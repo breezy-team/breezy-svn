@@ -34,6 +34,46 @@ import urllib
 import svn.core, svn.wc, svn.delta
 from svn.core import SubversionException, Pool
 
+from errors import InvalidExternalsDescription
+
+def parse_externals_description(val):
+    """Parse an svn:externals property value.
+
+    :returns: dictionary with local names as keys, (revnum, url)
+              as value. revnum is the revision number and is 
+              set to None if not applicable.
+    """
+    ret = {}
+    for l in val.splitlines():
+        if l == "" or l[0] == "#":
+            continue
+        pts = l.rsplit(None, 2) 
+        if len(pts) == 3:
+            assert pts[1].startswith("-r")
+            ret[pts[0]] = (int(pts[1][2:]), pts[2])
+        elif len(pts) == 2:
+            ret[pts[0]] = (None, pts[1])
+        else:
+            raise InvalidExternalsDescription
+    return ret
+
+
+def inventory_add_external(inv, parent_id, name, rev, url):
+    """Add an svn:externals entry to an inventory as a tree-reference.
+    
+    :param inv: Inventory to add to.
+    :param parent_id: File id of directory the entry was set on.
+    :param name: Name of the entry, relative to entry with parent_id.
+    :param rev: Revision of tree that's being referenced, or None if no 
+                specific revision is being referenced.
+    :param url: URL of referenced tree.
+    """
+    # FIXME: Find id of parent of name
+    (dir, base) = os.path.split(name)
+    os.path.join(inv.id2path(dir), dir)
+    pass
+
+
 def apply_txdelta_handler(src_stream, target_stream, pool):
     assert hasattr(src_stream, 'read')
     assert hasattr(target_stream, 'write')
@@ -79,6 +119,7 @@ class TreeBuildEditor(svn.delta.Editor):
         self.last_revnum = {}
         self.dir_revnum = {}
         self.dir_ignores = {}
+        self.externals = {}
         self.pool = pool
 
     def set_target_revision(self, revnum):
@@ -106,6 +147,8 @@ class TreeBuildEditor(svn.delta.Editor):
             self.dir_revnum[id] = int(value)
         elif name == svn.core.SVN_PROP_IGNORE:
             self.dir_ignores[id] = value
+        elif name == svn.core.SVN_PROP_EXTERNALS:
+            self.externals[id] = parse_externals_description(value)
         elif name == SVN_PROP_BZR_MERGE or name == SVN_PROP_SVK_MERGE:
             if id != self.tree._inventory.root.file_id:
                 mutter('%r set on non-root dir!' % SVN_PROP_BZR_MERGE)
@@ -132,6 +175,8 @@ class TreeBuildEditor(svn.delta.Editor):
             self.is_executable = (value != None)
         elif name == svn.core.SVN_PROP_SPECIAL:
             self.is_symlink = (value != None)
+        elif name == svn.core.SVN_PROP_EXTERNALS:
+            mutter('svn:externals property on file!')
         elif name == svn.core.SVN_PROP_ENTRY_COMMITTED_REV:
             self.last_file_rev = int(value)
         elif name in (svn.core.SVN_PROP_ENTRY_COMMITTED_DATE,
@@ -151,9 +196,15 @@ class TreeBuildEditor(svn.delta.Editor):
         self.is_executable = False
         return path
 
-    def close_dir(self, id):
+    def close_directory(self, id):
         if id in self.tree._inventory and self.dir_ignores.has_key(id):
             self.tree._inventory[id].ignores = self.dir_ignores[id]
+
+        if self.externals.has_key(id):
+            # Add externals. This happens after all children have been added
+            # as they can be grandchildren.
+            for name in self.externals[id]:
+                inventory_add_external(self.inventory, id, name, rev, url)
 
     def close_file(self, path, checksum):
         file_id, revision_id = self.tree.id_map[path]

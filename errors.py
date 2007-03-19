@@ -18,6 +18,11 @@ from bzrlib.errors import BzrError, ConnectionReset
 
 import svn.core
 
+
+class InvalidExternalsDescription(BzrError):
+    _fmt = """Unable to parse externals description."""
+
+
 class NotSvnBranchPath(BzrError):
     _fmt = """{%(branch_path)s}:%(revnum)s is not a valid Svn branch path"""
 

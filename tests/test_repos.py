@@ -670,6 +670,29 @@ class TestSubversionRepositoryWorks(TestCaseWithSubversionRepository):
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
 
+    def test_fetch_externals(self):
+        repos_url1 = self.make_client('d1', 'dc1')
+        self.build_tree({'dc1/proj1/trunk/file': "data"})
+        self.client_add("dc1/proj1")
+        self.client_commit("dc1", "My Message")
+
+        repos_url2 = self.make_client('d2', 'dc2')
+        self.build_tree({'dc2/somedir': None})
+        self.client_add("dc2/somedir")
+        self.client_set_prop("dc2/somedir", "svn:externals", 
+                str("bla\t%s/proj1/trunk\n" % repos_url1))
+        self.client_commit("dc2", "My Message")
+
+        oldrepos = Repository.open(repos_url2)
+        dir = BzrDir.create("f")
+        newrepos = dir.create_repository()
+        oldrepos.copy_content_into(newrepos)
+        inv = oldrepos.get_inventory(oldrepos.generate_revision_id(0, ""))
+        self.assertTrue(inv.has_filename("somedir/bla"))
+        self.assertTrue(inv.has_filename("somedir/bla/file"))
+        self.assertEqual(inv.path2id("somedir/bla"), "blaid")
+        self.assertEqual(inv.path2id("somedir/bla/file"), "blaid")
+
     def test_fetch_special_char(self):
         repos_url = self.make_client('d', 'dc')
         self.build_tree({u'dc/trunk/f\x2cle': "data"})

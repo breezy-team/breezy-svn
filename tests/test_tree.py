@@ -19,7 +19,7 @@ from bzrlib.errors import NoRepositoryPresent
 from bzrlib.tests import TestCase
 from bzrlib.workingtree import WorkingTree
 
-from tree import SvnBasisTree
+from tree import SvnBasisTree, parse_externals_description
 from tests import TestCaseWithSubversionRepository
 
 class TestBasisTree(TestCaseWithSubversionRepository):
@@ -86,3 +86,25 @@ class TestBasisTree(TestCaseWithSubversionRepository):
         self.assertFalse(tree.inventory[tree.inventory.path2id("file")].executable)
         self.assertFalse(wt.inventory[wt.inventory.path2id("file")].executable)
 
+
+class TestExternalsParser(TestCase):
+    def test_parse_externals(self):
+        self.assertEqual({
+                'third-party/sounds': (None, "http://sounds.red-bean.com/repos"),
+                'third-party/skins': (None, "http://skins.red-bean.com/repositories/skinproj"),
+                'third-party/skins/toolkit': (21, "http://svn.red-bean.com/repos/skin-maker")},
+            parse_externals_description(
+"""third-party/sounds             http://sounds.red-bean.com/repos
+third-party/skins              http://skins.red-bean.com/repositories/skinproj
+third-party/skins/toolkit -r21 http://svn.red-bean.com/repos/skin-maker"""))
+
+    def test_parse_comment(self):
+        self.assertEqual({
+            'third-party/sounds': (None, "http://sounds.red-bean.com/repos")
+                },
+            parse_externals_description(
+"""
+
+third-party/sounds             http://sounds.red-bean.com/repos
+#third-party/skins              http://skins.red-bean.com/repositories/skinproj
+#third-party/skins/toolkit -r21 http://svn.red-bean.com/repos/skin-maker"""))

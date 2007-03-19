@@ -33,7 +33,8 @@ import svn.core
 from fileids import generate_file_id
 from repository import (SvnRepository, SVN_PROP_BZR_MERGE, SVN_PROP_SVK_MERGE,
                 SVN_PROP_BZR_REVPROP_PREFIX, SvnRepositoryFormat)
-from tree import apply_txdelta_handler
+from tree import (apply_txdelta_handler, parse_externals_description, 
+                  inventory_add_external)
 
 
 def md5_strings(strings):
@@ -59,6 +60,7 @@ class RevisionBuildEditor(svn.delta.Editor):
         self._revprops = {}
         self._svn_revprops = svn_revprops
         self.pool = Pool()
+        self.externals = {}
 
     def _get_revision(self, revid):
         if self._parent_ids is None:
@@ -129,6 +131,14 @@ class RevisionBuildEditor(svn.delta.Editor):
         if not file_weave.has_version(self.revid):
             file_weave.add_lines(self.revid, self.dir_baserev[id], [])
 
+        if self.externals.has_key(id):
+            # Add externals. This happens after all children have been added
+            # as they can be grandchildren.
+            for (name, (rev, url)) in self.externals[id].items():
+                inventory_add_external(self.inventory, id, name, rev, url)
+            # FIXME: Externals could've disappeared or only changed. Need 
+            # to keep track of them.
+
     def add_directory(self, path, parent_id, copyfrom_path, copyfrom_revnum, pool):
         path = path.decode("utf-8")
         file_id = self._get_new_id(parent_id, path)
@@ -182,6 +192,8 @@ class RevisionBuildEditor(svn.delta.Editor):
                       svn.core.SVN_PROP_ENTRY_UUID,
                       svn.core.SVN_PROP_EXECUTABLE):
             pass
+        elif name == svn.core.SVN_PROP_EXTERNALS:
+            self.externals[id] = parse_externals_description(value)
         elif name.startswith(svn.core.SVN_PROP_WC_PREFIX):
             pass
         else:
@@ -198,6 +210,8 @@ class RevisionBuildEditor(svn.delta.Editor):
             self.is_symlink = (value != None)
         elif name == svn.core.SVN_PROP_ENTRY_COMMITTED_REV:
             self.last_file_rev = int(value)
+        elif name == svn.core.SVN_PROP_EXTERNALS:
+            mutter('svn:externals property on file!')
         elif name in (svn.core.SVN_PROP_ENTRY_COMMITTED_DATE,
                       svn.core.SVN_PROP_ENTRY_LAST_AUTHOR,
                       svn.core.SVN_PROP_ENTRY_LOCK_TOKEN,
