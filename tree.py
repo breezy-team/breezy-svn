@@ -14,7 +14,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-from bzrlib.inventory import Inventory
+from bzrlib.branch import Branch
+from bzrlib.inventory import Inventory, InventoryDirectory, TreeReference
 import bzrlib.osutils as osutils
 from bzrlib.trace import mutter
 from bzrlib.revisiontree import RevisionTree
@@ -51,20 +52,36 @@ def parse_externals_description(val):
     return ret
 
 
-def inventory_add_external(inv, parent_id, name, rev, url):
+def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     """Add an svn:externals entry to an inventory as a tree-reference.
     
     :param inv: Inventory to add to.
     :param parent_id: File id of directory the entry was set on.
-    :param name: Name of the entry, relative to entry with parent_id.
-    :param rev: Revision of tree that's being referenced, or None if no 
+    :param path: Path of the entry, relative to entry with parent_id.
+    :param revid: Revision to store in newly created inventory entries.
+    :param ref_revnum: Referenced revision of tree that's being referenced, or None if no 
                 specific revision is being referenced.
     :param url: URL of referenced tree.
     """
-    # FIXME: Find id of parent of name
-    (dir, base) = os.path.split(name)
-    os.path.join(inv.id2path(dir), dir)
-    pass
+    # FIXME: Use file id map
+    (dir, name) = os.path.split(path)
+    parent = inv[parent_id]
+    if dir != "":
+        for part in dir.split("/"):
+            if parent.children.has_key(part):
+                parent = parent.children[part]
+            else:
+                # Implicitly add directory if it doesn't exist yet
+                parent = inv.add(InventoryDirectory('someid', part, 
+                                 parent_id=parent.file_id))
+                parent.revision = revid
+
+    reference_branch = Branch.open(url)
+    file_id = reference_branch.get_root_id()
+    ie = TreeReference(file_id, name, parent.file_id, revision=revid)
+    if ref_revnum is not None:
+        ie.reference_revision = reference_branch.generate_revision_id(ref_revnum)
+    inv.add(ie)
 
 
 def apply_txdelta_handler(src_stream, target_stream, pool):

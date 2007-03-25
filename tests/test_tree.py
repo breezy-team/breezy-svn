@@ -14,10 +14,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from bzrlib.inventory import Inventory, TreeReference
+from bzrlib.repository import Repository
 from bzrlib.tests import TestCase
 from bzrlib.workingtree import WorkingTree
 
-from tree import SvnBasisTree, parse_externals_description
+from fileids import generate_svn_file_id
+from tree import (SvnBasisTree, parse_externals_description, 
+                  inventory_add_external)
 from tests import TestCaseWithSubversionRepository
 
 class TestBasisTree(TestCaseWithSubversionRepository):
@@ -106,3 +110,33 @@ third-party/skins/toolkit -r21 http://svn.red-bean.com/repos/skin-maker"""))
 third-party/sounds             http://sounds.red-bean.com/repos
 #third-party/skins              http://skins.red-bean.com/repositories/skinproj
 #third-party/skins/toolkit -r21 http://svn.red-bean.com/repos/skin-maker"""))
+
+class TestInventoryExternals(TestCaseWithSubversionRepository):
+    def test_add_nested_norev(self):
+        repos_url = self.make_client('d', 'dc')
+        repos = Repository.open(repos_url)
+        inv = Inventory(root_id='blabloe')
+        inventory_add_external(inv, 'blabloe', 'blie/bla', repos.generate_revision_id(1, ""), None, repos_url)
+        self.assertEqual(TreeReference(generate_svn_file_id(repos.uuid, 0, "", ""),
+             'bla', inv.path2id('blie'), revision=repos.generate_revision_id(1, "")), inv[inv.path2id('blie/bla')])
+
+    def test_add_simple_norev(self):
+        repos_url = self.make_client('d', 'dc')
+        repos = Repository.open(repos_url)
+        inv = Inventory(root_id='blabloe')
+        inventory_add_external(inv, 'blabloe', 'bla', repos.generate_revision_id(1, ""), None, repos_url)
+        self.assertEqual(TreeReference(generate_svn_file_id(repos.uuid, 0, "", ""),
+             'bla', 'blabloe', revision=repos.generate_revision_id(1, "")), inv[inv.path2id('bla')])
+
+    def test_add_simple_rev(self):
+        repos_url = self.make_client('d', 'dc')
+        repos = Repository.open(repos_url)
+        inv = Inventory(root_id='blabloe')
+        inventory_add_external(inv, 'blabloe', 'bla', repos.generate_revision_id(1, ""), 20, repos_url)
+        self.assertEqual(TreeReference(generate_svn_file_id(repos.uuid, 0, "", ""),
+             'bla', 'blabloe', revision=repos.generate_revision_id(1, ""),
+             reference_revision=repos.generate_revision_id(20, "")
+             ), inv[inv.path2id('bla')])
+        ie = inv[inv.path2id('bla')]
+        self.assertEqual(repos.generate_revision_id(20, ""), ie.reference_revision)
+        self.assertEqual(repos.generate_revision_id(1, ""), ie.revision)
