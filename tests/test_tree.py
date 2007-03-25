@@ -14,8 +14,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import NoRepositoryPresent
 from bzrlib.tests import TestCase
 from bzrlib.workingtree import WorkingTree
 
@@ -24,7 +22,7 @@ from tests import TestCaseWithSubversionRepository
 
 class TestBasisTree(TestCaseWithSubversionRepository):
     def test_executable(self):
-        repos_url = self.make_client("d", "dc")
+        self.make_client("d", "dc")
         self.build_tree({"dc/file": "x"})
         self.client_add("dc/file")
         self.client_set_prop("dc/file", "svn:executable", "*")
@@ -33,7 +31,7 @@ class TestBasisTree(TestCaseWithSubversionRepository):
         self.assertTrue(tree.inventory[tree.inventory.path2id("file")].executable)
 
     def test_executable_changed(self):
-        repos_url = self.make_client("d", "dc")
+        self.make_client("d", "dc")
         self.build_tree({"dc/file": "x"})
         self.client_add("dc/file")
         self.client_commit("dc", "executable")
@@ -43,7 +41,7 @@ class TestBasisTree(TestCaseWithSubversionRepository):
         self.assertFalse(tree.inventory[tree.inventory.path2id("file")].executable)
 
     def test_symlink(self):
-        repos_url = self.make_client("d", "dc")
+        self.make_client("d", "dc")
         import os
         os.symlink("target", "dc/file")
         self.build_tree({"dc/file": "x"})
@@ -57,7 +55,7 @@ class TestBasisTree(TestCaseWithSubversionRepository):
                          tree.inventory[tree.inventory.path2id("file")].symlink_target)
 
     def test_symlink_next(self):
-        repos_url = self.make_client("d", "dc")
+        self.make_client("d", "dc")
         import os
         os.symlink("target", "dc/file")
         self.build_tree({"dc/file": "x", "dc/bla": "p"})
@@ -74,7 +72,7 @@ class TestBasisTree(TestCaseWithSubversionRepository):
                          tree.inventory[tree.inventory.path2id("file")].symlink_target)
 
     def test_executable_link(self):
-        repos_url = self.make_client("d", "dc")
+        self.make_client("d", "dc")
         import os
         os.symlink("target", "dc/file")
         self.build_tree({"dc/file": "x"})

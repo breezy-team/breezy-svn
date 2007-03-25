@@ -32,7 +32,8 @@ import svn.core
 
 from fileids import generate_file_id
 from repository import (SvnRepository, SVN_PROP_BZR_MERGE, SVN_PROP_SVK_MERGE,
-                SVN_PROP_BZR_REVPROP_PREFIX, SvnRepositoryFormat)
+                SVN_PROP_BZR_PREFIX, SVN_PROP_BZR_REVPROP_PREFIX, 
+                SvnRepositoryFormat)
 from tree import (apply_txdelta_handler, parse_externals_description, 
                   inventory_add_external)
 
@@ -44,6 +45,9 @@ def md5_strings(strings):
 
 
 class RevisionBuildEditor(svn.delta.Editor):
+    """Implementation of the Subversion commit editor interface that builds a 
+    Bazaar revision.
+    """
     def __init__(self, source, target, branch_path, prev_inventory, revid, 
                  svn_revprops, id_map):
         self.branch_path = branch_path
@@ -63,6 +67,10 @@ class RevisionBuildEditor(svn.delta.Editor):
         self.externals = {}
 
     def _get_revision(self, revid):
+        """Creates the revision object.
+
+        :param revid: Revision id of the revision to create.
+        """
         if self._parent_ids is None:
             self._parent_ids = ""
 
@@ -139,7 +147,8 @@ class RevisionBuildEditor(svn.delta.Editor):
             # FIXME: Externals could've disappeared or only changed. Need 
             # to keep track of them.
 
-    def add_directory(self, path, parent_id, copyfrom_path, copyfrom_revnum, pool):
+    def add_directory(self, path, parent_id, copyfrom_path, copyfrom_revnum, 
+                      pool):
         path = path.decode("utf-8")
         file_id = self._get_new_id(parent_id, path)
 
@@ -196,7 +205,8 @@ class RevisionBuildEditor(svn.delta.Editor):
             self.externals[id] = parse_externals_description(value)
         elif name.startswith(svn.core.SVN_PROP_WC_PREFIX):
             pass
-        else:
+        elif (name.startswith(svn.core.SVN_PROP_PREFIX) or
+              name.startswith(SVN_PROP_BZR_PREFIX)):
             mutter('unsupported file property %r' % name)
 
     def change_file_prop(self, id, name, value, pool):
@@ -220,7 +230,8 @@ class RevisionBuildEditor(svn.delta.Editor):
             pass
         elif name.startswith(svn.core.SVN_PROP_WC_PREFIX):
             pass
-        else:
+        elif (name.startswith(svn.core.SVN_PROP_PREFIX) or
+              name.startswith(SVN_PROP_BZR_PREFIX)):
             mutter('unsupported file property %r' % name)
 
     def add_file(self, path, parent_id, copyfrom_path, copyfrom_revnum, baton):
@@ -239,7 +250,8 @@ class RevisionBuildEditor(svn.delta.Editor):
         self.file_id = self._get_existing_id(parent_id, path)
         self.is_executable = None
         self.is_symlink = (self.inventory[base_file_id].kind == 'symlink')
-        file_weave = self.weave_store.get_weave_or_empty(base_file_id, self.transact)
+        file_weave = self.weave_store.get_weave_or_empty(base_file_id, 
+                                                         self.transact)
         self.file_data = file_weave.get_text(base_revid)
         self.file_stream = None
         if self.file_id == base_file_id:
@@ -261,7 +273,8 @@ class RevisionBuildEditor(svn.delta.Editor):
         actual_checksum = md5_strings(lines)
         assert checksum is None or checksum == actual_checksum
 
-        file_weave = self.weave_store.get_weave_or_empty(self.file_id, self.transact)
+        file_weave = self.weave_store.get_weave_or_empty(self.file_id, 
+                                                         self.transact)
         if not file_weave.has_version(self.revid):
             file_weave.add_lines(self.revid, self.file_parents, lines)
 
@@ -301,9 +314,11 @@ class RevisionBuildEditor(svn.delta.Editor):
     def apply_textdelta(self, file_id, base_checksum):
         actual_checksum = md5.new(self.file_data).hexdigest(),
         assert (base_checksum is None or base_checksum == actual_checksum,
-            "base checksum mismatch: %r != %r" % (base_checksum, actual_checksum))
+            "base checksum mismatch: %r != %r" % (base_checksum, 
+                                                  actual_checksum))
         self.file_stream = StringIO()
-        return apply_txdelta_handler(StringIO(self.file_data), self.file_stream, self.pool)
+        return apply_txdelta_handler(StringIO(self.file_data), 
+                                     self.file_stream, self.pool)
 
 
 class InterSvnRepository(InterRepository):
@@ -321,7 +336,8 @@ class InterSvnRepository(InterRepository):
         for (branch, revnum) in self.source.follow_history(
                                                 self.source._latest_revnum):
             revid = self.source.generate_revision_id(revnum, branch)
-            parents[revid] = self.source._mainline_revision_parent(branch, revnum)
+            parents[revid] = self.source._mainline_revision_parent(branch, 
+                                                                   revnum)
 
             if not self.target.has_revision(revid):
                 needed.append(revid)
@@ -350,6 +366,7 @@ class InterSvnRepository(InterRepository):
 
     def copy_content(self, revision_id=None, basis=None, pb=None):
         """See InterRepository.copy_content."""
+        # FIXME: Use basis
         # Dictionary with paths as keys, revnums as values
 
         # Loop over all the revnums until revision_id
@@ -382,6 +399,7 @@ class InterSvnRepository(InterRepository):
         else:
             nested_pb = None
         num = 0
+        prev_inv = None
         try:
             for revid in needed:
                 (branch, revnum) = self.source.parse_revision_id(revid)
@@ -394,6 +412,7 @@ class InterSvnRepository(InterRepository):
                 elif prev_revid != parent_revid:
                     parent_inv = self.target.get_inventory(parent_revid)
                 else:
+                    assert prev_inv is not None
                     parent_inv = prev_inv
 
                 changes = self.source._log.get_revision_paths(revnum, branch)
@@ -402,9 +421,9 @@ class InterSvnRepository(InterRepository):
                                             revnum, branch, changes, renames)
 
                 editor = RevisionBuildEditor(self.source, self.target, branch, 
-                                             parent_inv, revid, 
-                                         self.source._log.get_revision_info(revnum),
-                                         id_map)
+                             parent_inv, revid, 
+                             self.source._log.get_revision_info(revnum),
+                             id_map)
 
                 pool = Pool()
                 edit, edit_baton = svn.delta.make_editor(editor, pool)
@@ -417,7 +436,8 @@ class InterSvnRepository(InterRepository):
                     # Report status of existing paths
                     reporter.set_path("", revnum, True, None, pool)
                 else:
-                    (parent_branch, parent_revnum) = self.source.parse_revision_id(parent_revid)
+                    (parent_branch, parent_revnum) = \
+                            self.source.parse_revision_id(parent_revid)
                     transport.reparent("%s/%s" % (repos_root, parent_branch))
 
                     if parent_branch != branch:
