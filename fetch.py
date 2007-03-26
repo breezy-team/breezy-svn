@@ -14,7 +14,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import bzrlib
 from bzrlib.inventory import Inventory
 import bzrlib.osutils as osutils
 from bzrlib.revision import Revision
@@ -143,7 +142,7 @@ class RevisionBuildEditor(svn.delta.Editor):
             # Add externals. This happens after all children have been added
             # as they can be grandchildren.
             for (name, (rev, url)) in self.externals[id].items():
-                inventory_add_external(self.inventory, id, name, rev, url)
+                inventory_add_external(self.inventory, id, name, self.revid, rev, url)
             # FIXME: Externals could've disappeared or only changed. Need 
             # to keep track of them.
 
@@ -303,8 +302,7 @@ class RevisionBuildEditor(svn.delta.Editor):
         rev = self._get_revision(self.revid)
         self.inventory.revision_id = self.revid
         rev.inventory_sha1 = osutils.sha_string(
-            bzrlib.xml5.serializer_v5.write_inventory_to_string(
-                self.inventory))
+                self.target.serialise_inventory(self.inventory))
         self.target.add_revision(self.revid, rev, self.inventory)
         self.pool.destroy()
 

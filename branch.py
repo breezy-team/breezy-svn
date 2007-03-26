@@ -117,10 +117,7 @@ class SvnBranch(Branch):
         self._revision_history.reverse()
 
     def get_root_id(self):
-        if self.last_revision() is None:
-            inv = Inventory()
-        else:
-            inv = self.repository.get_inventory(self.last_revision())
+        inv = self.repository.get_inventory(self.last_revision())
         return inv.root.file_id
 
     def _get_nick(self):

@@ -63,6 +63,8 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
                 specific revision is being referenced.
     :param url: URL of referenced tree.
     """
+    assert ref_revnum is None or isinstance(ref_revnum, int)
+    assert revid is None or isinstance(revid, str)
     # FIXME: Use file id map
     (dir, name) = os.path.split(path)
     parent = inv[parent_id]
@@ -218,8 +220,8 @@ class TreeBuildEditor(svn.delta.Editor):
         if self.externals.has_key(id):
             # Add externals. This happens after all children have been added
             # as they can be grandchildren.
-            for name in self.externals[id]:
-                inventory_add_external(self.inventory, id, name, rev, url)
+            for (name, (rev, url)) in self.externals[id].items():
+                inventory_add_external(self.tree._inventory, id, name, None, rev, url)
 
     def close_file(self, path, checksum):
         file_id, revision_id = self.tree.id_map[path]
@@ -334,6 +336,13 @@ class SvnBasisTree(RevisionTree):
                     (subid, subrevid) = find_ids(entry)
                     if subid is not None:
                         add_file_to_inv(subrelpath, subid, subrevid, wc)
+            # Process externals
+            # FIXME: props = svn.wc.get_prop_diffs(self.workingtree.abspath(relpath), wc)
+            props = {}
+            if props.has_key(svn.core.SVN_PROP_EXTERNALS):
+                for (name, (rev, url)) in \
+                        parse_externals_description(props[svn.core.SVN_PROP_EXTERNALS]).items():
+                    inventory_add_external(self._inventory, id, name, None, rev, url)
 
         wc = workingtree._get_wc() 
         try:

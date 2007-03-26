@@ -696,14 +696,12 @@ class TestSubversionRepositoryWorks(TestCaseWithSubversionRepository):
         self.client_commit("dc2", "My Message")
 
         oldrepos = Repository.open(repos_url2)
-        dir = BzrDir.create("f")
-        newrepos = dir.create_repository()
+        from bzrlib.repofmt.knitrepo import RepositoryFormatKnit3
+        newrepos = RepositoryFormatKnit3().initialize(BzrDir.create("f"))
         oldrepos.copy_content_into(newrepos)
-        inv = oldrepos.get_inventory(oldrepos.generate_revision_id(0, ""))
+        inv = oldrepos.get_inventory(oldrepos.generate_revision_id(1, ""))
         self.assertTrue(inv.has_filename("somedir/bla"))
-        self.assertTrue(inv.has_filename("somedir/bla/file"))
-        self.assertEqual(inv.path2id("somedir/bla"), "blaid")
-        self.assertEqual(inv.path2id("somedir/bla/file"), "blaid")
+        self.assertEqual(inv.path2id("somedir/bla"), Branch.open("%s/proj1/trunk" % repos_url1).get_root_id())
 
     def test_fetch_special_char(self):
         repos_url = self.make_client('d', 'dc')

@@ -58,6 +58,20 @@ class TestBasisTree(TestCaseWithSubversionRepository):
         self.assertEqual("target",
                          tree.inventory[tree.inventory.path2id("file")].symlink_target)
 
+    def test_external(self):
+        ref_repos_url = self.make_client("ref", "de")
+        self.make_client("d", "dc")
+        self.client_set_prop("dc", "svn:externals", str("bla\t%s\n" % ref_repos_url))
+        self.client_commit("dc", "add external")
+        self.client_update("dc")
+        wt = WorkingTree.open("dc")
+        tree = SvnBasisTree(wt)
+        self.assertEqual('tree-reference', 
+                         tree.inventory[tree.inventory.path2id("bla")].kind)
+        self.assertEqual(TreeReference(generate_svn_file_id(wt.branch.repository.uuid, 0, "", ""),
+             'bla', wt.branch.get_root_id(), revision=wt.branch.generate_revision_id(1)),
+                         tree.inventory[tree.inventory.path2id("bla")])
+
     def test_symlink_next(self):
         self.make_client("d", "dc")
         import os
