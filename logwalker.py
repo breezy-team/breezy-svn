@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+"""Cache of the Subversion history log."""
 
 from bzrlib.errors import NoSuchRevision
 import bzrlib.ui as ui
@@ -25,10 +26,7 @@ import svn.core
 
 import base64
 
-try:
-    import sqlite3
-except ImportError:
-    from pysqlite2 import dbapi2 as sqlite3
+from cache import sqlite3
 
 def _escape_commit_message(message):
     """Replace xml-incompatible control characters."""
@@ -82,6 +80,7 @@ class LogWalker(object):
           create table if not exists changed_path(rev integer, action text, path text, copyfrom_path text, copyfrom_rev integer);
           create index if not exists path_rev on changed_path(rev);
           create index if not exists path_rev_path on changed_path(rev, path);
+          create index if not exists path_rev_path_action on changed_path(rev, path, action);
         """)
         self.db.commit()
         self.saved_revnum = self.db.execute("SELECT MAX(revno) FROM revision").fetchone()[0]
@@ -193,7 +192,7 @@ class LogWalker(object):
 
         paths = {}
         for p, act, cf, cr in self.db.execute(query):
-            paths[p] = (act, cf, cr)
+            paths[p.encode("utf-8")] = (act, cf, cr)
         return paths
 
     def get_revision_info(self, revnum):

@@ -13,9 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+"""Simple transport for accessing Subversion smart servers."""
 
 from bzrlib.errors import (NoSuchFile, NotBranchError, TransportNotPossible, 
-                           FileExists)
+                           FileExists, NotLocalUrl)
 from bzrlib.trace import mutter
 from bzrlib.transport import Transport
 import bzrlib.urlutils as urlutils
@@ -242,7 +243,7 @@ class SvnRaTransport(Transport):
     def check_path(self, path, revnum, *args, **kwargs):
         assert len(path) == 0 or path[0] != "/"
         mutter("svn check_path -r%d %s" % (revnum, path))
-        return svn.ra.check_path(self._ra, path, revnum, *args, **kwargs)
+        return svn.ra.check_path(self._ra, path.encode('utf-8'), revnum, *args, **kwargs)
 
     @need_lock
     @convert_svn_error
@@ -294,3 +295,14 @@ class SvnRaTransport(Transport):
             return SvnRaTransport(self.base)
 
         return SvnRaTransport(urlutils.join(self.base, offset))
+
+    def local_abspath(self, relpath):
+        """See Transport.local_abspath()."""
+        absurl = self.abspath(relpath)
+        if self.base.startswith("file:///"):
+            return urlutils.local_path_from_url(absurl)
+        raise NotLocalUrl(absurl)
+
+    def abspath(self, relpath):
+        """See Transport.abspath()."""
+        return urlutils.join(self.base, relpath)

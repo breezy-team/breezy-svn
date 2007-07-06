@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+"""Basis and revision tree tests."""
 
 from bzrlib.inventory import Inventory, TreeReference
 from bzrlib.repository import Repository
@@ -31,7 +32,7 @@ class TestBasisTree(TestCaseWithSubversionRepository):
         self.client_add("dc/file")
         self.client_set_prop("dc/file", "svn:executable", "*")
         self.client_commit("dc", "executable")
-        tree = SvnBasisTree(WorkingTree.open("dc"))
+        tree = SvnBasisTree(self.open_checkout("dc"))
         self.assertTrue(tree.inventory[tree.inventory.path2id("file")].executable)
 
     def test_executable_changed(self):
@@ -41,7 +42,7 @@ class TestBasisTree(TestCaseWithSubversionRepository):
         self.client_commit("dc", "executable")
         self.client_update("dc")
         self.client_set_prop("dc/file", "svn:executable", "*")
-        tree = SvnBasisTree(WorkingTree.open("dc"))
+        tree = SvnBasisTree(self.open_checkout("dc"))
         self.assertFalse(tree.inventory[tree.inventory.path2id("file")].executable)
 
     def test_symlink(self):
@@ -52,7 +53,7 @@ class TestBasisTree(TestCaseWithSubversionRepository):
         self.client_add("dc/file")
         self.client_commit("dc", "symlink")
         self.client_update("dc")
-        tree = SvnBasisTree(WorkingTree.open("dc"))
+        tree = SvnBasisTree(self.open_checkout("dc"))
         self.assertEqual('symlink', 
                          tree.inventory[tree.inventory.path2id("file")].kind)
         self.assertEqual("target",
@@ -83,7 +84,7 @@ class TestBasisTree(TestCaseWithSubversionRepository):
         self.build_tree({"dc/bla": "pa"})
         self.client_commit("dc", "change")
         self.client_update("dc")
-        tree = SvnBasisTree(WorkingTree.open("dc"))
+        tree = SvnBasisTree(self.open_checkout("dc"))
         self.assertEqual('symlink', 
                          tree.inventory[tree.inventory.path2id("file")].kind)
         self.assertEqual("target",
@@ -97,7 +98,7 @@ class TestBasisTree(TestCaseWithSubversionRepository):
         self.client_add("dc/file")
         self.client_set_prop("dc/file", "svn:executable", "*")
         self.client_commit("dc", "exe1")
-        wt = WorkingTree.open("dc")
+        wt = self.open_checkout("dc")
         tree = SvnBasisTree(wt)
         self.assertFalse(tree.inventory[tree.inventory.path2id("file")].executable)
         self.assertFalse(wt.inventory[wt.inventory.path2id("file")].executable)

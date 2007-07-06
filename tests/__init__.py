@@ -14,16 +14,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+"""Tests for the bzr-svn plugin."""
+
 import os
 import bzrlib
 from bzrlib import osutils
 from bzrlib.bzrdir import BzrDir
-from bzrlib.tests import TestCaseInTempDir
+from bzrlib.tests import TestCaseInTempDir, TestSkipped
 from bzrlib.trace import mutter
+from bzrlib.workingtree import WorkingTree
 
 RENAMES = False
 
 import svn.repos, svn.wc
+from errors import NoCheckoutSupport
 
 class TestCaseWithSubversionRepository(TestCaseInTempDir):
     """A test case that provides the ability to build Subversion 
@@ -75,7 +79,11 @@ class TestCaseWithSubversionRepository(TestCaseInTempDir):
 
         repos_url = self.make_repository(repos_path)
 
-        return self.open_local_bzrdir(repos_url, relpath)
+        try:
+            return self.open_local_bzrdir(repos_url, relpath)
+        except NoCheckoutSupport:
+            raise TestSkipped('No Checkout Support')
+
 
     def make_checkout(self, repos_url, relpath):
         rev = svn.core.svn_opt_revision_t()
@@ -83,6 +91,35 @@ class TestCaseWithSubversionRepository(TestCaseInTempDir):
 
         svn.client.checkout2(repos_url, relpath, 
                 rev, rev, True, False, self.client_ctx)
+
+    @staticmethod
+    def create_checkout(branch, path, revision_id=None, lightweight=False):
+        try:
+            return branch.create_checkout(path, revision_id=revision_id,
+                                          lightweight=lightweight)
+        except NoCheckoutSupport:
+            raise TestSkipped('No Checkout Support')
+
+    @staticmethod
+    def open_checkout(url):
+        try:
+            return WorkingTree.open(url)
+        except NoCheckoutSupport:
+           raise TestSkipped('No Checkout Support')
+
+    @staticmethod
+    def open_checkout_bzrdir(url):
+        try:
+            return BzrDir.open(url)
+        except NoCheckoutSupport:
+           raise TestSkipped('No Checkout Support')
+
+    @staticmethod
+    def create_branch_convenience(url):
+        try:
+            return BzrDir.create_branch_convenience(url)
+        except NoCheckoutSupport:
+           raise TestSkipped('No Checkout Support')
 
     def client_set_prop(self, path, name, value):
         if value is None:
@@ -217,22 +254,26 @@ def test_suite():
     suite = TestSuite()
 
     testmod_names = [
-            'test_blackbox',
             'test_branch', 
             'test_branchprops', 
             'test_checkout',
             'test_commit',
+            'test_config',
             'test_convert',
             'test_errors',
+            'test_fetch',
             'test_fileids', 
             'test_logwalker',
+            'test_push',
             'test_radir',
             'test_repos', 
+            'test_revids',
             'test_scheme', 
             'test_transport',
             'test_tree',
             'test_upgrade',
-            'test_workingtree']
+            'test_workingtree',
+            'test_blackbox']
     suite.addTest(loader.loadTestsFromModuleNames(["%s.%s" % (__name__, i) for i in testmod_names]))
 
     return suite

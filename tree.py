@@ -13,9 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+"""Access to stored Subversion basis trees."""
 
 from bzrlib.branch import Branch
 from bzrlib.inventory import Inventory, InventoryDirectory, TreeReference
+
 import bzrlib.osutils as osutils
 from bzrlib.trace import mutter
 from bzrlib.revisiontree import RevisionTree
@@ -102,13 +104,15 @@ def apply_txdelta_handler(src_stream, target_stream, pool):
     return wrapper
 
 class SvnRevisionTree(RevisionTree):
+    """A tree that existed in a historical Subversion revision."""
     def __init__(self, repository, revision_id):
         self._repository = repository
         self._revision_id = revision_id
         pool = Pool()
-        (self.branch_path, self.revnum) = repository.parse_revision_id(revision_id)
+        (self.branch_path, self.revnum, scheme) = repository.lookup_revision_id(revision_id)
         self._inventory = Inventory()
-        self.id_map = repository.get_fileid_map(self.revnum, self.branch_path)
+        self.id_map = repository.get_fileid_map(self.revnum, self.branch_path, 
+                                                scheme)
         self.editor = TreeBuildEditor(self, pool)
         self.file_data = {}
         editor, baton = svn.delta.make_editor(self.editor, pool)
@@ -125,6 +129,7 @@ class SvnRevisionTree(RevisionTree):
 
 
 class TreeBuildEditor(svn.delta.Editor):
+    """Builds a tree given Subversion tree transform calls."""
     def __init__(self, tree, pool):
         self.tree = tree
         self.repository = tree._repository
@@ -153,8 +158,8 @@ class TreeBuildEditor(svn.delta.Editor):
 
     def change_dir_prop(self, id, name, value, pool):
         from repository import (SVN_PROP_BZR_MERGE, SVN_PROP_SVK_MERGE, 
-                        SVN_PROP_BZR_PREFIX, SVN_PROP_BZR_REVPROP_PREFIX, 
-                        SVN_PROP_BZR_FILEIDS)
+                        SVN_PROP_BZR_PREFIX, SVN_PROP_BZR_REVISION_INFO, 
+                        SVN_PROP_BZR_FILEIDS, SVN_PROP_BZR_REVISION_ID)
 
         if name == svn.core.SVN_PROP_ENTRY_COMMITTED_REV:
             self.dir_revnum[id] = int(value)
@@ -178,7 +183,8 @@ class TreeBuildEditor(svn.delta.Editor):
             pass
         elif name.startswith(svn.core.SVN_PROP_WC_PREFIX):
             pass
-        elif name.startswith(SVN_PROP_BZR_REVPROP_PREFIX):
+        elif (name == SVN_PROP_BZR_REVISION_INFO or 
+              name.startswith(SVN_PROP_BZR_REVISION_ID)):
             pass
         elif (name.startswith(svn.core.SVN_PROP_PREFIX) or
               name.startswith(SVN_PROP_BZR_PREFIX)):
@@ -270,9 +276,11 @@ class SvnBasisTree(RevisionTree):
     """Optimized version of SvnRevisionTree."""
     def __init__(self, workingtree):
         self.workingtree = workingtree
-        self._revision_id = workingtree.branch.generate_revision_id(workingtree.base_revnum)
+        self._revision_id = workingtree.branch.generate_revision_id(
+                                      workingtree.base_revnum)
         self.id_map = workingtree.branch.repository.get_fileid_map(
-                workingtree.base_revnum, workingtree.branch.branch_path)
+                workingtree.base_revnum, workingtree.branch.branch_path, 
+                workingtree.branch.scheme)
         self._inventory = Inventory(root_id=None)
         self._repository = workingtree.branch.repository
 
@@ -299,7 +307,7 @@ class SvnBasisTree(RevisionTree):
             if entry.schedule in (svn.wc.schedule_normal, 
                                   svn.wc.schedule_delete, 
                                   svn.wc.schedule_replace):
-                return self.id_map[workingtree.branch.repository.scheme.unprefix(relpath)[1]]
+                return self.id_map[workingtree.branch.scheme.unprefix(relpath)[1]]
             return (None, None)
 
         def add_dir_to_inv(relpath, wc, parent_id):

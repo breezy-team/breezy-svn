@@ -14,11 +14,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+"""Checkout tests."""
+
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import NoRepositoryPresent
 from bzrlib.tests import TestCase
 
-from checkout import SvnWorkingTreeFormat
+from convert import SvnConverter
+from checkout import SvnWorkingTreeFormat, SvnWorkingTreeDirFormat
 from tests import TestCaseWithSubversionRepository
 
 class TestWorkingTreeFormat(TestCase):
@@ -36,20 +39,28 @@ class TestWorkingTreeFormat(TestCase):
     def test_open(self):
         self.assertRaises(NotImplementedError, self.format.open, None)
 
+class TestCheckoutFormat(TestCase):
+    def setUp(self):
+        super(TestCheckoutFormat, self).setUp()
+        self.format = SvnWorkingTreeDirFormat()
+
+    def test_get_converter(self):
+        self.assertIsInstance(self.format.get_converter(), SvnConverter)
+
 
 class TestCheckout(TestCaseWithSubversionRepository):
     def test_not_for_writing(self):
         self.make_client("d", "dc")
-        x = BzrDir.create_branch_convenience("dc/foo")
+        x = self.create_branch_convenience("dc/foo")
         self.assertFalse(hasattr(x.repository, "uuid"))
 
     def test_open_repository(self):
         self.make_client("d", "dc")
-        x = BzrDir.open("dc")
+        x = self.open_checkout_bzrdir("dc")
         self.assertRaises(NoRepositoryPresent, x.open_repository)
 
     def test_find_repository(self):
         self.make_client("d", "dc")
-        x = BzrDir.open("dc")
+        x = self.open_checkout_bzrdir("dc")
         self.assertTrue(hasattr(x.find_repository(), "uuid"))
 

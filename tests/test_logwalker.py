@@ -14,6 +14,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+"""Log walker tests."""
+
 from bzrlib.errors import NoSuchRevision
 
 import os
@@ -55,6 +57,11 @@ class TestLogWalker(TestCaseWithSubversionRepository):
         repos_url = self.make_client("a", "dc")
         walker = logwalker.LogWalker(SvnRaTransport(repos_url))
         self.assertEqual({'': ('A', None, -1)}, walker.get_revision_paths(0))
+
+    def test_get_revision_paths_invalid(self):
+        repos_url = self.make_client("a", "dc")
+        walker = logwalker.LogWalker(SvnRaTransport(repos_url))
+        self.assertRaises(NoSuchRevision, lambda: walker.get_revision_paths(42))
 
     def test_get_branch_invalid_revision(self):
         repos_url = self.make_client("a", "dc")
@@ -509,3 +516,19 @@ class TestLogWalker(TestCaseWithSubversionRepository):
                           'trunk/data/fg', 'trunk/data/fg/f1', 'trunk/db',
                           'trunk/db/f1', 'trunk/db/f2']), 
                 set(walker.find_children("trunk", 3)))
+
+    def test_fetch_property_change_only_trunk(self):
+        repos_url = self.make_client('d', 'dc')
+        self.build_tree({'dc/trunk/bla': "data"})
+        self.client_add("dc/trunk")
+        self.client_commit("dc", "My Message")
+        self.client_set_prop("dc/trunk", "some:property", "some data\n")
+        self.client_commit("dc", "My 3")
+        self.client_set_prop("dc/trunk", "some2:property", "some data\n")
+        self.client_commit("dc", "My 2")
+        self.client_set_prop("dc/trunk", "some:property", "some data\n")
+        self.client_commit("dc", "My 4")
+        walker = logwalker.LogWalker(transport=SvnRaTransport(repos_url))
+        self.assertEquals({'trunk': ('M', None, -1)}, walker.get_revision_paths(3))
+
+

@@ -14,15 +14,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+"""Mapping upgrade tests."""
+
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import InvalidRevisionId
 from bzrlib.repository import Repository
-from bzrlib.tests import TestCase, TestCaseWithTransport
+from bzrlib.tests import TestCase, TestCaseWithTransport, TestSkipped
 
+from errors import RebaseNotPresent
 from fileids import generate_svn_file_id
+from format import get_rich_root_format
 from repository import MAPPING_VERSION
 from tests import TestCaseWithSubversionRepository
-from upgrade import (change_revision_parent, upgrade_repository, upgrade_branch,
+from upgrade import (upgrade_repository, upgrade_branch,
                      UpgradeChangesContent, parse_legacy_revision_id,
                      create_upgraded_revid)
 
@@ -34,15 +38,19 @@ class TestUpgradeChangesContent(TestCase):
 
 class ParserTests(TestCase):
     def test_current(self):
-        self.assertEqual(("uuid", "trunk", 1, 3), 
+        self.assertEqual(("uuid", "trunk", 1, "trunk0", 3), 
+                parse_legacy_revision_id("svn-v3-trunk0:uuid:trunk:1"))
+
+    def test_current_undefined(self):
+        self.assertEqual(("uuid", "trunk", 1, None, 3), 
                 parse_legacy_revision_id("svn-v3-undefined:uuid:trunk:1"))
 
     def test_legacy2(self):
-        self.assertEqual(("uuid", "trunk", 1, 2), 
+        self.assertEqual(("uuid", "trunk", 1, None, 2), 
                          parse_legacy_revision_id("svn-v2:1@uuid-trunk"))
 
     def test_legacy(self):
-        self.assertEqual(("uuid", "trunk", 1, 1), 
+        self.assertEqual(("uuid", "trunk", 1, None, 1), 
                          parse_legacy_revision_id("svn-v1:1@uuid-trunk"))
 
     def test_except(self):
@@ -62,28 +70,19 @@ class ParserTests(TestCase):
                          create_upgraded_revid("bla-svn1-upgrade"))
 
 
-class ConversionTests(TestCaseWithTransport):
-    def test_simple(self):
-        wt = self.make_branch_and_tree('.')
-        b = wt.branch
-        file('hello', 'w').write('hello world')
-        wt.add('hello')
-        wt.commit(message='add hello', rev_id="bla")
-        file('hello', 'w').write('world')
-        wt.commit(message='change hello', rev_id="bloe")
-        wt.set_last_revision("bla")
-        b.set_revision_history(["bla"])
-        file('hello', 'w').write('world')
-        wt.commit(message='change hello', rev_id="bla2")
-        
-        newrev = change_revision_parent(wt.branch.repository, "bla2", "bla4", 
-                                        ["bloe"])
-        self.assertEqual("bla4", newrev)
-        self.assertTrue(wt.branch.repository.has_revision(newrev))
-        self.assertEqual(["bloe"], wt.branch.repository.revision_parents(newrev))
+def skip_no_rebase(unbound):
+    def check_error(self, *args, **kwargs):
+        try:
+            return unbound(self, *args, **kwargs)
+        except RebaseNotPresent, e:
+            raise TestSkipped(e)
+    check_error.__doc__ = unbound.__doc__
+    check_error.__name__ = unbound.__name__
+    return check_error
 
 
 class UpgradeTests(TestCaseWithSubversionRepository):
+    @skip_no_rebase
     def test_no_custom(self):
         repos_url = self.make_client("a", "dc")
         self.build_tree({'dc/a': 'b'})
@@ -91,7 +90,7 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.client_commit("dc", "data")
 
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f")
+        dir = BzrDir.create("f",format=get_rich_root_format())
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         dir.create_branch()
@@ -104,8 +103,9 @@ class UpgradeTests(TestCaseWithSubversionRepository):
 
         upgrade_repository(newrepos, oldrepos, allow_change=True)
 
-        self.assertTrue(newrepos.has_revision(oldrepos.generate_revision_id(1, "")))
+        self.assertTrue(newrepos.has_revision(oldrepos.generate_revision_id(1, "", "none")))
 
+    @skip_no_rebase
     def test_single_custom(self):
         repos_url = self.make_client("a", "dc")
         self.build_tree({'dc/a': 'b'})
@@ -113,7 +113,7 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.client_commit("dc", "data")
 
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f")
+        dir = BzrDir.create("f",format=get_rich_root_format())
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         dir.create_branch()
@@ -126,11 +126,12 @@ class UpgradeTests(TestCaseWithSubversionRepository):
 
         upgrade_repository(newrepos, oldrepos, allow_change=True)
 
-        self.assertTrue(newrepos.has_revision(oldrepos.generate_revision_id(1, "")))
+        self.assertTrue(newrepos.has_revision(oldrepos.generate_revision_id(1, "", "none")))
         self.assertTrue(newrepos.has_revision("customrev-svn%d-upgrade" % MAPPING_VERSION))
-        self.assertTrue([oldrepos.generate_revision_id(1, "")],
+        self.assertTrue([oldrepos.generate_revision_id(1, "", "none")],
                         newrepos.revision_parents("customrev-svn%d-upgrade" % MAPPING_VERSION))
 
+    @skip_no_rebase
     def test_single_keep_parent_fileid(self):
         repos_url = self.make_client("a", "dc")
         self.build_tree({'dc/a': 'b'})
@@ -138,7 +139,7 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.client_commit("dc", "data")
 
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f")
+        dir = BzrDir.create("f", format=get_rich_root_format())
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         dir.create_branch()
@@ -158,7 +159,7 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.assertEqual(generate_svn_file_id(oldrepos.uuid, 1, "", "a"), 
                          tree.inventory.path2id("b"))
 
-
+    @skip_no_rebase
     def test_single_custom_continue(self):
         repos_url = self.make_client("a", "dc")
         self.build_tree({'dc/a': 'b', 'dc/b': 'c'})
@@ -167,7 +168,7 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.client_commit("dc", "data")
 
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f")
+        dir = BzrDir.create("f",format=get_rich_root_format())
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         dir.create_branch()
@@ -189,11 +190,12 @@ class UpgradeTests(TestCaseWithSubversionRepository):
 
         upgrade_repository(newrepos, oldrepos, allow_change=True)
 
-        self.assertTrue(newrepos.has_revision(oldrepos.generate_revision_id(1, "")))
+        self.assertTrue(newrepos.has_revision(oldrepos.generate_revision_id(1, "", "none")))
         self.assertTrue(newrepos.has_revision("customrev-svn%d-upgrade" % MAPPING_VERSION))
-        self.assertTrue([oldrepos.generate_revision_id(1, "")],
+        self.assertTrue([oldrepos.generate_revision_id(1, "", "none")],
                         newrepos.revision_parents("customrev-svn%d-upgrade" % MAPPING_VERSION))
 
+    @skip_no_rebase
     def test_more_custom(self):
         repos_url = self.make_client("a", "dc")
         self.build_tree({'dc/a': 'b'})
@@ -201,7 +203,7 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.client_commit("dc", "data")
 
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f")
+        dir = BzrDir.create("f",format=get_rich_root_format())
         newrepos = dir.create_repository()
         dir.create_branch()
         wt = dir.create_workingtree()
@@ -215,19 +217,20 @@ class UpgradeTests(TestCaseWithSubversionRepository):
 
         renames = upgrade_repository(newrepos, oldrepos, allow_change=True)
         self.assertEqual({
-            "svn-v1:1@%s-" % oldrepos.uuid: oldrepos.generate_revision_id(1, ""),
+            "svn-v1:1@%s-" % oldrepos.uuid: oldrepos.generate_revision_id(1, "", "none"),
             "customrev": "customrev-svn%d-upgrade" % MAPPING_VERSION,
             "anotherrev": "anotherrev-svn%d-upgrade" % MAPPING_VERSION},
             renames)
 
-        self.assertTrue(newrepos.has_revision(oldrepos.generate_revision_id(1, "")))
+        self.assertTrue(newrepos.has_revision(oldrepos.generate_revision_id(1, "", "none")))
         self.assertTrue(newrepos.has_revision("customrev-svn%d-upgrade" % MAPPING_VERSION))
         self.assertTrue(newrepos.has_revision("anotherrev-svn%d-upgrade" % MAPPING_VERSION))
-        self.assertTrue([oldrepos.generate_revision_id(1, "")],
+        self.assertTrue([oldrepos.generate_revision_id(1, "", "none")],
                         newrepos.revision_parents("customrev-svn%d-upgrade" % MAPPING_VERSION))
         self.assertTrue(["customrev-svn%d-upgrade" % MAPPING_VERSION],
                         newrepos.revision_parents("anotherrev-svn%d-upgrade" % MAPPING_VERSION))
 
+    @skip_no_rebase
     def test_more_custom_branch(self):
         repos_url = self.make_client("a", "dc")
         self.build_tree({'dc/a': 'b'})
@@ -235,7 +238,7 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.client_commit("dc", "data")
 
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f")
+        dir = BzrDir.create("f",format=get_rich_root_format())
         newrepos = dir.create_repository()
         b = dir.create_branch()
         wt = dir.create_workingtree()
@@ -248,12 +251,13 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         wt.commit(message='fix it again', rev_id="anotherrev")
 
         upgrade_branch(b, oldrepos, allow_change=True)
-        self.assertEqual([oldrepos.generate_revision_id(0, ""),
-                          oldrepos.generate_revision_id(1, ""),
+        self.assertEqual([oldrepos.generate_revision_id(0, "", "none"),
+                          oldrepos.generate_revision_id(1, "", "none"),
                           "customrev-svn%d-upgrade" % MAPPING_VERSION,
                           "anotherrev-svn%d-upgrade" % MAPPING_VERSION
                           ], b.revision_history())
 
+    @skip_no_rebase
     def test_branch_none(self):
         repos_url = self.make_client("a", "dc")
         self.build_tree({'dc/a': 'b'})
@@ -261,7 +265,7 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.client_commit("dc", "data")
 
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f")
+        dir = BzrDir.create("f",format=get_rich_root_format())
         dir.create_repository()
         b = dir.create_branch()
         wt = dir.create_workingtree()
@@ -277,6 +281,7 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.assertEqual(["blarev", "customrev", "anotherrev"],
                 b.revision_history())
 
+    @skip_no_rebase
     def test_raise_incompat(self):
         repos_url = self.make_client("a", "dc")
         self.build_tree({'dc/d': 'e'})
@@ -284,7 +289,7 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.client_commit("dc", "data")
 
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f")
+        dir = BzrDir.create("f",format=get_rich_root_format())
         dir.create_repository()
         b = dir.create_branch()
         wt = dir.create_workingtree()

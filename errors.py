@@ -13,8 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+"""Subversion-specific errors and conversion of Subversion-specific errors."""
 
-from bzrlib.errors import BzrError, ConnectionReset
+from bzrlib.errors import (BzrError, ConnectionReset, LockError, 
+                           PermissionDenied, DependencyNotPresent)
 
 import svn.core
 
@@ -24,6 +26,7 @@ class InvalidExternalsDescription(BzrError):
 
 
 class NotSvnBranchPath(BzrError):
+    """Error raised when a path was specified that did not exist."""
     _fmt = """{%(branch_path)s}:%(revnum)s is not a valid Svn branch path"""
 
     def __init__(self, branch_path, revnum=None):
@@ -33,10 +36,14 @@ class NotSvnBranchPath(BzrError):
 
 
 def convert_error(err):
-    (num, msg) = err.args
+    (msg, num) = err.args
 
     if num == svn.core.SVN_ERR_RA_SVN_CONNECTION_CLOSED:
         return ConnectionReset(msg=msg)
+    elif num == svn.core.SVN_ERR_WC_LOCKED:
+        return LockError(message=msg)
+    elif num == svn.core.SVN_ERR_RA_NOT_AUTHORIZED:
+        return PermissionDenied('.', msg)
     else:
         return err
 
@@ -59,3 +66,23 @@ def convert_svn_error(unbound):
 class NoCheckoutSupport(BzrError):
 
     _fmt = 'Subversion version too old for working tree support.'
+
+
+class LocalCommitsUnsupported(BzrError):
+
+    _fmt = 'Local commits are not supported for lightweight Subversion checkouts.'
+
+
+class InvalidPropertyValue(BzrError):
+    _fmt = 'Invalid property value for Subversion property %(property)s: %(msg)s'
+
+    def __init__(self, property, msg):
+        BzrError.__init__(self)
+        self.property = property
+        self.msg = msg
+
+class RebaseNotPresent(DependencyNotPresent):
+    _fmt = "Unable to import bzr-rebase (required for svn-upgrade support): %(error)s"
+
+    def __init__(self, error):
+        DependencyNotPresent.__init__(self, 'bzr-rebase', error)

@@ -14,10 +14,17 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import NoRepositoryPresent, NotBranchError, NotLocalUrl
+"""Remote access tests."""
 
+from bzrlib.bzrdir import BzrDir, format_registry
+from bzrlib.errors import (NoRepositoryPresent, NotBranchError, NotLocalUrl,
+                           NoWorkingTree)
+
+import svn
+
+from format import SvnFormat
 from tests import TestCaseWithSubversionRepository
+from transport import SvnRaTransport
 
 class TestRemoteAccess(TestCaseWithSubversionRepository):
     def test_clone(self):
@@ -25,18 +32,38 @@ class TestRemoteAccess(TestCaseWithSubversionRepository):
         self.build_tree({"dc/foo": None})
         self.client_add("dc/foo")
         self.client_commit("dc", "msg")
-        x = BzrDir.open("dc")
+        x = self.open_checkout_bzrdir("dc")
         self.assertRaises(NotImplementedError, x.clone, "dir")
 
     def test_open_workingtree(self):
         repos_url = self.make_client("d", "dc")
         x = BzrDir.open(repos_url)
-        self.assertRaises(NotLocalUrl, x.open_workingtree)
+        self.assertRaises(NoWorkingTree, x.open_workingtree)
+
+    def test_open_workingtree_recommend_arg(self):
+        repos_url = self.make_client("d", "dc")
+        x = BzrDir.open(repos_url)
+        self.assertRaises(NoWorkingTree, lambda: x.open_workingtree(recommend_upgrade=True))
 
     def test_create_workingtree(self):
         repos_url = self.make_client("d", "dc")
         x = BzrDir.open(repos_url)
         self.assertRaises(NotLocalUrl, x.create_workingtree)
+
+    def test_create_branch_top(self):
+        repos_url = self.make_client("d", "dc")
+        x = BzrDir.open(repos_url)
+        b = x.create_branch()
+        self.assertEquals(repos_url, b.base)
+
+    def test_create_branch_nested(self):
+        repos_url = self.make_client("d", "dc")
+        x = BzrDir.open(repos_url+"/trunk")
+        b = x.create_branch()
+        self.assertEquals(repos_url+"/trunk", b.base)
+        transport = SvnRaTransport(repos_url)
+        self.assertEquals(svn.core.svn_node_dir, 
+                transport.check_path("trunk", 1))
 
     def test_bad_dir(self):
         repos_url = self.make_client("d", "dc")
@@ -78,3 +105,19 @@ class TestRemoteAccess(TestCaseWithSubversionRepository):
         self.client_commit("dc", "data")
         x = BzrDir.open(repos_url+"/trunk")
         self.assertRaises(NoRepositoryPresent, x.open_repository)
+
+    def test_needs_format_upgrade_other(self):
+        repos_url = self.make_client("d", "dc")
+        x = BzrDir.open(repos_url+"/trunk")
+        self.assertTrue(x.needs_format_conversion(format_registry.make_bzrdir("dirstate-with-subtree")))
+
+    def test_needs_format_upgrade_default(self):
+        repos_url = self.make_client("d", "dc")
+        x = BzrDir.open(repos_url+"/trunk")
+        self.assertTrue(x.needs_format_conversion())
+
+    def test_needs_format_upgrade_self(self):
+        repos_url = self.make_client("d", "dc")
+        x = BzrDir.open(repos_url+"/trunk")
+        self.assertTrue(x.needs_format_conversion(SvnFormat()))
+

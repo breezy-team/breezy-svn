@@ -13,8 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+"""Branching scheme implementations."""
 
-from bzrlib.errors import NotBranchError
+from bzrlib.errors import NotBranchError, BzrError
 
 class BranchingScheme:
     """ Divides SVN repository data up into branches. Since there
@@ -55,16 +56,19 @@ class BranchingScheme:
         if name == "trunk":
             return TrunkBranchingScheme()
 
-        if name.startswith("trunk-"):
+        if name.startswith("trunk"):
             try:
-                return TrunkBranchingScheme(level=int(name[len("trunk-"):]))
+                return TrunkBranchingScheme(level=int(name[len("trunk"):]))
             except ValueError:
-                return None
+                raise UnknownBranchingScheme(name)
 
         if name == "none":
             return NoBranchingScheme()
 
-        return None
+        if name.startswith("single-"):
+            return SingleBranchingScheme(name[len("single-"):])
+
+        raise UnknownBranchingScheme(name)
 
     def is_branch_parent(self, path):
         """Check whether the specified path is the parent directory of branches.
@@ -106,7 +110,7 @@ class TrunkBranchingScheme(BranchingScheme):
         return False
 
     def is_tag(self, path):
-        """See BranchingScheme.is_branch()."""
+        """See BranchingScheme.is_tag()."""
         parts = path.strip("/").split("/")
         if len(parts) == self.level+2 and \
            (parts[self.level] == "tags"):
@@ -143,6 +147,7 @@ class TrunkBranchingScheme(BranchingScheme):
         parts = path.strip("/").split("/")
         return self.is_tag(path+"/aname")
 
+
 class NoBranchingScheme(BranchingScheme):
     """Describes a scheme where there is just one branch, the 
     root of the repository."""
@@ -158,7 +163,7 @@ class NoBranchingScheme(BranchingScheme):
         return ("", path.strip("/"))
 
     def __str__(self):
-        return "null"
+        return "none"
 
     def is_branch_parent(self, path):
         return False
@@ -193,4 +198,48 @@ class ListBranchingScheme(BranchingScheme):
                 return (i, path[len(i):].strip("/"))
 
         raise NotBranchError(path=path)
+
+class UnknownBranchingScheme(BzrError):
+    _fmt = "Branching scheme could not be found: %(name)s"
+
+    def __init__(self, name):
+        self.name = name
+
+
+class SingleBranchingScheme(BranchingScheme):
+    """Recognizes just one directory in the repository as branch.
+    """
+    def __init__(self, path):
+        self.path = path.strip("/")
+        if self.path == "":
+            raise BzrError("NoneBranchingScheme should be used")
+
+    def is_branch(self, path):
+        """See BranchingScheme.is_branch()."""
+        return self.path == path.strip("/")
+
+    def is_tag(self, path):
+        """See BranchingScheme.is_tag()."""
+        return False
+
+    def unprefix(self, path):
+        """See BranchingScheme.unprefix()."""
+        path = path.strip("/")
+        if not path.startswith(self.path):
+            raise NotBranchError(path=path)
+
+        return (path[0:len(self.path)].strip("/"), 
+                path[len(self.path):].strip("/"))
+
+    def __str__(self):
+        return "single-%s" % self.path
+
+    def is_branch_parent(self, path):
+        if not "/" in self.path:
+            return False
+        return self.is_branch(path+"/"+self.path.split("/")[-1])
+
+    def is_tag_parent(self, path):
+        return False
+
 

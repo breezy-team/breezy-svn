@@ -16,7 +16,19 @@ bzr-svn 0.4	UNRELEASED
    * Remove branches when they are being replaced. Fixes DivergedBranches 
      error when using svn-import (#81908).
 
-  IMPROVEMENTS
+   * Support true push (#80612).
+
+   * Support commits in heavy checkouts (#79330).
+   
+   * Use shared repositories by default in svn-import command.
+
+   * Put branching schemes in revision ids.
+
+   * Support using custom branching schemes.
+
+   * Add blackbox test for svn-import with dumpfile. (#123493)
+
+   * Consistently treat property changes as actual changes (#122115)
 
   PERFORMANCE
 
@@ -24,11 +36,32 @@ bzr-svn 0.4	UNRELEASED
      This should reduce the number of roundtrips significantly when 
 	 finding file id mappings.
 
-bzr-svn 0.3.3	UNRELEASED
+  INTERNALS
+
+   * Implement SvnRaTransport.local_abspath(). (#117090)
+
+   * Implement SvnRemoteAccess.create_branch().
+
+bzr-svn 0.3.4	2007-06-15
+
+  BUG FIXES
+
+  * Check for a working pysqlite, rather than checking that the 
+    first one found works. (#115026)
+
+  * Fix compatibility with Bazaar 0.17.
+
+bzr-svn 0.3.3	2007-04-29
 
   IMPROVEMENTS
 
+  * Fix compatibility with Bazaar 0.16 (#110164)
+
   * Don't do extra checkout before push if possible. (#91885)
+
+  * Set parent URLs in svn-import. (#94406)
+
+  * Don't show "not updating working tree" warnings when pushing.
 
 bzr-svn 0.3.2	2007-03-13
 

@@ -19,13 +19,14 @@ Support for foreign branches (Subversion)
 """
 import os
 import sys
+import tempfile
 import unittest
 import bzrlib
 
-from bzrlib.trace import warning
+from bzrlib.trace import warning, mutter
 
 __version__ = '0.4.0'
-COMPATIBLE_BZR_VERSIONS = [(0, 15), (0, 16)]
+COMPATIBLE_BZR_VERSIONS = [(0, 15), (0, 16), (0, 17), (0, 18)]
 
 def check_bzrlib_version(desired):
     """Check that bzrlib is compatible.
@@ -59,29 +60,8 @@ def check_subversion_version():
                 'bindings. See the bzr-svn README for details.')
         raise bzrlib.errors.BzrError("incompatible python subversion bindings")
 
-def check_pysqlite_version():
-    """Check that sqlite library is compatible.
-
-    """
-    try:
-        try:
-            import sqlite3
-        except ImportError:
-            from pysqlite2 import dbapi2 as sqlite3
-    except:
-        warning('Needs at least Python2.5 or Python2.4 with the pysqlite2 '
-                'module')
-        raise bzrlib.errors.BzrError("missing sqlite library")
-
-    if (sqlite3.sqlite_version_info[0] < 3 or 
-            (sqlite3.sqlite_version_info[0] == 3 and 
-             sqlite3.sqlite_version_info[1] < 3)):
-        warning('Needs at least sqlite 3.3.x')
-        raise bzrlib.errors.BzrError("incompatible sqlite library")
-
 check_bzrlib_version(COMPATIBLE_BZR_VERSIONS)
 check_subversion_version()
-check_pysqlite_version()
 
 import branch
 import convert
@@ -97,7 +77,8 @@ from bzrlib.bzrdir import BzrDirFormat
 
 from bzrlib.repository import InterRepository
 
-from fetch import InterSvnRepository
+from fetch import InterFromSvnRepository
+from commit import InterToSvnRepository
 
 BzrDirFormat.register_control_format(format.SvnFormat)
 
@@ -106,7 +87,8 @@ _subr_version = svn.core.svn_subr_version()
 
 BzrDirFormat.register_control_format(checkout.SvnWorkingTreeDirFormat)
 
-InterRepository.register_optimiser(InterSvnRepository)
+InterRepository.register_optimiser(InterFromSvnRepository)
+InterRepository.register_optimiser(InterToSvnRepository)
 
 from bzrlib.branch import Branch
 from bzrlib.commands import Command, register_command, display_command, Option
@@ -131,16 +113,16 @@ class cmd_svn_import(Command):
     """
     takes_args = ['from_location', 'to_location?']
     takes_options = [Option('trees', help='Create working trees'),
-                     Option('shared', help='Create shared repository'),
+                     Option('standalone', help='Create standalone branches'),
                      Option('all', 
                          help='Convert all revisions, even those not in '
-                              'current branch history (implies --shared)'),
+                              'current branch history (forbids --standalone)'),
                      Option('scheme', type=get_scheme,
                          help='Branching scheme (none, trunk, or trunk-INT)')]
 
     @display_command
     def run(self, from_location, to_location=None, trees=False, 
-            shared=False, scheme=None, all=False):
+            standalone=False, scheme=None, all=False):
         from convert import convert_repository
         from scheme import TrunkBranchingScheme
 
@@ -151,27 +133,49 @@ class cmd_svn_import(Command):
             to_location = os.path.basename(from_location.rstrip("/\\"))
 
         if all:
-            shared = True
-        convert_repository(from_location, to_location, scheme, shared, trees,
-                           all)
+            standalone = False
+
+        if os.path.isfile(from_location):
+            from convert import load_dumpfile
+            tmp_repos = tempfile.mkdtemp(prefix='bzr-svn-dump-')
+            mutter('loading dumpfile %r to %r' % (from_location, tmp_repos))
+            load_dumpfile(from_location, tmp_repos)
+            from_location = tmp_repos
+        else:
+            tmp_repos = None
+
+        from_repos = Repository.open(from_location)
+
+        convert_repository(from_repos, to_location, scheme, not standalone, 
+                trees, all)
+
+        if tmp_repos is not None:
+            from bzrlib import osutils
+            osutils.rmtree(tmp_repos)
 
 
 register_command(cmd_svn_import)
 
 class cmd_svn_upgrade(Command):
-    """Upgrade the revisions mapped from Subversion in a Bazaar branch.
+    """Upgrade revisions mapped from Subversion in a Bazaar branch.
     
     This will change the revision ids of revisions whose parents 
     were mapped from svn revisions.
     """
     takes_args = ['svn_repository?']
-    takes_options = [Option('allow-changes', help='Allow content changes')]
+    takes_options = []
 
     @display_command
-    def run(self, svn_repository=None, allow_changes=False):
+    def run(self, svn_repository=None):
         from upgrade import upgrade_branch
-        
-        branch_to = Branch.open(".")
+        from bzrlib.errors import NoWorkingTree
+        from bzrlib.workingtree import WorkingTree
+        try:
+            wt_to = WorkingTree.open(".")
+            branch_to = wt_to.branch
+        except NoWorkingTree:
+            wt_to = None
+            branch_to = Branch.open(".")
 
         stored_loc = branch_to.get_parent()
         if svn_repository is None:
@@ -182,10 +186,14 @@ class cmd_svn_upgrade(Command):
                 display_url = urlutils.unescape_for_display(stored_loc,
                         self.outf.encoding)
                 self.outf.write("Using saved location: %s\n" % display_url)
-                svn_repository = stored_loc
+                svn_repository = Branch.open(stored_loc).repository
+        else:
+            svn_repository = Repository.open(svn_repository)
 
-        upgrade_branch(branch_to, Repository.open(svn_repository), 
-                       allow_changes)
+        upgrade_branch(branch_to, svn_repository, allow_changes=True)
+
+        if wt_to is not None:
+            wt_to.set_last_revision(branch_to.last_revision())
 
 register_command(cmd_svn_upgrade)
 
