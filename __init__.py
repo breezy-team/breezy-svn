@@ -26,7 +26,7 @@ import bzrlib
 from bzrlib.trace import warning, mutter
 
 __version__ = '0.4.0'
-COMPATIBLE_BZR_VERSIONS = [(0, 15), (0, 16), (0, 17), (0, 18)]
+COMPATIBLE_BZR_VERSIONS = [(0, 18)]
 
 def check_bzrlib_version(desired):
     """Check that bzrlib is compatible.
@@ -67,7 +67,7 @@ import branch
 import convert
 import format
 import transport
-import checkout
+import workingtree
 
 from bzrlib.transport import register_transport
 register_transport('svn://', transport.SvnRaTransport)
@@ -85,7 +85,7 @@ BzrDirFormat.register_control_format(format.SvnFormat)
 import svn.core
 _subr_version = svn.core.svn_subr_version()
 
-BzrDirFormat.register_control_format(checkout.SvnWorkingTreeDirFormat)
+BzrDirFormat.register_control_format(workingtree.SvnWorkingTreeDirFormat)
 
 InterRepository.register_optimiser(InterFromSvnRepository)
 InterRepository.register_optimiser(InterToSvnRepository)
@@ -163,10 +163,10 @@ class cmd_svn_upgrade(Command):
     were mapped from svn revisions.
     """
     takes_args = ['svn_repository?']
-    takes_options = []
+    takes_options = ['verbose']
 
     @display_command
-    def run(self, svn_repository=None):
+    def run(self, svn_repository=None, verbose=False):
         from upgrade import upgrade_branch
         from bzrlib.errors import NoWorkingTree
         from bzrlib.workingtree import WorkingTree
@@ -190,7 +190,8 @@ class cmd_svn_upgrade(Command):
         else:
             svn_repository = Repository.open(svn_repository)
 
-        upgrade_branch(branch_to, svn_repository, allow_changes=True)
+        upgrade_branch(branch_to, svn_repository, allow_changes=True, 
+                       verbose=verbose)
 
         if wt_to is not None:
             wt_to.set_last_revision(branch_to.last_revision())
