@@ -20,7 +20,9 @@ from bzrlib.repository import Repository
 from bzrlib.tests import TestCase
 from bzrlib.workingtree import WorkingTree
 
+import errors
 from fileids import generate_svn_file_id
+import os
 from revids import generate_svn_revision_id
 from tree import (SvnBasisTree, parse_externals_description, 
                   inventory_add_external)
@@ -48,7 +50,6 @@ class TestBasisTree(TestCaseWithSubversionRepository):
 
     def test_symlink(self):
         self.make_client("d", "dc")
-        import os
         os.symlink("target", "dc/file")
         self.build_tree({"dc/file": "x"})
         self.client_add("dc/file")
@@ -76,7 +77,6 @@ class TestBasisTree(TestCaseWithSubversionRepository):
 
     def test_symlink_next(self):
         self.make_client("d", "dc")
-        import os
         os.symlink("target", "dc/file")
         self.build_tree({"dc/file": "x", "dc/bla": "p"})
         self.client_add("dc/file")
@@ -93,7 +93,6 @@ class TestBasisTree(TestCaseWithSubversionRepository):
 
     def test_executable_link(self):
         self.make_client("d", "dc")
-        import os
         os.symlink("target", "dc/file")
         self.build_tree({"dc/file": "x"})
         self.client_add("dc/file")
@@ -108,9 +107,9 @@ class TestBasisTree(TestCaseWithSubversionRepository):
 class TestExternalsParser(TestCase):
     def test_parse_externals(self):
         self.assertEqual({
-                'third-party/sounds': (None, "http://sounds.red-bean.com/repos"),
-                'third-party/skins': (None, "http://skins.red-bean.com/repositories/skinproj"),
-                'third-party/skins/toolkit': (21, "http://svn.red-bean.com/repos/skin-maker")},
+            'third-party/sounds': (None, "http://sounds.red-bean.com/repos"),
+            'third-party/skins': (None, "http://skins.red-bean.com/repositories/skinproj"),
+            'third-party/skins/toolkit': (21, "http://svn.red-bean.com/repos/skin-maker")},
             parse_externals_description(
 """third-party/sounds             http://sounds.red-bean.com/repos
 third-party/skins              http://skins.red-bean.com/repositories/skinproj
@@ -127,34 +126,60 @@ third-party/sounds             http://sounds.red-bean.com/repos
 #third-party/skins              http://skins.red-bean.com/repositories/skinproj
 #third-party/skins/toolkit -r21 http://svn.red-bean.com/repos/skin-maker"""))
 
+    def test_parse_invalid_missing_url(self):
+        """No URL specified."""
+        self.assertRaises(errors.InvalidExternalsDescription, 
+                lambda: parse_externals_description("bla"))
+            
+    def test_parse_invalid_too_much_data(self):
+        """No URL specified."""
+        self.assertRaises(errors.InvalidExternalsDescription, 
+                lambda: parse_externals_description("bla -R40 http://bla/"))
+ 
+
 class TestInventoryExternals(TestCaseWithSubversionRepository):
     def test_add_nested_norev(self):
+        """Add a nested tree with no specific revision referenced."""
         repos_url = self.make_client('d', 'dc')
         repos = Repository.open(repos_url)
         inv = Inventory(root_id='blabloe')
-        inventory_add_external(inv, 'blabloe', 'blie/bla', generate_svn_revision_id(repos.uuid, 1, "", "none"), 
-                               None, repos_url)
-        self.assertEqual(TreeReference(generate_svn_file_id(repos.uuid, 0, "", ""),
-             'bla', inv.path2id('blie'), revision=generate_svn_revision_id(repos.uuid, 1, "", "none")), 
+        inventory_add_external(inv, 'blabloe', 'blie/bla', 
+                generate_svn_revision_id(repos.uuid, 1, "", "none"), 
+                None, repos_url)
+        self.assertEqual(TreeReference(
+            generate_svn_file_id(repos.uuid, 0, "", ""),
+             'bla', inv.path2id('blie'), 
+             revision=generate_svn_revision_id(repos.uuid, 1, "", "none")), 
              inv[inv.path2id('blie/bla')])
 
     def test_add_simple_norev(self):
         repos_url = self.make_client('d', 'dc')
         repos = Repository.open(repos_url)
         inv = Inventory(root_id='blabloe')
-        inventory_add_external(inv, 'blabloe', 'bla', generate_svn_revision_id(repos.uuid, 1, "", "none"), None, repos_url)
-        self.assertEqual(TreeReference(generate_svn_file_id(repos.uuid, 0, "", ""),
-             'bla', 'blabloe', revision=generate_svn_revision_id(repos.uuid, 1, "", "none")), inv[inv.path2id('bla')])
+        inventory_add_external(inv, 'blabloe', 'bla', 
+            generate_svn_revision_id(repos.uuid, 1, "", "none"), None, 
+            repos_url)
+
+        self.assertEqual(TreeReference(
+            generate_svn_file_id(repos.uuid, 0, "", ""),
+             'bla', 'blabloe', 
+             revision=generate_svn_revision_id(repos.uuid, 1, "", "none")), 
+             inv[inv.path2id('bla')])
 
     def test_add_simple_rev(self):
         repos_url = self.make_client('d', 'dc')
         repos = Repository.open(repos_url)
         inv = Inventory(root_id='blabloe')
-        inventory_add_external(inv, 'blabloe', 'bla', generate_svn_revision_id(repos.uuid, 1, "", "none"), 0, repos_url)
-        self.assertEqual(TreeReference(generate_svn_file_id(repos.uuid, 0, "", ""),
-             'bla', 'blabloe', revision=generate_svn_revision_id(repos.uuid, 1, "", "none"),
-             reference_revision=generate_svn_revision_id(repos.uuid, 0, "", "none")
+        inventory_add_external(inv, 'blabloe', 'bla', 
+            generate_svn_revision_id(repos.uuid, 1, "", "none"), 0, repos_url)
+        self.assertEqual(
+            TreeReference(generate_svn_file_id(repos.uuid, 0, "", ""),
+            'bla', 'blabloe', 
+            revision=generate_svn_revision_id(repos.uuid, 1, "", "none"),
+            reference_revision=generate_svn_revision_id(repos.uuid, 0, "", "none")
              ), inv[inv.path2id('bla')])
         ie = inv[inv.path2id('bla')]
-        self.assertEqual(generate_svn_revision_id(repos.uuid, 0, "", "none"), ie.reference_revision)
-        self.assertEqual(generate_svn_revision_id(repos.uuid, 1, "", "none"), ie.revision)
+        self.assertEqual(generate_svn_revision_id(repos.uuid, 0, "", "none"), 
+                         ie.reference_revision)
+        self.assertEqual(generate_svn_revision_id(repos.uuid, 1, "", "none"), 
+                         ie.revision)

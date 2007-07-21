@@ -30,7 +30,7 @@ import urllib
 import svn.core, svn.wc, svn.delta
 from svn.core import Pool
 
-from errors import InvalidExternalsDescription
+import errors
 
 def parse_externals_description(val):
     """Parse an svn:externals property value.
@@ -45,12 +45,13 @@ def parse_externals_description(val):
             continue
         pts = l.rsplit(None, 2) 
         if len(pts) == 3:
-            assert pts[1].startswith("-r")
+            if not pts[1].startswith("-r"):
+                raise errors.InvalidExternalsDescription()
             ret[pts[0]] = (int(pts[1][2:]), pts[2])
         elif len(pts) == 2:
             ret[pts[0]] = (None, pts[1])
         else:
-            raise InvalidExternalsDescription
+            raise errors.InvalidExternalsDescription()
     return ret
 
 
@@ -61,8 +62,8 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     :param parent_id: File id of directory the entry was set on.
     :param path: Path of the entry, relative to entry with parent_id.
     :param revid: Revision to store in newly created inventory entries.
-    :param ref_revnum: Referenced revision of tree that's being referenced, or None if no 
-                specific revision is being referenced.
+    :param ref_revnum: Referenced revision of tree that's being referenced, or 
+        None if no specific revision is being referenced.
     :param url: URL of referenced tree.
     """
     assert ref_revnum is None or isinstance(ref_revnum, int)
@@ -84,7 +85,8 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     file_id = reference_branch.get_root_id()
     ie = TreeReference(file_id, name, parent.file_id, revision=revid)
     if ref_revnum is not None:
-        ie.reference_revision = reference_branch.generate_revision_id(ref_revnum)
+        ie.reference_revision = reference_branch.generate_revision_id(
+            ref_revnum)
     inv.add(ie)
 
 
@@ -120,7 +122,8 @@ class SvnRevisionTree(RevisionTree):
         self._repository = repository
         self._revision_id = revision_id
         pool = Pool()
-        (self.branch_path, self.revnum, scheme) = repository.lookup_revision_id(revision_id)
+        (self.branch_path, self.revnum, 
+            scheme) = repository.lookup_revision_id(revision_id)
         self._inventory = Inventory()
         self.id_map = repository.get_fileid_map(self.revnum, self.branch_path, 
                                                 scheme)
@@ -211,7 +214,7 @@ class TreeBuildEditor(svn.delta.Editor):
         elif name == svn.core.SVN_PROP_SPECIAL:
             self.is_symlink = (value != None)
         elif name == svn.core.SVN_PROP_EXTERNALS:
-            mutter('svn:externals property on file!')
+            mutter('%r property on file!' % name)
         elif name == svn.core.SVN_PROP_ENTRY_COMMITTED_REV:
             self.last_file_rev = int(value)
         elif name in (svn.core.SVN_PROP_ENTRY_COMMITTED_DATE,
@@ -240,7 +243,8 @@ class TreeBuildEditor(svn.delta.Editor):
             # Add externals. This happens after all children have been added
             # as they can be grandchildren.
             for (name, (rev, url)) in self.externals[id].items():
-                inventory_add_external(self.tree._inventory, id, name, None, rev, url)
+                inventory_add_external(self.tree._inventory, id, name, None, 
+                                       rev, url)
 
     def close_file(self, path, checksum):
         file_id, revision_id = self.tree.id_map[path]
@@ -365,8 +369,9 @@ class SvnBasisTree(RevisionTree):
             props = {}
             if props.has_key(svn.core.SVN_PROP_EXTERNALS):
                 for (name, (rev, url)) in \
-                        parse_externals_description(props[svn.core.SVN_PROP_EXTERNALS]).items():
-                    inventory_add_external(self._inventory, id, name, None, rev, url)
+                    parse_externals_description(props[svn.core.SVN_PROP_EXTERNALS]).items():
+                    inventory_add_external(self._inventory, id, name, None, 
+                                           rev, url)
 
         wc = workingtree._get_wc() 
         try:
