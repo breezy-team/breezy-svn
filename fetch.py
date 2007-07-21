@@ -15,6 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Fetching revisions from Subversion repositories in batches."""
 
+from bzrlib import urlutils
 from bzrlib.inventory import Inventory
 import bzrlib.osutils as osutils
 from bzrlib.revision import Revision
@@ -211,7 +212,9 @@ class RevisionBuildEditor(svn.delta.Editor):
                       svn.core.SVN_PROP_EXECUTABLE):
             pass
         elif name == svn.core.SVN_PROP_EXTERNALS:
-            self.externals[id] = parse_externals_description(value)
+            self.externals[id] = parse_externals_description(
+                urlutils.join(self.source.base, self.inventory.id2path(id)),
+                value)
         elif name.startswith(svn.core.SVN_PROP_WC_PREFIX):
             pass
         elif (name.startswith(svn.core.SVN_PROP_PREFIX) or

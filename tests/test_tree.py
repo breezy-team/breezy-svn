@@ -110,7 +110,7 @@ class TestExternalsParser(TestCase):
             'third-party/sounds': (None, "http://sounds.red-bean.com/repos"),
             'third-party/skins': (None, "http://skins.red-bean.com/repositories/skinproj"),
             'third-party/skins/toolkit': (21, "http://svn.red-bean.com/repos/skin-maker")},
-            parse_externals_description(
+            parse_externals_description("http://example.com",
 """third-party/sounds             http://sounds.red-bean.com/repos
 third-party/skins              http://skins.red-bean.com/repositories/skinproj
 third-party/skins/toolkit -r21 http://svn.red-bean.com/repos/skin-maker"""))
@@ -119,22 +119,29 @@ third-party/skins/toolkit -r21 http://svn.red-bean.com/repos/skin-maker"""))
         self.assertEqual({
             'third-party/sounds': (None, "http://sounds.red-bean.com/repos")
                 },
-            parse_externals_description(
+            parse_externals_description("http://example.com/",
 """
 
 third-party/sounds             http://sounds.red-bean.com/repos
 #third-party/skins              http://skins.red-bean.com/repositories/skinproj
 #third-party/skins/toolkit -r21 http://svn.red-bean.com/repos/skin-maker"""))
 
+    def test_parse_relative(self):
+        self.assertEqual({
+            'third-party/sounds': (None, "http://example.com/branches/other"),
+                },
+            parse_externals_description("http://example.com/trunk",
+"third-party/sounds             ../branches/other"))
+
     def test_parse_invalid_missing_url(self):
         """No URL specified."""
         self.assertRaises(errors.InvalidExternalsDescription, 
-                lambda: parse_externals_description("bla"))
+            lambda: parse_externals_description("http://example.com/", "bla"))
             
     def test_parse_invalid_too_much_data(self):
         """No URL specified."""
         self.assertRaises(errors.InvalidExternalsDescription, 
-                lambda: parse_externals_description("bla -R40 http://bla/"))
+            lambda: parse_externals_description(None, "bla -R40 http://bla/"))
  
 
 class TestInventoryExternals(TestCaseWithSubversionRepository):

@@ -15,6 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Access to stored Subversion basis trees."""
 
+from bzrlib import urlutils
 from bzrlib.branch import Branch
 from bzrlib.inventory import Inventory, InventoryDirectory, TreeReference
 
@@ -32,13 +33,17 @@ from svn.core import Pool
 
 import errors
 
-def parse_externals_description(val):
+def parse_externals_description(base_url, val):
     """Parse an svn:externals property value.
+
+    :param base_url: URL on which the property is set. Used for 
+        relative externals.
 
     :returns: dictionary with local names as keys, (revnum, url)
               as value. revnum is the revision number and is 
               set to None if not applicable.
     """
+    # TODO: Use svn.wc.parse_externals_description3 instead ?
     ret = {}
     for l in val.splitlines():
         if l == "" or l[0] == "#":
@@ -47,9 +52,9 @@ def parse_externals_description(val):
         if len(pts) == 3:
             if not pts[1].startswith("-r"):
                 raise errors.InvalidExternalsDescription()
-            ret[pts[0]] = (int(pts[1][2:]), pts[2])
+            ret[pts[0]] = (int(pts[1][2:]), urlutils.join(base_url, pts[2]))
         elif len(pts) == 2:
-            ret[pts[0]] = (None, pts[1])
+            ret[pts[0]] = (None, urlutils.join(base_url, pts[1]))
         else:
             raise errors.InvalidExternalsDescription()
     return ret
@@ -68,7 +73,6 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     """
     assert ref_revnum is None or isinstance(ref_revnum, int)
     assert revid is None or isinstance(revid, str)
-    # FIXME: Use file id map
     (dir, name) = os.path.split(path)
     parent = inv[parent_id]
     if dir != "":
@@ -77,6 +81,7 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
                 parent = parent.children[part]
             else:
                 # Implicitly add directory if it doesn't exist yet
+                # TODO: Generate a file id
                 parent = inv.add(InventoryDirectory('someid', part, 
                                  parent_id=parent.file_id))
                 parent.revision = revid
@@ -127,7 +132,8 @@ class SvnRevisionTree(RevisionTree):
         self._inventory = Inventory()
         self.id_map = repository.get_fileid_map(self.revnum, self.branch_path, 
                                                 scheme)
-        self.editor = TreeBuildEditor(self, pool)
+        self.editor = TreeBuildEditor(
+                urlutils.join(repository.base, self.branch_path), self, pool)
         self.file_data = {}
         editor, baton = svn.delta.make_editor(self.editor, pool)
         root_repos = repository.transport.get_repos_root()
@@ -144,7 +150,8 @@ class SvnRevisionTree(RevisionTree):
 
 class TreeBuildEditor(svn.delta.Editor):
     """Builds a tree given Subversion tree transform calls."""
-    def __init__(self, tree, pool):
+    def __init__(self, base, tree, pool):
+        self.base = base
         self.tree = tree
         self.repository = tree._repository
         self.last_revnum = {}
@@ -163,7 +170,8 @@ class TreeBuildEditor(svn.delta.Editor):
         self.tree._inventory.revision_id = revision_id
         return file_id
 
-    def add_directory(self, path, parent_baton, copyfrom_path, copyfrom_revnum, pool):
+    def add_directory(self, path, parent_baton, copyfrom_path, copyfrom_revnum, 
+                      pool):
         path = path.decode("utf-8")
         file_id, revision_id = self.tree.id_map[path]
         ie = self.tree._inventory.add_path(path, 'directory', file_id)
@@ -181,7 +189,9 @@ class TreeBuildEditor(svn.delta.Editor):
         elif name == svn.core.SVN_PROP_IGNORE:
             self.dir_ignores[id] = value
         elif name == svn.core.SVN_PROP_EXTERNALS:
-            self.externals[id] = parse_externals_description(value)
+            self.externals[id] = parse_externals_description(
+                urlutils.join(self.base, self.tree._inventory.id2path(id)),
+                value)
         elif name == SVN_PROP_BZR_MERGE or name == SVN_PROP_SVK_MERGE:
             if id != self.tree._inventory.root.file_id:
                 mutter('%r set on non-root dir!' % SVN_PROP_BZR_MERGE)
@@ -365,12 +375,11 @@ class SvnBasisTree(RevisionTree):
                     if subid is not None:
                         add_file_to_inv(subrelpath, subid, subrevid, wc)
             # Process externals
-            # FIXME: props = svn.wc.get_prop_diffs(self.workingtree.abspath(relpath), wc)
-            props = {}
+            props = svn.wc.get_prop_diffs(self.workingtree.abspath(relpath), wc)
             if props.has_key(svn.core.SVN_PROP_EXTERNALS):
                 for (name, (rev, url)) in \
                     parse_externals_description(props[svn.core.SVN_PROP_EXTERNALS]).items():
-                    inventory_add_external(self._inventory, id, name, None, 
+                    inventory_add_external(self._inventory, id, name, revid, 
                                            rev, url)
 
         wc = workingtree._get_wc() 
