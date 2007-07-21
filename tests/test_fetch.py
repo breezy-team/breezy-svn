@@ -72,7 +72,7 @@ class TestFetchWorks(TestCaseWithSubversionRepository):
         from bzrlib.repofmt.knitrepo import RepositoryFormatKnit3
         newrepos = RepositoryFormatKnit3().initialize(BzrDir.create("f"))
         oldrepos.copy_content_into(newrepos)
-        inv = oldrepos.get_inventory(oldrepos.generate_revision_id(1, ""))
+        inv = oldrepos.get_inventory(oldrepos.generate_revision_id(1, "", "none"))
         self.assertTrue(inv.has_filename("somedir/bla"))
         self.assertEqual(inv.path2id("somedir/bla"), Branch.open("%s/proj1/trunk" % repos_url1).get_root_id())
 

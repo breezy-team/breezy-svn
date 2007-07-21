@@ -21,6 +21,7 @@ from bzrlib.tests import TestCase
 from bzrlib.workingtree import WorkingTree
 
 from fileids import generate_svn_file_id
+from revids import generate_svn_revision_id
 from tree import (SvnBasisTree, parse_externals_description, 
                   inventory_add_external)
 from tests import TestCaseWithSubversionRepository
@@ -131,27 +132,29 @@ class TestInventoryExternals(TestCaseWithSubversionRepository):
         repos_url = self.make_client('d', 'dc')
         repos = Repository.open(repos_url)
         inv = Inventory(root_id='blabloe')
-        inventory_add_external(inv, 'blabloe', 'blie/bla', repos.generate_revision_id(1, ""), None, repos_url)
+        inventory_add_external(inv, 'blabloe', 'blie/bla', generate_svn_revision_id(repos.uuid, 1, "", "none"), 
+                               None, repos_url)
         self.assertEqual(TreeReference(generate_svn_file_id(repos.uuid, 0, "", ""),
-             'bla', inv.path2id('blie'), revision=repos.generate_revision_id(1, "")), inv[inv.path2id('blie/bla')])
+             'bla', inv.path2id('blie'), revision=generate_svn_revision_id(repos.uuid, 1, "", "none")), 
+             inv[inv.path2id('blie/bla')])
 
     def test_add_simple_norev(self):
         repos_url = self.make_client('d', 'dc')
         repos = Repository.open(repos_url)
         inv = Inventory(root_id='blabloe')
-        inventory_add_external(inv, 'blabloe', 'bla', repos.generate_revision_id(1, ""), None, repos_url)
+        inventory_add_external(inv, 'blabloe', 'bla', generate_svn_revision_id(repos.uuid, 1, "", "none"), None, repos_url)
         self.assertEqual(TreeReference(generate_svn_file_id(repos.uuid, 0, "", ""),
-             'bla', 'blabloe', revision=repos.generate_revision_id(1, "")), inv[inv.path2id('bla')])
+             'bla', 'blabloe', revision=generate_svn_revision_id(repos.uuid, 1, "", "none")), inv[inv.path2id('bla')])
 
     def test_add_simple_rev(self):
         repos_url = self.make_client('d', 'dc')
         repos = Repository.open(repos_url)
         inv = Inventory(root_id='blabloe')
-        inventory_add_external(inv, 'blabloe', 'bla', repos.generate_revision_id(1, ""), 20, repos_url)
+        inventory_add_external(inv, 'blabloe', 'bla', generate_svn_revision_id(repos.uuid, 1, "", "none"), 0, repos_url)
         self.assertEqual(TreeReference(generate_svn_file_id(repos.uuid, 0, "", ""),
-             'bla', 'blabloe', revision=repos.generate_revision_id(1, ""),
-             reference_revision=repos.generate_revision_id(20, "")
+             'bla', 'blabloe', revision=generate_svn_revision_id(repos.uuid, 1, "", "none"),
+             reference_revision=generate_svn_revision_id(repos.uuid, 0, "", "none")
              ), inv[inv.path2id('bla')])
         ie = inv[inv.path2id('bla')]
-        self.assertEqual(repos.generate_revision_id(20, ""), ie.reference_revision)
-        self.assertEqual(repos.generate_revision_id(1, ""), ie.revision)
+        self.assertEqual(generate_svn_revision_id(repos.uuid, 0, "", "none"), ie.reference_revision)
+        self.assertEqual(generate_svn_revision_id(repos.uuid, 1, "", "none"), ie.revision)
