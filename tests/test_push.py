@@ -18,12 +18,13 @@ from bzrlib.branch import Branch, BranchReferenceFormat
 from bzrlib.bzrdir import BzrDir, BzrDirFormat
 from bzrlib.errors import DivergedBranches
 from bzrlib.inventory import Inventory
+from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
 import os
 import format
 import svn.core
-from commit import push_as_merged
+from commit import push, push_as_merged
 from repository import MAPPING_VERSION, SVN_PROP_BZR_REVISION_ID
 from revids import generate_svn_revision_id
 from tests import TestCaseWithSubversionRepository
@@ -78,14 +79,15 @@ class TestPush(TestCaseWithSubversionRepository):
     def test_change(self):
         self.build_tree({'dc/foo/bla': 'other data'})
         wt = self.bzrdir.open_workingtree()
-        wt.commit(message="Commit from Bzr")
+        newid = wt.commit(message="Commit from Bzr")
 
-        self.svndir.open_branch().pull(self.bzrdir.open_branch())
+        svnbranch = self.svndir.open_branch()
+        svnbranch.pull(self.bzrdir.open_branch())
 
         repos = self.svndir.find_repository()
+        self.assertEquals(newid, svnbranch.last_revision())
         inv = repos.get_inventory(repos.generate_revision_id(2, "", "none"))
-        self.assertEqual(repos.generate_revision_id(2, "", "none"),
-                         inv[inv.path2id('foo/bla')].revision)
+        self.assertEqual(newid, inv[inv.path2id('foo/bla')].revision)
         self.assertEqual(wt.branch.last_revision(),
           repos.generate_revision_id(2, "", "none"))
         self.assertEqual(repos.generate_revision_id(2, "", "none"),
@@ -281,3 +283,31 @@ class TestPush(TestCaseWithSubversionRepository):
         self.assertRaises(DivergedBranches, 
                 lambda: Branch.open(oc_url).pull(self.bzrdir.open_branch()))
 
+    def test_different_branch_path(self):
+        # A       ,> C
+        # \ -> B /
+        self.build_tree({'sc/trunk/foo': "data", 'sc/branches': None})
+        self.client_add("sc/trunk")
+        self.client_add("sc/branches")
+        self.client_commit("sc", "foo")
+
+        self.client_copy('sc/trunk', 'sc/branches/mybranch')
+        self.build_tree({'sc/branches/mybranch/foo': "data2"})
+        self.client_commit("sc", "add branch")
+
+        self.svndir = BzrDir.open("sc/branches/mybranch")
+        os.mkdir("mybranch")
+        self.bzrdir = self.svndir.sprout("mybranch")
+
+        self.build_tree({'mybranch/foo': 'bladata'})
+        wt = self.bzrdir.open_workingtree()
+        revid = wt.commit(message="Commit from Bzr")
+        push(Branch.open("sc/trunk"), wt.branch, 
+             wt.branch.revision_history()[-2])
+        mutter('log %r' % self.client_log("sc/trunk")[4][0])
+        self.assertEquals('M',
+            self.client_log("sc/trunk")[4][0]['/trunk'].action)
+        push(Branch.open("sc/trunk"), wt.branch, wt.branch.last_revision())
+        mutter('log %r' % self.client_log("sc/trunk")[5][0])
+        self.assertEquals("/branches/mybranch", 
+            self.client_log("sc/trunk")[5][0]['/trunk'].copyfrom_path)

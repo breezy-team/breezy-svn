@@ -33,6 +33,7 @@ import svn.core
 from fileids import generate_file_id
 from repository import (SvnRepository, SVN_PROP_BZR_MERGE, SVN_PROP_SVK_MERGE,
                 SVN_PROP_BZR_PREFIX, SVN_PROP_BZR_REVISION_INFO, 
+                SVN_PROP_BZR_BRANCHING_SCHEME,
                 SvnRepositoryFormat, parse_revision_metadata)
 from tree import (apply_txdelta_handler, parse_externals_description, 
                   inventory_add_external)
@@ -185,9 +186,9 @@ class RevisionBuildEditor(svn.delta.Editor):
         return file_id
 
     def change_dir_prop(self, id, name, value, pool):
-        if name == SVN_PROP_BZR_MERGE:
+        if name in (SVN_PROP_BZR_MERGE, SVN_PROP_BZR_BRANCHING_SCHEME):
             if id != self.inventory.root.file_id:
-                mutter('rogue %r on non-root directory' % SVN_PROP_BZR_MERGE)
+                mutter('rogue %r on non-root directory' % name)
                 return
             
             self._parent_ids = value.splitlines()[-1]
@@ -335,7 +336,7 @@ class InterFromSvnRepository(InterRepository):
 
     @staticmethod
     def _get_repo_format_to_test():
-        return None
+        return SvnRepositoryFormat()
 
     def _find_all(self):
         parents = {}
@@ -356,7 +357,7 @@ class InterFromSvnRepository(InterRepository):
         prev_revid = None
         for (branch, revnum) in self.source.follow_branch(path, 
                                                           until_revnum, scheme):
-            revid = self.source.generate_revision_id(revnum, branch, scheme)
+            revid = self.source.generate_revision_id(revnum, branch, str(scheme))
 
             if prev_revid is not None:
                 parents[prev_revid] = revid
@@ -455,9 +456,9 @@ class InterFromSvnRepository(InterRepository):
                     # Report status of existing paths
                     reporter.set_path("", parent_revnum, False, None, pool)
 
-                transport.lock()
+                lock = transport.lock_read(".")
                 reporter.finish_report(pool)
-                transport.unlock()
+                lock.unlock()
 
                 prev_inv = editor.inventory
                 prev_revid = revid

@@ -15,24 +15,31 @@ bzr-svn 0.4	UNRELEASED
 
    * Remove branches when they are being replaced. Fixes DivergedBranches 
      error when using svn-import (#81908).
-
-   * Support true push (#80612).
-
-   * Support commits in heavy checkouts (#79330).
-   
-   * Use shared repositories by default in svn-import command.
-
-   * Put branching schemes in revision ids.
-
-   * Support using custom branching schemes.
-
-   * Add blackbox test for svn-import with dumpfile. (#123493)
-
+ 
    * Consistently treat property changes as actual changes (#122115)
 
    * Be a bit less verbose when trying to connect (#124858)
 
    * Fix locking issues (#125212)
+
+   * Warn when used with experimental version of mappings. (#117198)
+
+   * Only warn about out of date mappings, bzr-svn version or 
+     experimental mappings when the plugin is being used. (#93319)
+
+   * Clearer warning when branch specified to svn-import. (#121391)
+
+   * Support pushing multiple revisions in a row. (#115494)
+
+   * Fix compatibility with Subversion 1.5. (#73918)
+
+  BEHAVIOUR CHANGES
+
+   * Use shared repositories by default in svn-import command.
+
+  TESTS
+
+   * Add blackbox test for svn-import with dumpfile. (#123493)
 
   PERFORMANCE
 
@@ -43,6 +50,26 @@ bzr-svn 0.4	UNRELEASED
   FEATURES
    
    * add -v option to svn-upgrade
+
+   * store and allow setting the branching scheme in subversion.conf
+
+   * allow setting the branching scheme from a file property 
+     on the repository root
+
+   * Support true push (#80612).
+
+   * Support commits in heavy checkouts (#79330).
+
+   * Support using custom branching schemes.
+
+   * Support pushing new branches.
+
+   * Add --prefix option to svn-import. (#125993)
+
+   * Add 'bzr help svn-branching-schemes'
+
+   * Branching schemes can now be autodetected using some simple heuristics. 
+     (#81976)
 
   INTERNALS
 

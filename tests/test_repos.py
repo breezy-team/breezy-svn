@@ -31,14 +31,15 @@ import svn.fs
 from errors import InvalidPropertyValue
 from fileids import generate_svn_file_id, generate_file_id
 import format
-from scheme import TrunkBranchingScheme, NoBranchingScheme
+from scheme import (TrunkBranchingScheme, NoBranchingScheme, 
+                    ListBranchingScheme)
 from transport import SvnRaTransport
 from tests import TestCaseWithSubversionRepository
 from tests.test_fileids import MockRepo
 from repository import (revision_id_to_svk_feature,
                         SvnRepositoryFormat, SVN_PROP_BZR_REVISION_ID,
                         generate_revision_metadata, parse_revision_metadata,
-                        parse_revid_property)
+                        parse_revid_property, SVN_PROP_BZR_BRANCHING_SCHEME)
 from revids import (MAPPING_VERSION, escape_svn_path, unescape_svn_path,
                     parse_svn_revision_id, generate_svn_revision_id)
 
@@ -410,6 +411,7 @@ class TestSubversionRepositoryWorks(TestCaseWithSubversionRepository):
         self.build_tree({'dc/foo': "data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message")
+        self.client_update("dc")
         self.build_tree({'dc/foo': "data2"})
         self.client_set_prop("dc", "bzr:merge", "ghostparent\n")
         self.client_commit("dc", "Second Message")
@@ -456,6 +458,7 @@ class TestSubversionRepositoryWorks(TestCaseWithSubversionRepository):
         self.build_tree({'dc/foo': "data2"})
         self.client_set_prop("dc", "bzr:revision-id-v%d:none" % MAPPING_VERSION, 
                             "3 myrevid\n")
+        self.client_update("dc")
         (num, date, author) = self.client_commit("dc", "Second Message")
         repository = Repository.open("svn+%s" % repos_url)
         revid = generate_svn_revision_id(repository.uuid, 2, "", "none")
@@ -478,6 +481,13 @@ class TestSubversionRepositoryWorks(TestCaseWithSubversionRepository):
         self.assertEqual({}, rev.properties)
         self.assertEqual(None, rev.timezone)
         self.assertEqual(0.0, rev.timestamp)
+
+    def test_store_branching_scheme(self):
+        repos_url = self.make_client('d', 'dc')
+        repository = Repository.open(repos_url)
+        repository.set_branching_scheme(TrunkBranchingScheme(42))
+        repository = Repository.open(repos_url)
+        self.assertEquals("trunk42", str(repository.get_scheme()))
 
     def test_get_ancestry(self):
         repos_url = self.make_client('d', 'dc')
@@ -619,6 +629,7 @@ class TestSubversionRepositoryWorks(TestCaseWithSubversionRepository):
         self.build_tree({'dc/foo': "data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message")
+        self.client_update("dc")
         self.client_set_prop("dc", "bzr:merge", "a-parent\n")
         self.build_tree({'dc/foo': "data2"})
         self.client_commit("dc", "Second Message")
@@ -645,12 +656,12 @@ class TestSubversionRepositoryWorks(TestCaseWithSubversionRepository):
         self.build_tree({'dc/foo': "data", 'dc/blah': "other data"})
         self.client_add("dc/foo")
         self.client_add("dc/blah")
-        self.client_commit("dc", "My Message")
+        self.client_commit("dc", "My Message") #1
         self.build_tree({'dc/foo': "data2", "dc/bar/foo": "data3"})
         self.client_add("dc/bar")
-        self.client_commit("dc", "Second Message")
+        self.client_commit("dc", "Second Message") #2
         self.build_tree({'dc/foo': "data3"})
-        self.client_commit("dc", "Third Message")
+        self.client_commit("dc", "Third Message") #3
         repository = Repository.open("svn+%s" % repos_url)
         inv = repository.get_inventory(
                 repository.generate_revision_id(1, "", "none"))
@@ -751,6 +762,15 @@ class TestSubversionRepositoryWorks(TestCaseWithSubversionRepository):
         repository = Repository.open("svn+%s" % repos_url)
         self.assertRaises(NoSuchRevision, 
                 repository.lookup_revision_id, "foobar")
+
+    def test_set_branching_scheme_property(self):
+        repos_url = self.make_client('d', 'dc')
+        self.client_set_prop("dc", SVN_PROP_BZR_BRANCHING_SCHEME, 
+            "trunk\nbranches/*\nbranches/tmp/*")
+        self.client_commit("dc", "set scheme")
+        repository = Repository.open("svn+%s" % repos_url)
+        self.assertEquals(ListBranchingScheme(["trunk", "branches/*", "branches/tmp/*"]).branch_list,
+                          repository.get_scheme().branch_list)
 
     def test_lookup_revision_id_invalid_uuid(self):
         repos_url = self.make_client('d', 'dc')
@@ -963,12 +983,7 @@ class TestSubversionRepositoryWorks(TestCaseWithSubversionRepository):
         self.client_add("dc/py")
         self.client_commit("dc", "Initial commit")
         self.assertRaises(NoSuchRevision, 
-                lambda: repos._mainline_revision_parent("trunk", 1, NoBranchingScheme()))
-
-    def test_get_scheme(self):
-        repos_url = self.make_client('d', 'dc')
-        oldrepos = Repository.open("svn+"+repos_url)
-        self.assertEquals("trunk1", str(oldrepos.get_scheme("trunk1")))
+                lambda: repos._mainline_revision_parent("trunk", 2, NoBranchingScheme()))
 
 
 class TestSvnRevisionTree(TestCaseWithSubversionRepository):

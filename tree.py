@@ -88,20 +88,31 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     inv.add(ie)
 
 
-def apply_txdelta_handler(src_stream, target_stream, pool):
-    assert hasattr(src_stream, 'read')
-    assert hasattr(target_stream, 'write')
-    ret = svn.delta.svn_txdelta_apply(
-            src_stream, 
-            target_stream,
-            None,
-            pool)
+# Deal with Subversion 1.5 and the patched Subversion 1.4 (which are 
+# slightly different).
 
-    def wrapper(window):
-        svn.delta.invoke_txdelta_window_handler(
-            ret[1], window, ret[2])
+if hasattr(svn.delta, 'tx_invoke_window_handler'):
+    def apply_txdelta_handler(src_stream, target_stream, pool):
+        assert hasattr(src_stream, 'read')
+        assert hasattr(target_stream, 'write')
+        window_handler, baton = svn.delta.tx_apply(src_stream, target_stream, 
+                                                   None, pool)
 
-    return wrapper
+        def wrapper(window):
+            window_handler(window, baton)
+
+        return wrapper
+else:
+    def apply_txdelta_handler(src_stream, target_stream, pool):
+        assert hasattr(src_stream, 'read')
+        assert hasattr(target_stream, 'write')
+        ret = svn.delta.svn_txdelta_apply(src_stream, target_stream, None, pool)
+
+        def wrapper(window):
+            svn.delta.invoke_txdelta_window_handler(
+                ret[1], window, ret[2])
+
+        return wrapper
 
 class SvnRevisionTree(RevisionTree):
     """A tree that existed in a historical Subversion revision."""
@@ -159,7 +170,8 @@ class TreeBuildEditor(svn.delta.Editor):
     def change_dir_prop(self, id, name, value, pool):
         from repository import (SVN_PROP_BZR_MERGE, SVN_PROP_SVK_MERGE, 
                         SVN_PROP_BZR_PREFIX, SVN_PROP_BZR_REVISION_INFO, 
-                        SVN_PROP_BZR_FILEIDS, SVN_PROP_BZR_REVISION_ID)
+                        SVN_PROP_BZR_FILEIDS, SVN_PROP_BZR_REVISION_ID,
+                        SVN_PROP_BZR_BRANCHING_SCHEME)
 
         if name == svn.core.SVN_PROP_ENTRY_COMMITTED_REV:
             self.dir_revnum[id] = int(value)
@@ -171,9 +183,10 @@ class TreeBuildEditor(svn.delta.Editor):
             if id != self.tree._inventory.root.file_id:
                 mutter('%r set on non-root dir!' % SVN_PROP_BZR_MERGE)
                 return
-        elif name == SVN_PROP_BZR_FILEIDS:
+        elif name in (SVN_PROP_BZR_MERGE, SVN_PROP_BZR_FILEIDS,
+                      SVN_PROP_BZR_BRANCHING_SCHEME):
             if id != self.tree._inventory.root.file_id:
-                mutter('%r set on non-root dir!' % SVN_PROP_BZR_FILEIDS)
+                mutter('%r set on non-root dir!' % name)
                 return
         elif name in (svn.core.SVN_PROP_ENTRY_COMMITTED_DATE,
                       svn.core.SVN_PROP_ENTRY_LAST_AUTHOR,
@@ -279,13 +292,16 @@ class SvnBasisTree(RevisionTree):
         self._revision_id = workingtree.branch.generate_revision_id(
                                       workingtree.base_revnum)
         self.id_map = workingtree.branch.repository.get_fileid_map(
-                workingtree.base_revnum, workingtree.branch.branch_path, 
+                workingtree.base_revnum, 
+                workingtree.branch.get_branch_path(workingtree.base_revnum), 
                 workingtree.branch.scheme)
         self._inventory = Inventory(root_id=None)
         self._repository = workingtree.branch.repository
 
         def add_file_to_inv(relpath, id, revid, wc):
             props = svn.wc.get_prop_diffs(self.workingtree.abspath(relpath), wc)
+            if isinstance(props, list): # Subversion 1.5
+                props = props[1]
             if props.has_key(svn.core.SVN_PROP_SPECIAL):
                 ie = self._inventory.add_path(relpath, 'symlink', id)
                 ie.symlink_target = open(self._abspath(relpath)).read()[len("link "):]

@@ -17,7 +17,7 @@
 
 from bzrlib.bzrdir import BzrDirFormat, BzrDir, format_registry
 from bzrlib.errors import (NotBranchError, NotLocalUrl, NoRepositoryPresent,
-                           NoWorkingTree)
+                           NoWorkingTree, AlreadyBranchError)
 from bzrlib.lockable_files import TransportLock
 from bzrlib.transport.local import LocalTransport
 
@@ -25,7 +25,6 @@ from svn.core import SubversionException
 import svn.core, svn.repos
 
 from repository import SvnRepository
-from scheme import BranchingScheme
 from transport import SvnRaTransport, bzr_to_svn_url, get_svn_ra_transport
 
 def get_rich_root_format():
@@ -56,16 +55,6 @@ class SvnRemoteAccess(BzrDir):
         assert svn_url.startswith(self.svn_root_url)
         self.branch_path = svn_url[len(self.svn_root_url):]
 
-        if scheme is None:
-            self.scheme = BranchingScheme.guess_scheme(self.branch_path)
-        else:
-            self.scheme = scheme
-
-        if (not self.scheme.is_branch(self.branch_path) and 
-            not self.scheme.is_tag(self.branch_path) and 
-                self.branch_path != ""):
-            raise NotBranchError(path=self.root_transport.base)
-
     def clone(self, url, revision_id=None, force_new_repo=False):
         """See BzrDir.clone().
 
@@ -88,7 +77,6 @@ class SvnRemoteAccess(BzrDir):
                 result_repo.fetch(repo, revision_id=revision_id)
             except NoRepositoryPresent:
                 result_repo = repo.clone(result, revision_id)
-
         branch = self.open_branch()
         result_branch = branch.sprout(result, revision_id)
         if result_branch.repository.make_working_trees():
@@ -112,7 +100,7 @@ class SvnRemoteAccess(BzrDir):
         transport = self.root_transport
         if self.svn_root_url != transport.base:
             transport = SvnRaTransport(self.svn_root_url)
-        return SvnRepository(self, transport)
+        return SvnRepository(self, transport, self.branch_path)
 
     def open_workingtree(self, _unsupported=False,
             recommend_upgrade=True):
@@ -140,17 +128,34 @@ class SvnRemoteAccess(BzrDir):
             format = BzrDirFormat.get_default_format()
         return not isinstance(self._format, format.__class__)
 
+    def import_branch(self, source, stop_revision=None):
+        """Create a new branch in this repository, possibly 
+        with the specified history, optionally importing revisions.
+        
+        :param source: Source branch
+        :param stop_revision: Tip of new branch
+        :return: Branch object
+        """
+        from commit import push_new
+        if stop_revision is None:
+            stop_revision = source.last_revision()
+        push_new(self.find_repository(), self.branch_path, source, 
+                 stop_revision)
+        branch = self.open_branch()
+        branch.pull(source)
+        return branch
+
     def create_branch(self):
         """See BzrDir.create_branch()."""
         from branch import SvnBranch
         repos = self.find_repository()
 
         if self.branch_path != "":
+            # TODO: Set NULL_REVISION in SVN_PROP_BZR_BRANCHING_SCHEME
             repos.transport.mkdir(self.branch_path)
-            repos._latest_revnum = repos.transport.get_latest_revnum()
-        else:
-            # TODO: Check if there are any revisions in this repository yet
-            pass
+        elif repos.transport.get_latest_revnum() > 0:
+            # Bail out if there are already revisions in this repository
+            raise AlreadyBranchError(self.root_transport.base)
         branch = SvnBranch(self.root_transport.base, repos, self.branch_path)
         branch.bzrdir = self
         return branch

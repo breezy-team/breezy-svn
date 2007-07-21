@@ -1,30 +1,27 @@
 mandatory before 0.4.0:
+- commit still seems to have some issues with deletes
 - integrate bzr:merge into bzr:revision-info or rename to bzr:merge-vXXYY
+- fix setting of bzr:file-ids property
 - splittree support
 - nestedtree support
 
 todo:
-- intelligent guessing of branching scheme
-- be able to create new branches
-- make has_revision() more efficient - just call logwalker.touches_path() ?
-- simplify find_branches by using Transport.list_dir() ?
-- fix autorealm repository
+- BzrDir.create_branch() should set the revision id to NULL_REVISION
+- fix reuse of listbranchingscheme
 - avoid extra connect in logwalker?
-- allow branching scheme specified in magic property in repository root
-- free memory!
-- report changes to delta editor in Branch.pull()
+- free memory! (#54253)
 - more blackbox tests
+ - svn-import without scheme specified should guess
 - transform file ids in workingtree in svn-upgrade
-- more intelligent mechanism for finding branching scheme. Look at directory structure in current tree?
+- support tags (#81102)
 
-working trees:
-- custom implementation of WorkingTree.revert() / WorkingTree.merge()
+.svn working trees:
+- implement apply_inventory_delta()
+- support merge without requiring revisions to be added to svn repository
 - add tests for objects returned by WorkingTree.pull(), Branch.pull()
-- what happened to WorkingTree.add() ?
 - don't update all entries to the same revnum when opening working tree
 - when committing specific files in a lightweight checkout, make sure to 
-  also commit the file property changes for the tree root (except 
-  for pending merges).														   
+  also commit the file property changes for the tree root
 - faster "bzr status"
 
 for other things to do, see:

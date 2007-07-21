@@ -15,10 +15,10 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Generation of file-ids."""
 
+from bzrlib import osutils, ui
 from bzrlib.errors import NotBranchError
 from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import mutter
-import bzrlib.ui as ui
 
 import sha
 
@@ -38,7 +38,7 @@ def generate_svn_file_id(uuid, revnum, branch, path):
                             escape_svn_path(branch),
                             sha.new(path).hexdigest())
     assert isinstance(ret, str)
-    return ret
+    return osutils.safe_file_id(ret)
 
 
 def generate_file_id(repos, revid, path):
@@ -127,7 +127,7 @@ class FileIdMap(object):
         else:
             get_children = None
 
-        revid = self.repos.generate_revision_id(revnum, branch, scheme)
+        revid = self.repos.generate_revision_id(revnum, branch, str(scheme))
 
         def new_file_id(x):
             if renames.has_key(x):
@@ -144,13 +144,13 @@ class FileIdMap(object):
         if revnum == 0:
             assert branch == ""
             return {"": (generate_svn_file_id(uuid, revnum, branch, ""), 
-              self.repos.generate_revision_id(revnum, branch, scheme))}
+              self.repos.generate_revision_id(revnum, branch, str(scheme)))}
 
         # No history -> empty map
         for (bp, paths, rev) in self.repos.follow_branch_history(branch, 
                                              revnum, scheme):
             revid = self.repos.generate_revision_id(rev, bp.encode("utf-8"), 
-                                                    scheme)
+                                                    str(scheme))
             map = self.load(revid)
             if map != {}:
                 # found the nearest cached map
