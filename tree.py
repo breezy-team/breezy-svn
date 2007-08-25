@@ -70,7 +70,7 @@ class SvnRevisionTree(RevisionTree):
         editor, baton = svn.delta.make_editor(self.editor, pool)
         root_repos = repository.transport.get_repos_root()
         reporter = repository.transport.do_switch(
-                self.revnum, "", True, 
+                self.revnum, True, 
                 urlutils.join(root_repos, self.branch_path), editor, baton, pool)
         reporter.set_path("", 0, True, None, pool)
         reporter.finish_report(pool)
@@ -108,7 +108,7 @@ class TreeBuildEditor(svn.delta.Editor):
         return file_id
 
     def change_dir_prop(self, id, name, value, pool):
-        from repository import (SVN_PROP_BZR_ANCESTRY, SVN_PROP_SVK_MERGE, 
+        from repository import (SVN_PROP_BZR_ANCESTRY, 
                         SVN_PROP_BZR_PREFIX, SVN_PROP_BZR_REVISION_INFO, 
                         SVN_PROP_BZR_FILEIDS, SVN_PROP_BZR_REVISION_ID,
                         SVN_PROP_BZR_BRANCHING_SCHEME, SVN_PROP_BZR_MERGE)

@@ -258,12 +258,15 @@ class LogWalker(object):
                 self.base = base
 
             def set_target_revision(self, revnum):
+                """See Editor.set_target_revision()."""
                 pass
 
             def open_root(self, revnum, baton):
+                """See Editor.open_root()."""
                 return path
 
             def add_directory(self, path, parent_baton, copyfrom_path, copyfrom_revnum, pool):
+                """See Editor.add_directory()."""
                 self.files.append(urlutils.join(self.base, path))
                 return path
 
@@ -299,7 +302,7 @@ class LogWalker(object):
             root_repos = self.transport.get_repos_root()
             self.transport.reparent(urlutils.join(root_repos, path))
             reporter = self.transport.do_update(
-                            revnum, "", True, edit, baton, pool)
+                            revnum,  True, edit, baton, pool)
             reporter.set_path("", revnum, True, None, pool)
             reporter.finish_report(pool)
         finally:

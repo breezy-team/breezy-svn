@@ -1,5 +1,46 @@
 bzr-svn 0.5.0	UNRELEASED
 
+bzr-svn 0.4.1	UNRELEASED
+
+  BUG FIXES
+
+   * Convert errors to bzr errors when fetching data (avoids backtraces).
+
+   * Raise proper exception when repository can't be found remotely. (#130633)
+
+   * Use knits to store file id maps.
+
+   * Don't try to open repository root for http:// or https:// URLs. (#80553)
+   
+   * Handle corner cases fetching renames.
+
+   * Support WorkingTree.update()
+
+   * Mark as supporting Bazaar 0.90 rather than 0.19. (#133388)
+
+   * Don't mutter during commit unless explicitly enabled with -Dcommit.
+
+   * Fix pushing while svk:merge properties are not found. 
+     (#133287, Lukáš Lalinský)
+
+   * Show proper exception when a svn dump file ends prematurely. 
+
+   * Don't try to open directories of which parents haven't yet been opened 
+     from commit. (#133288, Lukáš Lalinský)
+
+   * Timestamps in properties no longer include locale-specific data. (#131337)
+
+  INTERNALS
+
+   * Support `topo_sorted` argument to by Repository.get_ancestry().
+
+  FEATURES
+
+   * Support initializing Subversion repositories. 
+     `bzr init-repo --format=subversion` now works.
+
+   * Support reading gzip and bzip2 compressed dump files in svn-import.
+
 bzr-svn 0.4.0	2007-08-04	
   
   BUG FIXES

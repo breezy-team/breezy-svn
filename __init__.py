@@ -18,14 +18,13 @@
 Support for Subversion branches
 """
 import bzrlib
-from bzrlib.bzrdir import BzrDirFormat
+from bzrlib.bzrdir import BzrDirFormat, format_registry
 from bzrlib.commands import Command, register_command, display_command, Option
 from bzrlib.help_topics import topic_registry
 from bzrlib.lazy_import import lazy_import
 from bzrlib.trace import warning, mutter
 from bzrlib.transport import register_lazy_transport, register_transport_proto
 from bzrlib.repository import InterRepository
-from bzrlib.workingtree import WorkingTreeFormat
 
 lazy_import(globals(), """
 import branch
@@ -38,7 +37,7 @@ import workingtree
 # versions ending in 'exp' mean experimental mappings
 # versions ending in 'dev' mean development version
 __version__ = '0.5.0exp'
-COMPATIBLE_BZR_VERSIONS = [(0, 19)]
+COMPATIBLE_BZR_VERSIONS = [(0, 90)]
 
 def check_bzrlib_version(desired):
     """Check that bzrlib is compatible.
@@ -108,13 +107,9 @@ topic_registry.register_lazy('svn-branching-schemes',
 
 BzrDirFormat.register_control_format(format.SvnFormat)
 BzrDirFormat.register_control_format(workingtree.SvnWorkingTreeDirFormat)
-
-bzrlib.branch.BranchFormat.register_format(branch.SvnBranchFormat())
-bzrlib.repository.format_registry.register_lazy(
-        "Subversion Repository Format",
-        "bzrlib.plugins.svn.repository",
-        "SvnRepositoryFormat")
-WorkingTreeFormat.register_format(workingtree.SvnWorkingTreeFormat())
+format_registry.register("subversion", format.SvnFormat, 
+                         "Subversion repository. ", 
+                         native=False)
 
 versions_checked = False
 def lazy_check_versions():
@@ -162,10 +157,8 @@ class cmd_svn_import(Command):
             standalone=False, scheme=None, all=False, prefix=None):
         from bzrlib.errors import NoRepositoryPresent
         from bzrlib.bzrdir import BzrDir
-        from bzrlib.trace import info
         from convert import convert_repository
         import os
-        from scheme import TrunkBranchingScheme
 
         if to_location is None:
             to_location = os.path.basename(from_location.rstrip("/\\"))
@@ -272,12 +265,12 @@ class cmd_svn_push(Command):
     def run(self, location, revision=None):
         from bzrlib.bzrdir import BzrDir
         from bzrlib.branch import Branch
-        from bzrlib.errors import NotBranchError
+        from bzrlib.errors import NotBranchError, BzrCommandError
         bzrdir = BzrDir.open(location)
         source_branch = Branch.open_containing(".")[0]
         if revision is not None:
             if len(revision) > 1:
-                raise errors.BzrCommandError(
+                raise BzrCommandError(
                     'bzr svn-push --revision takes exactly one revision' 
                     ' identifier')
             revision_id = revision[0].in_history(source_branch).rev_id
