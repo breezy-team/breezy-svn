@@ -20,7 +20,7 @@ from bzrlib import urlutils
 from bzrlib.branch import PullResult
 from bzrlib.bzrdir import BzrDirFormat, BzrDir
 from bzrlib.errors import (InvalidRevisionId, NotBranchError, NoSuchFile,
-                           NoRepositoryPresent, BzrError)
+                           NoRepositoryPresent, BzrError, UninitializableFormat)
 from bzrlib.inventory import Inventory, InventoryFile, InventoryLink
 from bzrlib.lockable_files import TransportLock, LockableFiles
 from bzrlib.lockdir import LockDir
@@ -33,15 +33,16 @@ from bzrlib.workingtree import WorkingTree, WorkingTreeFormat
 
 from branch import SvnBranch
 from convert import SvnConverter
-from errors import LocalCommitsUnsupported
+from errors import LocalCommitsUnsupported, NoSvnRepositoryPresent
+from remote import SvnRemoteAccess
 from repository import (SvnRepository, SVN_PROP_BZR_ANCESTRY,
                         SVN_PROP_SVK_MERGE, SVN_PROP_BZR_FILEIDS, 
                         SVN_PROP_BZR_REVISION_ID, SVN_PROP_BZR_REVISION_INFO,
                         revision_id_to_svk_feature, generate_revision_metadata) 
 from revids import escape_svn_path
 from scheme import BranchingScheme
-from transport import (SvnRaTransport, svn_config, bzr_to_svn_url, 
-                       _create_auth_baton) 
+from transport import (SvnRaTransport, bzr_to_svn_url, create_svn_client,
+                       svn_config) 
 from tree import SvnBasisTree
 
 import os
@@ -70,11 +71,9 @@ class SvnWorkingTree(WorkingTree):
         self._branch = branch
         self.base_revnum = 0
         self.pool = Pool()
-        self.client_ctx = svn.client.create_context()
-        self.client_ctx.config = svn_config
+        self.client_ctx = create_svn_client(self.pool)
         self.client_ctx.log_msg_func2 = \
                 svn.client.svn_swig_py_get_commit_log_func
-        self.client_ctx.auth_baton = _create_auth_baton(self.pool)
 
         self._get_wc()
         status = svn.wc.revision_status(self.basedir, None, True, None, None)
@@ -405,7 +404,9 @@ class SvnWorkingTree(WorkingTree):
     def commit(self, message=None, message_callback=None, revprops=None, 
                timestamp=None, timezone=None, committer=None, rev_id=None, 
                allow_pointless=True, strict=False, verbose=False, local=False, 
-               reporter=None, config=None, specific_files=None):
+               reporter=None, config=None, specific_files=None, author=None):
+        if author is not None:
+            revprops['author'] = author
         # FIXME: Use allow_pointless
         # FIXME: Use verbose
         # FIXME: Use reporter
@@ -675,6 +676,9 @@ class SvnWorkingTree(WorkingTree):
         pass
 
     def unlock(self):
+        # non-implementation specific cleanup
+        self._cleanup()
+
         # reverse order of locking.
         try:
             return self._control_files.unlock()
@@ -718,10 +722,9 @@ class SvnCheckout(BzrDir):
             svn.wc.adm_close(wc)
 
         remote_transport = SvnRaTransport(svn_url)
-        self.svn_root_transport = SvnRaTransport(remote_transport.get_repos_root())
+        self.remote_bzrdir = SvnRemoteAccess(remote_transport)
+        self.svn_root_transport = remote_transport.clone_root()
         self.root_transport = self.transport = transport
-
-        self.branch_path = svn_url[len(bzr_to_svn_url(self.svn_root_transport.base)):]
         
     def clone(self, path, revision_id=None, force_new_repo=False):
         raise NotImplementedError(self.clone)
@@ -745,7 +748,12 @@ class SvnCheckout(BzrDir):
         raise NoRepositoryPresent(self)
 
     def find_repository(self):
-        return SvnRepository(self, self.svn_root_transport, self.branch_path)
+        return SvnRepository(self, self.svn_root_transport, self.remote_bzrdir.branch_path)
+
+    def needs_format_conversion(self, format=None):
+        if format is None:
+            format = BzrDirFormat.get_default_format()
+        return not isinstance(self._format, format.__class__)
 
     def create_workingtree(self, revision_id=None):
         """See BzrDir.create_workingtree().
@@ -764,48 +772,16 @@ class SvnCheckout(BzrDir):
         repos = self.find_repository()
 
         try:
-            branch = SvnBranch(self.root_transport.base, repos, 
-                               self.branch_path)
+            branch = SvnBranch(self.svn_root_transport.base, repos, 
+                               self.remote_bzrdir.branch_path)
         except SubversionException, (_, num):
             if num == svn.core.SVN_ERR_WC_NOT_DIRECTORY:
                 raise NotBranchError(path=self.base)
             raise
+
+        branch.bzrdir = self.remote_bzrdir
  
-        branch.bzrdir = self
         return branch
 
 
-class SvnWorkingTreeDirFormat(BzrDirFormat):
-    """Working Tree implementation that uses Subversion working copies."""
-    _lock_class = TransportLock
 
-    @classmethod
-    def probe_transport(klass, transport):
-        format = klass()
-
-        if isinstance(transport, LocalTransport) and \
-            transport.has(svn.wc.get_adm_dir()):
-            return format
-
-        raise NotBranchError(path=transport.base)
-
-    def _open(self, transport):
-        subr_version = svn.core.svn_subr_version()
-        if subr_version.major == 1 and subr_version.minor < 4:
-            raise NoCheckoutSupport()
-        return SvnCheckout(transport, self)
-
-    def get_format_string(self):
-        return 'Subversion Local Checkout'
-
-    def get_format_description(self):
-        return 'Subversion Local Checkout'
-
-    def initialize_on_transport(self, transport):
-        raise NotImplementedError(self.initialize_on_transport)
-
-    def get_converter(self, format=None):
-        """See BzrDirFormat.get_converter()."""
-        if format is None:
-            format = get_rich_root_format()
-        return SvnConverter(format)

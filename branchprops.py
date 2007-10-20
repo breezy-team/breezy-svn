@@ -47,7 +47,7 @@ class BranchPropertyList:
         path = path.lstrip("/")
 
         try:
-            (_, _, props) = self.log.transport.get_dir(path, 
+            (_, _, props) = self.log._get_transport().get_dir(path, 
                 revnum, pool=self.pool)
         except SubversionException, (_, num):
             if num == svn.core.SVN_ERR_FS_NO_SUCH_REVISION:
@@ -68,7 +68,8 @@ class BranchPropertyList:
         assert path is not None
         assert isinstance(path, str)
         assert isinstance(origrevnum, int) and origrevnum >= 0
-        revnum = self.log.find_latest_change(path, origrevnum)
+        revnum = self.log.find_latest_change(path, origrevnum, 
+                                             include_parents=True)
         assert revnum is not None, \
                 "can't find latest change for %r:%r" % (path, origrevnum)
 

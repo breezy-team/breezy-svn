@@ -1,6 +1,111 @@
 bzr-svn 0.5.0	UNRELEASED
 
-bzr-svn 0.4.1	UNRELEASED
+bzr-svn 0.4.4	UNRELEASED
+
+  PERFORMANCE
+
+   * Improved import times, making bzr faster if bzr-svn is loaded but 
+     not used.
+
+  IMPROVEMENTS
+   
+   * Avoid tracebacks on "Malformed data" errors.
+
+   * Make push location optional for svn-push. 
+   
+   * Make svn-push support --remember.
+
+  INTERNALS
+
+   * Handle NULL_REVISION in SvnRepository.copy_content(). Fixes compatibility 
+     with bzr merge-into.
+
+   * Implement ListBranchingScheme.is_branch_parent(). (#144357)
+
+   * Use revprop lists rather than just commit message when committing.
+
+   * The version of bzr-rebase is now checked before it's being used.
+
+   * Handle checks of modified children correctly when path is the root 
+     in LogWalker.find_latest_change().
+
+  BUG FIXES
+
+   * Fix compatibility with 0.92.
+
+   * Handle long file names with unicode characters correctly on 
+     python2.4 (#129334)
+
+   * Give proper warning message when running 'bzr svn-branching-scheme' on 
+     something that is not a Subversion repository. (#145159)
+
+   * Give proper warning message when running 'bzr svn-import' on 
+     something that is not a Subversion repository. 
+
+   * Support svn+ hack when committing in bound branches. (#150699)
+
+   * Encode = in list branching scheme names (unusable in Subversion property 
+     names). (#125751)
+
+   * Fix 'bzr checkout --lightweight' for http and https branches. 
+     (#144032)
+
+   * Don't print traceback when raising errors about bzr versions.
+
+  DOCUMENTATION
+
+   * Add simple FAQ file. (#144388)
+
+bzr-svn 0.4.3	2007-09-15
+ 
+  PERFORMANCE
+
+   * Avoid extra RA connection in LogWalker if it isn't going to be used.
+
+  BUG FIXES
+
+   * Fix determination of relative URLs in SvnRaTransport._request_path(). 
+     (#139020)
+
+   * Mark as compatible with Bazaar 0.91.
+
+   * Use write groups in fetch as required by the packs branch.
+
+   * Handle pushing merges of which LHS parent is older revision of 
+     branch path.
+
+  INTERNALS
+
+   * Track moving parents correctly in follow_path().
+
+   * Implement SvnWorkingTreeDir.needs_format_conversion().
+
+bzr-svn 0.4.2	2007-09-09
+
+  BUG FIXES
+
+   * Fix regression that prevented the "svn+" prefix trick from working.
+
+   * Export version information so the version is displayed properly 
+     in "bzr plugins".
+
+   * Avoid deprecated static BzrDir.create_repository().
+
+   * Fix pushing of revisions of which only a non-left hand side parent
+     is present in the Subversion repository. (#131692)
+
+   * Fix some problems pushing to HTTP repositories because of 
+     the backing URL hack introduced to fix #80553. (#137176)
+
+   * Display unknown hostname errors properly without tracebacks.
+
+   * Handle files of which path didn't change but parent did when pushing. 
+     (#137455)
+
+   * Fix sqlite index that was causing indexing errors when a repository 
+     contains multiple copies of a single revision. 
+
+bzr-svn 0.4.1	2007-08-26
 
   BUG FIXES
 
@@ -29,6 +134,8 @@ bzr-svn 0.4.1	UNRELEASED
      from commit. (#133288, Lukáš Lalinský)
 
    * Timestamps in properties no longer include locale-specific data. (#131337)
+
+   * Handle copies of parent directories of branches correctly. (#131180)
 
   INTERNALS
 

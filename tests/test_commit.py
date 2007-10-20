@@ -176,7 +176,8 @@ class TestNativeCommit(TestCaseWithSubversionRepository):
         new_tree = copy(tree)
         ie = new_tree.inventory.root
         ie.revision = None
-        builder.record_entry_contents(ie, [tree.inventory], '', new_tree)
+        builder.record_entry_contents(ie, [tree.inventory], '', new_tree, 
+                                      None)
         builder.finish_inventory()
         builder.commit("foo")
 
@@ -199,7 +200,7 @@ class TestNativeCommit(TestCaseWithSubversionRepository):
         new_tree = copy(tree)
         ie = new_tree.inventory.root
         ie.revision = None
-        builder.record_entry_contents(ie, [tree.inventory], '', new_tree)
+        builder.record_entry_contents(ie, [tree.inventory], '', new_tree, None)
         builder.finish_inventory()
         builder.commit("foo")
 
@@ -269,8 +270,8 @@ class TestPush(TestCaseWithSubversionRepository):
         self.assertIsInstance(result, PullResult)
         self.assertEqual(result.old_revno, self.olddir.open_branch().revno())
         self.assertEqual(result.master_branch, None)
-        self.assertEqual(result.target_branch.bzrdir.transport.base, self.olddir.transport.base)
-        self.assertEqual(result.source_branch.bzrdir.transport.base, self.newdir.transport.base)
+        self.assertEqual(result.source_branch.bzrdir.root_transport.base, 
+                         self.newdir.root_transport.base)
 
     def test_child(self):
         self.build_tree({'sc/foo/bar': "data"})

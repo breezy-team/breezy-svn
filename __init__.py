@@ -21,23 +21,23 @@ import bzrlib
 from bzrlib.bzrdir import BzrDirFormat, format_registry
 from bzrlib.commands import Command, register_command, display_command, Option
 from bzrlib.help_topics import topic_registry
-from bzrlib.lazy_import import lazy_import
-from bzrlib.trace import warning, mutter
+from bzrlib.trace import warning
 from bzrlib.transport import register_lazy_transport, register_transport_proto
-from bzrlib.repository import InterRepository
 
-lazy_import(globals(), """
-import branch
-import commit
-import fetch 
 import format
-import workingtree
-""")
 
 # versions ending in 'exp' mean experimental mappings
 # versions ending in 'dev' mean development version
-__version__ = '0.5.0exp'
-COMPATIBLE_BZR_VERSIONS = [(0, 90)]
+# versions ending in 'final' mean release (well tested, etc)
+version_info = (0, 5, 0, 'exp', 0)
+
+if version_info[3] == 'final':
+    version_string = '%d.%d.%d' % version_info[:3]
+else:
+    version_string = '%d.%d.%d%s%d' % version_info
+__version__ = version_string
+
+COMPATIBLE_BZR_VERSIONS = [(0, 92)]
 
 def check_bzrlib_version(desired):
     """Check that bzrlib is compatible.
@@ -52,21 +52,19 @@ def check_bzrlib_version(desired):
         ((bzrlib_version[0], bzrlib_version[1]-1) in desired and 
          bzrlib.version_info[3] == 'dev')):
         return
+    from bzrlib.errors import BzrError
     if bzrlib_version < desired[0]:
-        warning('Installed bzr version %s is too old to be used with bzr-svn'
-                ' %s.' % (bzrlib.__version__, __version__))
-        # Not using BzrNewError, because it may not exist.
-        raise Exception, ('Version mismatch', desired)
+        raise BzrError('Installed bzr version %s is too old to be used with bzr-svn, at least %s.%s required' % (bzrlib.__version__, desired[0][0], desired[0][1]))
     else:
         warning('bzr-svn is not up to date with installed bzr version %s.'
                 ' \nThere should be a newer version of bzr-svn available.' 
                 % (bzrlib.__version__))
         if not (bzrlib_version[0], bzrlib_version[1]-1) in desired:
-            raise Exception, 'Version mismatch'
+            raise BzrError('Version mismatch')
 
 def check_bzrsvn_version():
     """Warn about use of experimental mappings."""
-    if __version__.endswith("exp"):
+    if version_info[3] == "exp":
         warning('version of bzr-svn is experimental; output may change between revisions')
 
 def check_subversion_version():
@@ -105,10 +103,13 @@ topic_registry.register_lazy('svn-branching-schemes',
                              'bzrlib.plugins.svn.scheme',
                              'help_schemes', 'Subversion branching schemes')
 
-BzrDirFormat.register_control_format(format.SvnFormat)
-BzrDirFormat.register_control_format(workingtree.SvnWorkingTreeDirFormat)
-format_registry.register("subversion", format.SvnFormat, 
+BzrDirFormat.register_control_format(format.SvnRemoteFormat)
+BzrDirFormat.register_control_format(format.SvnWorkingTreeDirFormat)
+format_registry.register("subversion", format.SvnRemoteFormat, 
                          "Subversion repository. ", 
+                         native=False)
+format_registry.register("subversion-wc", format.SvnWorkingTreeDirFormat, 
+                         "Subversion working copy. ", 
                          native=False)
 
 versions_checked = False
@@ -120,8 +121,17 @@ def lazy_check_versions():
     check_bzrlib_version(COMPATIBLE_BZR_VERSIONS)
     check_bzrsvn_version()
 
-InterRepository.register_optimiser(fetch.InterFromSvnRepository)
-InterRepository.register_optimiser(commit.InterToSvnRepository)
+optimizers_registered = False
+def lazy_register_optimizers():
+    global optimizers_registered
+    if optimizers_registered:
+        return
+    from bzrlib.repository import InterRepository
+    import commit
+    import fetch
+    optimizers_registered = True
+    InterRepository.register_optimiser(fetch.InterFromSvnRepository)
+    InterRepository.register_optimiser(commit.InterToSvnRepository)
 
 def get_scheme(schemename):
     """Parse scheme identifier and return a branching scheme."""
@@ -155,9 +165,10 @@ class cmd_svn_import(Command):
     @display_command
     def run(self, from_location, to_location=None, trees=False, 
             standalone=False, scheme=None, all=False, prefix=None):
-        from bzrlib.errors import NoRepositoryPresent
+        from bzrlib.errors import BzrCommandError, NoRepositoryPresent
         from bzrlib.bzrdir import BzrDir
         from convert import convert_repository
+        from repository import SvnRepository
         import os
 
         if to_location is None:
@@ -172,7 +183,6 @@ class cmd_svn_import(Command):
             from convert import load_dumpfile
             import tempfile
             tmp_repos = tempfile.mkdtemp(prefix='bzr-svn-dump-')
-            mutter('loading dumpfile %r to %r' % (from_location, tmp_repos))
             load_dumpfile(from_location, tmp_repos)
             from_location = tmp_repos
         else:
@@ -182,9 +192,12 @@ class cmd_svn_import(Command):
         try:
             from_repos = from_dir.open_repository()
         except NoRepositoryPresent, e:
-            from bzrlib.errors import BzrCommandError
             raise BzrCommandError("No Repository found at %s. "
                 "For individual branches, use 'bzr branch'." % from_location)
+
+        if not isinstance(from_repos, SvnRepository):
+            raise BzrCommandError(
+                    "Not a Subversion repository: %s" % from_location)
 
         def filter_branch((branch_path, revnum, exists)):
             if prefix is not None and not branch_path.startswith(prefix):
@@ -259,15 +272,27 @@ class cmd_svn_push(Command):
     This command is experimental and will be removed in the future when all 
     functionality is included in "bzr push".
     """
-    takes_args = ['location']
-    takes_options = ['revision']
+    takes_args = ['location?']
+    takes_options = ['revision', 'remember']
 
-    def run(self, location, revision=None):
+    def run(self, location=None, revision=None, remember=False):
         from bzrlib.bzrdir import BzrDir
         from bzrlib.branch import Branch
         from bzrlib.errors import NotBranchError, BzrCommandError
-        bzrdir = BzrDir.open(location)
+        from bzrlib import urlutils
+
         source_branch = Branch.open_containing(".")[0]
+        stored_loc = source_branch.get_push_location()
+        if location is None:
+            if stored_loc is None:
+                raise BzrCommandError("No push location known or specified.")
+            else:
+                display_url = urlutils.unescape_for_display(stored_loc,
+                        self.outf.encoding)
+                self.outf.write("Using saved location: %s\n" % display_url)
+                location = stored_loc
+
+        bzrdir = BzrDir.open(location)
         if revision is not None:
             if len(revision) > 1:
                 raise BzrCommandError(
@@ -281,6 +306,9 @@ class cmd_svn_push(Command):
             target_branch.pull(source_branch, revision_id)
         except NotBranchError:
             target_branch = bzrdir.import_branch(source_branch, revision_id)
+        # We successfully created the target, remember it
+        if source_branch.get_push_location() is None or remember:
+            source_branch.set_push_location(target_branch.base)
 
 register_command(cmd_svn_push)
 
@@ -298,15 +326,19 @@ class cmd_svn_branching_scheme(Command):
         ]
 
     def run(self, location=".", set=False, repository_wide=False):
+        from bzrlib.errors import BzrCommandError
         from bzrlib.msgeditor import edit_commit_message
         from bzrlib.repository import Repository
         from bzrlib.trace import info
+        from repository import SvnRepository
         from scheme import scheme_from_branch_list
         def scheme_str(scheme):
             if scheme is None:
                 return ""
             return "".join(map(lambda x: x+"\n", scheme.to_lines()))
         repos = Repository.open(location)
+        if not isinstance(repos, SvnRepository):
+            raise BzrCommandError("Not a Subversion repository: %s" % location)
         if repository_wide:
             scheme = repos._get_property_scheme()
         else:

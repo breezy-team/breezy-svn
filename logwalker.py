@@ -18,6 +18,7 @@
 from bzrlib import urlutils
 from bzrlib.errors import NoSuchRevision
 import bzrlib.ui as ui
+from copy import copy
 
 from svn.core import SubversionException, Pool
 from transport import SvnRaTransport
@@ -26,6 +27,8 @@ import svn.core
 import base64
 
 from cache import sqlite3
+
+LOG_CHUNK_LIMIT = 1000
 
 def _escape_commit_message(message):
     """Replace xml-incompatible control characters."""
@@ -50,7 +53,7 @@ def _escape_commit_message(message):
 
 class LogWalker(object):
     """Easy way to access the history of a Subversion repository."""
-    def __init__(self, transport=None, cache_db=None):
+    def __init__(self, transport, cache_db=None, limit=None):
         """Create a new instance.
 
         :param transport:   SvnRaTransport to use to access the repository.
@@ -59,7 +62,13 @@ class LogWalker(object):
         """
         assert isinstance(transport, SvnRaTransport)
 
-        self.transport = SvnRaTransport(transport.base)
+        self.url = transport.base
+        self._transport = None
+
+        if limit is not None:
+            self._limit = limit
+        else:
+            self._limit = LOG_CHUNK_LIMIT
 
         if cache_db is None:
             self.db = sqlite3.connect(":memory:")
@@ -79,16 +88,22 @@ class LogWalker(object):
         if self.saved_revnum is None:
             self.saved_revnum = 0
 
+    def _get_transport(self):
+        if self._transport is not None:
+            return self._transport
+        self._transport = SvnRaTransport(self.url)
+        return self._transport
+
     def fetch_revisions(self, to_revnum=None):
         """Fetch information about all revisions in the remote repository
         until to_revnum.
 
         :param to_revnum: End of range to fetch information for
         """
-        if to_revnum is None:
-            to_revnum = self.transport.get_latest_revnum()
-        else:
-            to_revnum = max(self.transport.get_latest_revnum(), to_revnum)
+        if to_revnum <= self.saved_revnum:
+            return
+        latest_revnum = self._get_transport().get_latest_revnum()
+        to_revnum = max(latest_revnum, to_revnum)
 
         pb = ui.ui_factory.nested_progress_bar()
 
@@ -98,7 +113,7 @@ class LogWalker(object):
                 orig_paths = {}
             for p in orig_paths:
                 copyfrom_path = orig_paths[p].copyfrom_path
-                if copyfrom_path:
+                if copyfrom_path is not None:
                     copyfrom_path = copyfrom_path.strip("/")
 
                 self.db.execute(
@@ -114,11 +129,14 @@ class LogWalker(object):
             if self.saved_revnum % 1000 == 0:
                 self.db.commit()
 
-        pool = Pool()
         try:
             try:
-                self.transport.get_log("/", self.saved_revnum, to_revnum, 
-                               0, True, True, rcvr, pool)
+                while self.saved_revnum < to_revnum:
+                    pool = Pool()
+                    self._get_transport().get_log("/", self.saved_revnum, 
+                                             to_revnum, self._limit, True, 
+                                             True, rcvr, pool)
+                    pool.destroy()
             finally:
                 pb.finished()
         except SubversionException, (_, num):
@@ -127,7 +145,6 @@ class LogWalker(object):
                     revision="Revision number %d" % to_revnum)
             raise
         self.db.commit()
-        pool.destroy()
 
     def follow_path(self, path, revnum):
         """Return iterator over all the revisions between revnum and 
@@ -145,13 +162,20 @@ class LogWalker(object):
         if revnum == 0 and path == "":
             return
 
+        recurse = (path != "")
+
         path = path.strip("/")
 
         while revnum >= 0:
-            revpaths = self.get_revision_paths(revnum, path)
+            assert revnum > 0 or path == ""
+            revpaths = self.get_revision_paths(revnum, path, recurse=recurse)
 
             if revpaths != {}:
-                yield (path, revpaths, revnum)
+                yield (path, copy(revpaths), revnum)
+
+            if path == "":
+                revnum -= 1
+                continue
 
             if revpaths.has_key(path):
                 if revpaths[path][1] is None:
@@ -163,27 +187,38 @@ class LogWalker(object):
                     # somewhere else
                     revnum = revpaths[path][2]
                     path = revpaths[path][1]
+                    assert path == "" or revnum > 0
                     continue
             revnum -= 1
+            for p in sorted(revpaths.keys()):
+                if path.startswith(p+"/") and revpaths[p][0] in ('A', 'R'):
+                    assert revpaths[p][1]
+                    path = path.replace(p, revpaths[p][1])
+                    revnum = revpaths[p][2]
+                    break
 
-    def get_revision_paths(self, revnum, path=None):
+    def get_revision_paths(self, revnum, path=None, recurse=False):
         """Obtain dictionary with all the changes in a particular revision.
 
         :param revnum: Subversion revision number
         :param path: optional path under which to return all entries
+        :param recurse: Report changes to parents as well
         :returns: dictionary with paths as keys and 
                   (action, copyfrom_path, copyfrom_rev) as values.
         """
 
         if revnum == 0:
+            assert path is None or path == ""
             return {'': ('A', None, -1)}
                 
-        if revnum > self.saved_revnum:
-            self.fetch_revisions(revnum)
+        self.fetch_revisions(revnum)
 
         query = "select path, action, copyfrom_path, copyfrom_rev from changed_path where rev="+str(revnum)
         if path is not None and path != "":
-            query += " and (path='%s' or path like '%s/%%')" % (path, path)
+            query += " and (path='%s' or path like '%s/%%'" % (path, path)
+            if recurse:
+                query += " or ('%s' LIKE path || '/%%')" % path
+            query += ")"
 
         paths = {}
         for p, act, cf, cr in self.db.execute(query):
@@ -199,14 +234,14 @@ class LogWalker(object):
         assert revnum >= 0
         if revnum == 0:
             return (None, None, None)
-        if revnum > self.saved_revnum:
-            self.fetch_revisions(revnum)
+        self.fetch_revisions(revnum)
         (author, message, date) = self.db.execute("select author, message, date from revision where revno="+ str(revnum)).fetchone()
         if message is not None:
             message = _escape_commit_message(base64.b64decode(message))
         return (author, message, date)
 
-    def find_latest_change(self, path, revnum, recurse=False):
+    def find_latest_change(self, path, revnum, include_parents=False,
+                           include_children=False):
         """Find latest revision that touched path.
 
         :param path: Path to check for changes
@@ -214,14 +249,17 @@ class LogWalker(object):
         """
         assert isinstance(path, basestring)
         assert isinstance(revnum, int) and revnum >= 0
-        if revnum > self.saved_revnum:
-            self.fetch_revisions(revnum)
+        self.fetch_revisions(revnum)
 
-        if recurse:
-            extra = " or path like '%s/%%'" % path.strip("/")
-        else:
-            extra = ""
-        query = "select rev from changed_path where (path='%s' or ('%s' like (path || '/%%') and (action = 'R' or action = 'A'))%s) and rev <= %d order by rev desc limit 1" % (path.strip("/"), path.strip("/"), extra, revnum)
+        extra = ""
+        if include_children:
+            if path == "":
+                extra += " OR path LIKE '%'"
+            else:
+                extra += " OR path LIKE '%s/%%'" % path.strip("/")
+        if include_parents:
+            extra += " OR ('%s' LIKE (path || '/%%') AND (action = 'R' OR action = 'A'))" % path.strip("/")
+        query = "SELECT rev FROM changed_path WHERE (path='%s'%s) AND rev <= %d ORDER BY rev DESC LIMIT 1" % (path.strip("/"), extra, revnum)
 
         row = self.db.execute(query).fetchone()
         if row is None and path == "":
@@ -238,8 +276,7 @@ class LogWalker(object):
         :param path:  Path to check
         :param revnum:  Revision to check
         """
-        if revnum > self.saved_revnum:
-            self.fetch_revisions(revnum)
+        self.fetch_revisions(revnum)
         if revnum == 0:
             return (path == "")
         return (self.db.execute("select 1 from changed_path where path='%s' and rev=%d" % (path, revnum)).fetchone() is not None)
@@ -247,7 +284,8 @@ class LogWalker(object):
     def find_children(self, path, revnum):
         """Find all children of path in revnum."""
         path = path.strip("/")
-        ft = self.transport.check_path(path, revnum)
+        transport = self._get_transport()
+        ft = transport.check_path(path, revnum)
         if ft == svn.core.svn_node_file:
             return []
         assert ft == svn.core.svn_node_dir
@@ -297,16 +335,15 @@ class LogWalker(object):
         pool = Pool()
         editor = TreeLister(path)
         edit, baton = svn.delta.make_editor(editor, pool)
-        old_base = self.transport.base
+        old_base = transport.base
         try:
-            root_repos = self.transport.get_repos_root()
-            self.transport.reparent(urlutils.join(root_repos, path))
-            reporter = self.transport.do_update(
-                            revnum,  True, edit, baton, pool)
+            root_repos = transport.get_svn_repos_root()
+            transport.reparent(urlutils.join(root_repos, path))
+            reporter = transport.do_update(revnum,  True, edit, baton, pool)
             reporter.set_path("", revnum, True, None, pool)
             reporter.finish_report(pool)
         finally:
-            self.transport.reparent(old_base)
+            transport.reparent(old_base)
         return editor.files
 
     def get_previous(self, path, revnum):
@@ -316,8 +353,7 @@ class LogWalker(object):
         :param revnum:  Revision to check
         """
         assert revnum >= 0
-        if revnum > self.saved_revnum:
-            self.fetch_revisions(revnum)
+        self.fetch_revisions(revnum)
         if revnum == 0:
             return (None, -1)
         row = self.db.execute("select action, copyfrom_path, copyfrom_rev from changed_path where path='%s' and rev=%d" % (path, revnum)).fetchone()

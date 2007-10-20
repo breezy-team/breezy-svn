@@ -18,7 +18,7 @@
 import bzrlib
 from bzrlib import osutils, ui, urlutils
 from bzrlib.inventory import Inventory
-from bzrlib.revision import Revision
+from bzrlib.revision import Revision, NULL_REVISION
 from bzrlib.repository import InterRepository
 from bzrlib.trace import mutter
 
@@ -353,7 +353,12 @@ class RevisionBuildEditor(svn.delta.Editor):
         self.inventory.revision_id = self.revid
         rev.inventory_sha1 = osutils.sha_string(
                 self.target.serialise_inventory(self.inventory))
-        self.target.add_revision(self.revid, rev, self.inventory)
+        self.target.start_write_group()
+        try:
+            self.target.add_revision(self.revid, rev, self.inventory)
+            self.target.commit_write_group()
+        except:
+            self.target.abort_write_group()
         self.pool.destroy()
 
     def abort_edit(self):
@@ -416,9 +421,10 @@ class InterFromSvnRepository(InterRepository):
         parents[prev_revid] = None
         return (needed, parents)
 
-    def copy_content(self, revision_id=None, basis=None, pb=None):
+    def copy_content(self, revision_id=None, pb=None):
         """See InterRepository.copy_content."""
-        # FIXME: Use basis
+        if revision_id == NULL_REVISION:
+            return
         # Dictionary with paths as keys, revnums as values
 
         # Loop over all the revnums until revision_id
@@ -437,11 +443,10 @@ class InterFromSvnRepository(InterRepository):
             # Nothing to fetch
             return
 
-        repos_root = self.source.transport.get_repos_root()
+        repos_root = self.source.transport.get_svn_repos_root()
 
         prev_revid = None
         transport = self.source.transport
-        self.target.lock_write()
         if pb is None:
             pb = ui.ui_factory.nested_progress_bar()
             nested_pb = pb
@@ -449,6 +454,7 @@ class InterFromSvnRepository(InterRepository):
             nested_pb = None
         num = 0
         prev_inv = None
+        self.target.lock_write()
         try:
             for revid in reversed(needed):
                 (branch, revnum, scheme) = self.source.lookup_revision_id(revid)
@@ -478,7 +484,10 @@ class InterFromSvnRepository(InterRepository):
                 edit, edit_baton = svn.delta.make_editor(editor, pool)
 
                 if parent_revid is None:
-                    transport.reparent(urlutils.join(repos_root, branch))
+                    branch_url = urlutils.join(repos_root, branch)
+                    transport.reparent(branch_url)
+                    assert transport.svn_url == branch_url.rstrip("/"), \
+                        "Expected %r, got %r" % (transport.svn_url, branch_url)
                     reporter = transport.do_update(
                                    revnum, True, edit, edit_baton, pool)
 

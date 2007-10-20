@@ -18,8 +18,8 @@
 import bzrlib
 from bzrlib import osutils, ui
 from bzrlib.branch import BranchCheckResult
-from bzrlib.errors import (InvalidRevisionId, NoSuchRevision, 
-                           NotBranchError, UninitializableFormat)
+from bzrlib.errors import (InvalidRevisionId, NoSuchRevision, NotBranchError, 
+                           UninitializableFormat, UnrelatedBranches)
 from bzrlib.inventory import Inventory
 from bzrlib.lockable_files import LockableFiles, TransportLock
 from bzrlib.repository import Repository, RepositoryFormat
@@ -53,9 +53,17 @@ SVN_PROP_BZR_FILEIDS = 'bzr:file-ids'
 SVN_PROP_BZR_MERGE = 'bzr:merge'
 SVN_PROP_SVK_MERGE = 'svk:merge'
 SVN_PROP_BZR_REVISION_INFO = 'bzr:revision-info'
-SVN_REVPROP_BZR_SIGNATURE = 'bzr:gpg-signature'
 SVN_PROP_BZR_REVISION_ID = 'bzr:revision-id:v%d-' % MAPPING_VERSION
 SVN_PROP_BZR_BRANCHING_SCHEME = 'bzr:branching-scheme'
+
+SVN_REVPROP_BZR_COMMITTER = 'bzr:committer'
+SVN_REVPROP_BZR_FILEIDS = 'bzr:file-ids'
+SVN_REVPROP_BZR_MERGE = 'bzr:merge'
+SVN_REVPROP_BZR_REVISION_ID = 'bzr:revision-id'
+SVN_REVPROP_BZR_REVPROP_PREFIX = 'bzr:revprop:'
+SVN_REVPROP_BZR_ROOT = 'bzr:root'
+SVN_REVPROP_BZR_SCHEME = 'bzr:scheme'
+SVN_REVPROP_BZR_SIGNATURE = 'bzr:gpg-signature'
 
 # The following two functions don't use day names (which can vary by 
 # locale) unlike the alternatives in bzrlib.timestamp
@@ -234,8 +242,8 @@ class SvnRepositoryFormat(RepositoryFormat):
     rich_root_data = True
 
     def __get_matchingbzrdir(self):
-        from format import SvnFormat
-        return SvnFormat()
+        from remote import SvnRemoteFormat
+        return SvnRemoteFormat()
 
     _matchingbzrdir = property(__get_matchingbzrdir)
 
@@ -260,6 +268,8 @@ class SvnRepository(Repository):
     by using the RA (remote access) API from subversion
     """
     def __init__(self, bzrdir, transport, branch_path=None):
+        from bzrlib.plugins.svn import lazy_register_optimizers
+        lazy_register_optimizers()
         from fileids import SimpleFileIdMap
         _revision_store = None
 
@@ -295,6 +305,16 @@ class SvnRepository(Repository):
         self.revmap = RevidMap(self.cachedb)
         self._scheme = None
         self._hinted_branch_path = branch_path
+
+    def lhs_missing_revisions(self, revhistory, stop_revision):
+        missing = []
+        slice = revhistory[:revhistory.index(stop_revision)+1]
+        for revid in reversed(slice):
+            if self.has_revision(revid):
+                missing.reverse()
+                return missing
+            missing.append(revid)
+        raise UnrelatedBranches()
     
     def get_transaction(self):
         raise NotImplementedError(self.get_transaction)
@@ -337,7 +357,7 @@ class SvnRepository(Repository):
         def done(revision, date, author):
             pass
         editor = self.transport.get_commit_editor(
-                "Updating branching scheme for Bazaar.",
+                {svn.core.SVN_PROP_REVISION_LOG: "Updating branching scheme for Bazaar."},
                 done, None, False)
         root = editor.open_root(-1)
         editor.change_dir_prop(root, SVN_PROP_BZR_BRANCHING_SCHEME, 
@@ -626,7 +646,8 @@ class SvnRepository(Repository):
                 self.branchprop_list.get_property(path, revnum, 
                      SVN_PROP_BZR_REVISION_INFO, ""), rev)
 
-        rev.inventory_sha1 = property(lambda: self.get_inventory_sha1(revision_id))
+        rev.inventory_sha1 = property(
+            lambda: self.get_inventory_sha1(revision_id))
 
         return rev
 
@@ -833,6 +854,7 @@ class SvnRepository(Repository):
         branch_path = branch_path.strip("/")
 
         while revnum >= 0:
+            assert revnum > 0 or branch_path == ""
             paths = self._log.get_revision_paths(revnum)
 
             yielded = False
@@ -840,7 +862,9 @@ class SvnRepository(Repository):
             # revision there, so yield it.
             for p in paths:
                 assert isinstance(p, str)
-                if p == branch_path or p.startswith(branch_path+"/") or branch_path == "":
+                if (p == branch_path or 
+                    p.startswith(branch_path+"/") or 
+                    branch_path == ""):
                     yield (branch_path, revnum)
                     yielded = True
                     break
@@ -872,12 +896,17 @@ class SvnRepository(Repository):
 
             # Path names need to be sorted so the longer paths 
             # override the shorter ones
-            for p in sorted(paths.keys()):
+            for p in sorted(paths.keys(), reverse=True):
+                if paths[p][0] == 'M':
+                    continue
                 if branch_path.startswith(p+"/"):
-                    assert paths[p][1] is not None and paths[p][0] in ('A', 'R'), "Parent didn't exist yet, but child wasn't added !?"
+                    assert paths[p][0] in ('A', 'R'), "Parent wasn't added"
+                    assert paths[p][1] is not None, \
+                        "Empty parent added, but child wasn't added !?"
 
                     revnum = paths[p][2]
                     branch_path = paths[p][1].encode("utf-8") + branch_path[len(p):]
+                    break
 
     def follow_branch_history(self, branch_path, revnum, scheme):
         """Return all the changes that happened in a branch 
@@ -890,8 +919,17 @@ class SvnRepository(Repository):
         assert scheme.is_branch(branch_path) or scheme.is_tag(branch_path)
 
         for (bp, paths, revnum) in self._log.follow_path(branch_path, revnum):
-            if (paths.has_key(bp) and 
-                paths[bp][1] is not None and 
+            assert revnum > 0 or bp == ""
+            assert scheme.is_branch(bp) or schee.is_tag(bp)
+            # Remove non-bp paths from paths
+            for p in paths.keys():
+                if not p.startswith(bp+"/") and bp != p and bp != "":
+                    del paths[p]
+
+            if paths == {}:
+                continue
+
+            if (paths.has_key(bp) and paths[bp][1] is not None and 
                 not scheme.is_branch(paths[bp][1]) and
                 not scheme.is_tag(paths[bp][1])):
                 # FIXME: if copyfrom_path is not a branch path, 
@@ -988,7 +1026,7 @@ class SvnRepository(Repository):
                         if paths[p][0] in ('R', 'D'):
                             del created_branches[p]
                             j = self._log.find_latest_change(p, i-1, 
-                                recurse=True)
+                                include_parents=True, include_children=True)
                             ret.append((p, j, False))
 
                         if paths[p][0] in ('A', 'R'): 
@@ -1001,7 +1039,8 @@ class SvnRepository(Repository):
                                 if c.startswith(p+"/"):
                                     del created_branches[c] 
                                     j = self._log.find_latest_change(c, i-1, 
-                                            recurse=True)
+                                            include_parents=True, 
+                                            include_children=True)
                                     ret.append((c, j, False))
                         if paths[p][0] in ('A', 'R'):
                             parents = [p]
@@ -1018,7 +1057,9 @@ class SvnRepository(Repository):
             pb.finished()
 
         for p in created_branches:
-            j = self._log.find_latest_change(p, revnum, recurse=True)
+            j = self._log.find_latest_change(p, revnum, 
+                                             include_parents=True,
+                                             include_children=True)
             if j is None:
                 j = created_branches[p]
             ret.append((p, j, True))

@@ -19,6 +19,7 @@ from bzrlib.bzrdir import BzrDir, Converter
 from bzrlib.branch import Branch
 from bzrlib.errors import (BzrError, NotBranchError, NoSuchFile, 
                            NoRepositoryPresent, NoSuchRevision)
+from bzrlib.revision import ensure_null
 from bzrlib.transport import get_transport
 
 from format import get_rich_root_format
@@ -131,6 +132,7 @@ def convert_repository(source_repos, output_url, scheme=None,
             filter(filter_branch,
                    source_repos.find_branches(source_repos.get_scheme()))]
 
+    source_graph = source_repos.get_graph()
     pb = ui.ui_factory.nested_progress_bar()
     try:
         i = 0
@@ -159,10 +161,9 @@ def convert_repository(source_repos, output_url, scheme=None,
                 # source_branch. If that is not the case, 
                 # assume that source_branch has been replaced 
                 # and remove target_branch
-                try:
-                    source_branch.revision_id_to_revno(
-                            target_branch.last_revision())
-                except NoSuchRevision:
+                if not source_graph.is_ancestor(
+                        ensure_null(target_branch.last_revision()),
+                        ensure_null(source_branch.last_revision())):
                     target_branch.set_revision_history([])
                 target_branch.pull(source_branch)
             if working_trees and not target_dir.has_workingtree():

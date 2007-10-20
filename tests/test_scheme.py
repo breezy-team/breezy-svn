@@ -138,6 +138,10 @@ class ListScheme(TestCase):
     def setUp(self):
         self.scheme = ListBranchingScheme(["foo", "bar/bloe"])
 
+    def test_create_from_string(self):
+        self.scheme = ListBranchingScheme('QlpoOTFBWSZTWXb2s-UAAADBAAAQAQCgACGYGYQYXckU4UJB29rPlA..')
+        self.assertEquals(["foo"], self.scheme.branch_list)
+
     def test_is_tag_empty(self):
         self.assertFalse(self.scheme.is_tag(""))
 
@@ -171,6 +175,18 @@ class ListScheme(TestCase):
         self.assertFalse(scheme.is_branch("trunk/bloe"))
         self.assertFalse(scheme.is_branch("blie/trunk/bloe/bla"))
         self.assertFalse(scheme.is_branch("bla"))
+
+    def test_is_branch_parent_root_root(self):
+        self.assertFalse(ListBranchingScheme([""]).is_branch_parent(""))
+
+    def test_is_branch_parent_root(self):
+        self.assertTrue(ListBranchingScheme(["trunk/*"]).is_branch_parent("trunk"))
+
+    def test_is_branch_parent_other(self):
+        self.assertFalse(ListBranchingScheme(["trunk/*"]).is_branch_parent("trunk/foo"))
+
+    def test_is_tag_parent_other(self):
+        self.assertFalse(ListBranchingScheme(["trunk"]).is_tag_parent("trunk/foo"))
 
     def test_is_branch_slashsub(self):
         self.assertTrue(self.scheme.is_branch("/foo"))
@@ -240,7 +256,7 @@ class ListScheme(TestCase):
         self.assertEqual(self.scheme.unprefix("bar/bloe"), ("bar/bloe", ""))
 
     def test_str(self):
-        self.assertEqual("list-QlpoOTFBWSZTWSDz6woAAAPRgAAQAACzBJAAIAAiDRo9QgyYjmbjatAeLuSKcKEgQefWFA==", str(self.scheme))
+        self.assertEqual("list-QlpoOTFBWSZTWSDz6woAAAPRgAAQAACzBJAAIAAiDRo9QgyYjmbjatAeLuSKcKEgQefWFA..", str(self.scheme))
 
     def test_parse_text(self):
         self.assertEqual(["bla/bloe"], parse_list_scheme_text("bla/bloe\n"))
