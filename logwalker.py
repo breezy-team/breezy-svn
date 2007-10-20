@@ -15,10 +15,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Cache of the Subversion history log."""
 
+from bzrlib import urlutils
 from bzrlib.errors import NoSuchRevision
 import bzrlib.ui as ui
-
-import os
 
 from svn.core import SubversionException, Pool
 from transport import SvnRaTransport
@@ -80,13 +79,16 @@ class LogWalker(object):
         if self.saved_revnum is None:
             self.saved_revnum = 0
 
-    def fetch_revisions(self, to_revnum):
+    def fetch_revisions(self, to_revnum=None):
         """Fetch information about all revisions in the remote repository
         until to_revnum.
 
         :param to_revnum: End of range to fetch information for
         """
-        to_revnum = max(self.transport.get_latest_revnum(), to_revnum)
+        if to_revnum is None:
+            to_revnum = self.transport.get_latest_revnum()
+        else:
+            to_revnum = max(self.transport.get_latest_revnum(), to_revnum)
 
         pb = ui.ui_factory.nested_progress_bar()
 
@@ -256,13 +258,16 @@ class LogWalker(object):
                 self.base = base
 
             def set_target_revision(self, revnum):
+                """See Editor.set_target_revision()."""
                 pass
 
             def open_root(self, revnum, baton):
+                """See Editor.open_root()."""
                 return path
 
             def add_directory(self, path, parent_baton, copyfrom_path, copyfrom_revnum, pool):
-                self.files.append(os.path.join(self.base, path))
+                """See Editor.add_directory()."""
+                self.files.append(urlutils.join(self.base, path))
                 return path
 
             def change_dir_prop(self, id, name, value, pool):
@@ -272,7 +277,7 @@ class LogWalker(object):
                 pass
 
             def add_file(self, path, parent_id, copyfrom_path, copyfrom_revnum, baton):
-                self.files.append(os.path.join(self.base, path))
+                self.files.append(urlutils.join(self.base, path))
                 return path
 
             def close_dir(self, id):
@@ -295,9 +300,9 @@ class LogWalker(object):
         old_base = self.transport.base
         try:
             root_repos = self.transport.get_repos_root()
-            self.transport.reparent(os.path.join(root_repos, path))
+            self.transport.reparent(urlutils.join(root_repos, path))
             reporter = self.transport.do_update(
-                            revnum, "", True, edit, baton, pool)
+                            revnum,  True, edit, baton, pool)
             reporter.set_path("", revnum, True, None, pool)
             reporter.finish_report(pool)
         finally:

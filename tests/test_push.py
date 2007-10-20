@@ -16,8 +16,10 @@
 
 from bzrlib.branch import Branch, BranchReferenceFormat
 from bzrlib.bzrdir import BzrDir, BzrDirFormat
-from bzrlib.errors import DivergedBranches
+from bzrlib.errors import AlreadyBranchError, DivergedBranches
 from bzrlib.inventory import Inventory
+from bzrlib.repository import Repository
+from bzrlib.tests import TestCaseWithTransport
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
@@ -311,3 +313,104 @@ class TestPush(TestCaseWithSubversionRepository):
         mutter('log %r' % self.client_log("sc/trunk")[5][0])
         self.assertEquals("/branches/mybranch", 
             self.client_log("sc/trunk")[5][0]['/trunk'].copyfrom_path)
+
+class PushNewBranchTests(TestCaseWithSubversionRepository):
+    def test_single_revision(self):
+        repos_url = self.make_client("a", "dc")
+        bzrwt = BzrDir.create_standalone_workingtree("c", 
+            format=format.get_rich_root_format())
+        self.build_tree({'c/test': "Tour"})
+        bzrwt.add("test")
+        revid = bzrwt.commit("Do a commit")
+        newdir = BzrDir.open(repos_url+"/trunk")
+        newbranch = newdir.import_branch(bzrwt.branch)
+        newtree = newbranch.repository.revision_tree(revid)
+        bzrwt.lock_read()
+        self.assertEquals(bzrwt.inventory.root.file_id,
+                          newtree.inventory.root.file_id)
+        bzrwt.unlock()
+        self.assertEquals(revid, newbranch.last_revision())
+        self.assertEquals([revid], newbranch.revision_history())
+
+    def test_repeat(self):
+        repos_url = self.make_client("a", "dc")
+        bzrwt = BzrDir.create_standalone_workingtree("c", 
+            format=format.get_rich_root_format())
+        self.build_tree({'c/test': "Tour"})
+        bzrwt.add("test")
+        revid = bzrwt.commit("Do a commit")
+        newdir = BzrDir.open(repos_url+"/trunk")
+        newbranch = newdir.import_branch(bzrwt.branch)
+        self.assertEquals(revid, newbranch.last_revision())
+        self.assertEquals([revid], newbranch.revision_history())
+        self.build_tree({'c/test': "Tour de France"})
+        bzrwt.commit("Do a commit")
+        newdir = BzrDir.open(repos_url+"/trunk")
+        self.assertRaises(AlreadyBranchError, newdir.import_branch, 
+                          bzrwt.branch)
+
+    def test_multiple(self):
+        repos_url = self.make_client("a", "dc")
+        bzrwt = BzrDir.create_standalone_workingtree("c", 
+            format=format.get_rich_root_format())
+        self.build_tree({'c/test': "Tour"})
+        bzrwt.add("test")
+        revid1 = bzrwt.commit("Do a commit")
+        self.build_tree({'c/test': "Tour de France"})
+        revid2 = bzrwt.commit("Do a commit")
+        newdir = BzrDir.open(repos_url+"/trunk")
+        newbranch = newdir.import_branch(bzrwt.branch)
+        self.assertEquals(revid2, newbranch.last_revision())
+        self.assertEquals([revid1, revid2], newbranch.revision_history())
+
+    def test_multiple_part_exists(self):
+        repos_url = self.make_client("a", "dc")
+        self.build_tree({'dc/trunk/myfile': "data", 'dc/branches': None})
+        self.client_add('dc/trunk')
+        self.client_add('dc/branches')
+        self.client_commit("dc", "Message")
+        svnrepos = Repository.open(repos_url)
+        os.mkdir("c")
+        bzrdir = BzrDir.open(repos_url+"/trunk").sprout("c")
+        bzrwt = bzrdir.open_workingtree()
+        self.build_tree({'c/myfile': "Tour"})
+        revid1 = bzrwt.commit("Do a commit")
+        self.build_tree({'c/myfile': "Tour de France"})
+        revid2 = bzrwt.commit("Do a commit")
+        newdir = BzrDir.open(repos_url+"/branches/mybranch")
+        newbranch = newdir.import_branch(bzrwt.branch)
+        self.assertEquals(revid2, newbranch.last_revision())
+        self.assertEquals([
+            svnrepos.generate_revision_id(1, "trunk", "trunk0") 
+            , revid1, revid2], newbranch.revision_history())
+
+    def test_complex_rename(self):
+        repos_url = self.make_client("a", "dc")
+        bzrwt = BzrDir.create_standalone_workingtree("c", 
+            format=format.get_rich_root_format())
+        self.build_tree({'c/registry/generic.c': "Tour"})
+        bzrwt.add("registry")
+        bzrwt.add("registry/generic.c")
+        revid1 = bzrwt.commit("Add initial directory + file")
+        bzrwt.rename_one("registry", "registry.moved")
+        os.unlink("c/registry.moved/generic.c")
+        bzrwt.remove("registry.moved/generic.c")
+        self.build_tree({'c/registry/generic.c': "bla"})
+        bzrwt.add("registry")
+        bzrwt.add("registry/generic.c")
+        revid2 = bzrwt.commit("Do some funky things")
+        newdir = BzrDir.open(repos_url+"/trunk")
+        newbranch = newdir.import_branch(bzrwt.branch)
+        self.assertEquals(revid2, newbranch.last_revision())
+        self.assertEquals([revid1, revid2], newbranch.revision_history())
+        tree = newbranch.repository.revision_tree(revid2)
+        mutter("inventory: %r" % tree.inventory.entries())
+        delta = tree.changes_from(bzrwt)
+        self.assertFalse(delta.has_changed())
+        self.assertTrue(tree.inventory.has_filename("registry"))
+        self.assertTrue(tree.inventory.has_filename("registry.moved"))
+        self.assertTrue(tree.inventory.has_filename("registry/generic.c"))
+        self.assertFalse(tree.inventory.has_filename("registry.moved/generic.c"))
+        os.mkdir("n")
+        BzrDir.open(repos_url+"/trunk").sprout("n")
+    

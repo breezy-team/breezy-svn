@@ -23,6 +23,7 @@ from svn.core import SubversionException, Pool
 import svn.core
 
 class BranchPropertyList:
+    """Simple class that retrieves file properties set on branches."""
     def __init__(self, log, cachedb):
         self.log = log
         self.cachedb = cachedb
@@ -36,6 +37,12 @@ class BranchPropertyList:
         self.pool = Pool()
 
     def _get_dir_props(self, path, revnum):
+        """Obtain all the directory properties set on a path/revnum pair.
+
+        :param path: Subversion path
+        :param revnum: Subversion revision number
+        :return: Dictionary with properties
+        """
         assert isinstance(path, str)
         path = path.lstrip("/")
 
@@ -50,6 +57,14 @@ class BranchPropertyList:
         return props
 
     def get_properties(self, path, origrevnum):
+        """Obtain the file properties set on a path/revnum pair.
+
+        Will use the cache.
+
+        :param path: Subversion path.
+        :param origrevnum: Subversion revision number.
+        :return: Dictionary with properties
+        """
         assert path is not None
         assert isinstance(path, str)
         assert isinstance(origrevnum, int) and origrevnum >= 0
@@ -75,12 +90,39 @@ class BranchPropertyList:
         return proplist
 
     def get_property(self, path, revnum, name, default=None):
+        """Get the contents of a Subversion file property.
+
+        Will use the cache.
+
+        :param path: Subversion path.
+        :param revnum: Subversion revision number.
+        :param default: Default value to return if property wasn't found.
+        :return: Contents of property or default if property didn't exist.
+        """
         assert isinstance(revnum, int)
         assert isinstance(path, str)
         props = self.get_properties(path, revnum)
         if props.has_key(name):
             return props[name]
         return default
+
+    def touches_property(self, path, revnum, name):
+        """Check whether a property was modified in a revision."""
+        assert isinstance(path, str)
+        assert isinstance(revnum, int)
+        assert isinstance(name, str)
+        # If the path this property is set on didn't change, then 
+        # the property can't have changed.
+        if not self.log.touches_path(path, revnum):
+            return ""
+
+        current = self.get_property(path, revnum, name, None)
+        (prev_path, prev_revnum) = self.log.get_previous(path, revnum)
+        if prev_path is None and prev_revnum == -1:
+            return (current is not None)
+        previous = self.get_property(prev_path.encode("utf-8"), 
+                                     prev_revnum, name, None)
+        return (previous != current)
 
     def get_property_diff(self, path, revnum, name):
         """Returns the new lines that were added to a particular property."""
@@ -98,6 +140,6 @@ class BranchPropertyList:
             previous = self.get_property(prev_path.encode("utf-8"), 
                                          prev_revnum, name, "")
         if len(previous) > len(current) or current[0:len(previous)] != previous:
-            mutter('original part changed!')
+            mutter('original part changed for %r between %s:%d -> %s:%d' % (name, prev_path, prev_revnum, path, revnum))
             return ""
         return current[len(previous):] 

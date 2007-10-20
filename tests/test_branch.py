@@ -49,7 +49,7 @@ class WorkingSubversionBranch(TestCaseWithSubversionRepository):
         self.client_add("dc/trunk")
         self.client_commit("dc", "Add branch")
         branch = Branch.open(repos_url+"/trunk")
-        self.assertEqual("/trunk", branch.get_branch_path())
+        self.assertEqual("trunk", branch.get_branch_path())
 
     def test_open_nonexistant(self):
         repos_url = self.make_client("a", "dc")
@@ -91,6 +91,7 @@ class WorkingSubversionBranch(TestCaseWithSubversionRepository):
         self.build_tree({'dc/foo': "data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message")
+        self.client_update("dc")
         
         bzrdir = BzrDir.open("svn+"+repos_url)
         branch = bzrdir.open_branch()
@@ -112,19 +113,6 @@ class WorkingSubversionBranch(TestCaseWithSubversionRepository):
         repos_url = self.make_client('a', 'dc')
         branch = Branch.open("svn+"+repos_url)
         self.assertRaises(NotImplementedError, branch.set_revision_history, [])
-
-    def test_get_root_id_empty(self):
-        repos_url = self.make_client('a', 'dc')
-        branch = Branch.open("svn+"+repos_url)
-        self.assertEqual(generate_svn_file_id(branch.repository.uuid, 0, "", ""), branch.get_root_id())
-
-    def test_get_root_id_trunk(self):
-        repos_url = self.make_client('a', 'dc')
-        self.build_tree({'dc/trunk': None})
-        self.client_add("dc/trunk")
-        self.client_commit("dc", "msg")
-        branch = Branch.open("svn+"+repos_url+"/trunk")
-        self.assertEqual(generate_svn_file_id(branch.repository.uuid, 1, "trunk", ""), branch.get_root_id())
 
     def test_break_lock(self):
         repos_url = self.make_client('a', 'dc')
@@ -173,6 +161,7 @@ class WorkingSubversionBranch(TestCaseWithSubversionRepository):
         self.client_set_prop("dc", SVN_PROP_BZR_REVISION_ID+"none", 
                 "42 mycommit\n")
         self.client_commit("dc", "My Message")
+        self.client_update("dc")
         
         branch = Branch.open("svn+"+repos_url)
         repos = Repository.open("svn+"+repos_url)
@@ -210,7 +199,7 @@ class WorkingSubversionBranch(TestCaseWithSubversionRepository):
         repos_url = self.make_client('a', 'dc')
         self.build_tree({'dc/foo': "data"})
         self.client_add("dc/foo")
-        self.client_set_prop("dc", "bzr:revision-id-v%d:none" % MAPPING_VERSION, 
+        self.client_set_prop("dc", "bzr:revision-id:v%d-none" % MAPPING_VERSION, 
                             "2 myrevid\n")
         self.client_commit("dc", "My Message")
         branch = Branch.open(repos_url)
@@ -220,11 +209,11 @@ class WorkingSubversionBranch(TestCaseWithSubversionRepository):
         repos_url = self.make_client('a', 'dc')
         self.build_tree({'dc/foo': "data"})
         self.client_add("dc/foo")
-        self.client_set_prop("dc", "bzr:revision-id-v%d:none" % MAPPING_VERSION, 
+        self.client_set_prop("dc", "bzr:revision-id:v%d-none" % MAPPING_VERSION, 
                             "2 myrevid\n")
         self.client_commit("dc", "My Message")
         self.build_tree({'dc/foo': "someotherdata"})
-        self.client_set_prop("dc", "bzr:revision-id-v%d:none" % MAPPING_VERSION, 
+        self.client_set_prop("dc", "bzr:revision-id:v%d-none" % MAPPING_VERSION, 
                             "2 myrevid\n3 mysecondrevid\n")
         self.client_commit("dc", "My Message")
         branch = Branch.open(repos_url)
@@ -503,7 +492,9 @@ foohosts""")
                 generate_svn_revision_id(uuid, 7, "branches/foobranch", 
                 "trunk0"))
 
-        weave = tree.get_weave(tree.inventory.path2id("hosts"))
+        weave = newbranch.repository.weave_store.get_weave(
+            tree.inventory.path2id("hosts"),
+            newbranch.repository.get_transaction())
         self.assertEqual([
             generate_svn_revision_id(uuid, 6, "branches/foobranch", "trunk0"),
             generate_svn_revision_id(uuid, 7, "branches/foobranch", "trunk0")],
@@ -548,7 +539,9 @@ foohosts""")
         tree = newbranch.repository.revision_tree(
              generate_svn_revision_id(uuid, 6, "branches/foobranch", "trunk0"))
 
-        weave = tree.get_weave(tree.inventory.path2id("hosts"))
+        weave = newbranch.repository.weave_store.get_weave(
+                tree.inventory.path2id("hosts"), 
+                newbranch.repository.get_transaction())
         self.assertEqual([
             generate_svn_revision_id(uuid, 1, "trunk", "trunk0"),
             generate_svn_revision_id(uuid, 2, "trunk", "trunk0"),
@@ -692,7 +685,7 @@ foohosts""")
 
         self.build_tree({'sc/foo/bla': "data"})
         self.client_add("sc/foo")
-        self.client_set_prop("sc", "bzr:merge", "some-ghost\n")
+        self.client_set_prop("sc", "bzr:ancestry:v3-none", "some-ghost\n")
         self.client_commit("sc", "foo")
 
         olddir = self.open_checkout_bzrdir("sc")

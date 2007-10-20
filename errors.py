@@ -16,7 +16,9 @@
 """Subversion-specific errors and conversion of Subversion-specific errors."""
 
 from bzrlib.errors import (BzrError, ConnectionReset, LockError, 
-                           NotBranchError, PermissionDenied, DependencyNotPresent)
+                           NotBranchError, PermissionDenied, 
+                           DependencyNotPresent, NoRepositoryPresent,
+                           UnexpectedEndOfContainerError)
 
 import svn.core
 
@@ -35,7 +37,19 @@ See 'bzr help svn-branching-schemes' for details."""
         self.scheme = scheme
 
 
+class NoSvnRepositoryPresent(NoRepositoryPresent):
+
+    def __init__(self, url):
+        BzrError.__init__(self)
+        self.path = url
+
+
 def convert_error(err):
+    """Convert a Subversion exception to the matching BzrError.
+
+    :param err: SubversionException.
+    :return: BzrError instance if it could be converted, err otherwise
+    """
     (msg, num) = err.args
 
     if num == svn.core.SVN_ERR_RA_SVN_CONNECTION_CLOSED:
@@ -44,6 +58,8 @@ def convert_error(err):
         return LockError(message=msg)
     elif num == svn.core.SVN_ERR_RA_NOT_AUTHORIZED:
         return PermissionDenied('.', msg)
+    elif num == svn.core.SVN_ERR_INCOMPLETE_DATA:
+        return UnexpectedEndOfContainerError()
     else:
         return err
 
