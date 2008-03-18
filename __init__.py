@@ -21,10 +21,12 @@ import bzrlib
 from bzrlib.bzrdir import BzrDirFormat, format_registry
 from bzrlib.commands import Command, register_command, display_command, Option
 from bzrlib.help_topics import topic_registry
+from bzrlib.revisionspec import SPEC_TYPES
 from bzrlib.trace import warning
 from bzrlib.transport import register_lazy_transport, register_transport_proto
 
 import format
+import revspec
 
 # versions ending in 'exp' mean experimental mappings
 # versions ending in 'dev' mean development version
@@ -37,7 +39,7 @@ else:
     version_string = '%d.%d.%d%s%d' % version_info
 __version__ = version_string
 
-COMPATIBLE_BZR_VERSIONS = [(0, 92)]
+COMPATIBLE_BZR_VERSIONS = [(0, 93), (1, 0), (1, 1), (1, 2)]
 
 def check_bzrlib_version(desired):
     """Check that bzrlib is compatible.
@@ -61,11 +63,6 @@ def check_bzrlib_version(desired):
                 % (bzrlib.__version__))
         if not (bzrlib_version[0], bzrlib_version[1]-1) in desired:
             raise BzrError('Version mismatch')
-
-def check_bzrsvn_version():
-    """Warn about use of experimental mappings."""
-    if version_info[3] == "exp":
-        warning('version of bzr-svn is experimental; output may change between revisions')
 
 def check_subversion_version():
     """Check that Subversion is compatible.
@@ -110,19 +107,26 @@ format_registry.register("subversion", format.SvnRemoteFormat,
                          native=False)
 format_registry.register("subversion-wc", format.SvnWorkingTreeDirFormat, 
                          "Subversion working copy. ", 
-                         native=False)
+                         native=False, hidden=True)
+SPEC_TYPES.append(revspec.RevisionSpec_svn)
 
 versions_checked = False
 def lazy_check_versions():
+    """Check whether all dependencies have the right versions.
+    
+    :note: Only checks once, caches the result."""
     global versions_checked
     if versions_checked:
         return
     versions_checked = True
     check_bzrlib_version(COMPATIBLE_BZR_VERSIONS)
-    check_bzrsvn_version()
 
 optimizers_registered = False
 def lazy_register_optimizers():
+    """Register optimizers for fetching between Subversion and Bazaar 
+    repositories.
+    
+    :note: Only registers on the first call."""
     global optimizers_registered
     if optimizers_registered:
         return
@@ -133,8 +137,14 @@ def lazy_register_optimizers():
     InterRepository.register_optimiser(fetch.InterFromSvnRepository)
     InterRepository.register_optimiser(commit.InterToSvnRepository)
 
+
 def get_scheme(schemename):
-    """Parse scheme identifier and return a branching scheme."""
+    """Parse scheme identifier and return a branching scheme.
+    
+    :param schemename: Name of the scheme to retrieve.
+    """
+    if isinstance(schemename, unicode):
+        schemename = schemename.encode("ascii")
     from scheme import BranchingScheme
     from bzrlib.errors import BzrCommandError
     
@@ -229,6 +239,7 @@ class cmd_svn_upgrade(Command):
         from bzrlib.branch import Branch
         from bzrlib.errors import NoWorkingTree, BzrCommandError
         from bzrlib.repository import Repository
+        from bzrlib.trace import info
         from bzrlib.workingtree import WorkingTree
         try:
             wt_to = WorkingTree.open(".")
@@ -252,11 +263,14 @@ class cmd_svn_upgrade(Command):
             from_repository = Repository.open(from_repository)
 
         if wt_to is not None:
-            upgrade_workingtree(wt_to, from_repository, allow_changes=True,
-                                verbose=verbose)
+            renames = upgrade_workingtree(wt_to, from_repository, 
+                                          allow_changes=True, verbose=verbose)
         else:
-            upgrade_branch(branch_to, from_repository, allow_changes=True, 
-                           verbose=verbose)
+            renames = upgrade_branch(branch_to, from_repository, 
+                                     allow_changes=True, verbose=verbose)
+
+        if renames == {}:
+            info("Nothing to do.")
 
         if wt_to is not None:
             wt_to.set_last_revision(branch_to.last_revision())
@@ -273,15 +287,23 @@ class cmd_svn_push(Command):
     functionality is included in "bzr push".
     """
     takes_args = ['location?']
-    takes_options = ['revision', 'remember']
+    takes_options = ['revision', 'remember', Option('directory',
+            help='Branch to push from, '
+                 'rather than the one containing the working directory.',
+            short_name='d',
+            type=unicode,
+            )]
 
-    def run(self, location=None, revision=None, remember=False):
+    def run(self, location=None, revision=None, remember=False, 
+            directory=None):
         from bzrlib.bzrdir import BzrDir
         from bzrlib.branch import Branch
         from bzrlib.errors import NotBranchError, BzrCommandError
         from bzrlib import urlutils
 
-        source_branch = Branch.open_containing(".")[0]
+        if directory is None:
+            directory = "."
+        source_branch = Branch.open_containing(directory)[0]
         stored_loc = source_branch.get_push_location()
         if location is None:
             if stored_loc is None:
@@ -316,7 +338,7 @@ register_command(cmd_svn_push)
 class cmd_svn_branching_scheme(Command):
     """Show or change the branching scheme for a Subversion repository.
 
-    See 'bzr help svn-branching-scheme' for details.
+    See 'bzr help svn-branching-schemes' for details.
     """
     takes_args = ['location?']
     takes_options = [
@@ -326,6 +348,7 @@ class cmd_svn_branching_scheme(Command):
         ]
 
     def run(self, location=".", set=False, repository_wide=False):
+        from bzrlib.bzrdir import BzrDir
         from bzrlib.errors import BzrCommandError
         from bzrlib.msgeditor import edit_commit_message
         from bzrlib.repository import Repository
@@ -336,7 +359,8 @@ class cmd_svn_branching_scheme(Command):
             if scheme is None:
                 return ""
             return "".join(map(lambda x: x+"\n", scheme.to_lines()))
-        repos = Repository.open(location)
+        dir = BzrDir.open_containing(location)[0]
+        repos = dir.find_repository()
         if not isinstance(repos, SvnRepository):
             raise BzrCommandError("Not a Subversion repository: %s" % location)
         if repository_wide:
@@ -351,7 +375,7 @@ class cmd_svn_branching_scheme(Command):
             if repository_wide:
                 repos.set_property_scheme(scheme)
             else:
-                repos.set_branching_scheme(scheme)
+                repos.set_branching_scheme(scheme, mandatory=True)
         elif scheme is not None:
             info(scheme_str(scheme))
 
@@ -359,7 +383,26 @@ class cmd_svn_branching_scheme(Command):
 register_command(cmd_svn_branching_scheme)
 
 
+class cmd_svn_set_revprops(Command):
+    """Migrate Bazaar metadata to Subversion revision properties.
+
+    This requires that you have permission to change the 
+    revision properties on the repository.
+
+    To change these permissions, edit the hooks/pre-revprop-change 
+    file in the Subversion repository.
+    """
+    takes_args = ['location']
+
+    def run(self, location="."):
+        raise NotImplementedError(self.run)
+
+
+register_command(cmd_svn_set_revprops)
+
+
 def test_suite():
+    """Returns the testsuite for bzr-svn."""
     from unittest import TestSuite
     import tests
     suite = TestSuite()

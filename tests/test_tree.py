@@ -16,6 +16,7 @@
 """Basis and revision tree tests."""
 
 from bzrlib.inventory import Inventory, TreeReference
+from bzrlib.osutils import has_symlinks
 from bzrlib.repository import Repository
 from bzrlib.tests import TestCase
 from bzrlib.workingtree import WorkingTree
@@ -26,6 +27,7 @@ import os
 from revids import generate_svn_revision_id
 from tree import (SvnBasisTree, parse_externals_description, 
                   inventory_add_external)
+import sys
 from tests import TestCaseWithSubversionRepository
 
 class TestBasisTree(TestCaseWithSubversionRepository):
@@ -49,6 +51,8 @@ class TestBasisTree(TestCaseWithSubversionRepository):
         self.assertFalse(tree.inventory[tree.inventory.path2id("file")].executable)
 
     def test_symlink(self):
+        if not has_symlinks():
+            return
         self.make_client("d", "dc")
         os.symlink("target", "dc/file")
         self.build_tree({"dc/file": "x"})
@@ -76,6 +80,8 @@ class TestBasisTree(TestCaseWithSubversionRepository):
                          tree.inventory[tree.inventory.path2id("bla")])
 
     def test_symlink_next(self):
+        if not has_symlinks():
+            return
         self.make_client("d", "dc")
         os.symlink("target", "dc/file")
         self.build_tree({"dc/file": "x", "dc/bla": "p"})
@@ -92,6 +98,8 @@ class TestBasisTree(TestCaseWithSubversionRepository):
                          tree.inventory[tree.inventory.path2id("file")].symlink_target)
 
     def test_executable_link(self):
+        if not has_symlinks():
+            return
         self.make_client("d", "dc")
         os.symlink("target", "dc/file")
         self.build_tree({"dc/file": "x"})

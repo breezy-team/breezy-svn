@@ -127,19 +127,16 @@ class SvnRevisionTree(RevisionTree):
         self._repository = repository
         self._revision_id = revision_id
         pool = Pool()
-        (self.branch_path, self.revnum, 
-            scheme) = repository.lookup_revision_id(revision_id)
+        (self.branch_path, self.revnum, mapping) = repository.lookup_revision_id(revision_id)
         self._inventory = Inventory()
         self.id_map = repository.get_fileid_map(self.revnum, self.branch_path, 
-                                                scheme)
-        self.editor = TreeBuildEditor(
-                urlutils.join(repository.base, self.branch_path), self, pool)
+                                                mapping)
+        editor = TreeBuildEditor(self, pool)
         self.file_data = {}
-        editor, baton = svn.delta.make_editor(self.editor, pool)
         root_repos = repository.transport.get_svn_repos_root()
         reporter = repository.transport.do_switch(
                 self.revnum, True, 
-                urlutils.join(root_repos, self.branch_path), editor, baton, pool)
+                urlutils.join(root_repos, self.branch_path), editor, pool)
         reporter.set_path("", 0, True, None, pool)
         reporter.finish_report(pool)
         pool.destroy()
@@ -179,7 +176,7 @@ class TreeBuildEditor(svn.delta.Editor):
         return file_id
 
     def change_dir_prop(self, id, name, value, pool):
-        from repository import (SVN_PROP_BZR_ANCESTRY, 
+        from mapping import (SVN_PROP_BZR_ANCESTRY, 
                         SVN_PROP_BZR_PREFIX, SVN_PROP_BZR_REVISION_INFO, 
                         SVN_PROP_BZR_FILEIDS, SVN_PROP_BZR_REVISION_ID,
                         SVN_PROP_BZR_BRANCHING_SCHEME, SVN_PROP_BZR_MERGE)
@@ -218,7 +215,7 @@ class TreeBuildEditor(svn.delta.Editor):
             mutter('unsupported dir property %r' % name)
 
     def change_file_prop(self, id, name, value, pool):
-        from repository import SVN_PROP_BZR_PREFIX
+        from mapping import SVN_PROP_BZR_PREFIX
 
         if name == svn.core.SVN_PROP_EXECUTABLE:
             self.is_executable = (value != None)
@@ -309,7 +306,7 @@ class SvnBasisTree(RevisionTree):
         self.id_map = workingtree.branch.repository.get_fileid_map(
                 workingtree.base_revnum, 
                 workingtree.branch.get_branch_path(workingtree.base_revnum), 
-                workingtree.branch.scheme)
+                workingtree.branch.mapping)
         self._inventory = Inventory(root_id=None)
         self._repository = workingtree.branch.repository
 
@@ -338,7 +335,7 @@ class SvnBasisTree(RevisionTree):
             if entry.schedule in (svn.wc.schedule_normal, 
                                   svn.wc.schedule_delete, 
                                   svn.wc.schedule_replace):
-                return self.id_map[workingtree.branch.scheme.unprefix(relpath)[1]]
+                return self.id_map[workingtree.branch.unprefix(relpath)]
             return (None, None)
 
         def add_dir_to_inv(relpath, wc, parent_id):

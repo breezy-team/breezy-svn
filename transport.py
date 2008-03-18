@@ -30,18 +30,39 @@ from errors import convert_svn_error, NoSvnRepositoryPresent
 
 svn_config = svn.core.svn_config_get_config(None)
 
+def get_client_string():
+    """Return a string that can be send as part of the User Agent string."""
+    return "bzr%s+bzr-svn%s" % (bzrlib.__version__, bzrlib.plugins.svn.__version__)
+
 
 def _create_auth_baton(pool):
     """Create a Subversion authentication baton. """
     # Give the client context baton a suite of authentication
     # providers.h
-    providers = [
+    providers = []
+
+    if svn.core.SVN_VER_MAJOR == 1 and svn.core.SVN_VER_MINOR >= 5:
+        import auth
+        providers += auth.SubversionAuthenticationConfig().get_svn_auth_providers()
+        providers += [auth.get_ssl_client_cert_pw_provider(1)]
+
+    providers += [
         svn.client.get_simple_provider(pool),
         svn.client.get_username_provider(pool),
         svn.client.get_ssl_client_cert_file_provider(pool),
         svn.client.get_ssl_client_cert_pw_file_provider(pool),
         svn.client.get_ssl_server_trust_file_provider(pool),
         ]
+
+    if hasattr(svn.client, 'get_windows_simple_provider'):
+        providers.append(svn.client.get_windows_simple_provider(pool))
+
+    if hasattr(svn.client, 'get_keychain_simple_provider'):
+        providers.append(svn.client.get_keychain_simple_provider(pool))
+
+    if hasattr(svn.client, 'get_windows_ssl_server_trust_provider'):
+        providers.append(svn.client.get_windows_ssl_server_trust_provider(pool))
+
     return svn.core.svn_auth_open(providers, pool)
 
 
@@ -85,9 +106,10 @@ def needs_busy(unbound):
     """
     def convert(self, *args, **kwargs):
         self._mark_busy()
-        ret = unbound(self, *args, **kwargs)
-        self._unmark_busy()
-        return ret
+        try:
+            return unbound(self, *args, **kwargs)
+        finally:
+            self._unmark_busy()
 
     convert.__doc__ = unbound.__doc__
     convert.__name__ = unbound.__name__
@@ -307,20 +329,53 @@ class SvnRaTransport(Transport):
         self.mutter("svn get-latest-revnum")
         return svn.ra.get_latest_revnum(self._ra)
 
+    def _make_editor(self, editor, pool=None):
+        edit, edit_baton = svn.delta.make_editor(editor, pool)
+        self._edit = edit
+        self._edit_baton = edit_baton
+        return self._edit, self._edit_baton
+
     @convert_svn_error
-    def do_switch(self, switch_rev, recurse, switch_url, *args, **kwargs):
+    def do_switch(self, switch_rev, recurse, switch_url, editor, pool=None):
         self._open_real_transport()
         self.mutter('svn switch -r %d -> %r' % (switch_rev, switch_url))
         self._mark_busy()
+        edit, edit_baton = self._make_editor(editor, pool)
         return self.Reporter(self, svn.ra.do_switch(self._ra, switch_rev, "", 
-                             recurse, switch_url, *args, **kwargs))
+                             recurse, switch_url, edit, edit_baton, pool))
 
     @convert_svn_error
     @needs_busy
-    def get_log(self, path, from_revnum, to_revnum, *args, **kwargs):
+    def get_log(self, path, from_revnum, to_revnum, limit, discover_changed_paths, 
+                strict_node_history, revprops, rcvr, pool=None):
         self.mutter('svn log %r:%r %r' % (from_revnum, to_revnum, path))
+        if hasattr(svn.ra, 'get_log2'):
+            return svn.ra.get_log2(self._ra, [self._request_path(path)], 
+                           from_revnum, to_revnum, limit, discover_changed_paths,
+                           strict_node_history, False, 
+                           revprops, rcvr, pool)
+
+        class LogEntry:
+            def __init__(self, changed_paths, rev, author, date, message):
+                self.changed_paths = changed_paths
+                self.revprops = {}
+                if svn.core.SVN_PROP_REVISION_AUTHOR in revprops:
+                    self.revprops[svn.core.SVN_PROP_REVISION_AUTHOR] = author
+                if svn.core.SVN_PROP_REVISION_LOG in revprops:
+                    self.revprops[svn.core.SVN_PROP_REVISION_LOG] = message
+                if svn.core.SVN_PROP_REVISION_DATE in revprops:
+                    self.revprops[svn.core.SVN_PROP_REVISION_DATE] = date
+                # FIXME: Check other revprops
+                # FIXME: Handle revprops is None
+                self.revision = rev
+                self.has_children = None
+
+        def rcvr_convert(orig_paths, rev, author, date, message, pool):
+            rcvr(LogEntry(orig_paths, rev, author, date, message), pool)
+
         return svn.ra.get_log(self._ra, [self._request_path(path)], 
-                              from_revnum, to_revnum, *args, **kwargs)
+                              from_revnum, to_revnum, limit, discover_changed_paths, 
+                              strict_node_history, rcvr_convert, pool)
 
     def _open_real_transport(self):
         if self._backing_url != self.svn_url:
@@ -333,6 +388,11 @@ class SvnRaTransport(Transport):
             self.base = self.get_repos_root()
         else:
             self.reparent(self.get_repos_root())
+
+    @convert_svn_error
+    def change_rev_prop(self, revnum, name, value, pool=None):
+        self.mutter('svn revprop -r%d --set %s=%s' % (revnum, name, value))
+        svn.ra.change_rev_prop(self._ra, revnum, name, value)
 
     @convert_svn_error
     @needs_busy
@@ -369,10 +429,10 @@ class SvnRaTransport(Transport):
 
     def _request_path(self, relpath):
         if self._backing_url == self.svn_url:
-            return relpath
+            return relpath.strip("/")
         newrelpath = urlutils.join(
                 urlutils.relative_url(self._backing_url+"/", self.svn_url+"/"),
-                relpath).rstrip("/")
+                relpath).strip("/")
         self.mutter('request path %r -> %r' % (relpath, newrelpath))
         return newrelpath
 
@@ -443,28 +503,51 @@ class SvnRaTransport(Transport):
             raise
 
     @convert_svn_error
-    def do_update(self, revnum, *args, **kwargs):
+    def replay(self, revision, low_water_mark, send_deltas, editor, pool=None):
+        self._open_real_transport()
+        self.mutter('svn replay -r%r:%r' % (low_water_mark, revision))
+        self._mark_busy()
+        edit, edit_baton = self._make_editor(editor, pool)
+        svn.ra.replay(self._ra, revision, low_water_mark, send_deltas,
+                      edit, edit_baton, pool)
+
+    @convert_svn_error
+    def do_update(self, revnum, recurse, editor, pool=None):
         self._open_real_transport()
         self.mutter('svn update -r %r' % revnum)
         self._mark_busy()
+        edit, edit_baton = self._make_editor(editor, pool)
         return self.Reporter(self, svn.ra.do_update(self._ra, revnum, "", 
-                             *args, **kwargs))
+                             recurse, edit, edit_baton, pool))
 
-    def supports_custom_revprops(self):
-        return has_attr(svn.ra, 'get_commit_editor3')
+    @convert_svn_error
+    def has_capability(self, cap):
+        return svn.ra.has_capability(self._ra, cap)
+
+    @convert_svn_error
+    def revprop_list(self, revnum, pool=None):
+        self.mutter('svn revprop-list -r %r' % revnum)
+        return svn.ra.rev_proplist(self._ra, revnum, pool)
 
     @convert_svn_error
     def get_commit_editor(self, revprops, done_cb, lock_token, keep_locks):
         self._open_real_transport()
         self._mark_busy()
-        if revprops.keys() == [svn.core.SVN_PROP_REVISION_LOG]:
-            editor = svn.ra.get_commit_editor(self._ra, 
-                        revprops[svn.core.SVN_PROP_REVISION_LOG],
-                        done_cb, lock_token, keep_locks)
-        else:
-            editor = svn.ra.get_commit_editor3(self._ra, revprops, done_cb, 
-                                              lock_token, keep_locks)
-        return Editor(self, editor)
+        try:
+            if hasattr(svn.ra, 'get_commit_editor3'):
+                editor = svn.ra.get_commit_editor3(self._ra, revprops, done_cb, 
+                                                  lock_token, keep_locks)
+            elif revprops.keys() != [svn.core.SVN_PROP_REVISION_LOG]:
+                raise NotImplementedError()
+            else:
+                editor = svn.ra.get_commit_editor2(self._ra, 
+                            revprops[svn.core.SVN_PROP_REVISION_LOG],
+                            done_cb, lock_token, keep_locks)
+
+            return Editor(self, editor)
+        except:
+            self._unmark_busy()
+            raise
 
     def listable(self):
         """See Transport.listable().

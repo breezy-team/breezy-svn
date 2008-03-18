@@ -20,11 +20,12 @@ from bzrlib import urlutils
 from bzrlib.branch import PullResult
 from bzrlib.bzrdir import BzrDirFormat, BzrDir
 from bzrlib.errors import (InvalidRevisionId, NotBranchError, NoSuchFile,
-                           NoRepositoryPresent, BzrError, UninitializableFormat)
+                           NoRepositoryPresent, BzrError, UninitializableFormat,
+                           OutOfDateTree)
 from bzrlib.inventory import Inventory, InventoryFile, InventoryLink
 from bzrlib.lockable_files import TransportLock, LockableFiles
 from bzrlib.lockdir import LockDir
-from bzrlib.osutils import file_kind, fingerprint_file
+from bzrlib.osutils import file_kind, fingerprint_file, supports_executable
 from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import mutter
 from bzrlib.tree import RevisionTree
@@ -32,14 +33,16 @@ from bzrlib.transport.local import LocalTransport
 from bzrlib.workingtree import WorkingTree, WorkingTreeFormat
 
 from branch import SvnBranch
+from commit import _revision_id_to_svk_feature
 from convert import SvnConverter
 from errors import LocalCommitsUnsupported, NoSvnRepositoryPresent
+from mapping import (SVN_PROP_BZR_ANCESTRY, SVN_PROP_BZR_FILEIDS, 
+                     SVN_PROP_BZR_REVISION_ID, SVN_PROP_BZR_REVISION_INFO,
+                     generate_revision_metadata)
 from remote import SvnRemoteAccess
-from repository import (SvnRepository, SVN_PROP_BZR_ANCESTRY,
-                        SVN_PROP_SVK_MERGE, SVN_PROP_BZR_FILEIDS, 
-                        SVN_PROP_BZR_REVISION_ID, SVN_PROP_BZR_REVISION_INFO,
-                        revision_id_to_svk_feature, generate_revision_metadata) 
-from revids import escape_svn_path
+from repository import SvnRepository
+from svk import SVN_PROP_SVK_MERGE, parse_svk_features, serialize_svk_features
+from mapping import escape_svn_path
 from scheme import BranchingScheme
 from transport import (SvnRaTransport, bzr_to_svn_url, create_svn_client,
                        svn_config) 
@@ -98,7 +101,7 @@ class SvnWorkingTree(WorkingTree):
             os.makedirs(os.path.join(self.controldir, 'lock'))
         except OSError:
             pass
-        control_transport = bzrdir.transport.clone(os.path.join(
+        control_transport = bzrdir.transport.clone(urlutils.join(
                                                    svn.wc.get_adm_dir(), 'bzr'))
         self._control_files = LockableFiles(control_transport, 'lock', LockDir)
 
@@ -106,12 +109,12 @@ class SvnWorkingTree(WorkingTree):
         ignores = set([svn.wc.get_adm_dir()])
         ignores.update(svn.wc.get_default_ignores(svn_config))
 
-        def dir_add(wc, prefix):
+        def dir_add(wc, prefix, patprefix):
             ignorestr = svn.wc.prop_get(svn.core.SVN_PROP_IGNORE, 
                                         self.abspath(prefix).rstrip("/"), wc)
             if ignorestr is not None:
                 for pat in ignorestr.splitlines():
-                    ignores.add("./"+os.path.join(prefix, pat))
+                    ignores.add(urlutils.joinpath(patprefix, pat))
 
             entries = svn.wc.entries_read(wc, False)
             for entry in entries:
@@ -126,13 +129,13 @@ class SvnWorkingTree(WorkingTree):
                 subwc = svn.wc.adm_open3(wc, self.abspath(subprefix), False, 
                                          0, None)
                 try:
-                    dir_add(subwc, subprefix)
+                    dir_add(subwc, subprefix, urlutils.joinpath(patprefix, entry))
                 finally:
                     svn.wc.adm_close(subwc)
 
         wc = self._get_wc()
         try:
-            dir_add(wc, "")
+            dir_add(wc, "", ".")
         finally:
             svn.wc.adm_close(wc)
 
@@ -221,13 +224,13 @@ class SvnWorkingTree(WorkingTree):
         """Generate a bzr file id from a Subversion file name. 
         
         :param revnum: Revision number.
-        :param path: Absolute path.
+        :param path: Absolute path within the Subversion repository.
         :return: Tuple with file id and revision id.
         """
         assert isinstance(revnum, int) and revnum >= 0
-        assert isinstance(path, basestring)
+        assert isinstance(path, str)
 
-        (_, rp) = self.branch.scheme.unprefix(path)
+        rp = self.branch.unprefix(path)
         entry = self.base_tree.id_map[rp]
         assert entry[0] is not None
         assert isinstance(entry[0], str), "fileid %r for %r is not a string" % (entry[0], path)
@@ -238,6 +241,7 @@ class SvnWorkingTree(WorkingTree):
 
         def add_file_to_inv(relpath, id, revid, parent_id):
             """Add a file to the inventory."""
+            assert isinstance(relpath, unicode)
             if os.path.islink(self.abspath(relpath)):
                 file = InventoryLink(id, os.path.basename(relpath), parent_id)
                 file.revision = revid
@@ -303,6 +307,7 @@ class SvnWorkingTree(WorkingTree):
                 return ("NEW-" + escape_svn_path(entry.url[len(entry.repos):].strip("/")), None)
 
         def add_dir_to_inv(relpath, wc, parent_id):
+            assert isinstance(relpath, unicode)
             entries = svn.wc.entries_read(wc, False)
             entry = entries[""]
             assert parent_id is None or isinstance(parent_id, str), \
@@ -315,7 +320,7 @@ class SvnWorkingTree(WorkingTree):
             assert isinstance(id, str), "%r is not a string" % id
 
             # First handle directory itself
-            inv.add_path(relpath, 'directory', id, parent_id).revision = revid
+            inv.add_path(relpath.decode("utf-8"), 'directory', id, parent_id).revision = revid
             if relpath == "":
                 inv.revision_id = revid
 
@@ -323,7 +328,7 @@ class SvnWorkingTree(WorkingTree):
                 if name == "":
                     continue
 
-                subrelpath = os.path.join(relpath, name)
+                subrelpath = os.path.join(relpath, name.decode("utf-8"))
 
                 entry = entries[name]
                 assert entry
@@ -344,7 +349,7 @@ class SvnWorkingTree(WorkingTree):
 
         rootwc = self._get_wc() 
         try:
-            add_dir_to_inv("", rootwc, None)
+            add_dir_to_inv(u"", rootwc, None)
         finally:
             svn.wc.adm_close(rootwc)
 
@@ -436,7 +441,7 @@ class SvnWorkingTree(WorkingTree):
             extra = ""
         wc = self._get_wc(write_lock=True)
         try:
-            svn.wc.prop_set(SVN_PROP_BZR_REVISION_ID+str(self.branch.scheme), 
+            svn.wc.prop_set(SVN_PROP_BZR_REVISION_ID+str(self.branch.mapping.scheme), 
                              self._get_bzr_revids() + extra,
                              self.basedir, wc)
             svn.wc.prop_set(SVN_PROP_BZR_REVISION_INFO, 
@@ -449,13 +454,18 @@ class SvnWorkingTree(WorkingTree):
             svn.wc.adm_close(wc)
 
         try:
-            commit_info = svn.client.commit3(specific_files, True, False, 
-                                         self.client_ctx)
+            try:
+                commit_info = svn.client.commit3(specific_files, True, False, 
+                                                 self.client_ctx)
+            except SubversionException, (_, num):
+                if num == svn.core.SVN_ERR_FS_TXN_OUT_OF_DATE:
+                    raise OutOfDateTree(self)
+                raise
         except:
             # Reset properties so the next subversion commit won't 
             # accidently set these properties.
             wc = self._get_wc(write_lock=True)
-            svn.wc.prop_set(SVN_PROP_BZR_REVISION_ID+str(self.branch.scheme), 
+            svn.wc.prop_set(SVN_PROP_BZR_REVISION_ID+str(self.branch.mapping.scheme), 
                              self._get_bzr_revids(), self.basedir, wc)
             svn.wc.prop_set(SVN_PROP_BZR_REVISION_INFO, 
                 self.branch.repository.branchprop_list.get_property(
@@ -550,7 +560,7 @@ class SvnWorkingTree(WorkingTree):
         return self.base_tree
 
     def pull(self, source, overwrite=False, stop_revision=None, 
-             delta_reporter=None):
+             delta_reporter=None, possible_transports=None):
         # FIXME: Use delta_reporter
         # FIXME: Use overwrite
         result = PullResult()
@@ -606,12 +616,12 @@ class SvnWorkingTree(WorkingTree):
         return self.branch.repository.branchprop_list.get_property(
                 self.branch.get_branch_path(self.base_revnum), 
                 self.base_revnum, 
-                SVN_PROP_BZR_REVISION_ID+str(self.branch.scheme), "")
+                SVN_PROP_BZR_REVISION_ID+str(self.branch.mapping.scheme), "")
 
     def _get_bzr_merges(self):
         return self.branch.repository.branchprop_list.get_property(
                 self.branch.get_branch_path(self.base_revnum), 
-                self.base_revnum, SVN_PROP_BZR_ANCESTRY+str(self.branch.scheme), "")
+                self.base_revnum, SVN_PROP_BZR_ANCESTRY+str(self.branch.mapping.scheme), "")
 
     def _get_svk_merges(self):
         return self.branch.repository.branchprop_list.get_property(
@@ -628,20 +638,21 @@ class SvnWorkingTree(WorkingTree):
             else:
                 bzr_merge = ""
 
-            svn.wc.prop_set(SVN_PROP_BZR_ANCESTRY+str(self.branch.scheme), 
+            svn.wc.prop_set(SVN_PROP_BZR_ANCESTRY+str(self.branch.mapping.scheme), 
                                  self._get_bzr_merges() + bzr_merge, 
                                  self.basedir, wc)
+            
+            svk_merges = parse_svk_features(self._get_svk_merges())
 
             # Set svk:merge
-            svk_merge = ""
             for merge in merges:
                 try:
-                    svk_merge += revision_id_to_svk_feature(merge) + "\n"
+                    svk_merges.add(_revision_id_to_svk_feature(merge))
                 except InvalidRevisionId:
                     pass
 
             svn.wc.prop_set2(SVN_PROP_SVK_MERGE, 
-                             self._get_svk_merges() + svk_merge, self.basedir, 
+                             serialize_svk_features(svk_merges), self.basedir, 
                              wc, False)
         finally:
             svn.wc.adm_close(wc)
@@ -656,7 +667,7 @@ class SvnWorkingTree(WorkingTree):
         wc = self._get_wc()
         try:
             merged_data = svn.wc.prop_get(
-                SVN_PROP_BZR_ANCESTRY+str(self.branch.scheme), self.basedir, wc)
+                SVN_PROP_BZR_ANCESTRY+str(self.branch.mapping.scheme), self.basedir, wc)
             if merged_data is None:
                 set_merged = []
             else:
@@ -685,6 +696,13 @@ class SvnWorkingTree(WorkingTree):
         finally:
             self.branch.unlock()
 
+    if not supports_executable():
+        def is_executable(self, file_id, path=None):
+            inv = self.basis_tree()._inventory
+            if file_id in inv:
+                return inv[file_id].executable
+            # Default to not executable
+            return False
 
 
 class SvnWorkingTreeFormat(WorkingTreeFormat):
@@ -733,29 +751,34 @@ class SvnCheckout(BzrDir):
         return SvnWorkingTree(self, self.local_path, self.open_branch())
 
     def sprout(self, url, revision_id=None, force_new_repo=False, 
-               recurse='down', possible_transports=None):
+               recurse='down', possible_transports=None, accelerator_tree=None,
+               hardlink=False):
         # FIXME: honor force_new_repo
         # FIXME: Use recurse
         result = get_rich_root_format().initialize(url)
-        repo = self.find_repository()
+        repo = self._find_repository()
         repo.clone(result, revision_id)
         branch = self.open_branch()
         branch.sprout(result, revision_id)
-        result.create_workingtree()
+        result.create_workingtree(hardlink=hardlink)
         return result
 
     def open_repository(self):
         raise NoRepositoryPresent(self)
 
     def find_repository(self):
-        return SvnRepository(self, self.svn_root_transport, self.remote_bzrdir.branch_path)
+        raise NoRepositoryPresent(self)
+
+    def _find_repository(self):
+        return SvnRepository(self, self.svn_root_transport, 
+                             self.remote_bzrdir.branch_path)
 
     def needs_format_conversion(self, format=None):
         if format is None:
             format = BzrDirFormat.get_default_format()
         return not isinstance(self._format, format.__class__)
 
-    def create_workingtree(self, revision_id=None):
+    def create_workingtree(self, revision_id=None, hardlink=None):
         """See BzrDir.create_workingtree().
 
         Not implemented for Subversion because having a .svn directory
@@ -769,7 +792,7 @@ class SvnCheckout(BzrDir):
 
     def open_branch(self, unsupported=True):
         """See BzrDir.open_branch()."""
-        repos = self.find_repository()
+        repos = self._find_repository()
 
         try:
             branch = SvnBranch(self.svn_root_transport.base, repos, 

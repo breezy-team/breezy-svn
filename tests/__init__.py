@@ -17,14 +17,14 @@
 """Tests for the bzr-svn plugin."""
 
 import os
+import sys
 import bzrlib
 from bzrlib import osutils
 from bzrlib.bzrdir import BzrDir
 from bzrlib.tests import TestCaseInTempDir, TestSkipped
 from bzrlib.trace import mutter
+from bzrlib.urlutils import local_path_to_url
 from bzrlib.workingtree import WorkingTree
-
-RENAMES = False
 
 import svn.repos, svn.wc
 from bzrlib.plugins.svn.errors import NoCheckoutSupport
@@ -42,23 +42,25 @@ class TestCaseWithSubversionRepository(TestCaseInTempDir):
     def log_message_func(self, items, pool):
         return self.next_message
 
-    def make_repository(self, relpath):
+    def make_repository(self, relpath, allow_revprop_changes=True):
         """Create a repository.
 
         :return: Handle to the repository.
         """
         abspath = os.path.join(self.test_dir, relpath)
-        repos_url = "file://%s" % abspath
 
         svn.repos.create(abspath, '', '', None, None)
 
-        revprop_hook = os.path.join(abspath, "hooks", "pre-revprop-change")
+        if allow_revprop_changes:
+            if sys.platform == 'win32':
+                revprop_hook = os.path.join(abspath, "hooks", "pre-revprop-change.bat")
+                open(revprop_hook, 'w').write("exit 0\n")
+            else:
+                revprop_hook = os.path.join(abspath, "hooks", "pre-revprop-change")
+                open(revprop_hook, 'w').write("#!/bin/sh\n")
+                os.chmod(revprop_hook, os.stat(revprop_hook).st_mode | 0111)
 
-        open(revprop_hook, 'w').write("#!/bin/sh")
-
-        os.chmod(revprop_hook, os.stat(revprop_hook).st_mode | 0111)
-
-        return repos_url
+        return local_path_to_url(abspath)
 
     def make_remote_bzrdir(self, relpath):
         """Create a repository."""
@@ -172,11 +174,13 @@ class TestCaseWithSubversionRepository(TestCaseInTempDir):
         if revnum is None:
             rev.kind = svn.core.svn_opt_revision_head
         else:
+            assert isinstance(revnum, int)
             rev.kind = svn.core.svn_opt_revision_number
             rev.value.number = revnum
         return rev
 
     def client_log(self, path, start_revnum=None, stop_revnum=None):
+        assert isinstance(path, str)
         ret = {}
         def rcvr(orig_paths, rev, author, date, message, pool):
             ret[rev] = (orig_paths, author, date, message)
@@ -238,14 +242,16 @@ class TestCaseWithSubversionRepository(TestCaseInTempDir):
 
         return BzrDir.open("svn+%s" % repos_url)
 
-    def make_client(self, repospath, clientpath):
+    def make_client(self, repospath, clientpath, allow_revprop_changes=True):
         """Create a repository and a checkout. Return the checkout.
 
         :param relpath: Optional relpath to check out if not the full 
             repository.
+        :param clientpath: Path to checkout
         :return: Repository URL.
         """
-        repos_url = self.make_repository(repospath)
+        repos_url = self.make_repository(repospath, 
+            allow_revprop_changes=allow_revprop_changes)
         self.make_checkout(repos_url, clientpath)
         return repos_url
 
@@ -286,11 +292,14 @@ def test_suite():
             'test_fetch',
             'test_fileids', 
             'test_logwalker',
+            'test_mapping',
             'test_push',
             'test_radir',
             'test_repos', 
             'test_revids',
+            'test_revspec',
             'test_scheme', 
+            'test_svk',
             'test_transport',
             'test_tree',
             'test_upgrade',

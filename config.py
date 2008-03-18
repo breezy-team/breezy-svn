@@ -16,7 +16,7 @@
 """Stores per-repository settings."""
 
 from bzrlib import osutils
-from bzrlib.config import IniBasedConfig, config_dir, ensure_config_dir_exists
+from bzrlib.config import IniBasedConfig, config_dir, ensure_config_dir_exists, GlobalConfig
 
 import os
 
@@ -30,6 +30,7 @@ def subversion_config_filename():
     """Return per-user configuration ini file filename."""
     return osutils.pathjoin(config_dir(), 'subversion.conf')
 
+
 class SvnRepositoryConfig(IniBasedConfig):
     """Per-repository settings."""
 
@@ -40,20 +41,67 @@ class SvnRepositoryConfig(IniBasedConfig):
         if not self.uuid in self._get_parser():
             self._get_parser()[self.uuid] = {}
 
-    def set_branching_scheme(self, scheme):
+    def set_branching_scheme(self, scheme, mandatory=False):
         """Change the branching scheme.
 
         :param scheme: New branching scheme.
         """
         self.set_user_option('branching-scheme', str(scheme))
+        self.set_user_option('branching-scheme-mandatory', str(mandatory))
+
+    def _get_user_option(self, name, use_global=True):
+        try:
+            return self._get_parser()[self.uuid][name]
+        except KeyError:
+            if not use_global:
+                return None
+            return GlobalConfig()._get_user_option(name)
 
     def get_branching_scheme(self):
         """Get the branching scheme.
 
         :return: BranchingScheme instance.
         """
+        schemename = self._get_user_option("branching-scheme", use_global=False)
+        if schemename is not None:
+            return BranchingScheme.find_scheme(schemename.encode('ascii'))
+        return None
+
+    def get_set_revprops(self):
+        """Check whether or not bzr-svn should attempt to store Bazaar
+        revision properties in Subversion revision properties during commit."""
         try:
-            return BranchingScheme.find_scheme(self._get_parser()[self.uuid]['branching-scheme'])
+            return self._get_parser().get_bool(self.uuid, "set-revprops")
+        except KeyError:
+            return None
+
+    def get_supports_change_revprop(self):
+        """Check whether or not the repository supports changing existing 
+        revision properties."""
+        try:
+            return self._get_parser().get_bool(self.uuid, "supports-change-revprop")
+        except KeyError:
+            return None
+
+    def branching_scheme_is_mandatory(self):
+        """Check whether or not the branching scheme for this repository 
+        is mandatory.
+        """
+        try:
+            return self._get_parser().get_bool(self.uuid, "branching-scheme-mandatory")
+        except KeyError:
+            return False
+
+    def get_override_svn_revprops(self):
+        """Check whether or not bzr-svn should attempt to override Subversion revision 
+        properties after committing."""
+        try:
+            return self._get_parser().get_bool(self.uuid, "override-svn-revprops")
+        except KeyError:
+            pass
+        global_config = GlobalConfig()
+        try:
+            return global_config._get_parser().get_bool(global_config._get_section(), "override-svn-revprops")
         except KeyError:
             return None
 
@@ -62,10 +110,10 @@ class SvnRepositoryConfig(IniBasedConfig):
 
         :return: Set with URLs.
         """
-        try:
-            return set(self._get_parser()[self.uuid]['locations'].split(";"))
-        except KeyError:
+        val = self._get_user_option("locations", use_global=False)
+        if val is None:
             return set()
+        return set(val.split(";"))
 
     def add_location(self, location):
         """Add a location for this repository.

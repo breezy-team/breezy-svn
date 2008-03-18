@@ -48,3 +48,38 @@ class ReposConfigTests(TestCaseInTempDir):
         c = SvnRepositoryConfig("blabla2")
         c.set_branching_scheme(TrunkBranchingScheme())
         self.assertEquals("trunk0", str(c.get_branching_scheme()))
+
+    def test_get_scheme_mandatory_none(self):
+        c = SvnRepositoryConfig("blabla3")
+        self.assertEquals(False, c.branching_scheme_is_mandatory())
+
+    def test_get_scheme_mandatory_set(self):
+        c = SvnRepositoryConfig("blabla3")
+        c.set_branching_scheme(TrunkBranchingScheme(), mandatory=True)
+        self.assertEquals(True, c.branching_scheme_is_mandatory())
+        c.set_branching_scheme(TrunkBranchingScheme(), mandatory=False)
+        self.assertEquals(False, c.branching_scheme_is_mandatory())
+
+    def test_override_revprops(self):
+        c = SvnRepositoryConfig("blabla2")
+        self.assertEquals(None, c.get_override_svn_revprops())
+        c.set_user_option("override-svn-revprops", "True")
+        self.assertEquals(True, c.get_override_svn_revprops())
+        c.set_user_option("override-svn-revprops", "False")
+        self.assertEquals(False, c.get_override_svn_revprops())
+
+    def test_set_revprops(self):
+        c = SvnRepositoryConfig("blabla2")
+        self.assertEquals(None, c.get_set_revprops())
+        c.set_user_option("set-revprops", "True")
+        self.assertEquals(True, c.get_set_revprops())
+        c.set_user_option("set-revprops", "False")
+        self.assertEquals(False, c.get_set_revprops())
+
+    def test_supports_change_revprop(self):
+        c = SvnRepositoryConfig("blabla2")
+        self.assertEquals(None, c.get_supports_change_revprop())
+        c.set_user_option("supports-change-revprop", "True")
+        self.assertEquals(True, c.get_supports_change_revprop())
+        c.set_user_option("supports-change-revprop", "False")
+        self.assertEquals(False, c.get_supports_change_revprop())

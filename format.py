@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2007 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2006-2008 Jelmer Vernooij <jelmer@samba.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,11 @@
 """Subversion BzrDir formats."""
 
 from bzrlib.bzrdir import BzrDirFormat, BzrDir, format_registry
+from bzrlib.errors import UninitializableFormat
 from bzrlib.lazy_import import lazy_import
 from bzrlib.lockable_files import TransportLock
+
+import os
 
 lazy_import(globals(), """
 import errors
@@ -31,8 +34,8 @@ def get_rich_root_format():
     if format.repository_format.rich_root_data:
         return format
     # Default format does not support rich root data, 
-    # fall back to dirstate-with-subtree
-    format = format_registry.make_bzrdir('dirstate-with-subtree')
+    # fall back to rich-root
+    format = format_registry.make_bzrdir('rich-root-pack')
     assert format.repository_format.rich_root_data
     return format
 
@@ -90,6 +93,10 @@ class SvnRemoteFormat(BzrDirFormat):
 
         local_path = transport._local_base.rstrip("/")
         svn.repos.create(local_path, '', '', None, None)
+        # All revision property changes
+        revprop_hook = os.path.join(local_path, "hooks", "pre-revprop-change")
+        open(revprop_hook, 'w').write("#!/bin/sh")
+        os.chmod(revprop_hook, os.stat(revprop_hook).st_mode | 0111)
         return self.open(get_svn_ra_transport(transport), _found=True)
 
     def is_supported(self):

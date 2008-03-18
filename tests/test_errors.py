@@ -20,6 +20,7 @@ from bzrlib.errors import (ConnectionError, ConnectionReset, LockError,
 from bzrlib.tests import TestCase
 
 from errors import (convert_svn_error, convert_error, InvalidPropertyValue, 
+                    InvalidSvnBranchPath, NotSvnBranchPath, 
                     SVN_ERR_UNKNOWN_HOSTNAME)
 
 import svn.core
@@ -29,7 +30,7 @@ class TestConvertError(TestCase):
     def test_decorator_unknown(self):
         @convert_svn_error
         def test_throws_svn():
-            raise SubversionException("foo", 100)
+            raise SubversionException("foo", 2000)
 
         self.assertRaises(SubversionException, test_throws_svn)
 
@@ -39,6 +40,10 @@ class TestConvertError(TestCase):
             raise SubversionException("Connection closed", svn.core.SVN_ERR_RA_SVN_CONNECTION_CLOSED)
 
         self.assertRaises(ConnectionReset, test_throws_svn)
+
+    def test_convert_error_oserror(self):
+        self.assertIsInstance(convert_error(SubversionException("foo", 13)),
+                OSError)
 
     def test_convert_error_unknown(self):
         self.assertIsInstance(convert_error(SubversionException("foo", -4)),
@@ -62,6 +67,9 @@ class TestConvertError(TestCase):
     def test_convert_unknown_hostname(self):
         self.assertIsInstance(convert_error(SubversionException("Unknown hostname 'bla'", SVN_ERR_UNKNOWN_HOSTNAME)), ConnectionError)
 
+    def test_not_implemented(self):
+        self.assertIsInstance(convert_error(SubversionException("Remote server doesn't support ...", svn.core.SVN_ERR_RA_NOT_IMPLEMENTED)), NotImplementedError)
+
     def test_decorator_nothrow(self):
         @convert_svn_error
         def test_nothrow(foo):
@@ -74,3 +82,9 @@ class TestConvertError(TestCase):
         self.assertEqual(
           "Invalid property value for Subversion property svn:foobar: corrupt", 
           str(error))
+
+    def test_invalidsvnbranchpath_nonascii(self):
+        InvalidSvnBranchPath('\xc3\xb6', None)
+
+    def test_notsvnbranchpath_nonascii(self):
+        NotSvnBranchPath('\xc3\xb6', None)

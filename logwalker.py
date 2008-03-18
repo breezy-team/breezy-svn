@@ -24,32 +24,9 @@ from svn.core import SubversionException, Pool
 from transport import SvnRaTransport
 import svn.core
 
-import base64
-
 from cache import sqlite3
 
-LOG_CHUNK_LIMIT = 1000
-
-def _escape_commit_message(message):
-    """Replace xml-incompatible control characters."""
-    if message is None:
-        return None
-    import re
-    # FIXME: RBC 20060419 this should be done by the revision
-    # serialiser not by commit. Then we can also add an unescaper
-    # in the deserializer and start roundtripping revision messages
-    # precisely. See repository_implementations/test_repository.py
-    
-    # Python strings can include characters that can't be
-    # represented in well-formed XML; escape characters that
-    # aren't listed in the XML specification
-    # (http://www.w3.org/TR/REC-xml/#NT-Char).
-    message, _ = re.subn(
-        u'[^\x09\x0A\x0D\u0020-\uD7FF\uE000-\uFFFD]+',
-        lambda match: match.group(0).encode('unicode_escape'),
-        message)
-    return message
-
+LOG_CHUNK_LIMIT = 0
 
 class LogWalker(object):
     """Easy way to access the history of a Subversion repository."""
@@ -76,15 +53,13 @@ class LogWalker(object):
             self.db = cache_db
 
         self.db.executescript("""
-          create table if not exists revision(revno integer unique, author text, message text, date text);
-          create unique index if not exists revision_revno on revision (revno);
           create table if not exists changed_path(rev integer, action text, path text, copyfrom_path text, copyfrom_rev integer);
           create index if not exists path_rev on changed_path(rev);
           create unique index if not exists path_rev_path on changed_path(rev, path);
           create unique index if not exists path_rev_path_action on changed_path(rev, path, action);
         """)
         self.db.commit()
-        self.saved_revnum = self.db.execute("SELECT MAX(revno) FROM revision").fetchone()[0]
+        self.saved_revnum = self.db.execute("SELECT MAX(rev) FROM changed_path").fetchone()[0]
         if self.saved_revnum is None:
             self.saved_revnum = 0
 
@@ -107,8 +82,9 @@ class LogWalker(object):
 
         pb = ui.ui_factory.nested_progress_bar()
 
-        def rcvr(orig_paths, rev, author, date, message, pool):
-            pb.update('fetching svn revision info', rev, to_revnum)
+        def rcvr(log_entry, pool):
+            pb.update('fetching svn revision info', log_entry.revision, to_revnum)
+            orig_paths = log_entry.changed_paths
             if orig_paths is None:
                 orig_paths = {}
             for p in orig_paths:
@@ -118,14 +94,11 @@ class LogWalker(object):
 
                 self.db.execute(
                      "replace into changed_path (rev, path, action, copyfrom_path, copyfrom_rev) values (?, ?, ?, ?, ?)", 
-                     (rev, p.strip("/"), orig_paths[p].action, copyfrom_path, orig_paths[p].copyfrom_rev))
+                     (log_entry.revision, p.strip("/"), orig_paths[p].action, copyfrom_path, orig_paths[p].copyfrom_rev))
+                # Work around nasty memory leak in Subversion
+                orig_paths[p]._parent_pool.destroy()
 
-            if message is not None:
-                message = base64.b64encode(message)
-
-            self.db.execute("replace into revision (revno, author, date, message) values (?,?,?,?)", (rev, author, date, message))
-
-            self.saved_revnum = rev
+            self.saved_revnum = log_entry.revision
             if self.saved_revnum % 1000 == 0:
                 self.db.commit()
 
@@ -133,9 +106,9 @@ class LogWalker(object):
             try:
                 while self.saved_revnum < to_revnum:
                     pool = Pool()
-                    self._get_transport().get_log("/", self.saved_revnum, 
+                    self._get_transport().get_log("", self.saved_revnum, 
                                              to_revnum, self._limit, True, 
-                                             True, rcvr, pool)
+                                             True, [], rcvr, pool)
                     pool.destroy()
             finally:
                 pb.finished()
@@ -147,15 +120,13 @@ class LogWalker(object):
         self.db.commit()
 
     def follow_path(self, path, revnum):
-        """Return iterator over all the revisions between revnum and 
-        0 named path or inside path.
+        """Return iterator over all the revisions between revnum and 0 named path or inside path.
 
-        :param path:   Branch path to start reporting (in revnum)
-        :param revnum:        Start revision.
-
-        :return: An iterators that yields tuples with (path, paths, revnum)
-        where paths is a dictionary with all changes that happened in path 
-        in revnum.
+        :param path:    Branch path to start reporting (in revnum)
+        :param revnum:  Start revision.
+        :return: An iterator that yields tuples with (path, paths, revnum)
+            where paths is a dictionary with all changes that happened in path 
+            in revnum.
         """
         assert revnum >= 0
 
@@ -222,23 +193,10 @@ class LogWalker(object):
 
         paths = {}
         for p, act, cf, cr in self.db.execute(query):
+            if cf is not None:
+                cf = cf.encode("utf-8")
             paths[p.encode("utf-8")] = (act, cf, cr)
         return paths
-
-    def get_revision_info(self, revnum):
-        """Obtain basic information for a specific revision.
-
-        :param revnum: Revision number.
-        :returns: Tuple with author, log message and date of the revision.
-        """
-        assert revnum >= 0
-        if revnum == 0:
-            return (None, None, None)
-        self.fetch_revisions(revnum)
-        (author, message, date) = self.db.execute("select author, message, date from revision where revno="+ str(revnum)).fetchone()
-        if message is not None:
-            message = _escape_commit_message(base64.b64decode(message))
-        return (author, message, date)
 
     def find_latest_change(self, path, revnum, include_parents=False,
                            include_children=False):
@@ -247,7 +205,7 @@ class LogWalker(object):
         :param path: Path to check for changes
         :param revnum: First revision to check
         """
-        assert isinstance(path, basestring)
+        assert isinstance(path, str)
         assert isinstance(revnum, int) and revnum >= 0
         self.fetch_revisions(revnum)
 
@@ -282,7 +240,11 @@ class LogWalker(object):
         return (self.db.execute("select 1 from changed_path where path='%s' and rev=%d" % (path, revnum)).fetchone() is not None)
 
     def find_children(self, path, revnum):
-        """Find all children of path in revnum."""
+        """Find all children of path in revnum.
+
+        :param path:  Path to check
+        :param revnum:  Revision to check
+        """
         path = path.strip("/")
         transport = self._get_transport()
         ft = transport.check_path(path, revnum)
@@ -334,12 +296,11 @@ class LogWalker(object):
                 pass
         pool = Pool()
         editor = TreeLister(path)
-        edit, baton = svn.delta.make_editor(editor, pool)
         old_base = transport.base
         try:
             root_repos = transport.get_svn_repos_root()
             transport.reparent(urlutils.join(root_repos, path))
-            reporter = transport.do_update(revnum,  True, edit, baton, pool)
+            reporter = transport.do_update(revnum, True, editor, pool)
             reporter.set_path("", revnum, True, None, pool)
             reporter.finish_report(pool)
         finally:
