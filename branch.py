@@ -20,14 +20,14 @@ from bzrlib.branch import Branch, BranchFormat, BranchCheckResult, PullResult
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import (NoSuchFile, DivergedBranches, NoSuchRevision, 
                            NoSuchTag, NotBranchError, UnstackableBranchFormat,
-                           UnrelatedBranches)
+                           UnrelatedBranches, RedirectRequested)
 from bzrlib.inventory import (Inventory)
 from bzrlib.revision import is_null, ensure_null, NULL_REVISION
 from bzrlib.tag import BasicTags
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
-from bzrlib.plugins.svn import core, wc
+from bzrlib.plugins.svn import core, properties, wc
 from bzrlib.plugins.svn.auth import create_auth_baton
 from bzrlib.plugins.svn.client import Client, get_config
 from bzrlib.plugins.svn.commit import push
@@ -140,6 +140,31 @@ class SubversionTags(BasicTags):
                 self.delete_tag(k)
 
 
+def check_path_with_externals(transport, path, revnum):
+    conn = transport.get_connection()
+    try:
+        pts = path.split("/")
+        for x in range(len(pts), 0, -1):
+            basepath = "/".join(pts[:x])
+            endpath = "/".join(pts[x:])
+            t = conn.check_path(basepath, revnum)
+            if endpath == "" and t != core.NODE_NONE:
+                return t
+            if t == core.NODE_FILE:
+                return core.NODE_NONE
+            if t == core.NODE_DIR:
+                (_, _, props) = conn.get_dir(basepath, revnum)
+                if not properties.PROP_EXTERNALS in props:
+                    return core.NODE_NONE
+                externals = properties.parse_externals_description(urlutils.join(conn.url, basepath), 
+                                                       props[properties.PROP_EXTERNALS])
+                if not endpath in externals:
+                    return core.NODE_NONE
+                raise RedirectRequested(urlutils.join(conn.url, path), externals[endpath][1])
+    finally:
+        transport.add_connection(conn)
+
+
 class SvnBranch(Branch):
     """Maps to a Branch in a Subversion repository """
     def __init__(self, repository, branch_path):
@@ -164,14 +189,17 @@ class SvnBranch(Branch):
         self._revmeta_cache = None
         assert isinstance(self._branch_path, str)
         try:
-            revnum = self.get_revnum()
-            if self.repository.transport.check_path(self._branch_path, 
+            if check_path_with_externals(self.repository.transport, self._branch_path, 
                 revnum) != core.NODE_DIR:
                 raise NotBranchError(self.base)
         except SubversionException, (_, num):
             if num == ERR_FS_NO_SUCH_REVISION:
                 raise NotBranchError(self.base)
             raise
+        except RedirectRequested, e:
+            mutter("Redirected to %s", e.target)
+            
+        revnum = self.get_revnum()
         if not self.mapping.is_branch(branch_path):
             raise NotSvnBranchPath(branch_path, mapping=self.mapping)
 
