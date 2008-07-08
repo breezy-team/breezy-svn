@@ -56,6 +56,8 @@ def parse_externals_description(base_url, val):
               as value. revnum is the revision number and is 
               set to None if not applicable.
     """
+    def is_url(u):
+        return ("://" in u)
     ret = {}
     for l in val.splitlines():
         if l == "" or l[0] == "#":
@@ -64,15 +66,28 @@ def parse_externals_description(base_url, val):
         if len(pts) == 3:
             if not pts[1].startswith("-r"):
                 raise InvalidExternalsDescription()
-            ret[pts[0]] = (int(pts[1][2:]), urlutils.join(base_url, pts[2]))
+            revno = int(pts[1][2:])
+            if not is_url(pts[0]):
+                relurl = pts[2]
+                path = pts[0]
+            else:
+                relurl = pts[0]
+                path = pts[2]
         elif len(pts) == 2:
-            if pts[1].startswith("//"):
-                raise NotImplementedError("Relative to the scheme externals not yet supported")
-            if pts[1].startswith("^/"):
-                raise NotImplementedError("Relative to the repository root externals not yet supported")
-            ret[pts[0]] = (None, urlutils.join(base_url, pts[1]))
+            if not is_url(pts[0]):
+                relurl = pts[1]
+                path = pts[0]
+            else:
+                relurl = pts[0]
+                path = pts[1]
+            revno = None
         else:
             raise InvalidExternalsDescription()
+        if relurl.startswith("//"):
+            raise NotImplementedError("Relative to the scheme externals not yet supported")
+        if relurl.startswith("^/"):
+            raise NotImplementedError("Relative to the repository root externals not yet supported")
+        ret[path] = (revno, urlutils.join(base_url, relurl))
     return ret
 
 
