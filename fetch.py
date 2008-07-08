@@ -103,7 +103,6 @@ class RevisionBuildEditor(object):
         self.dir_baserev = {}
         self._revinfo = None
         self._premature_deletes = set()
-        self.externals = {}
         self.old_inventory = prev_inventory
         self.inventory = prev_inventory.copy()
         self._start_revision()
@@ -220,7 +219,8 @@ class DirectoryBuildEditor(object):
             # Add externals. This happens after all children have been added
             # as they can be grandchildren.
             for (name, (rev, url)) in self.externals.items():
-                inventory_add_external(self.inventory, id, name, self.revid, rev, url)
+                inventory_add_external(self.editor.inventory, self.new_id, name, 
+                                       self.editor.revid, rev, url)
             # FIXME: Externals could've disappeared or only changed. Need 
             # to keep track of them.
 
@@ -287,7 +287,7 @@ class DirectoryBuildEditor(object):
             self.editor.revmeta.fileprops[name] = value
 
         if name == properties.PROP_EXTERNALS:
-            if value is not None:
+            if value is None:
                 value = ""
             self.externals = parse_externals_description(
                 urlutils.join(self.editor.source.base, self.editor.inventory.id2path(self.new_id)),
