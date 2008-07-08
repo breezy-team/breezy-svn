@@ -82,7 +82,8 @@ class TestBasisTree(TestCaseWithSubversionRepository):
         tree = SvnBasisTree(wt)
         self.assertEqual('tree-reference', 
                          tree.inventory[tree.inventory.path2id("bla")].kind)
-        self.assertEqual(TreeReference(generate_svn_file_id(wt.branch.repository.uuid, 0, "", ""),
+        mapping = wt.branch.repository.get_mapping()
+        self.assertEqual(TreeReference(mapping.generate_file_id(wt.branch.repository.uuid, 0, "", u""),
              'bla', wt.branch.get_root_id(), revision=wt.branch.generate_revision_id(1)),
                          tree.inventory[tree.inventory.path2id("bla")])
 

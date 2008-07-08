@@ -310,7 +310,8 @@ class SvnBasisTree(RevisionTree):
             (_, props) = adm.get_prop_diffs(self.workingtree.abspath(relpath).encode("utf-8"))
             if props.has_key(properties.PROP_EXTERNALS):
                 for (name, (rev, url)) in \
-                    properties.parse_externals_description(props[properties.PROP_EXTERNALS]).items():
+                    properties.parse_externals_description(self._repository.base, 
+                                                           props[properties.PROP_EXTERNALS]).items():
                     inventory_add_external(self._inventory, id, name, revid, rev, url)
 
         adm = workingtree._get_wc() 
