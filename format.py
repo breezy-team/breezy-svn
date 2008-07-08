@@ -2,7 +2,7 @@
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 
 # This program is distributed in the hope that it will be useful,
@@ -19,12 +19,12 @@ from bzrlib.bzrdir import BzrDirFormat, BzrDir, format_registry
 from bzrlib.errors import UninitializableFormat
 from bzrlib.lazy_import import lazy_import
 from bzrlib.lockable_files import TransportLock
+from bzrlib.trace import mutter
 
 import os
 
 lazy_import(globals(), """
-import errors
-import remote
+from bzrlib.plugins.svn import errors, remote
 
 from bzrlib import errors as bzr_errors
 """)
@@ -46,31 +46,35 @@ class SvnRemoteFormat(BzrDirFormat):
 
     def __init__(self):
         super(SvnRemoteFormat, self).__init__()
-        from repository import SvnRepositoryFormat
+        from bzrlib.plugins.svn import lazy_check_versions
+        lazy_check_versions()
+        from bzrlib.plugins.svn.repository import SvnRepositoryFormat
         self.repository_format = SvnRepositoryFormat()
 
     @classmethod
     def probe_transport(klass, transport):
-        from transport import get_svn_ra_transport
-        import svn.core
+        from bzrlib.plugins.svn.transport import get_svn_ra_transport
+        from bzrlib.plugins.svn import core
         format = klass()
 
         try:
             transport = get_svn_ra_transport(transport)
-        except svn.core.SubversionException, (_, num):
-            if num in (svn.core.SVN_ERR_RA_ILLEGAL_URL, \
-                       svn.core.SVN_ERR_RA_LOCAL_REPOS_OPEN_FAILED, \
-                       svn.core.SVN_ERR_BAD_URL):
+        except core.SubversionException, (msg, num):
+            if num in (errors.ERR_RA_ILLEGAL_URL, \
+                       errors.ERR_RA_LOCAL_REPOS_OPEN_FAILED, \
+                       errors.ERR_BAD_URL):
+                mutter("Unable to open %r with Subversion: %s", 
+                        transport, msg)
                 raise bzr_errors.NotBranchError(path=transport.base)
 
         return format
 
     def _open(self, transport):
-        import svn.core
+        from bzrlib.plugins.svn.core import SubversionException
         try: 
             return remote.SvnRemoteAccess(transport, self)
-        except svn.core.SubversionException, (_, num):
-            if num == svn.core.SVN_ERR_RA_DAV_REQUEST_FAILED:
+        except SubversionException, (_, num):
+            if num == errors.ERR_RA_DAV_REQUEST_FAILED:
                 raise bzr_errors.NotBranchError(transport.base)
             raise
 
@@ -82,9 +86,9 @@ class SvnRemoteFormat(BzrDirFormat):
 
     def initialize_on_transport(self, transport):
         """See BzrDir.initialize_on_transport()."""
-        from transport import get_svn_ra_transport
+        from bzrlib.plugins.svn.transport import get_svn_ra_transport
         from bzrlib.transport.local import LocalTransport
-        import svn.repos
+        from bzrlib.plugins.svn import repos
 
         if not isinstance(transport, LocalTransport):
             raise NotImplementedError(self.initialize, 
@@ -92,7 +96,7 @@ class SvnRemoteFormat(BzrDirFormat):
                 "non-local transports")
 
         local_path = transport._local_base.rstrip("/")
-        svn.repos.create(local_path, '', '', None, None)
+        repos.create(local_path)
         # All revision property changes
         revprop_hook = os.path.join(local_path, "hooks", "pre-revprop-change")
         open(revprop_hook, 'w').write("#!/bin/sh")
@@ -110,31 +114,28 @@ class SvnWorkingTreeDirFormat(BzrDirFormat):
 
     def __init__(self):
         super(SvnWorkingTreeDirFormat, self).__init__()
-        from repository import SvnRepositoryFormat
+        from bzrlib.plugins.svn.repository import SvnRepositoryFormat
         self.repository_format = SvnRepositoryFormat()
 
     @classmethod
     def probe_transport(klass, transport):
-        import svn
         from bzrlib.transport.local import LocalTransport
+        from bzrlib.plugins.svn import wc
         format = klass()
 
         if isinstance(transport, LocalTransport) and \
-            transport.has(svn.wc.get_adm_dir()):
+            transport.has(wc.get_adm_dir()):
             return format
 
         raise bzr_errors.NotBranchError(path=transport.base)
 
     def _open(self, transport):
-        import svn.core
-        from workingtree import SvnCheckout
-        subr_version = svn.core.svn_subr_version()
-        if subr_version.major == 1 and subr_version.minor < 4:
-            raise errors.NoCheckoutSupport()
+        from bzrlib.plugins.svn.workingtree import SvnCheckout
+        from bzrlib.plugins.svn import core
         try:
             return SvnCheckout(transport, self)
-        except svn.core.SubversionException, (_, num):
-            if num in (svn.core.SVN_ERR_RA_LOCAL_REPOS_OPEN_FAILED,):
+        except core.SubversionException, (_, num):
+            if num in (errors.ERR_RA_LOCAL_REPOS_OPEN_FAILED,):
                 raise errors.NoSvnRepositoryPresent(transport.base)
             raise
 

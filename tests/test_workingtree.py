@@ -3,7 +3,7 @@
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 
 # This program is distributed in the hope that it will be useful,
@@ -17,21 +17,21 @@
 
 """Working tree tests."""
 
+from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import NoSuchFile, OutOfDateTree
 from bzrlib.inventory import Inventory
 from bzrlib.osutils import has_symlinks, supports_executable
-from bzrlib.tests import KnownFailure
+from bzrlib.tests import KnownFailure, TestCase
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
-import svn.core
-import svn.wc
+from bzrlib.plugins.svn import wc
+from bzrlib.plugins.svn.transport import svn_config
+from bzrlib.plugins.svn.tests import TestCaseWithSubversionRepository
+from bzrlib.plugins.svn.workingtree import generate_ignore_list
 
 import os, sys
-
-from transport import svn_config
-from tests import TestCaseWithSubversionRepository
 
 class TestWorkingTree(TestCaseWithSubversionRepository):
     def test_add_duplicate(self):
@@ -207,13 +207,13 @@ class TestWorkingTree(TestCaseWithSubversionRepository):
     def test_get_ignore_list_empty(self):
         self.make_client('a', 'dc')
         tree = self.open_checkout("dc")
-        self.assertEqual(set([".svn"] + svn.wc.get_default_ignores(svn_config)), tree.get_ignore_list())
+        self.assertEqual(set([".svn"] + svn_config.get_default_ignores()), tree.get_ignore_list())
 
     def test_get_ignore_list_onelevel(self):
         self.make_client('a', 'dc')
         self.client_set_prop("dc", "svn:ignore", "*.d\n*.c\n")
         tree = self.open_checkout("dc")
-        self.assertEqual(set([".svn"] + svn.wc.get_default_ignores(svn_config) + ["./*.d", "./*.c"]), tree.get_ignore_list())
+        self.assertEqual(set([".svn"] + svn_config.get_default_ignores() + ["./*.d", "./*.c"]), tree.get_ignore_list())
 
     def test_get_ignore_list_morelevel(self):
         self.make_client('a', 'dc')
@@ -222,7 +222,7 @@ class TestWorkingTree(TestCaseWithSubversionRepository):
         self.client_add("dc/x")
         self.client_set_prop("dc/x", "svn:ignore", "*.e\n")
         tree = self.open_checkout("dc")
-        self.assertEqual(set([".svn"] + svn.wc.get_default_ignores(svn_config) + ["./*.d", "./*.c", "./x/*.e"]), tree.get_ignore_list())
+        self.assertEqual(set([".svn"] + svn_config.get_default_ignores() + ["./*.d", "./*.c", "./x/*.e"]), tree.get_ignore_list())
 
     def test_add_reopen(self):
         self.make_client('a', 'dc')
@@ -330,11 +330,11 @@ class TestWorkingTree(TestCaseWithSubversionRepository):
         self.assertFalse(inv.has_filename("bl"))
         self.assertFalse(basis_inv.has_filename("dir/bl"))
 
-    def test_pending_merges_empty(self):
-        self.make_client('a', 'dc')
+    def test_get_parent_ids_no_merges(self):
+        repos_url = self.make_client('a', 'dc')
         self.build_tree({"dc/bl": "data"})
         tree = self.open_checkout("dc")
-        self.assertEqual([], tree.pending_merges())
+        self.assertEqual([Branch.open(repos_url).last_revision()], tree.get_parent_ids())
  
     def test_delta(self):
         self.make_client('a', 'dc')
@@ -442,15 +442,17 @@ class TestWorkingTree(TestCaseWithSubversionRepository):
         self.assertEqual('symlink', inv[inv.path2id("bla")].kind)
         self.assertEqual("target", inv[inv.path2id("bla")].symlink_target)
 
-    def test_pending_merges(self):
-        self.make_client('a', 'dc')
+    def test_get_parent_ids(self):
+        repos_url = self.make_client('a', 'dc')
         self.build_tree({"dc/bl": None})
+
+        lhs_parent_id = Branch.open(repos_url).last_revision()
 
         tree = self.open_checkout("dc")
         tree.set_pending_merges(["a", "c"])
-        self.assertEqual(["a", "c"], tree.pending_merges())
+        self.assertEqual([lhs_parent_id, "a", "c"], tree.get_parent_ids())
         tree.set_pending_merges([])
-        self.assertEqual([], tree.pending_merges())
+        self.assertEqual([lhs_parent_id], tree.get_parent_ids())
 
     def test_set_pending_merges_prop(self):
         self.make_client('a', 'dc')
@@ -646,3 +648,22 @@ class TestWorkingTree(TestCaseWithSubversionRepository):
         tree = self.open_checkout("de")
         self.build_tree({'de/some strange file': 'data-y'})
         self.assertRaises(OutOfDateTree, lambda: tree.commit("bar"))
+
+
+class IgnoreListTests(TestCase):
+    def test_empty(self):
+        self.assertEquals([], generate_ignore_list({}))
+
+    def test_simple(self):
+        self.assertEquals(["./twin/peaks"], 
+                generate_ignore_list({"twin": "peaks"}))
+
+    def test_toplevel(self):
+        self.assertEquals(["./twin*"], 
+                generate_ignore_list({"": "twin*"}))
+
+    def test_multiple(self):
+        self.assertEquals(["./twin*", "./twin/peaks"], 
+                generate_ignore_list({"twin": "peaks", "": "twin*"}))
+
+

@@ -2,7 +2,7 @@
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 
 # This program is distributed in the hope that it will be useful,
@@ -17,17 +17,31 @@
 
 from bzrlib import ui
 from bzrlib.errors import NotBranchError, RevisionNotPresent
-from bzrlib.knit import KnitVersionedFile
+from bzrlib.knit import make_file_factory
 from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import mutter
+from bzrlib.versionedfile import ConstantMapper
 
 import urllib
 
-from mapping import escape_svn_path
+from bzrlib.plugins.svn import changes
+from bzrlib.plugins.svn.mapping import escape_svn_path
 
-def get_local_changes(paths, mapping, generate_revid, get_children=None):
+def get_local_changes(paths, branch, mapping, generate_revid, 
+                      get_children=None):
+    """Obtain all of the changes relative to a particular path
+    (usually a branch path).
+
+    :param paths: Changes
+    :param branch: Path under which to select changes
+    :parma mapping: Mapping to use to determine what are valid branch paths
+    :param generate_revid: Function for generating revision id from svn revnum
+    :param get_children: Function for obtaining the children of a path
+    """
     new_paths = {}
-    for p in sorted(paths.keys()):
+    for p in sorted(paths.keys(), reverse=False):
+        if not changes.path_is_child(branch, p):
+            continue
         data = paths[p]
         new_p = mapping.scheme.unprefix(p)[1]
         if data[1] is not None:
@@ -45,7 +59,7 @@ def get_local_changes(paths, mapping, generate_revid, get_children=None):
                 # Make it look like the files were added in this revision
                 if get_children is not None:
                     for c in get_children(data[1], data[2]):
-                        mutter('oops: %r child %r' % (data[1], c))
+                        mutter('oops: %r child %r', data[1], c)
                         new_paths[(new_p+"/"+c[len(data[1]):].strip("/")).strip("/")] = (data[0], None, -1)
                 data = (data[0], None, -1)
 
@@ -55,32 +69,44 @@ def get_local_changes(paths, mapping, generate_revid, get_children=None):
 
 FILEIDMAP_VERSION = 1
 
-class FileIdMap:
+def simple_apply_changes(new_file_id, changes, find_children=None):
+    """Simple function that generates a dictionary with file id changes.
+    
+    Does not track renames. """
+    map = {}
+    for p in sorted(changes.keys(), reverse=False):
+        data = changes[p]
+
+        inv_p = p.decode("utf-8")
+        if data[0] in ('D', 'R'):
+            map[inv_p] = None
+            for p in map:
+                if p.startswith("%s/" % inv_p):
+                    map[p] = None
+        if data[0] in ('A', 'R'):
+            map[inv_p] = new_file_id(inv_p)
+
+            if data[1] is not None:
+                mutter('%r copied from %r:%s', inv_p, data[1], data[2])
+                if find_children is not None:
+                    for c in find_children(data[1], data[2]):
+                        inv_c = c.decode("utf-8")
+                        path = c.replace(data[1].decode("utf-8"), inv_p+"/", 1).replace(u"//", u"/")
+                        map[path] = new_file_id(path)
+                        mutter('added mapping %r -> %r', path, map[path])
+
+    return map
+
+class FileIdMap(object):
     """File id store. 
 
     Keeps a map
 
     revnum -> branch -> path -> fileid
     """
-    def __init__(self, repos, cache_transport):
+    def __init__(self, apply_changes_fn, repos):
+        self.apply_changes_fn = apply_changes_fn
         self.repos = repos
-        self.idmap_knit = KnitVersionedFile("fileidmap-v%d" % FILEIDMAP_VERSION, cache_transport, create=True)
-
-    def save(self, revid, parent_revids, _map):
-        mutter('saving file id map for %r' % revid)
-                
-        self.idmap_knit.add_lines_with_ghosts(revid, parent_revids, 
-                ["%s\t%s\t%s\n" % (urllib.quote(filename), urllib.quote(_map[filename][0]), 
-                                        urllib.quote(_map[filename][1])) for filename in sorted(_map.keys())])
-
-    def load(self, revid):
-        map = {}
-        for line in self.idmap_knit.get_lines(revid):
-            (filename, id, create_revid) = line.rstrip("\n").split("\t", 3)
-            map[urllib.unquote(filename)] = (urllib.unquote(id), urllib.unquote(create_revid))
-            assert isinstance(map[urllib.unquote(filename)][0], str)
-
-        return map
 
     def apply_changes(self, uuid, revnum, branch, global_changes, 
                       renames, mapping, find_children=None):
@@ -93,7 +119,7 @@ class FileIdMap:
         :param renames: List of renames (known file ids for particular paths)
         :param mapping: Mapping
         """
-        changes = get_local_changes(global_changes, mapping,
+        changes = get_local_changes(global_changes, branch, mapping,
                     self.repos.generate_revision_id, find_children)
         if find_children is not None:
             def get_children(path, revid):
@@ -104,43 +130,147 @@ class FileIdMap:
             get_children = None
 
         def new_file_id(x):
-            return mapping.generate_file_id(self.repos.uuid, revnum, branch, x)
+            return mapping.generate_file_id(uuid, revnum, branch, x)
          
-        idmap = self._apply_changes(new_file_id, changes, get_children)
+        idmap = self.apply_changes_fn(new_file_id, changes, get_children)
         idmap.update(renames)
-        return idmap
+        return (idmap, changes)
 
-    def get_map(self, uuid, revnum, branch, renames_cb, mapping):
+    def get_map(self, uuid, revnum, branch, mapping):
         """Make sure the map is up to date until revnum."""
         # First, find the last cached map
-        todo = []
-        next_parent_revs = []
         if revnum == 0:
             assert branch == ""
-            return {"": (mapping.generate_file_id(uuid, revnum, branch, u""), 
-              self.repos.generate_revision_id(revnum, branch, mapping))}
+            return {"": (mapping.generate_file_id(uuid, 0, "", u""), 
+              self.repos.generate_revision_id(0, "", mapping))}
 
-        quickrevidmap = {}
+        todo = []
+        next_parent_revs = []
+        if mapping.is_branch(""):
+            map = {u"": (mapping.generate_file_id(uuid, 0, "", u""), NULL_REVISION)}
+        else:
+            map = {}
 
         # No history -> empty map
-        for (bp, paths, rev) in self.repos.follow_branch_history(branch, 
-                                             revnum, mapping):
-            revid = self.repos.generate_revision_id(rev, bp, mapping)
-            quickrevidmap[revid] = (rev, bp)
-            try:
-                map = self.load(revid)
-                # found the nearest cached map
-                next_parent_revs = [revid]
-                break
-            except RevisionNotPresent:
-                todo.append((revid, paths))
+        for revmeta in self.repos.iter_reverse_branch_changes(branch, revnum, mapping):
+            revid = revmeta.get_revision_id(mapping)
+            todo.append(revmeta)
    
+        pb = ui.ui_factory.nested_progress_bar()
+
+        try:
+            i = 1
+            for revmeta in reversed(todo):
+                revid = revmeta.get_revision_id(mapping)
+                expensive = False
+                def log_find_children(path, revnum):
+                    expensive = True
+                    return self.repos._log.find_children(path, revnum)
+
+                (idmap, changes) = self.apply_changes(self.repos.uuid, 
+                        revmeta.revnum, revmeta.branch_path, revmeta.paths,
+                        mapping.import_fileid_map(revmeta.revprops, revmeta.fileprops), 
+                        mapping, log_find_children)
+                pb.update('generating file id map', i, len(todo))
+
+                parent_revs = next_parent_revs
+
+                self.update_map(map, revid, idmap, changes)
+                       
+                next_parent_revs = [revid]
+                i += 1
+        finally:
+            pb.finished()
+        return map
+
+    def update_map(self, map, revid, idmap, changes):
+        for p in changes:
+            if changes[p][0] == 'M' and not idmap.has_key(p):
+                idmap[p] = map[p][0]
+
+        for x in sorted(idmap.keys()):
+            if idmap[x] is None:
+                del map[x]
+                for p in map.keys():
+                    if p.startswith("%s/" % x):
+                        del map[p]
+            else:
+                map[x] = (str(idmap[x]), revid)
+
+        # Mark all parent paths as changed
+        for p in idmap:
+            parts = p.split("/")
+            for j in range(1, len(parts)+1):
+                parent = "/".join(parts[0:len(parts)-j])
+                assert map.has_key(parent), "Parent item %s of %s doesn't exist in map" % (parent, p)
+                if map[parent][1] == revid:
+                    break
+                map[parent] = map[parent][0], revid
+
+
+class CachingFileIdMap(object):
+    """A file id map that uses a cache."""
+    def __init__(self, cache_transport, actual):
+        mapper = ConstantMapper("fileidmap-v%d" % FILEIDMAP_VERSION)
+        self.idmap_knit = make_file_factory(True, mapper)(cache_transport)
+        self.actual = actual
+        self.apply_changes = actual.apply_changes
+        self.repos = actual.repos
+
+    def save(self, revid, parent_revids, _map):
+        mutter('saving file id map for %r', revid)
+
+        for path, (id, created_revid)  in _map.items():
+            assert isinstance(path, unicode)
+            assert isinstance(id, str)
+            assert isinstance(created_revid, str)
+
+        self.idmap_knit.add_lines((revid,), [(r, ) for r in parent_revids], 
+                ["%s\t%s\t%s\n" % (urllib.quote(filename.encode("utf-8")), urllib.quote(_map[filename][0]), 
+                                        urllib.quote(_map[filename][1])) for filename in sorted(_map.keys())])
+
+    def load(self, revid):
+        map = {}
+        for ((create_revid,), line) in self.idmap_knit.annotate((revid,)):
+            (filename, id, create_revid) = line.rstrip("\n").split("\t", 3)
+            map[urllib.unquote(filename).decode("utf-8")] = (urllib.unquote(id), urllib.unquote(create_revid))
+            assert isinstance(map[urllib.unquote(filename).decode("utf-8")][0], str)
+
+        return map
+
+    def get_map(self, uuid, revnum, branch, mapping):
+        """Make sure the map is up to date until revnum."""
+        # First, find the last cached map
+        if revnum == 0:
+            assert branch == ""
+            return {"": (mapping.generate_file_id(uuid, 0, "", u""), 
+              self.repos.generate_revision_id(0, "", mapping))}
+
+        todo = []
+        next_parent_revs = []
+
+        # No history -> empty map
+        try:
+            pb = ui.ui_factory.nested_progress_bar()
+            for revmeta in self.repos.iter_reverse_branch_changes(branch, revnum, mapping):
+                pb.update("fetching changes for file ids", revnum-revmeta.revnum, revnum)
+                revid = revmeta.get_revision_id(mapping)
+                try:
+                    map = self.load(revid)
+                    # found the nearest cached map
+                    next_parent_revs = [revid]
+                    break
+                except RevisionNotPresent:
+                    todo.append(revmeta)
+        finally:
+            pb.finished()
+       
         # target revision was present
         if len(todo) == 0:
             return map
 
         if len(next_parent_revs) == 0:
-            if mapping.scheme.is_branch(""):
+            if mapping.is_branch(""):
                 map = {u"": (mapping.generate_file_id(uuid, 0, "", u""), NULL_REVISION)}
             else:
                 map = {}
@@ -149,46 +279,23 @@ class FileIdMap:
 
         try:
             i = 1
-            for (revid, global_changes) in reversed(todo):
+            for revmeta in reversed(todo):
+                revid = revmeta.get_revision_id(mapping)
                 expensive = False
                 def log_find_children(path, revnum):
                     expensive = True
                     return self.repos._log.find_children(path, revnum)
-                changes = get_local_changes(global_changes, mapping,
-                                            self.repos.generate_revision_id, 
-                                            log_find_children)
-                pb.update('generating file id map', i, len(todo))
 
-                def find_children(path, revid):
-                    (revnum, bp) = quickrevidmap[revid]
-                    for p in log_find_children(bp+"/"+path, revnum):
-                        yield mapping.unprefix(bp, p)
+                (idmap, changes) = self.actual.apply_changes(self.repos.uuid, 
+                        revmeta.revnum, revmeta.branch_path, revmeta.paths, 
+                        mapping.import_fileid_map(revmeta.revprops, revmeta.fileprops), 
+                        mapping, log_find_children)
+                pb.update('generating file id map', i, len(todo))
 
                 parent_revs = next_parent_revs
 
-                def new_file_id(x):
-                    (revnum, branch) = quickrevidmap[revid]
-                    return mapping.generate_file_id(self.repos.uuid, revnum, branch, x)
-                
-                revmap = self._apply_changes(new_file_id, changes, find_children)
-                revmap.update(renames_cb(revid))
-
-                for p in changes:
-                    if changes[p][0] == 'M' and not revmap.has_key(p):
-                        revmap[p] = map[p][0]
-
-                map.update(dict([(x, (str(revmap[x]), revid)) for x in revmap]))
-
-                # Mark all parent paths as changed
-                for p in revmap:
-                    parts = p.split("/")
-                    for j in range(1, len(parts)+1):
-                        parent = "/".join(parts[0:len(parts)-j])
-                        assert map.has_key(parent), "Parent item %s of %s doesn't exist in map" % (parent, p)
-                        if map[parent][1] == revid:
-                            break
-                        map[parent] = map[parent][0], revid
-                        
+                self.actual.update_map(map, revid, idmap, changes)
+                       
                 saved = False
                 if i % 500 == 0 or expensive:
                     self.save(revid, parent_revs, map)
@@ -201,25 +308,3 @@ class FileIdMap:
             self.save(revid, parent_revs, map)
         return map
 
-
-class SimpleFileIdMap(FileIdMap):
-    @staticmethod
-    def _apply_changes(new_file_id, changes, find_children=None):
-        map = {}
-        for p in sorted(changes.keys()):
-            data = changes[p]
-
-            if data[0] in ('A', 'R'):
-                inv_p = p.decode("utf-8")
-                map[inv_p] = new_file_id(inv_p)
-
-                if data[1] is not None:
-                    mutter('%r copied from %r:%s' % (inv_p, data[1], data[2]))
-                    if find_children is not None:
-                        for c in find_children(data[1], data[2]):
-                            inv_c = c.decode("utf-8")
-                            path = c.replace(data[1].decode("utf-8"), inv_p+"/", 1).replace(u"//", u"/")
-                            map[path] = new_file_id(path)
-                            mutter('added mapping %r -> %r' % (path, map[path]))
-
-        return map

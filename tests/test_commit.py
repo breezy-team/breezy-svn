@@ -4,7 +4,7 @@
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 
 # This program is distributed in the hope that it will be useful,
@@ -25,14 +25,15 @@ from bzrlib.tests import TestCase
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
-from commit import set_svn_revprops, _revision_id_to_svk_feature
 from copy import copy
-from errors import RevpropChangeFailed
 import os
-from remote import SvnRaTransport
-from tests import TestCaseWithSubversionRepository
 
-from svn.core import svn_time_to_cstring
+from bzrlib.plugins.svn import ra
+from bzrlib.plugins.svn.commit import set_svn_revprops, _revision_id_to_svk_feature
+from bzrlib.plugins.svn.errors import RevpropChangeFailed
+from bzrlib.plugins.svn.properties import time_to_cstring
+from bzrlib.plugins.svn.transport import SvnRaTransport
+from bzrlib.plugins.svn.tests import TestCaseWithSubversionRepository
 
 class TestNativeCommit(TestCaseWithSubversionRepository):
     def test_simple_commit(self):
@@ -78,6 +79,14 @@ class TestNativeCommit(TestCaseWithSubversionRepository):
         new_revision = wt.branch.repository.get_revision(
                             wt.branch.last_revision())
         self.assertEqual(wt.branch.last_revision(), new_revision.revision_id)
+
+    def test_commit_unicode_filename(self):
+        self.make_client('d', 'dc')
+        self.build_tree({u'dc/I²C': "data"})
+        self.client_add(u"dc/I²C".encode("utf-8"))
+        wt = self.open_checkout("dc")
+        wt.commit(message="data")
+
 
     def test_commit_local(self):
         self.make_client('d', 'dc')
@@ -131,9 +140,9 @@ class TestNativeCommit(TestCaseWithSubversionRepository):
         wt.commit(message="data")
         self.assertEqual("some-ghost-revision\n", 
                 self.client_get_prop(repos_url, "bzr:ancestry:v3-none", 1))
-        self.assertEqual([wt.branch.generate_revision_id(0), "some-ghost-revision"],
-                         wt.branch.repository.revision_parents(
-                             wt.branch.last_revision()))
+        self.assertEqual((wt.branch.generate_revision_id(0), "some-ghost-revision"),
+                         wt.branch.repository.get_revision(
+                             wt.branch.last_revision()).parent_ids)
 
     def test_commit_rename_file(self):
         repos_url = self.make_client('d', 'dc')
@@ -145,11 +154,11 @@ class TestNativeCommit(TestCaseWithSubversionRepository):
         wt.commit(message="data")
         wt.rename_one("foo", "bar")
         wt.commit(message="doe")
-        paths = self.client_log("dc", 2, 0)[2][0]
-        self.assertEquals('D', paths["/foo"].action)
-        self.assertEquals('A', paths["/bar"].action)
-        self.assertEquals('/foo', paths["/bar"].copyfrom_path)
-        self.assertEquals(1, paths["/bar"].copyfrom_rev)
+        paths = self.client_log(repos_url, 2, 0)[2][0]
+        self.assertEquals('D', paths["/foo"][0])
+        self.assertEquals('A', paths["/bar"][0])
+        self.assertEquals('/foo', paths["/bar"][1])
+        self.assertEquals(1, paths["/bar"][2])
         self.assertEquals("bar\t%s\n" % oldid, 
                           self.client_get_prop(repos_url, "bzr:file-ids", 2))
 
@@ -163,11 +172,11 @@ class TestNativeCommit(TestCaseWithSubversionRepository):
         self.assertFalse(wt.has_filename("adir/foo"))
         self.assertTrue(wt.has_filename("bar"))
         wt.commit(message="doe")
-        paths = self.client_log("dc", 2, 0)[2][0]
-        self.assertEquals('D', paths["/adir/foo"].action)
-        self.assertEquals('A', paths["/bar"].action)
-        self.assertEquals('/adir/foo', paths["/bar"].copyfrom_path)
-        self.assertEquals(1, paths["/bar"].copyfrom_rev)
+        paths = self.client_log(repos_url, 2, 0)[2][0]
+        self.assertEquals('D', paths["/adir/foo"][0])
+        self.assertEquals('A', paths["/bar"][0])
+        self.assertEquals('/adir/foo', paths["/bar"][1])
+        self.assertEquals(1, paths["/bar"][2])
 
     def test_commit_revision_id(self):
         repos_url = self.make_client('d', 'dc')
@@ -191,6 +200,51 @@ class TestNativeCommit(TestCaseWithSubversionRepository):
         self.assertEqual("3 my-revision-id\n", 
             self.client_get_prop("dc", 
                 "bzr:revision-id:v3-none", 2))
+
+    def test_commit_sets_mergeinfo(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        foo = dc.add_dir("trunk")
+        foo.add_file("trunk/bla").modify("bla")
+        dc.add_dir("branches")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        tags = dc.add_dir("tags")
+        foobranch = tags.add_dir("tags/foo")
+        foobranch.add_file("tags/foo/afile").modify()
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        tags = dc.open_dir("tags")
+        foobranch = tags.open_dir("tags/foo")
+        foobranch.add_file("tags/foo/bfile").modify()
+        dc.close()
+
+        branch = Branch.open(repos_url+"/trunk")
+        foobranch = Branch.open(repos_url+"/tags/foo")
+        builder = branch.get_commit_builder([branch.last_revision(), foobranch.last_revision()], 
+                revision_id="my-revision-id")
+        tree = branch.repository.revision_tree(branch.last_revision())
+        new_tree = copy(tree)
+        ie = new_tree.inventory.root
+        ie.revision = None
+        builder.record_entry_contents(ie, [tree.inventory], '', new_tree, 
+                                      None)
+        builder.finish_inventory()
+        builder.commit("foo")
+
+        self.assertEqual("/tags/foo:2-3\n",
+            self.client_get_prop("%s/trunk" % repos_url, 
+                "svn:mergeinfo", 4))
+
+        try:
+            c = ra.RemoteAccess(repos_url)
+            mi = c.mergeinfo(["trunk"], 4)
+            self.assertEquals({"trunk": {"/tags/foo": [(1, 3, 1)]}}, mi)
+        except NotImplementedError:
+            pass # Svn 1.4
 
     def test_commit_metadata(self):
         repos_url = self.make_client('d', 'dc')
@@ -304,6 +358,14 @@ class TestPush(TestCaseWithSubversionRepository):
                           olddir.open_branch().pull,
                           self.newdir.open_branch())
 
+    def test_unicode_filename(self):
+        self.build_tree({u'dc/I²C': 'other data'})
+        wt = self.newdir.open_workingtree()
+        wt.add(u'I²C')
+        wt.commit(message="Commit from Bzr")
+        self.assertEqual(1, int(self.olddir.open_branch().pull(
+                                self.newdir.open_branch())))
+
     def test_change(self):
         self.build_tree({'dc/foo/bla': 'other data'})
         wt = self.newdir.open_workingtree()
@@ -400,10 +462,10 @@ class TestPush(TestCaseWithSubversionRepository):
         wt.commit(message="doe")
         self.olddir.open_branch().pull(self.newdir.open_branch())
         paths = self.client_log(self.repos_url, 3, 0)[3][0]
-        self.assertEquals('D', paths["/vla"].action)
-        self.assertEquals('A', paths["/bar"].action)
-        self.assertEquals('/vla', paths["/bar"].copyfrom_path)
-        self.assertEquals(2, paths["/bar"].copyfrom_rev)
+        self.assertEquals('D', paths["/vla"][0])
+        self.assertEquals('A', paths["/bar"][0])
+        self.assertEquals('/vla', paths["/bar"][1])
+        self.assertEquals(2, paths["/bar"][2])
 
     def test_commit_rename_file_from_directory(self):
         wt = self.newdir.open_workingtree()
@@ -418,10 +480,10 @@ class TestPush(TestCaseWithSubversionRepository):
         self.olddir.open_branch().pull(self.newdir.open_branch())
         paths = self.client_log(self.repos_url, 3, 0)[3][0]
         mutter('paths %r' % paths)
-        self.assertEquals('D', paths["/adir/foo"].action)
-        self.assertEquals('A', paths["/bar"].action)
-        self.assertEquals('/adir/foo', paths["/bar"].copyfrom_path)
-        self.assertEquals(2, paths["/bar"].copyfrom_rev)
+        self.assertEquals('D', paths["/adir/foo"][0])
+        self.assertEquals('A', paths["/bar"][0])
+        self.assertEquals('/adir/foo', paths["/bar"][1])
+        self.assertEquals(2, paths["/bar"][2])
 
     def test_commit_remove(self):
         wt = self.newdir.open_workingtree()
@@ -433,7 +495,7 @@ class TestPush(TestCaseWithSubversionRepository):
         self.olddir.open_branch().pull(self.newdir.open_branch())
         paths = self.client_log(self.repos_url, 3, 0)[3][0]
         mutter('paths %r' % paths)
-        self.assertEquals('D', paths["/foob"].action)
+        self.assertEquals('D', paths["/foob"][0])
 
     def test_commit_rename_remove_parent(self):
         wt = self.newdir.open_workingtree()
@@ -447,10 +509,10 @@ class TestPush(TestCaseWithSubversionRepository):
         self.olddir.open_branch().pull(self.newdir.open_branch())
         paths = self.client_log(self.repos_url, 3, 0)[3][0]
         mutter('paths %r' % paths)
-        self.assertEquals('D', paths["/adir"].action)
-        self.assertEquals('A', paths["/bar"].action)
-        self.assertEquals('/adir/foob', paths["/bar"].copyfrom_path)
-        self.assertEquals(2, paths["/bar"].copyfrom_rev)
+        self.assertEquals('D', paths["/adir"][0])
+        self.assertEquals('A', paths["/bar"][0])
+        self.assertEquals('/adir/foob', paths["/bar"][1])
+        self.assertEquals(2, paths["/bar"][2])
 
     def test_commit_remove_nested(self):
         wt = self.newdir.open_workingtree()
@@ -463,7 +525,7 @@ class TestPush(TestCaseWithSubversionRepository):
         self.olddir.open_branch().pull(self.newdir.open_branch())
         paths = self.client_log(self.repos_url, 3, 0)[3][0]
         mutter('paths %r' % paths)
-        self.assertEquals('D', paths["/adir/foob"].action)
+        self.assertEquals('D', paths["/adir/foob"][0])
 
 
 class TestPushNested(TestCaseWithSubversionRepository):
@@ -493,7 +555,7 @@ class TestPushNested(TestCaseWithSubversionRepository):
 
 class HeavyWeightCheckoutTests(TestCaseWithSubversionRepository):
     def test_bind(self):
-        repos_url = self.make_client("d", "sc")
+        repos_url = self.make_repository("d")
         master_branch = Branch.open(repos_url)
         os.mkdir("b")
         local_dir = master_branch.bzrdir.sprout("b")
@@ -502,7 +564,7 @@ class HeavyWeightCheckoutTests(TestCaseWithSubversionRepository):
         local_dir.open_branch().unbind()
 
     def test_commit(self):
-        repos_url = self.make_client("d", "sc")
+        repos_url = self.make_repository("d")
         master_branch = Branch.open(repos_url)
         os.mkdir("b")
         local_dir = master_branch.bzrdir.sprout("b")
@@ -515,7 +577,7 @@ class HeavyWeightCheckoutTests(TestCaseWithSubversionRepository):
         self.assertEquals(revid, master_branch.last_revision())
 
     def test_fileid(self):
-        repos_url = self.make_client("d", "sc")
+        repos_url = self.make_repository("d")
         master_branch = Branch.open(repos_url)
         os.mkdir("b")
         local_dir = master_branch.bzrdir.sprout("b")
@@ -535,12 +597,13 @@ class HeavyWeightCheckoutTests(TestCaseWithSubversionRepository):
         tree1 = master_branch.repository.revision_tree(revid1)
         tree2 = master_branch.repository.revision_tree(revid2)
         delta = tree2.changes_from(tree1)
+        mutter("changes %r" % list(master_branch.repository.iter_reverse_branch_changes("", 2, master_branch.repository.get_mapping())))
         self.assertEquals(0, len(delta.added))
         self.assertEquals(0, len(delta.removed))
         self.assertEquals(1, len(delta.renamed))
 
     def test_nested_fileid(self):
-        repos_url = self.make_client("d", "sc")
+        repos_url = self.make_repository("d")
         master_branch = Branch.open(repos_url)
         os.mkdir("b")
         local_dir = master_branch.bzrdir.sprout("b")
@@ -560,27 +623,30 @@ class HeavyWeightCheckoutTests(TestCaseWithSubversionRepository):
 
 class RevpropTests(TestCaseWithSubversionRepository):
     def test_change_revprops(self):
-        repos_url = self.make_client("d", "dc")
-        self.build_tree({"dc/foo.txt": "txt"})
-        self.client_add("dc/foo.txt")
-        self.client_commit("dc", "My commit")
+        repos_url = self.make_repository("d")
+
+        dc = self.get_commit_editor(repos_url, message="My commit")
+        dc.add_file("foo.txt").modify()
+        dc.close()
 
         transport = SvnRaTransport(repos_url)
         set_svn_revprops(transport, 1, {"svn:author": "Somebody", 
-                                        "svn:date": svn_time_to_cstring(1000000*473385600)})
+                                        "svn:date": time_to_cstring(1000000*473385600)})
 
         self.assertEquals(("Somebody", "1985-01-01T00:00:00.000000Z", "My commit"), 
-                          self.client_log("dc")[1][1:])
+                          self.client_log(repos_url, 1, 1)[1][1:])
 
     def test_change_revprops_disallowed(self):
-        repos_url = self.make_client("d", "dc", allow_revprop_changes=False)
-        self.build_tree({"dc/foo.txt": "txt"})
-        self.client_add("dc/foo.txt")
-        self.client_commit("dc", "My commit")
+        repos_url = self.make_repository("d", allow_revprop_changes=False)
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("foo.txt").modify()
+        dc.close()
 
         transport = SvnRaTransport(repos_url)
         self.assertRaises(RevpropChangeFailed, 
-                lambda: set_svn_revprops(transport, 1, {"svn:author": "Somebody", "svn:date": svn_time_to_cstring(1000000*473385600)}))
+                lambda: set_svn_revprops(transport, 1, {"svn:author": "Somebody", "svn:date": time_to_cstring(1000000*473385600)}))
+
 
 class SvkTestCase(TestCase):
     def test_revid_svk_map(self):

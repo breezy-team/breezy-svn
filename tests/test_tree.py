@@ -2,7 +2,7 @@
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 
 # This program is distributed in the hope that it will be useful,
@@ -22,41 +22,49 @@ from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import TestCase
 from bzrlib.workingtree import WorkingTree
 
-import errors
+from bzrlib.plugins.svn import errors
+from bzrlib.plugins.svn.tests import TestCaseWithSubversionRepository
+from bzrlib.plugins.svn.tree import SvnBasisTree, inventory_add_external
+
 import os
-from tree import (SvnBasisTree, parse_externals_description, 
-                  inventory_add_external)
 import sys
-from tests import TestCaseWithSubversionRepository
 
 class TestBasisTree(TestCaseWithSubversionRepository):
     def test_executable(self):
-        self.make_client("d", "dc")
-        self.build_tree({"dc/file": "x"})
-        self.client_add("dc/file")
-        self.client_set_prop("dc/file", "svn:executable", "*")
-        self.client_commit("dc", "executable")
+        repos_url = self.make_client("d", "dc")
+
+        dc = self.get_commit_editor(repos_url)
+        f = dc.add_file("file")
+        f.modify("x")
+        f.change_prop("svn:executable", "*")
+        dc.close()
+
+        self.client_update("dc")
+
         tree = SvnBasisTree(self.open_checkout("dc"))
         self.assertTrue(tree.inventory[tree.inventory.path2id("file")].executable)
 
     def test_executable_changed(self):
-        self.make_client("d", "dc")
-        self.build_tree({"dc/file": "x"})
-        self.client_add("dc/file")
-        self.client_commit("dc", "executable")
+        repos_url = self.make_client("d", "dc")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("file").modify("x")
+        dc.close()
+
         self.client_update("dc")
         self.client_set_prop("dc/file", "svn:executable", "*")
         tree = SvnBasisTree(self.open_checkout("dc"))
         self.assertFalse(tree.inventory[tree.inventory.path2id("file")].executable)
 
     def test_symlink(self):
-        if not has_symlinks():
-            return
-        self.make_client("d", "dc")
-        os.symlink("target", "dc/file")
-        self.build_tree({"dc/file": "x"})
-        self.client_add("dc/file")
-        self.client_commit("dc", "symlink")
+        repos_url = self.make_client("d", "dc")
+
+        dc = self.get_commit_editor(repos_url)
+        file = dc.add_file("file")
+        file.modify("link target")
+        file.change_prop("svn:special", "*")
+        dc.close()
+
         self.client_update("dc")
         tree = SvnBasisTree(self.open_checkout("dc"))
         self.assertEqual('symlink', 
@@ -79,76 +87,61 @@ class TestBasisTree(TestCaseWithSubversionRepository):
                          tree.inventory[tree.inventory.path2id("bla")])
 
     def test_symlink_next(self):
-        if not has_symlinks():
-            return
-        self.make_client("d", "dc")
-        os.symlink("target", "dc/file")
-        self.build_tree({"dc/file": "x", "dc/bla": "p"})
-        self.client_add("dc/file")
-        self.client_add("dc/bla")
-        self.client_commit("dc", "symlink")
-        self.build_tree({"dc/bla": "pa"})
-        self.client_commit("dc", "change")
+        repos_url = self.make_client("d", "dc")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("bla").modify("p")
+        file = dc.add_file("file")
+        file.modify("link target")
+        file.change_prop("svn:special", "*")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.open_file("bla").modify("pa")
+        dc.close()
+
         self.client_update("dc")
+
         tree = SvnBasisTree(self.open_checkout("dc"))
         self.assertEqual('symlink', 
                          tree.inventory[tree.inventory.path2id("file")].kind)
         self.assertEqual("target",
                          tree.inventory[tree.inventory.path2id("file")].symlink_target)
 
+    def test_annotate_iter(self):
+        repos_url = self.make_client("d", "dc")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("file").modify("x\n")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.open_file("file").modify("x\ny\n")
+        dc.close()
+
+        self.client_update('dc')
+        tree = SvnBasisTree(self.open_checkout("dc"))
+        self.assertRaises(NotImplementedError, tree.annotate_iter, tree.path2id("file"))
+
     def test_executable_link(self):
         if not has_symlinks():
             return
-        self.make_client("d", "dc")
-        os.symlink("target", "dc/file")
-        self.build_tree({"dc/file": "x"})
-        self.client_add("dc/file")
-        self.client_set_prop("dc/file", "svn:executable", "*")
-        self.client_commit("dc", "exe1")
+        repos_url = self.make_client("d", "dc")
+
+        dc = self.get_commit_editor(repos_url)
+        file = dc.add_file("file")
+        file.modify("link target")
+        file.change_prop("svn:special", "*")
+        file.change_prop("svn:executable", "*")
+        dc.close()
+
+        self.client_update("dc")
+
         wt = self.open_checkout("dc")
         tree = SvnBasisTree(wt)
         self.assertFalse(tree.inventory[tree.inventory.path2id("file")].executable)
         self.assertFalse(wt.inventory[wt.inventory.path2id("file")].executable)
 
-class TestExternalsParser(TestCase):
-    def test_parse_externals(self):
-        self.assertEqual({
-            'third-party/sounds': (None, "http://sounds.red-bean.com/repos"),
-            'third-party/skins': (None, "http://skins.red-bean.com/repositories/skinproj"),
-            'third-party/skins/toolkit': (21, "http://svn.red-bean.com/repos/skin-maker")},
-            parse_externals_description("http://example.com",
-"""third-party/sounds             http://sounds.red-bean.com/repos
-third-party/skins              http://skins.red-bean.com/repositories/skinproj
-third-party/skins/toolkit -r21 http://svn.red-bean.com/repos/skin-maker"""))
-
-    def test_parse_comment(self):
-        self.assertEqual({
-            'third-party/sounds': (None, "http://sounds.red-bean.com/repos")
-                },
-            parse_externals_description("http://example.com/",
-"""
-
-third-party/sounds             http://sounds.red-bean.com/repos
-#third-party/skins              http://skins.red-bean.com/repositories/skinproj
-#third-party/skins/toolkit -r21 http://svn.red-bean.com/repos/skin-maker"""))
-
-    def test_parse_relative(self):
-        self.assertEqual({
-            'third-party/sounds': (None, "http://example.com/branches/other"),
-                },
-            parse_externals_description("http://example.com/trunk",
-"third-party/sounds             ../branches/other"))
-
-    def test_parse_invalid_missing_url(self):
-        """No URL specified."""
-        self.assertRaises(errors.InvalidExternalsDescription, 
-            lambda: parse_externals_description("http://example.com/", "bla"))
-            
-    def test_parse_invalid_too_much_data(self):
-        """No URL specified."""
-        self.assertRaises(errors.InvalidExternalsDescription, 
-            lambda: parse_externals_description(None, "bla -R40 http://bla/"))
- 
 
 class TestInventoryExternals(TestCaseWithSubversionRepository):
     def test_add_nested_norev(self):

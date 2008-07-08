@@ -2,7 +2,7 @@
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 
 # This program is distributed in the hope that it will be useful,
@@ -21,13 +21,13 @@ from bzrlib.errors import InvalidRevisionId
 from bzrlib.repository import Repository
 from bzrlib.tests import TestCase, TestCaseWithTransport, TestSkipped
 
-from errors import RebaseNotPresent
-from format import get_rich_root_format
-from mapping import (BzrSvnMappingv3FileProps, BzrSvnMappingv2, 
-                     BzrSvnMappingv1)
-from scheme import TrunkBranchingScheme
-from tests import TestCaseWithSubversionRepository
-from upgrade import (upgrade_repository, upgrade_branch,
+from bzrlib.plugins.svn.errors import RebaseNotPresent
+from bzrlib.plugins.svn.format import get_rich_root_format
+from bzrlib.plugins.svn.mapping import (BzrSvnMappingv2, BzrSvnMappingv1)
+from bzrlib.plugins.svn.mapping3 import BzrSvnMappingv3FileProps
+from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
+from bzrlib.plugins.svn.tests import TestCaseWithSubversionRepository
+from bzrlib.plugins.svn.upgrade import (upgrade_repository, upgrade_branch,
                      upgrade_workingtree, UpgradeChangesContent, 
                      create_upgraded_revid, generate_upgrade_map)
 
@@ -61,10 +61,11 @@ def skip_no_rebase(unbound):
 class UpgradeTests(TestCaseWithSubversionRepository):
     @skip_no_rebase
     def test_no_custom(self):
-        repos_url = self.make_client("a", "dc")
-        self.build_tree({'dc/a': 'b'})
-        self.client_add("dc/a")
-        self.client_commit("dc", "data")
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("a").modify("b")
+        dc.close()
 
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f", format=get_rich_root_format())
@@ -85,10 +86,11 @@ class UpgradeTests(TestCaseWithSubversionRepository):
 
     @skip_no_rebase
     def test_single_custom(self):
-        repos_url = self.make_client("a", "dc")
-        self.build_tree({'dc/a': 'b'})
-        self.client_add("dc/a")
-        self.client_commit("dc", "data")
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("a").modify("b")
+        dc.close()
 
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f", format=get_rich_root_format())
@@ -109,15 +111,16 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.assertTrue(newrepos.has_revision("customrev%s-upgrade" % mapping.upgrade_suffix))
         newrepos.lock_read()
         self.assertTrue((oldrepos.generate_revision_id(1, "", mapping),),
-                        tuple(newrepos.revision_parents("customrev%s-upgrade" % mapping.upgrade_suffix)))
+                        tuple(newrepos.get_revision("customrev%s-upgrade" % mapping.upgrade_suffix).parent_ids))
         newrepos.unlock()
 
     @skip_no_rebase
     def test_single_keep_parent_fileid(self):
-        repos_url = self.make_client("a", "dc")
-        self.build_tree({'dc/a': 'b'})
-        self.client_add("dc/a")
-        self.client_commit("dc", "data")
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("a").modify("b")
+        dc.close()
 
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f", format=get_rich_root_format())
@@ -142,11 +145,12 @@ class UpgradeTests(TestCaseWithSubversionRepository):
 
     @skip_no_rebase
     def test_single_custom_continue(self):
-        repos_url = self.make_client("a", "dc")
-        self.build_tree({'dc/a': 'b', 'dc/b': 'c'})
-        self.client_add("dc/a")
-        self.client_add("dc/b")
-        self.client_commit("dc", "data")
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("a").modify("b")
+        dc.add_file("b").modify("c")
+        dc.close()
 
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f", format=get_rich_root_format())
@@ -169,9 +173,11 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         newrepos.start_write_group()
 
         mapping = oldrepos.get_mapping()
-        vf = newrepos.weave_store.get_weave_or_empty(tree.inventory.path2id("a"), newrepos.get_transaction())
-        vf.clone_text("customrev%s-upgrade" % mapping.upgrade_suffix,
-                "svn-v1:1@%s-" % oldrepos.uuid, ["svn-v1:1@%s-" % oldrepos.uuid])
+        fileid = tree.inventory.path2id("a")
+        revid = "customrev%s-upgrade" % mapping.upgrade_suffix
+        newrepos.texts.add_lines((fileid, revid), 
+                [(fileid, "svn-v1:1@%s-" % oldrepos.uuid)],
+                tree.get_file(fileid).readlines())
 
         newrepos.commit_write_group()
         newrepos.unlock()
@@ -182,15 +188,16 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.assertTrue(newrepos.has_revision("customrev%s-upgrade" % mapping.upgrade_suffix))
         newrepos.lock_read()
         self.assertTrue((oldrepos.generate_revision_id(1, "", mapping),),
-                        tuple(newrepos.revision_parents("customrev%s-upgrade" % mapping.upgrade_suffix)))
+                        tuple(newrepos.get_revision("customrev%s-upgrade" % mapping.upgrade_suffix).parent_ids))
         newrepos.unlock()
 
     @skip_no_rebase
     def test_more_custom(self):
-        repos_url = self.make_client("a", "dc")
-        self.build_tree({'dc/a': 'b'})
-        self.client_add("dc/a")
-        self.client_commit("dc", "data")
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("a").modify("b")
+        dc.close()
 
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f", format=get_rich_root_format())
@@ -218,17 +225,18 @@ class UpgradeTests(TestCaseWithSubversionRepository):
         self.assertTrue(newrepos.has_revision("anotherrev%s-upgrade" % mapping.upgrade_suffix))
         newrepos.lock_read()
         self.assertTrue((oldrepos.generate_revision_id(1, "", mapping),),
-                        tuple(newrepos.revision_parents("customrev%s-upgrade" % mapping.upgrade_suffix)))
+                        tuple(newrepos.get_revision("customrev%s-upgrade" % mapping.upgrade_suffix).parent_ids))
         self.assertTrue(("customrev-%s-upgrade" % mapping.upgrade_suffix,),
-                        tuple(newrepos.revision_parents("anotherrev%s-upgrade" % mapping.upgrade_suffix)))
+                        tuple(newrepos.get_revision("anotherrev%s-upgrade" % mapping.upgrade_suffix).parent_ids))
         newrepos.unlock()
 
     @skip_no_rebase
     def test_more_custom_branch(self):
-        repos_url = self.make_client("a", "dc")
-        self.build_tree({'dc/a': 'b'})
-        self.client_add("dc/a")
-        self.client_commit("dc", "data")
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("a").modify("b")
+        dc.close()
 
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f", format=get_rich_root_format())
@@ -253,10 +261,11 @@ class UpgradeTests(TestCaseWithSubversionRepository):
 
     @skip_no_rebase
     def test_workingtree(self):
-        repos_url = self.make_client("a", "dc")
-        self.build_tree({'dc/a': 'b'})
-        self.client_add("dc/a")
-        self.client_commit("dc", "data")
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("a").modify("b")
+        dc.close()
 
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f", format=get_rich_root_format())
@@ -282,10 +291,11 @@ class UpgradeTests(TestCaseWithSubversionRepository):
 
     @skip_no_rebase
     def test_branch_none(self):
-        repos_url = self.make_client("a", "dc")
-        self.build_tree({'dc/a': 'b'})
-        self.client_add("dc/a")
-        self.client_commit("dc", "data")
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("a").modify("b")
+        dc.close()
 
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f", format=get_rich_root_format())
@@ -306,10 +316,11 @@ class UpgradeTests(TestCaseWithSubversionRepository):
 
     @skip_no_rebase
     def test_raise_incompat(self):
-        repos_url = self.make_client("a", "dc")
-        self.build_tree({'dc/d': 'e'})
-        self.client_add("dc/d")
-        self.client_commit("dc", "data")
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("d").modify("e")
+        dc.close()
 
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f", format=get_rich_root_format())

@@ -2,7 +2,7 @@
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 
 # This program is distributed in the hope that it will be useful,
@@ -16,8 +16,10 @@
 """Subversion cache directory access."""
 
 import bzrlib
+from bzrlib import debug
 from bzrlib.config import config_dir, ensure_config_dir_exists
-from bzrlib.trace import warning
+from bzrlib.trace import mutter, warning
+from bzrlib.plugins.svn import version_info
 
 import os
 
@@ -27,7 +29,13 @@ def create_cache_dir():
     :return: Path to cache directory.
     """
     ensure_config_dir_exists()
-    cache_dir = os.path.join(config_dir(), 'svn-cache')
+    if version_info[3] == 'exp':
+        name = 'svn-cache-exp'
+        extra = "This is the directory used by the experimental version of bzr-svn.\n"
+    else:
+        name = 'svn-cache'
+        extra = ""
+    cache_dir = os.path.join(config_dir(), name)
 
     if not os.path.exists(cache_dir):
         os.mkdir(cache_dir)
@@ -39,7 +47,7 @@ It is used for performance reasons only and can be removed
 without losing data.
 
 See http://bazaar-vcs.org/BzrForeignBranches/Subversion for details.
-""")
+""" + extra)
     return cache_dir
 
 
@@ -66,15 +74,30 @@ except:
     raise bzrlib.errors.BzrError("missing sqlite library")
 
 
-class CacheTable:
+class CacheTable(object):
     """Simple base class for SQLite-based caches."""
     def __init__(self, cache_db=None):
         if cache_db is None:
             self.cachedb = sqlite3.connect(":memory:")
         else:
             self.cachedb = cache_db
+        self._commit_interval = 500
         self._create_table()
         self.cachedb.commit()
+        self._commit_countdown = self._commit_interval
+
+    def commit(self):
+        self.cachedb.commit()
+        self._commit_countdown = self._commit_interval
+
+    def commit_conditionally(self):
+        self._commit_countdown -= 1
+        if self._commit_countdown <= 0:
+            self.commit()
 
     def _create_table(self):
         pass
+
+    def mutter(self, text, *args):
+        if "cache" in debug.debug_flags:
+            mutter(text, *args)

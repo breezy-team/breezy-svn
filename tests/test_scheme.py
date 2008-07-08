@@ -2,7 +2,7 @@
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 
 # This program is distributed in the hope that it will be useful,
@@ -19,9 +19,11 @@
 from bzrlib.errors import NotBranchError, BzrError
 
 from bzrlib.tests import TestCase
-from scheme import (ListBranchingScheme, NoBranchingScheme, 
+from bzrlib.plugins.svn.mapping3.scheme import (ListBranchingScheme, NoBranchingScheme, 
                     BranchingScheme, TrunkBranchingScheme, 
-                    SingleBranchingScheme, UnknownBranchingScheme,
+                    SingleBranchingSchemev0, 
+                    SingleBranchingScheme, 
+                    UnknownBranchingScheme, 
                     parse_list_scheme_text, find_commit_paths, 
                     guess_scheme_from_branch_path, guess_scheme_from_history,
                     guess_scheme_from_path, scheme_from_branch_list)
@@ -73,6 +75,11 @@ class BranchingSchemeTest(TestCase):
 
     def test_find_scheme_single(self):
         scheme = BranchingScheme.find_scheme("single-habla")
+        self.assertIsInstance(scheme, SingleBranchingSchemev0)
+        self.assertEqual("habla", scheme.path)
+
+    def test_find_scheme_single1(self):
+        scheme = BranchingScheme.find_scheme("single1-aGFibGE.")
         self.assertIsInstance(scheme, SingleBranchingScheme)
         self.assertEqual("habla", scheme.path)
 
@@ -267,6 +274,7 @@ class ListScheme(TestCase):
     def test_parse_text_comment(self):
         self.assertEqual(["bla/bloe", "blie"], parse_list_scheme_text("bla/bloe\n# comment\nblie"))
 
+
 class TrunkScheme(TestCase):
     def test_is_branch_empty(self):
         self.assertFalse(TrunkBranchingScheme().is_branch(""))
@@ -438,6 +446,28 @@ class TrunkScheme(TestCase):
     def test_is_branch_parent_other(self):
         self.assertFalse(TrunkBranchingScheme().is_branch_parent("trunk/foo"))
 
+    def test_get_tag_path_zero(self):
+        self.assertEquals("tags/foo", 
+                          TrunkBranchingScheme().get_tag_path("foo"))
+
+    def test_get_tag_path_nonzero(self):
+        self.assertRaises(NotImplementedError,
+                          TrunkBranchingScheme(2).get_tag_path, "foo")
+
+    def test_get_branch_path_zero(self):
+        self.assertEquals("branches/foo", 
+                          TrunkBranchingScheme().get_branch_path("foo"))
+
+    def test_get_branch_path_zero_trunk(self):
+        self.assertEquals("trunk", 
+                          TrunkBranchingScheme().get_branch_path("trunk"))
+
+    def test_get_branch_path_nonzero(self):
+        self.assertRaises(NotImplementedError,
+                          TrunkBranchingScheme(2).get_branch_path, "foo")
+
+
+
 
 class SingleBranchingSchemeTests(TestCase):
     def test_is_branch(self):
@@ -481,7 +511,13 @@ class SingleBranchingSchemeTests(TestCase):
         self.assertRaises(BzrError, SingleBranchingScheme, "")
 
     def test_str(self):
-        self.assertEquals("single-ha/bla", str(SingleBranchingScheme("ha/bla")))
+        self.assertEquals("single1-aGEvYmxh", str(SingleBranchingScheme("ha/bla")))
+
+    def test_str_no_need(self):
+        self.assertEquals("single-ha", str(SingleBranchingScheme("ha")))
+        
+    def test_str_v0(self):
+        self.assertEquals("single-ha/bla", str(SingleBranchingSchemev0("ha/bla")))
 
 
 class FindCommitPathsTester(TestCase):
@@ -578,22 +614,22 @@ class TestGuessBranchingSchemeFromPath(TestCase):
 class TestGuessBranchingSchemeFromHistory(TestCase):
     def test_simple(self):
         scheme = guess_scheme_from_history([
-            ("", {"trunk": ('M', None, None)}, 0)], 1)
+            ({"trunk": ('M', None, None)}, 0, None)], 1)
         self.assertIsInstance(scheme, TrunkBranchingScheme)
         self.assertEqual(0, scheme.level)
 
     def test_simple_with_relpath(self):
         scheme = guess_scheme_from_history([
-            ("", {"trunk": ('M', None, None)}, 0)], 1, 
+            ({"trunk": ('M', None, None)}, 0, None)], 1, 
             relpath="trunk")
         self.assertIsInstance(scheme, TrunkBranchingScheme)
         self.assertEqual(0, scheme.level)
 
     def test_simple_prefer_relpath(self):
         scheme = guess_scheme_from_history([
-            ("", {"trunk": ('M', None, None)}, 1),
-            ("", {"trunk": ('M', None, None)}, 2),
-            ("", {"trunk/bar": ('M', None, None)}, 3),
+            ({"trunk": ('M', None, None)}, 1, None),
+            ({"trunk": ('M', None, None)}, 2, None),
+            ({"trunk/bar": ('M', None, None)}, 3, None),
             ], 3, 
             relpath="trunk/bar")
         self.assertIsInstance(scheme, SingleBranchingScheme)
@@ -601,17 +637,17 @@ class TestGuessBranchingSchemeFromHistory(TestCase):
 
     def test_simple_notwant_single(self):
         scheme = guess_scheme_from_history([
-            ("", {"foo": ('M', None, None)}, 1),
-            ("", {"foo": ('M', None, None)}, 2),
-            ("", {"foo/bar": ('M', None, None)}, 3),
+            ({"foo": ('M', None, None)}, 1, None),
+            ({"foo": ('M', None, None)}, 2, None),
+            ({"foo/bar": ('M', None, None)}, 3, None),
             ], 3)
         self.assertIsInstance(scheme, NoBranchingScheme)
 
     def test_simple_no_bp_common(self):
         scheme = guess_scheme_from_history([
-            ("", {"foo": ('M', None, None)}, 1),
-            ("", {"trunk": ('M', None, None)}, 2),
-            ("", {"trunk": ('M', None, None)}, 3),
+            ({"foo": ('M', None, None)}, 1, None),
+            ({"trunk": ('M', None, None)}, 2, None),
+            ({"trunk": ('M', None, None)}, 3, None),
             ], 3)
         self.assertIsInstance(scheme, TrunkBranchingScheme)
 
@@ -622,6 +658,7 @@ class TestGuessBranchingSchemeFromHistory(TestCase):
     def test_simple_no_history_bp(self):
         scheme = guess_scheme_from_history([], 0, "trunk")
         self.assertIsInstance(scheme, TrunkBranchingScheme)
+
 
 class SchemeFromBranchListTests(TestCase):
     def test_nobranchingscheme(self):

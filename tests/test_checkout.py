@@ -2,7 +2,7 @@
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 
 # This program is distributed in the hope that it will be useful,
@@ -21,18 +21,18 @@ from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import NoRepositoryPresent, UninitializableFormat
 from bzrlib.tests import TestCase
 
-from convert import SvnConverter
+from bzrlib.plugins.svn.convert import SvnConverter
 from bzrlib.plugins.svn.workingtree import SvnWorkingTreeFormat
 from bzrlib.plugins.svn.format import SvnWorkingTreeDirFormat
-from tests import TestCaseWithSubversionRepository
+from bzrlib.plugins.svn.tests import TestCaseWithSubversionRepository
 
 class TestWorkingTreeFormat(TestCase):
     def setUp(self):
         super(TestWorkingTreeFormat, self).setUp()
-        self.format = SvnWorkingTreeFormat()
+        self.format = SvnWorkingTreeFormat(4)
 
     def test_get_format_desc(self):
-        self.assertEqual("Subversion Working Copy", 
+        self.assertEqual("Subversion Working Copy Version 4", 
                          self.format.get_format_description())
 
     def test_initialize(self):
@@ -40,6 +40,7 @@ class TestWorkingTreeFormat(TestCase):
 
     def test_open(self):
         self.assertRaises(NotImplementedError, self.format.open, None)
+
 
 class TestCheckoutFormat(TestCase):
     def setUp(self):
@@ -57,7 +58,7 @@ class TestCheckoutFormat(TestCase):
 class TestCheckout(TestCaseWithSubversionRepository):
     def test_not_for_writing(self):
         self.make_client("d", "dc")
-        x = self.create_branch_convenience("dc/foo")
+        x = BzrDir.create_branch_convenience("dc/foo")
         self.assertFalse(hasattr(x.repository, "uuid"))
 
     def test_open_repository(self):
@@ -91,3 +92,13 @@ class TestCheckout(TestCaseWithSubversionRepository):
         x = Branch.open("dc")
         x.create_checkout("de", lightweight=True)
 
+    def test_checkout_branch(self):
+        repos_url = self.make_client("d", "dc")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("trunk")
+        dc.close()
+
+        self.client_update("dc")
+        x = self.open_checkout_bzrdir("dc/trunk")
+        self.assertEquals(repos_url+"/trunk", x.open_branch().base)

@@ -2,7 +2,7 @@
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
 
 # This program is distributed in the hope that it will be useful,
@@ -15,23 +15,23 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Branching scheme implementations."""
 
-from bzrlib import ui
+from bzrlib import ui, urlutils
 from bzrlib.errors import BzrError
 from bzrlib.trace import mutter
 
-from errors import InvalidSvnBranchPath
+from bzrlib.errors import NotBranchError
 
 from base64 import urlsafe_b64decode, urlsafe_b64encode
+from bzrlib.plugins.svn.errors import InvalidSvnBranchPath
+from bzrlib.plugins.svn import properties
 import bz2
+import urllib
 
-class BranchingScheme:
+class BranchingScheme(object):
     """ Divides SVN repository data up into branches. Since there
     is no proper way to do this, there are several subclasses of this class
     each of which handles a particular convention that may be in use.
     """
-    def __init__(self):
-        pass
-
     def is_branch(self, path):
         """Check whether a location refers to a branch.
         
@@ -44,6 +44,20 @@ class BranchingScheme:
 
         :param path: Path to split up.
         :return: Tuple with branch-path and inside-branch path.
+        """
+        raise NotImplementedError
+
+    def get_tag_path(self, name):
+        """Find the path for a tag.
+
+        :param name: Tag name.
+        """
+        raise NotImplementedError
+
+    def get_branch_path(self, name):
+        """Find the path for a named branch.
+
+        :param name: Branch name.
         """
         raise NotImplementedError
 
@@ -67,7 +81,10 @@ class BranchingScheme:
             return NoBranchingScheme()
 
         if name.startswith("single-"):
-            return SingleBranchingScheme(name[len("single-"):])
+            return SingleBranchingSchemev0(name[len("single-"):])
+
+        if name.startswith("single1-"):
+            return SingleBranchingScheme(encoded=name[len("single1-"):])
 
         if name.startswith("list-"):
             return ListBranchingScheme(name[len("list-"):])
@@ -124,6 +141,14 @@ def parse_list_scheme_text(text):
     return branches
 
 
+def prop_name_unquote(text):
+    return urlsafe_b64decode(text.replace(".", "="))
+
+
+def prop_name_quote(text):
+    return urlsafe_b64encode(text).replace("=", ".")
+
+
 class ListBranchingScheme(BranchingScheme):
     """Branching scheme that keeps a list of branch paths, including 
     wildcards."""
@@ -134,13 +159,13 @@ class ListBranchingScheme(BranchingScheme):
         """
         assert isinstance(branch_list, list) or isinstance(branch_list, str)
         if isinstance(branch_list, str):
-            branch_list = bz2.decompress(urlsafe_b64decode(branch_list.encode("ascii").replace(".", "="))).splitlines()
+            branch_list = bz2.decompress(prop_name_unquote(branch_list.encode("ascii"))).splitlines()
         self.branch_list = [p.strip("/") for p in branch_list]
         self.split_branch_list = [p.split("/") for p in self.branch_list]
 
     def __str__(self):
-        return "list-%s" % urlsafe_b64encode(bz2.compress("".join(map(lambda x:x+"\n", self.branch_list)))).replace("=", ".")
-
+        return "list-%s" % prop_name_quote(bz2.compress("".join(map(lambda x:x+"\n", self.branch_list))))
+            
     def is_tag(self, path):
         """See BranchingScheme.is_tag()."""
         return False
@@ -170,7 +195,7 @@ class ListBranchingScheme(BranchingScheme):
             if self._pattern_cmp(parts[:len(pattern)], pattern):
                 return ("/".join(parts[:len(pattern)]), 
                         "/".join(parts[len(pattern):]))
-        raise InvalidSvnBranchPath(path=path, scheme=self)
+        raise InvalidSvnBranchPath(path, self)
 
     def __eq__(self, other):
         return self.branch_list == other.branch_list
@@ -235,6 +260,21 @@ class TrunkBranchingScheme(ListBranchingScheme):
              "*/" * level + "branches/*",
              "*/" * level + "tags/*"])
 
+    def get_tag_path(self, name):
+        # Only implemented for level 0
+        if self.level == 0:
+            return urlutils.join("tags", name)
+        raise NotImplementedError
+
+    def get_branch_path(self, name):
+        # Only implemented for level 0
+        if self.level == 0:
+            if name == "trunk":
+                return "trunk"
+            else:
+                return urlutils.join("branches", name)
+        raise NotImplementedError
+
     def is_branch(self, path):
         """See BranchingScheme.is_branch()."""
         parts = path.strip("/").split("/")
@@ -260,7 +300,7 @@ class TrunkBranchingScheme(ListBranchingScheme):
         assert isinstance(path, str)
         parts = path.strip("/").split("/")
         if len(parts) == 0 or self.level >= len(parts):
-            raise InvalidSvnBranchPath(path=path, scheme=self)
+            raise InvalidSvnBranchPath(path, self)
 
         if parts[self.level] == "trunk" or parts[self.level] == "hooks":
             return ("/".join(parts[0:self.level+1]).strip("/"), 
@@ -270,7 +310,7 @@ class TrunkBranchingScheme(ListBranchingScheme):
             return ("/".join(parts[0:self.level+2]).strip("/"), 
                     "/".join(parts[self.level+2:]).strip("/"))
         else:
-            raise InvalidSvnBranchPath(path=path, scheme=self)
+            raise InvalidSvnBranchPath(path, self)
 
     def __str__(self):
         return "trunk%d" % self.level
@@ -300,7 +340,9 @@ class UnknownBranchingScheme(BzrError):
 class SingleBranchingScheme(ListBranchingScheme):
     """Recognizes just one directory in the repository as branch.
     """
-    def __init__(self, path):
+    def __init__(self, path=None, encoded=None):
+        if encoded is not None:
+            path = prop_name_unquote(encoded)
         self.path = path.strip("/")
         if self.path == "":
             raise BzrError("NoBranchingScheme should be used")
@@ -319,13 +361,16 @@ class SingleBranchingScheme(ListBranchingScheme):
         assert isinstance(path, str)
         path = path.strip("/")
         if not path.startswith(self.path):
-            raise InvalidSvnBranchPath(path=path, scheme=self)
+            raise InvalidSvnBranchPath(path, self)
 
         return (path[0:len(self.path)].strip("/"), 
                 path[len(self.path):].strip("/"))
 
     def __str__(self):
-        return "single-%s" % self.path
+        if properties.is_valid_property_name(self.path):
+            return "single-%s" % self.path
+        else:
+            return "single1-%s" % prop_name_quote(self.path)
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.path)
@@ -337,6 +382,16 @@ class SingleBranchingScheme(ListBranchingScheme):
 
     def is_tag_parent(self, path):
         return False
+
+
+class SingleBranchingSchemev0(SingleBranchingScheme):
+    """Version of SingleBranchingSchemev0 that *never* quotes.
+    """
+    def __init__(self, path=None, allow_quotes=True):
+        SingleBranchingScheme.__init__(self, path)
+
+    def __str__(self):
+        return "single-%s" % self.path
 
 
 def _find_common_prefix(paths):
@@ -400,8 +455,8 @@ def guess_scheme_from_history(changed_paths, last_revnum,
                               relpath=None):
     """Try to determine the best fitting branching scheme.
 
-    :param changed_paths: Iterator over (branch_path, changes, revnum)
-        as returned from LogWalker.follow_path().
+    :param changed_paths: Iterator over (branch_path, changes, revnum, revprops)
+        as returned from LogWalker.iter_changes().
     :param last_revnum: Number of entries in changed_paths.
     :param relpath: Branch path that should be accepted by the branching 
                     scheme as a branch.
@@ -411,7 +466,7 @@ def guess_scheme_from_history(changed_paths, last_revnum,
     pb = ui.ui_factory.nested_progress_bar()
     scheme_cache = {}
     try:
-        for (bp, revpaths, revnum) in changed_paths:
+        for (revpaths, revnum, revprops) in changed_paths:
             assert isinstance(revpaths, dict)
             pb.update("analyzing repository layout", last_revnum-revnum, 
                       last_revnum)
