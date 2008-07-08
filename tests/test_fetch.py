@@ -1885,11 +1885,11 @@ class TestNestedTrees(TestCaseWithSubversionRepository):
         self.client_commit("dc2", "My Message")
 
         oldrepos = Repository.open(self.repos_url2)
-        newdir = BzrDir.create("f", format=format.get_rich_root_format())
+        newdir = BzrDir.create("f", format=format.get_nested_tree_format())
         newrepos = newdir.create_repository()
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
-        inv = oldrepos.get_inventory(
+        inv = newrepos.get_inventory(
                 oldrepos.generate_revision_id(1, "", mapping))
         self.assertTrue(inv.has_filename("somedir/bla"))
         self.assertEqual(inv.path2id("somedir/bla"), 
