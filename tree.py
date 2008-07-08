@@ -75,14 +75,14 @@ class SvnRevisionTree(RevisionTree):
         self.id_map = repository.get_fileid_map(self.revnum, self.branch_path, 
                                                 mapping)
         root_repos = repository.transport.get_svn_repos_root()
-        branch_url = urlutils.join(root_repos, self.branch_path)
-        editor = TreeBuildEditor(self, branch_url)
+        self.branch_url = urlutils.join(root_repos, self.branch_path)
+        editor = TreeBuildEditor(self)
         self.file_data = {}
         conn = repository.transport.get_connection()
         try:
             reporter = conn.do_switch(
                 self.revnum, "", True, 
-                branch_url, editor)
+                self.branch_url, editor)
             reporter.set_path("", 0, True, None)
             reporter.finish()
         finally:
@@ -94,10 +94,10 @@ class SvnRevisionTree(RevisionTree):
     def get_file_text(self, file_id):
         return self.file_data[file_id]
 
+
 class TreeBuildEditor(object):
     """Builds a tree given Subversion tree transform calls."""
-    def __init__(self, tree, base):
-        self.base = base
+    def __init__(self, tree):
         self.tree = tree
         self.repository = self.tree._repository
         self.externals = None
@@ -134,8 +134,8 @@ class DirectoryTreeEditor(object):
 
     def change_prop(self, name, value):
         if name == properties.PROP_EXTERNALS:
-            self.externals = parse_externals_description(
-                urlutils.join(self.editor.base, self.tree._inventory.id2path(self.file_id)),
+            self.externals = properties.parse_externals_description(
+                urlutils.join(self.tree.branch_url, self.tree._inventory.id2path(self.file_id)),
                 value)
         elif name in (properties.PROP_ENTRY_COMMITTED_DATE,
                     properties.PROP_ENTRY_LAST_AUTHOR,
@@ -310,7 +310,7 @@ class SvnBasisTree(RevisionTree):
             (_, props) = adm.get_prop_diffs(self.workingtree.abspath(relpath).encode("utf-8"))
             if props.has_key(properties.PROP_EXTERNALS):
                 for (name, (rev, url)) in \
-                    parse_externals_description(props[properties.PROP_EXTERNALS]).items():
+                    properties.parse_externals_description(props[properties.PROP_EXTERNALS]).items():
                     inventory_add_external(self._inventory, id, name, revid, rev, url)
 
         adm = workingtree._get_wc() 

@@ -290,7 +290,7 @@ class DirectoryBuildEditor(object):
             if value is not None:
                 value = ""
             self.externals = parse_externals_description(
-                urlutils.join(self.source.base, self.inventory.id2path(id)),
+                urlutils.join(self.editor.source.base, self.editor.inventory.id2path(self.new_id)),
                 value)
         elif name in (properties.PROP_ENTRY_COMMITTED_DATE,
                     properties.PROP_ENTRY_COMMITTED_REV,

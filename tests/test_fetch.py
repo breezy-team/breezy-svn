@@ -1881,20 +1881,21 @@ class TestNestedTrees(TestCaseWithSubversionRepository):
         self.build_tree({'dc2/somedir': None})
         self.client_add("dc2/somedir")
         self.client_set_prop("dc2/somedir", "svn:externals", 
-                str("bla\t%s/proj1/trunk\n" % self.repos_url1))
+                "bla\t%s/proj1/trunk\n" % self.repos_url1)
         self.client_commit("dc2", "My Message")
 
         oldrepos = Repository.open(self.repos_url2)
         newdir = BzrDir.create("f", format=format.get_rich_root_format())
         newrepos = newdir.create_repository()
         oldrepos.copy_content_into(newrepos)
+        mapping = oldrepos.get_mapping()
         inv = oldrepos.get_inventory(
-                oldrepos.generate_revision_id(1, "", "none"))
+                oldrepos.generate_revision_id(1, "", mapping))
         self.assertTrue(inv.has_filename("somedir/bla"))
         self.assertEqual(inv.path2id("somedir/bla"), 
             Branch.open("%s/proj1/trunk" % self.repos_url1).get_root_id())
         self.assertEqual(None, 
                 inv[inv.path2id("somedir/bla")].reference_revision)
-        self.assertEqual(oldrepos.generate_revision_id(1, "", "none"), 
+        self.assertEqual(oldrepos.generate_revision_id(1, "", mapping), 
                 inv[inv.path2id("somedir/bla")].revision)
 
