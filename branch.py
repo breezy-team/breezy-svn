@@ -188,6 +188,7 @@ class SvnBranch(Branch):
         self.base = urlutils.join(self.repository.base, self._branch_path).rstrip("/")
         self._revmeta_cache = None
         assert isinstance(self._branch_path, str)
+        revnum = self.get_revnum()
         try:
             if check_path_with_externals(self.repository.transport, self._branch_path, 
                 revnum) != core.NODE_DIR:
@@ -198,8 +199,6 @@ class SvnBranch(Branch):
             raise
         except RedirectRequested, e:
             mutter("Redirected to %s", e.target)
-            
-        revnum = self.get_revnum()
         if not self.mapping.is_branch(branch_path):
             raise NotSvnBranchPath(branch_path, mapping=self.mapping)
 
