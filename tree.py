@@ -74,14 +74,15 @@ class SvnRevisionTree(RevisionTree):
         self._inventory = Inventory()
         self.id_map = repository.get_fileid_map(self.revnum, self.branch_path, 
                                                 mapping)
-        editor = TreeBuildEditor(self)
-        self.file_data = {}
         root_repos = repository.transport.get_svn_repos_root()
+        branch_url = urlutils.join(root_repos, self.branch_path)
+        editor = TreeBuildEditor(self, branch_url)
+        self.file_data = {}
         conn = repository.transport.get_connection()
         try:
             reporter = conn.do_switch(
                 self.revnum, "", True, 
-                urlutils.join(root_repos, self.branch_path), editor)
+                branch_url, editor)
             reporter.set_path("", 0, True, None)
             reporter.finish()
         finally:
@@ -95,10 +96,10 @@ class SvnRevisionTree(RevisionTree):
 
 class TreeBuildEditor(object):
     """Builds a tree given Subversion tree transform calls."""
-    def __init__(self, base, tree):
+    def __init__(self, tree, base):
         self.base = base
         self.tree = tree
-        self.repository = tree._repository
+        self.repository = self.tree._repository
         self.externals = None
 
     def set_target_revision(self, revnum):
@@ -122,6 +123,7 @@ class DirectoryTreeEditor(object):
     def __init__(self, tree, file_id):
         self.tree = tree
         self.file_id = file_id
+        self.externals = None
 
     def add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         path = path.decode("utf-8")
@@ -131,7 +133,7 @@ class DirectoryTreeEditor(object):
         return DirectoryTreeEditor(self.tree, file_id)
 
     def change_prop(self, name, value):
-        if name == svn.core.SVN_PROP_EXTERNALS:
+        if name == properties.PROP_EXTERNALS:
             self.externals = parse_externals_description(
                 urlutils.join(self.editor.base, self.tree._inventory.id2path(self.file_id)),
                 value)

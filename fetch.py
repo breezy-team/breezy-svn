@@ -207,6 +207,7 @@ class DirectoryBuildEditor(object):
         self.old_id = old_id
         self.new_id = new_id
         self.parent_revids = parent_revids
+        self.externals = None
 
     def close(self):
         self.editor.inventory[self.new_id].revision = self.editor.revid
@@ -215,10 +216,10 @@ class DirectoryBuildEditor(object):
         self.editor.texts.add_lines((self.new_id, self.editor.revid), 
                  [(self.new_id, revid) for revid in self.parent_revids], [])
 
-        if self.externals.has_key(id):
+        if self.externals is not None:
             # Add externals. This happens after all children have been added
             # as they can be grandchildren.
-            for (name, (rev, url)) in self.externals[id].items():
+            for (name, (rev, url)) in self.externals.items():
                 inventory_add_external(self.inventory, id, name, self.revid, rev, url)
             # FIXME: Externals could've disappeared or only changed. Need 
             # to keep track of them.
@@ -286,6 +287,8 @@ class DirectoryBuildEditor(object):
             self.editor.revmeta.fileprops[name] = value
 
         if name == properties.PROP_EXTERNALS:
+            if value is not None:
+                value = ""
             self.externals = parse_externals_description(
                 urlutils.join(self.source.base, self.inventory.id2path(id)),
                 value)
