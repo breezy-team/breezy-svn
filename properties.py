@@ -62,17 +62,29 @@ def parse_externals_description(base_url, val):
     for l in val.splitlines():
         if l == "" or l[0] == "#":
             continue
-        pts = l.rsplit(None, 2) 
-        if len(pts) == 3:
-            if not pts[1].startswith("-r"):
-                raise InvalidExternalsDescription()
-            revno = int(pts[1][2:])
-            if not is_url(pts[0]):
+        pts = l.rsplit(None, 3) 
+        if len(pts) == 4:
+            if pts[0] == "-r": # -r X URL DIR
+                revno = int(pts[1])
+                path = pts[3]
                 relurl = pts[2]
+            elif pts[1] == "-r": # DIR -r X URL
+                revno = int(pts[2])
                 path = pts[0]
+                relurl = pts[3]
             else:
-                relurl = pts[0]
+                raise InvalidExternalsDescription()
+        elif len(pts) == 3:
+            if pts[1].startswith("-r"): # DIR -rX URL
+                revno = int(pts[1][2:])
+                path = pts[0]
+                relurl = pts[2]
+            elif pts[0].startswith("-r"): # -rX URL DIR
+                revno = int(pts[0][2:])
                 path = pts[2]
+                relurl = pts[1]
+            else:
+                raise InvalidExternalsDescription()
         elif len(pts) == 2:
             if not is_url(pts[0]):
                 relurl = pts[1]
