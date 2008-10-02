@@ -28,7 +28,7 @@ from bzrlib.trace import mutter, warning
 from cStringIO import StringIO
 
 from bzrlib.plugins.svn import mapping
-from bzrlib.plugins.svn.subvertpy import SubversionException, delta, NODE_DIR, properties, ERR_FS_TXN_OUT_OF_DATE
+from subvertpy import SubversionException, delta, NODE_DIR, properties, ERR_FS_TXN_OUT_OF_DATE
 from bzrlib.plugins.svn.errors import ChangesRootLHSHistory, MissingPrefix, RevpropChangeFailed, convert_svn_error
 from bzrlib.plugins.svn.svk import (
     generate_svk_feature, serialize_svk_features, 

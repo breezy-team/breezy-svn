@@ -30,9 +30,9 @@ from bzrlib.trace import mutter
 from bzrlib.transport import get_transport
 from bzrlib.workingtree import WorkingTree, WorkingTreeFormat
 
-from bzrlib.plugins.svn import subvertpy
-from bzrlib.plugins.svn.subvertpy import properties, ERR_FS_TXN_OUT_OF_DATE, ERR_ENTRY_EXISTS, ERR_WC_PATH_NOT_FOUND, ERR_WC_NOT_DIRECTORY
-from bzrlib.plugins.svn.subvertpy.wc import *
+import subvertpy
+from subvertpy import properties, ERR_FS_TXN_OUT_OF_DATE, ERR_ENTRY_EXISTS, ERR_WC_PATH_NOT_FOUND, ERR_WC_NOT_DIRECTORY
+from subvertpy.wc import *
 from bzrlib.plugins.svn.auth import create_auth_baton
 from bzrlib.plugins.svn.branch import SvnBranch
 from bzrlib.plugins.svn.commit import _revision_id_to_svk_feature

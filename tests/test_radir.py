@@ -22,7 +22,7 @@ from bzrlib.bzrdir import BzrDir, format_registry
 from bzrlib.errors import (NoRepositoryPresent, NotLocalUrl,
                            NoWorkingTree, AlreadyBranchError)
 
-from bzrlib.plugins.svn import subvertpy
+import subvertpy
 from bzrlib.plugins.svn.format import SvnRemoteFormat
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.transport import SvnRaTransport

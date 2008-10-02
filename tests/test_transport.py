@@ -19,8 +19,8 @@
 from bzrlib.errors import NoSuchFile, FileExists, InvalidURL
 from bzrlib import urlutils
 
-from bzrlib.plugins.svn import subvertpy
-from bzrlib.plugins.svn.subvertpy import ra
+import subvertpy
+from subvertpy import ra
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.transport import SvnRaTransport, bzr_to_svn_url, _url_unescape_uri
 

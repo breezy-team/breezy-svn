@@ -29,8 +29,8 @@ from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn import cache
-from bzrlib.plugins.svn.subvertpy import delta, ra, repos, delta, client, properties
-from bzrlib.plugins.svn.subvertpy.ra import Auth, RemoteAccess
+from subvertpy import delta, ra, repos, delta, client, properties
+from subvertpy.ra import Auth, RemoteAccess
 
 class TestFileEditor(object):
     def __init__(self, file):
@@ -347,6 +347,6 @@ def test_suite():
             'mapping3.test_scheme']
     suite.addTest(loader.loadTestsFromModuleNames(["%s.%s" % (__name__, i) for i in testmod_names]))
     suite.addTest(loader.loadTestsFromModuleNames(["bzrlib.plugins.svn.foreign.test_versionedfiles"]))
-    suite.addTest(loader.loadTestsFromModuleNames(["bzrlib.plugins.svn.subvertpy.tests.%s" % name for name in 'test_wc', 'test_client', 'test_ra', 'test_repos', 'test_core', 'test_delta', 'test_properties']))
+    suite.addTest(loader.loadTestsFromModuleNames(["subvertpy.tests.%s" % name for name in 'test_wc', 'test_client', 'test_ra', 'test_repos', 'test_core', 'test_delta', 'test_properties']))
 
     return suite

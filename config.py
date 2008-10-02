@@ -20,7 +20,7 @@ from bzrlib.config import IniBasedConfig, config_dir, ensure_config_dir_exists, 
 
 import os
 
-from bzrlib.plugins.svn.subvertpy import SubversionException, properties
+from subvertpy import SubversionException, properties
 
 # Settings are stored by UUID. 
 # Data stored includes default branching scheme and locations the repository 

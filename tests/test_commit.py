@@ -29,10 +29,10 @@ from bzrlib.workingtree import WorkingTree
 from copy import copy
 import os
 
-from bzrlib.plugins.svn.subvertpy import ra
+from subvertpy import ra
 from bzrlib.plugins.svn.commit import set_svn_revprops, _revision_id_to_svk_feature
 from bzrlib.plugins.svn.errors import RevpropChangeFailed
-from bzrlib.plugins.svn.subvertpy.properties import time_to_cstring
+from subvertpy.properties import time_to_cstring
 from bzrlib.plugins.svn.transport import SvnRaTransport
 from bzrlib.plugins.svn.tests import SubversionTestCase
 

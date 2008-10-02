@@ -21,7 +21,7 @@ from bzrlib.bzrdir import BzrDirFormat, BzrDir
 from bzrlib.errors import (NotLocalUrl, NoWorkingTree, AlreadyBranchError)
 from bzrlib.trace import warning
 
-from bzrlib.plugins.svn import subvertpy
+import subvertpy
 from bzrlib.plugins.svn.errors import NoSvnRepositoryPresent
 from bzrlib.plugins.svn.format import SvnRemoteFormat
 from bzrlib.plugins.svn.repository import SvnRepository

@@ -19,7 +19,7 @@
 from bzrlib.errors import NoSuchRevision
 
 from bzrlib.plugins.svn import logwalker
-from bzrlib.plugins.svn.subvertpy import SubversionException, properties, ERR_FS_NO_SUCH_REVISION
+from subvertpy import SubversionException, properties, ERR_FS_NO_SUCH_REVISION
 
 
 class PathPropertyProvider(object):

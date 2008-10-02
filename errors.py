@@ -22,7 +22,7 @@ from bzrlib.errors import (BzrError, ConnectionError, ConnectionReset,
                            NoSuchRevision)
 
 import urllib
-from bzrlib.plugins.svn import subvertpy
+import subvertpy
 
 
 class InvalidBzrSvnRevision(NoSuchRevision):

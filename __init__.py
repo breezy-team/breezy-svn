@@ -41,7 +41,7 @@ from bzrlib.revisionspec import SPEC_TYPES
 from bzrlib.trace import warning, mutter
 from bzrlib.transport import register_lazy_transport, register_transport_proto
 
-import os
+import os, sys
 
 # versions ending in 'exp' mean experimental mappings
 # versions ending in 'dev' mean development version
@@ -77,11 +77,12 @@ def check_bzrlib_version(desired):
         if not (bzrlib_version[0], bzrlib_version[1]-1) in desired:
             raise BzrError('Version mismatch')
 
-def check_subversion_version():
+def check_subversion_version(subvertpy):
     """Check that Subversion is compatible.
 
     """
-    from bzrlib.plugins.svn.subvertpy import ra
+    # Installed ?
+    from subvertpy import ra
     ra_version = ra.version()
     if (ra_version[0] >= 5 and getattr(ra, 'SVN_REVISION', None) and 
         27729 <= ra.SVN_REVISION < 31470):
@@ -90,8 +91,14 @@ def check_subversion_version():
 
     mutter("bzr-svn: using Subversion %d.%d.%d (%s)" % ra_version)
 
+# Find subvertpy, somehow
+try:
+    import subvertpy 
+except ImportError:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "subvertpy"))
+    import subvertpy
 
-check_subversion_version()
+check_subversion_version(subvertpy)
 
 from bzrlib.plugins.svn import format, revspec
 

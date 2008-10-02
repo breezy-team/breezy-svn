@@ -24,7 +24,7 @@ from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import TestSkipped
 from bzrlib.workingtree import WorkingTree
 
-from bzrlib.plugins.svn import subvertpy
+import subvertpy
 from bzrlib.plugins.svn.layout.standard import RootLayout
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.tree import SvnBasisTree, inventory_add_external
