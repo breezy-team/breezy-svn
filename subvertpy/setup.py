@@ -242,7 +242,7 @@ def SvnExtension(name, *args, **kwargs):
             if "define_macros" not in kwargs:
                 kwargs["define_macros"] = []
             kwargs["define_macros"].extend((('DARWIN', None), ('SVN_KEYCHAIN_PROVIDER_AVAILABLE', '1')))
-    return Extension("bzrlib.plugins.svn.subvertpy.%s" % name, *args, **kwargs)
+    return Extension(name, *args, **kwargs)
 
 
 # On Windows, we install the apr binaries too.
@@ -290,15 +290,16 @@ class install_lib_with_dlls(install_lib):
 
 def source_path(filename):
     source_code_dir = os.path.dirname(__file__)
-    return os.path.join(source_code_dir, filename)
+    return os.path.join(source_code_dir, "subvertpy", filename)
 
 
-subvertpy_modules = [ 
-    SvnExtension("client", [source_path(n) for n in "client.c", "editor.c", "util.c", "ra.c", "wc.c"], libraries=["svn_client-1", "svn_subr-1"]), 
-    SvnExtension("ra", [source_path(n) for n in "ra.c", "util.c", "editor.c"], libraries=["svn_ra-1", "svn_delta-1", "svn_subr-1"]),
-    SvnExtension("repos", [source_path(n) for n in "repos.c", "util.c"], libraries=["svn_repos-1", "svn_subr-1"]),
-    SvnExtension("wc", [source_path(n) for n in "wc.c", "util.c", "editor.c"], libraries=["svn_wc-1", "svn_subr-1"])
-    ]
+def subvertpy_modules(basemodule):
+    return [
+        SvnExtension("%s.client" % basemodule, [source_path(n) for n in "client.c", "editor.c", "util.c", "ra.c", "wc.c"], libraries=["svn_client-1", "svn_subr-1"]), 
+        SvnExtension("%s.ra" % basemodule, [source_path(n) for n in "ra.c", "util.c", "editor.c"], libraries=["svn_ra-1", "svn_delta-1", "svn_subr-1"]),
+        SvnExtension("%s.repos" % basemodule, [source_path(n) for n in "repos.c", "util.c"], libraries=["svn_repos-1", "svn_subr-1"]),
+        SvnExtension("%s.wc" % basemodule, [source_path(n) for n in "wc.c", "util.c", "editor.c"], libraries=["svn_wc-1", "svn_subr-1"])
+        ]
 
 
 if __name__ == "__main__":
@@ -315,7 +316,6 @@ if __name__ == "__main__":
           Alternative Python bindings for Subversion, split out from bzr-svn. The goal is to have complete, portable and "Pythonic" Python bindings. 
           """,
           packages=['subvertpy', 'subvertpy.tests'],
-          package_dir={"subvertpy":"."},
-          ext_modules=subvertpy_modules,
+          ext_modules=subvertpy_modules("subvertpy"),
           cmdclass = { 'install_lib': install_lib_with_dlls },
           )
