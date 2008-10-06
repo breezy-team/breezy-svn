@@ -18,7 +18,7 @@ import copy
 import os
 import time
 
-from subvertpy import NODE_NONE, NODE_FILE, NODE_DIR
+from subvertpy import NODE_NONE, NODE_FILE, NODE_DIR, ERR_RA_SVN_UNKNOWN_CMD
 from subvertpy.marshall import marshall, unmarshall, literal, MarshallError
 
 
@@ -69,14 +69,15 @@ class SVNServer:
         self.send_msg([literal("success"), list(contents)])
 
     def send_unknown(self, cmd):
-        self.send_failure([210001, "Unknown command '%s'" % cmd, __file__, \
-                          52])
+        self.send_failure([ERR_RA_SVN_UNKNOWN_CMD, 
+            "Unknown command '%s'" % cmd, __file__, 52])
 
     def get_latest_rev(self):
         self.send_success([], "")
         self.send_success(self.repo_backend.get_latest_revnum())
 
     def check_path(self, path, revnum):
+        # TODO: Proper implementation
         return NODE_DIR
 
     def log(self, target_path, start_rev, end_rev, changed_paths, 
@@ -188,6 +189,7 @@ class SVNServer:
         while not self._stop:
             ( cmd, args ) = self.recv_msg()
             if not self.commands.has_key(cmd):
+                self.mutter("client used unknown command %r" % cmd)
                 self.send_unknown(cmd)
                 return
             else:
@@ -202,13 +204,11 @@ class SVNServer:
             try:
                 self.inbuffer += self.recv_fn()
                 (self.inbuffer, ret) = unmarshall(self.inbuffer)
-                self.mutter('in: %r' % ret)
                 return ret
             except MarshallError, e:
                 self.mutter('ERROR: %r' % e)
 
     def send_msg(self, data):
-        self.mutter('out: %r' % data)
         self.send_fn(marshall(data))
 
     def mutter(self, text):
