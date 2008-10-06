@@ -360,8 +360,9 @@ class SVNServer:
                 return ret
             except NeedMoreData:
                 newdata = self.recv_fn(512)
-                self.mutter("IN: %r" % newdata)
-                self.inbuffer += newdata
+                if newdata != "":
+                    self.mutter("IN: %r" % newdata)
+                    self.inbuffer += newdata
             except MarshallError, e:
                 self.mutter('ERROR: %r' % e)
                 raise

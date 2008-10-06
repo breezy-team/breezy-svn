@@ -16,6 +16,9 @@
 """Subversion server implementation."""
 
 from bzrlib.branch import Branch
+from bzrlib.inventory import Inventory
+
+from bzrlib.plugins.svn.commit import dir_editor_send_changes
 
 from subvertpy import NODE_DIR
 from subvertpy.server import SVNServer, ServerBackend, ServerRepositoryBackend
@@ -102,11 +105,31 @@ class RepositoryBackend(ServerRepositoryBackend):
     def update(self, editor, revnum, target_path, recurse=True):
         if revnum is None:
             revnum = self.get_latest_revnum()
+        path, revid = self._get_revid(revnum)
         editor.set_target_revision(revnum)
         root = editor.open_root()
-        # FIXME
-        root.close()
-        editor.close()
+        old_inv = Inventory(None)
+        self.branch.repository.lock_read()
+        try:
+            new_tree = self.branch.repository.revision_tree(revid)
+            new_inv = new_tree.inventory
+            modified_files = {}
+            visit_dirs = set()
+            for name, ie in new_inv.iter_entries():
+                if ie.kind == "directory":
+                    visit_dirs.add(ie.file_id)
+                elif ie.kind == 'file':
+                    modified_files[ie.file_id] = new_tree.get_file_text(ie.file_id)
+                elif ie.kind == 'symlink':
+                    modified_files[ie.file_id] = "link %s" % ie.symlink_target
+
+            dir_editor_send_changes(old_inv, new_inv, "", new_inv.root.file_id, 
+                    root, "svn://localhost/", revnum-1, "trunk", 
+                                modified_files, visit_dirs)
+            root.close()
+            editor.close()
+        finally:
+            self.branch.repository.unlock()
 
     def check_path(self, path, revnum):
         return NODE_DIR
