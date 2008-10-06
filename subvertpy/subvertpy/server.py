@@ -218,6 +218,9 @@ class SVNServer:
             def close(self):
                 self.conn.send_msg([literal("close-edit"), []])
 
+            def abort(self):
+                self.conn.send_msg([literal("abort-edit"), []])
+
         class DirectoryEditor:
 
             def __init__(self, conn, id):
@@ -226,13 +229,33 @@ class SVNServer:
 
             def add_file(self, path):
                 child = generate_random_id()
-                self.conn.send_msg(["add-file", [path, self.id, child]])
+                self.conn.send_msg([literal("add-file"), [path, self.id, child]])
                 return FileEditor(self.conn, child)
+
+            def open_file(self, path, base_revnum):
+                child = generate_random_id()
+                self.conn.send_msg([literal("open-file"), [path, self.id, child, base_revnum]])
+                return FileEditor(self.conn, child)
+
+            def delete_entry(self, path, base_revnum):
+                self.conn.send_msg([literal("delete-entry"), [path, base_revnum, self.id]])
 
             def add_directory(self, path):
                 child = generate_random_id()
-                self.conn.send_msg(["add-dir", [path, self.id, child]])
+                self.conn.send_msg([literal("add-dir"), [path, self.id, child]])
                 return DirectoryEditor(self.conn, child)
+
+            def open_directory(self, path, base_revnum):
+                child = generate_random_id()
+                self.conn.send_msg([literal("open-dir"), [path, self.id, child, base_revnum]])
+                return DirectoryEditor(self.conn, child)
+
+            def change_prop(self, name, value):
+                if value is None:
+                    value = []
+                else:
+                    value = [value]
+                self.conn.send_msg([literal("change-dir-prop"), [self.id, name, value]])
 
             def close(self):
                 self.conn.send_msg([literal("close-dir"), [self.id]])
@@ -244,7 +267,14 @@ class SVNServer:
                 self.id = id
 
             def close(self):
-                self.conn.send_msg(["close-file", [self.id]])
+                self.conn.send_msg([literal("close-file"), [self.id]])
+
+            def change_prop(self, name, value):
+                if value is None:
+                    value = []
+                else:
+                    value = [value]
+                self.conn.send_msg([literal("change-dir-prop"), [self.id, name, value]])
 
         if len(rev) == 0:
             revnum = None
