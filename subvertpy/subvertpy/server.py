@@ -49,6 +49,9 @@ class ServerRepositoryBackend:
     def stat(self, path, revnum):
         raise NotImplementedError(self.stat)
 
+    def rev_proplist(self, revnum):
+        raise NotImplementedError(self.rev_proplist)
+
 
 MAJOR_VERSION = 1
 MINOR_VERSION = 2
@@ -153,6 +156,19 @@ class SVNServer:
         self.send_failure([ERR_UNSUPPORTED_FEATURE, 
             "commit not yet supported", __file__, 42])
 
+    def rev_proplist(self, revnum):
+        self.send_ack()
+        revprops = self.repo_backend.rev_proplist(revnum)
+        self.send_success(revprops.items())
+
+    def rev_prop(self, revnum, name):
+        self.send_ack()
+        revprops = self.repo_backend.rev_proplist(revnum)
+        if name in revprops:
+            self.send_success(revprops[name])
+        else:
+            self.send_success()
+
     def update(self, rev, target, recurse, depth=None, send_copyfrom_param=True):
         self.send_ack()
         while True:
@@ -222,9 +238,9 @@ class SVNServer:
             "reparent": reparent,
             "stat": stat,
             "commit": commit,
+            "rev-proplist": rev_proplist,
+            "rev-prop": rev_prop,
             # FIXME: get-dated-rev
-            # FIXME: rev-proplist
-            # FIXME: rev-prop
             # FIXME: get-file
             # FIXME: get-dir
             # FIXME: check-path
