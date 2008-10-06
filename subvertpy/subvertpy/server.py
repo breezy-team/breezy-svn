@@ -269,6 +269,19 @@ class SVNServer:
             def close(self):
                 self.conn.send_msg([literal("close-file"), [self.id]])
 
+            def apply_textdelta(self, base_checksum=None):
+                if base_checksum is None:
+                    base_check = []
+                else:
+                    base_check = [base_checksum]
+                self.conn.send_msg([literal("apply-textdelta"), [self.id, base_check]])
+                def send_textdelta(chunk):
+                    if chunk is None:
+                        self.conn.send_msg([literal("textdelta-end"), [self.id]])
+                    else:
+                        self.conn.send_msg([literal("textdelta-chunk"), [self.id, chunk]])
+                return send_textdelta
+
             def change_prop(self, name, value):
                 if value is None:
                     value = []
