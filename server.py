@@ -85,6 +85,9 @@ class RepositoryBackend(ServerRepositoryBackend):
         finally:
             self.branch.repository.unlock()
 
+    def rev_proplist(self, revnum):
+        return {}
+
     def update(self, editor, revnum, target_path, recurse=True):
         editor.set_target_revision(revnum)
         root = editor.open_root()
@@ -94,6 +97,11 @@ class RepositoryBackend(ServerRepositoryBackend):
 
     def check_path(self, path, revnum):
         return NODE_DIR
+
+    def get_locations(self, path, peg_revnum, revnums):
+        if path.strip() in ("trunk", ""):
+            return dict([(rev, path) for rev in revnums])
+        raise NotImplementedError
     
 
 class BzrServerBackend(ServerBackend):

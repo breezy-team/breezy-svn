@@ -52,6 +52,9 @@ class ServerRepositoryBackend:
     def rev_proplist(self, revnum):
         raise NotImplementedError(self.rev_proplist)
 
+    def get_locations(self, path, peg_revnum, revnums):
+        raise NotImplementedError(self.get_locations)
+
 
 MAJOR_VERSION = 1
 MINOR_VERSION = 2
@@ -169,6 +172,14 @@ class SVNServer:
         else:
             self.send_success()
 
+    def get_locations(self, path, peg_revnum, revnums):
+        self.send_ack()
+        locations = self.repo_backend.get_locations(path, peg_revnum, revnums)
+        for rev, path in locations.items():
+            self.send_msg([rev, path])
+        self.send_msg(literal("done"))
+        self.send_success()
+
     def update(self, rev, target, recurse, depth=None, send_copyfrom_param=True):
         self.send_ack()
         while True:
@@ -240,6 +251,7 @@ class SVNServer:
             "commit": commit,
             "rev-proplist": rev_proplist,
             "rev-prop": rev_prop,
+            "get-locations": get_locations,
             # FIXME: get-dated-rev
             # FIXME: get-file
             # FIXME: get-dir
@@ -247,7 +259,6 @@ class SVNServer:
             # FIXME: switch
             # FIXME: status
             # FIXME: diff
-            # FIXME: get-locations
             # FIXME: get-file-revs
             # FIXME: replay
     }
