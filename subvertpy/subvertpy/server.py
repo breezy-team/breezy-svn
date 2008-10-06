@@ -19,13 +19,18 @@ import os
 import time
 
 from subvertpy import ERR_RA_SVN_UNKNOWN_CMD, NODE_DIR, NODE_FILE, NODE_UNKNOWN, NODE_NONE, ERR_UNSUPPORTED_FEATURE
-from subvertpy.marshall import marshall, unmarshall, literal, MarshallError
+from subvertpy.marshall import marshall, unmarshall, literal, MarshallError, NeedMoreData
 
 
 class ServerBackend:
 
     def open_repository(self, location):
         raise NotImplementedError(self.open_repository)
+
+
+def generate_random_id():
+    import uuid
+    return str(uuid.uuid4())
 
 
 class ServerRepositoryBackend:
@@ -198,16 +203,20 @@ class SVNServer:
             def __init__(self, conn):
                 self.conn = conn
 
-            def set_target_revision(self, rev):
-                self.conn.send_msg(["target-rev", rev])
+            def set_target_revision(self, revnum):
+                self.conn.send_msg([literal("target-rev"), [revnum]])
 
             def open_root(self, base_revision=None):
                 id = generate_random_id()
-                self.send_msg(["open-root", [base_revision, tree.inventory.root.file_id]])
+                if base_revision is None:
+                    baserev = []
+                else:
+                    baserev = [base_revision]
+                self.conn.send_msg([literal("open-root"), [baserev, id]])
                 return DirectoryEditor(self.conn, id)
 
             def close(self):
-                self.conn.send_msg(["close-edit", []])
+                self.conn.send_msg([literal("close-edit"), []])
 
         class DirectoryEditor:
 
@@ -226,7 +235,7 @@ class SVNServer:
                 return DirectoryEditor(self.conn, child)
 
             def close(self):
-                self.conn.send_msg(["close-dir", [self.id]])
+                self.conn.send_msg([literal("close-dir"), [self.id]])
 
         class FileEditor:
 
@@ -301,13 +310,15 @@ class SVNServer:
         self._stop = True
 
     def recv_msg(self):
-        # FIXME: Blocking read?
+        # TODO: socket read should be blocking
         while True:
             try:
-                self.inbuffer += self.recv_fn(512)
                 (self.inbuffer, ret) = unmarshall(self.inbuffer)
-                self.mutter("IN: %r" % ret)
                 return ret
+            except NeedMoreData:
+                newdata = self.recv_fn(512)
+                self.mutter("IN: %r" % newdata)
+                self.inbuffer += newdata
             except MarshallError, e:
                 self.mutter('ERROR: %r' % e)
                 raise

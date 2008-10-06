@@ -100,6 +100,8 @@ class RepositoryBackend(ServerRepositoryBackend):
         return ret
 
     def update(self, editor, revnum, target_path, recurse=True):
+        if revnum is None:
+            revnum = self.get_latest_revnum()
         editor.set_target_revision(revnum)
         root = editor.open_root()
         # FIXME
