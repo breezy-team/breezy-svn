@@ -58,6 +58,9 @@ class RepositoryBackend(ServerRepositoryBackend):
     def get_latest_revnum(self):
         return self.branch.revno()
 
+    def _get_revid(self, revnum):
+        return "/trunk", self.branch.get_rev_id(revnum)
+
     def log(self, send_revision, target_path, start_rev, end_rev, report_changed_paths,
             strict_node, limit):
         i = 0
@@ -74,9 +77,10 @@ class RepositoryBackend(ServerRepositoryBackend):
                 if limit != 0 and i == limit:
                     break
                 if revno > 0:
-                    rev = self.branch.repository.get_revision(self.branch.get_rev_id(revno))
+                    (path, revid) = self._get_revid(revno)
+                    rev = self.branch.repository.get_revision(revid)
                     if report_changed_paths:
-                        changes = determine_changed_paths(self.branch.repository, "/trunk", rev, revno)
+                        changes = determine_changed_paths(self.branch.repository, path, rev, revno)
                     else:
                         changes = None
                     send_revision(revno, 
@@ -86,7 +90,14 @@ class RepositoryBackend(ServerRepositoryBackend):
             self.branch.repository.unlock()
 
     def rev_proplist(self, revnum):
-        return {}
+        path, revid = self._get_revid(revnum)
+        rev = self.branch.repository.get_revision(revid)
+        ret = {
+                "svn:author": rev.committer, 
+                "svn:date": time.strftime("%Y-%m-%dT%H:%M:%S.00000Z", time.gmtime(rev.timestamp)),
+                "svn:log": rev.message
+                }
+        return ret
 
     def update(self, editor, revnum, target_path, recurse=True):
         editor.set_target_revision(revnum)

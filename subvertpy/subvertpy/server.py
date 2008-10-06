@@ -168,7 +168,7 @@ class SVNServer:
         self.send_ack()
         revprops = self.repo_backend.rev_proplist(revnum)
         if name in revprops:
-            self.send_success(revprops[name])
+            self.send_success([revprops[name]])
         else:
             self.send_success()
 
