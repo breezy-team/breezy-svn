@@ -80,7 +80,8 @@ class SVNServer:
         return NODE_DIR
 
     def log(self, target_path, start_rev, end_rev, changed_paths, 
-            strict_node, limit=None):
+            strict_node, limit=None, include_merged_revisions=False, 
+            all_revprops=None, revprops=None):
         def send_revision(revno, author, date, message):
             self.send_msg([[], revno, [author], [date], [message]])
         self.send_success([], "")
@@ -206,4 +207,4 @@ class SVNServer:
 
     def mutter(self, text):
         if self._logf is not None:
-            self._logf.write(text)
+            self._logf.write("%s\n" % text)

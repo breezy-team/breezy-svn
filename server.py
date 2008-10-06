@@ -55,7 +55,7 @@ class RepositoryBackend(ServerRepositoryBackend):
                     break
                 if revno != 0:
                     rev = self.branch.repository.get_revision(self.branch.get_rev_id(revno))
-                    send_revision(revno, rev.committer, time.strftime("%Y-%m-%dT%H:%M:%S.00000Z", time.gmtime(rev.timestamp)), rev.message)
+                    send_revision(revno, rev.committer.encode("utf-8"), time.strftime("%Y-%m-%dT%H:%M:%S.00000Z", time.gmtime(rev.timestamp)), rev.message.encode("utf-8"))
         finally:
             self.branch.repository.unlock()
     
