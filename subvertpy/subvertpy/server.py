@@ -46,6 +46,9 @@ class ServerRepositoryBackend:
     def check_path(self, path, revnum):
         raise NotImplementedError(self.check_path)
 
+    def stat(self, path, revnum)
+        raise NotImplementedError(self.stat)
+
 
 MAJOR_VERSION = 1
 MINOR_VERSION = 2
@@ -135,9 +138,16 @@ class SVNServer:
         self.send_ack()
         self.send_success()
 
-    def stat(self, path, revnum):
+    def stat(self, path, rev):
+        if len(rev) == 0:
+            revnum = None
+        else:
+            revnum = rev[0]
         self.send_ack()
-        self.send_success()
+        dirent = self.repo_backend.stat(path, revnum)
+        self.send_success(dirent["name"], dirent["kind"], dirent["size"],
+                          dirent["has-props"], dirent["created-rev"],
+                          dirent["created-date"], dirent["last-author"])
 
     def update(self, rev, target, recurse, depth=None, send_copyfrom_param=True):
         self.send_ack()
