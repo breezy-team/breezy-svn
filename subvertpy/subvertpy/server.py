@@ -49,7 +49,8 @@ class ServerRepositoryBackend:
 
 MAJOR_VERSION = 1
 MINOR_VERSION = 2
-CAPABILITIES = [literal("edit-pipeline")]
+CAPABILITIES = ["edit-pipeline"]
+MECHANISMS = ["ANONYMOUS"]
 
 
 class SVNServer:
@@ -63,10 +64,11 @@ class SVNServer:
 
     def send_greeting(self):
         self.send_success(
-            MAJOR_VERSION, MINOR_VERSION, [literal("ANONYMOUS")], CAPABILITIES)
+            MAJOR_VERSION, MINOR_VERSION, [literal(x) for x in MECHANISMS], 
+            [literal(x) for x in CAPABILITIES])
 
     def send_mechs(self):
-        self.send_success([literal("ANONYMOUS")], "")
+        self.send_success([literal(x) for x in MECHANISMS], "")
 
     def send_failure(self, *contents):
         self.send_msg([literal("failure"), list(contents)])
@@ -74,17 +76,24 @@ class SVNServer:
     def send_success(self, *contents):
         self.send_msg([literal("success"), list(contents)])
 
+    def send_ack(self):
+        self.send_success([], "")
+
     def send_unknown(self, cmd):
         self.send_failure([ERR_RA_SVN_UNKNOWN_CMD, 
             "Unknown command '%s'" % cmd, __file__, 52])
 
     def get_latest_rev(self):
-        self.send_success([], "")
+        self.send_ack()
         self.send_success(self.repo_backend.get_latest_revnum())
 
-    def check_path(self, path, revnum):
+    def check_path(self, path, rev):
+        if len(rev) == 0:
+            revnum = None
+        else:
+            revnum = rev[0]
         kind = self.repo_backend.check_path(path, revnum)
-        self.send_success([], "")
+        self.send_ack()
         self.send_success(literal({NODE_NONE: "none", 
                            NODE_DIR: "dir",
                            NODE_FILE: "file",
@@ -102,7 +111,7 @@ class SVNServer:
                     else:
                         changes.append((p, literal(action), ()))
             self.send_msg([changes, revno, [author], [date], [message]])
-        self.send_success([], "")
+        self.send_ack()
         if len(start_rev) == 0:
             start_revnum = None
         else:
@@ -116,23 +125,29 @@ class SVNServer:
         self.send_msg(literal("done"))
         self.send_success()
 
+    def open_backend(self, url):
+        import urllib
+        (rooturl, location) = urllib.splithost(url)
+        self.repo_backend, self.relpath = self.backend.open_repository(location)
+
     def reparent(self, parent):
-        self.send_success([], "")
+        self.open_backend(parent)
+        self.send_ack()
         self.send_success()
 
     def stat(self, path, revnum):
-        self.send_success([], "")
+        self.send_ack()
         self.send_success()
 
-    def update(self, rev, target, recurse):
-        self.send_success([], "")
+    def update(self, rev, target, recurse, depth=None, send_copyfrom_param=True):
+        self.send_ack()
         while True:
             msg = self.recv_msg()
             assert msg[0] in ["set-path", "finish-report"]
             if msg[0] == "finish-report":
                 break
 
-        self.send_success([], "")
+        self.send_ack()
 
         class Editor:
 
@@ -178,8 +193,12 @@ class SVNServer:
             def close(self):
                 self.conn.send_msg(["close-file", [self.id]])
 
-            self.repo_backend.update(Editor(self), rev, target, recurse)
-            self.send_success([], "")
+        if len(rev) == 0:
+            revnum = None
+        else:
+            revnum = rev[0]
+        self.repo_backend.update(Editor(self), revnum, target, recurse)
+        self.send_ack()
 
     commands = {
             "get-latest-rev": get_latest_rev,
@@ -220,10 +239,7 @@ class SVNServer:
         # TODO: Proper authentication
         self.send_success()
 
-        import urllib
-        (rooturl, location) = urllib.splithost(url)
-
-        self.repo_backend, self.relpath = self.backend.open_repository(location)
+        self.open_backend(url)
         self.send_success(self.repo_backend.get_uuid(), url)
 
         # Expect:
@@ -245,11 +261,13 @@ class SVNServer:
             try:
                 self.inbuffer += self.recv_fn()
                 (self.inbuffer, ret) = unmarshall(self.inbuffer)
+                self.mutter("IN: %r" % ret)
                 return ret
             except MarshallError, e:
                 self.mutter('ERROR: %r' % e)
 
     def send_msg(self, data):
+        self.mutter("OUT: %r" % data)
         self.send_fn(marshall(data))
 
     def mutter(self, text):
