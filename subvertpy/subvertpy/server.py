@@ -18,7 +18,7 @@ import copy
 import os
 import time
 
-from subvertpy import ERR_RA_SVN_UNKNOWN_CMD, NODE_DIR, NODE_FILE, NODE_UNKNOWN, NODE_NONE
+from subvertpy import ERR_RA_SVN_UNKNOWN_CMD, NODE_DIR, NODE_FILE, NODE_UNKNOWN, NODE_NONE, ERR_UNSUPPORTED_FEATURE
 from subvertpy.marshall import marshall, unmarshall, literal, MarshallError
 
 
@@ -46,7 +46,7 @@ class ServerRepositoryBackend:
     def check_path(self, path, revnum):
         raise NotImplementedError(self.check_path)
 
-    def stat(self, path, revnum)
+    def stat(self, path, revnum):
         raise NotImplementedError(self.stat)
 
 
@@ -149,6 +149,10 @@ class SVNServer:
                           dirent["has-props"], dirent["created-rev"],
                           dirent["created-date"], dirent["last-author"])
 
+    def commit(self, logmsg, locks, keep_locks=False, rev_props=None):
+        self.send_failure([ERR_UNSUPPORTED_FEATURE, 
+            "commit not yet supported", __file__, 42])
+
     def update(self, rev, target, recurse, depth=None, send_copyfrom_param=True):
         self.send_ack()
         while True:
@@ -217,6 +221,7 @@ class SVNServer:
             "check-path": check_path,
             "reparent": reparent,
             "stat": stat,
+            "commit": commit,
             # FIXME: get-dated-rev
             # FIXME: rev-proplist
             # FIXME: rev-prop
@@ -269,12 +274,13 @@ class SVNServer:
         # FIXME: Blocking read?
         while True:
             try:
-                self.inbuffer += self.recv_fn()
+                self.inbuffer += self.recv_fn(512)
                 (self.inbuffer, ret) = unmarshall(self.inbuffer)
                 self.mutter("IN: %r" % ret)
                 return ret
             except MarshallError, e:
                 self.mutter('ERROR: %r' % e)
+                raise
 
     def send_msg(self, data):
         self.mutter("OUT: %r" % data)
