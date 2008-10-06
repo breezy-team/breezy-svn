@@ -18,7 +18,7 @@ import copy
 import os
 import time
 
-from subvertpy import NODE_NONE, NODE_FILE, NODE_DIR, ERR_RA_SVN_UNKNOWN_CMD
+from subvertpy import ERR_RA_SVN_UNKNOWN_CMD, NODE_DIR, NODE_FILE, NODE_UNKNOWN, NODE_NONE
 from subvertpy.marshall import marshall, unmarshall, literal, MarshallError
 
 
@@ -39,6 +39,12 @@ class ServerRepositoryBackend:
     def log(self, send_revision, target_path, start_rev, end_rev, changed_paths,
             strict_node, limit):
         raise NotImplementedError(self.log)
+
+    def update(self, editor, revnum, target_path, recurse=True):
+        raise NotImplementedError(self.update)
+
+    def check_path(self, path, revnum):
+        raise NotImplementedError(self.check_path)
 
 
 MAJOR_VERSION = 1
@@ -77,8 +83,12 @@ class SVNServer:
         self.send_success(self.repo_backend.get_latest_revnum())
 
     def check_path(self, path, revnum):
-        # TODO: Proper implementation
-        return NODE_DIR
+        kind = self.repo_backend.check_path(path, revnum)
+        self.send_success([], "")
+        self.send_success(literal({NODE_NONE: "none", 
+                           NODE_DIR: "dir",
+                           NODE_FILE: "file",
+                           NODE_UNKNOWN: "unknown"}[kind]))
 
     def log(self, target_path, start_rev, end_rev, changed_paths, 
             strict_node, limit=None, include_merged_revisions=False, 
@@ -93,8 +103,16 @@ class SVNServer:
                         changes.append((p, literal(action), ()))
             self.send_msg([changes, revno, [author], [date], [message]])
         self.send_success([], "")
-        self.repo_backend.log(send_revision, target_path, start_rev[0], 
-                              end_rev[0], changed_paths, strict_node, limit)
+        if len(start_rev) == 0:
+            start_revnum = None
+        else:
+            start_revnum = start_rev[0]
+        if len(end_rev) == 0:
+            end_revnum = None
+        else:
+            end_revnum = end_rev[0]
+        self.repo_backend.log(send_revision, target_path, start_revnum, 
+                              end_revnum, changed_paths, strict_node, limit)
         self.send_msg(literal("done"))
         self.send_success()
 
@@ -115,30 +133,53 @@ class SVNServer:
                 break
 
         self.send_success([], "")
-        self.send_msg(["target-rev", rev])
-        tree = self.branch.repository.revision_tree(
-                self.branch.get_rev_id(rev[0]))
-        path2id = {}
-        id2path = {}
-        self.send_msg(["open-root", [rev, tree.inventory.root.file_id]])
-        def send_children(self, id):
-            for child in tree.inventory[id].children:
-                if tree.inventory[child].kind in ('symlink', 'file'):
-                    self.send_msg(["add-file", [tree.inventory.id2path(child),
-                                                id, child]])
-                    # FIXME
-                    self.send_msg(["close-file", [child]])
-                else:
-                    self.send_msg(["add-dir", [tree.inventory.id2path(child),
-                                                id, child]])
-                    send_children(child)
-                    self.send_msg(["close-dir", [child]])
-        #send_children(tree.inventory.root.file_id)
-        self.send_msg(["close-dir", [tree.inventory.root.file_id]])
-        self.send_msg(["close-edit", []])
-        #msg = self.recv_msg()
-        #self.send_msg(msg)
 
+        class Editor:
+
+            def __init__(self, conn):
+                self.conn = conn
+
+            def set_target_revision(self, rev):
+                self.conn.send_msg(["target-rev", rev])
+
+            def open_root(self, base_revision=None):
+                id = generate_random_id()
+                self.send_msg(["open-root", [base_revision, tree.inventory.root.file_id]])
+                return DirectoryEditor(self.conn, id)
+
+            def close(self):
+                self.conn.send_msg(["close-edit", []])
+
+        class DirectoryEditor:
+
+            def __init__(self, conn, id):
+                self.conn = conn
+                self.id = id
+
+            def add_file(self, path):
+                child = generate_random_id()
+                self.conn.send_msg(["add-file", [path, self.id, child]])
+                return FileEditor(self.conn, child)
+
+            def add_directory(self, path):
+                child = generate_random_id()
+                self.conn.send_msg(["add-dir", [path, self.id, child]])
+                return DirectoryEditor(self.conn, child)
+
+            def close(self):
+                self.conn.send_msg(["close-dir", [self.id]])
+
+        class FileEditor:
+
+            def __init__(self, conn, id):
+                self.conn = conn
+                self.id = id
+
+            def close(self):
+                self.conn.send_msg(["close-file", [self.id]])
+
+            self.repo_backend.update(Editor(self), rev, target, recurse)
+            self.send_success([], "")
 
     commands = {
             "get-latest-rev": get_latest_rev,

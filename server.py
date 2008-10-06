@@ -17,6 +17,7 @@
 
 from bzrlib.branch import Branch
 
+from subvertpy import NODE_DIR
 from subvertpy.server import SVNServer, ServerBackend, ServerRepositoryBackend
 from subvertpy.properties import time_to_cstring
 
@@ -83,6 +84,16 @@ class RepositoryBackend(ServerRepositoryBackend):
                             rev.message, changed_paths=changes)
         finally:
             self.branch.repository.unlock()
+
+    def update(self, editor, revnum, target_path, recurse=True):
+        editor.set_target_revision(revnum)
+        root = editor.open_root()
+        # FIXME
+        root.close()
+        editor.close()
+
+    def check_path(self, path, revnum):
+        return NODE_DIR
     
 
 class BzrServerBackend(ServerBackend):
