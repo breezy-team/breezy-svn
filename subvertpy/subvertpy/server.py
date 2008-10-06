@@ -151,9 +151,12 @@ class SVNServer:
             revnum = rev[0]
         self.send_ack()
         dirent = self.repo_backend.stat(path, revnum)
-        self.send_success(dirent["name"], dirent["kind"], dirent["size"],
+        if dirent is None:
+            self.send_success([])
+        else:
+            self.send_success([dirent["name"], dirent["kind"], dirent["size"],
                           dirent["has-props"], dirent["created-rev"],
-                          dirent["created-date"], dirent["last-author"])
+                          dirent["created-date"], dirent["last-author"]])
 
     def commit(self, logmsg, locks, keep_locks=False, rev_props=None):
         self.send_failure([ERR_UNSUPPORTED_FEATURE, 

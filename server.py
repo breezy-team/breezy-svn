@@ -114,6 +114,9 @@ class RepositoryBackend(ServerRepositoryBackend):
             return dict([(rev, path) for rev in revnums])
         raise NotImplementedError
     
+    def stat(self, path, revnum):
+        return None
+
 
 class BzrServerBackend(ServerBackend):
 
