@@ -18,8 +18,27 @@
 from bzrlib.branch import Branch
 
 from subvertpy.server import SVNServer, ServerBackend, ServerRepositoryBackend
+from subvertpy.properties import time_to_cstring
 
 import os, time
+
+def determine_changed_paths(repository, branch_path, rev, revno):
+    def fixpath(p):
+        return "%s/%s" % (branch_path, p.encode("utf-8"))
+    changes = {}
+    changes[branch_path] = ("M", None, -1) # Always changes
+    delta = repository.get_revision_delta(rev.revision_id)
+    for (path, id, kind) in delta.added:
+        changes[fixpath(path)] = ("A", None, -1)
+    for (path, id, kind) in delta.removed:
+        changes[fixpath(path)] = ("D", None, -1)
+    for (oldpath, newpath, id, kind, text_modified, meta_modified) in delta.renamed:
+        changes[fixpath(newpath)] = ("A", fixpath(oldpath), revno-1)
+        changes[fixpath(oldpath)] = ("D", None, -1)
+    for (path, id, kind, text_modified, meta_modified) in delta.modified:
+        changes[fixpath(path)] = ("M", None, -1)
+    return changes
+
 
 class RepositoryBackend(ServerRepositoryBackend):
 
@@ -38,7 +57,7 @@ class RepositoryBackend(ServerRepositoryBackend):
     def get_latest_revnum(self):
         return self.branch.revno()
 
-    def log(self, send_revision, target_path, start_rev, end_rev, changed_paths,
+    def log(self, send_revision, target_path, start_rev, end_rev, report_changed_paths,
             strict_node, limit):
         i = 0
         revno = start_rev
@@ -53,9 +72,15 @@ class RepositoryBackend(ServerRepositoryBackend):
                     revno-=1
                 if limit != 0 and i == limit:
                     break
-                if revno != 0:
+                if revno > 0:
                     rev = self.branch.repository.get_revision(self.branch.get_rev_id(revno))
-                    send_revision(revno, rev.committer.encode("utf-8"), time.strftime("%Y-%m-%dT%H:%M:%S.00000Z", time.gmtime(rev.timestamp)), rev.message.encode("utf-8"))
+                    if report_changed_paths:
+                        changes = determine_changed_paths(self.branch.repository, "/trunk", rev, revno)
+                    else:
+                        changes = None
+                    send_revision(revno, 
+                            rev.committer, time.strftime("%Y-%m-%dT%H:%M:%S.00000Z", time.gmtime(rev.timestamp)),
+                            rev.message, changed_paths=changes)
         finally:
             self.branch.repository.unlock()
     

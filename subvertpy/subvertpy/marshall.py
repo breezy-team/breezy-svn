@@ -50,8 +50,10 @@ def marshall(x):
         return "( " + "".join(map(marshall, x)) + ") "
     elif isinstance(x, literal):
         return "%s " % x
-    elif isinstance(x, basestring):
+    elif isinstance(x, str):
         return "%d:%s " % (len(x), x)
+    elif isinstance(x, unicode):
+        return "%d:%s " % (len(x), x.encode("utf-8"))
     raise MarshallError("Unable to marshall type %s" % x)
 
 
