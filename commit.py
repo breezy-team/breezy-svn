@@ -133,7 +133,8 @@ def file_editor_send_changes(file_id, contents, file_editor):
     """
     assert file_editor is not None
     txdelta = file_editor.apply_textdelta()
-    digest = delta.send_stream(StringIO(contents), txdelta)
+    #digest = delta.send_stream(StringIO(contents), txdelta)
+    txdelta(None)
     if 'validate' in debug.debug_flags:
         from fetch import md5_strings
         assert digest == md5_strings(contents)
@@ -278,7 +279,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
         # Handle this directory
         dir_editor_send_changes(old_inv, new_inv, new_child_path, 
                             child_ie.file_id, child_editor, base_url, 
-                            base_revnum, modified_files, visit_dirs)
+                            base_revnum, branch_path, modified_files, visit_dirs)
 
         child_editor.close()
 

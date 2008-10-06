@@ -33,6 +33,12 @@ def generate_random_id():
     return str(uuid.uuid4())
 
 
+def txdelta_to_svndiff(delta):
+    ret = "SVN\2"
+    # FIXME
+    return ret
+
+
 class ServerRepositoryBackend:
     
     def get_uuid(self):
@@ -65,6 +71,103 @@ MAJOR_VERSION = 1
 MINOR_VERSION = 2
 CAPABILITIES = ["edit-pipeline"]
 MECHANISMS = ["ANONYMOUS"]
+
+class Editor:
+
+    def __init__(self, conn):
+        self.conn = conn
+
+    def set_target_revision(self, revnum):
+        self.conn.send_msg([literal("target-rev"), [revnum]])
+
+    def open_root(self, base_revision=None):
+        id = generate_random_id()
+        if base_revision is None:
+            baserev = []
+        else:
+            baserev = [base_revision]
+        self.conn.send_msg([literal("open-root"), [baserev, id]])
+        return DirectoryEditor(self.conn, id)
+
+    def close(self):
+        self.conn.send_msg([literal("close-edit"), []])
+
+    def abort(self):
+        self.conn.send_msg([literal("abort-edit"), []])
+
+class DirectoryEditor:
+
+    def __init__(self, conn, id):
+        self.conn = conn
+        self.id = id
+
+    def add_file(self, path):
+        child = generate_random_id()
+        self.conn.send_msg([literal("add-file"), [path, self.id, child]])
+        return FileEditor(self.conn, child)
+
+    def open_file(self, path, base_revnum):
+        child = generate_random_id()
+        self.conn.send_msg([literal("open-file"), [path, self.id, child, base_revnum]])
+        return FileEditor(self.conn, child)
+
+    def delete_entry(self, path, base_revnum):
+        self.conn.send_msg([literal("delete-entry"), [path, base_revnum, self.id]])
+
+    def add_directory(self, path):
+        child = generate_random_id()
+        self.conn.send_msg([literal("add-dir"), [path, self.id, child]])
+        return DirectoryEditor(self.conn, child)
+
+    def open_directory(self, path, base_revnum):
+        child = generate_random_id()
+        self.conn.send_msg([literal("open-dir"), [path, self.id, child, base_revnum]])
+        return DirectoryEditor(self.conn, child)
+
+    def change_prop(self, name, value):
+        if value is None:
+            value = []
+        else:
+            value = [value]
+        self.conn.send_msg([literal("change-dir-prop"), [self.id, name, value]])
+
+    def close(self):
+        self.conn.send_msg([literal("close-dir"), [self.id]])
+
+class FileEditor:
+
+    def __init__(self, conn, id):
+        self.conn = conn
+        self.id = id
+
+    def close(self, checksum=None):
+        if checksum is None:
+            checksum = []
+        else:
+            checksum = [checksum]
+        self.conn.send_msg([literal("close-file"), [self.id, checksum]])
+
+    def apply_textdelta(self, base_checksum=None):
+        if base_checksum is None:
+            base_check = []
+        else:
+            base_check = [base_checksum]
+        self.conn.send_msg([literal("apply-textdelta"), [self.id, base_check]])
+        def send_textdelta(delta):
+            if delta is None:
+                self.conn.send_msg([literal("textdelta-end"), [self.id]])
+            else:
+                self.conn.send_msg([literal("textdelta-chunk"), [self.id, txdelta_to_svndiff(delta)]])
+        return send_textdelta
+
+    def change_prop(self, name, value):
+        if value is None:
+            value = []
+        else:
+            value = [value]
+        self.conn.send_msg([literal("change-dir-prop"), [self.id, name, value]])
+
+
 
 
 class SVNServer:
@@ -197,97 +300,6 @@ class SVNServer:
                 break
 
         self.send_ack()
-
-        class Editor:
-
-            def __init__(self, conn):
-                self.conn = conn
-
-            def set_target_revision(self, revnum):
-                self.conn.send_msg([literal("target-rev"), [revnum]])
-
-            def open_root(self, base_revision=None):
-                id = generate_random_id()
-                if base_revision is None:
-                    baserev = []
-                else:
-                    baserev = [base_revision]
-                self.conn.send_msg([literal("open-root"), [baserev, id]])
-                return DirectoryEditor(self.conn, id)
-
-            def close(self):
-                self.conn.send_msg([literal("close-edit"), []])
-
-            def abort(self):
-                self.conn.send_msg([literal("abort-edit"), []])
-
-        class DirectoryEditor:
-
-            def __init__(self, conn, id):
-                self.conn = conn
-                self.id = id
-
-            def add_file(self, path):
-                child = generate_random_id()
-                self.conn.send_msg([literal("add-file"), [path, self.id, child]])
-                return FileEditor(self.conn, child)
-
-            def open_file(self, path, base_revnum):
-                child = generate_random_id()
-                self.conn.send_msg([literal("open-file"), [path, self.id, child, base_revnum]])
-                return FileEditor(self.conn, child)
-
-            def delete_entry(self, path, base_revnum):
-                self.conn.send_msg([literal("delete-entry"), [path, base_revnum, self.id]])
-
-            def add_directory(self, path):
-                child = generate_random_id()
-                self.conn.send_msg([literal("add-dir"), [path, self.id, child]])
-                return DirectoryEditor(self.conn, child)
-
-            def open_directory(self, path, base_revnum):
-                child = generate_random_id()
-                self.conn.send_msg([literal("open-dir"), [path, self.id, child, base_revnum]])
-                return DirectoryEditor(self.conn, child)
-
-            def change_prop(self, name, value):
-                if value is None:
-                    value = []
-                else:
-                    value = [value]
-                self.conn.send_msg([literal("change-dir-prop"), [self.id, name, value]])
-
-            def close(self):
-                self.conn.send_msg([literal("close-dir"), [self.id]])
-
-        class FileEditor:
-
-            def __init__(self, conn, id):
-                self.conn = conn
-                self.id = id
-
-            def close(self):
-                self.conn.send_msg([literal("close-file"), [self.id]])
-
-            def apply_textdelta(self, base_checksum=None):
-                if base_checksum is None:
-                    base_check = []
-                else:
-                    base_check = [base_checksum]
-                self.conn.send_msg([literal("apply-textdelta"), [self.id, base_check]])
-                def send_textdelta(chunk):
-                    if chunk is None:
-                        self.conn.send_msg([literal("textdelta-end"), [self.id]])
-                    else:
-                        self.conn.send_msg([literal("textdelta-chunk"), [self.id, chunk]])
-                return send_textdelta
-
-            def change_prop(self, name, value):
-                if value is None:
-                    value = []
-                else:
-                    value = [value]
-                self.conn.send_msg([literal("change-dir-prop"), [self.id, name, value]])
 
         if len(rev) == 0:
             revnum = None
