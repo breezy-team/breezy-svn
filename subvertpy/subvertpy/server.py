@@ -242,7 +242,7 @@ class SVNServer:
         else:
             revnum = rev[0]
         self.repo_backend.update(Editor(self), revnum, target, recurse)
-        self.send_ack()
+        self.send_success()
 
     commands = {
             "get-latest-rev": get_latest_rev,
