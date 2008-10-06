@@ -533,6 +533,63 @@ class cmd_svn_layout(Command):
 
 register_command(cmd_svn_layout)
 
+class cmd_svn_serve(Command):
+    """Provide access to a Bazaar branch using the Subversion ra_svn protocol.
+    """
+    takes_options = [
+        Option('inet',
+               help='serve on stdin/out for use from inetd or sshd'),
+        Option('port',
+               help='listen for connections on nominated port of the form '
+                    '[hostname:]portnumber. Passing 0 as the port number will '
+                    'result in a dynamically allocated port.',
+               type=str),
+        Option('directory',
+               help='serve contents of directory',
+               type=unicode)
+    ]
+
+    def run(self, inet=None, port=None, directory=None):
+        from subvertpy.server import SVNServer
+        from bzrlib.plugins.svn.server import BzrServerBackend
+        import threading
+
+        if directory is None:
+            directory = os.getcwd()
+
+        if inet:
+            def send_fn(data):
+                sys.stdout.write(data)
+                sys.stdout.flush()
+            server = SVNServer(BzrServerBackend(directory), sys.stdin.read, 
+                               send_fn)
+            server.serve()
+        else:
+            if port is None:
+                port = 3690
+            else:
+                port = int(port)
+
+            import socket
+            server_sock = socket.socket()
+            server_sock.bind(('0.0.0.0', port))
+            server_sock.listen(5)
+            def handle_new_client(sock):
+                def handle_connection():
+                    server.serve()
+                    sock.close()
+                server = SVNServer(directory, lambda: sock.recv(1024), sock.send)
+                server_thread = threading.Thread(None, handle_connection, name='svn-smart-server')
+                server_thread.setDaemon(True)
+                server_thread.start()
+                
+            while True:
+                sock, _ = server_sock.accept()
+                handle_new_client(sock)
+
+
+register_command(cmd_svn_serve)
+
 def test_suite():
     """Returns the testsuite for bzr-svn."""
     from unittest import TestSuite
