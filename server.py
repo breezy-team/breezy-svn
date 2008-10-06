@@ -19,6 +19,8 @@ from bzrlib.branch import Branch
 
 from subvertpy.server import SVNServer, ServerBackend, ServerRepositoryBackend
 
+import os, time
+
 class RepositoryBackend(ServerRepositoryBackend):
 
     def __init__(self, branch):
@@ -32,6 +34,9 @@ class RepositoryBackend(ServerRepositoryBackend):
             uuid = uuid.uuid4()
             config.set_user_option('svn_uuid', uuid)
         return str(uuid)
+
+    def get_latest_revnum(self):
+        return self.branch.revno()
 
     def log(self, send_revision, target_path, start_rev, end_rev, changed_paths,
             strict_node, limit):
@@ -57,6 +62,9 @@ class RepositoryBackend(ServerRepositoryBackend):
 
 class BzrServerBackend(ServerBackend):
 
+    def __init__(self, rootdir):
+        self.rootdir = rootdir
+
     def open_repository(self, path):
-        (branch, relpath) = Branch.open_containing(os.path.join(self.rootdir, location))
+        (branch, relpath) = Branch.open_containing(os.path.join(self.rootdir, path))
         return RepositoryBackend(branch), relpath

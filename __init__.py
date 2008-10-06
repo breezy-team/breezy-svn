@@ -578,7 +578,7 @@ class cmd_svn_serve(Command):
                 def handle_connection():
                     server.serve()
                     sock.close()
-                server = SVNServer(directory, lambda: sock.recv(1024), sock.send)
+                server = SVNServer(BzrServerBackend(directory), lambda: sock.recv(1024), sock.send, self.outf)
                 server_thread = threading.Thread(None, handle_connection, name='svn-smart-server')
                 server_thread.setDaemon(True)
                 server_thread.start()
