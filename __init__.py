@@ -562,7 +562,7 @@ class cmd_svn_serve(Command):
                 sys.stdout.write(data)
                 sys.stdout.flush()
             server = SVNServer(BzrServerBackend(directory), sys.stdin.read, 
-                               send_fn)
+                               send_fn, self.outf)
             server.serve()
         else:
             if port is None:

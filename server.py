@@ -33,6 +33,27 @@ class RepositoryBackend(ServerRepositoryBackend):
             config.set_user_option('svn_uuid', uuid)
         return str(uuid)
 
+    def log(self, send_revision, target_path, start_rev, end_rev, changed_paths,
+            strict_node, limit):
+        i = 0
+        revno = start_rev
+        self.branch.repository.lock_read()
+        try:
+            # FIXME: check whether start_rev and end_rev actually exist
+            while revno != end_rev:
+                #TODO: Honor target_path, strict_node, changed_paths
+                if end_rev > revno:
+                    revno+=1
+                else:
+                    revno-=1
+                if limit != 0 and i == limit:
+                    break
+                if revno != 0:
+                    rev = self.branch.repository.get_revision(self.branch.get_rev_id(revno))
+                    send_revision(revno, rev.committer, time.strftime("%Y-%m-%dT%H:%M:%S.00000Z", time.gmtime(rev.timestamp)), rev.message)
+        finally:
+            self.branch.repository.unlock()
+    
 
 class BzrServerBackend(ServerBackend):
 
