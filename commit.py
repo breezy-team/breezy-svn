@@ -15,7 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Committing and pushing to Subversion repositories."""
 
-from bzrlib import debug, urlutils, ui
+from bzrlib import debug, urlutils, trace, ui
 from bzrlib.branch import Branch
 from bzrlib.errors import (BzrError, InvalidRevisionId, DivergedBranches, 
                            UnrelatedBranches, AppendRevisionsOnlyViolation,
@@ -133,8 +133,7 @@ def file_editor_send_changes(file_id, contents, file_editor):
     """
     assert file_editor is not None
     txdelta = file_editor.apply_textdelta()
-    #digest = delta.send_stream(StringIO(contents), txdelta)
-    txdelta(None)
+    digest = delta.send_stream(StringIO(contents), txdelta)
     if 'validate' in debug.debug_flags:
         from fetch import md5_strings
         assert digest == md5_strings(contents)
@@ -152,7 +151,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
     """
     def mutter(text, *args):
         if 'commit' in debug.debug_flags:
-            mutter(text, *args)
+            trace.mutter(text, *args)
 
     assert dir_editor is not None
     # Loop over entries of file_id in old_inv
@@ -164,7 +163,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
             # remove if...
             if (
                 # ... path no longer exists
-                not child_ie.file_id in new_inventory or 
+                not child_ie.file_id in new_inv or 
                 # ... parent changed
                 child_ie.parent_id != new_inv[child_ie.file_id].parent_id or
                 # ... name changed
@@ -201,7 +200,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
                 base_revnum)
 
         # open if they existed at the same location
-        elif child_ie.file_id in self.modified_files:
+        elif child_ie.file_id in modified_files:
             mutter('open %s %r', child_ie.kind, new_child_path)
 
             child_editor = dir_editor.open_file(
@@ -549,8 +548,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                 if replace_existing and self._append_revisions_only:
                     raise AppendRevisionsOnlyViolation(urlutils.join(self.repository.base, self.branch_path))
 
-                if base_path is not None:
-                    base_url = urlutils.join(self.repository.transport.svn_url, base_path)
+                if self.base_path is not None:
+                    base_url = urlutils.join(self.repository.transport.svn_url, self.base_path)
                 else:
                     base_url = None
 
@@ -561,7 +560,7 @@ class SvnCommitBuilder(RootCommitBuilder):
 
                 dir_editor_send_changes(self.old_inv, self.new_inventory, 
                         "", self.new_inventory.root.file_id, branch_editors[-1],
-                        self.base_url, self.base_revnum, self.branch_path,
+                        base_url, self.base_revnum, self.branch_path,
                         self.modified_files, self.visit_dirs)
 
                 # Set all the revprops
