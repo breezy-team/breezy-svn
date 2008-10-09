@@ -32,6 +32,8 @@ bzr-svn-0.5			UNRELEASED
 
    * Add --until option to svn-import.
 
+   * Add experimental svn-serve subcommand.
+
   BUG FIXES
 
    * Set bzr signature revision property during commit if possible.

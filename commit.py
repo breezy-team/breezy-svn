@@ -15,7 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Committing and pushing to Subversion repositories."""
 
-from bzrlib import debug, urlutils, ui
+from bzrlib import debug, urlutils, trace, ui
 from bzrlib.branch import Branch
 from bzrlib.errors import (BzrError, InvalidRevisionId, DivergedBranches, 
                            UnrelatedBranches, AppendRevisionsOnlyViolation,
@@ -123,6 +123,164 @@ def set_svn_revprops(transport, revnum, revprops):
             transport.change_rev_prop(revnum, name, value)
         except SubversionException, (_, ERR_REPOS_DISABLED_FEATURE):
             raise RevpropChangeFailed(name)
+
+def file_editor_send_changes(file_id, contents, file_editor):
+    """Pass the changes to a file to the Subversion commit editor.
+
+    :param file_id: Id of the file to modify.
+    :param contents: Contents of the file.
+    :param file_editor: Subversion FileEditor object.
+    """
+    assert file_editor is not None
+    txdelta = file_editor.apply_textdelta()
+    digest = delta.send_stream(StringIO(contents), txdelta)
+    if 'validate' in debug.debug_flags:
+        from fetch import md5_strings
+        assert digest == md5_strings(contents)
+
+
+
+def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
+                            base_url, base_revnum, branch_path, 
+                            modified_files, visit_dirs):
+    """Pass the changes to a directory to the commit editor.
+
+    :param path: Path (from repository root) to the directory.
+    :param file_id: File id of the directory
+    :param dir_editor: Subversion DirEditor object.
+    """
+    def mutter(text, *args):
+        if 'commit' in debug.debug_flags:
+            trace.mutter(text, *args)
+
+    assert dir_editor is not None
+    # Loop over entries of file_id in old_inv
+    # remove if they no longer exist with the same name
+    # or parents
+    if file_id in old_inv:
+        for child_name in old_inv[file_id].children:
+            child_ie = old_inv.get_child(file_id, child_name)
+            # remove if...
+            if (
+                # ... path no longer exists
+                not child_ie.file_id in new_inv or 
+                # ... parent changed
+                child_ie.parent_id != new_inv[child_ie.file_id].parent_id or
+                # ... name changed
+                new_inv[child_ie.file_id].name != child_name):
+                mutter('removing %r(%r)', (child_name, child_ie.file_id))
+                dir_editor.delete_entry(
+                    urlutils.join(branch_path, path, child_name), 
+                    base_revnum)
+
+    # Loop over file children of file_id in new_inv
+    for child_name in new_inv[file_id].children:
+        child_ie = new_inv.get_child(file_id, child_name)
+        assert child_ie is not None
+
+        if not (child_ie.kind in ('file', 'symlink')):
+            continue
+
+        new_child_path = new_inv.id2path(child_ie.file_id).encode("utf-8")
+        full_new_child_path = urlutils.join(branch_path, new_child_path)
+        # add them if they didn't exist in old_inv 
+        if not child_ie.file_id in old_inv:
+            mutter('adding %s %r', child_ie.kind, new_child_path)
+            child_editor = dir_editor.add_file(full_new_child_path)
+
+        # copy if they existed at different location
+        elif (old_inv.id2path(child_ie.file_id) != new_child_path or
+                old_inv[child_ie.file_id].parent_id != child_ie.parent_id):
+            mutter('copy %s %r -> %r', child_ie.kind, 
+                              old_inv.id2path(child_ie.file_id), 
+                              new_child_path)
+            child_editor = dir_editor.add_file(
+                    full_new_child_path, 
+                urlutils.join(base_url, old_inv.id2path(child_ie.file_id)),
+                base_revnum)
+
+        # open if they existed at the same location
+        elif child_ie.file_id in modified_files:
+            mutter('open %s %r', child_ie.kind, new_child_path)
+
+            child_editor = dir_editor.open_file(
+                    full_new_child_path, base_revnum)
+
+        else:
+            # Old copy of the file was retained. No need to send changes
+            child_editor = None
+
+        if child_ie.file_id in old_inv:
+            old_executable = old_inv[child_ie.file_id].executable
+            old_special = (old_inv[child_ie.file_id].kind == 'symlink')
+        else:
+            old_special = False
+            old_executable = False
+
+        if child_editor is not None:
+            if old_executable != child_ie.executable:
+                if child_ie.executable:
+                    value = properties.PROP_EXECUTABLE_VALUE
+                else:
+                    value = None
+                child_editor.change_prop(
+                        properties.PROP_EXECUTABLE, value)
+
+            if old_special != (child_ie.kind == 'symlink'):
+                if child_ie.kind == 'symlink':
+                    value = properties.PROP_SPECIAL_VALUE
+                else:
+                    value = None
+
+                child_editor.change_prop(
+                        properties.PROP_SPECIAL, value)
+
+        # handle the file
+        if child_ie.file_id in modified_files:
+            file_editor_send_changes(child_ie.file_id, 
+                modified_files[child_ie.file_id], child_editor)
+
+        if child_editor is not None:
+            child_editor.close()
+
+    # Loop over subdirectories of file_id in new_inv
+    for child_name in new_inv[file_id].children:
+        child_ie = new_inv.get_child(file_id, child_name)
+        if child_ie.kind != 'directory':
+            continue
+
+        new_child_path = new_inv.id2path(child_ie.file_id)
+        # add them if they didn't exist in old_inv 
+        if not child_ie.file_id in old_inv:
+            mutter('adding dir %r', child_ie.name)
+            child_editor = dir_editor.add_directory(
+                urlutils.join(branch_path, new_child_path))
+
+        # copy if they existed at different location
+        elif old_inv.id2path(child_ie.file_id) != new_child_path:
+            old_child_path = old_inv.id2path(child_ie.file_id)
+            mutter('copy dir %r -> %r', old_child_path, new_child_path)
+            child_editor = dir_editor.add_directory(
+                urlutils.join(branch_path, new_child_path),
+                urlutils.join(base_url, old_child_path), base_revnum)
+
+        # open if they existed at the same location and 
+        # the directory was touched
+        elif child_ie.file_id in visit_dirs:
+            mutter('open dir %r', new_child_path)
+
+            child_editor = dir_editor.open_directory(
+                    urlutils.join(branch_path, new_child_path), 
+                    base_revnum)
+        else:
+            continue
+
+        # Handle this directory
+        dir_editor_send_changes(old_inv, new_inv, new_child_path, 
+                            child_ie.file_id, child_editor, base_url, 
+                            base_revnum, branch_path, modified_files, visit_dirs)
+
+        child_editor.close()
 
 
 class SvnCommitBuilder(RootCommitBuilder):
@@ -235,170 +393,20 @@ class SvnCommitBuilder(RootCommitBuilder):
     def finish_inventory(self):
         """See CommitBuilder.finish_inventory()."""
 
-    def _file_process(self, file_id, contents, file_editor):
-        """Pass the changes to a file to the Subversion commit editor.
-
-        :param file_id: Id of the file to modify.
-        :param contents: Contents of the file.
-        :param file_editor: Subversion FileEditor object.
-        """
-        assert file_editor is not None
-        txdelta = file_editor.apply_textdelta()
-        digest = delta.send_stream(StringIO(contents), txdelta)
-        if 'validate' in debug.debug_flags:
-            from fetch import md5_strings
-            assert digest == md5_strings(contents)
-
-    def _dir_process(self, path, file_id, dir_editor):
-        """Pass the changes to a directory to the commit editor.
-
-        :param path: Path (from repository root) to the directory.
-        :param file_id: File id of the directory
-        :param dir_editor: Subversion DirEditor object.
-        """
-        assert dir_editor is not None
-        # Loop over entries of file_id in self.old_inv
-        # remove if they no longer exist with the same name
-        # or parents
-        if file_id in self.old_inv:
-            for child_name in self.old_inv[file_id].children:
-                child_ie = self.old_inv.get_child(file_id, child_name)
-                # remove if...
-                if (
-                    # ... path no longer exists
-                    not child_ie.file_id in self.new_inventory or 
-                    # ... parent changed
-                    child_ie.parent_id != self.new_inventory[child_ie.file_id].parent_id or
-                    # ... name changed
-                    self.new_inventory[child_ie.file_id].name != child_name):
-                    self.mutter('removing %r(%r)', (child_name, child_ie.file_id))
-                    dir_editor.delete_entry(
-                        urlutils.join(self.branch_path, path, child_name), 
-                        self.base_revnum)
-
-        # Loop over file children of file_id in self.new_inventory
-        for child_name in self.new_inventory[file_id].children:
-            child_ie = self.new_inventory.get_child(file_id, child_name)
-            assert child_ie is not None
-
-            if not (child_ie.kind in ('file', 'symlink')):
-                continue
-
-            new_child_path = self.new_inventory.id2path(child_ie.file_id).encode("utf-8")
-            full_new_child_path = urlutils.join(self.branch_path, 
-                                  new_child_path)
-            # add them if they didn't exist in old_inv 
-            if not child_ie.file_id in self.old_inv:
-                self.mutter('adding %s %r', child_ie.kind, new_child_path)
-                child_editor = dir_editor.add_file(full_new_child_path)
-
-            # copy if they existed at different location
-            elif (self.old_inv.id2path(child_ie.file_id) != new_child_path or
-                    self.old_inv[child_ie.file_id].parent_id != child_ie.parent_id):
-                self.mutter('copy %s %r -> %r', child_ie.kind, 
-                                  self.old_inv.id2path(child_ie.file_id), 
-                                  new_child_path)
-                child_editor = dir_editor.add_file(
-                        full_new_child_path, 
-                    urlutils.join(self.repository.transport.svn_url, self.base_path, self.old_inv.id2path(child_ie.file_id)),
-                    self.base_revnum)
-
-            # open if they existed at the same location
-            elif child_ie.file_id in self.modified_files:
-                self.mutter('open %s %r', child_ie.kind, new_child_path)
-
-                child_editor = dir_editor.open_file(
-                        full_new_child_path, self.base_revnum)
-
-            else:
-                # Old copy of the file was retained. No need to send changes
-                child_editor = None
-
-            if child_ie.file_id in self.old_inv:
-                old_executable = self.old_inv[child_ie.file_id].executable
-                old_special = (self.old_inv[child_ie.file_id].kind == 'symlink')
-            else:
-                old_special = False
-                old_executable = False
-
-            if child_editor is not None:
-                if old_executable != child_ie.executable:
-                    if child_ie.executable:
-                        value = properties.PROP_EXECUTABLE_VALUE
-                    else:
-                        value = None
-                    child_editor.change_prop(
-                            properties.PROP_EXECUTABLE, value)
-
-                if old_special != (child_ie.kind == 'symlink'):
-                    if child_ie.kind == 'symlink':
-                        value = properties.PROP_SPECIAL_VALUE
-                    else:
-                        value = None
-
-                    child_editor.change_prop(
-                            properties.PROP_SPECIAL, value)
-
-            # handle the file
-            if child_ie.file_id in self.modified_files:
-                self._file_process(child_ie.file_id, 
-                    self.modified_files[child_ie.file_id], child_editor)
-
-            if child_editor is not None:
-                child_editor.close()
-
-        # Loop over subdirectories of file_id in self.new_inventory
-        for child_name in self.new_inventory[file_id].children:
-            child_ie = self.new_inventory.get_child(file_id, child_name)
-            if child_ie.kind != 'directory':
-                continue
-
-            new_child_path = self.new_inventory.id2path(child_ie.file_id)
-            # add them if they didn't exist in old_inv 
-            if not child_ie.file_id in self.old_inv:
-                self.mutter('adding dir %r', child_ie.name)
-                child_editor = dir_editor.add_directory(
-                    urlutils.join(self.branch_path, 
-                                  new_child_path))
-
-            # copy if they existed at different location
-            elif self.old_inv.id2path(child_ie.file_id) != new_child_path:
-                old_child_path = self.old_inv.id2path(child_ie.file_id)
-                self.mutter('copy dir %r -> %r', old_child_path, new_child_path)
-                child_editor = dir_editor.add_directory(
-                    urlutils.join(self.branch_path, new_child_path),
-                    urlutils.join(self.repository.transport.svn_url, self.base_path, old_child_path), self.base_revnum)
-
-            # open if they existed at the same location and 
-            # the directory was touched
-            elif child_ie.file_id in self.visit_dirs:
-                self.mutter('open dir %r', new_child_path)
-
-                child_editor = dir_editor.open_directory(
-                        urlutils.join(self.branch_path, new_child_path), 
-                        self.base_revnum)
-            else:
-                continue
-
-            # Handle this directory
-            self._dir_process(new_child_path, child_ie.file_id, child_editor)
-
-            child_editor.close()
-
     def open_branch_editors(self, root, elements, existing_elements, 
-                           base_path, base_rev, replace_existing):
+                           base_url, base_rev, replace_existing):
         """Open a specified directory given an editor for the repository root.
 
         :param root: Editor for the repository root
         :param elements: List of directory names to open
         :param existing_elements: List of directory names that exist
-        :param base_path: Path to base top-level branch on
+        :param base_url: URL to base top-level branch on
         :param base_rev: Revision of path to base top-level branch on
         :param replace_existing: Whether the current branch should be replaced
         """
         ret = [root]
 
-        self.mutter('opening branch %r (base %r:%r)', elements, base_path, 
+        self.mutter('opening branch %r (base %r:%r)', elements, base_url, 
                                                    base_rev)
 
         # Open paths leading up to branch
@@ -428,10 +436,6 @@ class SvnCommitBuilder(RootCommitBuilder):
                     raise ChangesRootLHSHistory()
                 self.mutter("removing branch dir %r", name)
                 ret[-1].delete_entry(name, -1)
-            if base_path is not None:
-                base_url = urlutils.join(self.repository.transport.svn_url, base_path)
-            else:
-                base_url = None
             self.mutter("adding branch dir %r", name)
             ret.append(ret[-1].add_directory(
                 name, base_url, base_rev))
@@ -544,13 +548,20 @@ class SvnCommitBuilder(RootCommitBuilder):
                 if replace_existing and self._append_revisions_only:
                     raise AppendRevisionsOnlyViolation(urlutils.join(self.repository.base, self.branch_path))
 
+                if self.base_path is not None:
+                    base_url = urlutils.join(self.repository.transport.svn_url, self.base_path)
+                else:
+                    base_url = None
+
                 # TODO: Accept create_prefix argument
                 branch_editors = self.open_branch_editors(root, bp_parts,
-                    existing_bp_parts, self.base_path, self.base_revnum, 
+                    existing_bp_parts, base_url, self.base_revnum, 
                     replace_existing)
 
-                self._dir_process("", self.new_inventory.root.file_id, 
-                    branch_editors[-1])
+                dir_editor_send_changes(self.old_inv, self.new_inventory, 
+                        "", self.new_inventory.root.file_id, branch_editors[-1],
+                        base_url, self.base_revnum, self.branch_path,
+                        self.modified_files, self.visit_dirs)
 
                 # Set all the revprops
                 if self.push_metadata and self._svnprops.is_loaded:
