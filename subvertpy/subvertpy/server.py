@@ -101,9 +101,13 @@ class DirectoryEditor:
         self.conn = conn
         self.id = id
 
-    def add_file(self, path):
+    def add_file(self, path, copyfrom_path=None, copyfrom_rev=-1):
         child = generate_random_id()
-        self.conn.send_msg([literal("add-file"), [path, self.id, child]])
+        if copyfrom_path is not None:
+            copyfrom_data = [copyfrom_path, copyfrom_rev]
+        else:
+            copyfrom_data = []
+        self.conn.send_msg([literal("add-file"), [path, self.id, child, copyfrom_data]])
         return FileEditor(self.conn, child)
 
     def open_file(self, path, base_revnum):
@@ -114,9 +118,13 @@ class DirectoryEditor:
     def delete_entry(self, path, base_revnum):
         self.conn.send_msg([literal("delete-entry"), [path, base_revnum, self.id]])
 
-    def add_directory(self, path):
+    def add_directory(self, path, copyfrom_path=None, copyfrom_rev=-1):
         child = generate_random_id()
-        self.conn.send_msg([literal("add-dir"), [path, self.id, child]])
+        if copyfrom_path is not None:
+            copyfrom_data = [copyfrom_path, copyfrom_rev]
+        else:
+            copyfrom_data = []
+        self.conn.send_msg([literal("add-dir"), [path, self.id, child, copyfrom_data]])
         return DirectoryEditor(self.conn, child)
 
     def open_directory(self, path, base_revnum):
@@ -307,6 +315,11 @@ class SVNServer:
             revnum = rev[0]
         self.repo_backend.update(Editor(self), revnum, target, recurse)
         self.send_success()
+        client_result = self.recv_msg()
+        if client_result[0] == "success":
+            return
+        else:
+            self.mutter("Client reported error during update: %r" % client_result)
 
     commands = {
             "get-latest-rev": get_latest_rev,
@@ -380,8 +393,9 @@ class SVNServer:
                 raise
 
     def send_msg(self, data):
-        self.mutter("OUT: %r" % data)
-        self.send_fn(marshall(data))
+        marshalled_data = marshall(data)
+        self.mutter("OUT: %r" % marshalled_data)
+        self.send_fn(marshalled_data)
 
     def mutter(self, text):
         if self._logf is not None:
