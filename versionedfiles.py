@@ -25,6 +25,13 @@ from cStringIO import StringIO
 
 _warned_experimental = False
 
+def warn_stacking_experimental():
+    global _warned_experimental
+    if not _warned_experimental:
+        warning("stacking support in bzr-svn is experimental.")
+        _warned_experimental = True
+
+
 class SvnTexts(VersionedFiles):
     """Subversion texts backend."""
 
@@ -39,10 +46,7 @@ class SvnTexts(VersionedFiles):
 
     @convert_svn_error
     def get_record_stream(self, keys, ordering, include_delta_closure):
-        global _warned_experimental
-        if not _warned_experimental:
-            warning("stacking support in bzr-svn is experimental.")
-            _warned_experimental = True
+        warn_stacking_experimental()
         # TODO: there may be valid text revisions that only exist as 
         # ghosts in the repository itself. This function will 
         # not be able to report them.

@@ -534,6 +534,9 @@ class cmd_svn_serve(Command):
     def run(self, inet=None, port=None, directory=None):
         from subvertpy.server import SVNServer, TCPSVNServer
         from bzrlib.plugins.svn.server import BzrServerBackend
+        from bzrlib.trace import warning
+
+        warning("server support in bzr-svn is experimental.")
 
         if directory is None:
             directory = os.getcwd()
