@@ -19,6 +19,7 @@ import os
 import time
 
 from subvertpy import ERR_RA_SVN_UNKNOWN_CMD, NODE_DIR, NODE_FILE, NODE_UNKNOWN, NODE_NONE, ERR_UNSUPPORTED_FEATURE
+from subvertpy.delta import pack_svndiff0
 from subvertpy.marshall import marshall, unmarshall, literal, MarshallError, NeedMoreData
 
 
@@ -31,12 +32,6 @@ class ServerBackend:
 def generate_random_id():
     import uuid
     return str(uuid.uuid4())
-
-
-def txdelta_to_svndiff(delta):
-    ret = "SVN\2"
-    # FIXME
-    return ret
 
 
 class ServerRepositoryBackend:
@@ -162,7 +157,7 @@ class FileEditor:
             if delta is None:
                 self.conn.send_msg([literal("textdelta-end"), [self.id]])
             else:
-                self.conn.send_msg([literal("textdelta-chunk"), [self.id, txdelta_to_svndiff(delta)]])
+                self.conn.send_msg([literal("textdelta-chunk"), [self.id, pack_svndiff0([delta])]])
         return send_textdelta
 
     def change_prop(self, name, value):
@@ -395,6 +390,7 @@ class SVNServer:
 
 SVN_PORT = 3690
 
+
 class TCPSVNServer(object):
 
     def __init__(self, backend, port=None, logf=None):
@@ -413,8 +409,10 @@ class TCPSVNServer(object):
         server_sock.listen(5)
         def handle_new_client(sock):
             def handle_connection():
-                server.serve()
-                sock.close()
+                try:
+                    server.serve()
+                finally:
+                    sock.close()
             sock.setblocking(True)
             server = SVNServer(self._backend, sock.recv, sock.send, self._logf)
             server_thread = threading.Thread(None, handle_connection, name='svn-smart-server')

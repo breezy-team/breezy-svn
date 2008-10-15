@@ -20,6 +20,7 @@ import md5
 TXDELTA_SOURCE = 0
 TXDELTA_TARGET = 1
 TXDELTA_NEW = 2
+TXDELTA_INVALID = 3
 
 def apply_txdelta_handler(sbuf, target_stream):
     def apply_window(window):
@@ -63,3 +64,114 @@ def send_stream(stream, handler, block_size=SEND_STREAM_BLOCK_SIZE):
         text = stream.read(block_size)
     handler(None)
     return hash.digest()
+
+
+def encode_length(len):
+    # Based on encode_int() in subversion/libsvn_delta/svndiff.c
+    assert len >= 0
+    assert isinstance(len, int), "expected int, got %r" % (len,)
+
+    # Count number of required bytes
+    v = len >> 7
+    n = 1;
+    while v > 0:
+        v = v >> 7
+        n+=1
+
+    ret = ""
+    # Encode the remaining bytes; n is always the number of bytes
+    # coming after the one we're encoding.  */
+    while n > 0:
+        n-=1
+        if n > 0:
+            cont = 1
+        else:
+            cont = 0
+        ret += chr(((len >> (n * 7)) & 0x7f) | (cont << 7))
+
+    return ret
+
+
+def decode_length(text):
+    # Decode bytes until we're done.  */
+    ret = 0
+    next = True
+    while next:
+        ret = (ret << 7) | (text[0] & 0x7f)
+        next = ((text[0] >> 7) & 0x1)
+        text = text[1:]
+    return ret, text
+
+
+def pack_svndiff_instruction((action, offset, length)):
+    text = chr((action << 6))
+    if length < 0x3f:
+        text[0] += length
+    else:
+        text += encode_length(length)
+    if action != TXDELTA_NEW:
+        text += encode_length(offset)
+    return text
+
+
+def unpack_svndiff_instruction(text):
+    action = (text[0] >> 6)
+    length = (text[0] & 0x3f)
+    text = text[1:]
+    if length == 0:
+        length, text = decode_length(text)
+    if action != TXDELTA_NEW:
+        offset, text = decode_length(text)
+    else:
+        offset = 0
+    return (action, offset, length), text
+
+
+def pack_svndiff0(windows):
+    ret = "SVN\0"
+
+    def pack_svndiff1_window(window):
+        (sview_offset, sview_len, tview_len, src_ops, ops, new_data) = window
+        ret = encode_length(sview_offset) + \
+              encode_length(sview_len) + \
+              encode_length(tview_len)
+
+        instrdata = ""
+        for op in ops:
+            instrdata += pack_svndiff_instruction(op)
+
+        ret += encode_length(len(instrdata))
+        ret += encode_length(len(new_data))
+        ret += instrdata
+        ret += new_data
+        return ret
+
+    for window in windows:
+        ret += pack_svndiff1_window(window)
+
+    return ret
+
+
+def unpack_svndiff0(text):
+    assert text.startswith("SVN\0")
+    text = text[4:]
+
+    while text != "":
+        sview_offset, text = decode_length(text)
+        sview_len, text = decode_length(text)
+        tview_len, text = decode_length(text)
+        instr_len, text = decode_length(text)
+        newdata_len, text = decode_length(text)
+
+        instrdata = text[:instr_len]
+        text = text[instr_len:]
+
+        ops = []
+        while instrdata != "":
+            op, instrdata = unpack_svndiff_instruction(instrdata)
+            ops.append(op)
+
+        newdata = text[:newdata_len]
+        text = text[newdata_len:]
+        yield (sview_offset, sview_len, tview_len, len(ops), ops, newdata)
+
