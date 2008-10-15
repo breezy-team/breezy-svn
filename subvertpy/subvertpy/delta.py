@@ -97,27 +97,27 @@ def decode_length(text):
     ret = 0
     next = True
     while next:
-        ret = (ret << 7) | (text[0] & 0x7f)
-        next = ((text[0] >> 7) & 0x1)
+        ret = ((ret << 7) | (ord(text[0]) & 0x7f))
+        next = ((ord(text[0]) >> 7) & 0x1)
         text = text[1:]
     return ret, text
 
 
 def pack_svndiff_instruction((action, offset, length)):
-    text = chr((action << 6))
     if length < 0x3f:
-        text[0] += length
+        text = chr((action << 6) + length)
     else:
-        text += encode_length(length)
+        text = chr((action << 6)) + encode_length(length)
     if action != TXDELTA_NEW:
         text += encode_length(offset)
     return text
 
 
 def unpack_svndiff_instruction(text):
-    action = (text[0] >> 6)
-    length = (text[0] & 0x3f)
+    action = (ord(text[0]) >> 6)
+    length = (ord(text[0]) & 0x3f)
     text = text[1:]
+    assert action in (TXDELTA_NEW, TXDELTA_SOURCE, TXDELTA_TARGET)
     if length == 0:
         length, text = decode_length(text)
     if action != TXDELTA_NEW:
