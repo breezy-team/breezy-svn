@@ -18,6 +18,7 @@ from bzrlib.trace import warning
 from bzrlib.versionedfile import FulltextContentFactory, VersionedFiles, VirtualVersionedFiles
 
 from subvertpy import SubversionException, ERR_FS_NOT_FILE
+from bzrlib.plugins.svn.errors import convert_svn_error
 from bzrlib.plugins.svn.foreign.versionedfiles import VirtualSignatureTexts, VirtualRevisionTexts, VirtualInventoryTexts
 
 from cStringIO import StringIO
@@ -36,6 +37,7 @@ class SvnTexts(VersionedFiles):
     def add_mpdiffs(self, records):
         raise NotImplementedError(self.add_mpdiffs)
 
+    @convert_svn_error
     def get_record_stream(self, keys, ordering, include_delta_closure):
         global _warned_experimental
         if not _warned_experimental:
