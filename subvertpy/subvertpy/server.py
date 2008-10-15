@@ -391,3 +391,38 @@ class SVNServer:
     def mutter(self, text):
         if self._logf is not None:
             self._logf.write("%s\n" % text)
+
+
+SVN_PORT = 3690
+
+class TCPSVNServer(object):
+
+    def __init__(self, backend, port=None, logf=None):
+        if port is None:
+            self._port = SVN_PORT
+        else:
+            self._port = int(port)
+        self._backend = backend
+        self._logf = logf
+
+    def serve(self):
+        import socket
+        import threading
+        server_sock = socket.socket()
+        server_sock.bind(('0.0.0.0', self._port))
+        server_sock.listen(5)
+        def handle_new_client(sock):
+            def handle_connection():
+                server.serve()
+                sock.close()
+            sock.setblocking(True)
+            server = SVNServer(self._backend, sock.recv, sock.send, self._logf)
+            server_thread = threading.Thread(None, handle_connection, name='svn-smart-server')
+            server_thread.setDaemon(True)
+            server_thread.start()
+            
+        while True:
+            sock, _ = server_sock.accept()
+            handle_new_client(sock)
+
+
