@@ -448,6 +448,7 @@ class TCPSVNServer(object):
                     server.serve()
                 finally:
                     sock.close()
+            self._logf.write("New client connection from %s:%d\n" % sock.getsockname())
             sock.setblocking(True)
             server = SVNServer(self._backend, sock.recv, sock.send, self._logf)
             server_thread = threading.Thread(None, handle_connection, name='svn-smart-server')
