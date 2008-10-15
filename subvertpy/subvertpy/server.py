@@ -321,6 +321,8 @@ class SVNServer:
             return
         else:
             self.mutter("Client reported error during update: %r" % client_result)
+            # Needs to be sent back to the client to display
+            self.send_failure(client_result[1][0])
 
     commands = {
             "get-latest-rev": get_latest_rev,
