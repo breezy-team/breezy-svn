@@ -87,6 +87,7 @@ class Editor:
         else:
             baserev = [base_revision]
         self.conn.send_msg([literal("open-root"), [baserev, id]])
+        self.conn._open_ids = []
         return DirectoryEditor(self.conn, id)
 
     def close(self):
@@ -100,8 +101,10 @@ class DirectoryEditor:
     def __init__(self, conn, id):
         self.conn = conn
         self.id = id
+        self.conn._open_ids.append(id)
 
     def add_file(self, path, copyfrom_path=None, copyfrom_rev=-1):
+        self._is_last_open()
         child = generate_random_id()
         if copyfrom_path is not None:
             copyfrom_data = [copyfrom_path, copyfrom_rev]
@@ -111,14 +114,17 @@ class DirectoryEditor:
         return FileEditor(self.conn, child)
 
     def open_file(self, path, base_revnum):
+        self._is_last_open()
         child = generate_random_id()
         self.conn.send_msg([literal("open-file"), [path, self.id, child, base_revnum]])
         return FileEditor(self.conn, child)
 
     def delete_entry(self, path, base_revnum):
+        self._is_last_open()
         self.conn.send_msg([literal("delete-entry"), [path, base_revnum, self.id]])
 
     def add_directory(self, path, copyfrom_path=None, copyfrom_rev=-1):
+        self._is_last_open()
         child = generate_random_id()
         if copyfrom_path is not None:
             copyfrom_data = [copyfrom_path, copyfrom_rev]
@@ -128,18 +134,25 @@ class DirectoryEditor:
         return DirectoryEditor(self.conn, child)
 
     def open_directory(self, path, base_revnum):
+        self._is_last_open()
         child = generate_random_id()
         self.conn.send_msg([literal("open-dir"), [path, self.id, child, base_revnum]])
         return DirectoryEditor(self.conn, child)
 
     def change_prop(self, name, value):
+        self._is_last_open()
         if value is None:
             value = []
         else:
             value = [value]
         self.conn.send_msg([literal("change-dir-prop"), [self.id, name, value]])
 
+    def _is_last_open(self):
+        assert self.conn._open_ids[-1] == self.id
+
     def close(self):
+        self._is_last_open()
+        self.conn._open_ids.pop()
         self.conn.send_msg([literal("close-dir"), [self.id]])
 
 class FileEditor:
@@ -147,8 +160,14 @@ class FileEditor:
     def __init__(self, conn, id):
         self.conn = conn
         self.id = id
+        self.conn._open_ids.append(id)
+
+    def _is_last_open(self):
+        assert self.conn._open_ids[-1] == self.id
 
     def close(self, checksum=None):
+        self._is_last_open()
+        self.conn._open_ids.pop()
         if checksum is None:
             checksum = []
         else:
@@ -156,6 +175,7 @@ class FileEditor:
         self.conn.send_msg([literal("close-file"), [self.id, checksum]])
 
     def apply_textdelta(self, base_checksum=None):
+        self._is_last_open()
         if base_checksum is None:
             base_check = []
         else:
@@ -170,13 +190,12 @@ class FileEditor:
         return send_textdelta
 
     def change_prop(self, name, value):
+        self._is_last_open()
         if value is None:
             value = []
         else:
             value = [value]
-        self.conn.send_msg([literal("change-dir-prop"), [self.id, name, value]])
-
-
+        self.conn.send_msg([literal("change-file-prop"), [self.id, name, value]])
 
 
 class SVNServer:
@@ -381,7 +400,6 @@ class SVNServer:
         self._stop = True
 
     def recv_msg(self):
-        # TODO: socket read should be blocking
         while True:
             try:
                 (self.inbuffer, ret) = unmarshall(self.inbuffer)
@@ -389,7 +407,7 @@ class SVNServer:
             except NeedMoreData:
                 newdata = self.recv_fn(512)
                 if newdata != "":
-                    self.mutter("IN: %r" % newdata)
+                    #self.mutter("IN: %r" % newdata)
                     self.inbuffer += newdata
             except MarshallError, e:
                 self.mutter('ERROR: %r' % e)
@@ -397,7 +415,7 @@ class SVNServer:
 
     def send_msg(self, data):
         marshalled_data = marshall(data)
-        self.mutter("OUT: %r" % marshalled_data)
+        # self.mutter("OUT: %r" % marshalled_data)
         self.send_fn(marshalled_data)
 
     def mutter(self, text):
