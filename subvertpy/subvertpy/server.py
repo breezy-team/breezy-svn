@@ -19,7 +19,7 @@ import os
 import time
 
 from subvertpy import ERR_RA_SVN_UNKNOWN_CMD, NODE_DIR, NODE_FILE, NODE_UNKNOWN, NODE_NONE, ERR_UNSUPPORTED_FEATURE
-from subvertpy.delta import pack_svndiff0
+from subvertpy.delta import pack_svndiff0_window, SVNDIFF0_HEADER
 from subvertpy.marshall import marshall, unmarshall, literal, MarshallError, NeedMoreData
 
 
@@ -161,11 +161,12 @@ class FileEditor:
         else:
             base_check = [base_checksum]
         self.conn.send_msg([literal("apply-textdelta"), [self.id, base_check]])
+        self.conn.send_msg([literal("textdelta-chunk"), [self.id, SVNDIFF0_HEADER]])
         def send_textdelta(delta):
             if delta is None:
                 self.conn.send_msg([literal("textdelta-end"), [self.id]])
             else:
-                self.conn.send_msg([literal("textdelta-chunk"), [self.id, pack_svndiff0([delta])]])
+                self.conn.send_msg([literal("textdelta-chunk"), [self.id, pack_svndiff0_window(delta)]])
         return send_textdelta
 
     def change_prop(self, name, value):

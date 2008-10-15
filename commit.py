@@ -153,6 +153,12 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
         if 'commit' in debug.debug_flags:
             trace.mutter(text, *args)
 
+    def branch_relative_path(*args):
+        if branch_path is None:
+            return urlutils.join(*args)
+        else:
+            return urlutils.join(branch_path, *args)
+
     assert dir_editor is not None
     # Loop over entries of file_id in old_inv
     # remove if they no longer exist with the same name
@@ -170,7 +176,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
                 new_inv[child_ie.file_id].name != child_name):
                 mutter('removing %r(%r)', (child_name, child_ie.file_id))
                 dir_editor.delete_entry(
-                    urlutils.join(branch_path, path, child_name), 
+                    branch_relative_path(path, child_name), 
                     base_revnum)
 
     # Loop over file children of file_id in new_inv
@@ -182,7 +188,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
             continue
 
         new_child_path = new_inv.id2path(child_ie.file_id).encode("utf-8")
-        full_new_child_path = urlutils.join(branch_path, new_child_path)
+        full_new_child_path = branch_relative_path(new_child_path)
         # add them if they didn't exist in old_inv 
         if not child_ie.file_id in old_inv:
             mutter('adding %s %r', child_ie.kind, new_child_path)
@@ -254,14 +260,14 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
         if not child_ie.file_id in old_inv:
             mutter('adding dir %r', child_ie.name)
             child_editor = dir_editor.add_directory(
-                urlutils.join(branch_path, new_child_path))
+                branch_relative_path(new_child_path))
 
         # copy if they existed at different location
         elif old_inv.id2path(child_ie.file_id) != new_child_path:
             old_child_path = old_inv.id2path(child_ie.file_id)
             mutter('copy dir %r -> %r', old_child_path, new_child_path)
             child_editor = dir_editor.add_directory(
-                urlutils.join(branch_path, new_child_path),
+                branch_relative_path(new_child_path),
                 urlutils.join(base_url, old_child_path), base_revnum)
 
         # open if they existed at the same location and 
@@ -270,7 +276,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
             mutter('open dir %r', new_child_path)
 
             child_editor = dir_editor.open_directory(
-                    urlutils.join(branch_path, new_child_path), 
+                    branch_relative_path(new_child_path), 
                     base_revnum)
         else:
             continue

@@ -107,6 +107,7 @@ class RepositoryBackend(ServerRepositoryBackend):
         if revnum is None:
             revnum = self.get_latest_revnum()
         path, revid = self._get_revid(revnum)
+        relpath = None # FIXME
         editor.set_target_revision(revnum)
         root = editor.open_root()
         old_inv = Inventory(None)
@@ -125,7 +126,7 @@ class RepositoryBackend(ServerRepositoryBackend):
                     modified_files[ie.file_id] = "link %s" % ie.symlink_target
 
             dir_editor_send_changes(old_inv, new_inv, "", new_inv.root.file_id, 
-                    root, "svn://localhost/", revnum-1, "trunk", 
+                    root, "svn://localhost/", revnum-1, relpath, 
                                 modified_files, visit_dirs)
             root.close()
             editor.close()
