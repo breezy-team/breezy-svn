@@ -58,6 +58,11 @@ class ServerRepositoryBackend:
         raise NotImplementedError(self.check_path)
 
     def stat(self, path, revnum):
+        """Stat a path.
+
+        Should return a dictionary with the following keys: name, kind, size, has-props, 
+        created-rev, created-date, last-author.
+        """
         raise NotImplementedError(self.stat)
 
     def rev_proplist(self, revnum):

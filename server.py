@@ -62,6 +62,7 @@ class RepositoryBackend(ServerRepositoryBackend):
         return self.branch.revno()
 
     def _get_revid(self, revnum):
+        """Find the revision id and branch path a particular revnum refers to."""
         return "/trunk", self.branch.get_rev_id(revnum)
 
     def log(self, send_revision, target_path, start_rev, end_rev, report_changed_paths,
@@ -140,7 +141,26 @@ class RepositoryBackend(ServerRepositoryBackend):
         raise NotImplementedError
     
     def stat(self, path, revnum):
-        return None
+        if revnum is None:
+            revnum = self.get_latest_revnum()
+        branch_path, revid = self._get_revid(revnum)
+        inv = self.branch.repository.get_inventory(revid)
+        id = inv.path2id(path[len(branch_path)].strip("/"))
+        if id is None:
+            return None
+        ie = inv[id]
+        ret = { "name": urlutils.basename(path) }
+        if ie.kind == "directory":
+            ret["kind"] = NODE_DIR
+        else:
+            ret["kind"] = NODE_FILE
+        ret["size"] = ie.text_size
+        ret["has-props"] = True
+        ret["created-rev"] = 0 # FIXME
+        ret["created-date"] = "" # FIXME
+        ret["last-author"] = "" # FIXME
+
+        return ret
 
 
 class BzrServerBackend(ServerBackend):
