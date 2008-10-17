@@ -32,7 +32,8 @@ For more information about bzr-svn, see the bzr-svn FAQ.
 """
 import bzrlib
 from bzrlib import api, bzrdir, log, repository
-from bzrlib.bzrdir import BzrDirFormat
+import bzrlib.api, bzrlib.repository
+from bzrlib.bzrdir import BzrDirFormat, format_registry
 from bzrlib.errors import BzrError
 from bzrlib.commands import Command, register_command, display_command
 from bzrlib.help_topics import topic_registry
@@ -125,7 +126,7 @@ def lazy_check_versions():
     if _versions_checked:
         return
     _versions_checked = True
-    api.require_any_api(bzrlib, COMPATIBLE_BZR_VERSIONS)
+    bzrlib.api.require_any_api(bzrlib, COMPATIBLE_BZR_VERSIONS)
 
 
 _optimizers_registered = False
@@ -531,44 +532,25 @@ class cmd_svn_serve(Command):
     ]
 
     def run(self, inet=None, port=None, directory=None):
-        from subvertpy.server import SVNServer
+        from subvertpy.server import SVNServer, TCPSVNServer
         from bzrlib.plugins.svn.server import BzrServerBackend
-        import threading
+        from bzrlib.trace import warning
+
+        warning("server support in bzr-svn is experimental.")
 
         if directory is None:
             directory = os.getcwd()
 
+        backend = BzrServerBackend(directory)
         if inet:
             def send_fn(data):
                 sys.stdout.write(data)
                 sys.stdout.flush()
-            server = SVNServer(BzrServerBackend(directory), sys.stdin.read, 
-                               send_fn, self.outf)
-            server.serve()
+            server = SVNServer(backend, sys.stdin.read, send_fn, 
+                               self.outf)
         else:
-            if port is None:
-                port = 3690
-            else:
-                port = int(port)
-
-            import socket
-            server_sock = socket.socket()
-            server_sock.bind(('0.0.0.0', port))
-            server_sock.listen(5)
-            def handle_new_client(sock):
-                def handle_connection():
-                    server.serve()
-                    sock.close()
-                sock.setblocking(True)
-                server = SVNServer(BzrServerBackend(directory), sock.recv, sock.send, self.outf)
-                server_thread = threading.Thread(None, handle_connection, name='svn-smart-server')
-                server_thread.setDaemon(True)
-                server_thread.start()
-                
-            while True:
-                sock, _ = server_sock.accept()
-                handle_new_client(sock)
-
+            server = TCPSVNServer(backend, port, self.outf)
+        server.serve()
 
 register_command(cmd_svn_serve)
 

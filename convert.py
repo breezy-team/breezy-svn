@@ -26,7 +26,7 @@ from bzrlib.revision import ensure_null
 from bzrlib.transport import get_transport
 
 from bzrlib.plugins.svn.branch import SvnBranch
-from subvertpy import SubversionException, repos, ERR_STREAM_MALFORMED_DATA
+from subvertpy import SubversionException, repos, ERR_STREAM_MALFORMED_DATA, ERR_FS_NOT_DIRECTORY
 from bzrlib.plugins.svn.format import get_rich_root_format
 
 LATEST_IMPORT_REVISION_FILENAME = "svn-import-revision"
@@ -193,7 +193,11 @@ def convert_repository(source_repos, output_url, layout=None,
                 pb.update("determining revisions to fetch", to_revnum-revmeta.revnum, to_revnum)
                 if revmeta.is_hidden(mapping):
                     continue
-                if target_repos is not None and not target_repos.has_revision(revmeta.get_revision_id(mapping)):
+                try:
+                    revid = revmeta.get_revision_id(mapping)
+                except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                    continue
+                if target_repos is not None and not target_repos.has_revision(revid):
                     revmetas.append(revmeta)
                 if not revmeta.branch_path in existing_branches:
                     existing_branches[revmeta.branch_path] = SvnBranch(source_repos, revmeta.branch_path, revnum=revmeta.revnum, _skip_check=True)

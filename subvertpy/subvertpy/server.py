@@ -19,6 +19,7 @@ import os
 import time
 
 from subvertpy import ERR_RA_SVN_UNKNOWN_CMD, NODE_DIR, NODE_FILE, NODE_UNKNOWN, NODE_NONE, ERR_UNSUPPORTED_FEATURE
+from subvertpy.delta import pack_svndiff0_window, SVNDIFF0_HEADER
 from subvertpy.marshall import marshall, unmarshall, literal, MarshallError, NeedMoreData
 
 
@@ -31,12 +32,6 @@ class ServerBackend:
 def generate_random_id():
     import uuid
     return str(uuid.uuid4())
-
-
-def txdelta_to_svndiff(delta):
-    ret = "SVN\2"
-    # FIXME
-    return ret
 
 
 class ServerRepositoryBackend:
@@ -58,6 +53,11 @@ class ServerRepositoryBackend:
         raise NotImplementedError(self.check_path)
 
     def stat(self, path, revnum):
+        """Stat a path.
+
+        Should return a dictionary with the following keys: name, kind, size, has-props, 
+        created-rev, created-date, last-author.
+        """
         raise NotImplementedError(self.stat)
 
     def rev_proplist(self, revnum):
@@ -87,6 +87,7 @@ class Editor:
         else:
             baserev = [base_revision]
         self.conn.send_msg([literal("open-root"), [baserev, id]])
+        self.conn._open_ids = []
         return DirectoryEditor(self.conn, id)
 
     def close(self):
@@ -100,38 +101,58 @@ class DirectoryEditor:
     def __init__(self, conn, id):
         self.conn = conn
         self.id = id
+        self.conn._open_ids.append(id)
 
-    def add_file(self, path):
+    def add_file(self, path, copyfrom_path=None, copyfrom_rev=-1):
+        self._is_last_open()
         child = generate_random_id()
-        self.conn.send_msg([literal("add-file"), [path, self.id, child]])
+        if copyfrom_path is not None:
+            copyfrom_data = [copyfrom_path, copyfrom_rev]
+        else:
+            copyfrom_data = []
+        self.conn.send_msg([literal("add-file"), [path, self.id, child, copyfrom_data]])
         return FileEditor(self.conn, child)
 
     def open_file(self, path, base_revnum):
+        self._is_last_open()
         child = generate_random_id()
         self.conn.send_msg([literal("open-file"), [path, self.id, child, base_revnum]])
         return FileEditor(self.conn, child)
 
     def delete_entry(self, path, base_revnum):
+        self._is_last_open()
         self.conn.send_msg([literal("delete-entry"), [path, base_revnum, self.id]])
 
-    def add_directory(self, path):
+    def add_directory(self, path, copyfrom_path=None, copyfrom_rev=-1):
+        self._is_last_open()
         child = generate_random_id()
-        self.conn.send_msg([literal("add-dir"), [path, self.id, child]])
+        if copyfrom_path is not None:
+            copyfrom_data = [copyfrom_path, copyfrom_rev]
+        else:
+            copyfrom_data = []
+        self.conn.send_msg([literal("add-dir"), [path, self.id, child, copyfrom_data]])
         return DirectoryEditor(self.conn, child)
 
     def open_directory(self, path, base_revnum):
+        self._is_last_open()
         child = generate_random_id()
         self.conn.send_msg([literal("open-dir"), [path, self.id, child, base_revnum]])
         return DirectoryEditor(self.conn, child)
 
     def change_prop(self, name, value):
+        self._is_last_open()
         if value is None:
             value = []
         else:
             value = [value]
         self.conn.send_msg([literal("change-dir-prop"), [self.id, name, value]])
 
+    def _is_last_open(self):
+        assert self.conn._open_ids[-1] == self.id
+
     def close(self):
+        self._is_last_open()
+        self.conn._open_ids.pop()
         self.conn.send_msg([literal("close-dir"), [self.id]])
 
 class FileEditor:
@@ -139,8 +160,14 @@ class FileEditor:
     def __init__(self, conn, id):
         self.conn = conn
         self.id = id
+        self.conn._open_ids.append(id)
+
+    def _is_last_open(self):
+        assert self.conn._open_ids[-1] == self.id
 
     def close(self, checksum=None):
+        self._is_last_open()
+        self.conn._open_ids.pop()
         if checksum is None:
             checksum = []
         else:
@@ -148,26 +175,27 @@ class FileEditor:
         self.conn.send_msg([literal("close-file"), [self.id, checksum]])
 
     def apply_textdelta(self, base_checksum=None):
+        self._is_last_open()
         if base_checksum is None:
             base_check = []
         else:
             base_check = [base_checksum]
         self.conn.send_msg([literal("apply-textdelta"), [self.id, base_check]])
+        self.conn.send_msg([literal("textdelta-chunk"), [self.id, SVNDIFF0_HEADER]])
         def send_textdelta(delta):
             if delta is None:
                 self.conn.send_msg([literal("textdelta-end"), [self.id]])
             else:
-                self.conn.send_msg([literal("textdelta-chunk"), [self.id, txdelta_to_svndiff(delta)]])
+                self.conn.send_msg([literal("textdelta-chunk"), [self.id, pack_svndiff0_window(delta)]])
         return send_textdelta
 
     def change_prop(self, name, value):
+        self._is_last_open()
         if value is None:
             value = []
         else:
             value = [value]
-        self.conn.send_msg([literal("change-dir-prop"), [self.id, name, value]])
-
-
+        self.conn.send_msg([literal("change-file-prop"), [self.id, name, value]])
 
 
 class SVNServer:
@@ -307,6 +335,13 @@ class SVNServer:
             revnum = rev[0]
         self.repo_backend.update(Editor(self), revnum, target, recurse)
         self.send_success()
+        client_result = self.recv_msg()
+        if client_result[0] == "success":
+            return
+        else:
+            self.mutter("Client reported error during update: %r" % client_result)
+            # Needs to be sent back to the client to display
+            self.send_failure(client_result[1][0])
 
     commands = {
             "get-latest-rev": get_latest_rev,
@@ -365,7 +400,6 @@ class SVNServer:
         self._stop = True
 
     def recv_msg(self):
-        # TODO: socket read should be blocking
         while True:
             try:
                 (self.inbuffer, ret) = unmarshall(self.inbuffer)
@@ -373,16 +407,56 @@ class SVNServer:
             except NeedMoreData:
                 newdata = self.recv_fn(512)
                 if newdata != "":
-                    self.mutter("IN: %r" % newdata)
+                    #self.mutter("IN: %r" % newdata)
                     self.inbuffer += newdata
             except MarshallError, e:
                 self.mutter('ERROR: %r' % e)
                 raise
 
     def send_msg(self, data):
-        self.mutter("OUT: %r" % data)
-        self.send_fn(marshall(data))
+        marshalled_data = marshall(data)
+        # self.mutter("OUT: %r" % marshalled_data)
+        self.send_fn(marshalled_data)
 
     def mutter(self, text):
         if self._logf is not None:
             self._logf.write("%s\n" % text)
+
+
+SVN_PORT = 3690
+
+
+class TCPSVNServer(object):
+
+    def __init__(self, backend, port=None, logf=None):
+        if port is None:
+            self._port = SVN_PORT
+        else:
+            self._port = int(port)
+        self._backend = backend
+        self._logf = logf
+
+    def serve(self):
+        import socket
+        import threading
+        server_sock = socket.socket()
+        server_sock.bind(('0.0.0.0', self._port))
+        server_sock.listen(5)
+        def handle_new_client(sock):
+            def handle_connection():
+                try:
+                    server.serve()
+                finally:
+                    sock.close()
+            self._logf.write("New client connection from %s:%d\n" % sock.getsockname())
+            sock.setblocking(True)
+            server = SVNServer(self._backend, sock.recv, sock.send, self._logf)
+            server_thread = threading.Thread(None, handle_connection, name='svn-smart-server')
+            server_thread.setDaemon(True)
+            server_thread.start()
+            
+        while True:
+            sock, _ = server_sock.accept()
+            handle_new_client(sock)
+
+

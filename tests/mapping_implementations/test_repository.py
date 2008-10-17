@@ -1031,10 +1031,6 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         mapping = oldrepos.get_mapping()
         branch = Branch.open("%s/trunk" % repos_url)
-        if mapping.is_branch("old-trunk"):
-            self.assertEqual([oldrepos.generate_revision_id(1, "old-trunk", mapping), 
-                              oldrepos.generate_revision_id(2, "trunk", mapping)], 
-                              branch.revision_history())
-        else:
-            self.assertEqual([oldrepos.generate_revision_id(2, "trunk", mapping)], 
-                         branch.revision_history())
+        self.assertEquals(branch.mapping, mapping)
+        self.assertEqual([oldrepos.generate_revision_id(2, "trunk", mapping)], 
+                     branch.revision_history())
