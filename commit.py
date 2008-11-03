@@ -163,8 +163,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
     # Loop over entries of file_id in old_inv
     # remove if they no longer exist with the same name
     # or parents
-    if (file_id in old_inv and
-        self.old_inv[file_id].kind == 'directory'):
+    if (file_id in old_inv and old_inv[file_id].kind == 'directory'):
         for child_name in old_inv[file_id].children:
             child_ie = old_inv.get_child(file_id, child_name)
             # remove if...
