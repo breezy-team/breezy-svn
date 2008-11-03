@@ -674,7 +674,10 @@ class SvnRepository(Repository):
                                 tr = self._log.find_latest_change(cf, cr)
                             tag_changes[p] = self.generate_revision_id(tr, tp, mapping)
                         else:
-                            tag_changes[bp] = self._revmeta_provider.get_revision(bp, revnum, revprops=revprops).get_revision_id(mapping)
+                            try:
+                                tag_changes[bp] = self._revmeta_provider.get_revision(bp, revnum, revprops=revprops).get_revision_id(mapping)
+                            except SubversionException, (_, errors.ERR_FS_NOT_DIRECTORY):
+                                pass
                 for path, revid in tag_changes.items():
                     name = layout.get_tag_name(path, project)
                     if revid is None:

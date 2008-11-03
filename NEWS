@@ -60,6 +60,8 @@ bzr-svn-0.5			UNRELEASED
 
     + Standard commit code provides commit notification. (#79333)
 
+bzr-svn 0.4.14	2008-11-03
+
   BUG FIXES
 
    * Fix compatibility with Bazaar 1.9. (#279444)
@@ -70,6 +72,8 @@ bzr-svn-0.5			UNRELEASED
      does this. (#278930)
 
    * Fix python2.6 deprecation warnings. (#292306)
+
+   * Ignore tags that happen to be files. (#290664)
 
 bzr-svn 0.4.13	2008-09-24
 
