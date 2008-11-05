@@ -22,6 +22,7 @@ from bzrlib.plugins.svn.mapping import is_bzr_revision_fileprops, is_bzr_revisio
 from bzrlib.plugins.svn.svk import (SVN_PROP_SVK_MERGE, svk_features_merged_since, 
                  parse_svk_feature, estimate_svk_ancestors)
 
+
 def full_paths(find_children, paths, bp, from_bp, from_rev):
     """Generate the changes creating a specified branch path.
 
@@ -155,6 +156,10 @@ class RevisionMetadata(object):
         return self._changed_fileprops
 
     def get_lhs_parent_revmeta(self, mapping):
+        """Get the revmeta object for the left hand side parent.
+
+        :note: Returns None when there is no parent (parent is NULL_REVISION)
+        """
         assert (mapping.is_branch(self.branch_path) or 
                 mapping.is_tag(self.branch_path)), "%s not valid in %r" % (self.branch_path, mapping)
         def get_next_parent(rm):
@@ -207,6 +212,7 @@ class RevisionMetadata(object):
         return is_bzr_revision_fileprops(self.get_changed_fileprops())
 
     def is_hidden(self, mapping):
+        """Check whether this revision should be hidden from Bazaar history."""
         if not mapping.supports_hidden:
             return False
         if self.consider_bzr_fileprops() or self.consider_bzr_revprops():
@@ -236,6 +242,7 @@ class RevisionMetadata(object):
         return mapping.get_rhs_parents(self.branch_path, self.get_revprops(), self.get_changed_fileprops())
 
     def get_svk_merges(self, mapping):
+        """Check what SVK revisions were merged in this revision."""
         if not self.consider_svk_fileprops():
             return ()
 
@@ -288,6 +295,7 @@ class RevisionMetadata(object):
         return self.get_svk_merges(mapping)
 
     def get_parent_ids(self, mapping):
+        """Return the parent ids for this revision. """
         lhs_parent = self.get_lhs_parent(mapping)
 
         if lhs_parent == NULL_REVISION:
@@ -341,6 +349,7 @@ class RevisionMetadata(object):
 
 
 class CachingRevisionMetadata(RevisionMetadata):
+    """Wrapper around RevisionMetadata that stores some results in a cache."""
 
     def __init__(self, repository, *args, **kwargs):
         super(CachingRevisionMetadata, self).__init__(repository, *args, **kwargs)
@@ -349,6 +358,7 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._revid = None
 
     def get_revision_id(self, mapping):
+        """Find the revision id of a revision, optionally caching it in a sqlite database."""
         if self._revid is not None:
             return self._revid
         # Look in the cache to see if it already has a revision id
@@ -363,6 +373,7 @@ class CachingRevisionMetadata(RevisionMetadata):
         return self._revid
 
     def get_parent_ids(self, mapping):
+        """Find the parent ids of a revision, optionally caching them in a sqlite database."""
         myrevid = self.get_revision_id(mapping)
 
         if self._parents_cache is not None:
@@ -422,6 +433,11 @@ class RevisionMetadataBranch(object):
         return True
 
     def get_lhs_parent(self, revmeta):
+        """Find the left hand side of a revision using revision metadata.
+
+        :note: Will return None if no LHS parent can be found, this 
+            doesn't necessarily mean there is no LHS parent.
+        """
         i = self._revs.index(revmeta)
         try:
             return self._revs[i+1]
@@ -429,6 +445,7 @@ class RevisionMetadataBranch(object):
             return None
 
     def append(self, revmeta):
+        """Append a revision metadata object to this branch."""
         assert len(self._revs) == 0 or self._revs[-1].revnum > revmeta.revnum
         self._revs.append(revmeta)
 

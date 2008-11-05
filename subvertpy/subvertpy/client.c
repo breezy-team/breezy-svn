@@ -803,8 +803,6 @@ static PyMethodDef client_mod_methods[] = {
 
 void initclient(void)
 {
-    extern void initeditor(void);
-
 	PyObject *mod;
 
 	if (PyType_Ready(&Client_Type) < 0)
@@ -815,8 +813,6 @@ void initclient(void)
 
 	if (PyType_Ready(&ConfigItem_Type) < 0)
 		return;
-
-    initeditor();
 
 	/* Make sure APR is initialized */
 	apr_initialize();

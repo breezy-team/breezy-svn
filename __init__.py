@@ -31,7 +31,7 @@ For more information about bzr-svn, see the bzr-svn FAQ.
 
 """
 import bzrlib
-from bzrlib import bzrdir, log, repository
+from bzrlib import api, bzrdir, log, repository
 import bzrlib.api, bzrlib.repository
 from bzrlib.bzrdir import BzrDirFormat, format_registry
 from bzrlib.errors import BzrError
