@@ -15,6 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Subversion-specific errors and conversion of Subversion-specific errors."""
 
+import bzrlib.errors
 from bzrlib.errors import (BzrError, ConnectionError, ConnectionReset, 
                            LockError, PermissionDenied, 
                            DependencyNotPresent, NoRepositoryPresent,
@@ -153,3 +154,12 @@ class LayoutUnusable(BzrError):
         BzrError.__init__(self)
         self.layout = layout
         self.mapping = mapping
+
+
+class AppendRevisionsOnlyViolation(bzrlib.errors.AppendRevisionsOnlyViolation):
+
+    _fmt = ('Operation denied because it would change the main history.'
+           ' Set the append_revisions_only setting to yes on'
+           ' branch "%(location)s".')
+
+

@@ -18,7 +18,7 @@
 from bzrlib import debug, urlutils, trace, ui
 from bzrlib.branch import Branch
 from bzrlib.errors import (BzrError, InvalidRevisionId, DivergedBranches, 
-                           UnrelatedBranches, AppendRevisionsOnlyViolation,
+                           UnrelatedBranches, 
                            NoSuchRevision)
 from bzrlib.inventory import Inventory
 from bzrlib.repository import RootCommitBuilder, InterRepository, Repository
@@ -29,7 +29,7 @@ from cStringIO import StringIO
 
 from bzrlib.plugins.svn import mapping
 from subvertpy import SubversionException, delta, NODE_DIR, properties, ERR_FS_TXN_OUT_OF_DATE
-from bzrlib.plugins.svn.errors import ChangesRootLHSHistory, MissingPrefix, RevpropChangeFailed, convert_svn_error
+from bzrlib.plugins.svn.errors import ChangesRootLHSHistory, MissingPrefix, RevpropChangeFailed, convert_svn_error, AppendRevisionsOnlyViolation
 from bzrlib.plugins.svn.svk import (
     generate_svk_feature, serialize_svk_features, 
     parse_svk_features, SVN_PROP_SVK_MERGE)
