@@ -673,7 +673,7 @@ class SvnRepository(Repository):
                                 tp = cf
                                 tr = self._log.find_latest_change(cf, cr)
                             try:
-                            tag_changes[p] = self.generate_revision_id(tr, tp, mapping)
+                                tag_changes[p] = self.generate_revision_id(tr, tp, mapping)
                             except SubversionException, (_, errors.ERR_FS_NOT_DIRECTORY):
                                 pass
                         else:
