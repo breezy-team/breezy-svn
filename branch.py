@@ -227,7 +227,7 @@ class SvnBranch(ForeignBranch):
     def get_config(self):
         return BranchConfig(self)
        
-    def _get_nick(self):
+    def _get_nick(self, master_transports=None):
         """Find the nick name for this branch.
 
         :return: Branch nick
