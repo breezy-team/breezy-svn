@@ -72,6 +72,12 @@ def check_subversion_version(subvertpy):
 
     mutter("bzr-svn: using Subversion %d.%d.%d (%s)" % ra_version)
 
+
+def get_client_string():
+    """Return a string that can be send as part of the User Agent string."""
+    return "bzr%s+bzr-svn%s" % (bzrlib.__version__, __version__)
+
+
 # Find subvertpy, somehow
 try:
     import subvertpy 

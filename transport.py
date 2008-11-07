@@ -33,11 +33,7 @@ import urllib
 
 svn_config = get_config()
 
-def get_client_string():
-    """Return a string that can be send as part of the User Agent string."""
-    return "bzr%s+bzr-svn%s" % (bzrlib.__version__, bzrlib.plugins.svn.__version__)
 
- 
 # Don't run any tests on SvnTransport as it is not intended to be 
 # a full implementation of Transport
 def get_test_permutations():
@@ -109,7 +105,7 @@ def Connection(url):
         mutter('opening SVN RA connection to %r' % url)
         ret = ra.RemoteAccess(url.encode('utf8'), 
                 auth=create_auth_baton(url),
-                client_string_func=get_client_string)
+                client_string_func=bzrlib.plugins.svn.get_client_string)
         if 'transport' in debug.debug_flags:
             ret = MutteringRemoteAccess(ret)
     except SubversionException, (msg, num):
