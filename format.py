@@ -81,10 +81,10 @@ class SvnRemoteFormat(BzrDirFormat):
         return format
 
     def _open(self, transport):
-        from subvertpy import SubversionException
+        import subvertpy
         try: 
             return remote.SvnRemoteAccess(transport, self)
-        except SubversionException, (_, num):
+        except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_RA_DAV_REQUEST_FAILED:
                 raise bzr_errors.NotBranchError(transport.base)
             raise
