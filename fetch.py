@@ -28,32 +28,12 @@ from bzrlib.osutils import md5
 from subvertpy import properties
 from subvertpy.delta import apply_txdelta_handler
 from bzrlib.plugins.svn.errors import InvalidFileName
+from bzrlib.plugins.svn.foreign import escape_commit_message
 from bzrlib.plugins.svn.mapping import (SVN_PROP_BZR_PREFIX)
 from bzrlib.plugins.svn.repository import SvnRepository, SvnRepositoryFormat
 from bzrlib.plugins.svn.transport import _url_escape_uri
 
 FETCH_COMMIT_WRITE_SIZE = 500
-
-def _escape_commit_message(message):
-    """Replace xml-incompatible control characters."""
-    if message is None:
-        return None
-    import re
-    # FIXME: RBC 20060419 this should be done by the revision
-    # serialiser not by commit. Then we can also add an unescaper
-    # in the deserializer and start roundtripping revision messages
-    # precisely. See repository_implementations/test_repository.py
-    
-    # Python strings can include characters that can't be
-    # represented in well-formed XML; escape characters that
-    # aren't listed in the XML specification
-    # (http://www.w3.org/TR/REC-xml/#NT-Char).
-    message, _ = re.subn(
-        u'[^\x09\x0A\x0D\u0020-\uD7FF\uE000-\uFFFD]+',
-        lambda match: match.group(0).encode('unicode_escape'),
-        message)
-    return message
-
 
 def md5_strings(strings):
     """Return the MD5sum of the concatenation of strings.
@@ -402,7 +382,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         rev = self.revmeta.get_revision(self.mapping)
         self.inventory.revision_id = self.revid
         # Escaping the commit message is really the task of the serialiser
-        rev.message = _escape_commit_message(rev.message)
+        rev.message = escape_commit_message(rev.message)
         rev.inventory_sha1 = None
         assert self.inventory.root.revision is not None
         self.target.add_revision(self.revid, rev, self.inventory)

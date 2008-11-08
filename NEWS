@@ -60,6 +60,10 @@ bzr-svn-0.5			UNRELEASED
 
     + Standard commit code provides commit notification. (#79333)
 
+bzr-svn 0.4.15	UNRELEASED
+
+   * Ignore tags that happen to be files. (#294283)
+
 bzr-svn 0.4.14	2008-11-03
 
   BUG FIXES
