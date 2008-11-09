@@ -249,14 +249,12 @@ class RevisionMetadata(object):
         if not self.changes_branch_root():
             return ()
 
-        current = self.get_fileprops().get(SVN_PROP_SVK_MERGE, "")
+        previous, current = self.get_changed_fileprops().get(SVN_PROP_SVK_MERGE, ("", ""))
         if current == "":
             return ()
 
-        previous = self.get_previous_fileprops().get(SVN_PROP_SVK_MERGE, "")
-
         ret = []
-        for feature in svk_features_merged_since(current, previous):
+        for feature in svk_features_merged_since(current, previous or ""):
             # We assume svk:merge is only relevant on non-bzr-svn revisions. 
             # If this is a bzr-svn revision, the bzr-svn properties 
             # would be parsed instead.

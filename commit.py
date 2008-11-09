@@ -574,15 +574,16 @@ class SvnCommitBuilder(RootCommitBuilder):
 
                 # Set all the revprops
                 if self.push_metadata and self._svnprops.is_loaded:
-                    for prop, value in self._svnprops.items():
-                        if value == self._base_branch_props.get(prop):
+                    for prop, newvalue in self._svnprops.items():
+                        oldvalue = self._base_branch_props.get(prop)
+                        if oldvalue == newvalue:
                             continue
-                        self._changed_fileprops[prop] = value
+                        self._changed_fileprops[prop] = (oldvalue, newvalue)
                         if not properties.is_valid_property_name(prop):
                             warning("Setting property %r with invalid characters in name", prop)
-                        assert isinstance(value, str)
-                        branch_editors[-1].change_prop(prop, value)
-                        self.mutter("Setting root file property %r -> %r", prop, value)
+                        assert isinstance(newvalue, str)
+                        branch_editors[-1].change_prop(prop, newvalue)
+                        self.mutter("Setting root file property %r -> %r", prop, newvalue)
 
                 for dir_editor in reversed(branch_editors):
                     dir_editor.close()

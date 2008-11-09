@@ -525,6 +525,17 @@ class SvnWorkingTree(WorkingTree):
         if wc is None:
             subwc.close()
 
+    def _get_changed_branch_props(self):
+        wc = self._get_wc()
+        ret = {}
+        try:
+            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir)
+            for k,v in prop_changes:
+                ret[k] = (orig_props.get(k), v)
+            return ret
+        finally:
+            wc.close()
+
     def _get_branch_props(self):
         wc = self._get_wc()
         try:
@@ -552,7 +563,7 @@ class SvnWorkingTree(WorkingTree):
 
     def _get_new_file_ids(self, wc):
         return self.branch.mapping.import_fileid_map({}, 
-                self._get_branch_props())
+                self._get_changed_branch_props())
 
     def _get_svk_merges(self, base_branch_props):
         return base_branch_props.get(SVN_PROP_SVK_MERGE, "")
