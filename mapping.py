@@ -58,6 +58,15 @@ SVN_REVPROP_BZR_HIDDEN = 'bzr:hidden'
 SVN_REVPROP_BZR_TAGS = 'bzr:tags'
 
 
+def find_new_lines((oldvalue, newvalue)):
+    if oldvalue is None:
+        oldvalue = ""
+    if not newvalue.startswith(oldvalue):
+        raise ValueError("Existing contents were changed")
+    appended = newvalue[len(oldvalue):]
+    return appended.splitlines()
+
+
 def escape_svn_path(x):
     """Escape a Subversion path for use in a revision identifier.
 
@@ -425,6 +434,12 @@ class BzrSvnMapping(foreign.VcsMapping):
         raise NotImplementedError(self.export_text_parents)
 
     def export_text_revisions(self, text_revisions, revprops, fileprops):
+        """Store a text revisions map.
+
+        :param text_parents: Text revision map
+        :param revprops: Revision properties
+        :param fileprops: File properties
+        """
         raise NotImplementedError(self.export_text_revisions)
 
     def import_text_revisions(self, revprops, fileprops):
@@ -512,17 +527,17 @@ class BzrSvnMappingFileProps(object):
         if metadata is not None:
             parse_revision_metadata(metadata[1], rev)
 
-    def import_text_revisions(self, svn_revprops, fileprops):
-        metadata = fileprops.get(SVN_PROP_BZR_TEXT_REVISIONS)
-        if metadata is None:
-            return {}
-        return parse_text_revisions_property(metadata[1])
-
     def import_text_parents(self, svn_revprops, fileprops):
         metadata = fileprops.get(SVN_PROP_BZR_TEXT_PARENTS)
         if metadata is None:
             return {}
         return parse_text_parents_property(metadata[1])
+
+    def import_text_revisions(self, svn_revprops, fileprops):
+        metadata = fileprops.get(SVN_PROP_BZR_TEXT_REVISIONS)
+        if metadata is None:
+            return {}
+        return parse_text_revisions_property(metadata[1])
 
     def export_text_parents(self, text_parents, svn_revprops, fileprops):
         if text_parents != {}:
@@ -539,7 +554,15 @@ class BzrSvnMappingFileProps(object):
     def get_rhs_parents(self, branch_path, revprops, fileprops):
         bzr_merges = fileprops.get(SVN_PROP_BZR_ANCESTRY+self.name, None)
         if bzr_merges is not None:
-            return parse_merge_property(bzr_merges[1].splitlines()[-1])
+            try:
+                new_lines = find_new_lines(bzr_merges)
+            except ValueError, e:
+                mutter(str(e))
+                return ()
+            if len(new_lines) != 1:
+                mutter("unexpected number of lines in bzr merge property: %r" % new_lines)
+                return ()
+            return parse_merge_property(new_lines[0])
 
         return ()
 
@@ -590,12 +613,18 @@ class BzrSvnMappingFileProps(object):
         if text is None:
             return (None, None)
 
-        lines = text[1].splitlines()
-        if len(lines) == 0:
+        try:
+            new_lines = find_new_lines(text)
+        except ValueError, e:
+            mutter(str(e))
+            return (None, None)
+
+        if len(new_lines) != 1:
+            mutter("unexpected number of lines: %r" % new_lines)
             return (None, None)
 
         try:
-            return parse_revid_property(lines[-1])
+            return parse_revid_property(new_lines[0])
         except errors.InvalidPropertyValue, e:
             mutter(str(e))
             return (None, None)
