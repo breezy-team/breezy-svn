@@ -40,11 +40,11 @@ class TestRevisionMetadata(SubversionTestCase):
         revmeta2 = repos._revmeta_provider.get_revision("", 2)
         revmeta3 = repos._revmeta_provider.get_revision("", 3)
 
-        self.assertEquals("data\n",
+        self.assertEquals((None, "data\n"),
                           revmeta1.get_changed_fileprops()["myprop"])
 
-        self.assertEquals("newdata\n", 
+        self.assertEquals(("data\n","newdata\n"), 
                           revmeta2.get_changed_fileprops()["myprop"])
 
-        self.assertEquals("newdata\n", 
+        self.assertEquals((None, "newdata\n"), 
                           revmeta3.get_changed_fileprops()["myp2"])

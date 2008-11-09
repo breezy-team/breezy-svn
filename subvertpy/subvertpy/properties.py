@@ -216,7 +216,8 @@ PROP_REVISION_DATE = "svn:date"
 
 def diff(current, previous):
     ret = {}
-    for key, val in current.items():
-        if previous.get(key) != val:
-            ret[key] = val
+    for key, newval in current.items():
+        oldval = previous.get(key)
+        if oldval != newval:
+            ret[key] = (oldval, newval)
     return ret
