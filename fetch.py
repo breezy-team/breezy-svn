@@ -372,7 +372,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
 
     def _finish_commit(self):
-        assert len(self._premature_deletes) == 0
+        if len(self._premature_deletes) > 0:
+            raise AssertionError("Remaining deletes in %s: %r" % (self.revid, self._premature_deletes))
         rev = self.revmeta.get_revision(self.mapping)
         self.inventory.revision_id = self.revid
         # Escaping the commit message is really the task of the serialiser
