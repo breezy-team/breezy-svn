@@ -37,6 +37,7 @@ import subvertpy
 from bzrlib.plugins.svn.branchprops import PathPropertyProvider
 from bzrlib.plugins.svn.config import SvnRepositoryConfig
 from subvertpy import SubversionException, properties
+from bzrlib.plugins.svn.errors import convert_svn_error
 from bzrlib.plugins.svn.layout.standard import WildcardLayout
 from bzrlib.plugins.svn.layout.guess import repository_guess_layout
 from bzrlib.plugins.svn.mapping import (SVN_REVPROP_BZR_SIGNATURE,
@@ -184,6 +185,7 @@ class SvnRepository(Repository):
     def is_write_locked(self):
         return (self._lock_mode == 'w')
 
+    @convert_svn_error
     def get_latest_revnum(self):
         if self._lock_mode in ('r','w') and self._cached_revnum is not None:
             return self._cached_revnum
