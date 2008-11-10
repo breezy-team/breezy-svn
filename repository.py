@@ -650,7 +650,7 @@ class SvnRepository(Repository):
                                 for c in self.transport.get_dir(p, revnum)[0].keys():
                                     n = p+"/"+c
                                     if layout.is_tag(n, project):
-                                        tag_changes[n] = self._revmeta_provider.get_revision(n, revnum, revprops=revprops).generate_revision_id(mapping)
+                                        tag_changes[n] = self._revmeta_provider.get_revision(n, revnum, revprops=revprops).get_revision_id(mapping)
                                     elif layout.is_tag_parent(n, project):
                                         parents.append(n)
                             except SubversionException, (_, subvertpy.ERR_FS_NOT_DIRECTORY):
