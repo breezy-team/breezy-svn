@@ -321,3 +321,4 @@ if __name__ == "__main__":
           ext_modules=subvertpy_modules("subvertpy"),
           cmdclass = { 'install_lib': install_lib_with_dlls },
           )
+

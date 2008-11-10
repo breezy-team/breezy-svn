@@ -60,11 +60,11 @@ bzr-svn-0.5			UNRELEASED
 
     + Standard commit code provides commit notification. (#79333)
 
-bzr-svn 0.4.15	UNRELEASED
+bzr-svn 0.4.16	UNRELEASED
+
+bzr-svn 0.4.15	2008-11-10
 
   BUG FIXES
-
-   * Fix compatibility with Bazaar 1.10.
 
    * Ignore tags that happen to be files (another instance). (#290664)
 
