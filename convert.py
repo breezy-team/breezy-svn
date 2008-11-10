@@ -129,6 +129,15 @@ def convert_repository(source_repos, output_url, layout=None,
         branches, should be imported
     :param format: Format to use
     """
+    def remove_branches(to_transport, removed_branches):
+        # Remove removed branches
+        for bp in removed_branches:
+            # TODO: Perhaps check if path is a valid branch with the right last
+            # revid?
+            fullpath = to_transport.local_abspath(bp)
+            if not os.path.isdir(fullpath):
+                continue
+            osutils.rmtree(fullpath)
     assert not all or create_shared_repo
     if format is None:
         format = get_rich_root_format()
@@ -180,7 +189,7 @@ def convert_repository(source_repos, output_url, layout=None,
             removed_branches = source_repos.find_deleted_branches_between(layout=layout, 
                 from_revnum=from_revnum, to_revnum=to_revnum, project=project)
         else:
-            removed_branches = []
+            removed_branches = set([])
         mapping = source_repos.get_mapping()
         revmetas = []
         existing_branches = {}
@@ -218,14 +227,7 @@ def convert_repository(source_repos, output_url, layout=None,
                 inter.fetch(revmetas=revmetas, mapping=source_repos.get_mapping())
 
         if not keep:
-            # Remove removed branches
-            for bp in removed_branches:
-                # TODO: Perhaps check if path is a valid branch with the right last
-                # revid?
-                fullpath = to_transport.local_abspath(bp)
-                if not os.path.isdir(fullpath):
-                    continue
-                osutils.rmtree(fullpath)
+            remove_branches(to_transport, removed_branches)
 
         source_graph = source_repos.get_graph()
         pb = ui.ui_factory.nested_progress_bar()
@@ -260,6 +262,9 @@ def convert_repository(source_repos, output_url, layout=None,
             pb.finished()
     finally:
         source_repos.unlock()
+
+    if not keep:
+        remove_branches(to_transport, removed_branches)
 
     if target_repos is not None:
         put_latest_svn_import_revision(target_repos, source_repos.uuid, to_revnum)
