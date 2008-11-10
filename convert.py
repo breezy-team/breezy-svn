@@ -185,7 +185,6 @@ def convert_repository(source_repos, output_url, layout=None,
         revmetas = []
         existing_branches = {}
         pb = ui.ui_factory.nested_progress_bar()
-        # FIXME: Use filter_branch
         try:
             for revmeta in source_repos._revmeta_provider.iter_all_changes(layout, mapping,
                                                                    to_revnum, from_revnum,
@@ -204,6 +203,8 @@ def convert_repository(source_repos, output_url, layout=None,
         finally:
             pb.finished()
         existing_branches = existing_branches.values()
+        if filter_branch is not None:
+            existing_branches = filter(filter_branch, existing_branches)
 
         if create_shared_repo:
             inter = InterRepository.get(source_repos, target_repos)
