@@ -215,7 +215,7 @@ def create_upgrade_plan(repository, foreign_repository, new_mapping,
     from bzrlib.plugins.rebase.rebase import generate_transpose_plan
     check_rebase_version(MIN_REBASE_VERSION)
 
-    graph = foreign_repository.get_graph()
+    graph = repository.get_graph()
     if revision_id is None:
         potential = repository.all_revision_ids()
     else:
