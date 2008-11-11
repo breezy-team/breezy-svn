@@ -37,6 +37,8 @@ from bzrlib.plugins.svn.logwalker import lazy_dict
 from bzrlib.plugins.svn.mapping import mapping_registry
 from bzrlib.plugins.svn.repository import SvnRepositoryFormat, SvnRepository
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
+from bzrlib.plugins.svn.transport import _url_escape_uri
+
 
 def _revision_id_to_svk_feature(revid):
     """Create a SVK feature identifier from a revision id.
@@ -203,7 +205,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
                               new_child_path)
             child_editor = dir_editor.add_file(
                     full_new_child_path, 
-                urlutils.join(base_url, old_inv.id2path(child_ie.file_id)),
+                _url_escape_uri(urlutils.join(base_url, old_inv.id2path(child_ie.file_id))),
                 base_revnum)
 
         # open if they existed at the same location
@@ -269,7 +271,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
             mutter('copy dir %r -> %r', old_child_path, new_child_path)
             child_editor = dir_editor.add_directory(
                 branch_relative_path(new_child_path),
-                urlutils.join(base_url, old_child_path), base_revnum)
+                _url_escape_uri(urlutils.join(base_url, old_child_path)), base_revnum)
 
         # open if they existed at the same location and 
         # the directory was touched
@@ -572,15 +574,16 @@ class SvnCommitBuilder(RootCommitBuilder):
 
                 # Set all the revprops
                 if self.push_metadata and self._svnprops.is_loaded:
-                    for prop, value in self._svnprops.items():
-                        if value == self._base_branch_props.get(prop):
+                    for prop, newvalue in self._svnprops.items():
+                        oldvalue = self._base_branch_props.get(prop)
+                        if oldvalue == newvalue:
                             continue
-                        self._changed_fileprops[prop] = value
+                        self._changed_fileprops[prop] = (oldvalue, newvalue)
                         if not properties.is_valid_property_name(prop):
                             warning("Setting property %r with invalid characters in name", prop)
-                        assert isinstance(value, str)
-                        branch_editors[-1].change_prop(prop, value)
-                        self.mutter("Setting root file property %r -> %r", prop, value)
+                        assert isinstance(newvalue, str)
+                        branch_editors[-1].change_prop(prop, newvalue)
+                        self.mutter("Setting root file property %r -> %r", prop, newvalue)
 
                 for dir_editor in reversed(branch_editors):
                     dir_editor.close()
@@ -726,7 +729,8 @@ def create_branch_with_hidden_commit(repository, branch_path, revid, deletefirst
             root = ci.open_root()
             if deletefirst:
                 root.delete_entry(urlutils.basename(branch_path))
-            branch_dir = root.add_directory(urlutils.basename(branch_path), urlutils.join(repository.base, revmeta.branch_path), revmeta.revnum)
+            branch_dir = root.add_directory(urlutils.basename(branch_path), 
+                    _url_escape_uri(urlutils.join(repository.base, revmeta.branch_path)), revmeta.revnum)
             for k, v in properties.diff(fileprops, revmeta.get_fileprops()).items():
                 branch_dir.change_prop(k, v)
             branch_dir.close()
@@ -967,7 +971,7 @@ class InterToSvnRepository(InterRepository):
 
                 (bp, _, _) = self.target.lookup_revision_id(parent_revid)
                 if target_branch is None:
-                    target_branch = Branch.open(urlutils.join(self.target.base, bp))
+                    target_branch = Branch.open(_url_escape_uri(urlutils.join(self.target.base, bp)))
                 if target_branch.get_branch_path() != bp:
                     target_branch.set_branch_path(bp)
 

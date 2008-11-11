@@ -60,9 +60,30 @@ bzr-svn-0.5			UNRELEASED
 
     + Standard commit code provides commit notification. (#79333)
 
-bzr-svn 0.4.15	UNRELEASED
+bzr-svn 0.4.16	UNRELEASED
 
-   * Ignore tags that happen to be files. (#294283)
+  BUG FIXES
+
+   * Don't print backtrace when error occurs while accessing repository root.
+     (#296224)
+
+bzr-svn 0.4.15	2008-11-10
+
+  BUG FIXES
+
+   * Ignore tags that happen to be files (another instance). (#290664)
+
+   * Support copying from files with spaces in their names over http. (#268304)
+
+   * Fix knit corruption because text revisions weren't stored properly. (#277043)
+
+   * Cope with file properties being modified by other parties than 
+     bzr-svn. (#295284)
+
+   * Fix erroneous call to object.__init__() causing issues with Python2.6.
+
+   * Don't take over when pulling from WebDAV source (without Subversion)
+     (#274840)
 
 bzr-svn 0.4.14	2008-11-03
 

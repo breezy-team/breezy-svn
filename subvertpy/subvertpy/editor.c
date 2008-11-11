@@ -137,7 +137,7 @@ PyTypeObject TxDeltaWindowHandler_Type = {
 	
 	/* Methods to implement standard operations */
 	
-	NULL, // done in initeditor() (destructor)PyObject_Del, /*	destructor tp_dealloc;	*/
+	NULL, /* destructor tp_dealloc;	(done in initeditor()) */
 	NULL, /*	printfunc tp_print;	*/
 	NULL, /*	getattrfunc tp_getattr;	*/
 	NULL, /*	setattrfunc tp_setattr;	*/
@@ -235,7 +235,7 @@ PyTypeObject FileEditor_Type = {
 	
 	/* Methods to implement standard operations */
 	
-	NULL, // Done in initeditor() (destructor)PyObject_Del, /*	destructor tp_dealloc;	*/
+	NULL, /*	destructor tp_dealloc; (Done in initeditor()) 	*/
 	NULL, /*	printfunc tp_print;	*/
 	NULL, /*	getattrfunc tp_getattr;	*/
 	NULL, /*	setattrfunc tp_setattr;	*/
@@ -492,7 +492,7 @@ PyTypeObject DirectoryEditor_Type = {
 	
 	/* Methods to implement standard operations */
 	
-	NULL, // Done in initeditor() (destructor)PyObject_Del, /*	destructor tp_dealloc;	*/
+	NULL, /* destructor tp_dealloc;	(Done in initeditor()) */
 	NULL, /*	printfunc tp_print;	*/
 	NULL, /*	getattrfunc tp_getattr;	*/
 	NULL, /*	setattrfunc tp_setattr;	*/

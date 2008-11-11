@@ -100,12 +100,6 @@ class DirectoryBuildEditor(object):
         return self._open_directory(path, base_revnum)
 
     def change_prop(self, name, value):
-        if self.path == "":
-            # Replay lazy_dict, since it may be more expensive
-            if type(self.editor.revmeta._changed_fileprops) != dict:
-                self.editor.revmeta._changed_fileprops = {}
-            self.editor.revmeta._changed_fileprops[name] = value
-
         if name in (properties.PROP_ENTRY_COMMITTED_DATE,
                     properties.PROP_ENTRY_COMMITTED_REV,
                     properties.PROP_ENTRY_LAST_AUTHOR,
@@ -329,7 +323,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
         if text_parents is None:
             text_parents = self.file_parents
         self.editor.texts.add_lines((self.file_id, text_revision), 
-            [(self.file_id, revid) for revid in text_parents], lines)
+                [(self.file_id, revid) for revid in text_parents], lines)
 
         if self.is_special is not None:
             self.is_symlink = (self.is_special and len(lines) > 0 and lines[0].startswith("link "))
@@ -378,7 +372,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
 
     def _finish_commit(self):
-        assert len(self._premature_deletes) == 0
+        if len(self._premature_deletes) > 0:
+            raise AssertionError("Remaining deletes in %s: %r" % (self.revid, self._premature_deletes))
         rev = self.revmeta.get_revision(self.mapping)
         self.inventory.revision_id = self.revid
         # Escaping the commit message is really the task of the serialiser

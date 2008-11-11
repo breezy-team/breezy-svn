@@ -22,7 +22,7 @@ from bzrlib.trace import mutter
 from bzrlib.plugins.svn.cache import CacheTable
 from subvertpy import SubversionException, ERR_FS_NO_SUCH_REVISION
 from bzrlib.plugins.svn.errors import InvalidPropertyValue, InvalidBzrSvnRevision
-from bzrlib.plugins.svn.mapping import (BzrSvnMapping, 
+from bzrlib.plugins.svn.mapping import (BzrSvnMapping, find_new_lines,
                      SVN_PROP_BZR_REVISION_ID, parse_revid_property,
                      find_mapping, mapping_registry, is_bzr_revision_revprops)
 
@@ -106,12 +106,20 @@ class RevidMap(object):
         # Find the branch property between min_revnum and max_revnum that 
         # added revid
         for revmeta in self.repos._revmeta_provider.iter_reverse_branch_changes(branch_path, max_revnum, min_revnum):
-            for propname, propvalue in revmeta.get_changed_fileprops().items():
+            for propname, (oldpropvalue, propvalue) in revmeta.get_changed_fileprops().items():
                 if not propname.startswith(SVN_PROP_BZR_REVISION_ID):
                     continue
                 try:
+                    new_lines = find_new_lines((oldpropvalue, propvalue))
+                    if len(new_lines) != 1:
+                        continue
+                except ValueError:
+                    # Don't warn about encountering an invalid property, 
+                    # that will already have happened earlier
+                    continue
+                try:
                     (entry_revno, entry_revid) = parse_revid_property(
-                        propvalue.splitlines()[-1])
+                        new_lines[0])
                 except InvalidPropertyValue:
                     # Don't warn about encountering an invalid property, 
                     # that will already have happened earlier

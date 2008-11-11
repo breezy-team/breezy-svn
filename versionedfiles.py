@@ -53,7 +53,7 @@ class SvnTexts(VersionedFiles):
         # TODO: Sort keys by file id and issue just one get_file_revs() call 
         # per file-id ?
         for (fileid, revid) in list(keys):
-            revmeta = self.repository._get_revmeta(revid)
+            revmeta, mapping = self.repository._get_revmeta(revid)
             map = self.repository.get_fileid_map(revmeta, mapping)
             # Unfortunately, the map is the other way around
             lines = None
@@ -61,7 +61,7 @@ class SvnTexts(VersionedFiles):
                 if v == fileid:
                     try:
                         stream = StringIO()
-                        self.repository.transport.get_file(urlutils.join(revmeta.branch_path, k), stream, revmeta.revnum)
+                        self.repository.transport.get_file(urlutils.join(revmeta.branch_path, k).strip("/"), stream, revmeta.revnum)
                         stream.seek(0)
                         lines = stream.readlines()
                     except SubversionException, (_, num):
