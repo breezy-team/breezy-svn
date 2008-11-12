@@ -13,22 +13,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib import osutils, ui
-from bzrlib.errors import InvalidRevisionId
+from bzrlib import (
+        errors as bzr_errors,
+        osutils,
+        ui,
+        )
 from bzrlib.trace import mutter
 
-from bzrlib.plugins.svn import errors, mapping
 from subvertpy import properties
+from subvertpy.ra import DIRENT_KIND
+
+from bzrlib.plugins.svn import errors, mapping
 from bzrlib.plugins.svn.layout.guess import GUESS_SAMPLE_SIZE
 from bzrlib.plugins.svn.layout import RepositoryLayout, get_root_paths
-from bzrlib.plugins.svn.mapping3.scheme import (BranchingScheme, guess_scheme_from_branch_path, 
-                             guess_scheme_from_history, ListBranchingScheme, 
-                             scheme_from_layout,
-                             parse_list_scheme_text, NoBranchingScheme,
-                             TrunkBranchingScheme, ListBranchingScheme,
-                             InvalidSvnBranchPath)
-from subvertpy.ra import DIRENT_KIND
-from bzrlib.osutils import sha
+from bzrlib.plugins.svn.mapping3.scheme import (
+        BranchingScheme,
+        guess_scheme_from_branch_path, 
+        guess_scheme_from_history, 
+        ListBranchingScheme, 
+        scheme_from_layout,
+        parse_list_scheme_text,
+        NoBranchingScheme,
+        TrunkBranchingScheme,
+        ListBranchingScheme,
+        InvalidSvnBranchPath,
+        )
 
 SVN_PROP_BZR_BRANCHING_SCHEME = 'bzr:branching-scheme'
 
@@ -217,7 +226,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMapping):
         if len(ret) > 150:
             ret = "%d@%s:%s;%s" % (revnum, uuid, 
                                 mapping.escape_svn_path(branch),
-                                sha(inv_path).hexdigest())
+                                osutils.sha(inv_path).hexdigest())
         assert isinstance(ret, str)
         return osutils.safe_file_id(ret)
 
@@ -226,12 +235,12 @@ class BzrSvnMappingv3(mapping.BzrSvnMapping):
         assert isinstance(revid, str)
 
         if not revid.startswith(cls.revid_prefix):
-            raise InvalidRevisionId(revid, "")
+            raise bzr_errors.InvalidRevisionId(revid, "")
 
         try:
             (version, uuid, branch_path, srevnum) = revid.split(":")
         except ValueError:
-            raise InvalidRevisionId(revid, "")
+            raise bzr_errors.InvalidRevisionId(revid, "")
 
         scheme = version[len(cls.revid_prefix):]
 

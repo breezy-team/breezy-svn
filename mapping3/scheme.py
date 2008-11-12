@@ -19,14 +19,19 @@ from bzrlib import ui, urlutils
 from bzrlib.errors import BzrError
 from bzrlib.trace import mutter
 
-from base64 import urlsafe_b64decode, urlsafe_b64encode
-from bzrlib.plugins.svn.layout.guess import find_commit_paths
-from bzrlib.plugins.svn.layout.standard import TrunkLayout, RootLayout, CustomLayout
-from bzrlib.plugins.svn.errors import LayoutUnusable
-from subvertpy import properties
+import base64
 import bz2
-
+from subvertpy import properties
 import urllib
+
+from bzrlib.plugins.svn.layout.guess import find_commit_paths
+from bzrlib.plugins.svn.layout.standard import (
+        CustomLayout,
+        RootLayout,
+        TrunkLayout,
+        )
+from bzrlib.plugins.svn.errors import LayoutUnusable
+
 
 class InvalidSvnBranchPath(BzrError):
     """Error raised when a path was specified that is not a child of or itself
@@ -156,11 +161,11 @@ def parse_list_scheme_text(text):
 
 
 def prop_name_unquote(text):
-    return urlsafe_b64decode(text.replace(".", "="))
+    return base64.urlsafe_b64decode(text.replace(".", "="))
 
 
 def prop_name_quote(text):
-    return urlsafe_b64encode(text).replace("=", ".")
+    return base64.urlsafe_b64encode(text).replace("=", ".")
 
 
 class ListBranchingScheme(BranchingScheme):

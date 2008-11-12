@@ -17,7 +17,7 @@ from bzrlib import registry, urlutils, ui
 from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn.errors import NotSvnBranchPath
-from subvertpy import SubversionException, NODE_DIR, ERR_FS_NOT_DIRECTORY, ERR_FS_NOT_FOUND, ERR_RA_DAV_PATH_NOT_FOUND
+import subvertpy
 from subvertpy.ra import DIRENT_KIND
 
 class RepositoryLayout(object):
@@ -197,16 +197,18 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None, pb=Non
     :param pb: Optional progress bar.
     """
     def check_path(path):
-        return repository.transport.check_path(path, revnum) == NODE_DIR
+        return repository.transport.check_path(path, revnum) == subvertpy.NODE_DIR
     def find_children(path):
         try:
             assert not path.startswith("/")
             dirents = repository.transport.get_dir(path, revnum, DIRENT_KIND)[0]
-        except SubversionException, (msg, num):
-            if num in (ERR_FS_NOT_DIRECTORY, ERR_FS_NOT_FOUND, ERR_RA_DAV_PATH_NOT_FOUND):
+        except subvertpy.SubversionException, (msg, num):
+            if num in (subvertpy.ERR_FS_NOT_DIRECTORY, 
+                       subvertpy.ERR_FS_NOT_FOUND, 
+                       subvertpy.ERR_RA_DAV_PATH_NOT_FOUND):
                 return None
             raise
-        return [d for d in dirents if dirents[d]['kind'] == NODE_DIR]
+        return [d for d in dirents if dirents[d]['kind'] == subvertpy.NODE_DIR]
 
     for idx, pattern in enumerate(itemlist):
         if pb is not None:
