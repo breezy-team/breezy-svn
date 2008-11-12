@@ -298,7 +298,8 @@ class SvnCommitBuilder(RootCommitBuilder):
     def __init__(self, repository, branch_path, parents, config, timestamp, 
                  timezone, committer, revprops, revision_id, old_inv=None,
                  push_metadata=True, graph=None, opt_signature=None,
-                 texts=None, append_revisions_only=True):
+                 texts=None, append_revisions_only=True, 
+                 override_svn_revprops=None):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -324,6 +325,11 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._append_revisions_only = append_revisions_only
         self._text_parents = {}
         self._texts = texts
+
+        if override_svn_revprops is None:
+            self._override_svn_revprops = self._config.get_override_svn_revprops()
+        else:
+            self._override_svn_revprops = override_svn_revprops
 
         # Gather information about revision on top of which the commit is 
         # happening
@@ -608,12 +614,11 @@ class SvnCommitBuilder(RootCommitBuilder):
                result_revision, result_author, 
                    result_date)
 
-        override_svn_revprops = self._config.get_override_svn_revprops()
-        if override_svn_revprops is not None:
+        if self._override_svn_revprops is not None:
             new_revprops = {}
-            if properties.PROP_REVISION_AUTHOR in override_svn_revprops:
+            if properties.PROP_REVISION_AUTHOR in self._override_svn_revprops:
                 new_revprops[properties.PROP_REVISION_AUTHOR] = self._committer.encode("utf-8")
-            if properties.PROP_REVISION_DATE in override_svn_revprops:
+            if properties.PROP_REVISION_DATE in self._override_svn_revprops:
                 new_revprops[properties.PROP_REVISION_DATE] = properties.time_to_cstring(1000000*self._timestamp)
             set_svn_revprops(self.repository.transport, result_revision, new_revprops)
             self._svn_revprops.update(new_revprops)
@@ -744,7 +749,8 @@ def create_branch_with_hidden_commit(repository, branch_path, revid, deletefirst
 
 
 def push_new(graph, target_repository, target_branch_path, source, stop_revision,
-             push_metadata=True, append_revisions_only=False):
+             push_metadata=True, append_revisions_only=False, 
+             override_svn_revprops=None):
     """Push a revision into Subversion, creating a new branch.
 
     This will do a new commit in the target branch.
@@ -778,8 +784,8 @@ def push_new(graph, target_repository, target_branch_path, source, stop_revision
                               target_repository.get_config(), 
                               source, start_revid_parent, start_revid, 
                               rev, push_metadata=push_metadata,
-                              append_revisions_only=append_revisions_only)
-
+                              append_revisions_only=append_revisions_only,
+                              override_svn_revprops=override_svn_revprops)
 
 
 def dpush(target, source, stop_revision=None):
@@ -824,7 +830,8 @@ def dpush(target, source, stop_revision=None):
 
 def push_revision_tree(graph, target_repo, branch_path, config, source_repo, base_revid, 
                        revision_id, rev, push_metadata=True,
-                       append_revisions_only=True):
+                       append_revisions_only=True,
+                       override_svn_revprops=None):
     """Push a revision tree into a target repository.
 
     :param graph: Repository graph.
@@ -866,7 +873,8 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo, bas
                                push_metadata=push_metadata,
                                graph=graph, opt_signature=opt_signature,
                                texts=source_repo.texts,
-                               append_revisions_only=append_revisions_only)
+                               append_revisions_only=append_revisions_only,
+                               override_svn_revprops=override_svn_revprops)
                          
     replay_delta(builder, parent_trees, old_tree)
     try:
@@ -881,7 +889,8 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo, bas
     return revid
 
 
-def push(graph, target, source_repo, revision_id, push_metadata=True):
+def push(graph, target, source_repo, revision_id, push_metadata=True, 
+         override_svn_revprops=None):
     """Push a revision into Subversion.
 
     This will do a new commit in the target branch.
@@ -889,6 +898,7 @@ def push(graph, target, source_repo, revision_id, push_metadata=True):
     :param target: Branch to push to
     :param source_repo: Branch to pull the revision from
     :param revision_id: Revision id of the revision to push
+    :param override_svn_revprops: List of Subversion revision properties to override
     :return: revision id of revision that was pushed
     """
     assert isinstance(source_repo, Repository)
@@ -909,7 +919,8 @@ def push(graph, target, source_repo, revision_id, push_metadata=True):
         revid = push_revision_tree(graph, target.repository, target.get_branch_path(), target.get_config(), 
                                    source_repo, base_revid, revision_id, 
                                    rev, push_metadata=push_metadata,
-                                   append_revisions_only=target._get_append_revisions_only())
+                                   append_revisions_only=target._get_append_revisions_only(),
+                                   override_svn_revprops=override_svn_revprops)
     finally:
         source_repo.unlock()
 
