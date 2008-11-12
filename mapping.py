@@ -60,6 +60,12 @@ SVN_REVPROP_BZR_TAGS = 'bzr:tags'
 
 
 def find_new_lines((oldvalue, newvalue)):
+    """Find any new lines that have been added to a string.
+
+    :param oldvalue: Previous contents
+    :param newvalue: Newcontents
+    :raises ValueError: If the existing contents were changed
+    """
     if oldvalue is None:
         oldvalue = ""
     if not newvalue.startswith(oldvalue):
@@ -159,7 +165,12 @@ def parse_merge_property(line):
 
 
 def parse_svn_dateprop(date):
-    """Parse a Subversion date property and return a unix timestamp."""
+    """Parse a Subversion date property and return a unix timestamp.
+    
+    :param date: A string containing a Subversion date string
+    :return: Unix timestamp
+    """
+    assert isinstance(date, str)
     return (properties.time_from_cstring(date) / 1000000.0, 0)
 
 

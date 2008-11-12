@@ -74,6 +74,8 @@ class VcsMappingRegistry(registry.Registry):
         The factory must be a callable that takes one parameter: the key.
         It must produce an instance of VcsMapping when called.
         """
+        if ":" in key:
+            raise ValueError("mapping name can not contain colon (:)")
         registry.Registry.register(self, key, factory, help)
 
     def set_default(self, key):
@@ -86,6 +88,12 @@ class VcsMappingRegistry(registry.Registry):
     def get_default(self):
         """Convenience function for obtaining the default mapping to use."""
         return self.get(self._get_default_key())
+
+    def parse_revision_id(self, revid):
+        for key, mapping in self.iteritems():
+            if revid.startswith(mapping.revid_prefix):
+                return mapping.revision_id_bzr_to_foreign(revid)
+        raise InvalidRevisionId(revid, None)
 
 
 class ForeignBranch(Branch):
@@ -245,5 +253,4 @@ def show_foreign_properties(mapping_registry, rev):
         return {}
 
     return mapping.show_foreign_revid(foreign_revid)
-
 

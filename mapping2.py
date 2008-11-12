@@ -37,6 +37,7 @@ class BzrSvnMappingv1(BzrSvnMapping):
     """
     name = "v1"
     roundtripping = False
+    revid_prefix = "svn-v1"
 
     def __init__(self, layout):
         super(BzrSvnMappingv1, self).__init__()
@@ -123,6 +124,7 @@ class BzrSvnMappingv2(BzrSvnMappingv1):
     """
     name = "v2"
     roundtripping = False
+    revid_prefix = "svn-v2"
 
     @classmethod
     def revision_id_bzr_to_foreign(cls, revid):
