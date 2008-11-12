@@ -149,7 +149,7 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEquals('/foo', paths["/bar"][1])
         self.assertEquals(1, paths["/bar"][2])
         svnrepo = Repository.open(repos_url)
-        self.assertEquals({u"bar": "oldid"}, 
+        self.assertEquals({u"bar": oldid}, 
                 svnrepo._revmeta_provider.get_revision("", 2).get_fileid_map(svnrepo.get_mapping()))
 
     def test_commit_rename_file_from_directory(self):
