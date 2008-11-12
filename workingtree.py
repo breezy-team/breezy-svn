@@ -125,6 +125,11 @@ class SvnWorkingTree(WorkingTree):
         self._control_files = LockableFiles(control_transport, 'lock', LockDir)
 
     def get_ignore_list(self):
+        """Obtain the list of ignore patterns for this working tree.
+
+        :note: Will interpret the svn:ignore properties, rather than read 
+        .bzrignore
+        """
         ignores = set([get_adm_dir()])
         ignores.update(svn_config.get_default_ignores())
 
@@ -161,6 +166,7 @@ class SvnWorkingTree(WorkingTree):
         return ignores
 
     def is_control_filename(self, path):
+        """Check whether path is a control file (used by bzr or svn)."""
         return is_adm_dir(path)
 
     def apply_inventory_delta(self, changes):
@@ -181,7 +187,11 @@ class SvnWorkingTree(WorkingTree):
             adm.close()
         return revnum
 
-    def update(self, change_reporter=None, possible_transports=None, revnum=None):
+    def update(self, change_reporter=None, possible_transports=None, 
+               revnum=None):
+        """Update the workingtree to a new Bazaar revision number.
+        
+        """
         orig_revnum = self.base_revnum
         self.base_revnum = self._update(revnum)
         self.base_revid = self.branch.generate_revision_id(self.base_revnum)
@@ -191,6 +201,7 @@ class SvnWorkingTree(WorkingTree):
 
     def remove(self, files, verbose=False, to_file=None, keep_files=True, 
                force=False):
+        """Remove files from the working tree."""
         # FIXME: Use to_file argument
         # FIXME: Use verbose argument
         assert isinstance(files, list)
@@ -206,6 +217,7 @@ class SvnWorkingTree(WorkingTree):
         self.read_working_inventory()
 
     def _get_wc(self, relpath="", write_lock=False):
+        """Open a working copy handle."""
         return WorkingCopy(None, self.abspath(relpath).rstrip("/"), 
                                 write_lock)
 
@@ -215,6 +227,7 @@ class SvnWorkingTree(WorkingTree):
         return (self._get_wc(dir, write_lock), file)
 
     def move(self, from_paths, to_dir=None, after=False, **kwargs):
+        """Move files to a new location."""
         # FIXME: Use after argument
         if after == True:
             raise NotImplementedError("move after not supported")
@@ -489,6 +502,7 @@ class SvnWorkingTree(WorkingTree):
         return added, ignored
 
     def add(self, files, ids=None, kinds=None):
+        """Add files to the working tree."""
         # TODO: Use kinds
         if isinstance(files, str):
             files = [files]
@@ -515,6 +529,7 @@ class SvnWorkingTree(WorkingTree):
         self.read_working_inventory()
 
     def basis_tree(self):
+        """Return the basis tree for a working tree."""
         if self.base_revid is None or self.base_revid == NULL_REVISION:
             return self.branch.repository.revision_tree(self.base_revid)
 
@@ -525,6 +540,7 @@ class SvnWorkingTree(WorkingTree):
 
     def pull(self, source, overwrite=False, stop_revision=None, 
              delta_reporter=None, possible_transports=None):
+        """Pull in changes from another branch into this working tree."""
         # FIXME: Use delta_reporter
         # FIXME: Use source
         # FIXME: Use overwrite
@@ -537,6 +553,7 @@ class SvnWorkingTree(WorkingTree):
         return result
 
     def get_file_sha1(self, file_id, path=None, stat_value=None):
+        """Determine the SHA1 for a file."""
         if not path:
             path = self._inventory.id2path(file_id)
         return osutils.fingerprint_file(open(self.abspath(path)))['sha1']
