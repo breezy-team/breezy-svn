@@ -39,11 +39,63 @@ class TestRevisionMetadata(SubversionTestCase):
         revmeta2 = repos._revmeta_provider.get_revision("", 2)
         revmeta3 = repos._revmeta_provider.get_revision("", 3)
 
+        self.assertFalse(revmeta1.knows_changed_fileprops())
+
         self.assertEquals((None, "data\n"),
                           revmeta1.get_changed_fileprops()["myprop"])
+
+        self.assertTrue(revmeta1.knows_changed_fileprops())
+        self.assertTrue(revmeta1.knows_fileprops())
+
+        self.assertEquals("data\n",
+                          revmeta1.get_fileprops()["myprop"])
+
+        self.assertEquals("newdata\n",
+                          revmeta2.get_fileprops()["myprop"])
 
         self.assertEquals(("data\n","newdata\n"), 
                           revmeta2.get_changed_fileprops()["myprop"])
 
         self.assertEquals((None, "newdata\n"), 
                           revmeta3.get_changed_fileprops()["myp2"])
+
+    def test_changes_branch_root(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        dc.change_prop("myprop", "data\n")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("bar").modify("bloe")
+        dc.close()
+
+        repos = Repository.open(repos_url)
+
+        revmeta1 = repos._revmeta_provider.get_revision("", 1)
+        revmeta2 = repos._revmeta_provider.get_revision("", 2)
+
+        self.assertTrue(revmeta1.changes_branch_root())
+        self.assertFalse(revmeta2.changes_branch_root())
+
+    def test_get_paths(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        dc.change_prop("myprop", "data\n")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("bar").modify("bloe")
+        dc.close()
+
+        repos = Repository.open(repos_url)
+
+        revmeta1 = repos._revmeta_provider.get_revision("", 1)
+        revmeta2 = repos._revmeta_provider.get_revision("", 2)
+
+        self.assertEquals({"": ("M", None, -1)}, revmeta1.get_paths())
+        self.assertEquals({"bar": ("A", None, -1)}, 
+                          revmeta2.get_paths())
+
+
