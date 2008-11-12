@@ -16,12 +16,6 @@
 """Upgrading revisions made with older versions of the mapping."""
 
 from bzrlib import ui
-from bzrlib.errors import BzrError, InvalidRevisionId
-from bzrlib.revision import Revision
-from bzrlib.trace import info
-
-import itertools
-from bzrlib.plugins.svn.mapping import mapping_registry
 
 
 def set_revprops(repository, new_mapping, from_revnum=0, to_revnum=None):

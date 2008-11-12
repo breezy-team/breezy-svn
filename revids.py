@@ -17,10 +17,9 @@
 """Revision id generation and caching."""
 
 from bzrlib.errors import (InvalidRevisionId, NoSuchRevision)
-from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn.cache import CacheTable
-from subvertpy import SubversionException, ERR_FS_NO_SUCH_REVISION
+from subvertpy import SubversionException
 from bzrlib.plugins.svn.errors import InvalidPropertyValue, InvalidBzrSvnRevision
 from bzrlib.plugins.svn.mapping import (BzrSvnMapping, find_new_lines,
                      SVN_PROP_BZR_REVISION_ID, parse_revid_property,

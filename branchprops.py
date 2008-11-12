@@ -16,10 +16,18 @@
 
 """Branch property access and caching."""
 
-from bzrlib.errors import NoSuchRevision
+from subvertpy import (
+        SubversionException,
+        ERR_FS_NO_SUCH_REVISION,
+        )
 
-from bzrlib.plugins.svn import logwalker
-from subvertpy import SubversionException, properties, ERR_FS_NO_SUCH_REVISION
+from bzrlib.errors import (
+        NoSuchRevision,
+        )
+
+from bzrlib.plugins.svn import (
+        logwalker,
+        )
 
 
 class PathPropertyProvider(object):

@@ -16,7 +16,6 @@
 """Subversion BzrDir formats."""
 
 import bzrlib
-from bzrlib import urlutils
 from bzrlib.bzrdir import BzrDirFormat, BzrDir
 from bzrlib.errors import (NotLocalUrl, NoWorkingTree, AlreadyBranchError)
 from bzrlib.trace import warning

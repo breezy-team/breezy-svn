@@ -18,7 +18,7 @@
 import bzrlib.errors
 from bzrlib.errors import (BzrError, ConnectionError, ConnectionReset, 
                            LockError, PermissionDenied, 
-                           DependencyNotPresent, NoRepositoryPresent,
+                           NoRepositoryPresent,
                            TransportError, UnexpectedEndOfContainerError,
                            NoSuchRevision)
 

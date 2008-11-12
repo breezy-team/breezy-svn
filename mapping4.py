@@ -16,7 +16,6 @@
 from bzrlib import errors
 
 from bzrlib.plugins.svn import mapping, get_client_string
-from bzrlib.plugins.svn.layout.standard import RootLayout, TrunkLayout
 
 supported_features = set()
 

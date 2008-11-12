@@ -15,7 +15,7 @@
 
 """Maps between Subversion and Bazaar semantics."""
 
-from bzrlib import osutils, registry
+from bzrlib import osutils
 from bzrlib.errors import InvalidRevisionId
 from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import mutter

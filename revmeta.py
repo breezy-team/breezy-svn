@@ -13,15 +13,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib import errors, ui
-from bzrlib.revision import NULL_REVISION, Revision
+from subvertpy import (
+        properties,
+        )
 
-from bzrlib.plugins.svn import changes, errors as svn_errors, logwalker
-from subvertpy import properties
-from bzrlib.plugins.svn.mapping import is_bzr_revision_fileprops, is_bzr_revision_revprops, estimate_bzr_ancestors, SVN_REVPROP_BZR_SIGNATURE, get_roundtrip_ancestor_revids
-from bzrlib.plugins.svn.svk import (SVN_PROP_SVK_MERGE, svk_features_merged_since, 
-                 parse_svk_feature, estimate_svk_ancestors)
-
+from bzrlib import (
+        ui,
+        )
+from bzrlib.revision import (
+        NULL_REVISION, 
+        Revision,
+        )
+from bzrlib.plugins.svn import (
+        changes, 
+        errors as svn_errors, 
+        logwalker,
+        )
+from bzrlib.plugins.svn.mapping import (
+        is_bzr_revision_fileprops, 
+        is_bzr_revision_revprops, 
+        estimate_bzr_ancestors, 
+        SVN_REVPROP_BZR_SIGNATURE, 
+        get_roundtrip_ancestor_revids,
+        )
+from bzrlib.plugins.svn.svk import (
+        SVN_PROP_SVK_MERGE, 
+        svk_features_merged_since, 
+        parse_svk_feature, 
+        estimate_svk_ancestors,
+        )
 
 def full_paths(find_children, paths, bp, from_bp, from_rev):
     """Generate the changes creating a specified branch path.

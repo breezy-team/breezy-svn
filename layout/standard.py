@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib import errors as bzr_errors, urlutils
+from bzrlib import urlutils
 from bzrlib.plugins.svn import errors as svn_errors
 from bzrlib.plugins.svn.layout import RepositoryLayout, get_root_paths, wildcard_matches
 

@@ -15,7 +15,6 @@
 
 from bzrlib.repository import Repository
 from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.transport import SvnRaTransport
 
 class TestRevisionMetadata(SubversionTestCase):
 

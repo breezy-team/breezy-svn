@@ -31,7 +31,7 @@ from bzrlib.plugins.svn import format
 from subvertpy import ra
 from bzrlib.plugins.svn.errors import MissingPrefix
 from bzrlib.plugins.svn.commit import push, dpush
-from bzrlib.plugins.svn.layout.standard import RootLayout, CustomLayout
+from bzrlib.plugins.svn.layout.standard import RootLayout
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_REVISION_ID
 from bzrlib.plugins.svn.tests import SubversionTestCase
 

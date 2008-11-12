@@ -17,11 +17,10 @@
 
 import bzrlib, bzrlib.add
 from bzrlib import osutils, urlutils
-from bzrlib.branch import PullResult
 from bzrlib.bzrdir import BzrDirFormat, BzrDir
 from bzrlib.errors import (InvalidRevisionId, NotBranchError, NoSuchFile,
                            NoRepositoryPresent, 
-                           OutOfDateTree, NoWorkingTree, UnsupportedFormatError)
+                           NoWorkingTree, UnsupportedFormatError)
 from bzrlib.inventory import Inventory, InventoryFile, InventoryLink
 from bzrlib.lockable_files import LockableFiles
 from bzrlib.lockdir import LockDir
@@ -31,9 +30,8 @@ from bzrlib.transport import get_transport
 from bzrlib.workingtree import WorkingTree, WorkingTreeFormat
 
 import subvertpy
-from subvertpy import properties, ERR_FS_TXN_OUT_OF_DATE, ERR_ENTRY_EXISTS, ERR_WC_PATH_NOT_FOUND, ERR_WC_NOT_DIRECTORY
+from subvertpy import properties, ERR_ENTRY_EXISTS, ERR_WC_PATH_NOT_FOUND, ERR_WC_NOT_DIRECTORY
 from subvertpy.wc import *
-from bzrlib.plugins.svn.auth import create_auth_baton
 from bzrlib.plugins.svn.branch import SvnBranch
 from bzrlib.plugins.svn.commit import _revision_id_to_svk_feature
 from bzrlib.plugins.svn.errors import NotSvnBranchPath
@@ -42,8 +40,7 @@ from bzrlib.plugins.svn.mapping import escape_svn_path
 from bzrlib.plugins.svn.remote import SvnRemoteAccess
 from bzrlib.plugins.svn.repository import SvnRepository
 from bzrlib.plugins.svn.svk import SVN_PROP_SVK_MERGE, parse_svk_features, serialize_svk_features
-from bzrlib.plugins.svn.transport import (SvnRaTransport, bzr_to_svn_url, 
-                       svn_config) 
+from bzrlib.plugins.svn.transport import (SvnRaTransport, svn_config) 
 from bzrlib.plugins.svn.tree import SvnBasisTree
 
 import os

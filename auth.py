@@ -15,11 +15,19 @@
 
 """Authentication token retrieval."""
 
-from bzrlib.config import AuthenticationConfig
-from bzrlib.trace import mutter
-from bzrlib.ui import ui_factory
+from bzrlib.config import (
+        AuthenticationConfig,
+        )
+from bzrlib.trace import (
+        mutter,
+        )
+from bzrlib.ui import (
+        ui_factory,
+        )
 
-from subvertpy import ra
+from subvertpy import (
+        ra,
+        )
 
 import urlparse
 import urllib
@@ -51,7 +59,8 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
         :param may_save: Whether or not the username should be saved.
         """
         mutter("Obtaining username for SVN connection")
-        username = self.get_user(self.scheme, host=self.host, path=self.path, realm=realm)
+        username = self.get_user(self.scheme, host=self.host, path=self.path, 
+                                 realm=realm)
         if username is None:
             return None
         return (username, False)

@@ -23,7 +23,7 @@ from bzrlib.errors import NoSuchFile, OutOfDateTree, NotBranchError
 from bzrlib.inventory import Inventory
 from bzrlib.osutils import has_symlinks, supports_executable
 from bzrlib.repository import Repository
-from bzrlib.tests import KnownFailure, TestCase
+from bzrlib.tests import TestCase
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 

@@ -15,16 +15,42 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Handles branch-specific operations."""
 
-from bzrlib import ui, urlutils
-from bzrlib.branch import Branch, BranchFormat, BranchCheckResult, PullResult
-from bzrlib.bzrdir import BzrDir
-from bzrlib.decorators import needs_write_lock
-from bzrlib.errors import (NoSuchFile, DivergedBranches, NoSuchRevision, 
-                           NotBranchError, UnstackableBranchFormat)
-from bzrlib.revision import is_null, ensure_null
-from bzrlib.workingtree import WorkingTree
+from bzrlib import (
+        ui,
+        urlutils,
+        )
+from bzrlib.branch import (
+        BranchFormat,
+        BranchCheckResult,
+        PullResult,
+        )
+from bzrlib.bzrdir import (
+        BzrDir,
+        )
+from bzrlib.decorators import (
+        needs_write_lock,
+        )
+from bzrlib.errors import (
+        DivergedBranches,
+        NoSuchRevision,
+        NotBranchError,
+        UnstackableBranchFormat,
+        )
+from bzrlib.revision import (
+        is_null,
+        ensure_null,
+        )
+from bzrlib.workingtree import (
+        WorkingTree,
+        )
 
-from subvertpy import wc, SubversionException, NODE_DIR, ERR_FS_NO_SUCH_REVISION
+from subvertpy import (
+        wc,
+        SubversionException,
+        NODE_DIR,
+        ERR_FS_NO_SUCH_REVISION,
+        )
+
 from bzrlib.plugins.svn.commit import push, push_ancestors
 from bzrlib.plugins.svn.config import BranchConfig
 from bzrlib.plugins.svn.errors import NotSvnBranchPath

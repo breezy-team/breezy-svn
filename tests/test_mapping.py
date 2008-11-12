@@ -17,8 +17,8 @@
 
 from bzrlib.osutils import sha
 
-from bzrlib.errors import InvalidRevisionId, NotBranchError
-from bzrlib.tests import TestCase, TestNotApplicable
+from bzrlib.errors import InvalidRevisionId
+from bzrlib.tests import TestCase
 from bzrlib.revision import Revision
 
 from bzrlib.plugins.svn import mapping

@@ -17,14 +17,14 @@
 
 from bzrlib import osutils, ui, urlutils, xml6
 from bzrlib.branch import BranchCheckResult
-from bzrlib.errors import (InvalidRevisionId, NoSuchRevision, NotBranchError, 
+from bzrlib.errors import (InvalidRevisionId, NoSuchRevision, 
                            UninitializableFormat, NotWriteLocked)
 from bzrlib.graph import CachingParentsProvider
 from bzrlib.inventory import Inventory
 from bzrlib.lockable_files import LockableFiles, TransportLock
 from bzrlib.repository import Repository, RepositoryFormat, needs_read_lock
 from bzrlib.revisiontree import RevisionTree
-from bzrlib.revision import Revision, NULL_REVISION, ensure_null
+from bzrlib.revision import NULL_REVISION, ensure_null
 from bzrlib.transport import Transport, get_transport
 from bzrlib.trace import info
 
@@ -45,13 +45,17 @@ from bzrlib.plugins.svn.mapping import (SVN_REVPROP_BZR_SIGNATURE,
                      parse_tags_property,
                      BzrSvnMapping,
                      mapping_registry,
-                     is_bzr_revision_revprops, is_bzr_revision_fileprops,
+                     is_bzr_revision_revprops, 
                      parse_svn_dateprop)
 from bzrlib.plugins.svn.parents import DiskCachingParentsProvider
 from bzrlib.plugins.svn.revids import CachingRevidMap, RevidMap
 from bzrlib.plugins.svn.tree import SvnRevisionTree
-from bzrlib.plugins.svn.versionedfiles import (SvnTexts, VirtualRevisionTexts, 
-                                               VirtualInventoryTexts, VirtualSignatureTexts)
+from bzrlib.plugins.svn.versionedfiles import SvnTexts
+from bzrlib.plugins.svn.foreign.versionedfiles import (
+        VirtualRevisionTexts, 
+        VirtualInventoryTexts,
+        VirtualSignatureTexts,
+        )
 
 class SvnRepositoryFormat(RepositoryFormat):
     """Repository format for Subversion repositories (accessed using svn_ra).

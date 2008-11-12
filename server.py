@@ -21,8 +21,7 @@ from bzrlib.inventory import Inventory
 from bzrlib.plugins.svn.commit import dir_editor_send_changes
 
 from subvertpy import NODE_DIR
-from subvertpy.server import SVNServer, ServerBackend, ServerRepositoryBackend
-from subvertpy.properties import time_to_cstring
+from subvertpy.server import ServerBackend, ServerRepositoryBackend
 
 import os, time
 

@@ -19,20 +19,12 @@
 """Subversion repository tests."""
 
 from bzrlib import urlutils
-from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir, format_registry
 from bzrlib.config import GlobalConfig
-from bzrlib.errors import NoSuchRevision, UninitializableFormat
-from bzrlib.inventory import Inventory
-from bzrlib.osutils import has_symlinks
+from bzrlib.errors import UninitializableFormat
 from bzrlib.repository import Repository
-from bzrlib.revision import NULL_REVISION
-from bzrlib.tests import TestCase, TestSkipped
+from bzrlib.tests import TestCase
 
-import os
-
-from bzrlib.plugins.svn import format
-from subvertpy import ra
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.repository import SvnRepositoryFormat
 
