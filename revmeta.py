@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2007 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2005-2008 Jelmer Vernooij <jelmer@samba.org>
  
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,12 @@ def full_paths(find_children, paths, bp, from_bp, from_rev):
 
 
 class RevisionMetadata(object):
-    """Object describing a revision with bzr semantics in a Subversion repository."""
+    """Object describing a revision with bzr semantics in a Subversion 
+    repository.
+    
+    Tries to be as lazy as possible - data is not retrieved or calculated 
+    from other known data before contacting the Subversions server.
+    """
 
     def __init__(self, repository, check_revprops, get_fileprops_fn, logwalker, 
                  uuid, branch_path, revnum, paths, revprops, 
@@ -302,9 +307,18 @@ class RevisionMetadata(object):
             return (lhs_parent,) + self.get_rhs_parents(mapping)
 
     def get_signature(self):
+        """Obtain the signature text for this revision, if any.
+
+        :note: Will use the cached revision properties, which 
+               may not necessarily be up to date.
+        """
         return self.get_revprops().get(SVN_REVPROP_BZR_SIGNATURE)
 
     def get_revision(self, mapping):
+        """Create a revision object for this revision.
+
+        :param mapping: Mapping to use
+        """
         parent_ids = self.get_parent_ids(mapping)
 
         if parent_ids == (NULL_REVISION,):
@@ -449,6 +463,7 @@ class RevisionMetadataBranch(object):
 
 
 class RevisionMetadataProvider(object):
+    """A RevisionMetadata provider."""
 
     def __init__(self, repository, cache, check_revprops):
         self._revmeta_cache = {}
@@ -463,6 +478,7 @@ class RevisionMetadataProvider(object):
 
     def get_revision(self, path, revnum, changes=None, revprops=None, changed_fileprops=None, 
                      fileprops=None, metabranch=None):
+        """Return a RevisionMetadata object for a specific svn (path,revnum)."""
         assert isinstance(path, str)
         assert isinstance(revnum, int)
         if (path, revnum) in self._revmeta_cache:
@@ -569,6 +585,11 @@ class RevisionMetadataProvider(object):
             yield prev
 
     def iter_all_changes(self, layout, mapping, from_revnum, to_revnum=0, project=None, pb=None):
+        """Iterate over all RevisionMetadata objects in a repository.
+
+        :param layout: Repository layout to use
+        :param mapping: Mapping to use
+        """
         assert from_revnum >= to_revnum
         metabranches = {}
         if mapping is None:
