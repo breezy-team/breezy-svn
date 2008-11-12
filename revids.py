@@ -100,7 +100,7 @@ class RevidMap(object):
             # If there are any new entries that are not yet in the cache, 
             # add them
             for ((entry_revno, entry_revid), mapping_name) in revids:
-                yield (entry_revid, branch, 0, revno, mapping_registry.parse_mapping_name(mapping_name))
+                yield (entry_revid, branch, 0, revno, mapping_registry.parse_mapping_name("svn-" + mapping_name))
 
     def bisect_revid_revnum(self, revid, branch_path, min_revnum, max_revnum):
         """Find out what the actual revnum was that corresponds to a revid.
@@ -135,7 +135,7 @@ class RevidMap(object):
                     continue
                 if entry_revid == revid:
                     mapping_name = propname[len(SVN_PROP_BZR_REVISION_ID):]
-                    mapping = mapping_registry.parse_mapping_name(mapping_name)
+                    mapping = mapping_registry.parse_mapping_name("svn-" + mapping_name)
                     assert (mapping.is_tag(revmeta.branch_path) or 
                             mapping.is_branch(revmeta.branch_path))
                     return (revmeta.branch_path, revmeta.revnum, mapping)
@@ -172,7 +172,7 @@ class CachingRevidMap(object):
             # Entry already complete?
             assert min_revnum <= max_revnum
             if min_revnum == max_revnum:
-                return (branch_path, min_revnum, mapping_registry.parse_mapping_name(mapping))
+                return (branch_path, min_revnum, mapping_registry.parse_mapping_name("svn-" + mapping))
         except NoSuchRevision, e:
             last_revnum = self.actual.repos.get_latest_revnum()
             last_checked = self.cache.last_revnum_checked(repr((layout, project)))

@@ -727,6 +727,8 @@ class SubversionMappingRegistry(foreign.VcsMappingRegistry):
 
     def parse_mapping_name(self, name):
         assert isinstance(name, str)
+        assert name.startswith("svn-")
+        name = name[len("svn-"):]
         if "-" in name:
             name, rest = name.split("-", 1)
             assert isinstance(rest, str)
@@ -782,7 +784,7 @@ def find_mapping(revprops, fileprops):
                 return ret
     for k, v in fileprops.items():
         if k.startswith(SVN_PROP_BZR_REVISION_ID):
-            return mapping_registry.parse_mapping_name(k[len(SVN_PROP_BZR_REVISION_ID):])
+            return mapping_registry.parse_mapping_name("svn-" + k[len(SVN_PROP_BZR_REVISION_ID):])
     return None
 
 
