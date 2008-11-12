@@ -16,6 +16,7 @@
 from bzrlib.errors import InvalidRevisionId
 
 from bzrlib.plugins.svn import mapping
+from bzrlib.plugins.svn.foreign import ForeignRevision
 
 def show_subversion_properties(rev):
     """Custom log displayer for Subversion revisions.
@@ -24,9 +25,8 @@ def show_subversion_properties(rev):
     """
     data = None
     ret = {}
-    if getattr(rev, "svn_meta", None) is not None:
-        foreign_revid = (rev.svn_meta.uuid, rev.svn_meta.branch_path, rev.svn_meta.revnum)
-        return rev.svn_mapping.show_foreign_revid(foreign_revid)
+    if isinstance(rev, ForeignRevision):
+        return rev.mapping.show_foreign_revid(rev.foreign_revid)
     else:
         try:
             foreign_revid, mapp = mapping.mapping_registry.parse_revision_id(rev.revision_id)

@@ -19,6 +19,7 @@
 from bzrlib import errors, registry
 from bzrlib.branch import Branch
 from bzrlib.commands import Command, Option
+from bzrlib.revision import Revision
 from bzrlib.trace import info
 
 
@@ -214,3 +215,14 @@ def escape_commit_message(message):
         message)
     return message
 
+
+class ForeignRevision(Revision):
+    """A Revision from a Foreign repository. Remembers 
+    information about foreign revision id and mapping.
+
+    """
+
+    def __init__(self, foreign_revid, mapping, *args, **kwargs):
+        super(ForeignRevision, self).__init__(*args, **kwargs)
+        self.foreign_revid = foreign_revid
+        self.mapping = mapping

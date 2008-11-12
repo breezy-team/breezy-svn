@@ -280,7 +280,7 @@ class SvnRepository(Repository):
 
     def get_revision_delta(self, revision):
         """See Repository.get_revision_delta()."""
-        parentrevmeta = revision.svn_meta.get_lhs_parent_revmeta(revision.svn_mapping)
+        parentrevmeta = revision.svn_meta.get_lhs_parent_revmeta(revision.mapping)
         from bzrlib.plugins.svn.fetch import TreeDeltaBuildEditor
         if parentrevmeta is None:
             parentfileidmap = {}
@@ -288,12 +288,12 @@ class SvnRepository(Repository):
             parentrevnum = revision.svn_meta.revnum
             start_empty = True
         else:
-            parentfileidmap = self.get_fileid_map(parentrevmeta, revision.svn_mapping)
+            parentfileidmap = self.get_fileid_map(parentrevmeta, revision.mapping)
             parent_branch_path = parentrevmeta.branch_path
             parentrevnum = parentrevmeta.revnum
             start_empty = False
-        editor = TreeDeltaBuildEditor(revision.svn_meta, revision.svn_mapping, 
-                                      self.get_fileid_map(revision.svn_meta, revision.svn_mapping), 
+        editor = TreeDeltaBuildEditor(revision.svn_meta, revision.mapping, 
+                                      self.get_fileid_map(revision.svn_meta, revision.mapping), 
                                       parentfileidmap)
         conn = self.transport.get_connection(parent_branch_path)
         try:

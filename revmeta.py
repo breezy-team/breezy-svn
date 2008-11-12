@@ -22,13 +22,13 @@ from bzrlib import (
         )
 from bzrlib.revision import (
         NULL_REVISION, 
-        Revision,
         )
 from bzrlib.plugins.svn import (
         changes, 
         errors as svn_errors, 
         logwalker,
         )
+from bzrlib.plugins.svn.foreign import ForeignRevision
 from bzrlib.plugins.svn.mapping import (
         is_bzr_revision_fileprops, 
         is_bzr_revision_revprops, 
@@ -343,12 +343,12 @@ class RevisionMetadata(object):
 
         if parent_ids == (NULL_REVISION,):
             parent_ids = ()
-        rev = Revision(revision_id=self.get_revision_id(mapping), 
+        rev = ForeignRevision(foreign_revid=(self.uuid, self.branch_path, self.revnum),
+                              mapping=self.mapping, revision_id=self.get_revision_id(mapping), 
                        parent_ids=parent_ids,
                        inventory_sha1="")
 
         rev.svn_meta = self
-        rev.svn_mapping = mapping
 
         mapping.import_revision(self.get_revprops(), self.get_changed_fileprops(), self.uuid, self.branch_path, 
                                 self.revnum, rev)
