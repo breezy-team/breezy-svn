@@ -31,7 +31,7 @@ For more information about bzr-svn, see the bzr-svn FAQ.
 
 """
 import bzrlib
-from bzrlib import api, bzrdir, log, repository
+from bzrlib import api, bzrdir, repository
 import bzrlib.api, bzrlib.repository
 from bzrlib.bzrdir import BzrDirFormat, format_registry
 from bzrlib.errors import BzrError
@@ -118,16 +118,6 @@ bzrdir.format_registry.register("subversion-wc", format.SvnWorkingTreeDirFormat,
                          "Subversion working copy. ", 
                          native=False, hidden=True)
 SPEC_TYPES.append(revspec.RevisionSpec_svn)
-
-# Unfortunately, functools.partial is not available in python2.4
-def show_subversion_properties(rev):
-    from bzrlib.plugins.svn import foreign
-    from bzrlib.plugins.svn.mapping import mapping_registry
-    return foreign.show_foreign_properties(mapping_registry, rev)
-
-log.properties_handler_registry.register_lazy("subversion",
-                                              "bzrlib.plugins.svn",
-                                              "show_subversion_properties")
 
 _versions_checked = False
 def lazy_check_versions():
@@ -437,6 +427,10 @@ register_command(cmd_svn_push)
 
 from bzrlib.plugins.svn import foreign
 register_command(foreign.cmd_dpush)
+
+foreign.foreign_vcs_registry.register_lazy("svn", 
+                                           "bzrlib.plugins.svn.mapping",
+                                           "foreign_vcs_svn")
 
 class cmd_svn_branching_scheme(Command):
     """Show or change the branching scheme for a Subversion repository.

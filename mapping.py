@@ -758,6 +758,8 @@ class SubversionMappingRegistry(foreign.VcsMappingRegistry):
         mapping = self.get(mapping_version)
         return mapping.revision_id_bzr_to_foreign(revid)
 
+    revision_id_bzr_to_foreign = parse_revision_id
+
 
 mapping_registry = SubversionMappingRegistry()
 mapping_registry.register_lazy('v1', 'bzrlib.plugins.svn.mapping2', 
@@ -842,3 +844,4 @@ def get_roundtrip_ancestor_revids(fileprops):
             except errors.InvalidPropertyValue, ie:
                 mutter(str(ie))
 
+foreign_vcs_svn = foreign.ForeignVcs(mapping_registry)
