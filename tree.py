@@ -18,13 +18,13 @@
 from bzrlib import osutils, urlutils
 from bzrlib.branch import Branch
 from bzrlib.inventory import Inventory, InventoryDirectory, TreeReference
+from bzrlib.osutils import md5
 from bzrlib.revision import CURRENT_REVISION
 from bzrlib.trace import mutter
 from bzrlib.revisiontree import RevisionTree
 
-import os
-from bzrlib.osutils import md5
 from cStringIO import StringIO
+import os
 import urllib
 
 from subvertpy import delta, wc, NODE_DIR, properties

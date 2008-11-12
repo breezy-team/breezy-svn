@@ -17,19 +17,29 @@
 """Simple transport for accessing Subversion smart servers."""
 
 import bzrlib
-from bzrlib import debug, urlutils
-from bzrlib.errors import (NoSuchFile, TransportNotPossible, 
-                           FileExists, NotLocalUrl, InvalidURL, RedirectRequested)
+from bzrlib import (
+        debug,
+        urlutils,
+        )
+from bzrlib.errors import (
+        NoSuchFile,
+        TransportNotPossible, 
+        FileExists,
+        NotLocalUrl,
+        InvalidURL,
+        RedirectRequested,
+        )
 from bzrlib.trace import mutter, warning
 from bzrlib.transport import Transport
 
-import bzrlib.plugins.svn
-from bzrlib.plugins.svn.auth import create_auth_baton
+import subvertpy
 from subvertpy.client import get_config
-from subvertpy import SubversionException, ra, ERR_BAD_URL, ERR_RA_SVN_REPOS_NOT_FOUND, ERR_FS_ALREADY_EXISTS, ERR_FS_NOT_DIRECTORY, ERR_RA_DAV_RELOCATED, ERR_RA_DAV_PATH_NOT_FOUND, ERR_UNKNOWN_CAPABILITY
-from bzrlib.plugins.svn.errors import convert_svn_error, NoSvnRepositoryPresent
 import urlparse
 import urllib
+
+import bzrlib.plugins.svn
+from bzrlib.plugins.svn.auth import create_auth_baton
+from bzrlib.plugins.svn.errors import convert_svn_error, NoSvnRepositoryPresent
 
 svn_config = get_config()
 
@@ -103,19 +113,19 @@ def bzr_to_svn_url(url):
 def Connection(url):
     try:
         mutter('opening SVN RA connection to %r' % url)
-        ret = ra.RemoteAccess(url.encode('utf8'), 
+        ret = subvertpy.ra.RemoteAccess(url.encode('utf8'), 
                 auth=create_auth_baton(url),
                 client_string_func=bzrlib.plugins.svn.get_client_string)
         if 'transport' in debug.debug_flags:
             ret = MutteringRemoteAccess(ret)
-    except SubversionException, (msg, num):
-        if num in (ERR_RA_SVN_REPOS_NOT_FOUND,):
+    except subvertpy.SubversionException, (msg, num):
+        if num in (subvertpy.ERR_RA_SVN_REPOS_NOT_FOUND,):
             raise NoSvnRepositoryPresent(url=url)
-        if num == ERR_BAD_URL:
+        if num == subvertpy.ERR_BAD_URL:
             raise InvalidURL(url)
-        if num == ERR_RA_DAV_PATH_NOT_FOUND:
+        if num == subvertpy.ERR_RA_DAV_PATH_NOT_FOUND:
             raise NoSuchFile(url)
-        if num == ERR_RA_DAV_RELOCATED:
+        if num == subvertpy.ERR_RA_DAV_RELOCATED:
             # Try to guess the new url
             if "'" in msg:
                 new_url = msg.split("'")[1]
@@ -357,8 +367,8 @@ class SvnRaTransport(Transport):
             relpath = ""
         try:
             (dirents, _, _) = self.get_dir(relpath, self.get_latest_revnum())
-        except SubversionException, (msg, num):
-            if num == ERR_FS_NOT_DIRECTORY:
+        except subvertpy.SubversionException, (msg, num):
+            if num == subvertpy.ERR_FS_NOT_DIRECTORY:
                 raise NoSuchFile(relpath)
             raise
         return dirents.keys()
@@ -386,11 +396,11 @@ class SvnRaTransport(Transport):
                 for c in reversed(toclose):
                     c.close()
                 ce.close()
-            except SubversionException, (msg, num):
+            except subvertpy.SubversionException, (msg, num):
                 ce.abort()
-                if num == ERR_FS_NOT_DIRECTORY:
+                if num == subvertpy.ERR_FS_NOT_DIRECTORY:
                     raise NoSuchFile(msg)
-                if num == ERR_FS_ALREADY_EXISTS:
+                if num == subvertpy.ERR_FS_ALREADY_EXISTS:
                     raise FileExists(msg)
                 raise
         finally:
@@ -403,8 +413,8 @@ class SvnRaTransport(Transport):
         try:
             try:
                 self.capabilities[cap] = conn.has_capability(cap)
-            except SubversionException, (msg, num):
-                if num != ERR_UNKNOWN_CAPABILITY:
+            except subvertpy.SubversionException, (msg, num):
+                if num != subvertpy.ERR_UNKNOWN_CAPABILITY:
                     raise
                 self.capabilities[cap] = None
             except NotImplementedError:

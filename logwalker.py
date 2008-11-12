@@ -19,9 +19,10 @@ from bzrlib import urlutils
 from bzrlib.errors import NoSuchRevision
 import bzrlib.ui as ui
 
+import subvertpy
+
 from bzrlib.plugins.svn import changes
 from bzrlib.plugins.svn.cache import CacheTable
-from subvertpy import SubversionException, ra, NODE_DIR, ERR_FS_NO_SUCH_REVISION, ERR_FS_NOT_FOUND, ERR_FS_NOT_DIRECTORY
 from bzrlib.plugins.svn.transport import SvnRaTransport
 
 class lazy_dict(object):
@@ -386,8 +387,8 @@ class CachingLogWalker(CacheTable):
             nested_pb.update('fetching svn revision info', 0, to_revnum)
             try:
                 self.actual._transport.get_log(rcvr, [""], self.saved_revnum, to_revnum, 0, True, True, False, todo_revprops)
-            except SubversionException, (_, num):
-                if num == ERR_FS_NO_SUCH_REVISION:
+            except subvertpy.SubversionException, (_, num):
+                if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                     raise NoSuchRevision(branch=self, 
                         revision="Revision number %d" % to_revnum)
                 raise
@@ -434,11 +435,11 @@ class LogWalker(object):
 
         try:
             return self._transport.iter_log([path], revnum, 0, 2, True, False, False, []).next()[1]
-        except SubversionException, (_, num):
-            if num == ERR_FS_NO_SUCH_REVISION:
+        except subvertpy.SubversionException, (_, num):
+            if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 raise NoSuchRevision(branch=self, 
                     revision="Revision number %d" % revnum)
-            if num == ERR_FS_NOT_FOUND:
+            if num == subvertpy.ERR_FS_NOT_FOUND:
                 return None
             raise
 
@@ -480,8 +481,8 @@ class LogWalker(object):
                 else:
                     revprops = lazy_dict(known_revprops, self._transport.revprop_list, revnum)
                 yield (revpaths, revnum, revprops)
-        except SubversionException, (_, num):
-            if num == ERR_FS_NO_SUCH_REVISION:
+        except subvertpy.SubversionException, (_, num):
+            if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 raise NoSuchRevision(branch=self, 
                     revision="Revision number %d" % from_revnum)
             raise
@@ -500,8 +501,8 @@ class LogWalker(object):
         try:
             return strip_slashes(
                 self._transport.iter_log([""], revnum, revnum, 1, True, True, False, []).next()[0])
-        except SubversionException, (_, num):
-            if num == ERR_FS_NO_SUCH_REVISION:
+        except subvertpy.SubversionException, (_, num):
+            if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 raise NoSuchRevision(branch=self, 
                     revision="Revision number %d" % revnum)
             raise
@@ -525,14 +526,14 @@ class LogWalker(object):
                 nextp = unchecked_dirs.pop()
                 num_checked += 1
                 try:
-                    dirents = conn.get_dir(nextp, revnum, ra.DIRENT_KIND)[0]
-                except SubversionException, (_, num):
-                    if num == ERR_FS_NOT_DIRECTORY:
+                    dirents = conn.get_dir(nextp, revnum, subvertpy.ra.DIRENT_KIND)[0]
+                except subvertpy.SubversionException, (_, num):
+                    if num == subvertpy.ERR_FS_NOT_DIRECTORY:
                         continue
                     raise
                 for k, v in dirents.items():
                     childp = urlutils.join(nextp, k)
-                    if v['kind'] == NODE_DIR:
+                    if v['kind'] == subvertpy.NODE_DIR:
                         unchecked_dirs.add(childp)
                     results.append(childp)
         finally:

@@ -21,8 +21,9 @@ from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn import errors, foreign, version_info
-from subvertpy import properties
+
 import calendar
+from subvertpy import properties
 import time
 import urllib
 

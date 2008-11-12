@@ -18,18 +18,19 @@
 from bzrlib import debug, delta, osutils, ui, urlutils
 from bzrlib.errors import NoSuchRevision
 from bzrlib.inventory import Inventory
+from bzrlib.osutils import md5
 from bzrlib.revision import NULL_REVISION
 from bzrlib.repository import InterRepository
 from bzrlib.trace import mutter
 
 from cStringIO import StringIO
-from bzrlib.osutils import md5
 
 from subvertpy import properties
 from subvertpy.delta import apply_txdelta_handler
+
 from bzrlib.plugins.svn.errors import InvalidFileName
 from bzrlib.plugins.svn.foreign import escape_commit_message
-from bzrlib.plugins.svn.mapping import (SVN_PROP_BZR_PREFIX)
+from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_PREFIX
 from bzrlib.plugins.svn.repository import SvnRepository, SvnRepositoryFormat
 from bzrlib.plugins.svn.transport import _url_escape_uri
 

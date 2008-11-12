@@ -20,10 +20,11 @@ from bzrlib.inventory import Inventory
 
 from bzrlib.plugins.svn.commit import dir_editor_send_changes
 
-from subvertpy import NODE_DIR
+import os
+import subvertpy
+from subvertpy import properties
 from subvertpy.server import ServerBackend, ServerRepositoryBackend
-
-import os, time
+import time
 
 def determine_changed_paths(repository, branch_path, rev, revno):
     def fixpath(p):
@@ -96,9 +97,9 @@ class RepositoryBackend(ServerRepositoryBackend):
         path, revid = self._get_revid(revnum)
         rev = self.branch.repository.get_revision(revid)
         ret = {
-                "svn:author": rev.committer, 
-                "svn:date": time.strftime("%Y-%m-%dT%H:%M:%S.00000Z", time.gmtime(rev.timestamp)),
-                "svn:log": rev.message
+                properties.PROP_REVISION_AUTHOR: rev.committer, 
+                properties.PROP_REVISION_DATE: time.strftime("%Y-%m-%dT%H:%M:%S.00000Z", time.gmtime(rev.timestamp)),
+                properties.PROP_REVISION_LOG: rev.message
                 }
         return ret
 
@@ -133,7 +134,7 @@ class RepositoryBackend(ServerRepositoryBackend):
             self.branch.repository.unlock()
 
     def check_path(self, path, revnum):
-        return NODE_DIR
+        return subvertpy.NODE_DIR
 
     def get_locations(self, path, peg_revnum, revnums):
         if path.strip() in ("trunk", ""):
@@ -151,7 +152,7 @@ class RepositoryBackend(ServerRepositoryBackend):
         ie = inv[id]
         ret = { "name": urlutils.basename(path) }
         if ie.kind == "directory":
-            ret["kind"] = NODE_DIR
+            ret["kind"] = subvertpy.NODE_DIR
         else:
             ret["kind"] = NODE_FILE
         ret["size"] = ie.text_size

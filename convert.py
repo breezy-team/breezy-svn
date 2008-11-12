@@ -17,16 +17,25 @@
 
 import os
 
-from bzrlib import osutils, ui, urlutils
-from bzrlib.bzrdir import BzrDir, Converter
-from bzrlib.errors import (BzrError, NotBranchError, NoSuchFile, 
-                           NoRepositoryPresent) 
+from bzrlib import (
+        bzrdir,
+        osutils,
+        ui,
+        urlutils,
+        )
+from bzrlib.errors import (
+        BzrError,
+        NotBranchError,
+        NoSuchFile,
+        NoRepositoryPresent,
+        ) 
 from bzrlib.repository import InterRepository
 from bzrlib.revision import ensure_null
 from bzrlib.transport import get_transport
 
-from bzrlib.plugins.svn.branch import SvnBranch
 from subvertpy import SubversionException, repos, ERR_STREAM_MALFORMED_DATA
+
+from bzrlib.plugins.svn.branch import SvnBranch
 from bzrlib.plugins.svn.format import get_rich_root_format
 
 LATEST_IMPORT_REVISION_FILENAME = "svn-import-revision"
@@ -148,7 +157,7 @@ def convert_repository(source_repos, output_url, layout=None,
             return dirs[path]
         nt = to_transport.clone(path)
         try:
-            dirs[path] = BzrDir.open_from_transport(nt)
+            dirs[path] = bzrdir.BzrDir.open_from_transport(nt)
         except NotBranchError:
             transport_makedirs(to_transport, urlutils.join(to_transport.base, path))
             dirs[path] = format.initialize_on_transport(nt)
@@ -270,7 +279,7 @@ def convert_repository(source_repos, output_url, layout=None,
         put_latest_svn_import_revision(target_repos, source_repos.uuid, to_revnum)
         
 
-class SvnConverter(Converter):
+class SvnConverter(bzrdir.Converter):
     """Converts from a Subversion directory to a bzr dir."""
     def __init__(self, target_format):
         """Create a SvnConverter.

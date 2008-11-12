@@ -17,10 +17,10 @@ from bzrlib import osutils, urlutils
 from bzrlib.trace import warning
 from bzrlib.versionedfile import FulltextContentFactory, VersionedFiles
 
-from subvertpy import SubversionException, ERR_FS_NOT_FILE
-from bzrlib.plugins.svn.errors import convert_svn_error
-
 from cStringIO import StringIO
+import subvertpy
+
+from bzrlib.plugins.svn.errors import convert_svn_error
 
 _warned_experimental = False
 
@@ -63,8 +63,8 @@ class SvnTexts(VersionedFiles):
                         self.repository.transport.get_file(urlutils.join(revmeta.branch_path, k).strip("/"), stream, revmeta.revnum)
                         stream.seek(0)
                         lines = stream.readlines()
-                    except SubversionException, (_, num):
-                        if num == ERR_FS_NOT_FILE:
+                    except subvertpy.SubversionException, (_, num):
+                        if num == subvertpy.ERR_FS_NOT_FILE:
                             lines = []
                         else:
                             raise

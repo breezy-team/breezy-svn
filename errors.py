@@ -16,11 +16,17 @@
 """Subversion-specific errors and conversion of Subversion-specific errors."""
 
 import bzrlib.errors
-from bzrlib.errors import (BzrError, ConnectionError, ConnectionReset, 
-                           LockError, PermissionDenied, 
-                           NoRepositoryPresent,
-                           TransportError, UnexpectedEndOfContainerError,
-                           NoSuchRevision)
+from bzrlib.errors import (
+        BzrError,
+        ConnectionError,
+        ConnectionReset,
+        LockError,
+        PermissionDenied,
+        NoRepositoryPresent,
+        NoSuchRevision,
+        TransportError,
+        UnexpectedEndOfContainerError,
+        )
 
 import urllib
 import subvertpy

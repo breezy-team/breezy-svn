@@ -15,8 +15,22 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Stores per-repository settings."""
 
-from bzrlib import osutils, urlutils, trace
-from bzrlib.config import IniBasedConfig, config_dir, ensure_config_dir_exists, GlobalConfig, LocationConfig, Config, STORE_BRANCH, STORE_GLOBAL, STORE_LOCATION
+from bzrlib import (
+        osutils,
+        urlutils,
+        trace,
+        )
+from bzrlib.config import (
+        IniBasedConfig,
+        config_dir,
+        ensure_config_dir_exists,
+        GlobalConfig,
+        LocationConfig,
+        Config,
+        STORE_BRANCH,
+        STORE_GLOBAL,
+        STORE_LOCATION,
+        )
 
 import os
 

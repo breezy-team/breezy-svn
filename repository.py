@@ -15,11 +15,15 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Subversion repository access."""
 
-from bzrlib import osutils, ui, urlutils, xml6
-from bzrlib.branch import BranchCheckResult
-from bzrlib.errors import (InvalidRevisionId, NoSuchRevision, 
-                           UninitializableFormat, NotWriteLocked)
-from bzrlib.graph import CachingParentsProvider
+from bzrlib import (
+        branch,
+        errors as bzr_errors,
+        graph,
+        osutils,
+        ui,
+        urlutils,
+        xml6,
+        )
 from bzrlib.inventory import Inventory
 from bzrlib.lockable_files import LockableFiles, TransportLock
 from bzrlib.repository import Repository, RepositoryFormat, needs_read_lock
@@ -31,22 +35,29 @@ from bzrlib.trace import info
 from copy import copy
 from itertools import chain
 import os
-
-from bzrlib.plugins.svn import cache, changes, errors, layout, logwalker, revmeta
 import subvertpy
+
+from bzrlib.plugins.svn import (
+        cache,
+        changes,
+        errors,
+        layout,
+        logwalker,
+        revmeta,
+        )
 from bzrlib.plugins.svn.branchprops import PathPropertyProvider
 from bzrlib.plugins.svn.config import SvnRepositoryConfig
-from subvertpy import SubversionException, properties
-from bzrlib.plugins.svn.errors import convert_svn_error
 from bzrlib.plugins.svn.layout.standard import WildcardLayout
 from bzrlib.plugins.svn.layout.guess import repository_guess_layout
-from bzrlib.plugins.svn.mapping import (SVN_REVPROP_BZR_SIGNATURE,
-                     SVN_REVPROP_BZR_TAGS,
-                     parse_tags_property,
-                     BzrSvnMapping,
-                     mapping_registry,
-                     is_bzr_revision_revprops, 
-                     parse_svn_dateprop)
+from bzrlib.plugins.svn.mapping import (
+        SVN_REVPROP_BZR_SIGNATURE,
+        SVN_REVPROP_BZR_TAGS,
+        parse_tags_property,
+        BzrSvnMapping,
+        mapping_registry,
+        is_bzr_revision_revprops, 
+        parse_svn_dateprop,
+        )
 from bzrlib.plugins.svn.parents import DiskCachingParentsProvider
 from bzrlib.plugins.svn.revids import CachingRevidMap, RevidMap
 from bzrlib.plugins.svn.tree import SvnRevisionTree
@@ -76,7 +87,7 @@ class SvnRepositoryFormat(RepositoryFormat):
         return "Subversion Repository"
 
     def initialize(self, url, shared=False, _internal=False):
-        raise UninitializableFormat(self)
+        raise bzr_errors.UninitializableFormat(self)
 
     def check_conversion_target(self, target_repo_format):
         return target_repo_format.rich_root_data
@@ -138,7 +149,7 @@ class SvnRepository(Repository):
             self.revmap = CachingRevidMap(self.revmap, self.cachedb)
             self._real_parents_provider = DiskCachingParentsProvider(self._real_parents_provider, cachedir_transport)
 
-        self._parents_provider = CachingParentsProvider(self._real_parents_provider)
+        self._parents_provider = graph.CachingParentsProvider(self._real_parents_provider)
         self.texts = SvnTexts(self)
         self.revisions = VirtualRevisionTexts(self)
         self.inventories = VirtualInventoryTexts(self)
@@ -175,7 +186,7 @@ class SvnRepository(Repository):
         self._cached_tags = {}
         self._cached_revnum = revnum
         self._layout = None
-        self._parents_provider = CachingParentsProvider(self._real_parents_provider)
+        self._parents_provider = graph.CachingParentsProvider(self._real_parents_provider)
 
     def lock_write(self):
         """See Branch.lock_write()."""
@@ -189,7 +200,7 @@ class SvnRepository(Repository):
     def is_write_locked(self):
         return (self._lock_mode == 'w')
 
-    @convert_svn_error
+    @errors.convert_svn_error
     def get_latest_revnum(self):
         if self._lock_mode in ('r','w') and self._cached_revnum is not None:
             return self._cached_revnum
@@ -232,7 +243,7 @@ class SvnRepository(Repository):
     def gather_stats(self, revid=None, committers=None):
         result = {}
         def revdate(revnum):
-            return parse_svn_dateprop(self._log.revprop_list(revnum)[properties.PROP_REVISION_DATE])
+            return parse_svn_dateprop(self._log.revprop_list(revnum)[subvertpy.properties.PROP_REVISION_DATE])
         if committers is not None and revid is not None:
             all_committers = set()
             for rev in self.get_revisions(filter(lambda r: r is not None and r != NULL_REVISION, self.get_ancestry(revid))):
@@ -337,7 +348,7 @@ class SvnRepository(Repository):
         return dir
 
     def _check(self, revision_ids):
-        return BranchCheckResult(self)
+        return branch.BranchCheckResult(self)
 
     def get_inventory(self, revision_id):
         assert revision_id != None
@@ -406,12 +417,12 @@ class SvnRepository(Repository):
 
         try:
             (path, revnum, _) = self.lookup_revision_id(revision_id, project=project)
-        except NoSuchRevision:
+        except bzr_errors.NoSuchRevision:
             return False
 
         try:
             return (subvertpy.NODE_DIR == self.transport.check_path(path, revnum))
-        except SubversionException, (_, num):
+        except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 return False
             raise
@@ -440,7 +451,7 @@ class SvnRepository(Repository):
 
             try:
                 revmeta, mapping = self._get_revmeta(ensure_null(revision_id))
-            except NoSuchRevision:
+            except bzr_errors.NoSuchRevision:
                 continue
             else:
                 parent_map[revision_id] = revmeta.get_parent_ids(mapping)
@@ -455,7 +466,7 @@ class SvnRepository(Repository):
     def get_revision(self, revision_id):
         """See Repository.get_revision."""
         if not revision_id or not isinstance(revision_id, str):
-            raise InvalidRevisionId(revision_id=revision_id, branch=self)
+            raise bzr_errors.InvalidRevisionId(revision_id=revision_id, branch=self)
 
         revmeta, mapping = self._get_revmeta(revision_id)
         
@@ -548,7 +559,7 @@ class SvnRepository(Repository):
         """
         try:
             revmeta, mapping = self._get_revmeta(revision_id)
-        except NoSuchRevision:
+        except bzr_errors.NoSuchRevision:
             return False
         # Make sure revprops are fresh, not cached:
         revmeta._revprops = self.transport.revprop_list(revmeta.revnum)
@@ -566,14 +577,14 @@ class SvnRepository(Repository):
         revmeta._revprops = self.transport.revprop_list(revmeta.revnum)
         signature = revmeta.get_signature()
         if signature is None:
-            raise NoSuchRevision(self, revision_id)
+            raise bzr_errors.NoSuchRevision(self, revision_id)
         return signature
 
     def add_signature_text(self, revision_id, signature):
         (path, revnum, mapping) = self.lookup_revision_id(revision_id)
         try:
             self.transport.change_rev_prop(revnum, SVN_REVPROP_BZR_SIGNATURE, signature)
-        except SubversionException, (_, subvertpy.ERR_REPOS_DISABLED_FEATURE):
+        except subvertpy.SubversionException, (_, subvertpy.ERR_REPOS_DISABLED_FEATURE):
             raise errors.RevpropChangeFailed(SVN_REVPROP_BZR_SIGNATURE)
 
     @needs_read_lock
@@ -656,7 +667,7 @@ class SvnRepository(Repository):
                                         tag_changes[n] = self._revmeta_provider.get_revision(n, revnum, revprops=revprops).get_revision_id(mapping)
                                     elif layout.is_tag_parent(n, project):
                                         parents.append(n)
-                            except SubversionException, (_, subvertpy.ERR_FS_NOT_DIRECTORY):
+                            except subvertpy.SubversionException, (_, subvertpy.ERR_FS_NOT_DIRECTORY):
                                 pass
                     else:
                         try:
@@ -679,12 +690,12 @@ class SvnRepository(Repository):
                                 tr = self._log.find_latest_change(cf, cr)
                             try:
                                 tag_changes[p] = self.generate_revision_id(tr, tp, mapping)
-                            except SubversionException, (_, errors.ERR_FS_NOT_DIRECTORY):
+                            except subvertpy.SubversionException, (_, errors.ERR_FS_NOT_DIRECTORY):
                                 pass
                         else:
                             try:
                                 tag_changes[bp] = self._revmeta_provider.get_revision(bp, revnum, revprops=revprops).get_revision_id(mapping)
-                            except SubversionException, (_, errors.ERR_FS_NOT_DIRECTORY):
+                            except subvertpy.SubversionException, (_, errors.ERR_FS_NOT_DIRECTORY):
                                 pass
                 for path, revid in tag_changes.items():
                     name = layout.get_tag_name(path, project)
@@ -778,7 +789,7 @@ class SvnRepository(Repository):
                                             created_branches[n] = i
                                         elif layout.is_branch_or_tag_parent(n, project):
                                             parents.append(n)
-                                except SubversionException, (_, subvertpy.ERR_FS_NOT_DIRECTORY):
+                                except subvertpy.SubversionException, (_, subvertpy.ERR_FS_NOT_DIRECTORY):
                                     pass
         finally:
             pb.finished()
@@ -824,5 +835,5 @@ class SvnRepository(Repository):
 
     def start_write_group(self):
         if not self.is_write_locked():
-            raise NotWriteLocked(self)
+            raise bzr_errors.NotWriteLocked(self)
         self._write_group = None 

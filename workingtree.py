@@ -16,12 +16,27 @@
 """Checkouts and working trees (working copies)."""
 
 import bzrlib, bzrlib.add
-from bzrlib import osutils, urlutils
-from bzrlib.bzrdir import BzrDirFormat, BzrDir
-from bzrlib.errors import (InvalidRevisionId, NotBranchError, NoSuchFile,
-                           NoRepositoryPresent, 
-                           NoWorkingTree, UnsupportedFormatError)
-from bzrlib.inventory import Inventory, InventoryFile, InventoryLink
+from bzrlib import (
+        osutils,
+        urlutils,
+        )
+from bzrlib.bzrdir import (
+        BzrDirFormat,
+        BzrDir,
+        )
+from bzrlib.errors import (
+        InvalidRevisionId,
+        NotBranchError,
+        NoSuchFile,
+        NoRepositoryPresent,
+        NoWorkingTree,
+        UnsupportedFormatError,
+        )
+from bzrlib.inventory import (
+        Inventory,
+        InventoryFile,
+        InventoryLink,
+        )
 from bzrlib.lockable_files import LockableFiles
 from bzrlib.lockdir import LockDir
 from bzrlib.revision import NULL_REVISION
@@ -29,22 +44,25 @@ from bzrlib.trace import mutter
 from bzrlib.transport import get_transport
 from bzrlib.workingtree import WorkingTree, WorkingTreeFormat
 
+import os
+import urllib
+
 import subvertpy
-from subvertpy import properties, ERR_ENTRY_EXISTS, ERR_WC_PATH_NOT_FOUND, ERR_WC_NOT_DIRECTORY
+from subvertpy import properties
 from subvertpy.wc import *
+
+from bzrlib.plugins.svn import (
+        errors as bzrsvn_errors,
+        svk,
+        )
 from bzrlib.plugins.svn.branch import SvnBranch
 from bzrlib.plugins.svn.commit import _revision_id_to_svk_feature
-from bzrlib.plugins.svn.errors import NotSvnBranchPath
 from bzrlib.plugins.svn.format import get_rich_root_format
 from bzrlib.plugins.svn.mapping import escape_svn_path
 from bzrlib.plugins.svn.remote import SvnRemoteAccess
 from bzrlib.plugins.svn.repository import SvnRepository
-from bzrlib.plugins.svn.svk import SVN_PROP_SVK_MERGE, parse_svk_features, serialize_svk_features
-from bzrlib.plugins.svn.transport import (SvnRaTransport, svn_config) 
+from bzrlib.plugins.svn.transport import SvnRaTransport, svn_config
 from bzrlib.plugins.svn.tree import SvnBasisTree
-
-import os
-import urllib
 
 def update_wc(adm, basedir, conn, revnum):
     # FIXME: honor SVN_CONFIG_SECTION_HELPERS:SVN_CONFIG_OPTION_DIFF3_CMD
@@ -397,7 +415,7 @@ class SvnWorkingTree(WorkingTree):
             merges = parent_ids[1:]
         adm = self._get_wc(write_lock=True)
         try:
-            svk_merges = parse_svk_features(self._get_svk_merges(self._get_base_branch_props()))
+            svk_merges = svk.parse_svk_features(self._get_svk_merges(self._get_base_branch_props()))
 
             # Set svk:merge
             for merge in merges:
@@ -406,8 +424,8 @@ class SvnWorkingTree(WorkingTree):
                 except InvalidRevisionId:
                     pass
 
-            adm.prop_set(SVN_PROP_SVK_MERGE, 
-                         serialize_svk_features(svk_merges), self.basedir)
+            adm.prop_set(svk.SVN_PROP_SVK_MERGE, 
+                         svk.serialize_svk_features(svk_merges), self.basedir)
         finally:
             adm.close()
 
@@ -468,9 +486,9 @@ class SvnWorkingTree(WorkingTree):
                     if ids is not None:
                         self._change_fileid_mapping(ids.next(), f, wc)
                 except subvertpy.SubversionException, (_, num):
-                    if num == ERR_ENTRY_EXISTS:
+                    if num == subvertpy.ERR_ENTRY_EXISTS:
                         continue
-                    elif num == ERR_WC_PATH_NOT_FOUND:
+                    elif num == subvertpy.ERR_WC_PATH_NOT_FOUND:
                         raise NoSuchFile(path=f)
                     raise
             finally:
@@ -563,7 +581,7 @@ class SvnWorkingTree(WorkingTree):
                 self._get_changed_branch_props())
 
     def _get_svk_merges(self, base_branch_props):
-        return base_branch_props.get(SVN_PROP_SVK_MERGE, "")
+        return base_branch_props.get(svk.SVN_PROP_SVK_MERGE, "")
 
     def apply_inventory_delta(self, delta):
         assert delta == []
@@ -755,7 +773,7 @@ class SvnCheckout(BzrDir):
     def open_workingtree(self, _unsupported=False, recommend_upgrade=False):
         try:
             return SvnWorkingTree(self, self.local_path, self.open_branch())
-        except NotSvnBranchPath, e:
+        except bzrsvn_errors.NotSvnBranchPath, e:
             raise NoWorkingTree(self.local_path)
 
     def sprout(self, url, revision_id=None, force_new_repo=False, 
@@ -809,7 +827,7 @@ class SvnCheckout(BzrDir):
         try:
             branch = SvnBranch(repos, self.get_remote_bzrdir().branch_path)
         except subvertpy.SubversionException, (_, num):
-            if num == ERR_WC_NOT_DIRECTORY:
+            if num == subvertpy.ERR_WC_NOT_DIRECTORY:
                 raise NotBranchError(path=self.base)
             raise
 

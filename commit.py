@@ -17,24 +17,44 @@
 
 from bzrlib import debug, urlutils, trace, ui
 from bzrlib.branch import Branch
-from bzrlib.errors import (BzrError, InvalidRevisionId, DivergedBranches, 
-                           UnrelatedBranches, 
-                           NoSuchRevision)
+from bzrlib.errors import (
+        BzrError, 
+        InvalidRevisionId, 
+        DivergedBranches, 
+        UnrelatedBranches, 
+        NoSuchRevision,
+        )
 from bzrlib.inventory import Inventory
-from bzrlib.repository import RootCommitBuilder, InterRepository, Repository
+from bzrlib.repository import (
+        RootCommitBuilder, 
+        InterRepository, 
+        Repository,
+        )
 from bzrlib.revision import NULL_REVISION, ensure_null
 from bzrlib.trace import mutter, warning
 
 from cStringIO import StringIO
 
+from subvertpy import (
+        SubversionException, 
+        delta, 
+        NODE_DIR, 
+        properties, 
+        ERR_FS_TXN_OUT_OF_DATE,
+        )
+
+from bzrlib.plugins.svn.errors import (
+        ChangesRootLHSHistory, 
+        MissingPrefix, 
+        RevpropChangeFailed, 
+        convert_svn_error, 
+        AppendRevisionsOnlyViolation,
+        )
 from bzrlib.plugins.svn import mapping
-from subvertpy import SubversionException, delta, NODE_DIR, properties, ERR_FS_TXN_OUT_OF_DATE
-from bzrlib.plugins.svn.errors import ChangesRootLHSHistory, MissingPrefix, RevpropChangeFailed, convert_svn_error, AppendRevisionsOnlyViolation
 from bzrlib.plugins.svn.svk import (
     generate_svk_feature, serialize_svk_features, 
     parse_svk_features, SVN_PROP_SVK_MERGE)
 from bzrlib.plugins.svn.logwalker import lazy_dict
-from bzrlib.plugins.svn.mapping import mapping_registry
 from bzrlib.plugins.svn.repository import SvnRepositoryFormat, SvnRepository
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
 from bzrlib.plugins.svn.transport import _url_escape_uri
@@ -47,7 +67,7 @@ def _revision_id_to_svk_feature(revid):
     :return: Matching SVK feature identifier.
     """
     assert isinstance(revid, str)
-    (uuid, branch, revnum), _ = mapping_registry.parse_revision_id(revid)
+    (uuid, branch, revnum), _ = mapping.mapping_registry.parse_revision_id(revid)
     # TODO: What about renamed revisions? Should use 
     # repository.lookup_revision_id here.
     return generate_svk_feature(uuid, branch, revnum)
@@ -125,6 +145,7 @@ def set_svn_revprops(transport, revnum, revprops):
             transport.change_rev_prop(revnum, name, value)
         except SubversionException, (_, ERR_REPOS_DISABLED_FEATURE):
             raise RevpropChangeFailed(name)
+
 
 def file_editor_send_changes(file_id, contents, file_editor):
     """Pass the changes to a file to the Subversion commit editor.
