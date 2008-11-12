@@ -19,22 +19,23 @@
 from bzrlib import errors, registry
 from bzrlib.branch import Branch
 from bzrlib.commands import Command, Option
+from bzrlib.errors import InvalidRevisionId
 from bzrlib.revision import Revision
 from bzrlib.trace import info
-
 
 class VcsMapping(object):
     """Describes the mapping between the semantics of Bazaar and a foreign vcs.
 
     """
+    # Whether this is an experimental mapping that is still open to changes.
     experimental = False
-    """Whether this is an experimental mapping that is still open to changes."""
 
+    # Whether this mapping supports exporting and importing all bzr semantics.
     roundtripping = False
-    """Whether this mapping supports exporting and importing all bzr semantics."""
 
+    # Prefix used when importing native foreign revisions (not roundtripped) 
+    # using this mapping.
     revid_prefix = None
-    """Prefix used when importing native foreign revisions (not roundtripped) using this mapping."""
 
     def revision_id_bzr_to_foreign(self, bzr_revid):
         """Parse a bzr revision id and convert it to a foreign revid.
@@ -226,3 +227,23 @@ class ForeignRevision(Revision):
         super(ForeignRevision, self).__init__(*args, **kwargs)
         self.foreign_revid = foreign_revid
         self.mapping = mapping
+
+
+def show_foreign_properties(mapping_registry, rev):
+    """Custom log displayer for foreign revision identifiers.
+
+    :param rev: Revision object.
+    """
+    # Revision comes directly from a foreign repository
+    if isinstance(rev, ForeignRevision):
+        return rev.mapping.show_foreign_revid(rev.foreign_revid)
+
+    # Revision was once imported from a foreign repository
+    try:
+        foreign_revid, mapping = mapping_registry.parse_revision_id(rev.revision_id)
+    except InvalidRevisionId:
+        return {}
+
+    return mapping.show_foreign_revid(foreign_revid)
+
+

@@ -295,6 +295,7 @@ def parse_bzr_svn_revprops(props, rev):
 def parse_required_features_property(text):
     return set(text.split(","))
 
+
 class BzrSvnMapping(foreign.VcsMapping):
     """Class that maps between Subversion and Bazaar semantics."""
     experimental = False
@@ -469,7 +470,7 @@ class BzrSvnMapping(foreign.VcsMapping):
         raise NotImplementedError(self.export_hidden)
 
     def show_foreign_revid(self, (uuid, bp, revnum)):
-        return { "svn revno": "%d (on /%s)" % data}
+        return { "svn revno": "%d (on /%s)" % (revnum, bp)}
 
 
 def parse_fileid_property(text):
@@ -731,7 +732,6 @@ class SubversionMappingRegistry(foreign.VcsMappingRegistry):
             assert isinstance(rest, str)
             return self.get(name)(rest)
         return self.get(name)()
-
 
     def parse_revision_id(self, revid):
         """Try to parse a Subversion revision id.

@@ -344,7 +344,7 @@ class RevisionMetadata(object):
         if parent_ids == (NULL_REVISION,):
             parent_ids = ()
         rev = ForeignRevision(foreign_revid=(self.uuid, self.branch_path, self.revnum),
-                              mapping=self.mapping, revision_id=self.get_revision_id(mapping), 
+                              mapping=mapping, revision_id=self.get_revision_id(mapping), 
                        parent_ids=parent_ids,
                        inventory_sha1="")
 

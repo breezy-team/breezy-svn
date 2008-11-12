@@ -13,22 +13,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib.plugins.svn.log import show_subversion_properties
+from bzrlib.plugins.svn import show_subversion_properties
 from bzrlib.revision import Revision
-
 from bzrlib.tests import TestCase
+
+from bzrlib.plugins.svn.foreign import ForeignRevision
+from bzrlib.plugins.svn.mapping2 import BzrSvnMappingv1
 
 class LogTestCase(TestCase):
     def test_notsvn(self):
         self.assertEquals({}, show_subversion_properties(Revision("foo")))
 
     def test_svnprops(self):
-        rev = Revision("foo")
-        class Metaobj:
-            def __init__(self, revnum, branch):
-                self.revnum = revnum
-                self.branch_path = branch
-        rev.svn_meta = Metaobj(2, "bar")
+        rev = ForeignRevision(("someuuid", "bar", 2), 
+                              BzrSvnMappingv1(None), "foo")
         self.assertEquals({"svn revno": "2 (on /bar)"}, 
                           show_subversion_properties(rev))
 

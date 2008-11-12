@@ -119,8 +119,14 @@ bzrdir.format_registry.register("subversion-wc", format.SvnWorkingTreeDirFormat,
                          native=False, hidden=True)
 SPEC_TYPES.append(revspec.RevisionSpec_svn)
 
+# Unfortunately, functools.partial is not available in python2.4
+def show_subversion_properties(rev):
+    from bzrlib.plugins.svn import foreign
+    from bzrlib.plugins.svn.mapping import mapping_registry
+    return foreign.show_foreign_properties(mapping_registry, rev)
+
 log.properties_handler_registry.register_lazy("subversion",
-                                              "bzrlib.plugins.svn.log",
+                                              "bzrlib.plugins.svn",
                                               "show_subversion_properties")
 
 _versions_checked = False

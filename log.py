@@ -13,28 +13,3 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib.errors import InvalidRevisionId
-
-from bzrlib.plugins.svn import mapping
-from bzrlib.plugins.svn.foreign import ForeignRevision
-
-def show_subversion_properties(rev):
-    """Custom log displayer for Subversion revisions.
-
-    :param rev: Revision object.
-    """
-    data = None
-    ret = {}
-    if isinstance(rev, ForeignRevision):
-        return rev.mapping.show_foreign_revid(rev.foreign_revid)
-    else:
-        try:
-            foreign_revid, mapp = mapping.mapping_registry.parse_revision_id(rev.revision_id)
-        except InvalidRevisionId:
-            pass
-        else:
-            return mapp.show_foreign_revid(foreign_revid)
-
-    return {}
-
-
