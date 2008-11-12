@@ -33,6 +33,7 @@ from bzrlib.trace import mutter, warning
 from bzrlib.transport import Transport
 
 import subvertpy
+from subvertpy import ERR_FS_NOT_DIRECTORY
 from subvertpy.client import get_config
 import urlparse
 import urllib
@@ -367,10 +368,8 @@ class SvnRaTransport(Transport):
             relpath = ""
         try:
             (dirents, _, _) = self.get_dir(relpath, self.get_latest_revnum())
-        except subvertpy.SubversionException, (msg, num):
-            if num == subvertpy.ERR_FS_NOT_DIRECTORY:
-                raise NoSuchFile(relpath)
-            raise
+        except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+            raise NoSuchFile(relpath)
         return dirents.keys()
 
     def check_path(self, path, revnum):
@@ -398,7 +397,7 @@ class SvnRaTransport(Transport):
                 ce.close()
             except subvertpy.SubversionException, (msg, num):
                 ce.abort()
-                if num == subvertpy.ERR_FS_NOT_DIRECTORY:
+                if num == ERR_FS_NOT_DIRECTORY:
                     raise NoSuchFile(msg)
                 if num == subvertpy.ERR_FS_ALREADY_EXISTS:
                     raise FileExists(msg)

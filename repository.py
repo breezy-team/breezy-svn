@@ -36,6 +36,7 @@ from copy import copy
 from itertools import chain
 import os
 import subvertpy
+from subvertpy import ERR_FS_NOT_DIRECTORY
 
 from bzrlib.plugins.svn import (
         cache,
@@ -678,7 +679,7 @@ class SvnRepository(Repository):
                                         tag_changes[n] = self._revmeta_provider.get_revision(n, revnum, revprops=revprops).get_revision_id(mapping)
                                     elif layout.is_tag_parent(n, project):
                                         parents.append(n)
-                            except subvertpy.SubversionException, (_, subvertpy.ERR_FS_NOT_DIRECTORY):
+                            except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                                 pass
                     else:
                         try:
@@ -701,12 +702,12 @@ class SvnRepository(Repository):
                                 tr = self._log.find_latest_change(cf, cr)
                             try:
                                 tag_changes[p] = self.generate_revision_id(tr, tp, mapping)
-                            except subvertpy.SubversionException, (_, errors.ERR_FS_NOT_DIRECTORY):
+                            except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                                 pass
                         else:
                             try:
                                 tag_changes[bp] = self._revmeta_provider.get_revision(bp, revnum, revprops=revprops).get_revision_id(mapping)
-                            except subvertpy.SubversionException, (_, errors.ERR_FS_NOT_DIRECTORY):
+                            except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                                 pass
                 for path, revid in tag_changes.items():
                     name = layout.get_tag_name(path, project)
@@ -800,7 +801,7 @@ class SvnRepository(Repository):
                                             created_branches[n] = i
                                         elif layout.is_branch_or_tag_parent(n, project):
                                             parents.append(n)
-                                except subvertpy.SubversionException, (_, subvertpy.ERR_FS_NOT_DIRECTORY):
+                                except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                                     pass
         finally:
             pb.finished()

@@ -550,6 +550,43 @@ class RepositoryTests(SubversionTestCase):
                 self.client_get_prop(repos_url+"/trunk", SVN_PROP_BZR_REVISION_ID+"v3-trunk0",
                                      c.get_latest_revnum()))
 
+    def test_revision_history(self):
+        repos_url = self.make_repository('a')
+
+        branch = Branch.open(repos_url)
+        self.assertEqual([branch.generate_revision_id(0)], 
+                branch.revision_history())
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("foo").modify()
+        dc.change_prop(SVN_PROP_BZR_REVISION_ID+"v3-none", 
+                "42 mycommit\n")
+        dc.close()
+        
+        branch = Branch.open(repos_url)
+        repos = Repository.open(repos_url)
+        
+        mapping = repos.get_mapping()
+
+        self.assertEqual([repos.generate_revision_id(0, "", mapping), 
+                    repos.generate_revision_id(1, "", mapping)], 
+                branch.revision_history())
+
+        dc = self.get_commit_editor(repos_url)
+        dc.open_file("foo").modify()
+        dc.close()
+
+        branch = Branch.open(repos_url)
+        repos = Repository.open(repos_url)
+
+        mapping = repos.get_mapping()
+
+        self.assertEqual([
+            repos.generate_revision_id(0, "", mapping),
+            "mycommit",
+            repos.generate_revision_id(2, "", mapping)],
+            branch.revision_history())
+
 class ErrorTests(TestCase):
     def test_invalidsvnbranchpath_nonascii(self):
         InvalidSvnBranchPath('\xc3\xb6', None)

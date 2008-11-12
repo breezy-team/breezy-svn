@@ -34,6 +34,7 @@ from bzrlib.plugins.svn.mapping import (
         )
 
 import subvertpy
+from subvertpy import ERR_FS_NOT_DIRECTORY
 
 class RevidMap(object):
     def __init__(self, repos):
@@ -94,7 +95,7 @@ class RevidMap(object):
                 revmeta = self.repos._revmeta_provider.get_revision(branch, revno)
                 for revid, bzr_revno, mapping_name in revmeta.get_roundtrip_ancestor_revids():
                     revids.add(((bzr_revno, revid), mapping_name))
-            except subvertpy.SubversionException, (_, subvertpy.ERR_FS_NOT_DIRECTORY):
+            except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                 continue
 
             # If there are any new entries that are not yet in the cache, 
