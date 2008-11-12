@@ -264,6 +264,7 @@ class SvnRepository(Repository):
         return mapping_registry.get_default()
 
     def get_mapping(self):
+        """Get the default mapping that is used for this repository."""
         if self._default_mapping is None:
             mappingcls = self.get_mapping_class()
             self._default_mapping = mappingcls.from_repository(self, self._hinted_branch_path)
@@ -273,10 +274,12 @@ class SvnRepository(Repository):
         return self._parents_provider
 
     def get_deltas_for_revisions(self, revisions):
+        """See Repository.get_deltas_for_revisions()."""
         for revision in revisions:
             yield self.get_revision_delta(revision)
 
     def get_revision_delta(self, revision):
+        """See Repository.get_revision_delta()."""
         parentrevmeta = revision.svn_meta.get_lhs_parent_revmeta(revision.svn_mapping)
         from bzrlib.plugins.svn.fetch import TreeDeltaBuildEditor
         if parentrevmeta is None:
@@ -302,10 +305,16 @@ class SvnRepository(Repository):
         return editor.delta
 
     def set_layout(self, layout):
+        """Set the layout that should be used by default by this instance."""
         self.get_mapping().check_layout(self, layout)
         self._layout = layout
 
     def get_layout(self):
+        """Determine layout to use for this repository.
+        
+        This will use whatever layout the user has specified, or 
+        otherwise the layout that was guessed by bzr-svn.
+        """
         if self._layout is None:
             self._layout = self.get_mapping().get_mandated_layout(self)
         if self._layout is None:
@@ -325,6 +334,8 @@ class SvnRepository(Repository):
         return self._layout
 
     def get_guessed_layout(self):
+        """Retrieve the layout bzr-svn deems most appropriate for this repo.
+        """
         if self._guessed_layout is None:
             self._guessed_layout = self.get_mapping().get_guessed_layout(self)
         if self._guessed_layout is None:
