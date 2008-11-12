@@ -19,51 +19,51 @@ from bzrlib.errors import (ConnectionError, ConnectionReset, LockError,
                            UnexpectedEndOfContainerError)
 from bzrlib.tests import TestCase
 
-from subvertpy import *
+import subvertpy
 from bzrlib.plugins.svn.errors import *
 
 class TestConvertError(TestCase):
     def test_decorator_unknown(self):
         @convert_svn_error
         def test_throws_svn():
-            raise SubversionException("foo", 2000)
+            raise subvertpy.SubversionException("foo", 2000)
 
-        self.assertRaises(SubversionException, test_throws_svn)
+        self.assertRaises(subvertpy.SubversionException, test_throws_svn)
 
     def test_decorator_known(self):
         @convert_svn_error
         def test_throws_svn():
-            raise SubversionException("Connection closed", ERR_RA_SVN_CONNECTION_CLOSED)
+            raise subvertpy.SubversionException("Connection closed", subvertpy.ERR_RA_SVN_CONNECTION_CLOSED)
 
         self.assertRaises(ConnectionReset, test_throws_svn)
 
     def test_convert_error_unknown(self):
-        self.assertIsInstance(convert_error(SubversionException("foo", -4)),
-                SubversionException)
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("foo", -4)),
+                subvertpy.SubversionException)
 
     def test_convert_dav_request_failed(self):
-        self.assertIsInstance(convert_error(SubversionException("foo", ERR_RA_DAV_REQUEST_FAILED)), DavRequestFailed)
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("foo", subvertpy.ERR_RA_DAV_REQUEST_FAILED)), DavRequestFailed)
 
     def test_convert_malformed(self):
-        self.assertIsInstance(convert_error(SubversionException("foo", ERR_RA_SVN_MALFORMED_DATA)), TransportError)
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("foo", subvertpy.ERR_RA_SVN_MALFORMED_DATA)), TransportError)
 
     def test_convert_error_reset(self):
-        self.assertIsInstance(convert_error(SubversionException("Connection closed", ERR_RA_SVN_CONNECTION_CLOSED)), ConnectionReset)
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("Connection closed", subvertpy.ERR_RA_SVN_CONNECTION_CLOSED)), ConnectionReset)
 
     def test_convert_error_lock(self):
-        self.assertIsInstance(convert_error(SubversionException("Working copy locked", ERR_WC_LOCKED)), LockError)
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("Working copy locked", subvertpy.ERR_WC_LOCKED)), LockError)
 
     def test_convert_perm_denied(self):
-        self.assertIsInstance(convert_error(SubversionException("Permission Denied", ERR_RA_NOT_AUTHORIZED)), PermissionDenied)
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("Permission Denied", subvertpy.ERR_RA_NOT_AUTHORIZED)), PermissionDenied)
 
     def test_convert_unexpected_end(self):
-        self.assertIsInstance(convert_error(SubversionException("Unexpected end of stream", ERR_INCOMPLETE_DATA)), UnexpectedEndOfContainerError)
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("Unexpected end of stream", subvertpy.ERR_INCOMPLETE_DATA)), UnexpectedEndOfContainerError)
 
     def test_convert_unknown_hostname(self):
-        self.assertIsInstance(convert_error(SubversionException("Unknown hostname 'bla'", ERR_UNKNOWN_HOSTNAME)), ConnectionError)
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("Unknown hostname 'bla'", subvertpy.ERR_UNKNOWN_HOSTNAME)), ConnectionError)
 
     def test_not_implemented(self):
-        self.assertIsInstance(convert_error(SubversionException("Remote server doesn't support ...", ERR_RA_NOT_IMPLEMENTED)), NotImplementedError)
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("Remote server doesn't support ...", subvertpy.ERR_RA_NOT_IMPLEMENTED)), NotImplementedError)
 
     def test_decorator_nothrow(self):
         @convert_svn_error

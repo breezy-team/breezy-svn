@@ -133,7 +133,6 @@ class cmd_dpush(Command):
             no_rebase=False):
         from bzrlib import urlutils
         from bzrlib.bzrdir import BzrDir
-        from bzrlib.branch import Branch
         from bzrlib.errors import BzrCommandError, NoWorkingTree
         from bzrlib.workingtree import WorkingTree
 
@@ -182,8 +181,7 @@ def test_suite():
     from bzrlib.tests import TestUtil
     loader = TestUtil.TestLoader()
     suite = TestSuite()
-    import test_versionedfiles
-    testmod_names = ['test_versionedfiles',]
+    testmod_names = ['test_versionedfiles', ]
     suite.addTest(loader.loadTestsFromModuleNames(testmod_names))
     return suite
 

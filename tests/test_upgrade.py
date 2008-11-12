@@ -30,6 +30,7 @@ from bzrlib.plugins.svn.foreign.upgrade import (upgrade_repository, upgrade_bran
                      upgrade_workingtree, UpgradeChangesContent, RebaseNotPresent,
                      create_upgraded_revid, generate_upgrade_map)
 
+
 class TestUpgradeChangesContent(TestCase):
     def test_init(self):
         x = UpgradeChangesContent("revisionx")
