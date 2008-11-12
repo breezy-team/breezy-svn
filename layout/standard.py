@@ -197,8 +197,8 @@ class RootLayout(RepositoryLayout):
 class CustomLayout(RepositoryLayout):
 
     def __init__(self, branches=[], tags=[]):
-        self.branches = branches
-        self.tags = tags
+        self.branches = [b.strip("/") for b in branches]
+        self.tags = [t.strip("/") for t in tags]
 
     def supports_tags(self):
         return (self.tags != [])
@@ -259,14 +259,14 @@ class CustomLayout(RepositoryLayout):
 
         :result: Iterator over tuples with (project, branch path)
         """
-        return self.branches
+        return [(project, b, b.split("/")[-1]) for b in self.branches]
 
     def get_tags(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
         :result: Iterator over tuples with (project, branch path)
         """
-        return self.tags
+        return [(project, t, t.split("/")[-1]) for t in self.tags]
 
     def __repr__(self):
         return "%s(%r,%r)" % (self.__class__.__name__, self.branches, self.tags)

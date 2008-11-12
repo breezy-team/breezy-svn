@@ -208,9 +208,9 @@ def convert_repository(source_repos, output_url, layout=None,
                                                                    to_revnum, from_revnum,
                                                                    project=project):
                 pb.update("determining revisions to fetch", to_revnum-revmeta.revnum, to_revnum)
-                if revmeta.is_hidden(mapping):
-                    continue
                 try:
+                    if revmeta.is_hidden(mapping):
+                        continue
                     revid = revmeta.get_revision_id(mapping)
                 except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                     continue
