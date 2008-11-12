@@ -140,6 +140,8 @@ class TestNativeCommit(SubversionTestCase):
         oldid = wt.path2id("foo")
         wt.commit(message="data") # 1
         wt.rename_one("foo", "bar")
+        self.assertEquals(oldid, wt.path2id("bar"))
+        self.assertEquals(None, wt.path2id("foo"))
         wt.commit(message="doe") # 2
         paths = self.client_log(repos_url, 2, 0)[2][0]
         self.assertEquals('D', paths["/foo"][0])

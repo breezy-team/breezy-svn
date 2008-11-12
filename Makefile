@@ -88,7 +88,7 @@ show-plugins::
 	BZR_PLUGIN_PATH=$(TMP_PLUGINS_DIR) $(BZR) plugins
 
 lint::
-	$(PYLINT) -f parseable *.py */*.py
+	PYTHONPATH=$(PYTHONPATH):subvertpy $(PYLINT) -f parseable *.py */*.py
 
 pydoctor::
 	$(PYDOCTOR) --make-html -c bzr-svn.cfg

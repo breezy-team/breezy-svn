@@ -94,7 +94,7 @@ def generate_ignore_list(ignore_map):
 
 
 class SvnWorkingTree(WorkingTree):
-    """WorkingTree implementation that uses a Subversion Working Copy for storage."""
+    """WorkingTree implementation that uses a svn working copy for storage."""
     def __init__(self, bzrdir, local_path, branch):
         version = check_wc(local_path)
         self._format = SvnWorkingTreeFormat(version)
@@ -216,7 +216,8 @@ class SvnWorkingTree(WorkingTree):
 
     def move(self, from_paths, to_dir=None, after=False, **kwargs):
         # FIXME: Use after argument
-        assert after != True
+        if after == True:
+            raise NotImplementedError("move after not supported")
         for entry in from_paths:
             try:
                 to_wc = self._get_wc(to_dir, write_lock=True)
@@ -236,7 +237,8 @@ class SvnWorkingTree(WorkingTree):
 
     def rename_one(self, from_rel, to_rel, after=False):
         # FIXME: Use after
-        assert after != True
+        if after == True:
+            raise NotImplementedError("rename_one after not supported")
         (to_wc, to_file) = self._get_rel_wc(to_rel, write_lock=True)
         if os.path.dirname(from_rel) == os.path.dirname(to_rel):
             # Prevent lock contention
@@ -270,10 +272,19 @@ class SvnWorkingTree(WorkingTree):
         return entry
 
     def read_working_inventory(self):
+        """'Read' the working inventory.
+
+        """
         inv = Inventory()
 
         def add_file_to_inv(relpath, id, revid, parent_id):
-            """Add a file to the inventory."""
+            """Add a file to the inventory.
+            
+            :param relpath: Path relative to working tree root
+            :param id: File id of current directory
+            :param revid: Revision id
+            :param parent_id: File id of parent directory
+            """
             assert isinstance(relpath, unicode)
             if os.path.islink(self.abspath(relpath)):
                 file = InventoryLink(id, os.path.basename(relpath), parent_id)
@@ -297,6 +308,12 @@ class SvnWorkingTree(WorkingTree):
                     pass
 
         def find_copies(url, relpath=""):
+            """Find copies of the specified path
+
+            :param url: URL of which to find copies
+            :param relpath: Optional subpath to search in
+            :return: Yields all copies
+            """
             wc = self._get_wc(relpath)
             entries = wc.entries_read(False)
             for entry in entries.values():
@@ -408,6 +425,7 @@ class SvnWorkingTree(WorkingTree):
         self.set_parent_ids([rev for (rev, tree) in parents_list])
 
     def set_parent_ids(self, parent_ids):
+        """See MutableTree.set_parent_ids."""
         super(SvnWorkingTree, self).set_parent_ids(parent_ids)
         if parent_ids == [] or parent_ids[0] == NULL_REVISION:
             merges = []
@@ -430,6 +448,7 @@ class SvnWorkingTree(WorkingTree):
             adm.close()
 
     def smart_add(self, file_list, recurse=True, action=None, save=True):
+        """See MutableTree.smart_add()."""
         assert isinstance(recurse, bool)
         if action is None:
             action = bzrlib.add.AddAction()
