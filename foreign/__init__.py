@@ -51,6 +51,14 @@ class VcsMapping(object):
         """
         raise NotImplementedError(self.revision_id_foreign_to_bzr)
 
+    def show_foreign_revid(self, foreign_revid):
+        """Prepare a foreign revision id for formatting using bzr log.
+        
+        :param foreign_revid: Foreign revision id.
+        :return: Dictionary mapping string keys to string values.
+        """
+        return { }
+
 
 class VcsMappingRegistry(registry.Registry):
     """Registry for Bazaar<->foreign VCS mappings.

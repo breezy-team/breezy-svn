@@ -468,6 +468,9 @@ class BzrSvnMapping(foreign.VcsMapping):
     def export_hidden(self, revprops, fileprops):
         raise NotImplementedError(self.export_hidden)
 
+    def show_foreign_revid(self, (uuid, bp, revnum)):
+        return { "svn revno": "%d (on /%s)" % data}
+
 
 def parse_fileid_property(text):
     """Pares a fileid file or revision property.

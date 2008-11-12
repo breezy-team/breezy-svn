@@ -25,17 +25,16 @@ def show_subversion_properties(rev):
     data = None
     ret = {}
     if getattr(rev, "svn_meta", None) is not None:
-        data = (rev.svn_meta.revnum, rev.svn_meta.branch_path)
+        foreign_revid = (rev.svn_meta.uuid, rev.svn_meta.branch_path, rev.svn_meta.revnum)
+        return rev.svn_mapping.show_foreign_revid(foreign_revid)
     else:
         try:
-            (uuid, bp, revnum), mapp = mapping.mapping_registry.parse_revision_id(rev.revision_id)
+            foreign_revid, mapp = mapping.mapping_registry.parse_revision_id(rev.revision_id)
         except InvalidRevisionId:
             pass
         else:
-            data = (revnum, bp)
+            return mapp.show_foreign_revid(foreign_revid)
 
-    if data is not None:
-        return { "svn revno": "%d (on /%s)" % data}
     return {}
 
 
