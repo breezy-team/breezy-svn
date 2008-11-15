@@ -704,46 +704,8 @@ class SvnWorkingTree(WorkingTree):
         newrevtree = self.branch.repository.revision_tree(new_revid)
         svn_revprops = self.branch.repository._log.revprop_list(rev)
 
-        def update_settings(wc, path):
-            id = newrevtree.inventory.path2id(path)
-            mutter("Updating settings for %r", id)
-            revnum = self.branch.lookup_revision_id(
-                    newrevtree.inventory[id].revision)
-
-            if newrevtree.inventory[id].kind != 'directory':
-                return
-
-            entries = wc.entries_read(True)
-            for name, entry in entries.items():
-                if name == "":
-                    continue
-
-                wc.process_committed(self.abspath(path).rstrip("/"), 
-                              False, self.branch.lookup_revision_id(newrevtree.inventory[id].revision),
-                              svn_revprops[properties.PROP_REVISION_DATE], 
-                              svn_revprops.get(properties.PROP_REVISION_AUTHOR, ""))
-
-                child_path = os.path.join(path, name.decode("utf-8"))
-
-                fileid = newrevtree.inventory.path2id(child_path)
-
-                if newrevtree.inventory[fileid].kind == 'directory':
-                    subwc = WorkingCopy(wc, self.abspath(child_path).rstrip("/"), write_lock=True)
-                    try:
-                        update_settings(subwc, child_path)
-                    finally:
-                        subwc.close()
-
         # Set proper version for all files in the wc
-        wc = self._get_wc(write_lock=True)
-        try:
-            wc.process_committed(self.basedir,
-                          False, self.branch.lookup_revision_id(newrevtree.inventory.root.revision),
-                          svn_revprops[properties.PROP_REVISION_DATE], 
-                          svn_revprops.get(properties.PROP_REVISION_AUTHOR, ""))
-            update_settings(wc, "")
-        finally:
-            wc.close()
+        self._update(self.branch.lookup_revision_id(new_revid))
 
         self.set_parent_ids([new_revid])
 
