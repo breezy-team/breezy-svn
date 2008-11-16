@@ -21,6 +21,8 @@ import base64
 import copy
 import os
 import socket
+import subprocess
+from cStringIO import StringIO
 import time
 import urllib
 from subvertpy import SubversionException, ERR_RA_SVN_UNKNOWN_CMD, NODE_DIR, NODE_FILE, NODE_UNKNOWN, NODE_NONE, ERR_UNSUPPORTED_FEATURE, properties
@@ -313,6 +315,20 @@ def mark_busy(unbound):
     convert.__name__ = unbound.__name__
     return convert
 
+def unmarshall_dirent(d):
+    ret = {
+        "name": d[0],
+        "kind": d[1],
+        "size": d[2],
+        "has-props": bool(d[3]),
+        "created-rev": d[4],
+        }
+    if d[5] != []:
+        ret["created-date"] = d[5]
+    if d[6] != []:
+        ret["last-author"] = d[6]
+    return ret
+
 
 class SVNClient(SVNConnection):
 
@@ -320,16 +336,18 @@ class SVNClient(SVNConnection):
                  client_string_func=None, open_tmp_file_func=None):
         self.url = url
         (type, opaque) = urllib.splittype(url)
-        assert type == "svn"
+        assert type in ("svn", "svn+ssh")
         (host, path) = urllib.splithost(opaque)
-        (self.host, self.port) = urllib.splitnport(host, SVN_PORT)
         self._progress_cb = progress_cb
         self._auth = auth
         self._config = config
         self._client_string_func = client_string_func
         # open_tmp_file_func is ignored, as it is not needed for svn://
-        self._connect()
-        super(SVNClient, self).__init__(self._socket.recv, self._socket.send)
+        if type == "svn":
+            (recv_func, send_func) = self._connect(host)
+        else:
+            (recv_func, send_func) = self._connect_ssh(host)
+        super(SVNClient, self).__init__(recv_func, send_func)
         (min_version, max_version, _, self._server_capabilities) = self._recv_greeting()
         self.send_msg([max_version, [literal(x) for x in CAPABILITIES if x in self._server_capabilities], self.url])
         (self._server_mechanisms, mech_arg) = self._unpack()
@@ -360,8 +378,9 @@ class SVNClient(SVNConnection):
 
     _recv_ack = _unpack
 
-    def _connect(self):
-        sockaddrs = socket.getaddrinfo(self.host, self.port, socket.AF_UNSPEC,
+    def _connect(self, host):
+        (host, port) = urllib.splitnport(host, SVN_PORT)
+        sockaddrs = socket.getaddrinfo(host, port, socket.AF_UNSPEC,
                socket.SOCK_STREAM, 0, 0)
         self._socket = None
         for (family, socktype, proto, canonname, sockaddr) in sockaddrs:
@@ -377,6 +396,13 @@ class SVNClient(SVNConnection):
         if self._socket is None:
             raise err
         self._socket.setblocking(True)
+        return (self._socket.recv, self._socket.send)
+
+    def _connect_ssh(self, host):
+        instream = StringIO()
+        outstream = StringIO()
+        subprocess.Popen(["ssh", host, "svnserve", "-t"], stdin=insteam, stdout=outstream)
+        return (outstream.read, instream.write)
 
     def get_file_revs(self, path, start, end, file_rev_handler):
         raise NotImplementedError(self.get_file_revs)
@@ -450,18 +476,25 @@ class SVNClient(SVNConnection):
         props = dict(ret[1])
         dirents = {}
         for d in ret[2]:
-            name = d[0]
-            dirents[name] = {}
-            dirents[name]["kind"] = d[1]
-            dirents[name]["size"] = d[2]
-            dirents[name]["has-props"] = bool(d[3])
-            dirents[name]["created-rev"] = d[4]
-            if d[5] != []:
-                dirents[name]["created-date"] = d[5]
-            if d[6] != []:
-                dirents[name]["last-author"] = d[6]
+            entry = unmarshall_dirent(d)
+            dirents[entry["name"]] = entry
 
         return (dirents, fetch_rev, props)
+
+    @mark_busy
+    def stat(self, path, revision=-1):
+        args = [path]
+        if revision is None or revision == -1:
+            args.append([revision])
+        else:
+            args.append([])
+
+        self.send_msg([literal("stat"), args])
+        self._recv_ack()
+        ret = self._unpack()
+        if len(ret) == 0:
+            return None
+        return unmarshall_dirent(ret[0])
 
     @mark_busy
     def get_file(self, path, stream, revision=-1):
@@ -683,7 +716,6 @@ class SVNServer(SVNConnection):
         self.send_success()
 
     def open_backend(self, url):
-        import urllib
         (rooturl, location) = urllib.splithost(url)
         self.repo_backend, self.relpath = self.backend.open_repository(location)
 
@@ -702,9 +734,17 @@ class SVNServer(SVNConnection):
         if dirent is None:
             self.send_success([])
         else:
-            self.send_success([dirent["name"], dirent["kind"], dirent["size"],
-                          dirent["has-props"], dirent["created-rev"],
-                          dirent["created-date"], dirent["last-author"]])
+            args = [dirent["name"], dirent["kind"], dirent["size"],
+                          dirent["has-props"], dirent["created-rev"]]
+            if dirent.has_key("created-date"):
+                args.append([dirent["created-date"]])
+            else:
+                args.append([])
+            if dirent.has_key("last-author"):
+                args.append([dirent["last-author"]])
+            else:
+                args.append([])
+            self.send_success([args])
 
     def commit(self, logmsg, locks, keep_locks=False, rev_props=None):
         self.send_failure([ERR_UNSUPPORTED_FEATURE, 
