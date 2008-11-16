@@ -48,7 +48,10 @@ version of it for your platform.
 
 Windows Setup
 ^^^^^^^^^^^^^
-An unofficial bzr-svn installer for Win32 as well as an unofficial, patched build of Python-Subversion for Windows can be found at http://d5190871.u44.websitesource.net/bzr/.  This package can be used with the Python-based installer or the standalone installation of Bazaar.
+The standard `Windows installers for Bazaar`_ include bzr-svn.
+
+.. _Windows installers for Bazaar: https://edge.launchpad.net/bzr/+download
+
 
 Debian/Ubuntu GNU/Linux
 ^^^^^^^^^^^^^^^^^^^^^^^
