@@ -15,6 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Subversion server implementation."""
 
+from bzrlib import urlutils
 from bzrlib.branch import Branch
 from bzrlib.inventory import Inventory
 
@@ -146,16 +147,17 @@ class RepositoryBackend(ServerRepositoryBackend):
             revnum = self.get_latest_revnum()
         branch_path, revid = self._get_revid(revnum)
         inv = self.branch.repository.get_inventory(revid)
-        id = inv.path2id(path[len(branch_path)].strip("/"))
+        id = inv.path2id(path[len(branch_path):].strip("/"))
         if id is None:
             return None
         ie = inv[id]
         ret = { "name": urlutils.basename(path) }
         if ie.kind == "directory":
             ret["kind"] = subvertpy.NODE_DIR
+            ret["size"] = 0
         else:
             ret["kind"] = NODE_FILE
-        ret["size"] = ie.text_size
+            ret["size"] = ie.text_size
         ret["has-props"] = True
         ret["created-rev"] = 0 # FIXME
         ret["created-date"] = "" # FIXME

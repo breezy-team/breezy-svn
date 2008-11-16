@@ -551,7 +551,7 @@ class cmd_svn_serve(Command):
     ]
 
     def run(self, inet=None, port=None, directory=None):
-        from subvertpy.server import SVNServer, TCPSVNServer
+        from subvertpy.ra_svn import SVNServer, TCPSVNServer
         from bzrlib.plugins.svn.server import BzrServerBackend
         from bzrlib.trace import warning
 
