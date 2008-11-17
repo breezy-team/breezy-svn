@@ -81,8 +81,12 @@ class SvnRevisionTree(RevisionTree):
             reporter = conn.do_switch(
                 self._revmeta.revnum, "", True, 
                 urlutils.join(root_repos, self._revmeta.branch_path), editor)
-            reporter.set_path("", 0, True, None)
-            reporter.finish()
+            try:
+                reporter.set_path("", 0, True, None)
+                reporter.finish()
+            except:
+                reporter.abort()
+                raise
         finally:
             repository.transport.add_connection(conn)
 
