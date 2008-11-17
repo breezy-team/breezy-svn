@@ -58,6 +58,97 @@ def check_filename(path):
         raise InvalidFileName(path)
 
 
+def editor_strip_prefix(editor, path):
+    if path == "":
+        return editor
+    return PathStrippingEditor(editor, path)
+
+
+class PathStrippingDirectoryEditor(object):
+
+    def __init__(self, editor, path, actual=None):
+        self.editor = editor
+        self.path = path
+        self.actual = actual
+
+    def open_directory(self, path, base_revnum):
+        if path.strip("/") == self.editor.prefix:
+            t = self.editor.actual.open_root(base_revnum)
+        elif self.actual is not None:
+            t = self.actual.open_directory(self.editor.strip_prefix(path), base_revnum)
+        else:
+            t = None
+        return PathStrippingDirectoryEditor(self.editor, path, t)
+
+    def add_directory(self, path, copyfrom_path=None, copyfrom_rev=-1):
+        if path.strip("/") == self.editor.prefix:
+            t = self.editor.actual.open_root(copyfrom_rev)
+        elif self.actual is not None:
+            t = self.actual.add_directory(self.editor.strip_prefix(path), self.editor.strip_copy_prefix(copyfrom_path), copyfrom_rev)
+        else:
+            t = None
+        return PathStrippingDirectoryEditor(self.editor, path, t)
+
+    def close(self):
+        if self.actual is not None:
+            self.actual.close()
+
+    def change_prop(self, name, value):
+        if self.actual is not None:
+            self.actual.change_prop(name, value)
+
+    def delete_entry(self, path, revnum):
+        if self.actual is not None:
+            self.actual.delete_entry(self.editor.strip_prefix(path), revnum)
+        else:
+            raise AssertionError("delete_entry should not be called")
+
+    def add_file(self, path, copyfrom_path=None, copyfrom_rev=-1):
+        if self.actual is not None:
+            return self.actual.add_file(self.editor.strip_prefix(path),
+                self.editor.strip_copy_prefix(copyfrom_path), copyfrom_rev)
+        raise AssertionError("add_file should not be called")
+
+    def open_file(self, path, base_revnum):
+        if self.actual is not None:
+            return self.actual.open_file(self.editor.strip_prefix(path),
+                   base_revnum)
+        raise AssertionError("open_file should not be called")
+
+
+class PathStrippingEditor(object):
+
+    def __init__(self, actual, path):
+        self.actual = actual
+        self.prefix = path.strip("/")
+
+    def __getattr__(self, name):
+        return getattr(super(PathStrippingEditor, self), name, getattr(self.actual, name))
+
+    def strip_prefix(self, path):
+        path = path.strip("/")
+        if not path.startswith(self.prefix):
+            raise AssertionError("Invalid path %r doesn't start with %r" % (path, self.prefix))
+        return path[len(self.prefix):].strip("/")
+
+    def strip_copy_prefix(self, path):
+        if path is None:
+            return None
+        return self.strip_prefix(path)
+
+    def open_root(self, base_revnum=None):
+        return PathStrippingDirectoryEditor(self, "")
+
+    def close(self):
+        self.actual.close()
+
+    def abort(self):
+        self.actual.abort()
+
+    def set_target_revision(self, rev):
+        self.actual.set_target_revision(rev)
+
+
 class DeltaBuildEditor(object):
     """Implementation of the Subversion commit editor interface that 
     converts Subversion to Bazaar semantics.
@@ -68,7 +159,7 @@ class DeltaBuildEditor(object):
         self.mapping = mapping
 
     def set_target_revision(self, revnum):
-        assert self.revmeta.revnum == revnum
+        assert self.revmeta.revnum == revnum, "Expected %d, got %d" % (self.revmeta.revnum, revnum)
 
     def open_root(self, base_revnum=None):
         return self._open_root(base_revnum)
@@ -699,7 +790,7 @@ class InterFromSvnRepository(InterRepository):
         assert low_water_mark >= 0
         conn = self.source.transport.get_connection(revmeta.branch_path)
         try:
-            conn.replay(revmeta.revnum, low_water_mark, editor, True)
+            conn.replay(revmeta.revnum, low_water_mark, editor_strip_prefix(editor, revmeta.branch_path), True)
         finally:
             if not conn.busy:
                 self.source.transport.add_connection(conn)
@@ -843,7 +934,7 @@ class InterFromSvnRepository(InterRepository):
                         pb.update("fetching revisions", revnum, len(revs))
                     revmeta, mapping = revmetas[revnum]
                     revmeta._revprops = revprops
-                    return self._get_editor(revmeta, mapping)
+                    return editor_strip_prefix(self._get_editor(revmeta, mapping), revmeta.branch_path)
 
                 def revfinish(revision, revprops, editor):
                     self._prev_inv = editor.inventory
