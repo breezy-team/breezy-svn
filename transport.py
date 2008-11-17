@@ -568,3 +568,14 @@ class MutteringRemoteAccess(object):
     def rev_proplist(self, revnum):
         mutter("svn rev-proplist -r%d" % revnum)
         return self.actual.rev_proplist(revnum)
+
+    def replay_range(self, start_revision, end_revision, low_water_mark, cbs, 
+                     send_deltas=True):
+        mutter("svn replay-range %d -> %d" % (start_revision, end_revision))
+        return self.actual.replay_range(start_revision, end_revision, low_water_mark, cbs, 
+                   send_deltas)
+
+    def replay(self, revision, low_water_mark, editor, send_deltas=True):
+        mutter("svn replay %d" % (revision,))
+        return self.actual.replay(revision, low_water_mark, editor, send_deltas)
+
