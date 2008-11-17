@@ -132,7 +132,7 @@ class FileIdMap(object):
                     self.repos.generate_revision_id, find_children)
         if find_children is not None:
             def get_children(path, revid):
-                (bp, revnum, mapping) = self.repos.lookup_revision_id(revid)
+                (uuid, bp, revnum), mapping = self.repos.lookup_revision_id(revid)
                 for p in find_children(bp+"/"+path, revnum):
                     yield p[len(bp):].strip("/")
         else:

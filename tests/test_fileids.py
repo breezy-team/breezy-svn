@@ -31,7 +31,7 @@ class MockRepo(object):
 
     def lookup_revision_id(self, revid):
         ret = self.mapping.revision_id_foreign_to_bzr(revid)
-        return ret[1], ret[2], ret[3]
+        return ret, None
 
 
 class TestComplexFileids(SubversionTestCase):

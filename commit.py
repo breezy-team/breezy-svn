@@ -119,7 +119,7 @@ def update_mergeinfo(repository, graph, oldvalue, baserevid, merges):
                 if graph.is_ancestor(revid, baserevid):
                     break
                 try:
-                    (path, revnum, mapping) = repository.lookup_revision_id(revid)
+                    (uuid, path, revnum), mapping = repository.lookup_revision_id(revid)
                 except NoSuchRevision:
                     break
 
@@ -369,7 +369,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             self.base_path = None
             self.base_mapping = repository.get_mapping()
         else:
-            (self.base_path, self.base_revnum, self.base_mapping) = \
+            (uuid, self.base_path, self.base_revnum), self.base_mapping = \
                 repository.lookup_revision_id(self.base_revid)
             self._base_revmeta = self.repository._revmeta_provider.get_revision(self.base_path, self.base_revnum)
             self._base_branch_props = self._base_revmeta.get_fileprops()
@@ -1001,7 +1001,7 @@ class InterToSvnRepository(InterRepository):
 
                 parent_revid = rev.parent_ids[0]
 
-                (bp, _, _) = self.target.lookup_revision_id(parent_revid)
+                (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
                 if target_branch is None:
                     target_branch = Branch.open(_url_escape_uri(urlutils.join(self.target.base, bp)))
                 if target_branch.get_branch_path() != bp:

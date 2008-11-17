@@ -193,7 +193,7 @@ class SvnBranch(ForeignBranch):
         :return: Revision number on the branch. 
         :raises NoSuchRevision: If the revision id was not found.
         """
-        (bp, revnum, mapping) = self.repository.lookup_revision_id(revid, 
+        (uuid, bp, revnum), mapping = self.repository.lookup_revision_id(revid, 
             ancestry=(self.get_branch_path(), self.get_revnum()), 
             project=self.project)
         assert bp.strip("/") == self.get_branch_path(revnum).strip("/"), \

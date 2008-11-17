@@ -406,7 +406,7 @@ class SvnRepository(Repository):
         """
         if revision_id in (None, NULL_REVISION):
             return
-        (branch_path, revnum, mapping) = self.lookup_revision_id(revision_id)
+        (uuid, branch_path, revnum), mapping = self.lookup_revision_id(revision_id)
         for revmeta in self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=0, 
                                                         mapping=mapping, pb=pb, 
                                                         limit=limit):
@@ -432,7 +432,7 @@ class SvnRepository(Repository):
             return True
 
         try:
-            (path, revnum, _) = self.lookup_revision_id(revision_id, project=project)
+            (uuid, path, revnum), _ = self.lookup_revision_id(revision_id, project=project)
         except bzr_errors.NoSuchRevision:
             return False
 
@@ -475,7 +475,7 @@ class SvnRepository(Repository):
         return parent_map
 
     def _get_revmeta(self, revision_id):
-        (branch, revnum, mapping) = self.lookup_revision_id(revision_id)
+        (uuid, branch, revnum), mapping = self.lookup_revision_id(revision_id)
         revmeta = self._revmeta_provider.get_revision(branch, revnum)
         return revmeta, mapping
 
@@ -597,7 +597,7 @@ class SvnRepository(Repository):
         return signature
 
     def add_signature_text(self, revision_id, signature):
-        (path, revnum, mapping) = self.lookup_revision_id(revision_id)
+        (uuid, path, revnum), mapping = self.lookup_revision_id(revision_id)
         try:
             self.transport.change_rev_prop(revnum, SVN_REVPROP_BZR_SIGNATURE, signature)
         except subvertpy.SubversionException, (_, subvertpy.ERR_REPOS_DISABLED_FEATURE):

@@ -48,7 +48,7 @@ class RevidMap(object):
             assert isinstance(branch_path, str)
             assert isinstance(mapping, BzrSvnMapping)
             if uuid == self.repos.uuid:
-                return (branch_path, revnum, mapping)
+                return (self.repos.uuid, branch_path, revnum), mapping
             # If the UUID doesn't match, this may still be a valid revision
             # id; a revision from another SVN repository may be pushed into 
             # this one.
@@ -57,15 +57,15 @@ class RevidMap(object):
 
         last_revnum = self.repos.get_latest_revnum()
         fileprops_to_revnum = last_revnum
-        for entry_revid, branch, min_revno, max_revno, mapping in self.discover_revprop_revids(lyout, last_revnum, 0):
+        for entry_revid, branch, min_revno, max_revno, mapping in self.discover_revprop_revids(layout, last_revnum, 0):
             if revid == entry_revid:
-                return (branch, min_revno, max_revno, mapping.name)
+                return (self.repos.uuid, branch, min_revno, max_revno), mapping
             fileprops_to_revnum = min(fileprops_to_revnum, min_revno)
 
         for entry_revid, branch, min_revno, max_revno, mapping in self.discover_fileprop_revids(layout, 0, fileprops_to_revnum, project):
             if revid == entry_revid:
                 (bp, revnum, mapping_name) = self.bisect_revid_revnum(revid, branch, min_revno, max_revno)
-                return (bp, revnum, mapping_name)
+                return (self.repos.uuid, bp, revnum), mapping_name
         raise NoSuchRevision(self, revid)
 
     def discover_revprop_revids(self, layout, from_revnum, to_revnum):
@@ -157,7 +157,7 @@ class CachingRevidMap(object):
             assert isinstance(branch_path, str)
             assert isinstance(mapping, BzrSvnMapping)
             if uuid == self.actual.repos.uuid:
-                return (branch_path, revnum, mapping)
+                return (uuid, branch_path, revnum), mapping
             # If the UUID doesn't match, this may still be a valid revision
             # id; a revision from another SVN repository may be pushed into 
             # this one.
@@ -173,7 +173,7 @@ class CachingRevidMap(object):
             # Entry already complete?
             assert min_revnum <= max_revnum
             if min_revnum == max_revnum:
-                return (branch_path, min_revnum, mapping_registry.parse_mapping_name("svn-" + mapping))
+                return (self.actual.repos.uuid, branch_path, min_revnum), mapping_registry.parse_mapping_name("svn-" + mapping)
         except NoSuchRevision, e:
             last_revnum = self.actual.repos.get_latest_revnum()
             last_checked = self.cache.last_revnum_checked(repr((layout, project)))
@@ -212,8 +212,7 @@ class CachingRevidMap(object):
         (branch_path, revnum, mapping) = self.actual.bisect_revid_revnum(revid, 
             branch_path, min_revnum, max_revnum)
         self.cache.insert_revid(revid, branch_path, revnum, revnum, mapping.name)
-        return (branch_path, revnum, mapping)
-
+        return (self.actual.repos.uuid, branch_path, revnum), mapping
 
 
 class RevisionIdMapCache(CacheTable):

@@ -623,11 +623,11 @@ class InterFromSvnRepository(InterRepository):
                     revmetas.append(revmeta)
                     for p in revmeta.get_rhs_parents(mapping):
                         try:
-                            (branch_path, revnum, mapping) = self.source.lookup_revision_id(p, project=project)
+                            foreign_revid, mapping = self.source.lookup_revision_id(p, project=project)
                         except NoSuchRevision:
                             pass # Ghost
                         else:
-                            extra.append(((uuid, branch_path, revnum), project, mapping))
+                            extra.append((foreign_revid, project, mapping))
                 elif not find_ghosts:
                     break
                 checked.add((revmeta.get_foreign_revid(), mapping))
@@ -773,8 +773,8 @@ class InterFromSvnRepository(InterRepository):
                 elif revision_id is None:
                     needed = self._find_all(self.source.get_mapping(), pb=nested_pb)
                 else:
-                    (branch_path, revnum, mapping) = self.source.lookup_revision_id(revision_id)
-                    needed = self._find_until((self.source.uuid, branch_path, revnum), mapping, find_ghosts, pb=nested_pb)
+                    foreign_revid, mapping = self.source.lookup_revision_id(revision_id)
+                    needed = self._find_until(foreign_revid, mapping, find_ghosts, pb=nested_pb)
             finally:
                 nested_pb.finished()
 

@@ -51,7 +51,7 @@ class SubversionTags(BasicTags):
         assert isinstance(path, str)
         parent = urlutils.dirname(path)
         try:
-            (from_bp, from_revnum, mapping) = self.repository.lookup_revision_id(tag_target, project=self.branch.project)
+            (from_uuid, from_bp, from_revnum), mapping = self.repository.lookup_revision_id(tag_target, project=self.branch.project)
         except NoSuchRevision:
             mutter("not setting tag %s; unknown revision %s", tag_name, tag_target)
             return
