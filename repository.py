@@ -299,8 +299,12 @@ class SvnRepository(Repository):
         conn = self.transport.get_connection(parent_branch_path)
         try:
             reporter = conn.do_diff(revision.svn_meta.revnum, "", urlutils.join(self.transport.get_svn_repos_root(), revision.svn_meta.branch_path), editor, True, True, False)
-            reporter.set_path("", parentrevnum, start_empty)
-            reporter.finish()
+            try:
+                reporter.set_path("", parentrevnum, start_empty)
+                reporter.finish()
+            except:
+                reporter.abort()
+                raise
         finally:
             self.transport.add_connection(conn)
         return editor.delta
