@@ -71,8 +71,6 @@ class DeltaBuildEditor(object):
         assert self.revmeta.revnum == revnum
 
     def open_root(self, base_revnum=None):
-        if base_revnum is None:
-            base_revnum = self.revmeta.revnum
         return self._open_root(base_revnum)
 
     def close(self):
@@ -99,7 +97,6 @@ class DirectoryBuildEditor(object):
     def open_directory(self, path, base_revnum):
         assert isinstance(path, str)
         path = path.decode("utf-8")
-        assert base_revnum >= 0
         return self._open_directory(path, base_revnum)
 
     def change_prop(self, name, value):
@@ -814,8 +811,9 @@ class InterFromSvnRepository(InterRepository):
         try:
             for i, (revmeta, mapping) in enumerate(revs):
                 pb.update("determining revision ranges", i, len(revs))
-                if revmeta.metabranch is not None and curmetabranch == revmeta.metabranch:
-                    (branch_path, low_water_mark, from_revnum, to_revum, revmetas) = currange
+                if (revmeta.metabranch is not None and
+                    curmetabranch == revmeta.metabranch):
+                    (branch_path, low_water_mark, from_revnum, to_revnum, revmetas) = currange
                     revmetas[revmeta.revnum] = (revmeta, mapping)
                     currange = (revmeta.branch_path, low_water_mark, from_revnum, revmeta.revnum, revmetas)
                 else:
@@ -849,7 +847,7 @@ class InterFromSvnRepository(InterRepository):
                 def revfinish(revision, revprops, editor):
                     self._prev_inv = editor.inventory
 
-                conn = self.source.transport.get_connection(revmeta.branch_path)
+                conn = self.source.transport.get_connection(branch_path)
                 try:
                     conn.replay_range(start_revision, end_revision, low_water_mark, (revstart, revfinish), True)
                 finally:

@@ -571,11 +571,11 @@ class MutteringRemoteAccess(object):
 
     def replay_range(self, start_revision, end_revision, low_water_mark, cbs, 
                      send_deltas=True):
-        mutter("svn replay-range %d -> %d" % (start_revision, end_revision))
+        mutter("svn replay-range %d -> %d (low water mark: %d)" % (start_revision, end_revision, low_water_mark))
         return self.actual.replay_range(start_revision, end_revision, low_water_mark, cbs, 
                    send_deltas)
 
     def replay(self, revision, low_water_mark, editor, send_deltas=True):
-        mutter("svn replay %d" % (revision,))
+        mutter("svn replay %d (low water mark: %d)" % (revision, low_water_mark))
         return self.actual.replay(revision, low_water_mark, editor, send_deltas)
 
