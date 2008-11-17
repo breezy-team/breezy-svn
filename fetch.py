@@ -826,12 +826,13 @@ class InterFromSvnRepository(InterRepository):
                         low_water_mark = parentrevmeta.revnum
                     currange = (revmeta.branch_path, low_water_mark, revmeta.revnum, revmeta.revnum,
                                 {revmeta.revnum: (revmeta, mapping)})
+                    curmetabranch = revmeta.metabranch
         finally:
             pb.finished()
         if currange is not None:
             ranges.append(currange)
 
-        mutter("fetching ranges: %r" % ranges)
+        mutter("fetching ranges: %r" % [r[:4] for r in ranges])
         if not self.target.is_in_write_group():
             self.target.start_write_group()
 
