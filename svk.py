@@ -45,7 +45,7 @@ def parse_svk_feature(feature):
     return (uuid, branch.strip("/"), int(revnum))
 
 
-def generate_svk_feature(uuid, branch, revnum):
+def generate_svk_feature((uuid, branch, revnum)):
     """Create a SVK feature identifier.
 
     :param uuid: Subversion repository UUID

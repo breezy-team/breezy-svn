@@ -103,6 +103,9 @@ class RevisionMetadata(object):
             return self.get_changed_fileprops() != {}
         return self.branch_path in self.get_paths()
 
+    def get_foreign_revid(self):
+        return (self.uuid, self.branch_path, self.revnum)
+
     def get_paths(self):
         """Fetch the changed paths dictionary for this revision.
         """
@@ -121,7 +124,7 @@ class RevisionMetadata(object):
 
         # Or generate it
         if revid is None:
-            return mapping.revision_id_foreign_to_bzr((self.uuid, self.branch_path, self.revnum))
+            return mapping.revision_id_foreign_to_bzr(self.get_foreign_revid())
 
         return revid
 
@@ -343,7 +346,7 @@ class RevisionMetadata(object):
 
         if parent_ids == (NULL_REVISION,):
             parent_ids = ()
-        rev = ForeignRevision(foreign_revid=(self.uuid, self.branch_path, self.revnum),
+        rev = ForeignRevision(foreign_revid=self.get_foreign_revid(),
                               mapping=mapping, revision_id=self.get_revision_id(mapping), 
                        parent_ids=parent_ids,
                        inventory_sha1="")

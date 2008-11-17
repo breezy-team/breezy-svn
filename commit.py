@@ -67,10 +67,10 @@ def _revision_id_to_svk_feature(revid):
     :return: Matching SVK feature identifier.
     """
     assert isinstance(revid, str)
-    (uuid, branch, revnum), _ = mapping.mapping_registry.parse_revision_id(revid)
+    foreign_revid, _ = mapping.mapping_registry.parse_revision_id(revid)
     # TODO: What about renamed revisions? Should use 
     # repository.lookup_revision_id here.
-    return generate_svk_feature(uuid, branch, revnum)
+    return generate_svk_feature(foreign_revid)
 
 
 def _check_dirs_exist(transport, bp_parts, base_rev):
