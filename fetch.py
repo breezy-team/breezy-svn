@@ -180,6 +180,7 @@ class FileBuildEditor(object):
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
     def __init__(self, editor, path, old_id, new_id, parent_revids=[]):
         super(DirectoryRevisionBuildEditor, self).__init__(editor, path)
+        assert isinstance(new_id, str)
         self.old_id = old_id
         self.new_id = new_id
         self.parent_revids = parent_revids
@@ -413,6 +414,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
             file_id = self._get_id_map().get("", old_file_id)
             file_parents = [self.old_inventory.root.revision]
 
+        assert isinstance(file_id, str)
+
         if self.inventory.root is not None and \
                 file_id == self.inventory.root.file_id:
             ie = self.inventory.root
@@ -619,13 +622,12 @@ class InterFromSvnRepository(InterRepository):
                 if revmeta.is_hidden(mapping):
                     continue
                 revid = revmeta.get_revision_id(mapping)
-                parent_ids = revmeta.get_parent_ids(mapping)
                 if revid in checked:
                     # This revision (and its ancestry) has already been checked
                     break
-                extra.extend([(p, project) for p in parent_ids[1:]])
                 if not self.target.has_revision(revid):
                     revmetas.append(revmeta)
+                    extra.extend([(p, project) for p in revmeta.get_rhs_parents(mapping)])
                 elif not find_ghosts:
                     break
                 checked.add(revid)
