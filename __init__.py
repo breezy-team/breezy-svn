@@ -87,6 +87,10 @@ except ImportError:
 
 check_subversion_version(subvertpy)
 
+import subvertpy.ra_svn
+import bzrlib.transport.ssh
+subvertpy.ra_svn.get_ssh_vendor = bzrlib.transport.ssh._get_ssh_vendor
+
 from bzrlib.plugins.svn import format, revspec
 
 register_transport_proto('svn+ssh://', 
