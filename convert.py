@@ -171,14 +171,17 @@ def convert_repository(source_repos, output_url, layout=None,
     if create_shared_repo:
         try:
             target_repos = get_dir("").open_repository()
+            target_repos_is_empty = False # FIXME: Call Repository.is_empty() ?
             assert (layout.is_branch("") or 
                     layout.is_tag("") or 
                     target_repos.is_shared())
         except NoRepositoryPresent:
             target_repos = get_dir("").create_repository(shared=True)
+            target_repos_is_empty = True
         target_repos.set_make_working_trees(working_trees)
     else:
         target_repos = None
+        target_repos_is_empty = False
 
     source_repos.lock_read()
     try:
@@ -211,13 +214,12 @@ def convert_repository(source_repos, output_url, layout=None,
                 try:
                     if revmeta.is_hidden(mapping):
                         continue
-                    revid = revmeta.get_revision_id(mapping)
+                    if target_repos is not None and (target_repos_is_empty or not target_repos.has_revision(revmeta.get_revision_id(mapping))):
+                        revmetas.append(revmeta)
+                    if not revmeta.branch_path in existing_branches:
+                        existing_branches[revmeta.branch_path] = SvnBranch(source_repos, revmeta.branch_path, revnum=revmeta.revnum, _skip_check=True)
                 except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                     continue
-                if target_repos is not None and not target_repos.has_revision(revid):
-                    revmetas.append(revmeta)
-                if not revmeta.branch_path in existing_branches:
-                    existing_branches[revmeta.branch_path] = SvnBranch(source_repos, revmeta.branch_path, revnum=revmeta.revnum, _skip_check=True)
         finally:
             pb.finished()
         existing_branches = existing_branches.values()
