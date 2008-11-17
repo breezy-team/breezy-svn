@@ -70,7 +70,9 @@ class DeltaBuildEditor(object):
     def set_target_revision(self, revnum):
         assert self.revmeta.revnum == revnum
 
-    def open_root(self, base_revnum):
+    def open_root(self, base_revnum=None):
+        if base_revnum is None:
+            base_revnum = self.revmeta.revnum
         return self._open_root(base_revnum)
 
     def close(self):
@@ -657,8 +659,9 @@ class InterFromSvnRepository(InterRepository):
         return self.target.get_inventory(revid)
 
     def _get_editor(self, revmeta, mapping):
-        return RevisionBuildEditor(self.source, self.target, 
-            revmeta.get_revision_id(mapping), 
+        revid = revmeta.get_revision_id(mapping)
+        assert revid is not None
+        return RevisionBuildEditor(self.source, self.target, revid, 
             self._get_inventory(revmeta.get_lhs_parent(mapping)), 
             revmeta, mapping)
 
