@@ -594,7 +594,7 @@ class InterFromSvnRepository(InterRepository):
         return [(meta_map[revid], mapping) for revid in needed]
 
     def _find_until(self, foreign_revid, mapping, find_ghosts=False, pb=None,
-                    checked=None, project=None):
+                    checked=None, project=None, target_is_empty=False):
         """Find all missing revisions until revision_id
 
         :param revision_id: Stop revision
@@ -619,7 +619,7 @@ class InterFromSvnRepository(InterRepository):
                     break
                 if revmeta.is_hidden(mapping):
                     continue
-                if not self.target.has_revision(revmeta.get_revision_id(mapping)):
+                if target_is_empty or not self.target.has_revision(revmeta.get_revision_id(mapping)):
                     revmetas.append(revmeta)
                     for p in revmeta.get_rhs_parents(mapping):
                         try:
@@ -774,6 +774,7 @@ class InterFromSvnRepository(InterRepository):
                     needed = self._find_all(self.source.get_mapping(), pb=nested_pb)
                 else:
                     foreign_revid, mapping = self.source.lookup_revision_id(revision_id)
+                    # FIXME: Specify target_is_empty
                     needed = self._find_until(foreign_revid, mapping, find_ghosts, pb=nested_pb)
             finally:
                 nested_pb.finished()
