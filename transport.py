@@ -546,6 +546,13 @@ class MutteringRemoteAccess(object):
         mutter("svn update -r%d %s" % (revnum, path))
         return self.actual.do_update(revnum, path, start_empty, editor)
 
+    def do_diff(self, revision_to_update, diff_target, versus_url, 
+                diff_editor, recurse=True, ignore_ancestry=False, text_deltas=False, 
+                depth=None):
+        mutter("svn diff -r%d %s -> %s" % (revision_to_update, diff_target, versus_url))
+        return self.actual.do_diff(revision_to_update, diff_target, versus_url,
+                diff_editor, recurse, ignore_ancestry, text_deltas)
+
     def do_switch(self, revnum, path, start_empty, to_url, editor):
         mutter("svn switch -r%d %s -> %s" % (revnum, path, to_url))
         return self.actual.do_switch(revnum, path, start_empty, to_url, editor)
