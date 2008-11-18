@@ -180,3 +180,6 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
             return
         old_value = fileprops.get(mapping.SVN_PROP_BZR_HIDDEN, "0")
         fileprops[mapping.SVN_PROP_BZR_HIDDEN] = str(int(old_value)+1)
+
+    def supports_tags(self):
+        return True

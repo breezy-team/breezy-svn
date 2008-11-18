@@ -115,6 +115,9 @@ class BzrSvnMappingv1(BzrSvnMapping):
         else:
             raise LayoutUnusable(layout, self)
 
+    def supports_tags(self):
+        return False
+
 
 class BzrSvnMappingv2(BzrSvnMappingv1):
     """The second version of the mappings as used in the 0.3.x series.

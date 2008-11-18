@@ -16,6 +16,7 @@
 """Handles branch-specific operations."""
 
 from bzrlib import (
+        tag,
         ui,
         urlutils,
         )
@@ -74,10 +75,10 @@ class SvnBranch(ForeignBranch):
             look at; none for latest.
         """
         self.repository = repository
+        self._format = SvnBranchFormat()
         assert isinstance(self.repository, SvnRepository)
         super(SvnBranch, self).__init__(self.repository.get_mapping())
         self.control_files = FakeControlFiles()
-        self._format = SvnBranchFormat()
         self._lock_mode = None
         self._lock_count = 0
         self.layout = self.repository.get_layout()
@@ -105,7 +106,10 @@ class SvnBranch(ForeignBranch):
             raise NotBranchError(branch_path)
 
     def _make_tags(self):
-        return SubversionTags(self)
+        if self.supports_tags():
+            return SubversionTags(self)
+        else:
+            return DisabledTags(self)
 
     def set_branch_path(self, branch_path):
         """Change the branch path for this branch.
@@ -526,7 +530,7 @@ class SvnBranch(ForeignBranch):
         return '%s(%r)' % (self.__class__.__name__, self.base)
 
     def supports_tags(self):
-        return self._format.supports_tags()
+        return self._format.supports_tags() and self.mapping.supports_tags()
 
     __repr__ = __str__
 

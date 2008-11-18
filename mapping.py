@@ -470,6 +470,9 @@ class BzrSvnMapping(foreign.VcsMapping):
     def get_revision_id(self, branch_path, revprops, fileprops):
         raise NotImplementedError(self.get_revision_id)
 
+    def supports_tags(self):
+        raise NotImplementedError(self.supports_tags)
+
     @classmethod
     def get_test_instance(cls):
         return cls()
