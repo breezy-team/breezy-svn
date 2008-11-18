@@ -669,20 +669,23 @@ class InterFromSvnRepository(InterRepository):
         yet in the target repository.
         """
         meta_map = {}
-        graph = self.source.get_graph()
-        available_revs = set()
+        needed = []
         for revmeta in self.source._revmeta_provider.iter_all_changes(self.source.get_layout(), mapping=mapping, from_revnum=self.source.get_latest_revnum(), pb=pb):
             if revmeta.is_hidden(mapping):
                 continue
-            revid = revmeta.get_revision_id(mapping)
-            available_revs.add(revid)
-            meta_map[revid] = revmeta
-        if target_is_empty:
-            missing = available_revs
-        else:
-            missing = available_revs.difference(self.target.has_revisions(available_revs))
-        needed = list(graph.iter_topo_order(missing))
-        return [(meta_map[revid], mapping) for revid in needed]
+            if target_is_empty or not self.target.has_revision(revmeta.get_revision_id(mapping)):
+                needed.append((revmeta, mapping))
+        # Check all parents are present
+        ret = list(needed)
+        ret.reverse()
+        for revmeta, mapping in reversed(needed):
+            lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
+            if lhs_parent_revmeta is None:
+                continue
+            if not (lhs_parent_revmeta, mapping) in needed:
+                ret = self._find_until(revmeta.get_foreign_revid(), mapping) + ret
+
+        return ret
 
     def _find_until(self, foreign_revid, mapping, find_ghosts=False, pb=None,
                     checked=None, project=None, target_is_empty=False):
