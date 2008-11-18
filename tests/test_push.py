@@ -986,9 +986,6 @@ class TestPushTwice(SubversionTestCase):
         svndir2.import_branch(wt.branch)
         self.assertEquals(expected_history, svndir2.open_branch().revision_history())
 
-        revid = wt.commit(message="Commit from Bzr")
-        expected_history = wt.branch.revision_history()
-
         svndir1.open_branch().pull(wt.branch)
         self.assertEquals(expected_history, svndir1.open_branch().revision_history())
         svndir2.open_branch().pull(wt.branch)
