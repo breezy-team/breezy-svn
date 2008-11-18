@@ -540,6 +540,9 @@ register_command(cmd_svn_layout)
 
 class cmd_svn_serve(Command):
     """Provide access to a Bazaar branch using the Subversion ra_svn protocol.
+
+    This command is experimental and doesn't support incremental updates 
+    properly yet.
     """
     takes_options = [
         Option('inet',
