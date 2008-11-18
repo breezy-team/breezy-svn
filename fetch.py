@@ -782,15 +782,10 @@ class InterFromSvnRepository(InterRepository):
                 self.source.transport.add_connection(conn)
 
     def _fetch_revision_replay(self, editor, revmeta, parent_revmeta):
-        if parent_revmeta is None:
-            low_water_mark = 0
-        else:
-            low_water_mark = parent_revmeta.revnum
         assert revmeta.revnum >= 0
-        assert low_water_mark >= 0
         conn = self.source.transport.get_connection(revmeta.branch_path)
         try:
-            conn.replay(revmeta.revnum, low_water_mark, editor_strip_prefix(editor, revmeta.branch_path), True)
+            conn.replay(revmeta.revnum, 0, editor_strip_prefix(editor, revmeta.branch_path), True)
         finally:
             if not conn.busy:
                 self.source.transport.add_connection(conn)
@@ -904,18 +899,14 @@ class InterFromSvnRepository(InterRepository):
                 pb.update("determining revision ranges", i, len(revs))
                 if (revmeta.metabranch is not None and
                     curmetabranch == revmeta.metabranch):
-                    (branch_path, low_water_mark, from_revnum, to_revnum, revmetas) = currange
+                    (branch_path, from_revnum, to_revnum, revmetas) = currange
                     revmetas[revmeta.revnum] = (revmeta, mapping)
-                    currange = (revmeta.branch_path, low_water_mark, from_revnum, revmeta.revnum, revmetas)
+                    currange = (revmeta.branch_path, from_revnum, revmeta.revnum, revmetas)
                 else:
                     if currange is not None:
                         ranges.append(currange)
                     parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
-                    if parentrevmeta is None:
-                        low_water_mark = 0
-                    else:
-                        low_water_mark = parentrevmeta.revnum
-                    currange = (revmeta.branch_path, low_water_mark, revmeta.revnum, revmeta.revnum,
+                    currange = (revmeta.branch_path, revmeta.revnum, revmeta.revnum,
                                 {revmeta.revnum: (revmeta, mapping)})
                     curmetabranch = revmeta.metabranch
         finally:
@@ -928,7 +919,7 @@ class InterFromSvnRepository(InterRepository):
             self.target.start_write_group()
 
         try:
-            for (branch_path, low_water_mark, start_revision, end_revision, revmetas) in ranges:
+            for (branch_path, start_revision, end_revision, revmetas) in ranges:
                 def revstart(revnum, revprops):
                     if pb is not None:
                         pb.update("fetching revisions", revnum, len(revs))
@@ -941,7 +932,7 @@ class InterFromSvnRepository(InterRepository):
 
                 conn = self.source.transport.get_connection(branch_path)
                 try:
-                    conn.replay_range(start_revision, end_revision, low_water_mark, (revstart, revfinish), True)
+                    conn.replay_range(start_revision, end_revision, 0, (revstart, revfinish), True)
                 finally:
                     if not conn.busy:
                         self.source.transport.add_connection(conn)
