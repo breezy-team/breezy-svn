@@ -785,7 +785,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertRaises(NoSuchRevision, repository.lookup_revision_id, 
             "nonexisting")
         mapping = repository.get_mapping()
-        self.assertEqual((repository.uuid, "bloe", 1), 
+        self.assertEqual(((repository.uuid, "bloe", 1), mapping),
             repository.lookup_revision_id(
                 repository.generate_revision_id(1, "bloe", mapping))[:2])
 
