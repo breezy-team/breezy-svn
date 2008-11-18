@@ -668,6 +668,7 @@ class InterFromSvnRepository(InterRepository):
         """Find all revisions from the source repository that are not 
         yet in the target repository.
         """
+        checked = set()
         meta_map = {}
         needed = []
         for revmeta in self.source._revmeta_provider.iter_all_changes(self.source.get_layout(), mapping=mapping, from_revnum=self.source.get_latest_revnum(), pb=pb):
@@ -680,10 +681,10 @@ class InterFromSvnRepository(InterRepository):
         ret.reverse()
         for revmeta, mapping in reversed(needed):
             lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
-            if lhs_parent_revmeta is None:
-                continue
-            if not (lhs_parent_revmeta, mapping) in needed:
-                ret = self._find_until(revmeta.get_foreign_revid(), mapping) + ret
+            if (lhs_parent_revmeta is not None and 
+                not (lhs_parent_revmeta, mapping) in needed):
+                ret = self._find_until(revmeta.get_foreign_revid(), mapping, checked=checked, target_is_empty=target_is_empty) + ret
+            checked.add((revmeta, mapping))
 
         return ret
 
