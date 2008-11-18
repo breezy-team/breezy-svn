@@ -664,7 +664,7 @@ class InterFromSvnRepository(InterRepository):
     def _get_repo_format_to_test():
         return None
 
-    def _find_all(self, mapping, pb=None):
+    def _find_all(self, mapping, pb=None, target_is_empty=False):
         """Find all revisions from the source repository that are not 
         yet in the target repository.
         """
@@ -677,7 +677,10 @@ class InterFromSvnRepository(InterRepository):
             revid = revmeta.get_revision_id(mapping)
             available_revs.add(revid)
             meta_map[revid] = revmeta
-        missing = available_revs.difference(self.target.has_revisions(available_revs))
+        if target_is_empty:
+            missing = available_revs
+        else:
+            missing = available_revs.difference(self.target.has_revisions(available_revs))
         needed = list(graph.iter_topo_order(missing))
         return [(meta_map[revid], mapping) for revid in needed]
 
@@ -851,14 +854,16 @@ class InterFromSvnRepository(InterRepository):
         try:
             nested_pb = ui.ui_factory.nested_progress_bar()
             try:
+                # FIXME: Specify target_is_empty
+                target_is_empty = False
                 if revmetas is not None:
                     needed = [(revmeta, mapping) for revmeta in revmetas]
                 elif revision_id is None:
-                    needed = self._find_all(self.source.get_mapping(), pb=nested_pb)
+                    needed = self._find_all(self.source.get_mapping(), pb=nested_pb, target_is_empty=target_is_empty)
                 else:
                     foreign_revid, mapping = self.source.lookup_revision_id(revision_id)
                     # FIXME: Specify target_is_empty
-                    needed = self._find_until(foreign_revid, mapping, find_ghosts, pb=nested_pb)
+                    needed = self._find_until(foreign_revid, mapping, find_ghosts, pb=nested_pb, target_is_empty=target_is_empty)
             finally:
                 nested_pb.finished()
 
