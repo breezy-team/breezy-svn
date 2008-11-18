@@ -653,28 +653,26 @@ def report_inventory_contents(reporter, revnum, start_empty):
     reporter.finish()
 
 
-class InterFromSvnRepository(InterRepository):
-    """Svn to any repository actions."""
+class FetchRevisionFinder(object):
+    """Simple object that can gather a list of revmeta, mapping tuples
+    to fetch."""
 
-    _matching_repo_format = SvnRepositoryFormat()
+    def __init__(self, source, target, target_is_empty):
+        self.source = source
+        self.target = target
+        self.target_is_empty = target_is_empty
+        self.checked = set()
 
-    _supports_branches = True
-
-    @staticmethod
-    def _get_repo_format_to_test():
-        return None
-
-    def _find_all(self, mapping, pb=None, target_is_empty=False):
+    def find_all(self, mapping, pb=None):
         """Find all revisions from the source repository that are not 
         yet in the target repository.
         """
-        checked = set()
         meta_map = {}
         needed = []
         for revmeta in self.source._revmeta_provider.iter_all_changes(self.source.get_layout(), mapping=mapping, from_revnum=self.source.get_latest_revnum(), pb=pb):
             if revmeta.is_hidden(mapping):
                 continue
-            if target_is_empty or not self.target.has_revision(revmeta.get_revision_id(mapping)):
+            if self.target_is_empty or not self.target.has_revision(revmeta.get_revision_id(mapping)):
                 needed.append((revmeta, mapping))
         # Check all parents are present
         ret = list(needed)
@@ -683,13 +681,13 @@ class InterFromSvnRepository(InterRepository):
             lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
             if (lhs_parent_revmeta is not None and 
                 not (lhs_parent_revmeta, mapping) in needed):
-                ret = self._find_until(revmeta.get_foreign_revid(), mapping, checked=checked, target_is_empty=target_is_empty) + ret
-            checked.add((revmeta, mapping))
+                ret = self.find_until(revmeta.get_foreign_revid(), mapping) + ret
+            self.checked.add((revmeta, mapping))
 
         return ret
 
-    def _find_until(self, foreign_revid, mapping, find_ghosts=False, pb=None,
-                    checked=None, project=None, target_is_empty=False):
+    def find_until(self, foreign_revid, mapping, find_ghosts=False, pb=None,
+                    project=None):
         """Find all missing revisions until revision_id
 
         :param revision_id: Stop revision
@@ -697,9 +695,7 @@ class InterFromSvnRepository(InterRepository):
         :return: Tuple with revisions missing and a dictionary with 
             parents for those revision.
         """
-        if checked is None:
-            checked = set()
-        if (foreign_revid, mapping) in checked:
+        if (foreign_revid, mapping) in self.checked:
             return []
         extra = list()
         def check_revid((uuid, branch_path, revnum), mapping, project=None):
@@ -709,12 +705,12 @@ class InterFromSvnRepository(InterRepository):
                 if pb:
                     pb.update("determining revisions to fetch", 
                               revnum-revmeta.revnum, revnum)
-                if (revmeta.get_foreign_revid(), mapping) in checked:
+                if (revmeta.get_foreign_revid(), mapping) in self.checked:
                     # This revision (and its ancestry) has already been checked
                     break
                 if revmeta.is_hidden(mapping):
                     continue
-                if target_is_empty or not self.target.has_revision(revmeta.get_revision_id(mapping)):
+                if self.target_is_empty or not self.target.has_revision(revmeta.get_revision_id(mapping)):
                     revmetas.append(revmeta)
                     for p in revmeta.get_rhs_parents(mapping):
                         try:
@@ -725,17 +721,29 @@ class InterFromSvnRepository(InterRepository):
                             extra.append((foreign_revid, project, mapping))
                 elif not find_ghosts:
                     break
-                checked.add((revmeta.get_foreign_revid(), mapping))
+                self.checked.add((revmeta.get_foreign_revid(), mapping))
             return [(revmeta, mapping) for revmeta in reversed(revmetas)]
 
         needed = check_revid(foreign_revid, mapping, project)
 
         while len(extra) > 0:
             foreign_revid, project, mapping = extra.pop()
-            if (foreign_revid, mapping) not in checked:
+            if (foreign_revid, mapping) not in self.checked:
                 needed += check_revid(foreign_revid, mapping, project)
 
         return needed
+
+
+class InterFromSvnRepository(InterRepository):
+    """Svn to any repository actions."""
+
+    _matching_repo_format = SvnRepositoryFormat()
+
+    _supports_branches = True
+
+    @staticmethod
+    def _get_repo_format_to_test():
+        return None
 
     def copy_content(self, revision_id=None, pb=None):
         """See InterRepository.copy_content."""
@@ -858,16 +866,17 @@ class InterFromSvnRepository(InterRepository):
         try:
             nested_pb = ui.ui_factory.nested_progress_bar()
             try:
-                # FIXME: Specify target_is_empty
-                target_is_empty = False
                 if revmetas is not None:
                     needed = [(revmeta, mapping) for revmeta in revmetas]
-                elif revision_id is None:
-                    needed = self._find_all(self.source.get_mapping(), pb=nested_pb, target_is_empty=target_is_empty)
                 else:
-                    foreign_revid, mapping = self.source.lookup_revision_id(revision_id)
                     # FIXME: Specify target_is_empty
-                    needed = self._find_until(foreign_revid, mapping, find_ghosts, pb=nested_pb, target_is_empty=target_is_empty)
+                    target_is_empty = False
+                    revisionfinder = FetchRevisionFinder(self.source, self.target, target_is_empty)
+                    if revision_id is None:
+                        needed = revisionfinder.find_all(self.source.get_mapping(), pb=nested_pb)
+                    else:
+                        foreign_revid, mapping = self.source.lookup_revision_id(revision_id)
+                        needed = revisionfinder.find_until(foreign_revid, mapping, find_ghosts, pb=nested_pb)
             finally:
                 nested_pb.finished()
 
