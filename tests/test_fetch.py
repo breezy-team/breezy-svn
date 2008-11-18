@@ -1266,8 +1266,12 @@ Node-copyfrom-path: x
 
         branch = Branch.open("%s/branches/mybranch" % repos_url)
         mapping = oldrepos.get_mapping()
-        self.assertEqual([oldrepos.generate_revision_id(2, "branches/mybranch", mapping)], 
-                         branch.revision_history())
+        if mapping.is_branch("trunk/lib"):
+            self.assertEqual([oldrepos.generate_revision_id(1, "trunk/lib", mapping), oldrepos.generate_revision_id(2, "branches/mybranch", mapping)], 
+                             branch.revision_history())
+        else:
+            self.assertEqual([oldrepos.generate_revision_id(2, "branches/mybranch", mapping)], 
+                             branch.revision_history())
 
     def test_fetch_dir_from_non_branch(self):
         repos_url = self.make_repository('d')
