@@ -52,7 +52,7 @@ from subvertpy import (
         ERR_FS_NO_SUCH_REVISION,
         )
 
-from bzrlib.plugins.svn.commit import push, push_ancestors
+from bzrlib.plugins.svn.commit import push, push_ancestors, create_branch_with_hidden_commit
 from bzrlib.plugins.svn.config import BranchConfig
 from bzrlib.plugins.svn.errors import NotSvnBranchPath
 from bzrlib.plugins.svn.foreign import ForeignBranch, FakeControlFiles
@@ -455,6 +455,12 @@ class SvnBranch(ForeignBranch):
 
     def _push_missing_revisions(self, my_graph, other, other_graph, todo, 
                                 push_merged=False, _override_svn_revprops=None):
+        if self.repository.has_revision(todo[-1]) and self.mapping.supports_hidden:
+            create_branch_with_hidden_commit(self.repository, 
+                self.get_branch_path(), todo[-1], set_metadata=True,
+                deletefirst=True)
+            self._clear_cached_state()
+            return
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for revid in todo:
