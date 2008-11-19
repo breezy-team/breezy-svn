@@ -120,6 +120,7 @@ class SvnRepository(Repository):
         self._lock_count = 0
         self._layout = None
         self._guessed_layout = None
+        self._guessed_appropriate_layout = None
         self.transport = transport
         self.uuid = transport.get_uuid()
         assert self.uuid is not None
@@ -339,8 +340,10 @@ class SvnRepository(Repository):
         if self._layout is None:
             self._layout = layout.repository_registry.get(self.uuid)
         if self._layout is None:
-            (self._guessed_layout, self._layout) = repository_guess_layout(self, 
+            if self._guessed_appropriate_layout is None:
+                (self._guessed_layout, self._guessed_appropriate_layout) = repository_guess_layout(self, 
                     self.get_latest_revnum(), self._hinted_branch_path)
+            self._layout = self._guessed_appropriate_layout
         return self._layout
 
     def get_guessed_layout(self):
@@ -349,7 +352,7 @@ class SvnRepository(Repository):
         if self._guessed_layout is None:
             self._guessed_layout = self.get_mapping().get_guessed_layout(self)
         if self._guessed_layout is None:
-            (self._guessed_layout, self._layout) = repository_guess_layout(self, 
+            (self._guessed_layout, self._guessed_appropriate_layout) = repository_guess_layout(self, 
                     self.get_latest_revnum(), self._hinted_branch_path)
         return self._guessed_layout
 
