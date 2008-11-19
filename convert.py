@@ -215,7 +215,7 @@ def convert_repository(source_repos, output_url, layout=None,
                         continue
                     if target_repos is not None and (target_repos_is_empty or not target_repos.has_revision(revmeta.get_revision_id(mapping))):
                         revmetas.append(revmeta)
-                    if not revmeta.branch_path in existing_branches:
+                    if not revmeta.branch_path in existing_branches and layout.is_branch(revmeta.branch_path, project=project):
                         existing_branches[revmeta.branch_path] = SvnBranch(source_repos, revmeta.branch_path, revnum=revmeta.revnum, _skip_check=True)
                 except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                     continue
