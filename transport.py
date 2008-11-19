@@ -124,7 +124,7 @@ def Connection(url):
             raise NoSvnRepositoryPresent(url=url)
         if num == subvertpy.ERR_BAD_URL:
             raise InvalidURL(url)
-        if num == subvertpy.ERR_RA_DAV_PATH_NOT_FOUND:
+        if num in (subvertpy.ERR_RA_DAV_PATH_NOT_FOUND, subvertpy.ERR_FS_NOT_FOUND):
             raise NoSuchFile(url)
         if num == subvertpy.ERR_RA_DAV_RELOCATED:
             # Try to guess the new url
