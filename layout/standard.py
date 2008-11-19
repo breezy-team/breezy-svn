@@ -472,6 +472,9 @@ class InverseTrunkLayout(RepositoryLayout):
     def __str__(self):
         return "itrunk%d" % self.level
 
+    def get_project_prefixes(self, project):
+        return None
+
 InverseTrunkLayout1 = partial(InverseTrunkLayout, 1)
 InverseTrunkLayout2 = partial(InverseTrunkLayout, 2)
 InverseTrunkLayout3 = partial(InverseTrunkLayout, 3)
