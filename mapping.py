@@ -367,6 +367,13 @@ class BzrSvnMapping(foreign.VcsMapping):
     def is_branch(self, branch_path):
         raise NotImplementedError(self.is_branch)
 
+    def get_branch_root(self, revprops):
+        """Determine the branch root set in the revision properties.
+        
+        :note: Return None if no branch root is set.
+        """
+        return None
+
     def is_tag(self, tag_path):
         raise NotImplementedError(self.is_tag)
 
@@ -691,7 +698,7 @@ class BzrSvnMappingRevProps(object):
         return tuple(svn_revprops.get(SVN_REVPROP_BZR_MERGE, "").splitlines())
 
     def get_branch_root(self, revprops):
-        return revprops[SVN_REVPROP_BZR_ROOT]
+        return revprops.get(SVN_REVPROP_BZR_ROOT)
 
     def get_revision_id(self, branch_path, revprops, fileprops):
         if not is_bzr_revision_revprops(revprops) or not SVN_REVPROP_BZR_REVISION_ID in revprops:
