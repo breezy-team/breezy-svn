@@ -642,7 +642,6 @@ class RevisionMetadataProvider(object):
                 try:
                     (_, bp, ip) = layout.split_project_path(p, project)
                 except svn_errors.NotSvnBranchPath:
-                    pass
                     for u in unusual:
                         if p.startswith("%s/" % u):
                             bps[u] = metabranches[u]
