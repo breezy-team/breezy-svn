@@ -350,6 +350,9 @@ class SvnRepository(Repository):
         """Retrieve the layout bzr-svn deems most appropriate for this repo.
         """
         if self._guessed_layout is None:
+            # Assume whatever is registered is appropriate
+            self._guessed_layout = layout.repository_registry.get(self.uuid)
+        if self._guessed_layout is None:
             self._guessed_layout = self.get_mapping().get_guessed_layout(self)
         if self._guessed_layout is None:
             (self._guessed_layout, self._guessed_appropriate_layout) = repository_guess_layout(self, 
