@@ -40,7 +40,7 @@ import urllib
 
 import bzrlib.plugins.svn
 from bzrlib.plugins.svn.auth import create_auth_baton
-from bzrlib.plugins.svn.errors import convert_svn_error, NoSvnRepositoryPresent
+from bzrlib.plugins.svn.errors import convert_svn_error, NoSvnRepositoryPresent, convert_error
 
 svn_config = get_config()
 
@@ -136,7 +136,7 @@ def Connection(url):
                 raise AssertionError("Unable to parse error message: %s" % msg)
             raise RedirectRequested(source=url, target=new_url, 
                                     is_permanent=True)
-        raise
+        raise convert_error(subvertpy.SubversionException(msg, num))
 
     from bzrlib.plugins.svn import lazy_check_versions
     lazy_check_versions()
