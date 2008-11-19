@@ -15,7 +15,7 @@
 
 from bzrlib import errors
 
-from bzrlib.plugins.svn import mapping, get_client_string
+from bzrlib.plugins.svn import mapping
 
 supported_features = set()
 
@@ -124,7 +124,6 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
             self.revprops.export_revision(branch_root, timestamp, timezone, committer, 
                                           revprops, revision_id, revno, parent_ids, svn_revprops, svn_fileprops)
             svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION] = self.name
-            svn_revprops[mapping.SVN_REVPROP_BZR_USER_AGENT] = get_client_string()
         else:
             self.fileprops.export_revision(branch_root, timestamp, timezone, committer, 
                                       revprops, revision_id, revno, parent_ids, svn_revprops, svn_fileprops)

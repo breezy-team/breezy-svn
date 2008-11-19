@@ -20,7 +20,7 @@ from bzrlib.errors import InvalidRevisionId
 from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import mutter
 
-from bzrlib.plugins.svn import errors, foreign, version_info
+from bzrlib.plugins.svn import errors, foreign, version_info, get_client_string
 
 import calendar
 from subvertpy import properties
@@ -728,6 +728,7 @@ class BzrSvnMappingRevProps(object):
             svn_revprops[SVN_REVPROP_BZR_BASE_REVISION] = parent_ids[0]
         
         svn_revprops[SVN_REVPROP_BZR_REVNO] = str(revno)
+        svn_revprops[SVN_REVPROP_BZR_USER_AGENT] = get_client_string()
 
     def export_fileid_map(self, fileids, revprops, fileprops):
         if fileids != {}:
