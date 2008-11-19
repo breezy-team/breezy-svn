@@ -729,7 +729,9 @@ def replay_delta(builder, old_trees, new_tree):
     builder.finish_inventory()
 
 
-def create_branch_with_hidden_commit(repository, branch_path, revid, deletefirst=False):
+def create_branch_with_hidden_commit(repository, branch_path, revid,
+                                     set_metadata=True,
+                                     deletefirst=False):
     """Create a new branch using a simple "svn cp" operation.
 
     :param repository: Repository in which to create the branch.
@@ -740,7 +742,9 @@ def create_branch_with_hidden_commit(repository, branch_path, revid, deletefirst
     revprops = {properties.PROP_REVISION_LOG: "Create new branch."}
     revmeta, mapping = repository._get_revmeta(revid)
     fileprops = dict(revmeta.get_fileprops().items())
-    mapping.export_hidden(revprops, fileprops)
+    if set_metadata:
+        assert mapping.supports_hidden
+        mapping.export_hidden(revprops, fileprops)
     parent = urlutils.dirname(branch_path)
 
     bp_parts = branch_path.split("/")
@@ -799,7 +803,7 @@ def push_new(graph, target_repository, target_branch_path, source, stop_revision
             revid = start_revid
         else:
             revid = start_revid_parent
-        create_branch_with_hidden_commit(target_repository, target_branch_path, revid, mapping)
+        create_branch_with_hidden_commit(target_repository, target_branch_path, revid, set_metadata=True, deletefirst=False)
     else:
         return push_revision_tree(graph, target_repository, target_branch_path, 
                               target_repository.get_config(), 
@@ -834,6 +838,8 @@ def dpush(target, source, stop_revision=None):
         revid_map = {}
         pb = ui.ui_factory.nested_progress_bar()
         try:
+            # FIXME: Call create_branch_with_hidden_commit if the revision is 
+            # already present in the target repository ?
             for revid in todo:
                 pb.update("pushing revisions", todo.index(revid), 
                           len(todo))
