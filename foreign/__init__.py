@@ -282,8 +282,9 @@ def show_foreign_properties(rev):
 
     return mapping.show_foreign_revid(foreign_revid)
 
-log.properties_handler_registry.register("foreign",
-                                         show_foreign_properties,
-                                         "Show foreign VCS properties")
+if not "foreign" in log.properties_handler_registry:
+    log.properties_handler_registry.register("foreign",
+                                             show_foreign_properties,
+                                             "Show foreign VCS properties")
 
 foreign_vcs_registry = ForeignVcsRegistry()
