@@ -173,7 +173,6 @@ def convert_repository(source_repos, output_url, layout=None,
             target_repos = get_dir("").open_repository()
             target_repos_is_empty = False # FIXME: Call Repository.is_empty() ?
             assert (layout.is_branch("") or 
-                    layout.is_tag("") or 
                     target_repos.is_shared())
         except NoRepositoryPresent:
             target_repos = get_dir("").create_repository(shared=True)
