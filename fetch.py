@@ -266,6 +266,7 @@ class FileBuildEditor(object):
 
 
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
+
     def __init__(self, editor, path, old_id, new_id, parent_revids=[]):
         super(DirectoryRevisionBuildEditor, self).__init__(editor, path)
         assert isinstance(new_id, str)
