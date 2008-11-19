@@ -382,6 +382,14 @@ class SvnRepository(Repository):
         return self.fileid_map.apply_changes(revmeta, mapping)[0]
 
     def all_revision_ids(self, layout=None, mapping=None):
+        """Find all revision ids in this repository, using the specified or 
+        default mapping.
+        
+        :note: This will use the standard layout to find the revisions, 
+               any revisions using non-standard branch locations (even 
+               if part of the ancestry of valid revisions) won't be 
+               returned.
+        """
         if mapping is None:
             mapping = self.get_mapping()
         if layout is None:
