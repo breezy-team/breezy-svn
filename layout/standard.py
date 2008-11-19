@@ -120,6 +120,13 @@ class TrunkLayout(RepositoryLayout):
         else:
             return "%s(%d)" % (self.__class__.__name__, self.level)
 
+    def __str__(self):
+        if self.level is None:
+            return "trunk"
+        else:
+            return "trunk%d" % self.level
+
+
 TrunkLayout0 = partial(TrunkLayout, 0)
 TrunkLayout1 = partial(TrunkLayout, 1)
 TrunkLayout2 = partial(TrunkLayout, 2)
@@ -192,6 +199,9 @@ class RootLayout(RepositoryLayout):
 
     def __repr__(self):
         return "%s()" % self.__class__.__name__
+
+    def __str__(self):
+        return "root"
 
 
 class CustomLayout(RepositoryLayout):
@@ -458,6 +468,9 @@ class InverseTrunkLayout(RepositoryLayout):
 
     def __repr__(self):
         return "%s(%d)" % (self.__class__.__name__, self.level)
+
+    def __str__(self):
+        return "itrunk%d" % self.level
 
 InverseTrunkLayout1 = partial(InverseTrunkLayout, 1)
 InverseTrunkLayout2 = partial(InverseTrunkLayout, 2)

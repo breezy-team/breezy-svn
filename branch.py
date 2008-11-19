@@ -109,7 +109,7 @@ class SvnBranch(ForeignBranch):
         if self.supports_tags():
             return SubversionTags(self)
         else:
-            return DisabledTags(self)
+            return tag.DisabledTags(self)
 
     def set_branch_path(self, branch_path):
         """Change the branch path for this branch.

@@ -27,6 +27,7 @@ from bzrlib.tests import TestCase
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
+from bzrlib.plugins.svn.layout.standard import TrunkLayout
 from bzrlib.plugins.svn.mapping3 import config_set_scheme
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.transport import svn_config
@@ -78,6 +79,7 @@ class TestWorkingTree(SubversionTestCase):
         self.client_add("dc/trunk/dir")
         config_set_scheme(Repository.open(repos_url), TrunkBranchingScheme(0), 
                           None, True)
+        Repository.open(repos_url).store_layout(TrunkLayout(0))
         self.assertRaises(NotBranchError, WorkingTree.open, "dc")
         self.assertRaises(NotBranchError, WorkingTree.open, "dc/trunk/dir")
         tree = WorkingTree.open("dc/trunk")

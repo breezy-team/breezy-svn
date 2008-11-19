@@ -314,6 +314,11 @@ class SvnRepository(Repository):
         self.get_mapping().check_layout(self, layout)
         self._layout = layout
 
+    def store_layout(self, layout):
+        """Permanantly store the layout for this repository."""
+        self.set_layout(layout)
+        self.get_config().set_layout(layout)
+
     def get_layout(self):
         """Determine layout to use for this repository.
         
@@ -325,7 +330,7 @@ class SvnRepository(Repository):
         if self._layout is None:
             layoutname = self.get_config().get_layout()
             if layoutname is not None:
-                self._layout = mapping_registry.get(layoutname)()
+                self._layout = layout.layout_registry.get(layoutname)()
         if self._layout is None:
             branches = self.get_config().get_branches()
             tags = self.get_config().get_tags()
