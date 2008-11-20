@@ -171,6 +171,8 @@ class RevisionMetadata(object):
         if self.metabranch is not None:
             try:
                 parentrevmeta = self.metabranch.get_lhs_parent(self)
+            except StopIteration:
+                return {}
                 prev = (parentrevmeta.branch_path, parentrevmeta.revnum)
             except NoRevisionMetabranch:
                 pass
