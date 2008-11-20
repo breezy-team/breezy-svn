@@ -98,17 +98,6 @@ class RevisionMetadata(object):
                 self.revnum == other.revnum and
                 self.uuid == other.uuid)
 
-    def __cmp__(self, other):
-        x = cmp(self.uuid, other.uuid)
-        if x != 0:
-            return x
-        x = cmp(self.revnum, other.revnum)
-        if x != 0:
-            return x
-        x = cmp(self.branch_path, other.branch_path)
-        if x != 0:
-            return x
-
     def __repr__(self):
         return "<RevisionMetadata for revision %d, path %s in repository %s>" % (self.revnum, self.branch_path, repr(self.uuid))
 
@@ -500,7 +489,9 @@ class RevisionMetadataBranch(object):
         return ret
 
     def _index(self, revmeta):
-        return bisect.bisect(self._revnums, revmeta.revnum)
+        i = len(self._revs) - bisect.bisect_right(self._revnums, revmeta.revnum)
+        assert i == len(self._revs) or self._revs[i] == revmeta
+        return i
 
     def consider_bzr_fileprops(self, revmeta):
         """Check whether bzr file properties should be analysed for 
@@ -540,7 +531,7 @@ class RevisionMetadataBranch(object):
         """Append a revision metadata object to this branch."""
         assert len(self._revs) == 0 or self._revs[-1].revnum > revmeta.revnum
         self._revs.append(revmeta)
-        self._revnums.append(revmeta.revnum)
+        self._revnums.insert(0, revmeta.revnum)
 
 
 class RevisionMetadataProvider(object):
