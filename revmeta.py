@@ -43,6 +43,8 @@ from bzrlib.plugins.svn.svk import (
         estimate_svk_ancestors,
         )
 
+import bisect
+
 class NoRevisionMetabranch(Exception):
     """No revision metadata branch."""
 
@@ -95,6 +97,17 @@ class RevisionMetadata(object):
                 self.branch_path == other.branch_path and
                 self.revnum == other.revnum and
                 self.uuid == other.uuid)
+
+    def __cmp__(self, other):
+        x = cmp(self.uuid, other.uuid)
+        if x != 0:
+            return x
+        x = cmp(self.revnum, other.revnum)
+        if x != 0:
+            return x
+        x = cmp(self.branch_path, other.branch_path)
+        if x != 0:
+            return x
 
     def __repr__(self):
         return "<RevisionMetadata for revision %d, path %s in repository %s>" % (self.revnum, self.branch_path, repr(self.uuid))
@@ -453,6 +466,7 @@ class RevisionMetadataBranch(object):
 
     def __init__(self, mapping, next=None, revmeta_provider=None):
         self._revs = []
+        self._revnums = []
         self.mapping = mapping
         self._get_next = next
         self._revmeta_provider = revmeta_provider
@@ -485,11 +499,14 @@ class RevisionMetadataBranch(object):
         self.append(ret)
         return ret
 
+    def _index(self, revmeta):
+        return bisect.bisect(self._revnums, revmeta.revnum)
+
     def consider_bzr_fileprops(self, revmeta):
         """Check whether bzr file properties should be analysed for 
         this revmeta.
         """
-        i = self._revs.index(revmeta)
+        i = self._index(revmeta)
         for desc in reversed(self._revs[:i]):
             if desc.knows_fileprops():
                 return (desc.estimate_bzr_fileprop_ancestors() > 0)
@@ -500,7 +517,7 @@ class RevisionMetadataBranch(object):
         """Check whether svk file propertise should be analysed for 
         this revmeta.
         """
-        i = self._revs.index(revmeta)
+        i = self._index(revmeta)
         for desc in reversed(self._revs[:i]):
             if desc.knows_fileprops():
                 return (desc.estimate_svk_fileprop_ancestors() > 0)
@@ -513,7 +530,7 @@ class RevisionMetadataBranch(object):
         :note: Will return None if no LHS parent can be found, this 
             doesn't necessarily mean there is no LHS parent.
         """
-        i = self._revs.index(revmeta)
+        i = self._index(revmeta)
         try:
             return self._revs[i+1]
         except IndexError:
@@ -523,6 +540,7 @@ class RevisionMetadataBranch(object):
         """Append a revision metadata object to this branch."""
         assert len(self._revs) == 0 or self._revs[-1].revnum > revmeta.revnum
         self._revs.append(revmeta)
+        self._revnums.append(revmeta.revnum)
 
 
 class RevisionMetadataProvider(object):
