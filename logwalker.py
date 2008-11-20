@@ -25,6 +25,9 @@ from bzrlib.plugins.svn import changes
 from bzrlib.plugins.svn.cache import CacheTable
 from bzrlib.plugins.svn.transport import SvnRaTransport
 
+# Maximum number of extra revisions to fetch in caching logwalker
+MAX_OVERHEAD_FETCH = 1000
+
 class lazy_dict(object):
     def __init__(self, initial, create_fn, *args):
         self.initial = initial
@@ -353,7 +356,7 @@ class CachingLogWalker(CacheTable):
         if self._latest_revnum is None:
             self._latest_revnum = self.actual._transport.get_latest_revnum()
         assert isinstance(self._latest_revnum, int)
-        to_revnum = max(self._latest_revnum, to_revnum)
+        to_revnum = max(min(self._latest_revnum, to_revnum+MAX_OVERHEAD_FETCH), to_revnum)
 
         # Subversion 1.4 clients and servers can only deliver a limited set of revprops
         if self._transport.has_capability("log-revprops"):
