@@ -721,7 +721,7 @@ class FetchRevisionFinder(object):
                 if (revmeta.get_foreign_revid(), mapping) in self.checked:
                     # This revision (and its ancestry) has already been checked
                     break
-                if self.needs_fetching(revmeta, mapping)
+                if self.needs_fetching(revmeta, mapping):
                     revmetas.append(revmeta)
                     for p in revmeta.get_rhs_parents(mapping):
                         try:
