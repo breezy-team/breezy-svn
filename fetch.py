@@ -677,26 +677,32 @@ class FetchRevisionFinder(object):
 
         :return: List with revmeta, mapping tuples to fetch
         """
-        meta_map = {}
         needed = []
-        for revmeta in self.source._revmeta_provider.iter_all_changes(self.source.get_layout(), mapping=mapping, from_revnum=self.source.get_latest_revnum(), pb=pb):
+        from_revnum = self.source.get_latest_revnum()
+        for revmeta in self.source._revmeta_provider.iter_all_changes(self.source.get_layout(), mapping=mapping, from_revnum=from_revnum, pb=pb):
+            if pb:
+                pb.update("determining revisions to fetch", 
+                          from_revnum-revmeta.revnum, from_revnum)
             if self.needs_fetching(revmeta, mapping):
                 needed.append((revmeta, mapping))
+                self.checked.add((revmeta.get_foreign_id(), mapping))
 
         needed.reverse()
         return self.find_missing_lhs_ancestors(needed)
 
-    def find_missing_lhs_ancestors(self, needed):
+    def find_missing_lhs_ancestors(self, needed, pb=None):
         # Check all parents are present
         ret = []
 
-        for revmeta, mapping in needed:
+        for i, (revmeta, mapping) in enumerate(needed):
+            if pb:
+                pb.update("finding missing ancestors", i, len(needed))
             lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
-            if (lhs_parent_revmeta is not None and 
-                not (lhs_parent_revmeta, mapping) in needed):
-                ret += self.find_until(revmeta.get_foreign_revid(), mapping)
-            self.checked.add((revmeta, mapping))
-            ret.append((revmeta, mapping))
+            if lhs_parent_revmeta is not None:
+                ret += self.find_until(lhs_parent_revmeta.get_foreign_revid(), mapping)
+            if not (revmeta.get_foreign_revid(), mapping) in self.checked:
+                self.checked.add((revmeta.get_foreign_revid(), mapping))
+                ret.append((revmeta, mapping))
 
         return ret
 
@@ -881,7 +887,9 @@ class InterFromSvnRepository(InterRepository):
                 target_is_empty = False
                 revisionfinder = FetchRevisionFinder(self.source, self.target, target_is_empty)
                 if revmetas is not None:
-                    needed = revisionfinder.find_missing_lhs_ancestors([(revmeta, mapping) for revmeta in revmetas])
+                    base_needed = [(revmeta, mapping) for revmeta in revmetas]
+                    revisionfinder.checked.update(base_needed)
+                    needed = revisionfinder.find_missing_lhs_ancestors(base_needed, pb=nested_pb)
                 else:
                     if revision_id is None:
                         needed = revisionfinder.find_all(self.source.get_mapping(), pb=nested_pb)
