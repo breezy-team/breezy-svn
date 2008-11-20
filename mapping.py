@@ -184,11 +184,7 @@ def parse_svn_log(log):
 
 
 def parse_svn_revprops(svn_revprops, rev):
-    if svn_revprops.has_key(properties.PROP_REVISION_AUTHOR):
-        rev.committer = svn_revprops[properties.PROP_REVISION_AUTHOR]
-    else:
-        rev.committer = ""
-    
+    rev.committer = svn_revprops.get(properties.PROP_REVISION_AUTHOR, "")
     rev.message = parse_svn_log(svn_revprops.get(properties.PROP_REVISION_LOG))
 
     assert svn_revprops.has_key(properties.PROP_REVISION_DATE)
