@@ -43,6 +43,9 @@ from bzrlib.plugins.svn.svk import (
         estimate_svk_ancestors,
         )
 
+class NoRevisionMetabranch(Exception):
+    """No revision metadata branch."""
+
 def full_paths(find_children, paths, bp, from_bp, from_rev):
     """Generate the changes creating a specified branch path.
 
@@ -164,9 +167,11 @@ class RevisionMetadata(object):
         # Perhaps the metabranch already has the parent?
         prev = None
         if self.metabranch is not None:
-            parentrevmeta = self.metabranch.get_lhs_parent(self)
-            if parentrevmeta is not None:
+            try:
+                parentrevmeta = self.metabranch.get_lhs_parent(self)
                 prev = (parentrevmeta.branch_path, parentrevmeta.revnum)
+            except NoRevisionMetabranch:
+                pass
         if prev is None:
             prev = changes.find_prev_location(self.get_paths(), self.branch_path, self.revnum)
         if prev is None:
@@ -193,8 +198,13 @@ class RevisionMetadata(object):
         def get_next_parent(rm):
             if rm.metabranch is not None and rm.metabranch.mapping == mapping:
                 # Perhaps the metabranch already has the parent?
-                parentrevmeta = rm.metabranch.get_lhs_parent(rm)
-                if parentrevmeta is not None:
+                try:
+                    parentrevmeta = rm.metabranch.get_lhs_parent(rm)
+                except StopIteration:
+                    return None
+                except NoRevisionMetabranch:
+                    pass
+                else:
                     return parentrevmeta
             # FIXME: Don't use self.repository.branch_prev_location,
             #        since it browses history
@@ -441,9 +451,39 @@ def svk_feature_to_revision_id(feature, mapping):
 class RevisionMetadataBranch(object):
     """Describes a Bazaar-like branch in a Subversion repository."""
 
-    def __init__(self, mapping):
+    def __init__(self, mapping, next=None, revmeta_provider=None):
         self._revs = []
         self.mapping = mapping
+        self._get_next = next
+        self._revmeta_provider = revmeta_provider
+
+    def __repr__(self):
+        return "<RevisionMetadataBranch starting at %s revision %d>" % (self._revs[0].branch_path, self._revs[0].revnum)
+
+    def __iter__(self):
+        class MetadataBranchIterator(object):
+
+            def __init__(self, branch):
+                self.branch = branch
+                self.base_iter = iter(branch._revs)
+
+            def next(self):
+                try:
+                    if self.base_iter is not None:
+                        return self.base_iter.next()
+                except StopIteration:
+                    self.base_iter = None
+                return self.branch.next()
+
+        return MetadataBranchIterator(self)
+
+    def next(self):
+        if self._get_next is None:
+            raise NoRevisionMetabranch()
+        (bp, paths, revnum, revprops) = self._get_next()
+        ret = self._revmeta_provider.get_revision(bp, revnum, paths, revprops, metabranch=self)
+        self.append(ret)
+        return ret
 
     def consider_bzr_fileprops(self, revmeta):
         """Check whether bzr file properties should be analysed for 
@@ -477,7 +517,7 @@ class RevisionMetadataBranch(object):
         try:
             return self._revs[i+1]
         except IndexError:
-            return None
+            return self.next()
 
     def append(self, revmeta):
         """Append a revision metadata object to this branch."""
@@ -512,6 +552,8 @@ class RevisionMetadataProvider(object):
                 cached._changed_fileprops = changed_fileprops
             if cached._fileprops is None:
                 cached._fileprops = fileprops
+            if cached.metabranch is None:
+                cached.metabranch = metabranch
             return self._revmeta_cache[path,revnum]
 
         ret = self._revmeta_cls(self.repository, self.check_revprops, self._get_fileprops_fn,
@@ -592,20 +634,14 @@ class RevisionMetadataProvider(object):
         :return: iterator that returns RevisionMetadata objects.
         """
         assert mapping is None or mapping.is_branch(branch_path) or mapping.is_tag(branch_path)
-        history_iter = self.iter_changes(branch_path, from_revnum, to_revnum, 
-                                         mapping, pb=pb, limit=limit)
-        metabranch = RevisionMetadataBranch(mapping)
-        prev = None
+        history_iter = self.iter_changes(branch_path, from_revnum, 
+                                              to_revnum, mapping, pb=pb, 
+                                              limit=limit)
+        metabranch = RevisionMetadataBranch(mapping, history_iter.next, self)
         # Always make sure there is one more revision in the metabranch
         # so the yielded rev can find its left hand side parent.
-        for (bp, paths, revnum, revprops) in history_iter:
-            ret = self.get_revision(bp, revnum, paths, revprops, metabranch=metabranch)
-            metabranch.append(ret)
-            if prev is not None:
-                yield prev
-            prev = ret
-        if prev is not None:
-            yield prev
+        for ret in metabranch:
+            yield ret
 
     def iter_all_changes(self, layout, mapping, from_revnum, to_revnum=0, project=None, pb=None):
         """Iterate over all RevisionMetadata objects in a repository.
