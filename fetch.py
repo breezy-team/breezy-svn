@@ -664,6 +664,13 @@ class FetchRevisionFinder(object):
         self.target_is_empty = target_is_empty
         self.checked = set()
 
+    def needs_fetching(self, revmeta, mapping):
+        if self.target_is_empty:
+            return True
+        if revmeta.is_hidden(mapping):
+            return false
+        return not self.target.has_revision(revmeta.get_revision_id(mapping))
+
     def find_all(self, mapping, pb=None):
         """Find all revisions from the source repository that are not 
         yet in the target repository.
@@ -673,9 +680,7 @@ class FetchRevisionFinder(object):
         meta_map = {}
         needed = []
         for revmeta in self.source._revmeta_provider.iter_all_changes(self.source.get_layout(), mapping=mapping, from_revnum=self.source.get_latest_revnum(), pb=pb):
-            if revmeta.is_hidden(mapping):
-                continue
-            if self.target_is_empty or not self.target.has_revision(revmeta.get_revision_id(mapping)):
+            if self.needs_fetching(revmeta, mapping):
                 needed.append((revmeta, mapping))
 
         needed.reverse()
@@ -716,9 +721,7 @@ class FetchRevisionFinder(object):
                 if (revmeta.get_foreign_revid(), mapping) in self.checked:
                     # This revision (and its ancestry) has already been checked
                     break
-                if revmeta.is_hidden(mapping):
-                    continue
-                if self.target_is_empty or not self.target.has_revision(revmeta.get_revision_id(mapping)):
+                if self.needs_fetching(revmeta, mapping)
                     revmetas.append(revmeta)
                     for p in revmeta.get_rhs_parents(mapping):
                         try:
