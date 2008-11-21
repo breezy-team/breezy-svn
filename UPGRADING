@@ -1,11 +1,16 @@
 Upgrading from bzr-svn 0.4.x to 0.5.x
 =====================================
 
-If you'd like to keep using bzr-svn 0.4.x against your svn repo,
-	set "default-mapping = v3".
+bzr-svn 0.5 introduces a new version of the mapping used by bzr-svn. This has
+several advantages, such as making bzr-svn more flexible in what paths 
+are considered branches and being able to work without bzr-specific file 
+properties in a Subversion >= 1.5 repository when pushing/committing to that 
+repository from bzr.
 
-else:
-	If you have Subversion 1.5 and are admin, run bzr svn-set-revprops
+Disadvantage of this new mapping format is that older bzr-svn clients won't 
+be able to recognize any bzr metadata on new revisions pushed using bzr-svn 0.5.
 
-	Any commits made by you from this point on will not have any bzr-specific 
-	metadata when retrieved by bzr-svn 0.4.x and vice-versa. 
+It is possible to make bzr-svn use the old-style mappings when pushing 
+revisions by setting "default-mapping = v3" in ~/.bazaar/bazaar.conf or 
+~/.bazaar/subversion.conf, for example if you still use older versions of 
+bzr-svn that you can't upgrade.
