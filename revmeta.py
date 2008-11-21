@@ -697,7 +697,7 @@ class RevisionMetadataProvider(object):
                         bps[bp] = get_metabranch(bp)
             
             # Apply renames and the like for the next round
-            for new_name, old_name in changes.apply_reverse_changes(metabranches.keys(), paths):
+            for new_name, old_name, old_rev in changes.apply_reverse_changes(metabranches.keys(), paths):
                 if new_name in unusual:
                     unusual.remove(new_name)
                 if old_name is None: 

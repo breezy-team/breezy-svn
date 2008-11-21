@@ -1,7 +1,7 @@
 mappingv4:
 - fix update_after_commit test
 - find tags during iter_all_changes() during fetch
-- 
+- iter_all_changes() doesn't follow non-layout (but mapping-approved) branch paths from older revisions that are part of the ancestors of a valid branch path revision properly
 
 more tests:
 - Run all tests against repository with revprop changing allowed and without

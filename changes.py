@@ -107,7 +107,7 @@ def changes_root(paths):
 def apply_reverse_changes(branches, changes):
     """
 
-    :return: [(new_name, old_name)]
+    :return: [(new_name, old_name, old_rev)]
     """
     branches = set(branches)
     for p in sorted(changes):
@@ -116,12 +116,12 @@ def apply_reverse_changes(branches, changes):
             for b in list(branches):
                 if path_is_child(p, b):
                     branches.remove(b)
-                    yield b, None
+                    yield b, None, -1
         elif cf is not None:
             for b in list(branches):
                 if path_is_child(p, b):
                     old_b = rebase_path(b, p, cf)
-                    yield b, old_b
+                    yield b, old_b, cr
                     branches.remove(b)
                     branches.add(old_b)
 
