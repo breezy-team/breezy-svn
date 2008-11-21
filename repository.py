@@ -254,7 +254,6 @@ class SvnRepository(Repository):
             result['committers'] = len(all_committers)
         result['firstrev'] = revdate(0)
         result['latestrev'] = revdate(self.get_latest_revnum())
-        result['uuid'] = self.uuid
         # Approximate number of revisions
         result['revisions'] = self.get_latest_revnum()+1
         return result
