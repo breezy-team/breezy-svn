@@ -581,14 +581,14 @@ class RevisionMetadataProvider(object):
                                changed_fileprops=changed_fileprops, fileprops=fileprops,
                                metabranch=metabranch)
 
-    def lookup_revision(self, path, revnum):
+    def lookup_revision(self, path, revnum, revprops=None):
         # finish fetching any open revisionmetadata branches for 
         # which the latest fetched revnum > revnum
         for mb in self._open_metabranches:
             if (path, revnum) in self._revmeta_cache:
                 break
             mb.fetch_until(revnum)
-        return self.get_revision(path, revnum)
+        return self.get_revision(path, revnum, revprops=revprops)
 
     def get_revision(self, path, revnum, changes=None, revprops=None, changed_fileprops=None, 
                      fileprops=None, metabranch=None):
