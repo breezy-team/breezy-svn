@@ -478,31 +478,29 @@ class RevisionMetadataBranch(object):
         return "<RevisionMetadataBranch starting at %s revision %d>" % (self._revs[0].branch_path, self._revs[0].revnum)
 
     def __iter__(self):
+
         class MetadataBranchIterator(object):
 
             def __init__(self, branch):
                 self.branch = branch
+                self.i = -1
                 self.base_iter = iter(branch._revs)
 
             def next(self):
+                self.i+=1
                 try:
-                    if self.base_iter is not None:
-                        return self.base_iter.next()
-                except StopIteration:
-                    self.base_iter = None
-                return self.branch.next()
+                    return self.branch._revs[self.i]
+                except IndexError:
+                    return self.branch.next()
 
         return MetadataBranchIterator(self)
 
     def next(self):
         if self._get_next is None:
             raise MetabranchHistoryIncomplete()
-        try:
-            (bp, paths, revnum, revprops) = self._get_next()
-        except StopIteration:
-            if self._history_limit and len(self._revs) >= self._history_limit:
-                raise MetabranchHistoryIncomplete()
-            raise
+        if self._history_limit and len(self._revs) >= self._history_limit:
+            raise MetabranchHistoryIncomplete()
+        (bp, paths, revnum, revprops) = self._get_next()
         ret = self._revmeta_provider.get_revision(bp, revnum, paths, revprops, metabranch=self)
         self.append(ret)
         return ret
@@ -669,8 +667,6 @@ class RevisionMetadataProvider(object):
                                               limit=limit)
         metabranch = RevisionMetadataBranch(mapping, history_iter.next, self,
                                             limit)
-        # Always make sure there is one more revision in the metabranch
-        # so the yielded rev can find its left hand side parent.
         for ret in metabranch:
             yield ret
 
