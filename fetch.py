@@ -688,23 +688,7 @@ class FetchRevisionFinder(object):
                 self.checked.add((revmeta.get_foreign_id(), mapping))
 
         needed.reverse()
-        return self.find_missing_lhs_ancestors(needed)
-
-    def find_missing_lhs_ancestors(self, needed, pb=None):
-        # Check all parents are present
-        ret = []
-
-        for i, (revmeta, mapping) in enumerate(needed):
-            if pb:
-                pb.update("finding missing ancestors", i, len(needed))
-            lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
-            if lhs_parent_revmeta is not None:
-                ret += self.find_until(lhs_parent_revmeta.get_foreign_revid(), mapping)
-            if not (revmeta.get_foreign_revid(), mapping) in self.checked:
-                self.checked.add((revmeta.get_foreign_revid(), mapping))
-                ret.append((revmeta, mapping))
-
-        return ret
+        return needed
 
     def find_until(self, foreign_revid, mapping, find_ghosts=False, pb=None,
                     project=None):
@@ -864,7 +848,7 @@ class InterFromSvnRepository(InterRepository):
             self.target.commit_write_group()
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False, 
-              revmetas=None, mapping=None):
+              needed=None, mapping=None):
         """Fetch revisions. """
         if revision_id == NULL_REVISION:
             return
@@ -886,11 +870,7 @@ class InterFromSvnRepository(InterRepository):
                 # FIXME: Specify target_is_empty
                 target_is_empty = False
                 revisionfinder = FetchRevisionFinder(self.source, self.target, target_is_empty)
-                if revmetas is not None:
-                    base_needed = [(revmeta, mapping) for revmeta in revmetas]
-                    revisionfinder.checked.update(base_needed)
-                    needed = revisionfinder.find_missing_lhs_ancestors(base_needed, pb=nested_pb)
-                else:
+                if needed is None:
                     if revision_id is None:
                         needed = revisionfinder.find_all(self.source.get_mapping(), pb=nested_pb)
                     else:
