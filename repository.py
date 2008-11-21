@@ -19,7 +19,6 @@ from bzrlib import (
         branch,
         errors as bzr_errors,
         graph,
-        osutils,
         ui,
         urlutils,
         xml6,
@@ -42,6 +41,7 @@ from bzrlib.plugins.svn import (
         cache,
         changes,
         errors,
+        foreign,
         layout,
         logwalker,
         revmeta,
@@ -98,7 +98,7 @@ CACHE_DB_VERSION = 4
 
 cachedbs = {}
 
-class SvnRepository(Repository):
+class SvnRepository(foreign.ForeignRepository):
     """
     Provides a simplified interface to a Subversion repository 
     by using the RA (remote access) API from subversion
@@ -254,6 +254,7 @@ class SvnRepository(Repository):
             result['committers'] = len(all_committers)
         result['firstrev'] = revdate(0)
         result['latestrev'] = revdate(self.get_latest_revnum())
+        result['uuid'] = self.uuid
         # Approximate number of revisions
         result['revisions'] = self.get_latest_revnum()+1
         return result
@@ -451,10 +452,13 @@ class SvnRepository(Repository):
             return True
 
         try:
-            (uuid, path, revnum), _ = self.lookup_revision_id(revision_id, project=project)
+            foreign_revid, _ = self.lookup_revision_id(revision_id, project=project)
         except bzr_errors.NoSuchRevision:
             return False
 
+        return self.has_foreign_revision(foreign_revid)
+
+    def has_foreign_revision(self, (uuid, path, revnum)):
         try:
             return (subvertpy.NODE_DIR == self.transport.check_path(path, revnum))
         except subvertpy.SubversionException, (_, num):
@@ -545,28 +549,6 @@ class SvnRepository(Repository):
         if layout is None:
             layout = self.get_layout()
         return self.get_revmap().get_branch_revnum(revid, layout, project)
-
-    def get_inventory_xml(self, revision_id):
-        """See Repository.get_inventory_xml()."""
-        return self.serialise_inventory(self.get_inventory(revision_id))
-
-    def get_inventory_sha1(self, revision_id):
-        """Get the sha1 for the XML representation of an inventory.
-
-        :param revision_id: Revision id of the inventory for which to return 
-         the SHA1.
-        :return: XML string
-        """
-
-        return osutils.sha_string(self.get_inventory_xml(revision_id))
-
-    def get_revision_xml(self, revision_id):
-        """Return the XML representation of a revision.
-
-        :param revision_id: Revision for which to return the XML.
-        :return: XML string
-        """
-        return self._serializer.write_revision_to_string(self.get_revision(revision_id))
 
     def seen_bzr_revprops(self):
         """Check whether bzr-specific custom revision properties are present on this 

@@ -371,9 +371,8 @@ class RevisionMetadata(object):
         if parent_ids == (NULL_REVISION,):
             parent_ids = ()
         rev = ForeignRevision(foreign_revid=self.get_foreign_revid(),
-                              mapping=mapping, revision_id=self.get_revision_id(mapping), 
-                       parent_ids=parent_ids,
-                       inventory_sha1="")
+                              mapping=mapping, 
+                              revision_id=self.get_revision_id(mapping), parent_ids=parent_ids)
 
         rev.svn_meta = self
 
@@ -383,6 +382,7 @@ class RevisionMetadata(object):
         return rev
 
     def get_fileid_map(self, mapping):
+        """Find the file id override map for this revision."""
         return mapping.import_fileid_map(self.get_revprops(), self.get_changed_fileprops())
 
     def get_text_revisions(self, mapping):
