@@ -667,13 +667,13 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertRaises(NoSuchRevision, repository.get_revision, "nonexisting")
         self.build_tree({'dc/foo': "data"})
         self.client_add("dc/foo")
-        self.client_commit("dc", "My Message")
+        self.client_commit("dc", "My Message") #1
         self.client_update("dc")
         self.build_tree({'dc/foo': "data2"})
-        self.client_commit("dc", "Second Message")
+        self.client_commit("dc", "Second Message") #2
         self.client_update("dc")
         self.build_tree({'dc/foo': "data3"})
-        self.client_commit("dc", "Third Message")
+        self.client_commit("dc", "Third Message") #3
         self.client_update("dc")
         repository = Repository.open(repos_url)
         mapping = repository.get_mapping()

@@ -686,7 +686,7 @@ class FetchRevisionFinder(object):
                           from_revnum-revmeta.revnum, from_revnum)
             if self.needs_fetching(revmeta, mapping):
                 needed.append((revmeta, mapping))
-                self.checked.add((revmeta.get_foreign_id(), mapping))
+                self.checked.add((revmeta.get_foreign_revid(), mapping))
 
         needed.reverse()
         return needed
@@ -699,11 +699,12 @@ class FetchRevisionFinder(object):
         :param find_ghosts: Find ghosts
         :return: List with revmeta, mapping tuples to fetch
         """
-        if (foreign_revid, mapping) in self.checked:
-            return []
         extra = list()
-        def check_revid((uuid, branch_path, revnum), mapping, project=None):
+        def check_revid(foreign_revid, mapping, project=None):
+            if (foreign_revid, mapping) in self.checked:
+                return []
             revmetas = []
+            (uuid, branch_path, revnum) = foreign_revid
             for revmeta in self.source._revmeta_provider.iter_reverse_branch_changes(
                 branch_path, revnum, to_revnum=0, mapping=mapping):
                 if pb:
@@ -732,8 +733,7 @@ class FetchRevisionFinder(object):
 
         while len(extra) > 0:
             foreign_revid, project, mapping = extra.pop()
-            if (foreign_revid, mapping) not in self.checked:
-                needed += check_revid(foreign_revid, mapping, project)
+            needed += check_revid(foreign_revid, mapping, project)
 
         return needed
 

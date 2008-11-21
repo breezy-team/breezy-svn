@@ -45,7 +45,7 @@ from bzrlib.plugins.svn.svk import (
 
 import bisect
 
-class NoRevisionMetabranch(Exception):
+class MetabranchHistoryIncomplete(Exception):
     """No revision metadata branch."""
 
 def full_paths(find_children, paths, bp, from_bp, from_rev):
@@ -173,11 +173,13 @@ class RevisionMetadata(object):
                 parentrevmeta = self.metabranch.get_lhs_parent(self)
             except StopIteration:
                 return {}
-                prev = (parentrevmeta.branch_path, parentrevmeta.revnum)
-            except NoRevisionMetabranch:
+            except MetabranchHistoryIncomplete:
                 pass
+            else:
+                prev = (parentrevmeta.branch_path, parentrevmeta.revnum)
         if prev is None:
-            prev = changes.find_prev_location(self.get_paths(), self.branch_path, self.revnum)
+            prev = changes.find_prev_location(self.get_paths(), 
+                                              self.branch_path, self.revnum)
         if prev is None:
             return {}
         (prev_path, prev_revnum) = prev
@@ -206,7 +208,7 @@ class RevisionMetadata(object):
                     parentrevmeta = rm.metabranch.get_lhs_parent(rm)
                 except StopIteration:
                     return None
-                except NoRevisionMetabranch:
+                except MetabranchHistoryIncomplete:
                     pass
                 else:
                     return parentrevmeta
@@ -463,11 +465,13 @@ def svk_feature_to_revision_id(feature, mapping):
 class RevisionMetadataBranch(object):
     """Describes a Bazaar-like branch in a Subversion repository."""
 
-    def __init__(self, mapping, next=None, revmeta_provider=None):
+    def __init__(self, mapping, next=None, revmeta_provider=None, 
+                 history_limit=None):
         self._revs = []
         self._revnums = []
         self.mapping = mapping
         self._get_next = next
+        self._history_limit = history_limit
         self._revmeta_provider = revmeta_provider
 
     def __repr__(self):
@@ -492,8 +496,13 @@ class RevisionMetadataBranch(object):
 
     def next(self):
         if self._get_next is None:
-            raise NoRevisionMetabranch()
-        (bp, paths, revnum, revprops) = self._get_next()
+            raise MetabranchHistoryIncomplete()
+        try:
+            (bp, paths, revnum, revprops) = self._get_next()
+        except StopIteration:
+            if self._history_limit and len(self._revs) >= self._history_limit:
+                raise MetabranchHistoryIncomplete()
+            raise
         ret = self._revmeta_provider.get_revision(bp, revnum, paths, revprops, metabranch=self)
         self.append(ret)
         return ret
@@ -658,7 +667,8 @@ class RevisionMetadataProvider(object):
         history_iter = self.iter_changes(branch_path, from_revnum, 
                                               to_revnum, mapping, pb=pb, 
                                               limit=limit)
-        metabranch = RevisionMetadataBranch(mapping, history_iter.next, self)
+        metabranch = RevisionMetadataBranch(mapping, history_iter.next, self,
+                                            limit)
         # Always make sure there is one more revision in the metabranch
         # so the yielded rev can find its left hand side parent.
         for ret in metabranch:
