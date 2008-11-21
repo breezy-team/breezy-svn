@@ -680,6 +680,7 @@ class FetchRevisionFinder(object):
         needed = []
         from_revnum = self.source.get_latest_revnum()
         for revmeta in self.source._revmeta_provider.iter_all_changes(self.source.get_layout(), mapping=mapping, from_revnum=from_revnum, pb=pb):
+            # FIXME: Call revmeta.get_appropriate_mapping(mapping)
             if pb:
                 pb.update("determining revisions to fetch", 
                           from_revnum-revmeta.revnum, from_revnum)
@@ -708,11 +709,12 @@ class FetchRevisionFinder(object):
                 if pb:
                     pb.update("determining revisions to fetch", 
                               revnum-revmeta.revnum, revnum)
+                mapping = revmeta.get_appropriate_mapping(mapping)
                 if (revmeta.get_foreign_revid(), mapping) in self.checked:
                     # This revision (and its ancestry) has already been checked
                     break
                 if self.needs_fetching(revmeta, mapping):
-                    revmetas.append(revmeta)
+                    revmetas.append((revmeta, mapping))
                     for p in revmeta.get_rhs_parents(mapping):
                         try:
                             foreign_revid, mapping = self.source.lookup_revision_id(p, project=project)
@@ -723,7 +725,8 @@ class FetchRevisionFinder(object):
                 elif not find_ghosts:
                     break
                 self.checked.add((revmeta.get_foreign_revid(), mapping))
-            return [(revmeta, mapping) for revmeta in reversed(revmetas)]
+            revmetas.reverse()
+            return revmetas
 
         needed = check_revid(foreign_revid, mapping, project)
 

@@ -218,6 +218,14 @@ class RevisionMetadata(object):
             nm = get_next_parent(nm)
         return nm
 
+    def get_appropriate_mapping(self, newest_allowed):
+        """Find the mapping that's most appropriate for this revision, 
+        taking into account that it shouldn't be newer than 'max_mapping'.
+
+        """
+        # TODO
+        return newest_allowed
+
     def get_lhs_parent(self, mapping):
         """Find the revid of the left hand side parent of this revision."""
         # Sometimes we can retrieve the lhs parent from the revprop data
@@ -644,7 +652,9 @@ class RevisionMetadataProvider(object):
 
         :return: iterator that returns RevisionMetadata objects.
         """
-        assert mapping is None or mapping.is_branch(branch_path) or mapping.is_tag(branch_path)
+        assert (mapping is None or 
+                mapping.is_branch(branch_path) or 
+                mapping.is_tag(branch_path))
         history_iter = self.iter_changes(branch_path, from_revnum, 
                                               to_revnum, mapping, pb=pb, 
                                               limit=limit)
@@ -654,7 +664,8 @@ class RevisionMetadataProvider(object):
         for ret in metabranch:
             yield ret
 
-    def iter_all_changes(self, layout, mapping, from_revnum, to_revnum=0, project=None, pb=None):
+    def iter_all_changes(self, layout, mapping, from_revnum, to_revnum=0, 
+                         project=None, pb=None):
         """Iterate over all RevisionMetadata objects in a repository.
 
         :param layout: Repository layout to use
