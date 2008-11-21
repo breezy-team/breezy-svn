@@ -382,7 +382,7 @@ class SvnRepository(Repository):
         return self.revision_tree(revision_id).inventory
 
     def get_fileid_map(self, revmeta, mapping):
-        return self.fileid_map.get_map(revmeta.uuid, revmeta.revnum, revmeta.branch_path, mapping)
+        return self.fileid_map.get_map(revmeta.get_foreign_revid(), mapping)
 
     def transform_fileid_map(self, revmeta, mapping):
         return self.fileid_map.apply_changes(revmeta, mapping)[0]
@@ -426,6 +426,7 @@ class SvnRepository(Repository):
         if revision_id in (None, NULL_REVISION):
             return
         (uuid, branch_path, revnum), mapping = self.lookup_revision_id(revision_id)
+        assert uuid == self.uuid
         for revmeta in self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=0, 
                                                         mapping=mapping, pb=pb, 
                                                         limit=limit):

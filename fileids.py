@@ -145,7 +145,7 @@ class FileIdMap(object):
         idmap.update(renames)
         return (idmap, changes)
 
-    def get_map(self, uuid, revnum, branch, mapping):
+    def get_map(self, (uuid, branch, revnum), mapping):
         """Make sure the map is up to date until revnum."""
         # First, find the last cached map
         if revnum == 0:
@@ -247,7 +247,7 @@ class CachingFileIdMap(object):
         self._use_text_revids = actual._use_text_revids
         self.repos = actual.repos
 
-    def get_map(self, uuid, revnum, branch, mapping):
+    def get_map(self, (uuid, branch, revnum), mapping):
         """Make sure the map is up to date until revnum."""
         # First, find the last cached map
         if revnum == 0:
