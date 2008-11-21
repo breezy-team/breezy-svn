@@ -116,7 +116,7 @@ class RevidMap(object):
         # Find the branch property between min_revnum and max_revnum that 
         # added revid
         for revmeta in self.repos._revmeta_provider.iter_reverse_branch_changes(branch_path, max_revnum, min_revnum):
-            for propname, (oldpropvalue, propvalue) in revmeta.get_changed_fileprops().items():
+            for propname, (oldpropvalue, propvalue) in revmeta.get_changed_fileprops().iteritems():
                 if not propname.startswith(SVN_PROP_BZR_REVISION_ID):
                     continue
                 try:

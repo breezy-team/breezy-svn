@@ -273,7 +273,7 @@ def generate_revision_metadata(timestamp, timezone, committer, revprops):
         text += "committer: %s\n" % committer.encode("utf-8")
     if revprops is not None and revprops != {}:
         text += "properties: \n"
-        for k, v in sorted(revprops.items()):
+        for k, v in sorted(revprops.iteritems()):
             text += "\t%s: %s\n" % (k.encode("utf-8"), v.encode("utf-8"))
     assert isinstance(text, str)
     return text
@@ -294,7 +294,7 @@ def parse_bzr_svn_revprops(props, rev):
     if props.has_key(SVN_REVPROP_BZR_LOG):
         rev.message = props[SVN_REVPROP_BZR_LOG]
 
-    for name, value in props.items():
+    for name, value in props.iteritems():
         if name.startswith(SVN_REVPROP_BZR_REVPROP_PREFIX):
             rev.properties[name[len(SVN_REVPROP_BZR_REVPROP_PREFIX):]] = value
 
@@ -715,7 +715,7 @@ class BzrSvnMappingRevProps(object):
             svn_revprops[SVN_REVPROP_BZR_COMMITTER] = committer.encode("utf-8")
 
         if revprops is not None:
-            for name, value in revprops.items():
+            for name, value in revprops.iteritems():
                 svn_revprops[SVN_REVPROP_BZR_REVPROP_PREFIX+name] = value.encode("utf-8")
 
         svn_revprops[SVN_REVPROP_BZR_ROOT] = branch_root
@@ -802,7 +802,7 @@ def find_mapping(revprops, fileprops):
         else:
             if ret is not None:
                 return ret
-    for k, v in fileprops.items():
+    for k, v in fileprops.iteritems():
         if k.startswith(SVN_PROP_BZR_REVISION_ID):
             return mapping_registry.parse_mapping_name("svn-" + k[len(SVN_PROP_BZR_REVISION_ID):])
     return None
@@ -828,7 +828,7 @@ def estimate_bzr_ancestors(fileprops):
 
     """
     found = []
-    for k, v in fileprops.items():
+    for k, v in fileprops.iteritems():
         if k.startswith(SVN_PROP_BZR_REVISION_ID):
             found.append(len(v.splitlines()))
     if found != []:
@@ -840,7 +840,7 @@ def estimate_bzr_ancestors(fileprops):
 
 
 def get_roundtrip_ancestor_revids(fileprops):
-    for propname, propvalue in fileprops.items():
+    for propname, propvalue in fileprops.iteritems():
         if not propname.startswith(SVN_PROP_BZR_REVISION_ID):
             continue
         mapping_name = propname[len(SVN_PROP_BZR_REVISION_ID):]

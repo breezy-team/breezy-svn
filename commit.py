@@ -140,7 +140,7 @@ def set_svn_revprops(transport, revnum, revprops):
     :param revnum: Revision number of revision to change metadata of.
     :param revprops: Dictionary with revision properties to set.
     """
-    for (name, value) in revprops.items():
+    for (name, value) in revprops.iteritems():
         try:
             transport.change_rev_prop(revnum, name, value)
         except SubversionException, (_, ERR_REPOS_DISABLED_FEATURE):
@@ -404,7 +404,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self._svn_revprops[mapping.SVN_REVPROP_BZR_SIGNATURE] = opt_signature
         else:
             self._svn_revprops = None
-        self._svnprops = lazy_dict({}, lambda: dict(self._base_branch_props.items()))
+        self._svnprops = lazy_dict({}, lambda: dict(self._base_branch_props.iteritems()))
         self.base_mapping.export_revision(
             self.branch_path, timestamp, timezone, committer, revprops, 
             revision_id, self.base_revno+1, parents, self._svn_revprops, self._svnprops)
@@ -601,7 +601,7 @@ class SvnCommitBuilder(RootCommitBuilder):
 
                 # Set all the revprops
                 if self.push_metadata and self._svnprops.is_loaded:
-                    for prop, newvalue in self._svnprops.items():
+                    for prop, newvalue in self._svnprops.iteritems():
                         oldvalue = self._base_branch_props.get(prop)
                         if oldvalue == newvalue:
                             continue
@@ -741,7 +741,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
     """
     revprops = {properties.PROP_REVISION_LOG: "Create new branch."}
     revmeta, mapping = repository._get_revmeta(revid)
-    fileprops = dict(revmeta.get_fileprops().items())
+    fileprops = dict(revmeta.get_fileprops().iteritems())
     if set_metadata:
         assert mapping.supports_hidden
         mapping.export_hidden(revprops, fileprops)
@@ -761,7 +761,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
                 root.delete_entry(urlutils.basename(branch_path))
             branch_dir = root.add_directory(urlutils.basename(branch_path), 
                     _url_escape_uri(urlutils.join(repository.base, revmeta.branch_path)), revmeta.revnum)
-            for k, v in properties.diff(fileprops, revmeta.get_fileprops()).items():
+            for k, v in properties.diff(fileprops, revmeta.get_fileprops()).iteritems():
                 branch_dir.change_prop(k, v)
             branch_dir.close()
             root.close()

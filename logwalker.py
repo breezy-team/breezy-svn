@@ -90,6 +90,10 @@ class lazy_dict(object):
         self._ensure_init()
         return self.dict.items()
 
+    def iteritems(self):
+        self._ensure_init()
+        return self.dict.iteritems()
+
     def __iter__(self):
         self._ensure_init()
         return self.dict.__iter__()
@@ -195,7 +199,7 @@ class LogCache(CacheTable):
     def insert_revprops(self, revision, revprops):
         if revprops is None:
             return
-        for k, v in revprops.items():
+        for k, v in revprops.iteritems():
             self.insert_revprop(revision, k, v)
 
     def has_all_revprops(self, revnum):
@@ -406,7 +410,7 @@ def strip_slashes(changed_paths):
         return {}
     assert isinstance(changed_paths, dict)
     revpaths = {}
-    for k, (action, copyfrom_path, copyfrom_rev) in changed_paths.items():
+    for k, (action, copyfrom_path, copyfrom_rev) in changed_paths.iteritems():
         if copyfrom_path is None:
             copyfrom_path = None
         else:
@@ -534,7 +538,7 @@ class LogWalker(object):
                     if num == subvertpy.ERR_FS_NOT_DIRECTORY:
                         continue
                     raise
-                for k, v in dirents.items():
+                for k, v in dirents.iteritems():
                     childp = urlutils.join(nextp, k)
                     if v['kind'] == subvertpy.NODE_DIR:
                         unchecked_dirs.add(childp)

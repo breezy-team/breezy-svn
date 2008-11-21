@@ -220,7 +220,7 @@ class SvnRepository(foreign.ForeignRepository):
             for c in d.renamed:
                 fileids.setdefault(c[2], set()).add(revid)
 
-        for fileid, altered_versions in fileids.items():
+        for fileid, altered_versions in fileids.iteritems():
             yield ("file", fileid, altered_versions)
         
         # We're done with the files_pb.  Note that it finished by the caller,
@@ -714,7 +714,7 @@ class SvnRepository(foreign.ForeignRepository):
                                 tag_changes[bp] = self._revmeta_provider.get_revision(bp, revnum, revprops=revprops).get_revision_id(mapping)
                             except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                                 pass
-                for path, revid in tag_changes.items():
+                for path, revid in tag_changes.iteritems():
                     name = layout.get_tag_name(path, project)
                     if revid is None:
                         del tags[name]
@@ -811,7 +811,7 @@ class SvnRepository(foreign.ForeignRepository):
         finally:
             pb.finished()
 
-        for p, i in created_branches.items():
+        for p, i in created_branches.iteritems():
             ret.append((p, i, True))
 
         return ret

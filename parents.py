@@ -37,7 +37,7 @@ class DiskCachingParentsProvider(object):
                 ret[k] = parents
         if len(todo) > 0:
             newfound = self.actual.get_parent_map(todo)
-            for revid, parents in newfound.items():
+            for revid, parents in newfound.iteritems():
                 if revid == NULL_REVISION:
                     continue
                 self._cache.insert_parents(revid, parents)

@@ -56,7 +56,7 @@ class SvnTexts(VersionedFiles):
             map = self.repository.get_fileid_map(revmeta, mapping)
             # Unfortunately, the map is the other way around
             lines = None
-            for k, (v, ck) in map.items():
+            for k, (v, ck) in map.iteritems():
                 if v == fileid:
                     try:
                         stream = StringIO()
@@ -79,7 +79,7 @@ class SvnTexts(VersionedFiles):
         revmeta, mapping = self.repository._get_revmeta(revid)
         fileidmap = self.repository.get_fileid_map(revmeta, mapping)
         path = None
-        for k, (v_fileid, v_revid) in fileidmap.items():
+        for k, (v_fileid, v_revid) in fileidmap.iteritems():
             if v_fileid == fileid:
                 path = k
         if path is None:

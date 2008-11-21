@@ -277,7 +277,7 @@ class SvnBasisTree(RevisionTree):
             if relpath == u"":
                 self._inventory.revision_id = revid
 
-            for name, entry in entries.items():
+            for name, entry in entries.iteritems():
                 name = name.decode("utf-8")
                 if name == u"":
                     continue

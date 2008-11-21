@@ -219,7 +219,7 @@ class FileIdMapCache(object):
     def save(self, revid, parent_revids, _map):
         mutter('saving file id map for %r', revid)
 
-        for path, (id, created_revid)  in _map.items():
+        for path, (id, created_revid)  in _map.iteritems():
             assert isinstance(path, unicode)
             assert isinstance(id, str)
             assert isinstance(created_revid, str)

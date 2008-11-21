@@ -872,7 +872,7 @@ class SVNServer(SVNConnection):
         def send_revision(revno, author, date, message, changed_paths=None):
             changes = []
             if changed_paths is not None:
-                for p, (action, cf, cr) in changed_paths.items():
+                for p, (action, cf, cr) in changed_paths.iteritems():
                     if cf is not None:
                         changes.append((p, literal(action), (cf, cr)))
                     else:
@@ -943,7 +943,7 @@ class SVNServer(SVNConnection):
     def get_locations(self, path, peg_revnum, revnums):
         self.send_ack()
         locations = self.repo_backend.get_locations(path, peg_revnum, revnums)
-        for rev, path in locations.items():
+        for rev, path in locations.iteritems():
             self.send_msg([rev, path])
         self.send_msg(literal("done"))
         self.send_success()

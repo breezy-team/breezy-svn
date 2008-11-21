@@ -601,7 +601,7 @@ class SvnWorkingTree(WorkingTree):
             wc.close()
 
     def _set_branch_props(self, wc, fileprops):
-        for k,v in fileprops.items():
+        for k,v in fileprops.iteritems():
             wc.prop_set(k, v, self.basedir)
 
     def _get_base_branch_props(self):
@@ -714,7 +714,7 @@ class SvnWorkingTree(WorkingTree):
                 return
 
             entries = wc.entries_read(True)
-            for name, entry in entries.items():
+            for name, entry in entries.iteritems():
                 if name == "":
                     continue
 
