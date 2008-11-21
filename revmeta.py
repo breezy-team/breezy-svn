@@ -495,6 +495,15 @@ class RevisionMetadataBranch(object):
 
         return MetadataBranchIterator(self)
 
+    def fetch_until(self, revnum):
+        while len(self._revnums) == 0 or self._revnums[0] > revnum:
+            try:
+                self.next()
+            except MetabranchHistoryIncomplete:
+                return
+            except StopIteration:
+                return
+
     def next(self):
         if self._get_next is None:
             raise MetabranchHistoryIncomplete()
@@ -560,16 +569,33 @@ class RevisionMetadataProvider(object):
         self._get_fileprops_fn = self.repository.branchprop_list.get_properties
         self._log = repository._log
         self.check_revprops = check_revprops
+        self._open_metabranches = []
         if cache:
             self._revmeta_cls = CachingRevisionMetadata
         else:
             self._revmeta_cls = RevisionMetadata
+
+    def create_revision(self, path, revnum, changes=None, revprops=None, changed_fileprops=None, fileprops=None, metabranch=None):
+        return self._revmeta_cls(self.repository, self.check_revprops, self._get_fileprops_fn,
+                               self._log, self.repository.uuid, path, revnum, changes, revprops, 
+                               changed_fileprops=changed_fileprops, fileprops=fileprops,
+                               metabranch=metabranch)
+
+    def lookup_revision(self, path, revnum):
+        # finish fetching any open revisionmetadata branches for 
+        # which the latest fetched revnum > revnum
+        for mb in self._open_metabranches:
+            if (path, revnum) in self._revmeta_cache:
+                break
+            mb.fetch_until(revnum)
+        return self.get_revision(path, revnum)
 
     def get_revision(self, path, revnum, changes=None, revprops=None, changed_fileprops=None, 
                      fileprops=None, metabranch=None):
         """Return a RevisionMetadata object for a specific svn (path,revnum)."""
         assert isinstance(path, str)
         assert isinstance(revnum, int)
+
         if (path, revnum) in self._revmeta_cache:
             cached = self._revmeta_cache[path,revnum]
             if changes is not None:
@@ -582,10 +608,7 @@ class RevisionMetadataProvider(object):
                 cached.metabranch = metabranch
             return self._revmeta_cache[path,revnum]
 
-        ret = self._revmeta_cls(self.repository, self.check_revprops, self._get_fileprops_fn,
-                               self._log, self.repository.uuid, path, revnum, changes, revprops, 
-                               changed_fileprops=changed_fileprops, fileprops=fileprops,
-                               metabranch=metabranch)
+        ret = self.create_revision(path, revnum, changes, revprops, changed_fileprops, fileprops, metabranch)
         self._revmeta_cache[path,revnum] = ret
         return ret
 
@@ -667,6 +690,7 @@ class RevisionMetadataProvider(object):
                                               limit=limit)
         metabranch = RevisionMetadataBranch(mapping, history_iter.next, self,
                                             limit)
+        self._open_metabranches.append(metabranch)
         for ret in metabranch:
             yield ret
 

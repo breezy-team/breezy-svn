@@ -499,7 +499,7 @@ class SvnRepository(foreign.ForeignRepository):
 
     def _get_revmeta(self, revision_id):
         (uuid, branch, revnum), mapping = self.lookup_revision_id(revision_id)
-        revmeta = self._revmeta_provider.get_revision(branch, revnum)
+        revmeta = self._revmeta_provider.lookup_revision(branch, revnum)
         return revmeta, mapping
 
     def get_revision(self, revision_id):
@@ -532,7 +532,7 @@ class SvnRepository(foreign.ForeignRepository):
         assert isinstance(revnum, int)
         assert isinstance(mapping, BzrSvnMapping)
 
-        return self._revmeta_provider.get_revision(path, revnum).get_revision_id(mapping)
+        return self._revmeta_provider.lookup_revision(path, revnum).get_revision_id(mapping)
 
     def lookup_revision_id(self, revid, layout=None, ancestry=None, 
                            project=None):
@@ -681,7 +681,7 @@ class SvnRepository(foreign.ForeignRepository):
                                 for c in self.transport.get_dir(p, revnum)[0].keys():
                                     n = p+"/"+c
                                     if layout.is_tag(n, project):
-                                        tag_changes[n] = self._revmeta_provider.get_revision(n, revnum, revprops=revprops).get_revision_id(mapping)
+                                        tag_changes[n] = self._revmeta_provider.lookup_revision(n, revnum, revprops=revprops).get_revision_id(mapping)
                                     elif layout.is_tag_parent(n, project):
                                         parents.append(n)
                             except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
@@ -711,7 +711,7 @@ class SvnRepository(foreign.ForeignRepository):
                                 pass
                         else:
                             try:
-                                tag_changes[bp] = self._revmeta_provider.get_revision(bp, revnum, revprops=revprops).get_revision_id(mapping)
+                                tag_changes[bp] = self._revmeta_provider.lookup_revision(bp, revnum, revprops=revprops).get_revision_id(mapping)
                             except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                                 pass
                 for path, revid in tag_changes.iteritems():

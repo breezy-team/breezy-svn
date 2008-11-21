@@ -371,7 +371,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         else:
             (uuid, self.base_path, self.base_revnum), self.base_mapping = \
                 repository.lookup_revision_id(self.base_revid)
-            self._base_revmeta = self.repository._revmeta_provider.get_revision(self.base_path, self.base_revnum)
+            self._base_revmeta = self.repository._revmeta_provider.lookup_revision(self.base_path, self.base_revnum)
             self._base_branch_props = self._base_revmeta.get_fileprops()
 
         if self.base_revid == NULL_REVISION:
