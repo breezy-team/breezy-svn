@@ -30,17 +30,18 @@ from bzrlib.plugins.svn import (
         )
 from bzrlib.plugins.svn.foreign import ForeignRevision
 from bzrlib.plugins.svn.mapping import (
+        estimate_bzr_ancestors, 
+        find_mapping,
+        get_roundtrip_ancestor_revids,
         is_bzr_revision_fileprops, 
         is_bzr_revision_revprops, 
-        estimate_bzr_ancestors, 
         SVN_REVPROP_BZR_SIGNATURE, 
-        get_roundtrip_ancestor_revids,
         )
 from bzrlib.plugins.svn.svk import (
-        SVN_PROP_SVK_MERGE, 
-        svk_features_merged_since, 
-        parse_svk_feature, 
         estimate_svk_ancestors,
+        parse_svk_feature, 
+        svk_features_merged_since, 
+        SVN_PROP_SVK_MERGE, 
         )
 
 import bisect
@@ -225,8 +226,13 @@ class RevisionMetadata(object):
         taking into account that it shouldn't be newer than 'max_mapping'.
 
         """
-        # TODO
-        return newest_allowed
+        if not self.is_bzr_revision():
+            return newest_allowed
+        ret = find_mapping(self.get_revprops(), self.get_changed_fileprops())
+        # FIXME: Make sure ret is older than newest_allowed
+        if ret is None:
+            return newest_allowed
+        return ret
 
     def get_lhs_parent(self, mapping):
         """Find the revid of the left hand side parent of this revision."""
@@ -750,9 +756,10 @@ class RevisionMetadataProvider(object):
                     unusual.remove(new_name)
                 if old_name is None: 
                     # didn't exist previously
-                    del metabranches[new_name]
+                    if new_name in metabranches:
+                        del metabranches[new_name]
                 else:
-                    data = metabranches[new_name]
+                    data = get_metabranch(new_name)
                     del metabranches[new_name]
                     if mapping_check_path(old_name):
                         metabranches_history.setdefault(old_rev, {})[old_name] = data
