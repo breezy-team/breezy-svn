@@ -718,11 +718,16 @@ class RevisionMetadataProvider(object):
             prefixes = layout.get_project_prefixes(project)
         else:
             prefixes = [""]
+        unusual_history = {}
+        metabranches_history = {}
         unusual = set()
         for (paths, revnum, revprops) in self._log.iter_changes(prefixes, from_revnum, to_revnum, pb=pb):
             bps = {}
             if pb:
                 pb.update("discovering revisions", revnum, from_revnum-revnum)
+
+            metabranches.update(metabranches_history.get(revnum, {}))
+            unusual.update(unusual_history.get(revnum, set()))
 
             for p in sorted(paths):
                 action = paths[p][0]
@@ -730,12 +735,14 @@ class RevisionMetadataProvider(object):
                 try:
                     (_, bp, ip) = layout.split_project_path(p, project)
                 except svn_errors.NotSvnBranchPath:
-                    for u in unusual:
-                        if p.startswith("%s/" % u):
-                            bps[u] = metabranches[u]
+                    pass
                 else:
                     if action != 'D' or ip != "":
                         bps[bp] = get_metabranch(bp)
+                for u in unusual:
+                    if p.startswith("%s/" % u):
+                        bps[u] = get_metabranch(u)
+
             
             # Apply renames and the like for the next round
             for new_name, old_name, old_rev in changes.apply_reverse_changes(metabranches.keys(), paths):
@@ -748,9 +755,9 @@ class RevisionMetadataProvider(object):
                     data = metabranches[new_name]
                     del metabranches[new_name]
                     if mapping_check_path(old_name):
-                        metabranches[old_name] = data
+                        metabranches_history.setdefault(old_rev, {})[old_name] = data
                         if not layout.is_branch_or_tag(old_name, project):
-                            unusual.add(old_name)
+                            unusual_history.setdefault(old_rev, set()).add(old_name)
 
             for bp in bps:
                 revmeta = self.get_revision(bp, revnum, paths, revprops, metabranch=bps[bp])
