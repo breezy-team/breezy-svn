@@ -748,7 +748,6 @@ class RevisionMetadataProvider(object):
                 for u in unusual:
                     if p.startswith("%s/" % u):
                         bps[u] = get_metabranch(u)
-
             
             # Apply renames and the like for the next round
             for new_name, old_name, old_rev in changes.apply_reverse_changes(metabranches.keys(), paths):

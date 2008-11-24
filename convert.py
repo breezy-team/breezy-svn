@@ -213,7 +213,7 @@ def convert_repository(source_repos, output_url, layout=None,
                 try:
                     if revmeta.is_hidden(mapping):
                         continue
-                    # FIXME: Call revmeta.get_appropriate_mapping(mapping)
+                    mapping = revmeta.get_appropriate_mapping(mapping)
                     if target_repos is not None and (target_repos_is_empty or not target_repos.has_revision(revmeta.get_revision_id(mapping))):
                         revmetas.append((revmeta, mapping))
                     if not revmeta.branch_path in existing_branches and layout.is_branch(revmeta.branch_path, project=project):
