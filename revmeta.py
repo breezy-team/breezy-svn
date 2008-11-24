@@ -112,11 +112,20 @@ class RevisionMetadata(object):
     def get_foreign_revid(self):
         return (self.uuid, self.branch_path, self.revnum)
 
-    def get_paths(self):
+    def get_paths(self, mapping=None):
         """Fetch the changed paths dictionary for this revision.
         """
         if self._paths is None:
             self._paths = self._log.get_revision_paths(self.revnum)
+        if mapping is not None and mapping.restricts_branch_paths:
+            next = changes.find_prev_location(self._paths, self.branch_path, self.revnum)
+            if next is not None and not mapping.is_branch_or_tag(next[0]):
+                # Make it look like the branch started here if the mapping (anything < v4)
+                # restricts what paths can be valid branches
+                paths = dict(self._paths.items())
+                lazypaths = logwalker.lazy_dict(paths, full_paths, self.repository._log.find_children, paths, self.branch_path, next[0], next[1])
+                paths[self.branch_path] = ('A', None, -1)
+                return lazypaths
         return self._paths
 
     def get_revision_id(self, mapping):
@@ -200,10 +209,9 @@ class RevisionMetadata(object):
 
         :note: Returns None when there is no parent (parent is NULL_REVISION)
         """
-        assert (mapping.is_branch(self.branch_path) or 
-                mapping.is_tag(self.branch_path)), "%s not valid in %r" % (self.branch_path, mapping)
+        assert mapping.is_branch_or_tag(self.branch_path), "%s not valid in %r" % (self.branch_path, mapping)
         def get_next_parent(rm):
-            if rm.metabranch is not None and rm.metabranch.mapping == mapping:
+            if rm.metabranch is not None:
                 # Perhaps the metabranch already has the parent?
                 try:
                     parentrevmeta = rm.metabranch.get_lhs_parent(rm)
@@ -463,7 +471,7 @@ def svk_feature_to_revision_id(feature, mapping):
         (uuid, bp, revnum) = parse_svk_feature(feature)
     except svn_errors.InvalidPropertyValue:
         return None
-    if not mapping.is_branch(bp) and not mapping.is_tag(bp):
+    if not mapping.is_branch_or_tag(bp):
         return None
     return mapping.revision_id_foreign_to_bzr((uuid, bp, revnum))
 
@@ -471,11 +479,10 @@ def svk_feature_to_revision_id(feature, mapping):
 class RevisionMetadataBranch(object):
     """Describes a Bazaar-like branch in a Subversion repository."""
 
-    def __init__(self, mapping, next=None, revmeta_provider=None, 
+    def __init__(self, next=None, revmeta_provider=None, 
                  history_limit=None):
         self._revs = []
         self._revnums = []
-        self.mapping = mapping
         self._get_next = next
         self._history_limit = history_limit
         self._revmeta_provider = revmeta_provider
@@ -618,15 +625,13 @@ class RevisionMetadataProvider(object):
         self._revmeta_cache[path,revnum] = ret
         return ret
 
-    def iter_changes(self, branch_path, from_revnum, to_revnum, mapping=None, pb=None, limit=0):
+    def iter_changes(self, branch_path, from_revnum, to_revnum, pb=None, limit=0):
         """Iterate over all revisions backwards.
         
         :return: iterator that returns tuples with branch path, 
             changed paths, revision number, changed file properties and 
         """
         assert isinstance(branch_path, str)
-        assert mapping is None or mapping.is_branch(branch_path) or mapping.is_tag(branch_path), \
-                "Mapping %r doesn't accept %s as branch or tag" % (mapping, branch_path)
         assert from_revnum >= to_revnum
 
         bp = branch_path
@@ -641,19 +646,7 @@ class RevisionMetadataProvider(object):
             assert bp is not None
             next = changes.find_prev_location(paths, bp, revnum)
             assert revnum > 0 or bp == ""
-            assert mapping is None or mapping.is_branch(bp) or mapping.is_tag(bp), "%r is not a valid path" % bp
-
-            if (next is not None and 
-                not (mapping is None or mapping.is_branch(next[0]) or mapping.is_tag(next[0]))):
-                # Make it look like the branch started here if the mapping 
-                # doesn't support weird paths as branches
-                # TODO: Make this quicker - it can be very slow for large repos.
-                lazypaths = logwalker.lazy_dict(paths, full_paths, self._log.find_children, paths, bp, next[0], next[1])
-                paths[bp] = ('A', None, -1)
-
-                yield (bp, lazypaths, revnum, revprops)
-                return
-                     
+                    
             if changes.changes_path(paths, bp, False):
                 yield (bp, paths, revnum, revprops)
                 i += 1
@@ -666,6 +659,7 @@ class RevisionMetadataProvider(object):
                 bp = next[0]
 
     def get_mainline(self, branch_path, revnum, mapping, pb=None):
+        """Get a list with all the RevisionMetadata elements on a branch mainline."""
         return list(self.iter_reverse_branch_changes(branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb))
 
     def branch_prev_location(self, revmeta, mapping):
@@ -673,11 +667,7 @@ class RevisionMetadataProvider(object):
         firstrevmeta = iterator.next()
         assert revmeta == firstrevmeta
         try:
-            parentrevmeta = iterator.next()
-            if (not mapping.is_branch(parentrevmeta.branch_path) and
-                not mapping.is_tag(parentrevmeta.branch_path)):
-                return None
-            return parentrevmeta
+            return iterator.next()
         except StopIteration:
             return None
 
@@ -688,16 +678,16 @@ class RevisionMetadataProvider(object):
 
         :return: iterator that returns RevisionMetadata objects.
         """
-        assert (mapping is None or 
-                mapping.is_branch(branch_path) or 
-                mapping.is_tag(branch_path))
+        assert mapping is None or mapping.is_branch_or_tag(branch_path)
         history_iter = self.iter_changes(branch_path, from_revnum, 
-                                              to_revnum, mapping, pb=pb, 
+                                              to_revnum, pb=pb, 
                                               limit=limit)
-        metabranch = RevisionMetadataBranch(mapping, history_iter.next, self,
+        metabranch = RevisionMetadataBranch(history_iter.next, self,
                                             limit)
         self._open_metabranches.append(metabranch)
         for ret in metabranch:
+            if mapping is not None and not mapping.is_branch_or_tag(ret.branch_path):
+                break
             yield ret
 
     def iter_all_changes(self, layout, mapping, from_revnum, to_revnum=0, 
@@ -710,14 +700,14 @@ class RevisionMetadataProvider(object):
         assert from_revnum >= to_revnum
         metabranches = {}
         if mapping is None:
-            mapping_check_path = lambda x:True
+            mapping_check_path = lambda x: True
         else:
-            mapping_check_path = lambda x: mapping.is_branch(x) or mapping.is_tag(x)
+            mapping_check_path = mapping.is_branch_or_tag
         # Layout decides which ones to pick up
         # Mapping decides which ones to keep
         def get_metabranch(bp):
             if not bp in metabranches:
-                metabranches[bp] = RevisionMetadataBranch(mapping)
+                metabranches[bp] = RevisionMetadataBranch()
             return metabranches[bp]
 
         if project is not None:

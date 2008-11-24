@@ -311,6 +311,7 @@ class BzrSvnMapping(foreign.VcsMapping):
     can_use_revprops = False
     can_use_fileprops = False
     supports_hidden = False
+    restricts_branch_paths = False
 
     def __init__(self):
         if (version_info[3] == 'exp' or self.experimental) and not BzrSvnMapping._warned_experimental:
@@ -372,6 +373,9 @@ class BzrSvnMapping(foreign.VcsMapping):
 
     def is_tag(self, tag_path):
         raise NotImplementedError(self.is_tag)
+
+    def is_branch_or_tag(self, path):
+        return self.is_branch(path) or self.is_tag(path)
 
     @staticmethod
     def generate_file_id(uuid, revnum, branch, inv_path):

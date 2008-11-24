@@ -249,6 +249,7 @@ class cmd_svn_import(Command):
                     raise BzrCommandError("%s appears to contain a branch. " 
                             "For individual branches, use 'bzr branch'." % 
                             from_location)
+                # FIXME: Hint about is_tag()
                 elif guessed_overall_layout.is_branch_parent(prefix):
                     self.outf.write("Importing branches with prefix /%s\n" % 
                         urlutils.unescape_for_display(prefix, self.outf.encoding))

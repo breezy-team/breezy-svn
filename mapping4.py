@@ -34,6 +34,7 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
     can_use_revprops = True
     can_use_fileprops = True
     supports_hidden = True
+    restricts_branch_paths = False
 
     def __init__(self):
         self.name = "v4"

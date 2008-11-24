@@ -137,8 +137,7 @@ class RevidMap(object):
                 if entry_revid == revid:
                     mapping_name = propname[len(SVN_PROP_BZR_REVISION_ID):]
                     mapping = mapping_registry.parse_mapping_name("svn-" + mapping_name)
-                    assert (mapping.is_tag(revmeta.branch_path) or 
-                            mapping.is_branch(revmeta.branch_path))
+                    assert mapping.is_branch_or_tag(revmeta.branch_path)
                     return (revmeta.branch_path, revmeta.revnum, mapping)
 
         raise InvalidBzrSvnRevision(revid)
