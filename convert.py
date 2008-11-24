@@ -229,13 +229,13 @@ def convert_repository(source_repos, output_url, layout=None,
         if create_shared_repo:
             inter = InterRepository.get(source_repos, target_repos)
 
-            if all:
-                inter.fetch()
-            elif (target_repos.is_shared() and 
-                  getattr(inter, '_supports_branches', None) and 
-                  inter._supports_branches):
+            if (target_repos.is_shared() and 
+                  getattr(inter, '_supports_revmetas', None) and 
+                  inter._supports_revmetas):
                 revmetas.reverse()
-                inter.fetch(needed=revmetas, mapping=source_repos.get_mapping())
+                inter.fetch(needed=revmetas)
+            elif all:
+                inter.fetch()
 
         if not keep:
             remove_branches(to_transport, removed_branches)

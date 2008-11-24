@@ -745,7 +745,7 @@ class InterFromSvnRepository(InterRepository):
 
     _matching_repo_format = SvnRepositoryFormat()
 
-    _supports_branches = True
+    _supports_revmetas = True
 
     @staticmethod
     def _get_repo_format_to_test():
