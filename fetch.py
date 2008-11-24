@@ -679,7 +679,7 @@ class FetchRevisionFinder(object):
         """
         needed = []
         from_revnum = self.source.get_latest_revnum()
-        for revmeta in self.source._revmeta_provider.iter_all_changes(self.source.get_layout(), check_unusual_path=mapping.is_branch_or_tag, from_revnum=from_revnum, pb=pb):
+        for kind, revmeta in self.source._revmeta_provider.iter_all_changes(self.source.get_layout(), check_unusual_path=mapping.is_branch_or_tag, from_revnum=from_revnum, pb=pb):
             #FIXME: mapping = revmeta.get_appropriate_mapping(mapping)
             if pb:
                 pb.update("determining revisions to fetch", 

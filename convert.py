@@ -206,7 +206,7 @@ def convert_repository(source_repos, output_url, layout=None,
         existing_branches = {}
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for revmeta in source_repos._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag,
+            for kind, revmeta in source_repos._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag,
                                                                    to_revnum, from_revnum,
                                                                    project=project):
                 pb.update("determining revisions to fetch", to_revnum-revmeta.revnum, to_revnum)

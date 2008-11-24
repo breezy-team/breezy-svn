@@ -400,7 +400,7 @@ class SvnRepository(foreign.ForeignRepository):
             mapping = self.get_mapping()
         if layout is None:
             layout = self.get_layout()
-        for revmeta in self._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, self.get_latest_revnum()):
+        for revmeta in self._revmeta_provider.iter_all_revisions(layout, mapping.is_branch_or_tag, self.get_latest_revnum()):
             if revmeta.is_hidden(mapping):
                 continue
             yield revmeta.get_revision_id(mapping)
@@ -557,7 +557,7 @@ class SvnRepository(foreign.ForeignRepository):
         """
         if self.transport.has_capability("commit-revprops") == False:
             return False
-        for revmeta in self._revmeta_provider.iter_all_changes(self.get_layout(), None, self.get_latest_revnum()):
+        for revmeta in self._revmeta_provider.iter_all_revisions(self.get_layout(), None, self.get_latest_revnum()):
             if revmeta.is_bzr_revision_revprops():
                 return True
         return False

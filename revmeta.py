@@ -45,6 +45,7 @@ from bzrlib.plugins.svn.svk import (
         )
 
 import bisect
+from itertools import ifilter
 
 class MetabranchHistoryIncomplete(Exception):
     """No revision metadata branch."""
@@ -691,6 +692,11 @@ class RevisionMetadataProvider(object):
                 break
             yield ret
 
+    def iter_all_revisions(self, layout, check_unusual_path, from_revnum, to_revnum=0, project=None, pb=None):
+        for kind, rev in self.iter_all_changes(layout, check_unusual_path, from_revnum, to_revnum, project, pb):
+            if kind == "revision":
+                yield rev
+
     def iter_all_changes(self, layout, check_unusual_path, from_revnum, to_revnum=0, 
                          project=None, pb=None):
         """Iterate over all RevisionMetadata objects in a repository.
@@ -757,10 +763,10 @@ class RevisionMetadataProvider(object):
             for bp in bps:
                 revmeta = self.get_revision(bp, revnum, paths, revprops, metabranch=bps[bp])
                 bps[bp].append(revmeta)
-                yield revmeta
+                yield "revision", revmeta
     
         # Make sure commit 0 is processed
         if to_revnum == 0 and layout.is_branch_or_tag("", project):
             bps[""] = get_metabranch("")
             revmeta = self.get_revision("", 0, {"": ('A', None, -1)}, {}, metabranch=bps[""])
-            yield revmeta
+            yield "revision", revmeta

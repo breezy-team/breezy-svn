@@ -75,7 +75,7 @@ class RevidMap(object):
         """
         if self.repos.transport.has_capability("log-revprops") != True:
             return
-        for revmeta in self.repos._revmeta_provider.iter_all_changes(layout, None, from_revnum, to_revnum):
+        for revmeta in self.repos._revmeta_provider.iter_all_revisions(layout, None, from_revnum, to_revnum):
             if is_bzr_revision_revprops(revmeta.get_revprops()):
                 mapping = find_mapping(revmeta.get_revprops(), {})
                 revid = revmeta.get_revision_id(mapping)
