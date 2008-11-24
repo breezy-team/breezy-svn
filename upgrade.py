@@ -17,6 +17,8 @@
 
 from bzrlib import ui
 
+from itertools import ifilter
+
 
 def set_revprops(repository, new_mapping, from_revnum=0, to_revnum=None):
     """Set bzr-svn revision properties for existing bzr-svn revisions.
@@ -65,7 +67,7 @@ def set_revprops(repository, new_mapping, from_revnum=0, to_revnum=None):
             new_mapping.export_text_revisions(old_mapping.import_text_revisions(revprops, fileprops), new_revprops, None)
             if rev.message != mapping.parse_svn_log(revprops.get(properties.PROP_REVISION_LOG)):
                 new_mapping.export_message(rev.message, new_revprops, None)
-            changed_revprops = dict(filter(lambda (k,v): k not in revprops or revprops[k] != v, new_revprops.iteritems()))
+            changed_revprops = dict(ifilter(lambda (k,v): k not in revprops or revprops[k] != v, new_revprops.iteritems()))
             if logcache is not None:
                 logcache.drop_revprops(revnum)
             for k, v in changed_revprops.iteritems():

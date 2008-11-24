@@ -206,14 +206,14 @@ def convert_repository(source_repos, output_url, layout=None,
         existing_branches = {}
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for revmeta in source_repos._revmeta_provider.iter_all_changes(layout, mapping,
+            for revmeta in source_repos._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag,
                                                                    to_revnum, from_revnum,
                                                                    project=project):
                 pb.update("determining revisions to fetch", to_revnum-revmeta.revnum, to_revnum)
                 try:
                     if revmeta.is_hidden(mapping):
                         continue
-                    mapping = revmeta.get_appropriate_mapping(mapping)
+                    # FIXME: mapping = revmeta.get_appropriate_mapping(mapping)
                     if target_repos is not None and (target_repos_is_empty or not target_repos.has_revision(revmeta.get_revision_id(mapping))):
                         revmetas.append((revmeta, mapping))
                     if not revmeta.branch_path in existing_branches and layout.is_branch(revmeta.branch_path, project=project):

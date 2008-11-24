@@ -568,7 +568,8 @@ class RevisionMetadataBranch(object):
 
     def append(self, revmeta):
         """Append a revision metadata object to this branch."""
-        assert len(self._revs) == 0 or self._revs[-1].revnum > revmeta.revnum
+        assert len(self._revs) == 0 or self._revs[-1].revnum > revmeta.revnum,\
+                "%r > %r" % (self._revs[-1].revnum, revmeta.revnum)
         self._revs.append(revmeta)
         self._revnums.insert(0, revmeta.revnum)
 
@@ -690,7 +691,7 @@ class RevisionMetadataProvider(object):
                 break
             yield ret
 
-    def iter_all_changes(self, layout, mapping, from_revnum, to_revnum=0, 
+    def iter_all_changes(self, layout, check_unusual_path, from_revnum, to_revnum=0, 
                          project=None, pb=None):
         """Iterate over all RevisionMetadata objects in a repository.
 
@@ -698,11 +699,9 @@ class RevisionMetadataProvider(object):
         :param mapping: Mapping to use
         """
         assert from_revnum >= to_revnum
+        if check_unusual_path is None:
+            check_unusual_path = lambda x: True
         metabranches = {}
-        if mapping is None:
-            mapping_check_path = lambda x: True
-        else:
-            mapping_check_path = mapping.is_branch_or_tag
         # Layout decides which ones to pick up
         # Mapping decides which ones to keep
         def get_metabranch(bp):
@@ -750,7 +749,7 @@ class RevisionMetadataProvider(object):
                 else:
                     data = get_metabranch(new_name)
                     del metabranches[new_name]
-                    if mapping_check_path(old_name):
+                    if check_unusual_path(old_name):
                         metabranches_history.setdefault(old_rev, {})[old_name] = data
                         if not layout.is_branch_or_tag(old_name, project):
                             unusual_history.setdefault(old_rev, set()).add(old_name)
@@ -763,4 +762,5 @@ class RevisionMetadataProvider(object):
         # Make sure commit 0 is processed
         if to_revnum == 0 and layout.is_branch_or_tag("", project):
             bps[""] = get_metabranch("")
-            yield self.get_revision("", 0, {"": ('A', None, -1)}, {}, metabranch=bps[""])
+            revmeta = self.get_revision("", 0, {"": ('A', None, -1)}, {}, metabranch=bps[""])
+            yield revmeta
