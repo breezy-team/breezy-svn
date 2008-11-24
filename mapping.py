@@ -784,13 +784,7 @@ mapping_registry.register_lazy('v4', 'bzrlib.plugins.svn.mapping4',
 mapping_registry.set_default('v4')
 
 
-def find_mapping(revprops, fileprops):
-    """Find a mapping instance based on the revprops and fileprops set on a revision.
-
-    :param revprops: Revision properties.
-    :param fileprops: File properties set on branch root.
-    :return: BzrSvnMapping instance or None if no mapping found.
-    """
+def find_mapping_revprops(revprops):
     if SVN_REVPROP_BZR_MAPPING_VERSION in revprops:
         try:
             cls = mapping_registry.get(revprops[SVN_REVPROP_BZR_MAPPING_VERSION])
@@ -802,10 +796,24 @@ def find_mapping(revprops, fileprops):
         else:
             if ret is not None:
                 return ret
-    for k, v in fileprops.iteritems():
+    return None
+
+
+def find_mapping_fileprops(changed_fileprops):
+    for k, v in changed_fileprops.iteritems():
         if k.startswith(SVN_PROP_BZR_REVISION_ID):
             return mapping_registry.parse_mapping_name("svn-" + k[len(SVN_PROP_BZR_REVISION_ID):])
     return None
+
+
+def find_mapping(revprops, changed_fileprops):
+    """Find a mapping instance based on the revprops and fileprops set on a revision.
+
+    :param revprops: Revision properties.
+    :param fileprops: File properties set on branch root.
+    :return: BzrSvnMapping instance or None if no mapping found.
+    """
+    return find_mapping_revprops(revprops) or find_mapping_fileprops(changed_fileprops)
 
 
 def is_bzr_revision_revprops(revprops):
