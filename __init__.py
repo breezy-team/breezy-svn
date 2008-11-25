@@ -35,6 +35,7 @@ from bzrlib import api, bzrdir, repository
 import bzrlib.api, bzrlib.repository
 from bzrlib.bzrdir import BzrDirFormat, format_registry
 from bzrlib.errors import BzrError
+from bzrlib.foreign import foreign_vcs_registry
 from bzrlib.commands import Command, register_command, display_command
 from bzrlib.help_topics import topic_registry
 from bzrlib.option import Option, RegistryOption
@@ -55,7 +56,7 @@ else:
     version_string = '%d.%d.%d%s%d' % version_info
 __version__ = version_string
 
-COMPATIBLE_BZR_VERSIONS = [(1, 9, 0)]
+COMPATIBLE_BZR_VERSIONS = [(1, 10, 0)]
 
 
 def check_subversion_version(subvertpy):
@@ -430,12 +431,11 @@ class cmd_svn_push(Command):
 
 register_command(cmd_svn_push)
 
-from bzrlib.plugins.svn import foreign
-register_command(foreign.cmd_dpush)
+from bzrlib.plugins.svn.foreign import cmd_dpush
+register_command(cmd_dpush)
 
-foreign.foreign_vcs_registry.register_lazy("svn", 
-                                           "bzrlib.plugins.svn.mapping",
-                                           "foreign_vcs_svn")
+foreign_vcs_registry.register_lazy("svn", "bzrlib.plugins.svn.mapping",
+                                   "foreign_vcs_svn")
 
 class cmd_svn_branching_scheme(Command):
     """Show or change the branching scheme for a Subversion repository.

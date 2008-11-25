@@ -20,6 +20,9 @@ from subvertpy import (
 from bzrlib import (
         ui,
         )
+from bzrlib.foreign import (
+        ForeignRevision,
+        )
 from bzrlib.revision import (
         NULL_REVISION, 
         )
@@ -28,7 +31,6 @@ from bzrlib.plugins.svn import (
         errors as svn_errors, 
         logwalker,
         )
-from bzrlib.plugins.svn.foreign import ForeignRevision
 from bzrlib.plugins.svn.mapping import (
         estimate_bzr_ancestors, 
         find_mapping,
