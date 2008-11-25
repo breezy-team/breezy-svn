@@ -387,7 +387,7 @@ class SvnRepository(foreign.ForeignRepository):
     def transform_fileid_map(self, revmeta, mapping):
         return self.fileid_map.apply_changes(revmeta, mapping)[0]
 
-    def all_revision_ids(self, layout=None, mapping=None):
+    def _all_revision_ids(self, layout=None, mapping=None):
         """Find all revision ids in this repository, using the specified or 
         default mapping.
         
