@@ -704,14 +704,14 @@ class RevisionMetadataProvider(object):
         """Iterate over all RevisionMetadata objects in a repository.
 
         :param layout: Repository layout to use
-        :param mapping: Mapping to use
+        :param check_unusual_path: Check whether to keep branch
+
+        Layout decides which ones to pick up.
         """
         assert from_revnum >= to_revnum
         if check_unusual_path is None:
             check_unusual_path = lambda x: True
         metabranches = {}
-        # Layout decides which ones to pick up
-        # Mapping decides which ones to keep
         def get_metabranch(bp):
             if not bp in metabranches:
                 metabranches[bp] = RevisionMetadataBranch()
