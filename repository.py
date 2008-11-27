@@ -659,7 +659,7 @@ class SvnRepository(foreign.ForeignRepository):
                         except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                             pass
                 elif kind == "delete":
-                    for t in tags:
+                    for t in list(tags):
                         if changes.path_is_child(t, item):
                             del tags[t]
         finally:

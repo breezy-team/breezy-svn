@@ -736,6 +736,7 @@ class RevisionMetadataProvider(object):
         unusual = set()
         for (paths, revnum, revprops) in self._log.iter_changes(prefixes, from_revnum, to_revnum, pb=pb):
             bps = {}
+            deletes = []
             if pb:
                 pb.update("discovering revisions", revnum, from_revnum-revnum)
 
@@ -755,6 +756,12 @@ class RevisionMetadataProvider(object):
                 for u in unusual:
                     if p.startswith("%s/" % u):
                         bps[u] = get_metabranch(u)
+                if action in ('R', 'D') and (layout.is_branch_or_tag(p, project) or layout.is_branch_or_tag_parent(p, project)):
+                    deletes.append(p)
+
+            # Mention deletes
+            for d in deletes:
+                yield ("delete", p)
             
             # Apply renames and the like for the next round
             for new_name, old_name, old_rev in changes.apply_reverse_changes(metabranches.keys(), paths):
