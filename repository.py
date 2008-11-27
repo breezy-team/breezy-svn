@@ -52,8 +52,6 @@ from bzrlib.plugins.svn.layout.standard import WildcardLayout
 from bzrlib.plugins.svn.layout.guess import repository_guess_layout
 from bzrlib.plugins.svn.mapping import (
         SVN_REVPROP_BZR_SIGNATURE,
-        SVN_REVPROP_BZR_TAGS,
-        parse_tags_property,
         BzrSvnMapping,
         mapping_registry,
         is_bzr_revision_revprops, 
@@ -163,9 +161,6 @@ class SvnRepository(foreign.ForeignRepository):
                 use_cache,
                 self.transport.has_capability("commit-revprops") in (True, None))
 
-    def get_revmap(self):
-        return self.revmap
-   
     def get_transaction(self):
         raise NotImplementedError(self.get_transaction)
 
@@ -548,7 +543,7 @@ class SvnRepository(foreign.ForeignRepository):
         # If there is no entry in the map, walk over all branches:
         if layout is None:
             layout = self.get_layout()
-        return self.get_revmap().get_branch_revnum(revid, layout, project)
+        return self.revmap.get_branch_revnum(revid, layout, project)
 
     def seen_bzr_revprops(self):
         """Check whether bzr-specific custom revision properties are present on this 
@@ -652,68 +647,20 @@ class SvnRepository(foreign.ForeignRepository):
             tags = {}
         assert from_revnum <= to_revnum
         pb = ui.ui_factory.nested_progress_bar()
-        if project is None:
-            prefixes = [""]
-        else:
-            prefixes = layout.get_project_prefixes(project)
-
         try:
-            entries = list(self._log.iter_changes(prefixes, to_revnum, from_revnum, pb=pb))
-            for (paths, revnum, revprops) in reversed(entries):
-                if revprops is None:
-                    continue
-                if (self.transport.has_capability("log-revprops") and 
-                    SVN_REVPROP_BZR_TAGS in revprops):
-                    for name, revid in parse_tags_property(revprops[SVN_REVPROP_BZR_TAGS]):
-                        if revid is None:
-                            del tags[name]
-                        else:
-                            tags[name] = revid
-                    continue
+            entries = list(self._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, to_revnum, from_revnum, project=project, pb=pb))
+            for kind, item in reversed(entries):
                 tag_changes = {}
-                for p in sorted(paths):
-                    (action, cf, cr) = paths[p]
-                    if layout.is_tag_parent(p, project) and cf is not None:
-                        parents = [p]
-                        while parents:
-                            p = parents.pop()
-                            try:
-                                for c in self.transport.get_dir(p, revnum)[0].keys():
-                                    n = p+"/"+c
-                                    if layout.is_tag(n, project):
-                                        tag_changes[n] = self._revmeta_provider.lookup_revision(n, revnum, revprops=revprops).get_revision_id(mapping)
-                                    elif layout.is_tag_parent(n, project):
-                                        parents.append(n)
-                            except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                                pass
-                    else:
+                if kind == "revision":
+                    revmeta = item
+                    if layout.is_tag(revmeta.branch_path):
+                        refer_revmeta = revmeta.get_tag_revmeta(mapping)
                         try:
-                            (pt, bp, rp) = layout.split_project_path(p, project)
-                        except errors.NotSvnBranchPath:
-                            continue
-                        if pt != "tag":
-                            continue
-                        if action == "D" and rp == "":
-                            tag_changes[p] = None
-                        elif rp == "" and cf is not None:
-                            # This tag was (recreated) here, so unless anything else under this 
-                            # tag changed
-                            tp = p
-                            tr = revnum
-                            newpaths = copy(paths)
-                            del newpaths[p]
-                            if not changes.changes_path(newpaths, p, False) and layout.is_branch(cf):
-                                tp = cf
-                                tr = self._log.find_latest_change(cf, cr)
-                            try:
-                                tag_changes[p] = self.generate_revision_id(tr, tp, mapping)
-                            except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                                pass
-                        else:
-                            try:
-                                tag_changes[bp] = self._revmeta_provider.lookup_revision(bp, revnum, revprops=revprops).get_revision_id(mapping)
-                            except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                                pass
+                            tag_changes[revmeta.branch_path] = refer_revmeta.get_revision_id(mapping)
+                        except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                            pass
+                elif kind == "branch-end":
+                    tag_changes = dict([(path, None) for (path, revnum) in item])
                 for path, revid in tag_changes.iteritems():
                     name = layout.get_tag_name(path, project)
                     if revid is None:

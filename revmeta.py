@@ -146,6 +146,16 @@ class RevisionMetadata(object):
 
         return revid
 
+    def get_tag_revmeta(self, mapping):
+        if self.changes_branch_root():
+            # This tag was (recreated) here, so unless anything else under this 
+            # tag changed
+            if not changes.changes_children(self.get_paths(), self.branch_path):
+                lhs_parent_revmeta = self.get_lhs_parent_revmeta(mapping)
+                if lhs_parent_revmeta is not None:
+                    return lhs_parent_revmeta
+        return self
+
     def get_fileprops(self):
         """Get the file properties set on the branch root.
         """

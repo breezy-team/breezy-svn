@@ -86,6 +86,19 @@ def changes_path(changes, path, parents=False):
     return False
 
 
+def changes_children(changes, path):
+    """Check if one of the specified changes applies to 
+    one of paths children.
+
+    :note: Does not consider changes to path itself.
+    """
+    for p in changes:
+        assert isinstance(p, str)
+        if path_is_child(path, p) and path != p:
+            return True
+    return False
+
+
 def changes_root(paths):
     """Find the root path that was changed.
 

@@ -86,8 +86,6 @@ class SubversionTags(BasicTags):
         revprops = {properties.PROP_REVISION_LOG: message, }
         if self.repository.transport.has_capability("commit-revprops"):
             revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
-            if tags_dict is not None:
-                revprops[mapping.SVN_REVPROP_BZR_TAGS] = mapping.generate_tags_property(tags_dict)
         return revprops
 
     def lookup_tag(self, tag_name):

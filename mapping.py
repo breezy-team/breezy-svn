@@ -56,7 +56,6 @@ SVN_REVPROP_BZR_REQUIRED_FEATURES = 'bzr:required-features'
 SVN_REVPROP_BZR_BASE_REVISION = 'bzr:base-revision'
 SVN_REVPROP_BZR_SKIP = 'bzr:skip'
 SVN_REVPROP_BZR_HIDDEN = 'bzr:hidden'
-SVN_REVPROP_BZR_TAGS = 'bzr:tags'
 
 
 def find_new_lines((oldvalue, newvalue)):
@@ -216,24 +215,6 @@ def parse_revision_metadata(text, rev):
         else:
             raise errors.InvalidPropertyValue(SVN_PROP_BZR_REVISION_INFO, 
                     "Invalid key %r" % key)
-
-
-def parse_tags_property(text):
-    for name, revid in [line.split("\t") for line in text.splitlines()]:
-        if revid == "":
-            yield name.decode("utf-8"), None
-        else:
-            yield name.decode("utf-8"), revid
-
-
-def generate_tags_property(tags):
-    ret = ""
-    for name in sorted(tags):
-        ret += "%s\t" % name.encode("utf-8")
-        if tags[name] is not None:
-            ret += tags[name]
-        ret += "\n"
-    return ret
 
 
 def parse_revid_property(line):
