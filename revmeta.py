@@ -492,6 +492,21 @@ def svk_feature_to_revision_id(feature, mapping):
     return mapping.revision_id_foreign_to_bzr((uuid, bp, revnum))
 
 
+class ListBuildingIterator(object):
+
+    def __init__(self, base_list, it):
+        self.base_list = base_list
+        self.i = -1
+        self.it = it
+
+    def next(self):
+        self.i+=1
+        try:
+            return self.base_list[self.i]
+        except IndexError:
+            return self.it()
+
+
 class RevisionMetadataBranch(object):
     """Describes a Bazaar-like branch in a Subversion repository."""
 
@@ -502,27 +517,13 @@ class RevisionMetadataBranch(object):
         self._get_next = next
         self._history_limit = history_limit
         self._revmeta_provider = revmeta_provider
+        self.finished = False
 
     def __repr__(self):
         return "<RevisionMetadataBranch starting at %s revision %d>" % (self._revs[0].branch_path, self._revs[0].revnum)
 
     def __iter__(self):
-
-        class MetadataBranchIterator(object):
-
-            def __init__(self, branch):
-                self.branch = branch
-                self.i = -1
-                self.base_iter = iter(branch._revs)
-
-            def next(self):
-                self.i+=1
-                try:
-                    return self.branch._revs[self.i]
-                except IndexError:
-                    return self.branch.next()
-
-        return MetadataBranchIterator(self)
+        return ListBuildingIterator(self._revs, self.next)
 
     def fetch_until(self, revnum):
         while len(self._revnums) == 0 or self._revnums[0] > revnum:
@@ -538,7 +539,11 @@ class RevisionMetadataBranch(object):
             raise MetabranchHistoryIncomplete()
         if self._history_limit and len(self._revs) >= self._history_limit:
             raise MetabranchHistoryIncomplete()
-        (bp, paths, revnum, revprops) = self._get_next()
+        try:
+            (bp, paths, revnum, revprops) = self._get_next()
+        except StopIteration:
+            self.finished = True
+            raise
         ret = self._revmeta_provider.get_revision(bp, revnum, paths, revprops, metabranch=self)
         self.append(ret)
         return ret
@@ -588,6 +593,94 @@ class RevisionMetadataBranch(object):
                 "%r > %r" % (self._revs[-1].revnum, revmeta.revnum)
         self._revs.append(revmeta)
         self._revnums.insert(0, revmeta.revnum)
+
+
+class RevisionMetadataBrowser(object):
+
+    def __init__(self, prefixes, from_revnum, to_revnum, layout, provider,
+            project=None, pb=None):
+        self.prefixes = prefixes
+        self.from_revnum = from_revnum
+        self.to_revnum = to_revnum
+        self.layout = layout
+        self._metabranches = {}
+        self._provider = provider
+        self._actions = []
+        self._iter = iter(self.do(project, pb))
+
+    def get_metabranch(self, bp):
+        if not bp in self._metabranches:
+            # FIXME: Provide hsitory iter
+            self._metabranches[bp] = RevisionMetadataBranch()
+            # FIXME: self._open_metabranches.append(metabranches[bp])
+        return self._metabranches[bp]
+
+    def __iter__(self):
+        return ListBuildingIterator(self._actions, self.next)
+
+    def next(self):
+        ret = self._iter.next()
+        self._actions.append(ret)
+        return ret
+
+    def do(self, project=None, pb=None):
+        unusual_history = {}
+        metabranches_history = {}
+        unusual = set()
+        for (paths, revnum, revprops) in self._provider._log.iter_changes(self.prefixes, self.from_revnum, self.to_revnum, pb=pb):
+            bps = {}
+            deletes = []
+            if pb:
+                pb.update("discovering revisions", revnum, self.from_revnum-revnum)
+
+            self._metabranches.update(metabranches_history.get(revnum, {}))
+            unusual.update(unusual_history.get(revnum, set()))
+
+            for p in sorted(paths):
+                action = paths[p][0]
+
+                try:
+                    (_, bp, ip) = self.layout.split_project_path(p, project)
+                except svn_errors.NotSvnBranchPath:
+                    pass
+                else:
+                    if action != 'D' or ip != "":
+                        bps[bp] = self.get_metabranch(bp)
+                for u in unusual:
+                    if p.startswith("%s/" % u):
+                        bps[u] = self.get_metabranch(u)
+                if action in ('R', 'D') and (self.layout.is_branch_or_tag(p, project) or self.layout.is_branch_or_tag_parent(p, project)):
+                    deletes.append(p)
+
+            # Mention deletes
+            for d in deletes:
+                yield ("delete", p)
+            
+            # Apply renames and the like for the next round
+            for new_name, old_name, old_rev in changes.apply_reverse_changes(self._metabranches.keys(), paths):
+                if new_name in unusual:
+                    unusual.remove(new_name)
+                if old_name is None: 
+                    # didn't exist previously
+                    if new_name in self._metabranches:
+                        del self._metabranches[new_name]
+                else:
+                    data = self.get_metabranch(new_name)
+                    del self._metabranches[new_name]
+                    metabranches_history.setdefault(old_rev, {})[old_name] = data
+                    if not self.layout.is_branch_or_tag(old_name, project):
+                        unusual_history.setdefault(old_rev, set()).add(old_name)
+
+            for bp in bps:
+                revmeta = self._provider.get_revision(bp, revnum, paths, revprops, metabranch=bps[bp])
+                bps[bp].append(revmeta)
+                yield "revision", revmeta
+    
+        # Make sure commit 0 is processed
+        if self.to_revnum == 0 and self.layout.is_branch_or_tag("", project):
+            bps[""] = self.get_metabranch("")
+            revmeta = self._provider.get_revision("", 0, {"": ('A', None, -1)}, {}, metabranch=bps[""])
+            yield "revision", revmeta
 
 
 class RevisionMetadataProvider(object):
@@ -708,13 +801,21 @@ class RevisionMetadataProvider(object):
             yield ret
 
     def iter_all_revisions(self, layout, check_unusual_path, from_revnum, to_revnum=0, project=None, pb=None):
+        """Iterate over all RevisionMetadata objects in a repository.
+
+        :param layout: Repository layout to use
+        :param check_unusual_path: Check whether to keep branch
+
+        Layout decides which ones to pick up.
+        """
         for kind, rev in self.iter_all_changes(layout, check_unusual_path, from_revnum, to_revnum, project, pb):
             if kind == "revision":
                 yield rev
 
     def iter_all_changes(self, layout, check_unusual_path, from_revnum, to_revnum=0, 
                          project=None, pb=None):
-        """Iterate over all RevisionMetadata objects in a repository.
+        """Iterate over all RevisionMetadata objects and branch removals 
+        in a repository.
 
         :param layout: Repository layout to use
         :param check_unusual_path: Check whether to keep branch
@@ -724,71 +825,13 @@ class RevisionMetadataProvider(object):
         assert from_revnum >= to_revnum
         if check_unusual_path is None:
             check_unusual_path = lambda x: True
-        metabranches = {}
-        def get_metabranch(bp):
-            if not bp in metabranches:
-                metabranches[bp] = RevisionMetadataBranch()
-            return metabranches[bp]
-
         if project is not None:
             prefixes = layout.get_project_prefixes(project)
         else:
             prefixes = [""]
-        unusual_history = {}
-        metabranches_history = {}
-        unusual = set()
-        for (paths, revnum, revprops) in self._log.iter_changes(prefixes, from_revnum, to_revnum, pb=pb):
-            bps = {}
-            deletes = []
-            if pb:
-                pb.update("discovering revisions", revnum, from_revnum-revnum)
-
-            metabranches.update(metabranches_history.get(revnum, {}))
-            unusual.update(unusual_history.get(revnum, set()))
-
-            for p in sorted(paths):
-                action = paths[p][0]
-
-                try:
-                    (_, bp, ip) = layout.split_project_path(p, project)
-                except svn_errors.NotSvnBranchPath:
-                    pass
-                else:
-                    if action != 'D' or ip != "":
-                        bps[bp] = get_metabranch(bp)
-                for u in unusual:
-                    if p.startswith("%s/" % u):
-                        bps[u] = get_metabranch(u)
-                if action in ('R', 'D') and (layout.is_branch_or_tag(p, project) or layout.is_branch_or_tag_parent(p, project)):
-                    deletes.append(p)
-
-            # Mention deletes
-            for d in deletes:
-                yield ("delete", p)
-            
-            # Apply renames and the like for the next round
-            for new_name, old_name, old_rev in changes.apply_reverse_changes(metabranches.keys(), paths):
-                if new_name in unusual:
-                    unusual.remove(new_name)
-                if old_name is None: 
-                    # didn't exist previously
-                    if new_name in metabranches:
-                        del metabranches[new_name]
-                else:
-                    data = get_metabranch(new_name)
-                    del metabranches[new_name]
-                    if check_unusual_path(old_name):
-                        metabranches_history.setdefault(old_rev, {})[old_name] = data
-                        if not layout.is_branch_or_tag(old_name, project):
-                            unusual_history.setdefault(old_rev, set()).add(old_name)
-
-            for bp in bps:
-                revmeta = self.get_revision(bp, revnum, paths, revprops, metabranch=bps[bp])
-                bps[bp].append(revmeta)
-                yield "revision", revmeta
-    
-        # Make sure commit 0 is processed
-        if to_revnum == 0 and layout.is_branch_or_tag("", project):
-            bps[""] = get_metabranch("")
-            revmeta = self.get_revision("", 0, {"": ('A', None, -1)}, {}, metabranch=bps[""])
-            yield "revision", revmeta
+        
+        browser = RevisionMetadataBrowser(prefixes, from_revnum, to_revnum, 
+                                          layout, self, project, pb=pb)
+        for kind, item in browser:
+            if kind != "revision" or check_unusual_path(item.branch_path):
+                yield kind, item
