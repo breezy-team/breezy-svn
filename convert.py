@@ -122,6 +122,15 @@ def load_dumpfile(dumpfile, outputdir):
     return r
 
 
+def contains_parent_path(s, p):
+    while p != "":
+        if p in s:
+            return p
+        (p, _) = urlutils.split(p)
+    return False
+
+
+
 def convert_repository(source_repos, output_url, layout=None,
                        create_shared_repo=True, working_trees=False, all=False,
                        format=None, filter_branch=None, keep=False, 
@@ -138,11 +147,16 @@ def convert_repository(source_repos, output_url, layout=None,
         branches, should be imported
     :param format: Format to use
     """
-    def remove_branches(to_transport, removed_branches):
+    def remove_branches(to_transport, removed_branches, exceptions):
         # Remove removed branches
         for bp in removed_branches:
-            # TODO: Perhaps check if path is a valid branch with the right last
-            # revid?
+            skip = False
+            for e in exceptions:
+                if bp.startswith(e+"/"):
+                    skip = True
+                    break
+            if skip:
+                continue
             fullpath = to_transport.local_abspath(bp)
             if not os.path.isdir(fullpath):
                 continue
@@ -192,24 +206,17 @@ def convert_repository(source_repos, output_url, layout=None,
         project = None
         if to_revnum is None:
             to_revnum = source_repos.get_latest_revnum()
-        # Searching history for touched and removed branches is more expensive than 
-        # just listing the branches in HEAD, so avoid it if possible.
-        # If there's more than one subdirectory (we always have .bzr), we may 
-        # have to remove existing branches.
-        if (not keep and to_transport.has(".") and len(to_transport.list_dir(".")) > 1):
-            removed_branches = source_repos.find_deleted_branches_between(layout=layout, 
-                from_revnum=from_revnum, to_revnum=to_revnum, project=project)
-        else:
-            removed_branches = set([])
         mapping = source_repos.get_mapping()
         revmetas = []
         existing_branches = {}
+        deleted = set()
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for kind, revmeta in source_repos._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag,
+            for kind, item in source_repos._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag,
                                                                    to_revnum, from_revnum,
                                                                    project=project):
                 if kind == "revision":
+                    revmeta = item
                     pb.update("determining revisions to fetch", to_revnum-revmeta.revnum, to_revnum)
                     try:
                         if revmeta.is_hidden(mapping):
@@ -217,15 +224,16 @@ def convert_repository(source_repos, output_url, layout=None,
                         # FIXME: mapping = revmeta.get_appropriate_mapping(mapping)
                         if target_repos is not None and (target_repos_is_empty or not target_repos.has_revision(revmeta.get_revision_id(mapping))):
                             revmetas.append((revmeta, mapping))
-                        if not revmeta.branch_path in existing_branches and layout.is_branch(revmeta.branch_path, project=project):
+                        if (not revmeta.branch_path in existing_branches and 
+                            layout.is_branch(revmeta.branch_path, project=project) and 
+                            not contains_parent_path(deleted, revmeta.branch_path)):
                             existing_branches[revmeta.branch_path] = SvnBranch(source_repos, revmeta.branch_path, revnum=revmeta.revnum, _skip_check=True)
                     except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                         continue
+                elif kind == "delete":
+                    deleted.add(item)
         finally:
             pb.finished()
-        existing_branches = existing_branches.values()
-        if filter_branch is not None:
-            existing_branches = filter(filter_branch, existing_branches)
 
         if create_shared_repo:
             inter = InterRepository.get(source_repos, target_repos)
@@ -239,8 +247,11 @@ def convert_repository(source_repos, output_url, layout=None,
                 inter.fetch()
 
         if not keep:
-            remove_branches(to_transport, removed_branches)
+            remove_branches(to_transport, deleted, existing_branches.keys())
 
+        existing_branches = existing_branches.values()
+        if filter_branch is not None:
+            existing_branches = filter(filter_branch, existing_branches)
         source_graph = source_repos.get_graph()
         pb = ui.ui_factory.nested_progress_bar()
         try:
@@ -274,9 +285,6 @@ def convert_repository(source_repos, output_url, layout=None,
             pb.finished()
     finally:
         source_repos.unlock()
-
-    if not keep:
-        remove_branches(to_transport, removed_branches)
 
     if target_repos is not None:
         put_latest_svn_import_revision(target_repos, source_repos.uuid, to_revnum)

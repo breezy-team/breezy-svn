@@ -600,25 +600,6 @@ class SvnRepository(foreign.ForeignRepository):
             raise errors.RevpropChangeFailed(SVN_REVPROP_BZR_SIGNATURE)
 
     @needs_read_lock
-    def find_deleted_branches_between(self, layout, from_revnum, to_revnum, project=None):
-        deleted = set()
-        if project is not None:
-            prefixes = layout.get_project_prefixes(project)
-        else:
-            prefixes = None
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
-            for (paths, revnum, revprops) in self._log.iter_changes(prefixes, from_revnum, to_revnum):
-                pb.update("finding branches", revnum, to_revnum)
-                for p in paths:
-                    if ((layout.is_branch_parent(p, project) or layout.is_branch(p, project)) and 
-                            paths[p][0] in ('R', 'D')):
-                        deleted.add(p)
-        finally:
-            pb.finished()
-        return deleted
-
-    @needs_read_lock
     def find_branches(self, layout=None, revnum=None):
         """Find branches underneath this repository.
 
