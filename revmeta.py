@@ -610,10 +610,24 @@ class RevisionMetadataBrowser(object):
 
     def get_metabranch(self, bp):
         if not bp in self._metabranches:
-            # FIXME: Provide hsitory iter
             self._metabranches[bp] = RevisionMetadataBranch()
-            # FIXME: self._open_metabranches.append(metabranches[bp])
+            self._provider._open_metabranches.append(self._metabranches[bp])
         return self._metabranches[bp]
+
+    def _branch_next(self, metabranch):
+        # Walk over all revisions since the last one currently present 
+        # in metabranch until one of the following conditions occurs:
+        # - New revision is added to metabranch
+        # - We run out of data 
+        ol = len(metabranch._revs)
+        while not metabranch.finished:
+            try:
+                self.next()
+            except StopIteration:
+                raise MetabranchHistoryIncomplete()
+            if len(metabranch._revs) > ol:
+                return metabranch._revs[ol]
+        raise StopIteration()
 
     def __iter__(self):
         return ListBuildingIterator(self._actions, self.next)
@@ -663,6 +677,7 @@ class RevisionMetadataBrowser(object):
                 if old_name is None: 
                     # didn't exist previously
                     if new_name in self._metabranches:
+                        self._metabranches[new_name].finished = True
                         del self._metabranches[new_name]
                 else:
                     data = self.get_metabranch(new_name)
@@ -680,6 +695,7 @@ class RevisionMetadataBrowser(object):
         if self.to_revnum == 0 and self.layout.is_branch_or_tag("", project):
             bps[""] = self.get_metabranch("")
             revmeta = self._provider.get_revision("", 0, {"": ('A', None, -1)}, {}, metabranch=bps[""])
+            bps[""].finished = True
             yield "revision", revmeta
 
 
