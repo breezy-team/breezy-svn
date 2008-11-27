@@ -650,27 +650,22 @@ class SvnRepository(foreign.ForeignRepository):
         try:
             entries = list(self._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, to_revnum, from_revnum, project=project, pb=pb))
             for kind, item in reversed(entries):
-                tag_changes = {}
                 if kind == "revision":
                     revmeta = item
                     if layout.is_tag(revmeta.branch_path):
                         refer_revmeta = revmeta.get_tag_revmeta(mapping)
                         try:
-                            tag_changes[revmeta.branch_path] = refer_revmeta.get_revision_id(mapping)
+                            tags[revmeta.branch_path] = refer_revmeta.get_revision_id(mapping)
                         except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                             pass
-                elif kind == "branch-end":
-                    tag_changes = dict([(path, None) for (path, revnum) in item])
-                for path, revid in tag_changes.iteritems():
-                    name = layout.get_tag_name(path, project)
-                    if revid is None:
-                        del tags[name]
-                    else:
-                        tags[name] = revid
+                elif kind == "delete":
+                    for t in tags:
+                        if changes.path_is_child(t, item):
+                            del tags[t]
         finally:
             pb.finished()
 
-        return tags
+        return dict([(layout.get_tag_name(path, project), revid) for (path, revid) in tags.iteritems()])
 
     @needs_read_lock
     def find_tags(self, project, layout=None, mapping=None, revnum=None):
