@@ -200,6 +200,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         dc.close()
 
         repos = Repository.open(repos_url)
+        repos.set_layout(TrunkLayout())
 
         self.assertEqual(1, 
                    len(set(repos.all_revision_ids(TrunkLayout()))))

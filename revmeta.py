@@ -510,13 +510,13 @@ class ListBuildingIterator(object):
 class RevisionMetadataBranch(object):
     """Describes a Bazaar-like branch in a Subversion repository."""
 
-    def __init__(self, next=None, revmeta_provider=None, 
+    def __init__(self, revmeta_provider=None, 
                  history_limit=None):
         self._revs = []
         self._revnums = []
-        self._get_next = next
         self._history_limit = history_limit
         self._revmeta_provider = revmeta_provider
+        self._get_next = None
         self.finished = False
 
     def __repr__(self):
@@ -540,12 +540,10 @@ class RevisionMetadataBranch(object):
         if self._history_limit and len(self._revs) >= self._history_limit:
             raise MetabranchHistoryIncomplete()
         try:
-            (bp, paths, revnum, revprops) = self._get_next()
+            ret = self._get_next()
         except StopIteration:
             self.finished = True
             raise
-        ret = self._revmeta_provider.get_revision(bp, revnum, paths, revprops, metabranch=self)
-        self.append(ret)
         return ret
 
     def _index(self, revmeta):
@@ -610,7 +608,9 @@ class RevisionMetadataBrowser(object):
 
     def get_metabranch(self, bp):
         if not bp in self._metabranches:
+            from functools import partial
             self._metabranches[bp] = RevisionMetadataBranch()
+            self._metabranches[bp]._get_next = partial(self._branch_next, self._metabranches[bp])
             self._provider._open_metabranches.append(self._metabranches[bp])
         return self._metabranches[bp]
 
@@ -808,8 +808,13 @@ class RevisionMetadataProvider(object):
         history_iter = self.iter_changes(branch_path, from_revnum, 
                                               to_revnum, pb=pb, 
                                               limit=limit)
-        metabranch = RevisionMetadataBranch(history_iter.next, self,
-                                            limit)
+        def convert((bp, paths, revnum, revprops)):
+            ret = self.get_revision(bp, revnum, paths, revprops, metabranch=metabranch)
+            metabranch.append(ret)
+            return ret
+        metabranch = RevisionMetadataBranch(self, limit)
+        from itertools import imap
+        metabranch._get_next = imap(convert, history_iter).next
         self._open_metabranches.append(metabranch)
         for ret in metabranch:
             if mapping is not None and not mapping.is_branch_or_tag(ret.branch_path):
