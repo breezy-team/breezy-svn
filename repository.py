@@ -94,7 +94,7 @@ class SvnRepositoryFormat(RepositoryFormat):
         return target_repo_format.rich_root_data
 
 
-CACHE_DB_VERSION = 4
+CACHE_DB_VERSION = 5
 
 cachedbs = {}
 
