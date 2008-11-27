@@ -247,13 +247,16 @@ class RevisionMetadata(object):
         taking into account that it shouldn't be newer than 'max_mapping'.
 
         """
+        original = self.get_original_mapping()
+        if original is not None:
+            # TODO: Make sure original <= newest_allowed
+            return original
+        return newest_allowed
+
+    def get_original_mapping(self):
         if not self.is_bzr_revision():
-            return newest_allowed
-        ret = find_mapping(self.get_revprops(), self.get_changed_fileprops())
-        # FIXME: Make sure ret is older than newest_allowed
-        if ret is None:
-            return newest_allowed
-        return ret
+            return None
+        return find_mapping(self.get_revprops(), self.get_changed_fileprops())
 
     def get_lhs_parent(self, mapping):
         """Find the revid of the left hand side parent of this revision."""
