@@ -369,7 +369,7 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError
 
-    def import_revision(self, revprops, fileprops, uuid, branch, revnum, rev):
+    def import_revision(self, revprops, fileprops, foreign_revid, rev):
         """Update a Revision object from Subversion revision and branch 
         properties.
 
@@ -526,7 +526,7 @@ class BzrSvnMappingFileProps(object):
     def __init__(self, name):
         self.name = name
 
-    def import_revision(self, svn_revprops, fileprops, uuid, branch, revnum, rev):
+    def import_revision(self, svn_revprops, fileprops, foreign_revid, rev):
         parse_svn_revprops(svn_revprops, rev)
         if SVN_PROP_BZR_LOG in fileprops:
             rev.message = fileprops[SVN_PROP_BZR_LOG][1]
@@ -645,7 +645,7 @@ class BzrSvnMappingFileProps(object):
 
 
 class BzrSvnMappingRevProps(object):
-    def import_revision(self, svn_revprops, fileprops, uuid, branch, revnum, rev):
+    def import_revision(self, svn_revprops, fileprops, foreign_revid, rev):
         parse_svn_revprops(svn_revprops, rev)
         parse_bzr_svn_revprops(svn_revprops, rev)
 

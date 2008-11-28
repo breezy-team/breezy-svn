@@ -302,9 +302,13 @@ class RevisionMetadata(object):
         return estimate_svk_ancestors(self.get_fileprops())
 
     def is_bzr_revision_revprops(self):
+        """Check if any revision properties indicate this is a bzr revision.
+        """
         return is_bzr_revision_revprops(self.get_revprops())
 
     def is_bzr_revision_fileprops(self):
+        """Check if any file properties indicate this is a bzr revision.
+        """
         return is_bzr_revision_fileprops(self.get_changed_fileprops())
 
     def is_hidden(self, mapping):
@@ -335,6 +339,7 @@ class RevisionMetadata(object):
         return None
 
     def get_bzr_merges(self, mapping):
+        """Check what Bazaar revisions were merged in this revision."""
         return mapping.get_rhs_parents(self.branch_path, self.get_revprops(), self.get_changed_fileprops())
 
     def get_svk_merges(self, mapping):
@@ -372,6 +377,7 @@ class RevisionMetadata(object):
         return None
 
     def get_hidden_lhs_ancestors_count(self, mapping):
+        """Get the number of hidden ancestors this revision has."""
         if not mapping.supports_hidden:
             return 0
         count = mapping.get_hidden_lhs_ancestors_count(self.get_fileprops())
@@ -417,12 +423,13 @@ class RevisionMetadata(object):
             parent_ids = ()
         rev = ForeignRevision(foreign_revid=self.get_foreign_revid(),
                               mapping=mapping, 
-                              revision_id=self.get_revision_id(mapping), parent_ids=parent_ids)
+                              revision_id=self.get_revision_id(mapping), 
+                              parent_ids=parent_ids)
 
         rev.svn_meta = self
 
-        mapping.import_revision(self.get_revprops(), self.get_changed_fileprops(), self.uuid, self.branch_path, 
-                                self.revnum, rev)
+        mapping.import_revision(self.get_revprops(), 
+                                self.get_changed_fileprops(), self.get_foreign_revid(), rev)
 
         return rev
 

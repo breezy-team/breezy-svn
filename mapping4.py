@@ -147,18 +147,18 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
         else:
             self.fileprops.export_text_revisions(text_revisions, revprops, fileprops)
 
-    def import_revision(self, svn_revprops, fileprops, uuid, branch, revnum, rev):
+    def import_revision(self, svn_revprops, fileprops, foreign_revid, rev):
         if svn_revprops.has_key(mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES):
             features = mapping.parse_required_features_property(svn_revprops[mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES])
             assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
         if svn_revprops.has_key(mapping.SVN_REVPROP_BZR_MAPPING_VERSION):
             assert svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION] == self.name, "unknown mapping: %s" % svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION]
-            self.revprops.import_revision(svn_revprops, fileprops, uuid, branch, revnum, rev)
+            self.revprops.import_revision(svn_revprops, fileprops, foreign_revid, rev)
         else:
             if fileprops.has_key(mapping.SVN_PROP_BZR_REQUIRED_FEATURES):
                 features = mapping.parse_required_features_property(fileprops[mapping.SVN_PROP_BZR_REQUIRED_FEATURES])
                 assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
-            self.fileprops.import_revision(svn_revprops, fileprops, uuid, branch, revnum, rev)
+            self.fileprops.import_revision(svn_revprops, fileprops, foreign_revid, rev)
 
     def get_mandated_layout(self, repository):
         return None

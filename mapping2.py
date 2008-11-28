@@ -71,7 +71,7 @@ class BzrSvnMappingv1(BzrSvnMapping):
     def is_tag(self, tag_path):
         return False
 
-    def import_revision(self, svn_revprops, fileprops, uuid, branch, revnum, rev):
+    def import_revision(self, svn_revprops, fileprops, (uuid, branch, revnum), rev):
         parse_svn_revprops(svn_revprops, rev)
 
     def generate_file_id(self, uuid, revnum, branch, inv_path):
