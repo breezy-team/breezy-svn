@@ -645,7 +645,7 @@ class RevisionMetadataBrowser(object):
             bps = {}
             deletes = []
             if pb:
-                pb.update("discovering revisions", revnum, self.from_revnum-revnum)
+                pb.update("discovering revisions", revnum-self.to_revnum, self.from_revnum-self.to_revnum)
 
             self._metabranches.update(metabranches_history.get(revnum, {}))
             unusual.update(unusual_history.get(revnum, set()))
