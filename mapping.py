@@ -802,6 +802,8 @@ def find_mapping(revprops, changed_fileprops):
 
 
 def is_bzr_revision_revprops(revprops):
+    """Check if the specified revision properties 
+    contain bzr-svn metadata."""
     if revprops.has_key(SVN_REVPROP_BZR_MAPPING_VERSION):
         return True
     if revprops.has_key(SVN_REVPROP_BZR_SKIP):
@@ -810,6 +812,9 @@ def is_bzr_revision_revprops(revprops):
 
 
 def is_bzr_revision_fileprops(fileprops):
+    """Check if the specified fileprops dictionary contains 
+    bzr-svn metadata.
+    """
     for k in fileprops:
         if k.startswith(SVN_PROP_BZR_PREFIX):
             return True
