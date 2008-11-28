@@ -251,9 +251,7 @@ class CachingFileIdMap(object):
         """Make sure the map is up to date until revnum."""
         # First, find the last cached map
         if revnum == 0:
-            assert branch == ""
-            return {"": (mapping.generate_file_id(uuid, 0, "", u""), 
-              self.repos.generate_revision_id(0, "", mapping))}
+            return self.actual.get_map((uuid, branch, revnum), mapping)
 
         todo = []
         next_parent_revs = []

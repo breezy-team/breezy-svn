@@ -31,7 +31,6 @@ from bzrlib.revision import NULL_REVISION, ensure_null
 from bzrlib.transport import Transport, get_transport
 from bzrlib.trace import info
 
-from copy import copy
 from itertools import chain
 import os
 import subvertpy
@@ -378,9 +377,6 @@ class SvnRepository(foreign.ForeignRepository):
 
     def get_fileid_map(self, revmeta, mapping):
         return self.fileid_map.get_map(revmeta.get_foreign_revid(), mapping)
-
-    def transform_fileid_map(self, revmeta, mapping):
-        return self.fileid_map.apply_changes(revmeta, mapping)[0]
 
     def all_revision_ids(self, layout=None, mapping=None):
         """Find all revision ids in this repository, using the specified or 
