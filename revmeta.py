@@ -49,8 +49,10 @@ from bzrlib.plugins.svn.svk import (
 import bisect
 from itertools import ifilter
 
+
 class MetabranchHistoryIncomplete(Exception):
     """No revision metadata branch."""
+
 
 def full_paths(find_children, paths, bp, from_bp, from_rev):
     """Generate the changes creating a specified branch path.
@@ -147,6 +149,15 @@ class RevisionMetadata(object):
         return revid
 
     def get_tag_revmeta(self, mapping):
+        """Return the revmeta object for the revision that should be 
+        referenced when this revision is considered a tag.
+        
+        This will return the original location if a tag was created by 
+        copying from another branch into a tag path and there were 
+        no additional changes. Doing this makes it more likely that tags 
+        are on the mainline and therefore show up with a revision 
+        number in 'bzr tags'.
+        """
         if self.changes_branch_root():
             # This tag was (recreated) here, so unless anything else under this 
             # tag changed
@@ -254,6 +265,9 @@ class RevisionMetadata(object):
         return newest_allowed
 
     def get_original_mapping(self):
+        """Find the original mapping that was used to store this revision
+        or None if it is not a bzr-svn revision.
+        """
         if not self.is_bzr_revision():
             return None
         return find_mapping(self.get_revprops(), self.get_changed_fileprops())
@@ -340,8 +354,6 @@ class RevisionMetadata(object):
             # We assume svk:merge is only relevant on non-bzr-svn revisions. 
             # If this is a bzr-svn revision, the bzr-svn properties 
             # would be parsed instead.
-            #
-            # This saves one svn_get_dir() call.
             revid = svk_feature_to_revision_id(feature, mapping)
             if revid is not None:
                 ret.append(revid)
@@ -349,6 +361,9 @@ class RevisionMetadata(object):
         return tuple(ret)
 
     def get_distance_to_null(self, mapping):
+        """Return the number of revisions between this one and the left hand 
+        side NULL_REVISION, if known.
+        """
         if mapping.roundtripping:
             (bzr_revno, _) = mapping.get_revision_id(self.branch_path, self.get_revprops(), 
                                                              self.get_changed_fileprops())
