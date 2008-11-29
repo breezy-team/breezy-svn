@@ -54,6 +54,8 @@ bzr-svn 0.5.0			UNRELEASED
 
    * Upgrade tags as well during svn-upgrade.
 
+   * Correctly detect prefix when repository root is URL root (#303292)
+
   INTERNALS
 
    * Remove custom commit code for working tree. 
