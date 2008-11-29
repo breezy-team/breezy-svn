@@ -319,7 +319,7 @@ class RevisionMetadata(object):
         """Check whether this revision should be hidden from Bazaar history."""
         if not mapping.supports_hidden:
             return False
-        if self.consider_bzr_fileprops() or self.consider_bzr_revprops():
+        if self.consider_bzr_fileprops() or self.check_revprops:
             return mapping.is_bzr_revision_hidden(self.get_revprops(), self.get_changed_fileprops())
         return False
 
