@@ -95,6 +95,8 @@ class RevisionMetadata(object):
         self._revprops = revprops
         self._changed_fileprops = changed_fileprops
         self._fileprops = fileprops
+        self._is_bzr_revision = None
+        self._direct_lhs_parent_known = False
         self.metabranch = metabranch
         self.uuid = uuid
 
@@ -105,7 +107,7 @@ class RevisionMetadata(object):
                 self.uuid == other.uuid)
 
     def __repr__(self):
-        return "<RevisionMetadata for revision %d, path %s in repository %s>" % (self.revnum, self.branch_path, repr(self.uuid))
+        return "<RevisionMetadata for revision %d, path %s in repository %r>" % (self.revnum, self.branch_path, self.uuid)
 
     def changes_branch_root(self):
         """Check whether the branch root was modified in this revision.
@@ -215,17 +217,23 @@ class RevisionMetadata(object):
         return self._changed_fileprops
 
     def get_direct_lhs_parent_revmeta(self):
+        if self._direct_lhs_parent_known:
+            return self._direct_lhs_parent_revmeta
+        self._direct_lhs_parent_known = True
         if self.metabranch is not None:
             # Perhaps the metabranch already has the parent?
             try:
-                return self.metabranch.get_lhs_parent(self)
+                self._direct_lhs_parent_revmeta = self.metabranch.get_lhs_parent(self)
+                return self._direct_lhs_parent_revmeta
             except StopIteration:
-                return None
+                self._direct_lhs_parent_revmeta = None
+                return self._direct_lhs_parent_revmeta
             except MetabranchHistoryIncomplete:
                 pass
         # FIXME: Don't use self.repository.branch_prev_location,
         #        since it browses history
-        return self.repository._revmeta_provider.branch_prev_location(self)
+        self._direct_lhs_parent_revmeta = self.repository._revmeta_provider.branch_prev_location(self)
+        return self._direct_lhs_parent_revmeta
 
     def get_lhs_parent_revmeta(self, mapping):
         """Get the revmeta object for the left hand side parent.
@@ -316,6 +324,8 @@ class RevisionMetadata(object):
         """Determine (with as few network requests as possible) if this is a bzr revision.
 
         """
+        if self._is_bzr_revision is not None:
+            return self._is_bzr_revision
         order = []
         # If the server already sent us all revprops, look at those first
         if self._log.quick_revprops:
@@ -328,6 +338,7 @@ class RevisionMetadata(object):
         for fn in order:
             ret = fn()
             if ret is not None:
+                self._is_bzr_revision = ret
                 return ret
         return None
 
