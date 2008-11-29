@@ -232,7 +232,8 @@ class cmd_svn_import(Command):
                 raise BzrCommandError("Path inside repository specified "
                                       "and --prefix specified")
             from_repos = from_dir.find_repository()
-            prefix = urlutils.relative_url(from_repos.base, from_location)
+            assert from_location.startswith(from_repos.base)
+            prefix = from_location[len(from_repos.base):].strip("/")
             prefix = prefix.encode("utf-8")
 
         if until is None:
