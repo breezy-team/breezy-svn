@@ -287,16 +287,16 @@ class RevisionMetadata(object):
 
         """
         if not self.knows_fileprops() and not self.consider_bzr_fileprops():
-            # This revisions descendant doesn't have bzr fileprops set, so this one can't have 
-            # them either.
+            # This revisions descendant doesn't have bzr fileprops set, so 
+            # this one can't have them either.
             return 0
         return estimate_bzr_ancestors(self.get_fileprops())
 
     def estimate_svk_fileprop_ancestors(self):
         """Estimate how many svk ancestors this revision has."""
         if not self.knows_fileprops() and not self.consider_svk_fileprops():
-            # This revisions descendant doesn't have svk fileprops set, so this one can't have 
-            # them either.
+            # This revisions descendant doesn't have svk fileprops set, so
+            # this one can't have them either.
             return 0
         return estimate_svk_ancestors(self.get_fileprops())
 
@@ -305,15 +305,15 @@ class RevisionMetadata(object):
         """
         return is_bzr_revision_revprops(self.get_revprops())
 
-    def is_changes_root(self):
-        return changes.changes_root(self.get_paths()) == self.branch_path
-
     def is_bzr_revision_fileprops(self):
         """Check if any file properties indicate this is a bzr revision.
         """
         if not self.is_changes_root():
             return False
         return is_bzr_revision_fileprops(self.get_changed_fileprops())
+
+    def is_changes_root(self):
+        return changes.changes_root(self.get_paths()) == self.branch_path
 
     def is_hidden(self, mapping):
         """Check whether this revision should be hidden from Bazaar history."""
@@ -347,7 +347,8 @@ class RevisionMetadata(object):
 
     def get_bzr_merges(self, mapping):
         """Check what Bazaar revisions were merged in this revision."""
-        return mapping.get_rhs_parents(self.branch_path, self.get_revprops(), self.get_changed_fileprops())
+        return mapping.get_rhs_parents(self.branch_path, self.get_revprops(), 
+                                       self.get_changed_fileprops())
 
     def get_svk_merges(self, mapping):
         """Check what SVK revisions were merged in this revision."""
@@ -436,16 +437,19 @@ class RevisionMetadata(object):
         rev.svn_meta = self
 
         mapping.import_revision(self.get_revprops(), 
-                                self.get_changed_fileprops(), self.get_foreign_revid(), rev)
+                                self.get_changed_fileprops(), 
+                                self.get_foreign_revid(), rev)
 
         return rev
 
     def get_fileid_map(self, mapping):
         """Find the file id override map for this revision."""
-        return mapping.import_fileid_map(self.get_revprops(), self.get_changed_fileprops())
+        return mapping.import_fileid_map(self.get_revprops(), 
+                                         self.get_changed_fileprops())
 
     def get_text_revisions(self, mapping):
-        return mapping.import_text_revisions(self.get_revprops(), self.get_changed_fileprops())
+        return mapping.import_text_revisions(self.get_revprops(), 
+                                             self.get_changed_fileprops())
 
     def consider_bzr_fileprops(self):
         return self.metabranch is None or self.metabranch.consider_bzr_fileprops(self)

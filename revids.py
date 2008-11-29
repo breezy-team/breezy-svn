@@ -64,8 +64,8 @@ class RevidMap(object):
 
         for entry_revid, branch, min_revno, max_revno, mapping in self.discover_fileprop_revids(layout, 0, fileprops_to_revnum, project):
             if revid == entry_revid:
-                (bp, revnum, mapping_name) = self.bisect_revid_revnum(revid, branch, min_revno, max_revno)
-                return (self.repos.uuid, bp, revnum), mapping_name
+                (foreign_revid, mapping_name) = self.bisect_revid_revnum(revid, branch, min_revno, max_revno)
+                return (foreign_revid, mapping_name)
         raise NoSuchRevision(self, revid)
 
     def discover_revprop_revids(self, layout, from_revnum, to_revnum):
@@ -138,12 +138,13 @@ class RevidMap(object):
                     mapping_name = propname[len(SVN_PROP_BZR_REVISION_ID):]
                     mapping = mapping_registry.parse_mapping_name("svn-" + mapping_name)
                     assert mapping.is_branch_or_tag(revmeta.branch_path)
-                    return (revmeta.branch_path, revmeta.revnum, mapping)
+                    return (revmeta.get_foreign_revid(), mapping)
 
         raise InvalidBzrSvnRevision(revid)
 
 
 class CachingRevidMap(object):
+
     def __init__(self, actual, cachedb=None):
         self.cache = RevisionIdMapCache(cachedb)
         self.actual = actual
@@ -208,10 +209,10 @@ class CachingRevidMap(object):
             assert min_revnum <= max_revnum
             assert isinstance(branch_path, str)
 
-        (branch_path, revnum, mapping) = self.actual.bisect_revid_revnum(revid, 
+        ((uuid, branch_path, revnum), mapping) = self.actual.bisect_revid_revnum(revid, 
             branch_path, min_revnum, max_revnum)
         self.cache.insert_revid(revid, branch_path, revnum, revnum, mapping.name)
-        return (self.actual.repos.uuid, branch_path, revnum), mapping
+        return (uuid, branch_path, revnum), mapping
 
 
 class RevisionIdMapCache(CacheTable):
