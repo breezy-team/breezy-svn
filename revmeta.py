@@ -305,10 +305,13 @@ class RevisionMetadata(object):
         """
         return is_bzr_revision_revprops(self.get_revprops())
 
+    def is_changes_root(self):
+        return changes.changes_root(self.get_paths()) == self.branch_path
+
     def is_bzr_revision_fileprops(self):
         """Check if any file properties indicate this is a bzr revision.
         """
-        if changes.changes_root(self.get_paths()) != self.branch_path:
+        if not self.is_changes_root():
             return False
         return is_bzr_revision_fileprops(self.get_changed_fileprops())
 
@@ -333,7 +336,7 @@ class RevisionMetadata(object):
         if self.consider_bzr_fileprops():
             order.append(self.is_bzr_revision_fileprops)
         # Only look for revprops if they could've been committed
-        if ((not self._log.quick_revprops) and self.consider_bzr_revprops()):
+        if ((not self._log.quick_revprops) and self.check_revprops):
             order.append(self.is_bzr_revision_revprops)
         for fn in order:
             ret = fn()
@@ -446,9 +449,6 @@ class RevisionMetadata(object):
 
     def consider_bzr_fileprops(self):
         return self.metabranch is None or self.metabranch.consider_bzr_fileprops(self)
-
-    def consider_bzr_revprops(self):
-        return self.check_revprops
 
     def consider_svk_fileprops(self):
         return self.metabranch is None or self.metabranch.consider_svk_fileprops(self)
@@ -573,6 +573,8 @@ class RevisionMetadataBranch(object):
         return ret
 
     def _index(self, revmeta):
+        """Find the location of a revmeta object, counted from the 
+        most recent revision."""
         i = len(self._revs) - bisect.bisect_right(self._revnums, revmeta.revnum)
         assert i == len(self._revs) or self._revs[i] == revmeta
         return i
