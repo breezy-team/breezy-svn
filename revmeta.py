@@ -300,6 +300,8 @@ class RevisionMetadata(object):
     def is_bzr_revision_fileprops(self):
         """Check if any file properties indicate this is a bzr revision.
         """
+        if changes.changes_root(self.get_paths()) != self.branch_path:
+            return False
         return is_bzr_revision_fileprops(self.get_changed_fileprops())
 
     def is_hidden(self, mapping):
