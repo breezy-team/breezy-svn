@@ -200,24 +200,10 @@ class RevisionMetadata(object):
 
     def get_previous_fileprops(self):
         """Return the file properties set on the branch root before this revision."""
-        # Perhaps the metabranch already has the parent?
-        prev = None
-        if self.metabranch is not None:
-            try:
-                parentrevmeta = self.metabranch.get_lhs_parent(self)
-            except StopIteration:
-                return {}
-            except MetabranchHistoryIncomplete:
-                pass
-            else:
-                prev = (parentrevmeta.branch_path, parentrevmeta.revnum)
-        if prev is None:
-            prev = changes.find_prev_location(self.get_paths(), 
-                                              self.branch_path, self.revnum)
+        prev = self.get_direct_lhs_parent_revmeta()
         if prev is None:
             return {}
-        (prev_path, prev_revnum) = prev
-        return self._get_fileprops_fn(prev_path, prev_revnum)
+        return prev.get_fileprops()
 
     def get_changed_fileprops(self):
         """Determine the file properties changed in this revision."""
@@ -228,26 +214,31 @@ class RevisionMetadata(object):
                 self._changed_fileprops = {}
         return self._changed_fileprops
 
+    def get_direct_lhs_parent_revmeta(self):
+        if self.metabranch is not None:
+            # Perhaps the metabranch already has the parent?
+            try:
+                return self.metabranch.get_lhs_parent(self)
+            except StopIteration:
+                return None
+            except MetabranchHistoryIncomplete:
+                pass
+        # FIXME: Don't use self.repository.branch_prev_location,
+        #        since it browses history
+        return self.repository._revmeta_provider.branch_prev_location(self)
+
     def get_lhs_parent_revmeta(self, mapping):
         """Get the revmeta object for the left hand side parent.
 
         :note: Returns None when there is no parent (parent is NULL_REVISION)
         """
         assert mapping.is_branch_or_tag(self.branch_path), "%s not valid in %r" % (self.branch_path, mapping)
-        def get_next_parent(rm):
-            if rm.metabranch is not None:
-                # Perhaps the metabranch already has the parent?
-                try:
-                    parentrevmeta = rm.metabranch.get_lhs_parent(rm)
-                except StopIteration:
-                    return None
-                except MetabranchHistoryIncomplete:
-                    pass
-                else:
-                    return parentrevmeta
-            # FIXME: Don't use self.repository.branch_prev_location,
-            #        since it browses history
-            return rm.repository._revmeta_provider.branch_prev_location(rm, mapping)
+        def get_next_parent(nm):
+            pm = nm.get_direct_lhs_parent_revmeta()
+            if pm is None or mapping.is_branch_or_tag(pm.branch_path):
+                return pm
+            else:
+                return None
         nm = get_next_parent(self)
         while nm is not None and nm.is_hidden(mapping):
             nm = get_next_parent(nm)
@@ -810,8 +801,8 @@ class RevisionMetadataProvider(object):
         """Get a list with all the RevisionMetadata elements on a branch mainline."""
         return list(self.iter_reverse_branch_changes(branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb))
 
-    def branch_prev_location(self, revmeta, mapping):
-        iterator = self.iter_reverse_branch_changes(revmeta.branch_path, revmeta.revnum, to_revnum=0, mapping=mapping, limit=2)
+    def branch_prev_location(self, revmeta):
+        iterator = self.iter_reverse_branch_changes(revmeta.branch_path, revmeta.revnum, to_revnum=0, mapping=None, limit=2)
         firstrevmeta = iterator.next()
         assert revmeta == firstrevmeta
         try:
