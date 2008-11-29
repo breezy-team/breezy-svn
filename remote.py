@@ -76,7 +76,7 @@ class SvnRemoteAccess(BzrDir):
     def break_lock(self):
         pass
 
-    def find_repository(self):
+    def find_repository(self, _ignore_branch_path=False):
         """Open the repository associated with this BzrDir.
         
         :return: instance of SvnRepository.
@@ -84,7 +84,10 @@ class SvnRemoteAccess(BzrDir):
         transport = self.root_transport
         if self.root_url != transport.base:
             transport = transport.clone_root()
-        return SvnRepository(self, transport, self.branch_path)
+        if _ignore_branch_path:
+            return SvnRepository(self, transport)
+        else:
+            return SvnRepository(self, transport, self.branch_path)
 
     def cloning_metadir(self, stacked=False):
         """Produce a metadir suitable for cloning with."""
