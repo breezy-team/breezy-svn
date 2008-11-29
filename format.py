@@ -163,4 +163,5 @@ class SvnWorkingTreeDirFormat(BzrDirFormat):
         """See BzrDirFormat.get_converter()."""
         if format is None:
             format = get_rich_root_format()
-        raise NotImplementedError(self.get_converter)
+        from bzrlib.plugins.svn.workingtree import SvnCheckoutConverter
+        return SvnCheckoutConverter(format)

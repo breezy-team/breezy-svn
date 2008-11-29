@@ -289,17 +289,3 @@ def convert_repository(source_repos, output_url, layout=None,
     if target_repos is not None:
         put_latest_svn_import_revision(target_repos, source_repos.uuid, to_revnum)
         
-
-class SvnConverter(bzrdir.Converter):
-    """Converts from a Subversion directory to a bzr dir."""
-    def __init__(self, target_format):
-        """Create a SvnConverter.
-        :param target_format: The format the resulting repository should be.
-        """
-        super(SvnConverter, self).__init__()
-        self.target_format = target_format
-
-    def convert(self, to_convert, pb):
-        """See Converter.convert()."""
-        convert_repository(to_convert.open_repository(), to_convert.base, 
-                           format=self.target_format, all=True, pb=pb)

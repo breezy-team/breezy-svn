@@ -20,9 +20,13 @@ from bzrlib import (
         osutils,
         urlutils,
         )
+from bzrlib.branch import (
+        BranchReferenceFormat,
+        )
 from bzrlib.bzrdir import (
         BzrDirFormat,
         BzrDir,
+        Converter,
         )
 from bzrlib.errors import (
         InvalidRevisionId,
@@ -793,6 +797,9 @@ class SvnCheckout(BzrDir):
         self.svn_controldir = os.path.join(self.local_path, get_adm_dir())
         self.root_transport = self.transport = transport
 
+    def backup_bzrdir(self, to_directory):
+        self.root_transport.copy_tree(".svn", to_directory)
+
     def get_remote_bzrdir(self):
         if self._remote_bzrdir is None:
             self._remote_bzrdir = SvnRemoteAccess(self.get_remote_transport())
@@ -870,3 +877,23 @@ class SvnCheckout(BzrDir):
         branch.bzrdir = self.get_remote_bzrdir()
  
         return branch
+
+
+class SvnCheckoutConverter(Converter):
+    """Converts from a Subversion directory to a bzr dir."""
+    def __init__(self, target_format):
+        """Create a SvnCheckoutConverter.
+        :param target_format: The format the resulting repository should be.
+        """
+        super(SvnCheckoutConverter, self).__init__()
+        self.target_format = target_format
+
+    def convert(self, to_convert, pb):
+        """See Converter.convert()."""
+        remote_branch = to_convert.open_branch()
+        bzrdir = self.target_format.initialize(to_convert.root_transport.base)
+        branch = BranchReferenceFormat().initialize(bzrdir, remote_branch)
+        wt = bzrdir.create_workingtree()
+        # FIXME: Convert working tree
+        to_convert.root_transport.delete_tree(".svn")
+        return bzrdir
