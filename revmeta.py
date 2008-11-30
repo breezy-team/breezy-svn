@@ -47,7 +47,8 @@ from bzrlib.plugins.svn.svk import (
         )
 
 import bisect
-from itertools import ifilter
+from functools import partial
+from itertools import ifilter, imap
 
 
 class MetabranchHistoryIncomplete(Exception):
@@ -217,6 +218,10 @@ class RevisionMetadata(object):
         return self._changed_fileprops
 
     def get_direct_lhs_parent_revmeta(self):
+        """Find the direct left hand side parent of this revision.
+        
+        This ignores mapping restrictions (invalid paths, hidden revisions).
+        """
         if self._direct_lhs_parent_known:
             return self._direct_lhs_parent_revmeta
         self._direct_lhs_parent_known = True
@@ -240,7 +245,8 @@ class RevisionMetadata(object):
 
         :note: Returns None when there is no parent (parent is NULL_REVISION)
         """
-        assert mapping.is_branch_or_tag(self.branch_path), "%s not valid in %r" % (self.branch_path, mapping)
+        assert mapping.is_branch_or_tag(self.branch_path), \
+                "%s not valid in %r" % (self.branch_path, mapping)
         def get_next_parent(nm):
             pm = nm.get_direct_lhs_parent_revmeta()
             if pm is None or mapping.is_branch_or_tag(pm.branch_path):
@@ -274,7 +280,8 @@ class RevisionMetadata(object):
     def get_lhs_parent(self, mapping):
         """Find the revid of the left hand side parent of this revision."""
         # Sometimes we can retrieve the lhs parent from the revprop data
-        lhs_parent = mapping.get_lhs_parent(self.branch_path, self.get_revprops(), self.get_changed_fileprops())
+        lhs_parent = mapping.get_lhs_parent(self.branch_path, 
+                            self.get_revprops(), self.get_changed_fileprops())
         if lhs_parent is not None:
             return lhs_parent
         parentrevmeta = self.get_lhs_parent_revmeta(mapping)
@@ -283,7 +290,7 @@ class RevisionMetadata(object):
         return parentrevmeta.get_revision_id(mapping)
 
     def estimate_bzr_fileprop_ancestors(self):
-        """Estimate how many ancestors with bzr file properties this revision has.
+        """Estimate how many ancestors with bzr fileprops this revision has.
 
         """
         if not self.knows_fileprops() and not self.consider_bzr_fileprops():
@@ -320,7 +327,8 @@ class RevisionMetadata(object):
         if not mapping.supports_hidden:
             return False
         if self.consider_bzr_fileprops() or self.check_revprops:
-            return mapping.is_bzr_revision_hidden(self.get_revprops(), self.get_changed_fileprops())
+            return mapping.is_bzr_revision_hidden(self.get_revprops(), 
+                                                  self.get_changed_fileprops())
         return False
 
     def is_bzr_revision(self):
@@ -357,8 +365,9 @@ class RevisionMetadata(object):
 
         if not self.changes_branch_root():
             return ()
-
-        previous, current = self.get_changed_fileprops().get(SVN_PROP_SVK_MERGE, ("", ""))
+        
+        changed_fileprops = self.get_changed_fileprops()
+        previous, current = changed_fileprops.get(SVN_PROP_SVK_MERGE, ("", ""))
         if current == "":
             return ()
 
@@ -378,8 +387,9 @@ class RevisionMetadata(object):
         side NULL_REVISION, if known.
         """
         if mapping.roundtripping:
-            (bzr_revno, _) = mapping.get_revision_id(self.branch_path, self.get_revprops(), 
-                                                             self.get_changed_fileprops())
+            (bzr_revno, _) = mapping.get_revision_id(self.branch_path, 
+                                                     self.get_revprops(), 
+                                                     self.get_changed_fileprops())
             if bzr_revno is not None:
                 return bzr_revno
         return None
@@ -471,28 +481,33 @@ class CachingRevisionMetadata(RevisionMetadata):
     """Wrapper around RevisionMetadata that stores some results in a cache."""
 
     def __init__(self, repository, *args, **kwargs):
-        super(CachingRevisionMetadata, self).__init__(repository, *args, **kwargs)
-        self._parents_cache = getattr(self.repository._real_parents_provider, "_cache", None)
+        super(CachingRevisionMetadata, self).__init__(repository, *args, 
+            **kwargs)
+        self._parents_cache = getattr(self.repository._real_parents_provider, 
+                                      "_cache", None)
         self._revid_cache = self.repository.revmap.cache
         self._revid = None
 
     def get_revision_id(self, mapping):
-        """Find the revision id of a revision, optionally caching it in a sqlite database."""
+        """Find the revision id of a revision."""
         if self._revid is not None:
             return self._revid
         # Look in the cache to see if it already has a revision id
-        self._revid = self._revid_cache.lookup_branch_revnum(self.revnum, self.branch_path, mapping.name)
+        self._revid = self._revid_cache.lookup_branch_revnum(self.revnum, 
+                                                             self.branch_path, 
+                                                             mapping.name)
         if self._revid is not None:
             return self._revid
 
         self._revid = super(CachingRevisionMetadata, self).get_revision_id(mapping)
 
-        self._revid_cache.insert_revid(self._revid, self.branch_path, self.revnum, self.revnum, mapping.name)
+        self._revid_cache.insert_revid(self._revid, self.branch_path, 
+                                       self.revnum, self.revnum, mapping.name)
         self._revid_cache.commit_conditionally()
         return self._revid
 
     def get_parent_ids(self, mapping):
-        """Find the parent ids of a revision, optionally caching them in a sqlite database."""
+        """Find the parent ids of a revision."""
         myrevid = self.get_revision_id(mapping)
 
         if self._parents_cache is not None:
@@ -523,6 +538,11 @@ def svk_feature_to_revision_id(feature, mapping):
 
 
 class ListBuildingIterator(object):
+    """Simple iterator that iterates over a list, and calling an iterator 
+    once all items in the list have been iterated.
+
+    The list may be updated while the iterator is running.
+    """
 
     def __init__(self, base_list, it):
         self.base_list = base_list
@@ -530,6 +550,7 @@ class ListBuildingIterator(object):
         self.it = it
 
     def next(self):
+        """Return the next item."""
         self.i+=1
         try:
             return self.base_list[self.i]
@@ -640,13 +661,14 @@ class RevisionMetadataBrowser(object):
 
     def get_metabranch(self, bp):
         if not bp in self._metabranches:
-            from functools import partial
             self._metabranches[bp] = RevisionMetadataBranch()
-            self._metabranches[bp]._get_next = partial(self._branch_next, self._metabranches[bp])
+            self._metabranches[bp]._get_next = partial(self._branch_next, 
+                                                       self._metabranches[bp])
             self._provider._open_metabranches.append(self._metabranches[bp])
         return self._metabranches[bp]
 
     def _branch_next(self, metabranch):
+        """Find the next revision in a metabranch."""
         # Walk over all revisions since the last one currently present 
         # in metabranch until one of the following conditions occurs:
         # - New revision is added to metabranch
@@ -677,7 +699,8 @@ class RevisionMetadataBrowser(object):
             bps = {}
             deletes = []
             if pb:
-                pb.update("discovering revisions", revnum-self.to_revnum, self.from_revnum-self.to_revnum)
+                pb.update("discovering revisions", revnum-self.to_revnum, 
+                          self.from_revnum-self.to_revnum)
 
             self._metabranches.update(metabranches_history.get(revnum, {}))
             unusual.update(unusual_history.get(revnum, set()))
@@ -695,7 +718,9 @@ class RevisionMetadataBrowser(object):
                 for u in unusual:
                     if p.startswith("%s/" % u):
                         bps[u] = self.get_metabranch(u)
-                if action in ('R', 'D') and (self.layout.is_branch_or_tag(p, project) or self.layout.is_branch_or_tag_parent(p, project)):
+                if action in ('R', 'D') and (
+                    self.layout.is_branch_or_tag(p, project) or 
+                    self.layout.is_branch_or_tag_parent(p, project)):
                     deletes.append(p)
 
             # Mention deletes
@@ -703,7 +728,8 @@ class RevisionMetadataBrowser(object):
                 yield ("delete", p)
             
             # Apply renames and the like for the next round
-            for new_name, old_name, old_rev in changes.apply_reverse_changes(self._metabranches.keys(), paths):
+            for new_name, old_name, old_rev in changes.apply_reverse_changes(
+                self._metabranches.keys(), paths):
                 if new_name in unusual:
                     unusual.remove(new_name)
                 if old_name is None: 
@@ -746,13 +772,18 @@ class RevisionMetadataProvider(object):
         else:
             self._revmeta_cls = RevisionMetadata
 
-    def create_revision(self, path, revnum, changes=None, revprops=None, changed_fileprops=None, fileprops=None, metabranch=None):
-        return self._revmeta_cls(self.repository, self.check_revprops, self._get_fileprops_fn,
-                               self._log, self.repository.uuid, path, revnum, changes, revprops, 
-                               changed_fileprops=changed_fileprops, fileprops=fileprops,
-                               metabranch=metabranch)
+    def create_revision(self, path, revnum, changes=None, revprops=None, 
+                        changed_fileprops=None, fileprops=None, 
+                        metabranch=None):
+        return self._revmeta_cls(self.repository, self.check_revprops, 
+                                 self._get_fileprops_fn, self._log, 
+                                 self.repository.uuid, path, revnum, changes, 
+                                 revprops, changed_fileprops=changed_fileprops,
+                                 fileprops=fileprops, metabranch=metabranch)
 
     def lookup_revision(self, path, revnum, revprops=None):
+        """Lookup a revision, optionally checking whether there are any 
+        unchecked metabranches that perhaps contain the revision."""
         # finish fetching any open revisionmetadata branches for 
         # which the latest fetched revnum > revnum
         for mb in self._open_metabranches:
@@ -761,8 +792,8 @@ class RevisionMetadataProvider(object):
             mb.fetch_until(revnum)
         return self.get_revision(path, revnum, revprops=revprops)
 
-    def get_revision(self, path, revnum, changes=None, revprops=None, changed_fileprops=None, 
-                     fileprops=None, metabranch=None):
+    def get_revision(self, path, revnum, changes=None, revprops=None, 
+                     changed_fileprops=None, fileprops=None, metabranch=None):
         """Return a RevisionMetadata object for a specific svn (path,revnum)."""
         assert isinstance(path, str)
         assert isinstance(revnum, int)
@@ -779,11 +810,13 @@ class RevisionMetadataProvider(object):
                 cached.metabranch = metabranch
             return self._revmeta_cache[path,revnum]
 
-        ret = self.create_revision(path, revnum, changes, revprops, changed_fileprops, fileprops, metabranch)
+        ret = self.create_revision(path, revnum, changes, revprops, 
+                                   changed_fileprops, fileprops, metabranch)
         self._revmeta_cache[path,revnum] = ret
         return ret
 
-    def iter_changes(self, branch_path, from_revnum, to_revnum, pb=None, limit=0):
+    def iter_changes(self, branch_path, from_revnum, to_revnum, pb=None, 
+                     limit=0):
         """Iterate over all revisions backwards.
         
         :return: iterator that returns tuples with branch path, 
@@ -799,8 +832,8 @@ class RevisionMetadataProvider(object):
         # because we're skipping some revs
         # TODO: Rather than fetching everything if limit == 2, maybe just 
         # set specify an extra X revs just to be sure?
-        for (paths, revnum, revprops) in self._log.iter_changes([branch_path], from_revnum, to_revnum, 
-                                                                pb=pb):
+        for (paths, revnum, revprops) in self._log.iter_changes([branch_path], 
+            from_revnum, to_revnum, pb=pb):
             assert bp is not None
             next = changes.find_prev_location(paths, bp, revnum)
             assert revnum > 0 or bp == ""
@@ -841,11 +874,11 @@ class RevisionMetadataProvider(object):
                                               to_revnum, pb=pb, 
                                               limit=limit)
         def convert((bp, paths, revnum, revprops)):
-            ret = self.get_revision(bp, revnum, paths, revprops, metabranch=metabranch)
+            ret = self.get_revision(bp, revnum, paths, revprops, 
+                                    metabranch=metabranch)
             metabranch.append(ret)
             return ret
         metabranch = RevisionMetadataBranch(self, limit)
-        from itertools import imap
         metabranch._get_next = imap(convert, history_iter).next
         self._open_metabranches.append(metabranch)
         for ret in metabranch:
@@ -853,7 +886,8 @@ class RevisionMetadataProvider(object):
                 break
             yield ret
 
-    def iter_all_revisions(self, layout, check_unusual_path, from_revnum, to_revnum=0, project=None, pb=None):
+    def iter_all_revisions(self, layout, check_unusual_path, from_revnum, 
+                           to_revnum=0, project=None, pb=None):
         """Iterate over all RevisionMetadata objects in a repository.
 
         :param layout: Repository layout to use
@@ -861,12 +895,13 @@ class RevisionMetadataProvider(object):
 
         Layout decides which ones to pick up.
         """
-        for kind, rev in self.iter_all_changes(layout, check_unusual_path, from_revnum, to_revnum, project, pb):
+        for kind, rev in self.iter_all_changes(layout, check_unusual_path, 
+            from_revnum, to_revnum, project, pb):
             if kind == "revision":
                 yield rev
 
-    def iter_all_changes(self, layout, check_unusual_path, from_revnum, to_revnum=0, 
-                         project=None, pb=None):
+    def iter_all_changes(self, layout, check_unusual_path, from_revnum, 
+                         to_revnum=0, project=None, pb=None):
         """Iterate over all RevisionMetadata objects and branch removals 
         in a repository.
 

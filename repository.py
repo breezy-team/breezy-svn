@@ -589,6 +589,7 @@ class SvnRepository(foreign.ForeignRepository):
         return signature
 
     def add_signature_text(self, revision_id, signature):
+        """Add a signature text to an existing revision."""
         (uuid, path, revnum), mapping = self.lookup_revision_id(revision_id)
         try:
             self.transport.change_rev_prop(revnum, SVN_REVPROP_BZR_SIGNATURE, signature)
@@ -740,15 +741,18 @@ class SvnRepository(foreign.ForeignRepository):
         return True
 
     def get_physical_lock_status(self):
+        """See Repository.get_physical_lock_status()."""
         return False
 
     def get_commit_builder(self, branch, parents, config, timestamp=None, 
                            timezone=None, committer=None, revprops=None, 
                            revision_id=None):
+        """See Repository.get_commit_builder()."""
         from bzrlib.plugins.svn.commit import SvnCommitBuilder
-        return SvnCommitBuilder(self, branch.get_branch_path(), parents, config, timestamp, 
-                timezone, committer, revprops, revision_id, 
-                append_revisions_only=True)
+        return SvnCommitBuilder(self, branch.get_branch_path(), parents, 
+                                config, timestamp, timezone, committer, 
+                                revprops, revision_id, 
+                                append_revisions_only=True)
 
     def find_fileprop_paths(self, layout, from_revnum, to_revnum, 
                                project=None, check_removed=False):
@@ -764,12 +768,15 @@ class SvnRepository(foreign.ForeignRepository):
                 yield (branch, revno, exists)
 
     def abort_write_group(self, suppress_errors=False):
+        """See Repository.abort_write_group()."""
         self._write_group = None
 
     def commit_write_group(self):
+        """See Repository.commit_write_group()."""
         self._write_group = None
 
     def start_write_group(self):
+        """See Repository.commit_write_group()."""
         if not self.is_write_locked():
             raise bzr_errors.NotWriteLocked(self)
         self._write_group = None 
