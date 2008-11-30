@@ -98,8 +98,11 @@ class RevisionMetadata(object):
         self._fileprops = fileprops
         self._is_bzr_revision = None
         self._direct_lhs_parent_known = False
+        self._consider_bzr_fileprops = None
+        self._consider_svk_fileprops = None
         self.metabranch = metabranch
         self.uuid = uuid
+        self.descendants = set()
 
     def __eq__(self, other):
         return (type(self) == type(other) and 
@@ -478,10 +481,15 @@ class RevisionMetadata(object):
                                              self.get_changed_fileprops())
 
     def consider_bzr_fileprops(self):
-        return self.metabranch is None or self.metabranch.consider_bzr_fileprops(self)
+        if self._consider_bzr_fileprops is not None:
+            return self._consider_bzr_fileprops
+        self._consider_bzr_fileprops = (self.metabranch is None or self.metabranch.consider_bzr_fileprops(self))
 
     def consider_svk_fileprops(self):
-        return self.metabranch is None or self.metabranch.consider_svk_fileprops(self)
+        if self._consider_svk_fileprops is not None:
+            return self._consider_svk_fileprops
+        self._consider_svk_fileprops = (self.metabranch is None or self.metabranch.consider_svk_fileprops(self))
+        return self._consider_svk_fileprops
 
     def get_roundtrip_ancestor_revids(self):
         if not self.consider_bzr_fileprops():
