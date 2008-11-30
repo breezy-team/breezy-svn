@@ -49,7 +49,7 @@ def get_local_changes(paths, branch, mapping, layout, generate_revid,
         if not changes.path_is_child(branch, p):
             continue
         data = paths[p]
-        new_p = layout.parse(p)[3]
+        new_p = p[len(branch):].strip("/")
         if data[1] is not None:
             try:
                 (pt, proj, cbp, crp) = layout.parse(data[1])
