@@ -23,9 +23,10 @@ from bzrlib.revision import NULL_REVISION
 from bzrlib.repository import InterRepository
 from bzrlib.trace import mutter
 
+from collections import deque
 from cStringIO import StringIO
 
-from subvertpy import properties
+from subvertpy import properties, SubversionException
 from subvertpy.delta import apply_txdelta_handler
 
 from bzrlib.plugins.svn.errors import InvalidFileName
@@ -667,9 +668,22 @@ class FetchRevisionFinder(object):
     def needs_fetching(self, revmeta, mapping):
         if self.target_is_empty:
             return True
-        if revmeta.is_hidden(mapping):
-            return false
-        return not self.target.has_revision(revmeta.get_revision_id(mapping))
+        try:
+            if revmeta.is_hidden(mapping):
+                return False
+            return not self.target.has_revision(revmeta.get_revision_id(mapping))
+        except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+            return False
+
+    def find_iter(self, iter, mapping):
+        needed = deque()
+        for revmeta in iter:
+            #FIXME: mapping = revmeta.get_appropriate_mapping(mapping)
+            if self.needs_fetching(revmeta, mapping):
+                needed.appendleft((revmeta, mapping))
+                self.checked.add((revmeta.get_foreign_revid(), mapping))
+
+        return needed
 
     def find_all(self, mapping, pb=None):
         """Find all revisions from the source repository that are not 
@@ -677,19 +691,8 @@ class FetchRevisionFinder(object):
 
         :return: List with revmeta, mapping tuples to fetch
         """
-        needed = []
         from_revnum = self.source.get_latest_revnum()
-        for revmeta in self.source._revmeta_provider.iter_all_revisions(self.source.get_layout(), check_unusual_path=mapping.is_branch_or_tag, from_revnum=from_revnum, pb=pb):
-            #FIXME: mapping = revmeta.get_appropriate_mapping(mapping)
-            if pb:
-                pb.update("determining revisions to fetch", 
-                          from_revnum-revmeta.revnum, from_revnum)
-            if self.needs_fetching(revmeta, mapping):
-                needed.append((revmeta, mapping))
-                self.checked.add((revmeta.get_foreign_revid(), mapping))
-
-        needed.reverse()
-        return needed
+        return self.find_iter(self.source._revmeta_provider.iter_all_revisions(self.source.get_layout(), check_unusual_path=mapping.is_branch_or_tag, from_revnum=from_revnum, pb=pb), mapping)
 
     def find_until(self, foreign_revid, mapping, find_ghosts=False, pb=None,
                     project=None):
@@ -703,7 +706,7 @@ class FetchRevisionFinder(object):
         def check_revid(foreign_revid, mapping, project=None):
             if (foreign_revid, mapping) in self.checked:
                 return []
-            revmetas = []
+            revmetas = deque()
             (uuid, branch_path, revnum) = foreign_revid
             # TODO: Do binary search to find first revision to fetch if
             # fetch_ghosts=False ?
@@ -717,7 +720,7 @@ class FetchRevisionFinder(object):
                     # This revision (and its ancestry) has already been checked
                     break
                 if self.needs_fetching(revmeta, mapping):
-                    revmetas.append((revmeta, mapping))
+                    revmetas.appendleft((revmeta, mapping))
                     for p in revmeta.get_rhs_parents(mapping):
                         try:
                             foreign_revid, mapping = self.source.lookup_revision_id(p, project=project)
@@ -728,7 +731,6 @@ class FetchRevisionFinder(object):
                 elif not find_ghosts:
                     break
                 self.checked.add((revmeta.get_foreign_revid(), mapping))
-            revmetas.reverse()
             return revmetas
 
         needed = check_revid(foreign_revid, mapping, project)

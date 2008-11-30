@@ -15,6 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Conversion of full repositories."""
 
+from itertools import tee
 import os
 
 from bzrlib import (
@@ -36,7 +37,9 @@ from bzrlib.transport import get_transport
 from subvertpy import SubversionException, repos, ERR_STREAM_MALFORMED_DATA
 
 from bzrlib.plugins.svn.branch import SvnBranch
+from bzrlib.plugins.svn.fetch import FetchRevisionFinder
 from bzrlib.plugins.svn.format import get_rich_root_format
+from bzrlib.plugins.svn.revmeta import filter_revisions
 
 LATEST_IMPORT_REVISION_FILENAME = "svn-import-revision"
 
@@ -207,29 +210,20 @@ def convert_repository(source_repos, output_url, layout=None,
         if to_revnum is None:
             to_revnum = source_repos.get_latest_revnum()
         mapping = source_repos.get_mapping()
-        revmetas = []
         existing_branches = {}
         deleted = set()
+        it = source_repos._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, to_revnum, from_revnum, project=project)
+        if create_shared_repo:
+            revfinder = FetchRevisionFinder(source_repos, target_repos, target_repos_is_empty)
+            (it, it_rev) = tee(it)
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for kind, item in source_repos._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag,
-                                                                   to_revnum, from_revnum,
-                                                                   project=project):
+            for kind, item in it:
                 if kind == "revision":
-                    revmeta = item
-                    pb.update("determining revisions to fetch", to_revnum-revmeta.revnum, to_revnum)
-                    try:
-                        if revmeta.is_hidden(mapping):
-                            continue
-                        # FIXME: mapping = revmeta.get_appropriate_mapping(mapping)
-                        if target_repos is not None and (target_repos_is_empty or not target_repos.has_revision(revmeta.get_revision_id(mapping))):
-                            revmetas.append((revmeta, mapping))
-                        if (not revmeta.branch_path in existing_branches and 
-                            layout.is_branch(revmeta.branch_path, project=project) and 
-                            not contains_parent_path(deleted, revmeta.branch_path)):
-                            existing_branches[revmeta.branch_path] = SvnBranch(source_repos, revmeta.branch_path, revnum=revmeta.revnum, _skip_check=True)
-                    except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                        continue
+                    if (not item.branch_path in existing_branches and 
+                        layout.is_branch(item.branch_path, project=project) and 
+                        not contains_parent_path(deleted, item.branch_path)):
+                        existing_branches[item.branch_path] = SvnBranch(source_repos, item.branch_path, revnum=item.revnum, _skip_check=True)
                 elif kind == "delete":
                     deleted.add(item)
         finally:
@@ -241,7 +235,8 @@ def convert_repository(source_repos, output_url, layout=None,
             if (target_repos.is_shared() and 
                   getattr(inter, '_supports_revmetas', None) and 
                   inter._supports_revmetas):
-                revmetas.reverse()
+                revmetas = revfinder.find_iter(filter_revisions(it_rev), 
+                                               mapping)
                 inter.fetch(needed=revmetas)
             elif all:
                 inter.fetch()

@@ -580,8 +580,7 @@ class ListBuildingIterator(object):
 class RevisionMetadataBranch(object):
     """Describes a Bazaar-like branch in a Subversion repository."""
 
-    def __init__(self, revmeta_provider=None, 
-                 history_limit=None):
+    def __init__(self, revmeta_provider=None, history_limit=None):
         self._revs = []
         self._revnums = []
         self._history_limit = history_limit
@@ -715,7 +714,8 @@ class RevisionMetadataBrowser(object):
         unusual_history = {}
         metabranches_history = {}
         unusual = set()
-        for (paths, revnum, revprops) in self._provider._log.iter_changes(self.prefixes, self.from_revnum, self.to_revnum, pb=pb):
+        for (paths, revnum, revprops) in self._provider._log.iter_changes(
+                self.prefixes, self.from_revnum, self.to_revnum, pb=pb):
             bps = {}
             deletes = []
             if pb:
@@ -776,6 +776,12 @@ class RevisionMetadataBrowser(object):
             revmeta = self._provider.get_revision("", 0, {"": ('A', None, -1)}, {}, metabranch=bps[""])
             bps[""].finished = True
             yield "revision", revmeta
+
+
+def filter_revisions(it):
+    for kind, rev in it:
+        if kind == "revision":
+            yield rev
 
 
 class RevisionMetadataProvider(object):
@@ -912,10 +918,7 @@ class RevisionMetadataProvider(object):
 
         Layout decides which ones to pick up.
         """
-        for kind, rev in self.iter_all_changes(layout, check_unusual_path, 
-            from_revnum, to_revnum, project, pb):
-            if kind == "revision":
-                yield rev
+        return filter_revisions(self.iter_all_changes(layout, check_unusual_path, from_revnum, to_revnum, project, pb))
 
     def iter_all_changes(self, layout, check_unusual_path, from_revnum, 
                          to_revnum=0, project=None, pb=None):
