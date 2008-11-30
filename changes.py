@@ -15,6 +15,8 @@
 
 """Utility functions for dealing with changes dictionaries as return by Subversions' log functions."""
 
+REV0_CHANGES = {"": ('A', None, -1)}
+
 def path_is_child(branch_path, path):
     """Check whether path is or is under branch_path."""
     return (branch_path == "" or 

@@ -31,6 +31,7 @@ from bzrlib.revision import NULL_REVISION, ensure_null
 from bzrlib.transport import Transport, get_transport
 from bzrlib.trace import info
 
+from collections import defaultdict
 from itertools import chain
 import os
 import subvertpy
@@ -204,15 +205,15 @@ class SvnRepository(foreign.ForeignRepository):
         return self._cached_revnum
 
     def item_keys_introduced_by(self, revision_ids, _files_pb=None):
-        fileids = {}
+        fileids = defaultdict(set)
 
         for count, (revid, d) in enumerate(zip(revision_ids, self.get_deltas_for_revisions(self.get_revisions(revision_ids)))):
             if _files_pb is not None:
                 _files_pb.update("fetch revisions for texts", count, len(revision_ids))
             for c in d.added + d.modified:
-                fileids.setdefault(c[1], set()).add(revid)
+                fileids[c[1]].add(revid)
             for c in d.renamed:
-                fileids.setdefault(c[2], set()).add(revid)
+                fileids[c[2]].add(revid)
 
         for fileid, altered_versions in fileids.iteritems():
             yield ("file", fileid, altered_versions)

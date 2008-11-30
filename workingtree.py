@@ -473,7 +473,7 @@ class SvnWorkingTree(WorkingTree):
         if not file_list:
             # no paths supplied: add the entire tree.
             file_list = [u'.']
-        ignored = {}
+        ignored = defaultdict(list)
         added = []
 
         for file_path in file_list:
@@ -495,7 +495,7 @@ class SvnWorkingTree(WorkingTree):
                         c_path = os.path.join(file_path, c)
                         ignore_glob = self.is_ignored(c)
                         if ignore_glob is not None:
-                            ignored.setdefault(ignore_glob, []).append(c_path)
+                            ignored[ignore_glob].append(c_path)
                         todo.append(c_path)
             finally:
                 wc.close()

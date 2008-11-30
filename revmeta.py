@@ -47,6 +47,7 @@ from bzrlib.plugins.svn.svk import (
         )
 
 import bisect
+from collections import defaultdict
 from functools import partial
 from itertools import ifilter, imap
 
@@ -483,13 +484,13 @@ class RevisionMetadata(object):
     def consider_bzr_fileprops(self):
         if self._consider_bzr_fileprops is not None:
             return self._consider_bzr_fileprops
-        self._consider_bzr_fileprops = (self.metabranch is None or self.metabranch.consider_bzr_fileprops(self))
+        self._consider_bzr_fileprops = True # FIXME
         return self._consider_bzr_fileprops
 
     def consider_svk_fileprops(self):
         if self._consider_svk_fileprops is not None:
             return self._consider_svk_fileprops
-        self._consider_svk_fileprops = (self.metabranch is None or self.metabranch.consider_svk_fileprops(self))
+        self._consider_svk_fileprops = True # FIXME
         return self._consider_svk_fileprops
 
     def get_roundtrip_ancestor_revids(self):
@@ -632,28 +633,6 @@ class RevisionMetadataBranch(object):
         assert i == len(self._revs) or self._revs[i] == revmeta
         return i
 
-    def consider_bzr_fileprops(self, revmeta):
-        """Check whether bzr file properties should be analysed for 
-        this revmeta.
-        """
-        i = self._index(revmeta)
-        for desc in reversed(self._revs[:i]):
-            if desc.knows_fileprops():
-                return (desc.estimate_bzr_fileprop_ancestors() > 0)
-        # assume the worst
-        return True
-
-    def consider_svk_fileprops(self, revmeta):
-        """Check whether svk file propertise should be analysed for 
-        this revmeta.
-        """
-        i = self._index(revmeta)
-        for desc in reversed(self._revs[:i]):
-            if desc.knows_fileprops():
-                return (desc.estimate_svk_fileprop_ancestors() > 0)
-        # assume the worst
-        return True
-
     def get_lhs_parent(self, revmeta):
         """Find the left hand side of a revision using revision metadata.
 
@@ -720,8 +699,8 @@ class RevisionMetadataBrowser(object):
         return ret
 
     def do(self, project=None, pb=None):
-        unusual_history = {}
-        metabranches_history = {}
+        unusual_history = defaultdict(set)
+        metabranches_history = defaultdict(dict)
         unusual = set()
         for (paths, revnum, revprops) in self._provider._log.iter_changes(
                 self.prefixes, self.from_revnum, self.to_revnum, pb=pb):
@@ -731,8 +710,8 @@ class RevisionMetadataBrowser(object):
                 pb.update("discovering revisions", revnum-self.to_revnum, 
                           self.from_revnum-self.to_revnum)
 
-            self._metabranches.update(metabranches_history.get(revnum, {}))
-            unusual.update(unusual_history.get(revnum, set()))
+            self._metabranches.update(metabranches_history[revnum])
+            unusual.update(unusual_history[revnum])
 
             for p in sorted(paths):
                 action = paths[p][0]
@@ -769,9 +748,9 @@ class RevisionMetadataBrowser(object):
                 else:
                     data = self._get_metabranch(new_name)
                     del self._metabranches[new_name]
-                    metabranches_history.setdefault(old_rev, {})[old_name] = data
+                    metabranches_history[old_rev][old_name] = data
                     if not self.layout.is_branch_or_tag(old_name, project):
-                        unusual_history.setdefault(old_rev, set()).add(old_name)
+                        unusual_history[old_rev].add(old_name)
 
             for bp in bps:
                 revmeta = self._provider.get_revision(bp, revnum, paths, 
@@ -782,7 +761,7 @@ class RevisionMetadataBrowser(object):
         # Make sure commit 0 is processed
         if self.to_revnum == 0 and self.layout.is_branch_or_tag("", project):
             bps[""] = self._get_metabranch("")
-            revmeta = self._provider.get_revision("", 0, {"": ('A', None, -1)}, {}, metabranch=bps[""])
+            revmeta = self._provider.get_revision("", 0, changes.REV0_CHANGES, {}, metabranch=bps[""])
             bps[""].finished = True
             yield "revision", revmeta
 
@@ -907,7 +886,8 @@ class RevisionMetadataProvider(object):
         def convert((bp, paths, revnum, revprops)):
             ret = self.get_revision(bp, revnum, paths, revprops, 
                                     metabranch=metabranch)
-            ret.children.add(metabranch._revs[-1])
+            if metabranch._revs:
+                ret.children.add(metabranch._revs[-1])
             metabranch.append(ret)
             return ret
         metabranch = RevisionMetadataBranch(self, limit)

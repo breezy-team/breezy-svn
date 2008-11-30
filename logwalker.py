@@ -318,7 +318,7 @@ class CachingLogWalker(CacheTable):
 
     def get_revision_paths(self, revnum):
         if revnum == 0:
-            return {'': ('A', None, -1)}
+            return changes.REV0_CHANGES
         self._fetch_revisions(revnum)
 
         return self.cache.get_revision_paths(revnum)
@@ -478,7 +478,7 @@ class LogWalker(object):
                 if pb is not None:
                     pb.update("determining changes", from_revnum-revnum, from_revnum)
                 if revnum == 0 and changed_paths is None:
-                    revpaths = {"": ('A', None, -1)}
+                    revpaths = changes.REV0_CHANGES
                 elif isinstance(changed_paths, dict):
                     revpaths = strip_slashes(changed_paths)
                 else:
@@ -503,7 +503,7 @@ class LogWalker(object):
         """
         # To make the existing code happy:
         if revnum == 0:
-            return {'': ('A', None, -1)}
+            return changes.REV0_CHANGES
 
         try:
             return strip_slashes(
