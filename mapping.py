@@ -787,7 +787,13 @@ def find_mapping_revprops(revprops):
 def find_mapping_fileprops(changed_fileprops):
     for k, v in changed_fileprops.iteritems():
         if k.startswith(SVN_PROP_BZR_REVISION_ID):
-            return mapping_registry.parse_mapping_name("svn-" + k[len(SVN_PROP_BZR_REVISION_ID):])
+            try:
+                # perhaps check if content change was valid?
+                find_new_lines(v)
+            except ValueError:
+                pass
+            else:
+                return mapping_registry.parse_mapping_name("svn-" + k[len(SVN_PROP_BZR_REVISION_ID):])
     return None
 
 
