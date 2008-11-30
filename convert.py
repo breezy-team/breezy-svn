@@ -220,6 +220,7 @@ def convert_repository(source_repos, output_url, layout=None,
         try:
             for kind, item in it:
                 if kind == "revision":
+                    pb.update("finding branches", to_revnum-item.revnum, to_revnum-from_revnum)
                     if (not item.branch_path in existing_branches and 
                         layout.is_branch(item.branch_path, project=project) and 
                         not contains_parent_path(deleted, item.branch_path)):
@@ -237,7 +238,7 @@ def convert_repository(source_repos, output_url, layout=None,
                   inter._supports_revmetas):
                 # TODO: Skip revisions in removed branches unless all=True
                 revmetas = revfinder.find_iter(filter_revisions(it_rev), 
-                                               mapping)
+                                                   mapping)
                 inter.fetch(needed=revmetas)
             elif all:
                 inter.fetch()

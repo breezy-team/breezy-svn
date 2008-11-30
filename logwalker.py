@@ -476,7 +476,7 @@ class LogWalker(object):
 
             for (changed_paths, revnum, known_revprops, has_children) in iterator:
                 if pb is not None:
-                    pb.update("determining changes", from_revnum-revnum, from_revnum)
+                    pb.update("determining changes", from_revnum-revnum, from_revnum-to_revnum)
                 if revnum == 0 and changed_paths is None:
                     revpaths = changes.REV0_CHANGES
                 elif isinstance(changed_paths, dict):

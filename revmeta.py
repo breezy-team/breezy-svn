@@ -765,6 +765,7 @@ class RevisionMetadataBrowser(object):
                 revmeta = process_new_rev(bp, mb, revnum, paths, revprops)
                 yield "revision", revmeta
             self._last_revnum = revnum
+            del metabranches_history[revnum]
     
         # Make sure commit 0 is processed
         if self.to_revnum == 0 and self.layout.is_branch_or_tag("", project):
