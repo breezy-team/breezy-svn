@@ -47,7 +47,7 @@ class TestCheckoutFormat(TestCase):
         self.format = SvnWorkingTreeDirFormat()
 
     def test_get_converter(self):
-        self.assertRaises(NotImplementedError, self.format.get_converter)
+        convert = self.format.get_converter()
 
     def test_initialize(self):
         self.assertRaises(UninitializableFormat, 
