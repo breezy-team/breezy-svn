@@ -93,8 +93,9 @@ class RevidMap(object):
             revids = set()
             try:
                 revmeta = self.repos._revmeta_provider.lookup_revision(branch, revno)
-                for revid, bzr_revno, mapping_name in revmeta.get_roundtrip_ancestor_revids():
-                    revids.add(((bzr_revno, revid), mapping_name))
+                if revmeta.consider_bzr_fileprops():
+                    for revid, bzr_revno, mapping_name in revmeta.get_roundtrip_ancestor_revids():
+                        revids.add(((bzr_revno, revid), mapping_name))
             except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                 continue
 

@@ -51,7 +51,7 @@ from functools import partial
 from itertools import ifilter, imap
 
 
-class MetabranchHistoryIncomplete(Exception):
+class MetaHistoryIncomplete(Exception):
     """No revision metadata branch."""
 
 
@@ -102,7 +102,7 @@ class RevisionMetadata(object):
         self._consider_svk_fileprops = None
         self.metabranch = metabranch
         self.uuid = uuid
-        self.descendants = set()
+        self.children = set()
 
     def __eq__(self, other):
         return (type(self) == type(other) and 
@@ -240,7 +240,7 @@ class RevisionMetadata(object):
             except StopIteration:
                 self._direct_lhs_parent_revmeta = None
                 return self._direct_lhs_parent_revmeta
-            except MetabranchHistoryIncomplete:
+            except MetaHistoryIncomplete:
                 pass
         # FIXME: Don't use iter_reverse_branch_changes since it browses history
         iterator = self.repository._revmeta_provider.iter_reverse_branch_changes(self.branch_path, 
@@ -484,6 +484,7 @@ class RevisionMetadata(object):
         if self._consider_bzr_fileprops is not None:
             return self._consider_bzr_fileprops
         self._consider_bzr_fileprops = (self.metabranch is None or self.metabranch.consider_bzr_fileprops(self))
+        return self._consider_bzr_fileprops
 
     def consider_svk_fileprops(self):
         if self._consider_svk_fileprops is not None:
@@ -607,16 +608,16 @@ class RevisionMetadataBranch(object):
         while len(self._revnums) == 0 or self._revnums[0] > revnum:
             try:
                 self.next()
-            except MetabranchHistoryIncomplete:
+            except MetaHistoryIncomplete:
                 return
             except StopIteration:
                 return
 
     def next(self):
         if self._get_next is None:
-            raise MetabranchHistoryIncomplete()
+            raise MetaHistoryIncomplete()
         if self._history_limit and len(self._revs) >= self._history_limit:
-            raise MetabranchHistoryIncomplete()
+            raise MetaHistoryIncomplete()
         try:
             ret = self._get_next()
         except StopIteration:
@@ -705,7 +706,7 @@ class RevisionMetadataBrowser(object):
             try:
                 self.next()
             except StopIteration:
-                raise MetabranchHistoryIncomplete()
+                raise MetaHistoryIncomplete()
             if len(metabranch._revs) > ol:
                 return metabranch._revs[ol]
         raise StopIteration()
@@ -906,6 +907,7 @@ class RevisionMetadataProvider(object):
         def convert((bp, paths, revnum, revprops)):
             ret = self.get_revision(bp, revnum, paths, revprops, 
                                     metabranch=metabranch)
+            ret.children.add(metabranch._revs[-1])
             metabranch.append(ret)
             return ret
         metabranch = RevisionMetadataBranch(self, limit)
