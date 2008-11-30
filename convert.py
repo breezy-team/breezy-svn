@@ -235,6 +235,7 @@ def convert_repository(source_repos, output_url, layout=None,
             if (target_repos.is_shared() and 
                   getattr(inter, '_supports_revmetas', None) and 
                   inter._supports_revmetas):
+                # TODO: Skip revisions in removed branches unless all=True
                 revmetas = revfinder.find_iter(filter_revisions(it_rev), 
                                                mapping)
                 inter.fetch(needed=revmetas)
