@@ -86,7 +86,7 @@ class RevisionMetadata(object):
     def __init__(self, repository, check_revprops, get_fileprops_fn, logwalker, 
                  uuid, branch_path, revnum, paths, revprops, 
                  changed_fileprops=None, fileprops=None, 
-                 metabranch=None):
+                 metaiterator=None):
         self.repository = repository
         self.check_revprops = check_revprops
         self._get_fileprops_fn = get_fileprops_fn
@@ -101,7 +101,7 @@ class RevisionMetadata(object):
         self._direct_lhs_parent_known = False
         self._consider_bzr_fileprops = None
         self._consider_svk_fileprops = None
-        self.metabranch = metabranch
+        self.metaiterator = metaiterator
         self.uuid = uuid
         self.children = set()
 
@@ -233,10 +233,10 @@ class RevisionMetadata(object):
         if self._direct_lhs_parent_known:
             return self._direct_lhs_parent_revmeta
         self._direct_lhs_parent_known = True
-        if self.metabranch is not None:
-            # Perhaps the metabranch already has the parent?
+        if self.metaiterator is not None:
+            # Perhaps the metaiterator already has the parent?
             try:
-                self._direct_lhs_parent_revmeta = self.metabranch.get_lhs_parent(self)
+                self._direct_lhs_parent_revmeta = self.metaiterator.get_lhs_parent(self)
                 return self._direct_lhs_parent_revmeta
             except StopIteration:
                 self._direct_lhs_parent_revmeta = None
@@ -660,38 +660,32 @@ class RevisionMetadataBrowser(object):
         self.prefixes = prefixes
         self.from_revnum = from_revnum
         self.to_revnum = to_revnum
+        self._last_revnum = None
         self.layout = layout
-        self._metabranches = {}
+        self._metabranches = defaultdict(RevisionMetadataBranch)
         self._provider = provider
         self._actions = []
         self._iter = iter(self.do(project, pb))
 
-    def _get_metabranch(self, bp):
-        if not bp in self._metabranches:
-            self._metabranches[bp] = RevisionMetadataBranch()
-            self._metabranches[bp]._get_next = partial(self._branch_next, 
-                                                       self._metabranches[bp])
-            self._provider._open_metabranches.append(self._metabranches[bp])
-        return self._metabranches[bp]
+    def __iter__(self):
+        return ListBuildingIterator(self._actions, self.next)
 
-    def _branch_next(self, metabranch):
-        """Find the next revision in a metabranch."""
-        # Walk over all revisions since the last one currently present 
-        # in metabranch until one of the following conditions occurs:
-        # - New revision is added to metabranch
-        # - We run out of data 
-        ol = len(metabranch._revs)
-        while not metabranch.finished:
+    def get_lhs_parent(self, revmeta):
+        while not revmeta._direct_lhs_parent_known:
             try:
                 self.next()
             except StopIteration:
-                raise MetaHistoryIncomplete()
-            if len(metabranch._revs) > ol:
-                return metabranch._revs[ol]
-        raise StopIteration()
+                raise AssertionError("This should never occur")
 
-    def __iter__(self):
-        return ListBuildingIterator(self._actions, self.next)
+    def fetch_until(self, revnum):
+        """Fetch at least all revisions until revnum."""
+        try:
+            while self._last_revnum is None or self._last_revnum > revnum:
+                self.next()
+        except StopIteration:
+            return
+        except MetaHistoryIncomplete:
+            return
 
     def next(self):
         ret = self._iter.next()
@@ -700,7 +694,21 @@ class RevisionMetadataBrowser(object):
 
     def do(self, project=None, pb=None):
         unusual_history = defaultdict(set)
-        metabranches_history = defaultdict(dict)
+        metabranches_history = defaultdict(lambda: defaultdict(set))
+
+        def process_new_rev(bp, mb, revnum, paths, revprops):
+            revmeta = self._provider.get_revision(bp, revnum, paths, revprops, 
+                                                  metaiterator=self)
+            children = set([c._revs[-1] for c in metabranches_history[revnum][bp]])
+            if mb._revs:
+                children.add(mb._revs[-1])
+            mb.append(revmeta)
+            for c in children:
+                c._direct_lhs_parent_known = True
+                c._direct_lhs_parent_revmeta = revmeta
+            revmeta.children.update(children)
+            return revmeta
+
         unusual = set()
         for (paths, revnum, revprops) in self._provider._log.iter_changes(
                 self.prefixes, self.from_revnum, self.to_revnum, pb=pb):
@@ -710,7 +718,7 @@ class RevisionMetadataBrowser(object):
                 pb.update("discovering revisions", revnum-self.to_revnum, 
                           self.from_revnum-self.to_revnum)
 
-            self._metabranches.update(metabranches_history[revnum])
+            self._metabranches.update([(k, iter(v).next()) for (k, v) in metabranches_history[revnum].iteritems()])
             unusual.update(unusual_history[revnum])
 
             for p in sorted(paths):
@@ -722,10 +730,10 @@ class RevisionMetadataBrowser(object):
                     pass
                 else:
                     if action != 'D' or ip != "":
-                        bps[bp] = self._get_metabranch(bp)
+                        bps[bp] = self._metabranches[bp]
                 for u in unusual:
                     if p.startswith("%s/" % u):
-                        bps[u] = self._get_metabranch(u)
+                        bps[u] = self._metabranches[u]
                 if action in ('R', 'D') and (
                     self.layout.is_branch_or_tag(p, project) or 
                     self.layout.is_branch_or_tag_parent(p, project)):
@@ -746,24 +754,24 @@ class RevisionMetadataBrowser(object):
                         self._metabranches[new_name].finished = True
                         del self._metabranches[new_name]
                 else:
-                    data = self._get_metabranch(new_name)
+                    data = self._metabranches[new_name]
                     del self._metabranches[new_name]
-                    metabranches_history[old_rev][old_name] = data
+                    if data._revs:
+                        metabranches_history[old_rev][old_name].add(data)
                     if not self.layout.is_branch_or_tag(old_name, project):
                         unusual_history[old_rev].add(old_name)
 
-            for bp in bps:
-                revmeta = self._provider.get_revision(bp, revnum, paths, 
-                    revprops, metabranch=bps[bp])
-                bps[bp].append(revmeta)
+            for bp, mb in bps.items():
+                revmeta = process_new_rev(bp, mb, revnum, paths, revprops)
                 yield "revision", revmeta
+            self._last_revnum = revnum
     
         # Make sure commit 0 is processed
         if self.to_revnum == 0 and self.layout.is_branch_or_tag("", project):
-            bps[""] = self._get_metabranch("")
-            revmeta = self._provider.get_revision("", 0, changes.REV0_CHANGES, {}, metabranch=bps[""])
-            bps[""].finished = True
+            revmeta = process_new_rev("", self._metabranches[""], 0, changes.REV0_CHANGES, {})
+            self._metabranches[""].finished = True
             yield "revision", revmeta
+            self._last_revnum = 0
 
 
 def filter_revisions(it):
@@ -781,7 +789,7 @@ class RevisionMetadataProvider(object):
         self._get_fileprops_fn = self.repository.branchprop_list.get_properties
         self._log = repository._log
         self.check_revprops = check_revprops
-        self._open_metabranches = []
+        self._open_metaiterators = []
         if cache:
             self._revmeta_cls = CachingRevisionMetadata
         else:
@@ -789,26 +797,26 @@ class RevisionMetadataProvider(object):
 
     def create_revision(self, path, revnum, changes=None, revprops=None, 
                         changed_fileprops=None, fileprops=None, 
-                        metabranch=None):
+                        metaiterator=None):
         return self._revmeta_cls(self.repository, self.check_revprops, 
                                  self._get_fileprops_fn, self._log, 
                                  self.repository.uuid, path, revnum, changes, 
                                  revprops, changed_fileprops=changed_fileprops,
-                                 fileprops=fileprops, metabranch=metabranch)
+                                 fileprops=fileprops, metaiterator=metaiterator)
 
     def lookup_revision(self, path, revnum, revprops=None):
         """Lookup a revision, optionally checking whether there are any 
-        unchecked metabranches that perhaps contain the revision."""
+        unchecked metaiterators that perhaps contain the revision."""
         # finish fetching any open revisionmetadata branches for 
         # which the latest fetched revnum > revnum
-        for mb in self._open_metabranches:
+        for mb in self._open_metaiterators:
             if (path, revnum) in self._revmeta_cache:
                 break
             mb.fetch_until(revnum)
         return self.get_revision(path, revnum, revprops=revprops)
 
     def get_revision(self, path, revnum, changes=None, revprops=None, 
-                     changed_fileprops=None, fileprops=None, metabranch=None):
+                     changed_fileprops=None, fileprops=None, metaiterator=None):
         """Return a RevisionMetadata object for a specific svn (path,revnum)."""
         assert isinstance(path, str)
         assert isinstance(revnum, int)
@@ -821,12 +829,12 @@ class RevisionMetadataProvider(object):
                 cached._changed_fileprops = changed_fileprops
             if cached._fileprops is None:
                 cached._fileprops = fileprops
-            if cached.metabranch is None:
-                cached.metabranch = metabranch
+            if cached.metaiterator is None:
+                cached.metaiterator = metaiterator
             return self._revmeta_cache[path,revnum]
 
         ret = self.create_revision(path, revnum, changes, revprops, 
-                                   changed_fileprops, fileprops, metabranch)
+                                   changed_fileprops, fileprops, metaiterator)
         self._revmeta_cache[path,revnum] = ret
         return ret
 
@@ -885,14 +893,14 @@ class RevisionMetadataProvider(object):
                                          to_revnum, pb=pb, limit=limit)
         def convert((bp, paths, revnum, revprops)):
             ret = self.get_revision(bp, revnum, paths, revprops, 
-                                    metabranch=metabranch)
+                                    metaiterator=metabranch)
             if metabranch._revs:
                 ret.children.add(metabranch._revs[-1])
             metabranch.append(ret)
             return ret
         metabranch = RevisionMetadataBranch(self, limit)
         metabranch._get_next = imap(convert, history_iter).next
-        self._open_metabranches.append(metabranch)
+        self._open_metaiterators.append(metabranch)
 
         for ret in metabranch:
             if not check_unusual_path(ret.branch_path):
@@ -930,6 +938,7 @@ class RevisionMetadataProvider(object):
         
         browser = RevisionMetadataBrowser(prefixes, from_revnum, to_revnum, 
                                           layout, self, project, pb=pb)
+        self._open_metaiterators.append(browser)
         for kind, item in browser:
             if kind != "revision" or check_unusual_path(item.branch_path):
                 yield kind, item
