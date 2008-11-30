@@ -225,6 +225,12 @@ class RevisionMetadata(object):
                 self._changed_fileprops = {}
         return self._changed_fileprops
 
+    def _set_direct_lhs_parent_revmeta(self, parent_revmeta):
+        assert (not self._direct_lhs_parent_known or 
+                self._direct_lhs_parent_revmeta == parent_revmeta)
+        self._direct_lhs_parent_known = True
+        self._direct_lhs_parent_revmeta = parent_revmeta
+
     def get_direct_lhs_parent_revmeta(self):
         """Find the direct left hand side parent of this revision.
         
@@ -596,7 +602,6 @@ class RevisionMetadataBranch(object):
         self._history_limit = history_limit
         self._revmeta_provider = revmeta_provider
         self._get_next = None
-        self.finished = False
 
     def __repr__(self):
         return "<RevisionMetadataBranch starting at %s revision %d>" % (self._revs[0].branch_path, self._revs[0].revnum)
@@ -622,7 +627,6 @@ class RevisionMetadataBranch(object):
         try:
             ret = self._get_next()
         except StopIteration:
-            self.finished = True
             raise
         return ret
 
@@ -704,8 +708,7 @@ class RevisionMetadataBrowser(object):
                 children.add(mb._revs[-1])
             mb.append(revmeta)
             for c in children:
-                c._direct_lhs_parent_known = True
-                c._direct_lhs_parent_revmeta = revmeta
+                c._set_direct_lhs_parent_revmeta(revmeta)
             revmeta.children.update(children)
             return revmeta
 
@@ -751,7 +754,7 @@ class RevisionMetadataBrowser(object):
                 if old_name is None: 
                     # didn't exist previously
                     if new_name in self._metabranches:
-                        self._metabranches[new_name].finished = True
+                        self._metabranches[new_name]._set_direct_lhs_parent_revmeta(None)
                         del self._metabranches[new_name]
                 else:
                     data = self._metabranches[new_name]
@@ -770,7 +773,7 @@ class RevisionMetadataBrowser(object):
         # Make sure commit 0 is processed
         if self.to_revnum == 0 and self.layout.is_branch_or_tag("", project):
             revmeta = process_new_rev("", self._metabranches[""], 0, changes.REV0_CHANGES, {})
-            self._metabranches[""].finished = True
+            self._metabranches[""]._set_direct_lhs_parent_revmeta(None)
             yield "revision", revmeta
             self._last_revnum = 0
 
