@@ -692,7 +692,12 @@ class RevisionMetadataBrowser(object):
             return
 
     def next(self):
-        ret = self._iter.next()
+        try:
+            ret = self._iter.next()
+        except StopIteration:
+            if self.to_revnum > 0:
+                raise MetaHistoryIncomplete()
+            raise
         self._actions.append(ret)
         return ret
 
