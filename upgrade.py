@@ -43,9 +43,9 @@ def set_revprops(repository, new_mapping, from_revnum=0, to_revnum=None):
                 # Never a bzr-svn revision
                 continue
             # Find the root path of the change
-            bp = changes.changes_root(paths.keys())
+            bp = revprops.get(mapping.SVN_REVPROP_BZR_ROOT)
             if bp is None:
-                bp = revprops.get(mapping.SVN_REVPROP_BZR_ROOT)
+                bp = changes.changes_root(paths.keys())
             if bp is None:
                 # Not a bzr-svn revision, since there is not a single root
                 # (fileproperties) nor a bzr:root revision property

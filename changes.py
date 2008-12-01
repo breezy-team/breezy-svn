@@ -116,6 +116,8 @@ def changes_root(paths):
         elif root.startswith("%s/" % p): # new path is parent of root
             root = p
         else:
+            if "" in paths:
+                return ""
             return None # Mismatch
     return root
 

@@ -349,7 +349,7 @@ class RevisionMetadata(object):
         This is a requirement for revisions pushed with bzr-svn using 
         file properties.
         """
-        return changes.changes_root(self.get_paths()) == self.branch_path
+        return changes.changes_root(self.get_paths().keys()) == self.branch_path
 
     def is_hidden(self, mapping):
         """Check whether this revision should be hidden from Bazaar history."""
@@ -374,7 +374,7 @@ class RevisionMetadata(object):
         if self.consider_bzr_fileprops():
             order.append(self.is_bzr_revision_fileprops)
         # Only look for revprops if they could've been committed
-        if ((not self._log.quick_revprops) and self.check_revprops):
+        if (self.check_revprops and not self.is_bzr_revision_revprops in order):
             order.append(self.is_bzr_revision_revprops)
         for fn in order:
             ret = fn()
