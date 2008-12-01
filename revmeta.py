@@ -180,7 +180,10 @@ class RevisionMetadata(object):
         """Get the file properties set on the branch root.
         """
         if self._fileprops is None:
-            self._fileprops = self._get_fileprops_fn(self.branch_path, self.revnum)
+            if self.changes_branch_root():
+                self._fileprops = self._get_fileprops_fn(self.branch_path, self.revnum)
+            else:
+                self._fileprops = self.get_direct_lhs_parent_revmeta().get_fileprops()
         return self._fileprops
 
     def get_revprops(self):
