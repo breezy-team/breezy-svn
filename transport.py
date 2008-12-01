@@ -134,8 +134,8 @@ def Connection(url):
                 new_url = msg[msg.index("»")+2:msg.index("«")]
             else:
                 raise AssertionError("Unable to parse error message: %s" % msg)
-            raise RedirectRequested(source=url, 
-                                    target=urlutils.join(url, new_url), 
+            raise RedirectRequested(source=_url_escape_uri(url),
+                                    target=_url_escape_uri(urlutils.join(url, new_url)), 
                                     is_permanent=True)
         raise convert_error(subvertpy.SubversionException(msg, num))
 
