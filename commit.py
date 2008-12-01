@@ -649,8 +649,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                 revprops=self._svn_revprops,
                 changed_fileprops=self._changed_fileprops,
                 fileprops=self._svnprops,
-                metabranch=None # FIXME: Determine from base_revmeta ?
                 )
+        self.revmeta._set_direct_lhs_parent_revmeta(self._base_revmeta)
 
         revid = self.revmeta.get_revision_id(self.base_mapping)
 

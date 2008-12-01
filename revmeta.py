@@ -107,9 +107,7 @@ class RevisionMetadata(object):
 
     def __eq__(self, other):
         return (type(self) == type(other) and 
-                self.branch_path == other.branch_path and
-                self.revnum == other.revnum and
-                self.uuid == other.uuid)
+                self.get_foreign_revid() == other.get_foreign_revid())
 
     def __repr__(self):
         return "<RevisionMetadata for revision %d, path %s in repository %r>" % (self.revnum, self.branch_path, self.uuid)
@@ -226,10 +224,13 @@ class RevisionMetadata(object):
         return self._changed_fileprops
 
     def _set_direct_lhs_parent_revmeta(self, parent_revmeta):
-        assert (not self._direct_lhs_parent_known or 
-                self._direct_lhs_parent_revmeta == parent_revmeta)
+        if (self._direct_lhs_parent_known and 
+            self._direct_lhs_parent_revmeta != parent_revmeta):
+            raise AssertionError()
         self._direct_lhs_parent_known = True
         self._direct_lhs_parent_revmeta = parent_revmeta
+        if parent_revmeta is not None:
+            parent_revmeta.children.add(self)
 
     def get_direct_lhs_parent_revmeta(self):
         """Find the direct left hand side parent of this revision.
@@ -238,14 +239,15 @@ class RevisionMetadata(object):
         """
         if self._direct_lhs_parent_known:
             return self._direct_lhs_parent_revmeta
-        self._direct_lhs_parent_known = True
         if self.metaiterator is not None:
             # Perhaps the metaiterator already has the parent?
             try:
                 self._direct_lhs_parent_revmeta = self.metaiterator.get_lhs_parent(self)
+                self._direct_lhs_parent_known = True
                 return self._direct_lhs_parent_revmeta
             except StopIteration:
                 self._direct_lhs_parent_revmeta = None
+                self._direct_lhs_parent_known = True
                 return self._direct_lhs_parent_revmeta
             except MetaHistoryIncomplete:
                 pass
@@ -258,6 +260,7 @@ class RevisionMetadata(object):
             self._direct_lhs_parent_revmeta = iterator.next()
         except StopIteration:
             self._direct_lhs_parent_revmeta = None
+        self._direct_lhs_parent_known = True
         return self._direct_lhs_parent_revmeta
 
     def get_lhs_parent_revmeta(self, mapping):
@@ -679,7 +682,10 @@ class RevisionMetadataBrowser(object):
             try:
                 self.next()
             except StopIteration:
-                raise AssertionError("This should never occur")
+                if self.to_revnum > 0:
+                    raise MetaHistoryIncomplete()
+                raise AssertionError("Unable to find direct lhs parent for %r" % revmeta)
+        return revmeta._direct_lhs_parent_revmeta
 
     def fetch_until(self, revnum):
         """Fetch at least all revisions until revnum."""
@@ -688,16 +694,9 @@ class RevisionMetadataBrowser(object):
                 self.next()
         except StopIteration:
             return
-        except MetaHistoryIncomplete:
-            return
 
     def next(self):
-        try:
-            ret = self._iter.next()
-        except StopIteration:
-            if self.to_revnum > 0:
-                raise MetaHistoryIncomplete()
-            raise
+        ret = self._iter.next()
         self._actions.append(ret)
         return ret
 
@@ -708,13 +707,13 @@ class RevisionMetadataBrowser(object):
         def process_new_rev(bp, mb, revnum, paths, revprops):
             revmeta = self._provider.get_revision(bp, revnum, paths, revprops, 
                                                   metaiterator=self)
+            assert revmeta is not None
             children = set([c._revs[-1] for c in metabranches_history[revnum][bp]])
             if mb._revs:
                 children.add(mb._revs[-1])
             mb.append(revmeta)
             for c in children:
                 c._set_direct_lhs_parent_revmeta(revmeta)
-            revmeta.children.update(children)
             return revmeta
 
         unusual = set()
@@ -726,7 +725,9 @@ class RevisionMetadataBrowser(object):
                 pb.update("discovering revisions", revnum-self.to_revnum, 
                           self.from_revnum-self.to_revnum)
 
-            self._metabranches.update([(k, iter(v).next()) for (k, v) in metabranches_history[revnum].iteritems()])
+            for bp, mbs in metabranches_history[revnum].iteritems():
+                if not bp in self._metabranches:
+                    self._metabranches[bp] = iter(mbs).next()
             unusual.update(unusual_history[revnum])
 
             for p in sorted(paths):
@@ -740,7 +741,7 @@ class RevisionMetadataBrowser(object):
                     if action != 'D' or ip != "":
                         bps[bp] = self._metabranches[bp]
                 for u in unusual:
-                    if p.startswith("%s/" % u):
+                    if (p == u and not action in ('D', 'R')) or p.startswith("%s/" % u):
                         bps[u] = self._metabranches[u]
                 if action in ('R', 'D') and (
                     self.layout.is_branch_or_tag(p, project) or 
@@ -759,28 +760,23 @@ class RevisionMetadataBrowser(object):
                 if old_name is None: 
                     # didn't exist previously
                     if new_name in self._metabranches:
-                        self._metabranches[new_name]._set_direct_lhs_parent_revmeta(None)
+                        if self._metabranches[new_name]._revs:
+                            self._metabranches[new_name]._revs[-1]._set_direct_lhs_parent_revmeta(None)
                         del self._metabranches[new_name]
                 else:
                     data = self._metabranches[new_name]
                     del self._metabranches[new_name]
-                    if data._revs:
-                        metabranches_history[old_rev][old_name].add(data)
+                    metabranches_history[old_rev][old_name].add(data)
                     if not self.layout.is_branch_or_tag(old_name, project):
                         unusual_history[old_rev].add(old_name)
 
             for bp, mb in bps.items():
                 revmeta = process_new_rev(bp, mb, revnum, paths, revprops)
+                if (bp in paths and paths[bp][0] in ('A', 'R') and 
+                    paths[bp][1] is None):
+                    revmeta._set_direct_lhs_parent_revmeta(None)
                 yield "revision", revmeta
             self._last_revnum = revnum
-            del metabranches_history[revnum]
-    
-        # Make sure commit 0 is processed
-        if self.to_revnum == 0 and self.layout.is_branch_or_tag("", project):
-            revmeta = process_new_rev("", self._metabranches[""], 0, changes.REV0_CHANGES, {})
-            self._metabranches[""]._set_direct_lhs_parent_revmeta(None)
-            yield "revision", revmeta
-            self._last_revnum = 0
 
 
 def filter_revisions(it):
@@ -904,7 +900,7 @@ class RevisionMetadataProvider(object):
             ret = self.get_revision(bp, revnum, paths, revprops, 
                                     metaiterator=metabranch)
             if metabranch._revs:
-                ret.children.add(metabranch._revs[-1])
+                metabranch._revs[-1]._set_direct_lhs_parent_revmeta(ret)
             metabranch.append(ret)
             return ret
         metabranch = RevisionMetadataBranch(self, limit)

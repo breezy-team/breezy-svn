@@ -60,28 +60,28 @@ class TestFetchWorks(SubversionTestCase):
         ch.add_dir("trunk/check/debian")
         ch.add_file("trunk/check/stamp-h.in").modify("foo")
         dc.add_dir("tags")
-        dc.close()
+        dc.close() #1
 
         dc = self.get_commit_editor(repos_url)
         t = dc.open_dir("trunk")
         ch = t.open_dir("trunk/check")
         deb = ch.open_dir("trunk/check/debian")
         deb.add_file("trunk/check/debian/pl").modify("bar")
-        dc.close()
+        dc.close() #2
 
         dc = self.get_commit_editor(repos_url)
         t = dc.open_dir("trunk")
         ch = t.open_dir("trunk/check")
         deb = ch.open_dir("trunk/check/debian")
         deb.add_file("trunk/check/debian/voo").modify("bar")
-        dc.close()
+        dc.close() #3
 
         dc = self.get_commit_editor(repos_url)
         t = dc.open_dir("trunk")
         ch = t.open_dir("trunk/check")
         deb = ch.open_dir("trunk/check/debian")
         deb.add_file("trunk/check/debian/blie").modify("oeh")
-        dc.close()
+        dc.close() #4
 
         dc = self.get_commit_editor(repos_url)
         t = dc.open_dir("trunk")
@@ -89,7 +89,7 @@ class TestFetchWorks(SubversionTestCase):
         deb = ch.open_dir("trunk/check/debian")
         deb.add_file("trunk/check/debian/bar").modify("oeh")
         ch.add_file("trunk/check/bar").modify("bla")
-        dc.close()
+        dc.close() #5
 
         self.make_checkout(repos_url, "dc")
         self.client_copy("dc/trunk", "dc/tags/R_0_9_2", revnum=2)
@@ -102,7 +102,7 @@ class TestFetchWorks(SubversionTestCase):
                          revnum=4)
         self.build_tree({"dc/tags/R_0_9_2/check/debian/blie": "oehha"})
         self.client_update("dc")
-        self.client_commit("dc", "strange revision")
+        self.client_commit("dc", "strange revision") # 6
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())

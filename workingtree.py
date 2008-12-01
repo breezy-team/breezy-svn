@@ -48,6 +48,7 @@ from bzrlib.trace import mutter
 from bzrlib.transport import get_transport
 from bzrlib.workingtree import WorkingTree, WorkingTreeFormat
 
+from collections import defaultdict
 import os
 import urllib
 

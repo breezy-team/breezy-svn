@@ -253,8 +253,11 @@ def convert_repository(source_repos, output_url, layout=None,
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for i, source_branch in enumerate(existing_branches):
-                pb.update("%s:%d" % (source_branch.get_branch_path(), 
-                    source_branch.get_revnum()), i, len(existing_branches))
+                try:
+                    pb.update("%s:%d" % (source_branch.get_branch_path(), 
+                        source_branch.get_revnum()), i, len(existing_branches))
+                except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                    continue
                 target_dir = get_dir(source_branch.get_branch_path())
                 if not create_shared_repo:
                     try:

@@ -737,7 +737,7 @@ class FetchRevisionFinder(object):
 
         while len(extra) > 0:
             foreign_revid, project, mapping = extra.pop()
-            needed += check_revid(foreign_revid, mapping, project)
+            needed.extend(check_revid(foreign_revid, mapping, project))
 
         return needed
 
@@ -823,7 +823,10 @@ class InterFromSvnRepository(InterRepository):
         self._prev_inv = None
 
         for num, (revmeta, mapping) in enumerate(revs):
-            revid = revmeta.get_revision_id(mapping)
+            try:
+                revid = revmeta.get_revision_id(mapping)
+            except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                continue
             assert revid != NULL_REVISION
             if pb is not None:
                 pb.update('copying revision', num, len(revs))
@@ -904,6 +907,8 @@ class InterFromSvnRepository(InterRepository):
                 if nested_pb is not None:
                     nested_pb.finished()
         finally:
+            if self.target.is_in_write_group():
+                self.target.abort_write_group()
             self.target.unlock()
 
     def _fetch_revision_chunks(self, revs, pb=None):
