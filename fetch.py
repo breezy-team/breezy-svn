@@ -666,11 +666,11 @@ class FetchRevisionFinder(object):
         self.checked = set()
 
     def needs_fetching(self, revmeta, mapping):
-        if self.target_is_empty:
-            return True
         try:
             if revmeta.is_hidden(mapping):
                 return False
+            if self.target_is_empty:
+                return True
             return not self.target.has_revision(revmeta.get_revision_id(mapping))
         except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
             return False

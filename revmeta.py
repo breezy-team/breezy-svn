@@ -312,23 +312,37 @@ class RevisionMetadata(object):
             return NULL_REVISION
         return parentrevmeta.get_revision_id(mapping)
 
+    # TODO: Cache these results
+    def _estimate_fileprop_ancestors(self, estimate_fn, call_next):
+        if self.knows_fileprops() or not self.children:
+            # If we already have the file properties, just don't guess
+            return estimate_fn(self.get_fileprops())
+        # FIXME: Use BFS here rather than DFS ?
+        # TODO: Use loop rather than recursive call?
+        desc_cnt = call_next(iter(self.children).next())
+        if desc_cnt == 0:
+            return 0
+        if self.changes_branch_root():
+            desc_cnt -= 1
+        if desc_cnt == 0:
+            return estimate_fn(self.get_fileprops())
+        return desc_cnt
+
     def estimate_bzr_fileprop_ancestors(self):
         """Estimate how many ancestors with bzr fileprops this revision has.
 
         """
-        if not self.knows_fileprops() and not self.consider_bzr_fileprops():
-            # This revisions descendant doesn't have bzr fileprops set, so 
-            # this one can't have them either.
-            return 0
-        return estimate_bzr_ancestors(self.get_fileprops())
+        return self._estimate_fileprop_ancestors(estimate_bzr_ancestors,
+            lambda x: x.estimate_bzr_fileprop_ancestors())
 
     def estimate_svk_fileprop_ancestors(self):
         """Estimate how many svk ancestors this revision has."""
-        if not self.knows_fileprops() and not self.consider_svk_fileprops():
-            # This revisions descendant doesn't have svk fileprops set, so
-            # this one can't have them either.
-            return 0
-        return estimate_svk_ancestors(self.get_fileprops())
+        return self._estimate_fileprop_ancestors(estimate_svk_ancestors,
+            lambda x: x.estimate_svk_fileprop_ancestors())
+
+    def estimate_bzr_hidden_fileprop_ancestors(self, mapping):
+        return self._estimate_fileprop_ancestors(estimate_svk_ancestors,
+            lambda x: x.estimate_bzr_hidden_fileprop_ancestors(mapping))
 
     def is_bzr_revision_revprops(self):
         """Check if any revision properties indicate this is a bzr revision.
@@ -338,8 +352,6 @@ class RevisionMetadata(object):
     def is_bzr_revision_fileprops(self):
         """Check if any file properties indicate this is a bzr revision.
         """
-        if not self.is_changes_root():
-            return False
         return is_bzr_revision_fileprops(self.get_changed_fileprops())
 
     def is_changes_root(self):
@@ -355,10 +367,12 @@ class RevisionMetadata(object):
         """Check whether this revision should be hidden from Bazaar history."""
         if not mapping.supports_hidden:
             return False
-        if self.consider_bzr_fileprops() or self.check_revprops:
-            return mapping.is_bzr_revision_hidden(self.get_revprops(), 
-                                                  self.get_changed_fileprops())
-        return False
+        if self.estimate_bzr_hidden_fileprop_ancestors(mapping) == 0:
+            if self.check_revprops:
+                return mapping.is_bzr_revision_hidden(self.get_revprops(), {})
+            return False
+        return mapping.is_bzr_revision_hidden(self.get_revprops(), 
+                                              self.get_changed_fileprops())
 
     def is_bzr_revision(self):
         """Determine if this is a bzr revision.
@@ -430,8 +444,14 @@ class RevisionMetadata(object):
         count = mapping.get_hidden_lhs_ancestors_count(self.get_fileprops())
         if count is not None:
             return count
-        # FIXME: Count number of lhs ancestor revisions with bzr:hidden set
-        return 0
+        if not self.check_revprops:
+            return 0
+        ret = 0
+        lm = self
+        while lm:
+            ret += lm.is_hidden(mapping)
+            lm = lm.get_direct_lhs_parent_revmeta()
+        return ret
 
     def get_rhs_parents(self, mapping):
         """Determine the right hand side parents for this revision.
@@ -493,20 +513,19 @@ class RevisionMetadata(object):
     def consider_bzr_fileprops(self):
         if self._consider_bzr_fileprops is not None:
             return self._consider_bzr_fileprops
-        self._consider_bzr_fileprops = True # FIXME
+        if not self.is_changes_root():
+            self._consider_bzr_fileprops = False
+        else:
+            self._consider_bzr_fileprops = (self.estimate_bzr_fileprop_ancestors() > 0)
         return self._consider_bzr_fileprops
 
     def consider_svk_fileprops(self):
         if self._consider_svk_fileprops is not None:
             return self._consider_svk_fileprops
-        self._consider_svk_fileprops = True # FIXME
+        self._consider_svk_fileprops = (self.estimate_svk_fileprop_ancestors() > 0)
         return self._consider_svk_fileprops
 
     def get_roundtrip_ancestor_revids(self):
-        if not self.consider_bzr_fileprops():
-            # This revisions descendant doesn't have bzr fileprops set, so 
-            # this one can't have them either.
-            return iter([])
         return iter(get_roundtrip_ancestor_revids(self.get_fileprops()))
 
     def __hash__(self):
