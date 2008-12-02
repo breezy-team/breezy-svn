@@ -379,14 +379,19 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self.editor._premature_deletes.add(copyfrom_path)
             # No need to rename if it's already in the right spot
             self.editor._rename(file_id, self.new_id, copyfrom_path, path, 'file')
+        # TODO: Retrieve base text here when used by replay/replay_range()
         return FileRevisionBuildEditor(self.editor, path, file_id)
+
+    def _get_record_stream(self, file_id, revision_id):
+        return self.editor.texts.get_record_stream([(file_id, revision_id)], 
+                                                   'unordered', True).next()
 
     def _open_file(self, path, base_revnum):
         base_file_id = self.editor._get_old_id(self.old_id, path)
         base_revid = self.editor.old_inventory[base_file_id].revision
         file_id = self.editor._get_existing_id(self.old_id, self.new_id, path)
         is_symlink = (self.editor.inventory[base_file_id].kind == 'symlink')
-        record = self.editor.texts.get_record_stream([(base_file_id, base_revid)], 'unordered', True).next()
+        record = self._get_record_stream(base_file_id, base_revid)
         file_data = record.get_bytes_as('fulltext')
         if file_id == base_file_id:
             file_parents = [base_revid]
