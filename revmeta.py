@@ -271,7 +271,7 @@ class RevisionMetadata(object):
                 pass
         # FIXME: Don't use iter_reverse_branch_changes since it browses history
         iterator = self.repository._revmeta_provider.iter_reverse_branch_changes(self.branch_path, 
-            self.revnum, to_revnum=0, mapping=None, limit=2)
+            self.revnum, to_revnum=0, mapping=None, limit=500)
         firstrevmeta = iterator.next()
         assert self == firstrevmeta
         try:
@@ -924,8 +924,6 @@ class RevisionMetadataProvider(object):
             if changes.changes_path(paths, bp, False):
                 yield (bp, paths, revnum, revprops)
                 i += 1
-                if limit != 0 and limit == i:
-                    break
 
             if next is None:
                 bp = None

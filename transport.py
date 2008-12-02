@@ -518,10 +518,10 @@ class MutteringRemoteAccess(object):
         mutter('svn get-latest-revnum')
         return self.actual.get_latest_revnum()
 
-    def get_log(self, callback, paths, from_revnum, to_revnum, *args, **kwargs):
-        mutter('svn log -r%d:%d %r' % (from_revnum, to_revnum, paths))
+    def get_log(self, callback, paths, from_revnum, to_revnum, limit, *args, **kwargs):
+        mutter('svn log -r%d:%d %r (limit: %r)' % (from_revnum, to_revnum, paths, limit))
         return self.actual.get_log(callback, paths, 
-                    from_revnum, to_revnum, *args, **kwargs)
+                    from_revnum, to_revnum, limit, *args, **kwargs)
 
     def change_rev_prop(self, revnum, name, value):
         mutter('svn change-revprop -r%d %s=%s' % (revnum, name, value))
