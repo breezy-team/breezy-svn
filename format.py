@@ -69,7 +69,8 @@ class SvnRemoteFormat(BzrDirFormat):
         import subvertpy
         format = klass()
 
-        if isinstance(transport, LocalTransport) and not transport.has("format"):
+        if (isinstance(transport, LocalTransport) and 
+            transport.has(".") and not transport.has("format")):
             raise bzr_errors.NotBranchError(path=transport.base)
         try:
             transport = get_svn_ra_transport(transport)
