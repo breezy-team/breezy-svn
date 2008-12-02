@@ -180,10 +180,18 @@ class RevisionMetadata(object):
         """Get the file properties set on the branch root.
         """
         if self._fileprops is None:
-            if self.changes_branch_root():
-                self._fileprops = self._get_fileprops_fn(self.branch_path, self.revnum)
-            else:
-                self._fileprops = self.get_direct_lhs_parent_revmeta().get_fileprops()
+            # Argh, this should've just been a simple tail recursion call, but 
+            # Python doesn't handle those very well..
+            lm = self
+            todo = set()
+            while not lm.changes_branch_root() and lm._fileprops is None:
+                todo.add(lm)
+                lm = lm.get_direct_lhs_parent_revmeta()
+            if lm._fileprops is None:
+                lm._fileprops = self._get_fileprops_fn(lm.branch_path, 
+                                                       lm.revnum)
+            for r in todo:
+                r._fileprops = lm._fileprops
         return self._fileprops
 
     def get_revprops(self):
