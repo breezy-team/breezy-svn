@@ -126,6 +126,8 @@ def Connection(url):
             raise InvalidURL(url)
         if num in (subvertpy.ERR_RA_DAV_PATH_NOT_FOUND, subvertpy.ERR_FS_NOT_FOUND):
             raise NoSuchFile(url)
+        if num == subvertpy.ERR_RA_ILLEGAL_URL:
+            raise InvalidURL(url, msg)
         if num == subvertpy.ERR_RA_DAV_RELOCATED:
             # Try to guess the new url
             if "'" in msg:
