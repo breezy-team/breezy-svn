@@ -10,7 +10,7 @@ more tests:
 
 performance:
 - generate deltas rather than fulltexts when creating file id maps
-- use replay and replay range to fetch revisions
+- fix copyfrom in replay and replay_range
 - implement SvnWorkingTree.apply_inventory_delta()
 
 for other things to do, see:

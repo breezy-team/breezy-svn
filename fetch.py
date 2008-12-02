@@ -690,9 +690,11 @@ class FetchRevisionFinder(object):
         except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
             return False
 
-    def find_iter(self, iter, mapping):
+    def find_iter(self, iter, mapping, pb=None):
         needed = deque()
-        for revmeta in iter:
+        for i, revmeta in enumerate(iter):
+            if pb is not None:
+                pb.update("checking revisions to fetch", i)
             #FIXME: mapping = revmeta.get_appropriate_mapping(mapping)
             if self.needs_fetching(revmeta, mapping):
                 needed.appendleft((revmeta, mapping))

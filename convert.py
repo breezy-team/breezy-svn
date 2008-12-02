@@ -216,6 +216,7 @@ def convert_repository(source_repos, output_url, layout=None,
         if create_shared_repo:
             revfinder = FetchRevisionFinder(source_repos, target_repos, target_repos_is_empty)
             (it, it_rev) = tee(it)
+        num_revs = 0
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for kind, item in it:
@@ -225,6 +226,7 @@ def convert_repository(source_repos, output_url, layout=None,
                         layout.is_branch(item.branch_path, project=project) and 
                         not contains_parent_path(deleted, item.branch_path)):
                         existing_branches[item.branch_path] = SvnBranch(source_repos, item.branch_path, revnum=item.revnum, _skip_check=True)
+                    num_revs += 1
                 elif kind == "delete":
                     deleted.add(item)
         finally:
@@ -237,8 +239,13 @@ def convert_repository(source_repos, output_url, layout=None,
                   getattr(inter, '_supports_revmetas', None) and 
                   inter._supports_revmetas):
                 # TODO: Skip revisions in removed branches unless all=True
-                revmetas = revfinder.find_iter(filter_revisions(it_rev), 
-                                                   mapping)
+                pb = ui.ui_factory.nested_progress_bar()
+                try:
+                    pb.update("checking revisions to fetch", total_cnt=num_revs)
+                    revmetas = revfinder.find_iter(filter_revisions(it_rev), 
+                                                       mapping, pb)
+                finally:
+                    pb.finished()
                 inter.fetch(needed=revmetas)
             elif all:
                 inter.fetch()
