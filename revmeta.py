@@ -755,6 +755,7 @@ class RevisionMetadataBrowser(object):
                                                   metaiterator=self)
             assert revmeta is not None
             children = set([c._revs[-1] for c in metabranches_history[revnum][bp]])
+            del metabranches_history[revnum][bp]
             if mb._revs:
                 children.add(mb._revs[-1])
             mb.append(revmeta)
@@ -763,6 +764,7 @@ class RevisionMetadataBrowser(object):
             return revmeta
 
         unusual = set()
+        remembered = dict()
         for (paths, revnum, revprops) in self._provider._log.iter_changes(
                 self.prefixes, self.from_revnum, self.to_revnum, pb=pb):
             bps = {}
@@ -771,6 +773,8 @@ class RevisionMetadataBrowser(object):
                 pb.update("discovering revisions", revnum-self.to_revnum, 
                           self.from_revnum-self.to_revnum)
 
+            for bp, mbs in remembered.iteritems():
+                metabranches_history[revnum][bp].update(mbs)
             for bp, mbs in metabranches_history[revnum].iteritems():
                 if not bp in self._metabranches:
                     self._metabranches[bp] = iter(mbs).next()
@@ -823,6 +827,9 @@ class RevisionMetadataBrowser(object):
                     revmeta._set_direct_lhs_parent_revmeta(None)
                 yield "revision", revmeta
             self._last_revnum = revnum
+            remembered = defaultdict(set)
+            for bp in metabranches_history[revnum]:
+                remembered[bp].update(metabranches_history[revnum][bp])
 
 
 def filter_revisions(it):
