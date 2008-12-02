@@ -23,7 +23,7 @@ from bzrlib.revision import NULL_REVISION
 from bzrlib.repository import InterRepository
 from bzrlib.trace import mutter
 
-from collections import deque
+from collections import deque, defaultdict
 from cStringIO import StringIO
 
 from subvertpy import properties, SubversionException
@@ -894,7 +894,7 @@ class InterFromSvnRepository(InterRepository):
         try:
             nested_pb = ui.ui_factory.nested_progress_bar()
             try:
-                # FIXME: Specify target_is_empty
+                # FIXME: Specify target_is_empt
                 target_is_empty = False
                 revisionfinder = FetchRevisionFinder(self.source, self.target, target_is_empty)
                 if needed is None:
@@ -935,50 +935,45 @@ class InterFromSvnRepository(InterRepository):
         :param pb: Optional progress bar
         """
         self._prev_inv = None
-        ranges = []
-        curmetabranch = None
         currange = None
-        revmetas = {}
+        activeranges = defaultdict(list)
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for i, (revmeta, mapping) in enumerate(revs):
                 pb.update("determining revision ranges", i, len(revs))
-                if (revmeta.metabranch is not None and
-                    curmetabranch == revmeta.metabranch):
-                    (branch_path, from_revnum, to_revnum, revmetas) = currange
-                    revmetas[revmeta.revnum] = (revmeta, mapping)
-                    currange = (revmeta.branch_path, from_revnum, revmeta.revnum, revmetas)
-                else:
-                    if currange is not None:
-                        ranges.append(currange)
-                    parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
-                    currange = (revmeta.branch_path, revmeta.revnum, revmeta.revnum,
-                                {revmeta.revnum: (revmeta, mapping)})
-                    curmetabranch = revmeta.metabranch
+                p = revmeta.get_direct_lhs_parent_revmeta()
+                range = activeranges[p,mapping]
+                range.append(revmeta)
+                del activeranges[p,mapping]
+                activeranges[revmeta,mapping] = range
         finally:
             pb.finished()
-        if currange is not None:
-            ranges.append(currange)
 
-        mutter("fetching ranges: %r" % [r[:4] for r in ranges])
         if not self.target.is_in_write_group():
             self.target.start_write_group()
 
         try:
-            for (branch_path, start_revision, end_revision, revmetas) in ranges:
+            def cmprange((ak, av),(bk, bv)):
+                return cmp(av[0], bv[0])
+            ranges = sorted(activeranges.iteritems(), cmp=cmprange)
+            for (head, mapping), revmetas in ranges:
                 def revstart(revnum, revprops):
                     if pb is not None:
                         pb.update("fetching revisions", revnum, len(revs))
-                    revmeta, mapping = revmetas[revnum]
+                    revmeta = None
+                    for r in revmetas:
+                        if r.revnum == revnum:
+                            revmeta = r
+                            break
                     revmeta._revprops = revprops
                     return editor_strip_prefix(self._get_editor(revmeta, mapping), revmeta.branch_path)
 
                 def revfinish(revision, revprops, editor):
                     self._prev_inv = editor.inventory
 
-                conn = self.source.transport.get_connection(branch_path)
+                conn = self.source.transport.get_connection(revmetas[-1].branch_path)
                 try:
-                    conn.replay_range(start_revision, end_revision, 0, (revstart, revfinish), True)
+                    conn.replay_range(revmetas[0].revnum, revmetas[-1].revnum, 0, (revstart, revfinish), True)
                 finally:
                     if not conn.busy:
                         self.source.transport.add_connection(conn)

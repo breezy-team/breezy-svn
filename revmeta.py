@@ -112,6 +112,10 @@ class RevisionMetadata(object):
         return (type(self) == type(other) and 
                 self.get_foreign_revid() == other.get_foreign_revid())
 
+    def __cmp__(self, other):
+        return cmp((self.uuid, self.revnum, self.branch_path),
+                   (other.uuid, other.revnum, other.branch_path))
+
     def __repr__(self):
         return "<RevisionMetadata for revision %d, path %s in repository %r>" % (self.revnum, self.branch_path, self.uuid)
 
