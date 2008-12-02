@@ -600,6 +600,25 @@ class TestLogWalker(SubversionTestCase):
                            ({'trunk': (u'M', None, -1)}, 2), 
                            ({'trunk/bla': (u'A', None, -1), 'trunk': (u'A', None, -1)}, 1)], [l[:2] for l in walker.iter_changes(["trunk"], 3)])
 
+    def test_iter_changes_pointless(self):
+        repos_url = self.make_repository('d')
+
+        cb = self.get_commit_editor(repos_url)
+        cb.close()
+
+        cb = self.get_commit_editor(repos_url)
+        t = cb.add_dir("trunk")
+        cb.close()
+
+        walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
+        self.assertEquals([({'trunk': (u'A', None, -1)}, 2)],
+                [l[:2] for l in walker.iter_changes(["trunk"], 2)])
+
+        self.assertEquals([({'trunk': (u'A', None, -1)}, 2), 
+                           ({}, 1),
+                           ({'': ('A', None, -1)}, 0) ],
+                [l[:2] for l in walker.iter_changes([""], 2)])
+
 
 class TestCachingLogWalker(TestLogWalker):
     def setUp(self):

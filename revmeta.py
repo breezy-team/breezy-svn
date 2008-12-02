@@ -827,9 +827,7 @@ class RevisionMetadataBrowser(object):
                     revmeta._set_direct_lhs_parent_revmeta(None)
                 yield "revision", revmeta
             self._last_revnum = revnum
-            remembered = defaultdict(set)
-            for bp in metabranches_history[revnum]:
-                remembered[bp].update(metabranches_history[revnum][bp])
+            remembered = metabranches_history[revnum]
 
 
 def filter_revisions(it):

@@ -300,7 +300,7 @@ class CachingLogWalker(CacheTable):
 
             revprops = lazy_dict({}, self.revprop_list, revnum)
 
-            if changes.changes_path(revpaths, path, True):
+            if path == "" or changes.changes_path(revpaths, path, True):
                 assert isinstance(revnum, int)
                 yield (revpaths, revnum, revprops)
                 i += 1
