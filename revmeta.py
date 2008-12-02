@@ -720,6 +720,9 @@ class RevisionMetadataBrowser(object):
     def __iter__(self):
         return ListBuildingIterator(self._actions, self.next)
 
+    def __repr__(self):
+        return "<RevisionMetadataBrowser from %d to %d, layout: %r>" % (self.from_revnum, self.to_revnum, self.layout)
+
     def get_lhs_parent(self, revmeta):
         while not revmeta._direct_lhs_parent_known:
             try:
