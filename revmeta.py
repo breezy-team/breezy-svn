@@ -101,6 +101,9 @@ class RevisionMetadata(object):
         self._direct_lhs_parent_known = False
         self._consider_bzr_fileprops = None
         self._consider_svk_fileprops = None
+        self._estimated_bzr_fileprop_ancestors = None
+        self._estimated_svk_fileprop_ancestors = None
+        self._estimated_bzr_hidden_fileprop_ancestors = None
         self.metaiterator = metaiterator
         self.uuid = uuid
         self.children = set()
@@ -323,37 +326,47 @@ class RevisionMetadata(object):
             return NULL_REVISION
         return parentrevmeta.get_revision_id(mapping)
 
-    # TODO: Cache these results
     def _estimate_fileprop_ancestors(self, estimate_fn, call_next):
+        """Count the number of lines in file properties, estimating how many 
+        still exist in the worst case in a revision."""
         if self.knows_fileprops() or not self.children:
             # If we already have the file properties, just don't guess
-            return estimate_fn(self.get_fileprops())
-        # FIXME: Use BFS here rather than DFS ?
-        # TODO: Use loop rather than recursive call?
-        desc_cnt = call_next(iter(self.children).next())
-        if desc_cnt == 0:
-            return 0
-        if self.changes_branch_root():
-            desc_cnt -= 1
-        if desc_cnt == 0:
-            return estimate_fn(self.get_fileprops())
-        return desc_cnt
+            ret = estimate_fn(self.get_fileprops())
+        else:
+            # FIXME: Use BFS here rather than DFS ?
+            # TODO: Use loop rather than recursive call?
+            ret = call_next(iter(self.children).next())
+            if ret == 0:
+                ret = 0
+            else:
+                if self.changes_branch_root():
+                    ret -= 1
+                if ret == 0:
+                    ret = estimate_fn(self.get_fileprops())
+        return ret
 
     def estimate_bzr_fileprop_ancestors(self):
         """Estimate how many ancestors with bzr fileprops this revision has.
 
         """
-        return self._estimate_fileprop_ancestors(estimate_bzr_ancestors,
-            lambda x: x.estimate_bzr_fileprop_ancestors())
+        if self._estimated_bzr_fileprop_ancestors is None:
+            self._estimated_bzr_fileprop_ancestors = \
+                    self._estimate_fileprop_ancestors(estimate_bzr_ancestors,
+                    lambda x: x.estimate_bzr_fileprop_ancestors())
+        return self._estimated_bzr_fileprop_ancestors
 
     def estimate_svk_fileprop_ancestors(self):
         """Estimate how many svk ancestors this revision has."""
-        return self._estimate_fileprop_ancestors(estimate_svk_ancestors,
+        if self._estimated_svk_fileprop_ancestors is None:
+            self._estimated_svk_fileprop_ancestors = self._estimate_fileprop_ancestors(estimate_svk_ancestors,
             lambda x: x.estimate_svk_fileprop_ancestors())
+        return self._estimated_svk_fileprop_ancestors
 
     def estimate_bzr_hidden_fileprop_ancestors(self, mapping):
-        return self._estimate_fileprop_ancestors(estimate_svk_ancestors,
+        if self._estimated_bzr_hidden_fileprop_ancestors is None:
+            self._estimated_bzr_hidden_fileprop_ancestors = self._estimate_fileprop_ancestors(estimate_svk_ancestors,
             lambda x: x.estimate_bzr_hidden_fileprop_ancestors(mapping))
+        return self._estimated_bzr_hidden_fileprop_ancestors
 
     def is_bzr_revision_revprops(self):
         """Check if any revision properties indicate this is a bzr revision.
