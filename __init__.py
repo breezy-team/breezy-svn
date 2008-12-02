@@ -236,6 +236,9 @@ class cmd_svn_import(Command):
             prefix = from_location[len(from_repos.base):].strip("/")
             prefix = prefix.encode("utf-8")
 
+        if not isinstance(from_repos, SvnRepository):
+            raise BzrCommandError("Source repository is not a Subversion repository.")
+
         if until is None:
             to_revnum = from_repos.get_latest_revnum()
         else:
