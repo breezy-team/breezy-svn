@@ -489,8 +489,14 @@ class RevisionBuildEditor(DeltaBuildEditor):
         rev = self.revmeta.get_revision(self.mapping)
         # Escaping the commit message is really the task of the serialiser
         rev.message = escape_commit_message(rev.message)
-        if getattr(self.target, "add_inventory_delta", None) is not None:
+        if getattr(self.old_inventory, "create_by_apply_delta", None) is not None:
             self.inventory = self.old_inventory.create_by_apply_delta(self._inv_delta, rev.revision_id)
+        else:
+            self.inventory = self.old_inventory
+            self.inventory.apply_delta(self._inv_delta)
+            self.inventory.revision_id = rev.revision_id
+
+        if getattr(self.target, "add_inventory_delta", None) is not None:
             try:
                 basis_id = rev.parent_ids[0]
             except IndexError:
@@ -499,9 +505,6 @@ class RevisionBuildEditor(DeltaBuildEditor):
                                   self._inv_delta, rev.revision_id,
                                   [r for r in rev.parent_ids if self.target.has_revision(r)])
         else:
-            self.inventory = self.old_inventory
-            self.inventory.apply_delta(self._inv_delta)
-            self.inventory.revision_id = rev.revision_id
             rev.inventory_sha1 = self.target.add_inventory(rev.revision_id, 
                     self.inventory, rev.parent_ids)
         self.target.add_revision(self.revid, rev)
