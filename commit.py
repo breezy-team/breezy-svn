@@ -186,8 +186,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
     # Loop over entries of file_id in old_inv
     # remove if they no longer exist with the same name
     # or parents
-    if (file_id in old_inv and 
-        old_inv[file_id].kind == 'directory'):
+    if file_id in old_inv and old_inv[file_id].kind == 'directory':
         for child_name in old_inv[file_id].children:
             child_ie = old_inv.get_child(file_id, child_name)
             # remove if...
@@ -224,8 +223,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
             mutter('copy %s %r -> %r', child_ie.kind, 
                               old_inv.id2path(child_ie.file_id), 
                               new_child_path)
-            child_editor = dir_editor.add_file(
-                    full_new_child_path, 
+            child_editor = dir_editor.add_file(full_new_child_path, 
                 _url_escape_uri(urlutils.join(base_url, old_inv.id2path(child_ie.file_id))),
                 base_revnum)
 
@@ -253,17 +251,14 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
                     value = properties.PROP_EXECUTABLE_VALUE
                 else:
                     value = None
-                child_editor.change_prop(
-                        properties.PROP_EXECUTABLE, value)
+                child_editor.change_prop(properties.PROP_EXECUTABLE, value)
 
             if old_special != (child_ie.kind == 'symlink'):
                 if child_ie.kind == 'symlink':
                     value = properties.PROP_SPECIAL_VALUE
                 else:
                     value = None
-
-                child_editor.change_prop(
-                        properties.PROP_SPECIAL, value)
+                child_editor.change_prop(properties.PROP_SPECIAL, value)
 
         # handle the file
         if child_ie.file_id in modified_files:
@@ -407,14 +402,18 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._svnprops = lazy_dict({}, lambda: dict(self._base_branch_props.iteritems()))
         self.base_mapping.export_revision(
             self.branch_path, timestamp, timezone, committer, revprops, 
-            revision_id, self.base_revno+1, parents, self._svn_revprops, self._svnprops)
+            revision_id, self.base_revno+1, parents, self._svn_revprops, 
+            self._svnprops)
 
         if len(merges) > 0:
-            new_svk_merges = update_svk_features(self._base_branch_props.get(SVN_PROP_SVK_MERGE, ""), merges)
+            old_svk_merges = self._base_branch_props.get(SVN_PROP_SVK_MERGE, "")
+            new_svk_merges = update_svk_features(old_svk_merges, merges)
             if new_svk_merges is not None:
                 self._svnprops[SVN_PROP_SVK_MERGE] = new_svk_merges
 
-            new_mergeinfo = update_mergeinfo(self.repository, graph, self._base_branch_props.get(properties.PROP_MERGEINFO, ""), self.base_revid, merges)
+            new_mergeinfo = update_mergeinfo(self.repository, graph,
+                self._base_branch_props.get(properties.PROP_MERGEINFO, ""), 
+                self.base_revid, merges)
             if new_mergeinfo is not None:
                 self._svnprops[properties.PROP_MERGEINFO] = new_mergeinfo
 
