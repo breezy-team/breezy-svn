@@ -297,22 +297,17 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         self.parent_revids = parent_revids
         self._metadata_changed = False
         self.new_ie = InventoryDirectory(self.new_id, urlutils.basename(self.path), parent_file_id)
+        if self.new_id in self.editor.old_inventory:
+            self.new_ie.revision = self.editor.old_inventory[self.new_id].revision
 
     def _delete_entry(self, path, revnum):
-        if path in self.editor._premature_deletes:
-            # Delete recursively
-            self.editor._premature_deletes.remove(path)
-            for p in self.editor._premature_deletes.copy():
-                if p.startswith("%s/" % path):
-                    self.editor._premature_deletes.remove(p)
-        else:
-            def rec_del(ie):
-                self.editor._inv_delta.append((self.editor.old_inventory.id2path(ie.file_id), None, ie.file_id, None))
-                if ie.kind != 'directory':
-                    return
-                for c in ie.children.values():
-                    rec_del(c)
-            rec_del(self.editor.old_inventory[self.editor._get_old_id(self.old_id, path)])
+        def rec_del(ie):
+            self.editor._inv_delta.append((self.editor.old_inventory.id2path(ie.file_id), None, ie.file_id, None))
+            if ie.kind != 'directory':
+                return
+            for c in ie.children.values():
+                rec_del(c)
+        rec_del(self.editor.old_inventory[self.editor._get_old_id(self.old_id, path)])
 
     def _close(self):
         if (not self.new_id in self.editor.old_inventory or 
@@ -321,9 +316,9 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self.old_path != self.path or 
             self.editor._get_text_revid(self.path) is not None):
             assert self.editor.revid is not None
-            self.new_ie.revision = self.editor.revid
 
-            text_revision = self.editor._get_text_revid(self.path) or self.new_ie.revision
+            text_revision = self.editor._get_text_revid(self.path) or self.editor.revid
+            self.new_ie.revision = text_revision
             text_parents = self.editor._get_text_parents(self.path)
             if text_parents is None:
                 text_parents = self.parent_revids
@@ -346,8 +341,6 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                 copyfrom_path = self.editor.old_inventory.id2path(file_id)
                 mutter('no copyfrom path set, assuming %r', copyfrom_path)
             assert copyfrom_path == self.editor.old_inventory.id2path(file_id)
-            assert copyfrom_path not in self.editor._premature_deletes
-            self.editor._premature_deletes.add(copyfrom_path)
             old_path = copyfrom_path
             old_file_id = file_id
         else:
@@ -366,8 +359,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         else:
             old_path = None
             file_parents = []
-            # FIXME: What if base_file_id gets used in this revision?
-            self.editor._inv_delta.append((path, None, base_file_id, None))
+            self._delete_entry(path, base_revnum)
         return DirectoryRevisionBuildEditor(self.editor, old_path, path, base_file_id, file_id, self.new_id, file_parents)
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
@@ -380,8 +372,6 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                 copyfrom_path = self.editor.old_inventory.id2path(file_id)
                 mutter('no copyfrom path set, assuming %r', copyfrom_path)
             assert copyfrom_path == self.editor.old_inventory.id2path(file_id)
-            assert copyfrom_path not in self.editor._premature_deletes
-            self.editor._premature_deletes.add(copyfrom_path)
             # No need to rename if it's already in the right spot
             old_path = copyfrom_path
         else:
@@ -409,8 +399,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # Replace with historical version
             old_path = None
             file_parents = []
-            # FIXME: What if base_file_id gets used in this revision?
-            self.editor._inv_delta.append((path, None, base_file_id, None))
+            self._delete_entry(path, base_revnum)
         return FileRevisionBuildEditor(self.editor, old_path, path, file_id, self.new_id,
                 file_parents, file_data, is_symlink=is_symlink)
 
@@ -475,7 +464,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
             ie.text_size = sum(map(len, lines))
             assert ie.text_size is not None
             ie.executable = self.is_executable
-        ie.revision = self.editor._get_text_revid(self.path) or self.editor.revid
+        ie.revision = text_revision
         self.editor._inv_delta.append((self.old_path, self.path, self.file_id, ie))
 
         self.file_stream = None
@@ -492,14 +481,11 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self.revid = revid
         self._text_revids = None
         self._text_parents = None
-        self._premature_deletes = set()
         self.old_inventory = prev_inventory
         self._inv_delta = []
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
 
     def _finish_commit(self):
-        if len(self._premature_deletes) > 0:
-            raise AssertionError("Remaining deletes in %s: %r" % (self.revid, self._premature_deletes))
         rev = self.revmeta.get_revision(self.mapping)
         # Escaping the commit message is really the task of the serialiser
         rev.message = escape_commit_message(rev.message)
