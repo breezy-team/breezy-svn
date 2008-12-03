@@ -296,11 +296,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         self.old_path = old_path
         self.parent_revids = parent_revids
         self._metadata_changed = False
-        if self.new_id in self.editor.old_inventory:
-            self.new_ie = self.editor.old_inventory[self.new_id].copy()
-            self.new_ie.parent_id = parent_file_id
-        else:
-            self.new_ie = InventoryDirectory(self.new_id, urlutils.basename(self.path), parent_file_id)
+        self.new_ie = InventoryDirectory(self.new_id, urlutils.basename(self.path), parent_file_id)
 
     def _delete_entry(self, path, revnum):
         if path in self.editor._premature_deletes:
