@@ -499,7 +499,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 basis_id = NULL_REVISION
             rev.inventory_sha1 = self.target.add_inventory_delta(basis_id,
                                   self._inv_delta, rev.revision_id,
-                                  [self.target.has_revision(r) for r in rev.parent_ids])
+                                  [r for r in rev.parent_ids if self.target.has_revision(r)])
         else:
             rev.inventory_sha1 = self.target.add_inventory(rev.revision_id, 
                     self.inventory, rev.parent_ids)
