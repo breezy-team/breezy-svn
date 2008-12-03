@@ -244,7 +244,7 @@ class RevisionMetadata(object):
     def _set_direct_lhs_parent_revmeta(self, parent_revmeta):
         if (self._direct_lhs_parent_known and 
             self._direct_lhs_parent_revmeta != parent_revmeta):
-            raise AssertionError()
+            raise AssertionError("Tried registering %r as parent while %r already was parent for %r" % (parent_revmeta, self._direct_lhs_parent_revmeta, self))
         self._direct_lhs_parent_known = True
         self._direct_lhs_parent_revmeta = parent_revmeta
         if parent_revmeta is not None:
