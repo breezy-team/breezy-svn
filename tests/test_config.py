@@ -42,6 +42,16 @@ class ReposConfigTests(TestCaseInTempDir):
         c.add_location("brainslug")
         self.assertEquals(set(["foobar", "brainslug"]), c.get_locations())
 
+    def test_get_branches(self):
+        c = SvnRepositoryConfig("blabla3") 
+        c.set_user_option("branches", "bla;blie")
+        self.assertEquals(["bla", "blie"], c.get_branches())
+
+    def test_get_tags(self):
+        c = SvnRepositoryConfig("blabla3") 
+        c.set_user_option("tags", "bla;blie")
+        self.assertEquals(["bla", "blie"], c.get_tags())
+
     def test_get_scheme_none(self):
         c = SvnRepositoryConfig("blabla3")
         self.assertEquals(None, c.get_branching_scheme())

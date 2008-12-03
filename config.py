@@ -86,7 +86,7 @@ class SvnRepositoryConfig(IniBasedConfig):
         tags_str = self._get_user_option("tags", use_global=False)
         if tags_str is None:
             return None
-        return filter(lambda b: b != "", branches_str.split(";"))
+        return filter(lambda b: b != "", tags_str.split(";"))
 
     def _get_user_option(self, name, use_global=True):
         try:
