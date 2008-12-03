@@ -56,6 +56,8 @@ bzr-svn 0.5.0			UNRELEASED
 
    * Correctly detect prefix when repository root is URL root (#303292)
 
+   * Fix removing file properties. (#304866)
+
   INTERNALS
 
    * Remove custom commit code for working tree. 
