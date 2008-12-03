@@ -294,7 +294,7 @@ class SvnRepository(foreign.ForeignRepository):
                                       parentfileidmap)
         conn = self.transport.get_connection(parent_branch_path)
         try:
-            reporter = conn.do_diff(revision.svn_meta.revnum, "", urlutils.join(self.transport.get_svn_repos_root(), revision.svn_meta.branch_path), editor, True, True, False)
+            reporter = conn.do_diff(revision.svn_meta.revnum, "", urlutils.join(self.transport.get_svn_repos_root(), revision.svn_meta.branch_path).rstrip("/"), editor, True, True, False)
             try:
                 reporter.set_path("", parentrevnum, start_empty)
                 reporter.finish()
