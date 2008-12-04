@@ -282,6 +282,7 @@ class RepositoryRegistry(registry.Registry):
             return None
 
 repository_registry = RepositoryRegistry()
-# KDE:
 repository_registry.register_lazy("283d02a7-25f6-0310-bc7c-ecb5cbfe19da", 
-        "bzrlib.plugins.svn.layout.standard", "InverseTrunkLayout1")
+        "bzrlib.plugins.svn.layout.custom", "KDELayout")
+repository_registry.register_lazy("13f79535-47bb-0310-9956-ffa450edef68",
+        "bzrlib.plugins.svn.layout.custom", "ApacheLayout")
