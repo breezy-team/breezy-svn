@@ -734,6 +734,9 @@ class RevisionMetadataBrowser(object):
             except StopIteration:
                 if self.to_revnum > 0:
                     raise MetaHistoryIncomplete()
+                if not any([x for x in self.prefixes if revmeta.branch_path.startswith(x+"/") or x == revmeta.branch_path or x == ""]):
+                    import pdb;pdb.set_trace()
+                    raise MetaHistoryIncomplete()
                 raise AssertionError("Unable to find direct lhs parent for %r" % revmeta)
         return revmeta._direct_lhs_parent_revmeta
 
@@ -985,7 +988,7 @@ class RevisionMetadataProvider(object):
         return filter_revisions(self.iter_all_changes(layout, check_unusual_path, from_revnum, to_revnum, project, pb))
 
     def iter_all_changes(self, layout, check_unusual_path, from_revnum, 
-                         to_revnum=0, project=None, prefix=None, pb=None):
+                         to_revnum=0, project=None, pb=None, prefix=None):
         """Iterate over all RevisionMetadata objects and branch removals 
         in a repository.
 
