@@ -548,7 +548,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _get_old_id(self, parent_id, old_path):
         assert isinstance(old_path, unicode)
         assert isinstance(parent_id, str)
-        return self.old_inventory[parent_id].children[urlutils.basename(old_path)].file_id
+        basename = urlutils.basename(old_path)
+        return self.old_inventory[parent_id].children[basename].file_id
 
     def _get_existing_id(self, old_parent_id, new_parent_id, path):
         assert isinstance(path, unicode)
@@ -557,7 +558,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         ret = self._get_id_map().get(path)
         if ret is not None:
             return ret
-        return self.old_inventory[old_parent_id].children[urlutils.basename(path)].file_id
+        return self._get_old_id(old_parent_id, path)
 
     def _get_new_id(self, new_path):
         assert isinstance(new_path, unicode)
