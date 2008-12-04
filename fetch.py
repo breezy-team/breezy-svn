@@ -297,7 +297,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         self.parent_revids = parent_revids
         self._metadata_changed = False
         self.new_ie = InventoryDirectory(self.new_id, urlutils.basename(self.path), parent_file_id)
-        if self.new_id in self.editor.old_inventory:
+        if self.editor.old_inventory.has_id(self.new_id):
             self.new_ie.revision = self.editor.old_inventory[self.new_id].revision
 
     def _delete_entry(self, path, revnum):
@@ -310,7 +310,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         rec_del(self.editor.old_inventory[self.editor._get_old_id(self.old_id, path)])
 
     def _close(self):
-        if (not self.new_id in self.editor.old_inventory or 
+        if (not self.editor.old_inventory.has_id(self.new_id) or 
             (self._metadata_changed and self.path != "") or 
             self.new_ie != self.editor.old_inventory[self.new_id] or
             self.old_path != self.path or 
@@ -333,7 +333,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
     def _add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         file_id = self.editor._get_new_id(path)
 
-        if file_id in self.editor.old_inventory:
+        if self.editor.old_inventory.has_id(file_id):
             # This directory was moved here from somewhere else, but the 
             # other location hasn't been removed yet. 
             if copyfrom_path is None:
@@ -364,7 +364,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         file_id = self.editor._get_new_id(path)
-        if file_id in self.editor.old_inventory:
+        if self.editor.old_inventory.has_id(file_id):
             # This file was moved here from somewhere else, but the 
             # other location hasn't been removed yet. 
             if copyfrom_path is None:
@@ -447,7 +447,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
         assert self.is_symlink in (True, False)
 
-        if self.file_id in self.editor.old_inventory:
+        if self.editor.old_inventory.has_id(self.file_id):
             if self.is_executable is None:
                 self.is_executable = self.editor.old_inventory[self.file_id].executable
 
@@ -489,24 +489,24 @@ class RevisionBuildEditor(DeltaBuildEditor):
         rev = self.revmeta.get_revision(self.mapping)
         # Escaping the commit message is really the task of the serialiser
         rev.message = escape_commit_message(rev.message)
-        if getattr(self.old_inventory, "create_by_apply_delta", None) is not None:
-            self.inventory = self.old_inventory.create_by_apply_delta(self._inv_delta, rev.revision_id)
-        else:
-            self.inventory = self.old_inventory
-            self.inventory.apply_delta(self._inv_delta)
-            self.inventory.revision_id = rev.revision_id
-
         if getattr(self.target, "add_inventory_delta", None) is not None:
             try:
                 basis_id = rev.parent_ids[0]
             except IndexError:
                 basis_id = NULL_REVISION
-            rev.inventory_sha1 = self.target.add_inventory_delta(basis_id,
+            rev.inventory_sha1, self.inventory = self.target.add_inventory_delta(basis_id,
                                   self._inv_delta, rev.revision_id,
                                   [r for r in rev.parent_ids if self.target.has_revision(r)])
         else:
-            rev.inventory_sha1 = self.target.add_inventory(rev.revision_id, 
-                    self.inventory, rev.parent_ids)
+            if getattr(self.old_inventory, "create_by_apply_delta", None) is not None:
+                self.inventory = self.old_inventory.create_by_apply_delta(self._inv_delta, rev.revision_id)
+            else:
+                self.inventory = self.old_inventory
+                self.inventory.apply_delta(self._inv_delta)
+                self.inventory.revision_id = rev.revision_id
+
+                rev.inventory_sha1 = self.target.add_inventory(rev.revision_id, 
+                        self.inventory, rev.parent_ids)
         self.target.add_revision(self.revid, rev)
 
         # Only fetch signature if it's cheap
