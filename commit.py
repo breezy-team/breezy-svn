@@ -263,7 +263,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
         # handle the file
         if child_ie.file_id in modified_files:
             file_editor_send_changes(child_ie.file_id, 
-                modified_files[child_ie.file_id], child_editor)
+                modified_files[child_ie.file_id](child_ie), child_editor)
 
         if child_editor is not None:
             child_editor.close()
@@ -701,10 +701,14 @@ class SvnCommitBuilder(RootCommitBuilder):
         if (ie.file_id in self.old_inv and ie == self.old_inv[ie.file_id] and 
             (ie.kind != 'directory' or ie.children == self.old_inv[ie.file_id].children)):
             return self._get_delta(ie, self.old_inv, self.new_inventory.id2path(ie.file_id)), version_recorded
+        def get_symlink_contents(ie):
+            return "link %s" % ie.symlink_target
+        def get_file_contents(ie):
+            return tree.get_file_text(ie.file_id)
         if ie.kind == 'file':
-            self.modified_files[ie.file_id] = tree.get_file_text(ie.file_id)
+            self.modified_files[ie.file_id] = get_file_contents
         elif ie.kind == 'symlink':
-            self.modified_files[ie.file_id] = "link %s" % ie.symlink_target
+            self.modified_files[ie.file_id] = get_symlink_contents
         elif ie.kind == 'directory':
             self.visit_dirs.add(ie.file_id)
         fid = ie.parent_id
