@@ -549,7 +549,12 @@ class RevisionBuildEditor(DeltaBuildEditor):
         assert isinstance(old_path, unicode)
         assert isinstance(parent_id, str)
         basename = urlutils.basename(old_path)
-        return self.old_inventory[parent_id].children[basename].file_id
+        parent_id_basename_index = getattr(self.old_inventory, "parent_id_basename_to_file_id", None)
+        if parent_id_basename_index is None:
+            return self.old_inventory[parent_id].children[basename].file_id
+        else:
+            ret = parent_id_basename_index.iteritems([(parent_id, basename)])
+            return ret.next()[1]
 
     def _get_existing_id(self, old_parent_id, new_parent_id, path):
         assert isinstance(path, unicode)
