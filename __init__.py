@@ -277,7 +277,7 @@ class cmd_svn_import(Command):
                                not standalone, trees, all, 
                                filter_branch=filter_branch,
                                keep=keep, incremental=incremental,
-                               to_revnum=to_revnum)
+                               to_revnum=to_revnum, prefix=prefix)
 
             if tmp_repos is not None:
                 osutils.rmtree(tmp_repos)

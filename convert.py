@@ -137,7 +137,7 @@ def contains_parent_path(s, p):
 def convert_repository(source_repos, output_url, layout=None,
                        create_shared_repo=True, working_trees=False, all=False,
                        format=None, filter_branch=None, keep=False, 
-                       incremental=False, to_revnum=None):
+                       incremental=False, to_revnum=None, prefix=None):
     """Convert a Subversion repository and its' branches to a 
     Bazaar repository.
 
@@ -212,7 +212,7 @@ def convert_repository(source_repos, output_url, layout=None,
         mapping = source_repos.get_mapping()
         existing_branches = {}
         deleted = set()
-        it = source_repos._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, to_revnum, from_revnum, project=project)
+        it = source_repos._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, to_revnum, from_revnum, project=project, prefix=prefix)
         if create_shared_repo:
             revfinder = FetchRevisionFinder(source_repos, target_repos, target_repos_is_empty)
             (it, it_rev) = tee(it)

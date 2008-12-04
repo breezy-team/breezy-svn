@@ -840,6 +840,14 @@ def filter_revisions(it):
             yield rev
 
 
+def restrict_prefixes(prefixes, prefix):
+    for p in prefixes:
+        if prefix == "" or p == prefix or p.startswith(prefix+"/"):
+            yield p
+        elif prefix.startswith(p+"/") or p == "":
+            yield prefix
+
+
 class RevisionMetadataProvider(object):
     """A RevisionMetadata provider."""
 
@@ -977,7 +985,7 @@ class RevisionMetadataProvider(object):
         return filter_revisions(self.iter_all_changes(layout, check_unusual_path, from_revnum, to_revnum, project, pb))
 
     def iter_all_changes(self, layout, check_unusual_path, from_revnum, 
-                         to_revnum=0, project=None, pb=None):
+                         to_revnum=0, project=None, prefix=None, pb=None):
         """Iterate over all RevisionMetadata objects and branch removals 
         in a repository.
 
@@ -993,6 +1001,9 @@ class RevisionMetadataProvider(object):
             prefixes = layout.get_project_prefixes(project)
         else:
             prefixes = [""]
+
+        if prefix is not None:
+            prefixes = list(restrict_prefixes(prefixes, prefix))
         
         browser = RevisionMetadataBrowser(prefixes, from_revnum, to_revnum, 
                                           layout, self, project, pb=pb)
