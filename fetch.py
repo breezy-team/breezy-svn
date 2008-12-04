@@ -498,15 +498,12 @@ class RevisionBuildEditor(DeltaBuildEditor):
                                   self._inv_delta, rev.revision_id,
                                   [r for r in rev.parent_ids if self.target.has_revision(r)])
         else:
-            if getattr(self.old_inventory, "create_by_apply_delta", None) is not None:
-                self.inventory = self.old_inventory.create_by_apply_delta(self._inv_delta, rev.revision_id)
-            else:
-                self.inventory = self.old_inventory
-                self.inventory.apply_delta(self._inv_delta)
-                self.inventory.revision_id = rev.revision_id
+            self.inventory = self.old_inventory
+            self.inventory.apply_delta(self._inv_delta)
+            self.inventory.revision_id = rev.revision_id
 
-                rev.inventory_sha1 = self.target.add_inventory(rev.revision_id, 
-                        self.inventory, rev.parent_ids)
+            rev.inventory_sha1 = self.target.add_inventory(rev.revision_id, 
+                    self.inventory, rev.parent_ids)
         self.target.add_revision(self.revid, rev)
 
         # Only fetch signature if it's cheap
