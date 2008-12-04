@@ -58,6 +58,8 @@ bzr-svn 0.5.0			UNRELEASED
 
    * Fix removing file properties. (#304866)
 
+   * Fix canonicalization of paths to svn_ra_diff(). (#304894)
+
   INTERNALS
 
    * Remove custom commit code for working tree. 
