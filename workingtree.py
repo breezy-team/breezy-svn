@@ -127,7 +127,7 @@ class SvnWorkingTree(WorkingTree):
         """Obtain the list of ignore patterns for this working tree.
 
         :note: Will interpret the svn:ignore properties, rather than read 
-        .bzrignore
+               .bzrignore
         """
         ignores = set([get_adm_dir()])
         ignores.update(svn_config.get_default_ignores())

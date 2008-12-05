@@ -162,6 +162,7 @@ class SvnRepository(foreign.ForeignRepository):
                 self.transport.has_capability("commit-revprops") in (True, None))
 
     def get_transaction(self):
+        """See Repository.get_transaction()."""
         raise NotImplementedError(self.get_transaction)
 
     def lock_read(self):
@@ -199,12 +200,17 @@ class SvnRepository(foreign.ForeignRepository):
 
     @errors.convert_svn_error
     def get_latest_revnum(self):
+        """Return the youngest revnum in the Subversion repository.
+
+        Will be cached when there is a read lock open.
+        """
         if self._lock_mode in ('r','w') and self._cached_revnum is not None:
             return self._cached_revnum
         self._cached_revnum = self.transport.get_latest_revnum()
         return self._cached_revnum
 
     def item_keys_introduced_by(self, revision_ids, _files_pb=None):
+        """See Repository.item_keys_introduced_by()."""
         fileids = defaultdict(set)
 
         for count, (revid, d) in enumerate(zip(revision_ids, self.get_deltas_for_revisions(self.get_revisions(revision_ids)))):
@@ -238,6 +244,7 @@ class SvnRepository(foreign.ForeignRepository):
 
     @needs_read_lock
     def gather_stats(self, revid=None, committers=None):
+        """See Repository.gather_stats()."""
         result = {}
         def revdate(revnum):
             return parse_svn_dateprop(self._log.revprop_list(revnum)[subvertpy.properties.PROP_REVISION_DATE])
@@ -249,7 +256,6 @@ class SvnRepository(foreign.ForeignRepository):
             result['committers'] = len(all_committers)
         result['firstrev'] = revdate(0)
         result['latestrev'] = revdate(self.get_latest_revnum())
-        result['uuid'] = self.uuid
         # Approximate number of revisions
         result['revisions'] = self.get_latest_revnum()+1
         return result
@@ -268,9 +274,11 @@ class SvnRepository(foreign.ForeignRepository):
         return self._default_mapping
 
     def _make_parents_provider(self):
+        """See Repository._make_parents_provider()."""
         return self._parents_provider
 
     def get_deltas_for_revisions(self, revisions):
+        """See Repository.get_deltas_for_revisions()."""
         """See Repository.get_deltas_for_revisions()."""
         for revision in revisions:
             yield self.get_revision_delta(revision)
@@ -373,6 +381,7 @@ class SvnRepository(foreign.ForeignRepository):
         return branch.BranchCheckResult(self)
 
     def get_inventory(self, revision_id):
+        """See Repository.get_inventory()."""
         assert revision_id != None
         return self.revision_tree(revision_id).inventory
 
@@ -474,6 +483,7 @@ class SvnRepository(foreign.ForeignRepository):
         return SvnRevisionTree(self, revision_id)
 
     def get_parent_map(self, revids):
+        """See Repository.get_parent_map()."""
         parent_map = {}
         for revision_id in revids:
             if revision_id == NULL_REVISION:
@@ -509,6 +519,7 @@ class SvnRepository(foreign.ForeignRepository):
         return map(self.get_revision, revision_ids)
 
     def add_revision(self, rev_id, rev, inv=None, config=None):
+        """See Repository.add_revision()."""
         raise NotImplementedError(self.add_revision)
 
     def generate_revision_id(self, revnum, path, mapping):

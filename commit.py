@@ -1040,7 +1040,8 @@ class InterToSvnRepository(InterRepository):
         return isinstance(target, SvnRepository)
 
 
-def push_ancestors(target_repo, source_repo, layout, project, parent_revids, graph, create_prefix=False):
+def push_ancestors(target_repo, source_repo, layout, project, parent_revids, 
+                   graph, create_prefix=False):
     """Push the ancestors of a revision.
 
     :param target_repo: Target repository.
@@ -1063,7 +1064,8 @@ def push_ancestors(target_repo, source_repo, layout, project, parent_revids, gra
             nick = (rev.properties.get('branch-nick') or "merged").encode("utf-8").replace("/","_")
             rhs_branch_path = layout.get_branch_path(nick, project)
             try:
-                push_new(graph, target_repo, rhs_branch_path, source_repo, x, append_revisions_only=False)
+                push_new(graph, target_repo, rhs_branch_path, source_repo, x, 
+                         append_revisions_only=False)
             except MissingPrefix, e:
                 if not create_prefix:
                     raise

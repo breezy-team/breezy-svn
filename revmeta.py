@@ -226,7 +226,8 @@ class RevisionMetadata(object):
         return isinstance(revprops, dict) or revprops.is_loaded
 
     def get_previous_fileprops(self):
-        """Return the file properties set on the branch root before this revision."""
+        """Return the file properties set on the branch root before this 
+        revision."""
         prev = self.get_direct_lhs_parent_revmeta()
         if prev is None:
             return {}
