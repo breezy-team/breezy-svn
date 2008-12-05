@@ -6,6 +6,7 @@ mappingv4:
  - cope with old mappings in find_tags_between_*
  - set-revprops upgrades v3 stuff as well?
 - automatically disable cache in some situations, allow partial cache?
+- actually fetch just required revisions in find_iter() rather than everything
 
 more tests:
 - Run all tests against repository with revprop changing allowed and without

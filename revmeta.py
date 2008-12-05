@@ -270,7 +270,6 @@ class RevisionMetadata(object):
                 return self._direct_lhs_parent_revmeta
             except MetaHistoryIncomplete:
                 pass
-        # FIXME: Don't use iter_reverse_branch_changes since it browses history
         iterator = self.repository._revmeta_provider.iter_reverse_branch_changes(self.branch_path, 
             self.revnum, to_revnum=0, mapping=None, limit=500)
         firstrevmeta = iterator.next()
@@ -308,10 +307,12 @@ class RevisionMetadata(object):
                  lhs parent revmeta
         """
         original = self.get_original_mapping()
-        if original is not None:
-            # TODO: Make sure original <= newest_allowed
-            return (original, original)
-        return (newest_allowed, newest_allowed)
+        if original is None:
+            return (newest_allowed, newest_allowed)
+        # TODO: Retrieve lhs
+        lhs = original
+        # TODO: Make sure original <= newest_allowed
+        return (original, lhs)
 
     def get_original_mapping(self):
         """Find the original mapping that was used to store this revision
@@ -1015,6 +1016,9 @@ class RevisionMetadataProvider(object):
 
 
 def iter_with_mapping(it, mapping):
+    """Iterate through a stream of RevisionMetadata objects, newest first and 
+    add the appropriate mapping.
+    """
     for revmeta in it:
         (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(mapping)
         if not mapping.is_branch_or_tag(revmeta.branch_path):

@@ -707,7 +707,10 @@ class FetchRevisionFinder(object):
             if pb is not None:
                 pb.update("checking revisions to fetch", i)
             for m in needed_mappings[revmeta]:
-                (m, lhsm) = revmeta.get_appropriate_mappings(m)
+                try:
+                    (m, lhsm) = revmeta.get_appropriate_mappings(m)
+                except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                    continue
                 if (m != master_mapping and 
                     not m.is_branch_or_tag(revmeta.branch_path)):
                     continue
