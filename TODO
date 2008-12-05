@@ -7,6 +7,7 @@ mappingv4:
 - automatically disable cache in some situations, allow partial cache?
 - avoid checking properties in get_appropriate_mappings() unless really necessary
 - in-memory caching of revid mapping (LRUCache ?)
+- warn when retrieving revision properties slowly
 
 more tests:
 - Run all tests against repository with revprop changing allowed and without

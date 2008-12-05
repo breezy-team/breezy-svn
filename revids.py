@@ -20,23 +20,24 @@ from bzrlib.errors import InvalidRevisionId, NoSuchRevision
 
 from bzrlib.plugins.svn.cache import CacheTable
 from bzrlib.plugins.svn.errors import (
-        InvalidPropertyValue,
         InvalidBzrSvnRevision,
+        InvalidPropertyValue,
         )
 from bzrlib.plugins.svn.mapping import (
         BzrSvnMapping,
-        find_new_lines,
         SVN_PROP_BZR_REVISION_ID,
-        parse_revid_property,
         find_mapping,
-        mapping_registry,
+        find_new_lines,
         is_bzr_revision_revprops,
+        mapping_registry,
+        parse_revid_property,
         )
 
 import subvertpy
 from subvertpy import ERR_FS_NOT_DIRECTORY
 
 class RevidMap(object):
+
     def __init__(self, repos):
         self.repos = repos
 

@@ -673,9 +673,13 @@ class BzrSvnMappingRevProps(object):
             svn_revprops[SVN_REVPROP_BZR_TEXT_REVISIONS] = generate_text_revisions_property(text_revisions)
 
     def get_lhs_parent(self, branch_parent, svn_revprops, fileprops):
+        if self.get_branch_root(svn_revprops) != branch_parent:
+            return None
         return svn_revprops.get(SVN_REVPROP_BZR_BASE_REVISION)
 
     def get_rhs_parents(self, branch_path, svn_revprops, fileprops):
+        if self.get_branch_root(svn_revprops) != branch_path:
+            return ()
         return tuple(svn_revprops.get(SVN_REVPROP_BZR_MERGE, "").splitlines())
 
     def get_branch_root(self, revprops):
@@ -683,6 +687,8 @@ class BzrSvnMappingRevProps(object):
 
     def get_revision_id(self, branch_path, revprops, fileprops):
         if not is_bzr_revision_revprops(revprops) or not SVN_REVPROP_BZR_REVISION_ID in revprops:
+            return (None, None)
+        if self.get_branch_root(revprops) != branch_path:
             return (None, None)
         revid = revprops[SVN_REVPROP_BZR_REVISION_ID]
         revno = int(revprops[SVN_REVPROP_BZR_REVNO])
