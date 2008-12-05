@@ -432,7 +432,7 @@ class SvnRepository(foreign.ForeignRepository):
     def get_mainline(self, branch_path, revnum, mapping, pb=None):
         """Get a list with all the revisions elements on a branch mainline."""
         return list(iter_with_mapping(self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, 
-            to_revnum=0, mapping=mapping, pb=pb), mapping))
+            to_revnum=0, pb=pb), mapping))
 
     def iter_reverse_revision_history(self, revision_id, pb=None, limit=0):
         """Iterate backwards through revision ids in the lefthand history
@@ -445,7 +445,7 @@ class SvnRepository(foreign.ForeignRepository):
         (uuid, branch_path, revnum), mapping = self.lookup_revision_id(revision_id)
         assert uuid == self.uuid
         for revmeta, mapping in iter_with_mapping(self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=0, 
-                                                        mapping=mapping, pb=pb, 
+                                                        pb=pb, 
                                                         limit=limit), mapping):
             if revmeta.is_hidden(mapping):
                 continue
@@ -505,14 +505,12 @@ class SvnRepository(foreign.ForeignRepository):
             if revision_id == NULL_REVISION:
                 parent_map[revision_id] = ()
                 continue
-
             try:
                 revmeta, mapping = self._get_revmeta(ensure_null(revision_id))
             except bzr_errors.NoSuchRevision:
                 continue
             else:
                 parent_map[revision_id] = revmeta.get_parent_ids(mapping)
-
         return parent_map
 
     def _get_revmeta(self, revision_id):

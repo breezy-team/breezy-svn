@@ -283,7 +283,7 @@ class RevisionMetadata(object):
             except MetaHistoryIncomplete:
                 pass
         iterator = self.repository._revmeta_provider.iter_reverse_branch_changes(self.branch_path, 
-            self.revnum, to_revnum=0, mapping=None, limit=500)
+            self.revnum, to_revnum=0, limit=500)
         firstrevmeta = iterator.next()
         assert self == firstrevmeta
         try:
@@ -1013,17 +1013,12 @@ class RevisionMetadataProvider(object):
                 bp = next[0]
 
     def iter_reverse_branch_changes(self, branch_path, from_revnum, to_revnum, 
-                                    mapping=None, pb=None, limit=0):
+                                    pb=None, limit=0):
         """Return all the changes that happened in a branch 
         until branch_path,revnum. 
 
         :return: iterator that returns RevisionMetadata objects.
         """
-        if mapping is None:
-            check_unusual_path = lambda x: True
-        else:
-            check_unusual_path = mapping.is_branch_or_tag
-        assert check_unusual_path(branch_path)
         history_iter = self.iter_changes(branch_path, from_revnum, 
                                          to_revnum, pb=pb, limit=limit)
         def convert((bp, paths, revnum, revprops)):
@@ -1036,11 +1031,7 @@ class RevisionMetadataProvider(object):
         metabranch = RevisionMetadataBranch(self, limit)
         metabranch._get_next = imap(convert, history_iter).next
         self._open_metaiterators.append(metabranch)
-
-        for ret in metabranch:
-            if not check_unusual_path(ret.branch_path):
-                break
-            yield ret
+        return metabranch
 
     def iter_all_revisions(self, layout, check_unusual_path, from_revnum, 
                            to_revnum=0, project=None, pb=None):

@@ -38,6 +38,7 @@ from bzrlib.plugins.svn.errors import InvalidFileName
 from bzrlib.plugins.svn.foreign import escape_commit_message
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_PREFIX
 from bzrlib.plugins.svn.repository import SvnRepository, SvnRepositoryFormat
+from bzrlib.plugins.svn.revmeta import iter_with_mapping
 from bzrlib.plugins.svn.transport import _url_escape_uri
 
 FETCH_COMMIT_WRITE_SIZE = 500
@@ -729,9 +730,9 @@ class FetchRevisionFinder(object):
                 if (m != master_mapping and 
                     not m.is_branch_or_tag(revmeta.branch_path)):
                     continue
-                if lhsm != master_mapping or heads is not None:
-                    needed_mappings[revmeta.get_direct_lhs_parent_revmeta()].add(lhsm)
                 if self.needs_fetching(revmeta, m):
+                    if lhsm != master_mapping or heads is not None:
+                        needed_mappings[revmeta.get_direct_lhs_parent_revmeta()].add(lhsm)
                     needed.appendleft((revmeta, m))
                     self.checked.add((revmeta.get_foreign_revid(), m))
 
@@ -762,12 +763,11 @@ class FetchRevisionFinder(object):
             (uuid, branch_path, revnum) = foreign_revid
             # TODO: Do binary search to find first revision to fetch if
             # fetch_ghosts=False ?
-            for revmeta in self.source._revmeta_provider.iter_reverse_branch_changes(
-                branch_path, revnum, to_revnum=0, mapping=mapping):
+            for revmeta, mapping in iter_with_mapping(self.source._revmeta_provider.iter_reverse_branch_changes(
+                branch_path, revnum, to_revnum=0), mapping):
                 if pb:
                     pb.update("determining revisions to fetch", 
                               revnum-revmeta.revnum, revnum)
-                mapping, lhs_parent_mapping = revmeta.get_appropriate_mappings(mapping)
                 if (revmeta.get_foreign_revid(), mapping) in self.checked:
                     # This revision (and its ancestry) has already been checked
                     break
@@ -783,7 +783,6 @@ class FetchRevisionFinder(object):
                 elif not find_ghosts:
                     break
                 self.checked.add((revmeta.get_foreign_revid(), mapping))
-                mapping = lhs_parent_mapping
             return revmetas
 
         needed = check_revid(foreign_revid, mapping, project)

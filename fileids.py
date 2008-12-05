@@ -260,7 +260,7 @@ class CachingFileIdMap(object):
         # No history -> empty map
         try:
             pb = ui.ui_factory.nested_progress_bar()
-            for revmeta, mapping in iter_with_mapping(self.repos._revmeta_provider.iter_reverse_branch_changes(branch, revnum, to_revnum=0, mapping=mapping), mapping):
+            for revmeta, mapping in iter_with_mapping(self.repos._revmeta_provider.iter_reverse_branch_changes(branch, revnum, to_revnum=0), mapping):
                 pb.update("fetching changes for file ids", revnum-revmeta.revnum, revnum)
                 if revmeta.is_hidden(mapping):
                     continue

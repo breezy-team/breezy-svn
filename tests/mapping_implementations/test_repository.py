@@ -55,7 +55,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertEqual([
             ('', {'foo': ('A', None, -1)}, 1), 
             ('', {'': ('A', None, -1)}, 0)],
-            [(l.branch_path, l.get_paths(), l.revnum) for l in repos._revmeta_provider.iter_reverse_branch_changes("", 1, 0, repos.get_mapping())])
+            [(l.branch_path, l.get_paths(), l.revnum) for l in repos._revmeta_provider.iter_reverse_branch_changes("", 1, 0)])
 
     def test_iter_changes_parent_rename(self):
         repos_url = self.make_repository("a")
@@ -176,7 +176,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
             repos.set_layout(CustomLayout(["pygments"]))
         except svn_errors.LayoutUnusable:
             raise TestNotApplicable
-        changes = repos._revmeta_provider.iter_reverse_branch_changes("pygments", 2, 0, mapping=repos.get_mapping())
+        changes = repos._revmeta_provider.iter_reverse_branch_changes("pygments", 2, 0)
         if repos.get_mapping().is_branch("pykleur"):
             self.assertEquals([('pygments',
                   {'pygments': ('A', 'pykleur', 1)},
