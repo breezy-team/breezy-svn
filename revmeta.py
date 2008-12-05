@@ -1017,6 +1017,8 @@ class RevisionMetadataProvider(object):
 def iter_with_mapping(it, mapping):
     for revmeta in it:
         (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(mapping)
+        if not mapping.is_branch_or_tag(revmeta.branch_path):
+            return
         yield revmeta, mapping
         mapping = lhs_mapping
 
