@@ -908,7 +908,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos_url = self.make_client('d', 'dc')
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
-        self.assertEquals(NULL_REVISION, repos._revmeta_provider.get_revision("", 0).get_lhs_parent(repos.get_mapping()))
+        self.assertEquals(NULL_REVISION, repos._revmeta_provider.get_revision("", 0).get_lhs_parent_revid(repos.get_mapping()))
 
     def testlhs_revision_parent_first(self):
         repos_url = self.make_client('d', 'dc')
@@ -919,7 +919,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.client_commit("dc", "Initial commit")
         mapping = repos.get_mapping()
         self.assertEquals(repos.generate_revision_id(0, "", mapping), \
-                repos._revmeta_provider.get_revision("", 1).get_lhs_parent(mapping))
+                repos._revmeta_provider.get_revision("", 1).get_lhs_parent_revid(mapping))
 
     def testlhs_revision_parent_simple(self):
         repos_url = self.make_client('d', 'dc')
@@ -935,7 +935,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos.set_layout(TrunkLayout(0))
         mapping = repos.get_mapping()
         self.assertEquals(repos.generate_revision_id(1, "trunk", mapping), \
-                repos._revmeta_provider.get_revision("trunk", 2).get_lhs_parent(mapping))
+                repos._revmeta_provider.get_revision("trunk", 2).get_lhs_parent_revid(mapping))
 
     def testlhs_revision_parent_copied(self):
         repos_url = self.make_client('d', 'dc')
@@ -951,7 +951,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos.set_layout(TrunkLayout(1))
         mapping = repos.get_mapping()
         self.assertEquals(repos.generate_revision_id(1, "py/trunk", mapping), \
-                repos._revmeta_provider.get_revision("de/trunk", 3).get_lhs_parent(mapping))
+                repos._revmeta_provider.get_revision("de/trunk", 3).get_lhs_parent_revid(mapping))
 
     def test_mainline_revision_copied(self):
         repos_url = self.make_client('d', 'dc')
@@ -967,7 +967,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos.set_layout(TrunkLayout(1))
         mapping = repos.get_mapping()
         self.assertEquals(repos.generate_revision_id(1, "py/trunk", mapping), \
-                repos._revmeta_provider.get_revision("de/trunk", 2).get_lhs_parent(mapping))
+                repos._revmeta_provider.get_revision("de/trunk", 2).get_lhs_parent_revid(mapping))
 
     def test_mainline_revision_nested_deleted(self):
         repos_url = self.make_client('d', 'dc')
@@ -983,7 +983,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos.set_layout(TrunkLayout(1))
         mapping = repos.get_mapping()
         self.assertEquals(repos.generate_revision_id(1, "py/trunk", mapping), \
-                repos._revmeta_provider.get_revision("de/trunk", 3).get_lhs_parent(mapping))
+                repos._revmeta_provider.get_revision("de/trunk", 3).get_lhs_parent_revid(mapping))
 
     def test_item_keys_introduced_by(self):
         repos_url = self.make_repository('d')

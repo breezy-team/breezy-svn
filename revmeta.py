@@ -355,7 +355,10 @@ class RevisionMetadata(object):
         parentrevmeta = self.get_lhs_parent_revmeta(mapping)
         if parentrevmeta is None:
             return NULL_REVISION
-        return parentrevmeta.get_revision_id(mapping)
+        lhs_mapping = parentrevmeta.get_original_mapping()
+        if lhs_mapping is None:
+            lhs_mapping = mapping
+        return parentrevmeta.get_revision_id(lhs_mapping)
 
     def _estimate_fileprop_ancestors(self, key, estimate_fn):
         """Count the number of lines in file properties, estimating how many 

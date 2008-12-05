@@ -5,7 +5,8 @@ mappingv4:
  - cope with old mappings in find_tags_between_*
  - set-revprops upgrades v3 stuff as well?
 - automatically disable cache in some situations, allow partial cache?
-- avoid checking properties if get_appropriate_mappings() unless really necessary
+- avoid checking properties in get_appropriate_mappings() unless really necessary
+- in-memory caching of revid mapping (LRUCache ?)
 
 more tests:
 - Run all tests against repository with revprop changing allowed and without
