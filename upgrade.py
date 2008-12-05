@@ -19,6 +19,8 @@ from bzrlib import ui
 
 from itertools import ifilter
 
+from subvertpy import SubversionException, ERR_FS_NOT_DIRECTORY
+
 
 def set_revprops(repository, new_mapping, from_revnum=0, to_revnum=None):
     """Set bzr-svn revision properties for existing bzr-svn revisions.
@@ -28,15 +30,18 @@ def set_revprops(repository, new_mapping, from_revnum=0, to_revnum=None):
     """
     from bzrlib.plugins.svn import changes, logwalker, mapping
     from subvertpy import properties
+    num_changed = 0
+    def set_skip_revprop(revnum, revprops):
+        if not mapping.SVN_REVPROP_BZR_SKIP in revprops:
+            repository.transport.change_rev_prop(revnum, mapping.SVN_REVPROP_BZR_SKIP, "")
+            return 1
+        return 1
     if to_revnum is None:
         to_revnum = repository.get_latest_revnum()
     graph = repository.get_graph()
     assert from_revnum <= to_revnum
     pb = ui.ui_factory.nested_progress_bar()
     logcache = getattr(repository._log, "cache", None)
-    def set_skip_revprop(revnum, revprops):
-        if not mapping.SVN_REVPROP_BZR_SKIP in revprops:
-            repository.transport.change_rev_prop(revnum, mapping.SVN_REVPROP_BZR_SKIP, "")
     try:
         for (paths, revnum, revprops) in repository._log.iter_changes(None, to_revnum, from_revnum, pb=pb):
             if revnum == 0:
@@ -49,12 +54,16 @@ def set_revprops(repository, new_mapping, from_revnum=0, to_revnum=None):
             if bp is None:
                 # Not a bzr-svn revision, since there is not a single root
                 # (fileproperties) nor a bzr:root revision property
-                set_skip_revprop(revnum, revprops)
+                num_changed += set_skip_revprop(revnum, revprops)
                 continue
-            revmeta = repository._revmeta_provider.get_revision(bp, revnum, changes, revprops)
-            old_mapping = revmeta.get_original_mapping()
+            revmeta = repository._revmeta_provider.get_revision(bp, revnum, paths, revprops)
+            try:
+                old_mapping = revmeta.get_original_mapping()
+            except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                num_changed += set_skip_revprop(revnum, revprops)
+                continue
             if old_mapping is None:
-                set_skip_revprop(revnum, revprops)
+                num_changed += set_skip_revprop(revnum, revprops)
                 continue
             if old_mapping == new_mapping:
                 # Already the latest mapping
@@ -76,6 +85,8 @@ def set_revprops(repository, new_mapping, from_revnum=0, to_revnum=None):
                 logcache.drop_revprops(revnum)
             for k, v in changed_revprops.iteritems():
                 repository.transport.change_rev_prop(revnum, k, v)
+            num_changed += 1
             # Might as well update the cache while we're at it
     finally:
         pb.finished()
+    return num_changed

@@ -20,6 +20,7 @@ from subvertpy import (
         )
 
 from bzrlib import (
+        errors as bzr_errors,
         ui,
         )
 from bzrlib.foreign import (
@@ -322,8 +323,16 @@ class RevisionMetadata(object):
         original = self.get_original_mapping()
         if original is None:
             return (newest_allowed, newest_allowed)
-        # TODO: Retrieve lhs
-        lhs = original
+        lhs_revid = self._get_stored_lhs_parent_revid(original)
+        if lhs_revid is None:
+            lhs = original
+        else:
+            try:
+                _, lhs = original.revision_id_bzr_to_foreign(lhs_revid)
+            except bzr_errors.InvalidRevisionId:
+                lhs = original
+            else:
+                pass # TODO: Make sure lhs <= original
         # TODO: Make sure original <= newest_allowed
         return (original, lhs)
 
@@ -335,11 +344,14 @@ class RevisionMetadata(object):
             return None
         return find_mapping(self.get_revprops(), self.get_changed_fileprops())
 
-    def get_lhs_parent(self, mapping):
+    def _get_stored_lhs_parent_revid(self, mapping):
+        return mapping.get_lhs_parent(self.branch_path, 
+                            self.get_revprops(), self.get_changed_fileprops())
+
+    def get_lhs_parent_revid(self, mapping):
         """Find the revid of the left hand side parent of this revision."""
         # Sometimes we can retrieve the lhs parent from the revprop data
-        lhs_parent = mapping.get_lhs_parent(self.branch_path, 
-                            self.get_revprops(), self.get_changed_fileprops())
+        lhs_parent = self._get_stored_lhs_parent_revid(mapping)
         if lhs_parent is not None:
             return lhs_parent
         parentrevmeta = self.get_lhs_parent_revmeta(mapping)
@@ -509,7 +521,7 @@ class RevisionMetadata(object):
 
     def get_parent_ids(self, mapping):
         """Return the parent ids for this revision. """
-        lhs_parent = self.get_lhs_parent(mapping)
+        lhs_parent = self.get_lhs_parent_revid(mapping)
 
         if lhs_parent == NULL_REVISION:
             return (NULL_REVISION,)
@@ -555,6 +567,11 @@ class RevisionMetadata(object):
         """Return text revision override map for this revision."""
         return mapping.import_text_revisions(self.get_revprops(), 
                                              self.get_changed_fileprops())
+
+    def get_text_parents(self, mapping):
+        """Return text revision override map for this revision."""
+        return mapping.import_text_parents(self.get_revprops(), 
+                                           self.get_changed_fileprops())
 
     def consider_bzr_fileprops(self):
         """See if any bzr file properties should be checked at all.
