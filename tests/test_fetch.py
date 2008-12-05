@@ -1605,6 +1605,59 @@ Node-copyfrom-path: x
                 oldrepos.generate_revision_id(1, "", mapping))
         self.assertEqual('file', inv1[inv1.path2id("mylink")].kind)
 
+    def test_fetch_special_unbecomes_symlink(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        l = dc.add_file("mylink")
+        l.modify("link bla")
+        l.change_prop("svn:special", "*")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        l = dc.open_file("mylink")
+        l.modify("bloebla")
+        dc.close()
+
+        oldrepos = Repository.open(repos_url)
+        oldrepos.set_layout(RootLayout())
+        dir = BzrDir.create("f", format.get_rich_root_format())
+        newrepos = dir.create_repository()
+        oldrepos.copy_content_into(newrepos)
+        mapping = oldrepos.get_mapping()
+        self.assertTrue(newrepos.has_revision(
+            oldrepos.generate_revision_id(2, "", mapping)))
+        inv1 = newrepos.get_inventory(
+                oldrepos.generate_revision_id(2, "", mapping))
+        self.assertEqual('file', inv1[inv1.path2id("mylink")].kind)
+
+    def test_fetch_special_becomes_symlink(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        l = dc.add_file("mylink")
+        l.change_prop("svn:special", "*")
+        l.modify("bloebla")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        l = dc.open_file("mylink")
+        l.modify("link bla")
+        dc.close()
+
+        oldrepos = Repository.open(repos_url)
+        oldrepos.set_layout(RootLayout())
+        dir = BzrDir.create("f", format.get_rich_root_format())
+        newrepos = dir.create_repository()
+        oldrepos.copy_content_into(newrepos)
+        mapping = oldrepos.get_mapping()
+        self.assertTrue(newrepos.has_revision(
+            oldrepos.generate_revision_id(2, "", mapping)))
+        inv1 = newrepos.get_inventory(
+                oldrepos.generate_revision_id(2, "", mapping))
+        raise KnownFailure("not allowing svn:special invalid files to be restored to symlinks yet")
+        self.assertEqual('symlink', inv1[inv1.path2id("mylink")].kind)
+
     def test_fetch_symlink_kind_change(self):
         repos_url = self.make_repository('d')
 

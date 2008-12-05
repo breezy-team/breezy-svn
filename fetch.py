@@ -445,6 +445,13 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
         if self.is_special is not None:
             self.is_symlink = (self.is_special and len(lines) > 0 and lines[0].startswith("link "))
+        elif (len(lines) > 0 and lines[0].startswith("link ")):
+            # This file just might be a file that is svn:special but didn't contain a symlink
+            # but does now
+            if not self.is_symlink:
+                pass # FIXME: Query whether this file has svn:special set.
+        else:
+            self.is_symlink = False
 
         assert self.is_symlink in (True, False)
 
