@@ -705,7 +705,7 @@ class FetchRevisionFinder(object):
         for i, revmeta in enumerate(iter):
             if pb is not None:
                 pb.update("checking revisions to fetch", i)
-            #FIXME: mapping = revmeta.get_appropriate_mapping(mapping)
+            #FIXME: (mapping, lhs_parent_mapping) = revmeta.get_appropriate_mapping(mapping)
             if self.needs_fetching(revmeta, mapping):
                 needed.appendleft((revmeta, mapping))
                 self.checked.add((revmeta.get_foreign_revid(), mapping))
@@ -742,7 +742,7 @@ class FetchRevisionFinder(object):
                 if pb:
                     pb.update("determining revisions to fetch", 
                               revnum-revmeta.revnum, revnum)
-                mapping = revmeta.get_appropriate_mapping(mapping)
+                mapping, lhs_parent_mapping = revmeta.get_appropriate_mapping(mapping)
                 if (revmeta.get_foreign_revid(), mapping) in self.checked:
                     # This revision (and its ancestry) has already been checked
                     break
@@ -750,14 +750,15 @@ class FetchRevisionFinder(object):
                     revmetas.appendleft((revmeta, mapping))
                     for p in revmeta.get_rhs_parents(mapping):
                         try:
-                            foreign_revid, mapping = self.source.lookup_revision_id(p, project=project)
+                            foreign_revid, rhs_mapping = self.source.lookup_revision_id(p, project=project)
                         except NoSuchRevision:
                             pass # Ghost
                         else:
-                            extra.append((foreign_revid, project, mapping))
+                            extra.append((foreign_revid, project, rhs_mapping))
                 elif not find_ghosts:
                     break
                 self.checked.add((revmeta.get_foreign_revid(), mapping))
+                mapping = lhs_parent_mapping
             return revmetas
 
         needed = check_revid(foreign_revid, mapping, project)

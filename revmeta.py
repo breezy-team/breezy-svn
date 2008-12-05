@@ -299,16 +299,18 @@ class RevisionMetadata(object):
             nm = get_next_parent(nm)
         return nm
 
-    def get_appropriate_mapping(self, newest_allowed):
+    def get_appropriate_mappings(self, newest_allowed):
         """Find the mapping that's most appropriate for this revision, 
         taking into account that it shouldn't be newer than 'max_mapping'.
 
+        :return: Tuple with mapping for current revmeta and mapping for 
+                 lhs parent revmeta
         """
         original = self.get_original_mapping()
         if original is not None:
             # TODO: Make sure original <= newest_allowed
-            return original
-        return newest_allowed
+            return (original, original)
+        return (newest_allowed, newest_allowed)
 
     def get_original_mapping(self):
         """Find the original mapping that was used to store this revision

@@ -324,6 +324,7 @@ class SvnBranch(ForeignBranch):
         if is_null(revision_id):
             return 0
         revmeta_history = self._revision_meta_history()
+        # FIXME: Maybe we can parse revision_id as a bzr-svn roundtripped revision?
         for revmeta in revmeta_history:
             if revmeta.get_revision_id(self.mapping) == revision_id:
                 return len(revmeta_history) - revmeta_history.index(revmeta) - revmeta.get_hidden_lhs_ancestors_count(self.mapping)
