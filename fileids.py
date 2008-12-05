@@ -25,6 +25,9 @@ from bzrlib.versionedfile import ConstantMapper
 import urllib
 
 from bzrlib.plugins.svn import changes, errors
+from bzrlib.plugins.svn.revmeta import (
+        iter_with_mapping,
+        )
 
 def get_local_changes(paths, branch, mapping, layout, generate_revid, 
                       get_children=None):
@@ -161,12 +164,12 @@ class FileIdMap(object):
             map = {}
 
         # No history -> empty map
-        todo = self.repos._revmeta_provider.get_mainline(branch, revnum, mapping)
+        todo = self.repos.get_mainline(branch, revnum, mapping)
    
         pb = ui.ui_factory.nested_progress_bar()
 
         try:
-            for i, revmeta in enumerate(reversed(todo)):
+            for i, (revmeta, mapping) in enumerate(reversed(todo)):
                 pb.update('generating file id map', i, len(todo))
                 if revmeta.is_hidden(mapping):
                     continue
@@ -175,9 +178,7 @@ class FileIdMap(object):
                         mapping, self.repos._log.find_children)
                 self.update_map(map, revid, idmap, changes)
                 self._use_text_revids(mapping, revmeta, map)
-
                 parent_revs = next_parent_revs
-
                 next_parent_revs = [revid]
         finally:
             pb.finished()
@@ -259,7 +260,7 @@ class CachingFileIdMap(object):
         # No history -> empty map
         try:
             pb = ui.ui_factory.nested_progress_bar()
-            for revmeta in self.repos._revmeta_provider.iter_reverse_branch_changes(branch, revnum, to_revnum=0, mapping=mapping):
+            for revmeta, mapping in iter_with_mapping(self.repos._revmeta_provider.iter_reverse_branch_changes(branch, revnum, to_revnum=0, mapping=mapping), mapping):
                 pb.update("fetching changes for file ids", revnum-revmeta.revnum, revnum)
                 if revmeta.is_hidden(mapping):
                     continue
@@ -270,7 +271,7 @@ class CachingFileIdMap(object):
                     next_parent_revs = [revid]
                     break
                 except RevisionNotPresent:
-                    todo.append(revmeta)
+                    todo.append((revmeta, mapping))
         finally:
             pb.finished()
        
@@ -287,7 +288,7 @@ class CachingFileIdMap(object):
         pb = ui.ui_factory.nested_progress_bar()
 
         try:
-            for i, revmeta in enumerate(reversed(todo)):
+            for i, (revmeta, mapping) in enumerate(reversed(todo)):
                 pb.update('generating file id map', i, len(todo))
                 revid = revmeta.get_revision_id(mapping)
                 def log_find_children(path, revnum):

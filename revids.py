@@ -77,7 +77,7 @@ class RevidMap(object):
             return
         for revmeta in self.repos._revmeta_provider.iter_all_revisions(layout, None, from_revnum, to_revnum):
             if is_bzr_revision_revprops(revmeta.get_revprops()):
-                mapping = find_mapping(revmeta.get_revprops(), {})
+                mapping = revmeta.get_original_mapping()
                 revid = revmeta.get_revision_id(mapping)
                 if revid is not None:
                     yield (revid, mapping.get_branch_root(revmeta.get_revprops()).strip("/"), revmeta.revnum, revmeta.revnum, mapping)

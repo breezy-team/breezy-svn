@@ -65,7 +65,8 @@ import os
 
 class SvnBranch(ForeignBranch):
     """Maps to a Branch in a Subversion repository """
-    def __init__(self, repository, branch_path, revnum=None, _skip_check=False):
+    def __init__(self, repository, branch_path, revnum=None, _skip_check=False,
+                 mapping=None):
         """Instantiate a new SvnBranch.
 
         :param repos: SvnRepository this branch is part of.
@@ -77,7 +78,7 @@ class SvnBranch(ForeignBranch):
         self.repository = repository
         self._format = SvnBranchFormat()
         assert isinstance(self.repository, SvnRepository)
-        super(SvnBranch, self).__init__(self.repository.get_mapping())
+        super(SvnBranch, self).__init__(mapping or self.repository.get_mapping())
         self.control_files = FakeControlFiles()
         self._lock_mode = None
         self._lock_count = 0
@@ -159,8 +160,8 @@ class SvnBranch(ForeignBranch):
     def last_revmeta(self):
         """Return the revmeta element for the last revision in this branch.
         """
-        for revmeta in self._revision_meta_history():
-            if not revmeta.is_hidden(self.mapping):
+        for revmeta, mapping in self._revision_meta_history():
+            if not revmeta.is_hidden(mapping):
                 return revmeta
         return None
 
@@ -248,6 +249,7 @@ class SvnBranch(ForeignBranch):
         """Generate a new revision id for a revision on this branch."""
         assert isinstance(revnum, int)
         try:
+            # FIXME: Consider required mapping for older revisions ?
             return self.repository.generate_revision_id(
                 revnum, self.get_branch_path(revnum), self.mapping)
         except SubversionException, (_, num):
@@ -326,9 +328,9 @@ class SvnBranch(ForeignBranch):
             return 0
         revmeta_history = self._revision_meta_history()
         # FIXME: Maybe we can parse revision_id as a bzr-svn roundtripped revision?
-        for revmeta in revmeta_history:
-            if revmeta.get_revision_id(self.mapping) == revision_id:
-                return len(revmeta_history) - revmeta_history.index(revmeta) - revmeta.get_hidden_lhs_ancestors_count(self.mapping)
+        for revmeta, mapping in revmeta_history:
+            if revmeta.get_revision_id(mapping) == revision_id:
+                return len(revmeta_history) - revmeta_history.index((revmeta,mapping)) - revmeta.get_hidden_lhs_ancestors_count(mapping)
         raise NoSuchRevision(self, revision_id)
 
     def get_root_id(self, revnum=None):
@@ -351,7 +353,7 @@ class SvnBranch(ForeignBranch):
         if self._revmeta_cache is None:
             pb = ui.ui_factory.nested_progress_bar()
             try:
-                self._revmeta_cache = self.repository._revmeta_provider.get_mainline(self.get_branch_path(), self._revnum or self.repository.get_latest_revnum(), self.mapping, pb=pb)
+                self._revmeta_cache = self.repository.get_mainline(self.get_branch_path(), self._revnum or self.repository.get_latest_revnum(), self.mapping, pb=pb)
             finally:
                 pb.finished()
         return self._revmeta_cache
@@ -359,7 +361,7 @@ class SvnBranch(ForeignBranch):
     def _gen_revision_history(self):
         """Generate the revision history from last revision
         """
-        history = [revmeta.get_revision_id(self.mapping) for revmeta in self._revision_meta_history() if not revmeta.is_hidden(self.mapping)]
+        history = [revmeta.get_revision_id(mapping) for revmeta, mapping in self._revision_meta_history() if not revmeta.is_hidden(mapping)]
         history.reverse()
         return history
 

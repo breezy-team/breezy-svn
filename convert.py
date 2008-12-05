@@ -225,7 +225,7 @@ def convert_repository(source_repos, output_url, layout=None,
                     if (not item.branch_path in existing_branches and 
                         layout.is_branch(item.branch_path, project=project) and 
                         not contains_parent_path(deleted, item.branch_path)):
-                        existing_branches[item.branch_path] = SvnBranch(source_repos, item.branch_path, revnum=item.revnum, _skip_check=True)
+                        existing_branches[item.branch_path] = SvnBranch(source_repos, item.branch_path, revnum=item.revnum, _skip_check=True, mapping=mapping)
                     num_revs += 1
                 elif kind == "delete":
                     deleted.add(item)

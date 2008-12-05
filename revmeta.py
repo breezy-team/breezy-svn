@@ -944,11 +944,6 @@ class RevisionMetadataProvider(object):
             else:
                 bp = next[0]
 
-    def get_mainline(self, branch_path, revnum, mapping, pb=None):
-        """Get a list with all the revisions elements on a branch mainline."""
-        return list(self.iter_reverse_branch_changes(branch_path, revnum, 
-            to_revnum=0, mapping=mapping, pb=pb))
-
     def iter_reverse_branch_changes(self, branch_path, from_revnum, to_revnum, 
                                     mapping=None, pb=None, limit=0):
         """Return all the changes that happened in a branch 
@@ -1017,3 +1012,13 @@ class RevisionMetadataProvider(object):
         for kind, item in browser:
             if kind != "revision" or check_unusual_path(item.branch_path):
                 yield kind, item
+
+
+def iter_with_mapping(it, mapping):
+    for revmeta in it:
+        (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(mapping)
+        yield revmeta, mapping
+        mapping = lhs_mapping
+
+
+

@@ -59,6 +59,7 @@ from bzrlib.plugins.svn.mapping import (
         )
 from bzrlib.plugins.svn.parents import DiskCachingParentsProvider
 from bzrlib.plugins.svn.revids import CachingRevidMap, RevidMap
+from bzrlib.plugins.svn.revmeta import iter_with_mapping
 from bzrlib.plugins.svn.tree import SvnRevisionTree
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
 from bzrlib.plugins.svn.foreign.versionedfiles import (
@@ -418,6 +419,11 @@ class SvnRepository(foreign.ForeignRepository):
         """
         return False
 
+    def get_mainline(self, branch_path, revnum, mapping, pb=None):
+        """Get a list with all the revisions elements on a branch mainline."""
+        return list(iter_with_mapping(self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, 
+            to_revnum=0, mapping=mapping, pb=pb), mapping))
+
     def iter_reverse_revision_history(self, revision_id, pb=None, limit=0):
         """Iterate backwards through revision ids in the lefthand history
 
@@ -428,9 +434,9 @@ class SvnRepository(foreign.ForeignRepository):
             return
         (uuid, branch_path, revnum), mapping = self.lookup_revision_id(revision_id)
         assert uuid == self.uuid
-        for revmeta in self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=0, 
+        for revmeta, mapping in iter_with_mapping(self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=0, 
                                                         mapping=mapping, pb=pb, 
-                                                        limit=limit):
+                                                        limit=limit), mapping):
             if revmeta.is_hidden(mapping):
                 continue
             yield revmeta.get_revision_id(mapping)
@@ -639,6 +645,7 @@ class SvnRepository(foreign.ForeignRepository):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             entries = list(self._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, to_revnum, from_revnum, project=project, pb=pb))
+            # FIXME: Use mapping
             for kind, item in reversed(entries):
                 if kind == "revision":
                     revmeta = item
