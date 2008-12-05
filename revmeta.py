@@ -493,7 +493,7 @@ class RevisionMetadata(object):
         return mapping.get_hidden_lhs_ancestors_count(self.get_fileprops())
 
     def get_revno(self, mapping):
-        extra = 1
+        extra = 0
         total_hidden = None
         lm = self
         while lm and mapping.is_branch_or_tag(lm.branch_path):
@@ -501,7 +501,7 @@ class RevisionMetadata(object):
             ret = lm.get_distance_to_null(mapping)
             if ret is not None:
                 return ret + extra - (total_hidden or 0)
-            if totel_hidden is None:
+            if total_hidden is None:
                 total_hidden = lm.get_hidden_lhs_ancestors_count(mapping)
             extra += 1
             lm = lm.get_direct_lhs_parent_revmeta()
