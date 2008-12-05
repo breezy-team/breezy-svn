@@ -42,14 +42,19 @@ class ForeignBranch(Branch):
         """Pull deltas from another branch.
 
         :note: This does not, like pull, retain the revision ids from 
-        the source branch and will, rather than adding bzr-specific metadata,
-        push only those semantics of the revision that can be natively 
-        represented in this branch.
+            the source branch and will, rather than adding bzr-specific 
+            metadata, push only those semantics of the revision that can be 
+            natively represented in this branch.
 
         :param source: Source branch
         :param stop_revision: Revision to pull, defaults to last revision.
         """
         raise NotImplementedError(self.pull)
+
+    def supports_tags(self):
+        """See Branch.supports_tags()."""
+        return self._format.supports_tags() and self.mapping.supports_tags()
+
 
 
 class ForeignRepository(Repository):

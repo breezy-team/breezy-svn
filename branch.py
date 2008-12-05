@@ -169,6 +169,7 @@ class SvnBranch(ForeignBranch):
 
         Doesn't do anything for Subversion repositories at the moment (yet).
         """
+        # TODO: Check svn file properties?
         return BranchCheckResult(self)
 
     def _create_heavyweight_checkout(self, to_location, revision_id=None, 
@@ -523,21 +524,11 @@ class SvnBranch(ForeignBranch):
         """See Branch.get_physical_lock_status()."""
         return False
 
-    def sprout(self, to_bzrdir, revision_id=None):
-        """See Branch.sprout()."""
-        result = to_bzrdir.create_branch()
-        self.copy_content_into(result, revision_id=revision_id)
-        result.set_parent(self.bzrdir.root_transport.base)
-        return result
-
     def get_stacked_on_url(self):
         raise UnstackableBranchFormat(self._format, self.base)
 
     def __str__(self):
         return '%s(%r)' % (self.__class__.__name__, self.base)
-
-    def supports_tags(self):
-        return self._format.supports_tags() and self.mapping.supports_tags()
 
     __repr__ = __str__
 

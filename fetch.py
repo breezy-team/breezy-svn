@@ -705,7 +705,7 @@ class FetchRevisionFinder(object):
         for i, revmeta in enumerate(iter):
             if pb is not None:
                 pb.update("checking revisions to fetch", i)
-            #FIXME: (mapping, lhs_parent_mapping) = revmeta.get_appropriate_mapping(mapping)
+            #FIXME: (mapping, lhs_parent_mapping) = revmeta.get_appropriate_mappings(mapping)
             if self.needs_fetching(revmeta, mapping):
                 needed.appendleft((revmeta, mapping))
                 self.checked.add((revmeta.get_foreign_revid(), mapping))
@@ -742,7 +742,7 @@ class FetchRevisionFinder(object):
                 if pb:
                     pb.update("determining revisions to fetch", 
                               revnum-revmeta.revnum, revnum)
-                mapping, lhs_parent_mapping = revmeta.get_appropriate_mapping(mapping)
+                mapping, lhs_parent_mapping = revmeta.get_appropriate_mappings(mapping)
                 if (revmeta.get_foreign_revid(), mapping) in self.checked:
                     # This revision (and its ancestry) has already been checked
                     break
