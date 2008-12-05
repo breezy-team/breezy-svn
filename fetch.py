@@ -90,7 +90,8 @@ class PathStrippingDirectoryEditor(object):
         if path.strip("/") == self.editor.prefix:
             t = self.editor.actual.open_root(copyfrom_rev)
         elif self.actual is not None:
-            t = self.actual.add_directory(self.editor.strip_prefix(path), self.editor.strip_copy_prefix(copyfrom_path), copyfrom_rev)
+            t = self.actual.add_directory(self.editor.strip_prefix(path), 
+               self.editor.strip_copy_prefix(copyfrom_path), copyfrom_rev)
         else:
             t = None
         return PathStrippingDirectoryEditor(self.editor, path, t)

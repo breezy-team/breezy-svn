@@ -330,7 +330,7 @@ class SvnBranch(ForeignBranch):
         # FIXME: Maybe we can parse revision_id as a bzr-svn roundtripped revision?
         for revmeta, mapping in revmeta_history:
             if revmeta.get_revision_id(mapping) == revision_id:
-                return len(revmeta_history) - revmeta_history.index((revmeta,mapping)) - revmeta.get_hidden_lhs_ancestors_count(mapping)
+                return revmeta.get_revno(mapping)
         raise NoSuchRevision(self, revision_id)
 
     def get_root_id(self, revnum=None):

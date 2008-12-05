@@ -104,9 +104,7 @@ class RevisionMetadata(object):
         self._direct_lhs_parent_known = False
         self._consider_bzr_fileprops = None
         self._consider_svk_fileprops = None
-        self._estimated_bzr_fileprop_ancestors = None
-        self._estimated_svk_fileprop_ancestors = None
-        self._estimated_bzr_hidden_fileprop_ancestors = None
+        self._estimated_fileprop_ancestors = {}
         self.metaiterators = set()
         if metaiterator is not None:
             self.metaiterators.add(metaiterator)
@@ -359,16 +357,19 @@ class RevisionMetadata(object):
             return NULL_REVISION
         return parentrevmeta.get_revision_id(mapping)
 
-    def _estimate_fileprop_ancestors(self, estimate_fn, call_next):
+    def _estimate_fileprop_ancestors(self, key, estimate_fn):
         """Count the number of lines in file properties, estimating how many 
         still exist in the worst case in a revision."""
+        if key in self._estimated_fileprop_ancestors:
+            return self._estimated_fileprop_ancestors[key]
         if self.knows_fileprops() or not self.children:
             # If we already have the file properties, just don't guess
             ret = estimate_fn(self.get_fileprops())
         else:
             # FIXME: Use BFS here rather than DFS ?
             # TODO: Use loop rather than recursive call?
-            ret = call_next(iter(self.children).next())
+            next = iter(self.children).next()
+            ret = next._estimate_fileprop_ancestors(key, estimate_fn)
             if ret == 0:
                 ret = 0
             else:
@@ -376,30 +377,21 @@ class RevisionMetadata(object):
                     ret -= 1
                 if ret == 0:
                     ret = estimate_fn(self.get_fileprops())
+        self._estimated_fileprop_ancestors[key] = ret
         return ret
 
     def estimate_bzr_fileprop_ancestors(self):
         """Estimate how many ancestors with bzr fileprops this revision has.
 
         """
-        if self._estimated_bzr_fileprop_ancestors is None:
-            self._estimated_bzr_fileprop_ancestors = \
-                    self._estimate_fileprop_ancestors(estimate_bzr_ancestors,
-                    lambda x: x.estimate_bzr_fileprop_ancestors())
-        return self._estimated_bzr_fileprop_ancestors
+        return self._estimate_fileprop_ancestors("bzr:", estimate_bzr_ancestors)
 
     def estimate_svk_fileprop_ancestors(self):
         """Estimate how many svk ancestors this revision has."""
-        if self._estimated_svk_fileprop_ancestors is None:
-            self._estimated_svk_fileprop_ancestors = self._estimate_fileprop_ancestors(estimate_svk_ancestors,
-            lambda x: x.estimate_svk_fileprop_ancestors())
-        return self._estimated_svk_fileprop_ancestors
+        return self._estimate_fileprop_ancestors("svk:merge", estimate_svk_ancestors)
 
     def estimate_bzr_hidden_fileprop_ancestors(self, mapping):
-        if self._estimated_bzr_hidden_fileprop_ancestors is None:
-            self._estimated_bzr_hidden_fileprop_ancestors = self._estimate_fileprop_ancestors(estimate_svk_ancestors,
-            lambda x: x.estimate_bzr_hidden_fileprop_ancestors(mapping))
-        return self._estimated_bzr_hidden_fileprop_ancestors
+        return self._estimate_fileprop_ancestors("bzr:hidden", estimate_bzr_ancestors)
 
     def is_bzr_revision_revprops(self):
         """Check if any revision properties indicate this is a bzr revision.
@@ -498,17 +490,23 @@ class RevisionMetadata(object):
         """Get the number of hidden ancestors this revision has."""
         if not mapping.supports_hidden:
             return 0
-        count = mapping.get_hidden_lhs_ancestors_count(self.get_fileprops())
-        if count is not None:
-            return count
-        if not self.check_revprops:
-            return 0
-        ret = 0
+        return mapping.get_hidden_lhs_ancestors_count(self.get_fileprops())
+
+    def get_revno(self, mapping):
+        extra = 1
+        total_hidden = None
         lm = self
-        while lm:
-            ret += lm.is_hidden(mapping)
+        while lm and mapping.is_branch_or_tag(lm.branch_path):
+            (mapping, lhs_mapping) = lm.get_appropriate_mappings(mapping)
+            ret = lm.get_distance_to_null(mapping)
+            if ret is not None:
+                return ret + extra - (total_hidden or 0)
+            if totel_hidden is None:
+                total_hidden = lm.get_hidden_lhs_ancestors_count(mapping)
+            extra += 1
             lm = lm.get_direct_lhs_parent_revmeta()
-        return ret
+            mapping = lhs_mapping
+        return extra - (total_hidden or 0)
 
     def get_rhs_parents(self, mapping):
         """Determine the right hand side parents for this revision.
