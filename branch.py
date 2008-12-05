@@ -248,14 +248,13 @@ class SvnBranch(ForeignBranch):
     def generate_revision_id(self, revnum):
         """Generate a new revision id for a revision on this branch."""
         assert isinstance(revnum, int)
-        try:
-            # FIXME: Consider required mapping for older revisions ?
-            return self.repository.generate_revision_id(
-                revnum, self.get_branch_path(revnum), self.mapping)
-        except SubversionException, (_, num):
-            if num == ERR_FS_NO_SUCH_REVISION:
-                raise NoSuchRevision(self, revnum)
-            raise
+        revmeta_history = self._revision_meta_history()
+        for revmeta, mapping in revmeta_history:
+            if revmeta.revnum == revnum:
+                return revmeta.generate_revision_id(mapping)
+            if revmeta.revnum < revnum:
+                break
+        raise NoSuchRevision(self, revnum)
 
     def get_config(self):
         return BranchConfig(self)
