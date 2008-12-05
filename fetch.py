@@ -700,15 +700,22 @@ class FetchRevisionFinder(object):
         except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
             return False
 
-    def find_iter(self, iter, mapping, pb=None):
+    def find_iter(self, iter, master_mapping, pb=None):
         needed = deque()
+        needed_mappings = defaultdict(lambda: set([master_mapping]))
         for i, revmeta in enumerate(iter):
             if pb is not None:
                 pb.update("checking revisions to fetch", i)
-            #FIXME: (mapping, lhs_parent_mapping) = revmeta.get_appropriate_mappings(mapping)
-            if self.needs_fetching(revmeta, mapping):
-                needed.appendleft((revmeta, mapping))
-                self.checked.add((revmeta.get_foreign_revid(), mapping))
+            for m in needed_mappings[revmeta]:
+                (m, lhsm) = revmeta.get_appropriate_mappings(m)
+                if (m != master_mapping and 
+                    not m.is_branch_or_tag(revmeta.branch_path)):
+                    continue
+                if lhsm != master_mapping:
+                    needed_mappings[revmeta.get_direct_lhs_parent_revmeta()].add(lhsm)
+                if self.needs_fetching(revmeta, m):
+                    needed.appendleft((revmeta, m))
+                    self.checked.add((revmeta.get_foreign_revid(), m))
 
         return needed
 
@@ -867,9 +874,11 @@ class InterFromSvnRepository(InterRepository):
                 editor = self._get_editor(revmeta, mapping)
                 try:
                     if use_replay:
-                        self._fetch_revision_replay(editor, revmeta, parent_revmeta)
+                        self._fetch_revision_replay(editor, revmeta, 
+                                                    parent_revmeta)
                     else:
-                        self._fetch_revision_switch(editor, revmeta, parent_revmeta)
+                        self._fetch_revision_switch(editor, revmeta, 
+                                                    parent_revmeta)
                 except:
                     editor.abort()
                     raise
