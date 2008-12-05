@@ -106,7 +106,9 @@ class RevisionMetadata(object):
         self._estimated_bzr_fileprop_ancestors = None
         self._estimated_svk_fileprop_ancestors = None
         self._estimated_bzr_hidden_fileprop_ancestors = None
-        self.metaiterator = metaiterator
+        self.metaiterators = set()
+        if metaiterator is not None:
+            self.metaiterators.add(metaiterator)
         self.uuid = uuid
         self.children = set()
 
@@ -269,10 +271,10 @@ class RevisionMetadata(object):
         """
         if self._direct_lhs_parent_known:
             return self._direct_lhs_parent_revmeta
-        if self.metaiterator is not None:
+        for metaiterator in self.metaiterators:
             # Perhaps the metaiterator already has the parent?
             try:
-                self._direct_lhs_parent_revmeta = self.metaiterator.get_lhs_parent(self)
+                self._direct_lhs_parent_revmeta = metaiterator.get_lhs_parent(self)
                 self._direct_lhs_parent_known = True
                 return self._direct_lhs_parent_revmeta
             except StopIteration:
@@ -679,6 +681,17 @@ class RevisionMetadataBranch(object):
         self._revmeta_provider = revmeta_provider
         self._get_next = None
 
+    def __eq__(self, other):
+        return (type(self) == type(other) and 
+                self._history_limit == other._history_limit and
+                ((self._revs == [] and other._revs == []) or 
+                 (self._revs != [] and other._revs != [] and self._revs[0] == other._revs[0])))
+
+    def __hash__(self):
+        if len(self._revs) == 0:
+            return hash((type(self), self._history_limit))
+        return hash((type(self), self._history_limit, self._revs[0]))
+
     def __repr__(self):
         return "<RevisionMetadataBranch starting at %s revision %d>" % (self._revs[0].branch_path, self._revs[0].revnum)
 
@@ -753,6 +766,16 @@ class RevisionMetadataBrowser(object):
     def __repr__(self):
         return "<RevisionMetadataBrowser from %d to %d, layout: %r>" % (self.from_revnum, self.to_revnum, self.layout)
 
+    def __eq__(self, other):
+        return (type(self) == type(other) and 
+                self.from_revnum == other.from_revnum and 
+                self.to_revnum == other.to_revnum and
+                self.prefixes == other.prefixes and
+                self.layout == other.layout)
+
+    def __hash__(self):
+        return hash((type(self), self.from_revnum, self.to_revnum, tuple(self.prefixes), hash(self.layout)))
+
     def get_lhs_parent(self, revmeta):
         while not revmeta._direct_lhs_parent_known:
             try:
@@ -761,7 +784,6 @@ class RevisionMetadataBrowser(object):
                 if self.to_revnum > 0:
                     raise MetaHistoryIncomplete()
                 if not any([x for x in self.prefixes if revmeta.branch_path.startswith(x+"/") or x == revmeta.branch_path or x == ""]):
-                    import pdb;pdb.set_trace()
                     raise MetaHistoryIncomplete()
                 raise AssertionError("Unable to find direct lhs parent for %r" % revmeta)
         return revmeta._direct_lhs_parent_revmeta
@@ -926,8 +948,8 @@ class RevisionMetadataProvider(object):
                 cached._changed_fileprops = changed_fileprops
             if cached._fileprops is None:
                 cached._fileprops = fileprops
-            if cached.metaiterator is None:
-                cached.metaiterator = metaiterator
+            if metaiterator is not None:
+                cached.metaiterators.add(metaiterator)
             return self._revmeta_cache[path,revnum]
 
         ret = self.create_revision(path, revnum, changes, revprops, 
