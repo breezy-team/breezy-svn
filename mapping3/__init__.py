@@ -181,6 +181,12 @@ class BzrSvnMappingv3(mapping.BzrSvnMapping):
         self.guessed_scheme = guessed_scheme
         self.name = "v3-" + str(scheme)
 
+    def __eq__(self, other):
+        return (type(self) == type(other) and self.name == other.name)
+
+    def __hash__(self):
+        return hash((type(self), self.name))
+
     @classmethod
     def from_revprops(cls, revprops):
         return None

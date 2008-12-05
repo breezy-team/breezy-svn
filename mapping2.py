@@ -65,6 +65,9 @@ class BzrSvnMappingv1(BzrSvnMapping):
     def __eq__(self, other):
         return type(self) == type(other)
 
+    def __hash__(self):
+        return hash(type(self))
+
     def is_branch(self, branch_path):
         return self._layout.is_branch(branch_path)
 
@@ -149,6 +152,9 @@ class BzrSvnMappingv2(BzrSvnMappingv1):
 
     def __eq__(self, other):
         return type(self) == type(other)
+
+    def __hash__(self):
+        return hash(type(self))
 
 
 class LegacyLayout(RepositoryLayout):

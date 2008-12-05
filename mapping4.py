@@ -41,6 +41,12 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
         self.revprops = mapping.BzrSvnMappingRevProps()
         self.fileprops = mapping.BzrSvnMappingFileProps(self.name)
 
+    def __eq__(self, other):
+        return type(self) == type(other)
+
+    def __hash__(self):
+        return hash(type(self))
+
     @classmethod
     def from_repository(cls, repository, _hinted_branch_path=None):
         if _hinted_branch_path == "":
