@@ -108,15 +108,9 @@ class SvnWorkingTree(WorkingTree):
         self.bzrdir = bzrdir
         self._branch = branch
         self.base_revnum = 0
-
         self._get_wc()
         max_rev = revision_status(self.basedir, None, True)[1]
-        self.base_revnum = max_rev
-        self.base_revid = branch.generate_revision_id(self.base_revnum)
-        self.base_tree = SvnBasisTree(self)
-
-        self.read_working_inventory()
-
+        self._update_base_revnum(max_rev)
         self._detect_case_handling()
         self._transport = bzrdir.get_workingtree_transport(None)
         self.controldir = os.path.join(bzrdir.svn_controldir, 'bzr')
@@ -198,10 +192,7 @@ class SvnWorkingTree(WorkingTree):
         
         """
         orig_revnum = self.base_revnum
-        self.base_revnum = self._update(revnum)
-        self.base_revid = self.branch.generate_revision_id(self.base_revnum)
-        self.base_tree = None
-        self.read_working_inventory()
+        self._update_base_revnum(self._update(revnum))
         return self.base_revnum - orig_revnum
 
     def remove(self, files, verbose=False, to_file=None, keep_files=True, 
@@ -543,6 +534,12 @@ class SvnWorkingTree(WorkingTree):
 
         return self.base_tree
 
+    def _update_base_revnum(self, fetched):
+        self.base_revnum = fetched
+        self.base_revid = self.branch.generate_revision_id(fetched)
+        self.base_tree = None
+        self.read_working_inventory()
+
     def pull(self, source, overwrite=False, stop_revision=None, 
              delta_reporter=None, possible_transports=None):
         """Pull in changes from another branch into this working tree."""
@@ -551,10 +548,7 @@ class SvnWorkingTree(WorkingTree):
         # FIXME: Use overwrite
         result = self.branch.pull(source, overwrite=overwrite, stop_revision=stop_revision)
         fetched = self._update(self.branch.get_revnum())
-        self.base_revnum = fetched
-        self.base_revid = self.branch.generate_revision_id(fetched)
-        self.base_tree = None
-        self.read_working_inventory()
+        self._update_base_revnum(fetched)
         return result
 
     def get_file_sha1(self, file_id, path=None, stat_value=None):
