@@ -483,6 +483,9 @@ class SvnBranch(ForeignBranch):
         finally:
             pb.finished()
 
+    def is_locked(self):
+        return self._lock_count != 0
+
     def lock_write(self):
         """See Branch.lock_write()."""
         # TODO: Obtain lock on the remote server?
