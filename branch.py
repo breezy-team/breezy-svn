@@ -369,7 +369,9 @@ class SvnBranch(ForeignBranch):
         """See Branch.last_revision()."""
         # Shortcut for finding the tip. This avoids expensive generation time
         # on large branches.
-        return self.last_revmeta().get_revision_id(self.mapping)
+        last_revmeta = self.last_revmeta()
+        mapping = last_revmeta.get_appropriate_mappings(self.mapping)[0]
+        return last_revmeta.get_revision_id(mapping)
 
     @needs_write_lock
     def dpull(self, source, stop_revision=None):

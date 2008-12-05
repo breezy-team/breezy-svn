@@ -1,6 +1,10 @@
 mappingv4:
 - fix update_after_commit test
 - handle upgrades from v3 properly
+ - follow new mappings in find_iter()
+ - return lhs parent mapping if necessary
+ - check mapping for Branch.generate_revision_id()
+- automatically disable cache in some situations, allow partial cache?
 
 more tests:
 - Run all tests against repository with revprop changing allowed and without
