@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Subversion Meta-Revisions."""
+
 from subvertpy import (
         properties,
         )
@@ -127,6 +129,10 @@ class RevisionMetadata(object):
         return self.branch_path in self.get_paths()
 
     def get_foreign_revid(self):
+        """Return the foreign revision id for this revision.
+        
+        :return: Tuple with uuid, branch path and revision number.
+        """
         return (self.uuid, self.branch_path, self.revnum)
 
     def get_paths(self, mapping=None):
@@ -243,6 +249,11 @@ class RevisionMetadata(object):
         return self._changed_fileprops
 
     def _set_direct_lhs_parent_revmeta(self, parent_revmeta):
+        """Set the direct left-hand side parent. 
+
+        :note: Should only be called once, later callers are only allowed 
+            to specify the same lhs parent.
+        """
         if (self._direct_lhs_parent_known and 
             self._direct_lhs_parent_revmeta != parent_revmeta):
             raise AssertionError("Tried registering %r as parent while %r already was parent for %r" % (parent_revmeta, self._direct_lhs_parent_revmeta, self))
@@ -539,10 +550,15 @@ class RevisionMetadata(object):
                                          self.get_changed_fileprops())
 
     def get_text_revisions(self, mapping):
+        """Return text revision override map for this revision."""
         return mapping.import_text_revisions(self.get_revprops(), 
                                              self.get_changed_fileprops())
 
     def consider_bzr_fileprops(self):
+        """See if any bzr file properties should be checked at all.
+
+        This will try to avoid extra network traffic if at all possible.
+        """
         if self._consider_bzr_fileprops is not None:
             return self._consider_bzr_fileprops
         if not self.is_changes_root():
@@ -552,12 +568,18 @@ class RevisionMetadata(object):
         return self._consider_bzr_fileprops
 
     def consider_svk_fileprops(self):
+        """See if svk:merge should be checked at all for this revision.
+
+        This will try to avoid extra network traffic if at all possible.
+        """
         if self._consider_svk_fileprops is not None:
             return self._consider_svk_fileprops
         self._consider_svk_fileprops = (self.estimate_svk_fileprop_ancestors() > 0)
         return self._consider_svk_fileprops
 
     def get_roundtrip_ancestor_revids(self):
+        """Return the number of fileproperty roundtrip ancestors.
+        """
         return iter(get_roundtrip_ancestor_revids(self.get_fileprops()))
 
     def __hash__(self):

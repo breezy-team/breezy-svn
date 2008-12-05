@@ -7,6 +7,7 @@ mappingv4:
  - set-revprops upgrades v3 stuff as well?
 - automatically disable cache in some situations, allow partial cache?
 - actually fetch just required revisions in find_iter() rather than everything
+- avoid checking properties if get_appropriate_mappings() unless really necessary
 
 more tests:
 - Run all tests against repository with revprop changing allowed and without

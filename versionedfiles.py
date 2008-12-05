@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Fake versionedfiles implementation for Subversion."""
+
 from bzrlib import osutils, urlutils
 from bzrlib.trace import warning
 from bzrlib.versionedfile import FulltextContentFactory, VersionedFiles
