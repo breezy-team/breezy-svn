@@ -251,7 +251,7 @@ class SvnBranch(ForeignBranch):
         revmeta_history = self._revision_meta_history()
         for revmeta, mapping in revmeta_history:
             if revmeta.revnum == revnum:
-                return revmeta.generate_revision_id(mapping)
+                return revmeta.get_revision_id(mapping)
             if revmeta.revnum < revnum:
                 break
         raise NoSuchRevision(self, revnum)
