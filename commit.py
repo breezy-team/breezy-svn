@@ -369,6 +369,9 @@ class SvnCommitBuilder(RootCommitBuilder):
             self._base_revmeta = self.repository._revmeta_provider.lookup_revision(self.base_path, self.base_revnum)
             self._base_branch_props = self._base_revmeta.get_fileprops()
 
+        self.mapping = self.repository.get_mapping() 
+        # FIXME: Check that self.mapping >= self.base_mapping
+
         if self.base_revid == NULL_REVISION:
             self.old_inv = Inventory(root_id=None)
         elif old_inv is None:
@@ -388,9 +391,9 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.modified_files = {}
         self.supports_custom_revprops = self.repository.transport.has_capability("commit-revprops")
         if (self.supports_custom_revprops is None and 
-            self.base_mapping.can_use_revprops and 
+            self.mapping.can_use_revprops and 
             self.repository.seen_bzr_revprops()):
-            raise BzrError("Please upgrade your Subversion client libraries to 1.5 or higher to be able to commit with Subversion mapping %s" % self.base_mapping.name)
+            raise BzrError("Please upgrade your Subversion client libraries to 1.5 or higher to be able to commit with Subversion mapping %s" % self.mapping.name)
 
         if self.supports_custom_revprops == True:
             self._svn_revprops = {}
@@ -400,7 +403,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         else:
             self._svn_revprops = None
         self._svnprops = lazy_dict({}, lambda: dict(self._base_branch_props.iteritems()))
-        self.base_mapping.export_revision(
+        self.mapping.export_revision(
             self.branch_path, timestamp, timezone, committer, revprops, 
             revision_id, self.base_revno+1, parents, self._svn_revprops, 
             self._svnprops)
@@ -538,11 +541,11 @@ class SvnCommitBuilder(RootCommitBuilder):
         if self.push_metadata:
             (fileids, text_revisions, text_parents) = self._determine_texts_identity()
 
-            self.base_mapping.export_text_revisions(text_revisions, self._svn_revprops, self._svnprops)
-            self.base_mapping.export_text_parents(text_parents, self._svn_revprops, self._svnprops)
-            self.base_mapping.export_fileid_map(fileids, self._svn_revprops, self._svnprops)
+            self.mapping.export_text_revisions(text_revisions, self._svn_revprops, self._svnprops)
+            self.mapping.export_text_parents(text_parents, self._svn_revprops, self._svnprops)
+            self.mapping.export_fileid_map(fileids, self._svn_revprops, self._svnprops)
             if self._config.get_log_strip_trailing_newline():
-                self.base_mapping.export_message(message, self._svn_revprops, self._svnprops)
+                self.mapping.export_message(message, self._svn_revprops, self._svnprops)
                 message = message.rstrip("\n")
         if not self.supports_custom_revprops:
             self._svn_revprops = {}
@@ -651,7 +654,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 )
         self.revmeta._set_direct_lhs_parent_revmeta(self._base_revmeta)
 
-        revid = self.revmeta.get_revision_id(self.base_mapping)
+        revid = self.revmeta.get_revision_id(self.mapping)
 
         assert not self.push_metadata or self._new_revision_id is None or self._new_revision_id == revid
         return revid
