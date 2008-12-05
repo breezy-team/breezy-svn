@@ -11,11 +11,10 @@ You will need a recent version of Bazaar, usually the release of Bazaar
 released in the same month as the release of bzr-svn you are using. bzr-svn 
 will warn if the Bazaar release used is too old or too new.
 
-SQLite
+Python
 ^^^^^^
 
-If you are using Python 2.4, you will need to have the pysqlite module 
-installed.  Python 2.5 and higher have sqlite support built in. 
+You need Python 2.5 or higher.
 
 Subversion development files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
