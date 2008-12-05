@@ -15,6 +15,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Subversion repository access."""
 
+import threading
+
 from bzrlib import (
         branch,
         errors as bzr_errors,
@@ -95,7 +97,15 @@ class SvnRepositoryFormat(RepositoryFormat):
 
 CACHE_DB_VERSION = 5
 
-cachedbs = {}
+_cachedbs = threading.local()
+def cachedbs():
+    """Get a cache for this thread's db connections."""
+    try:
+        return _cachedbs.cache
+    except AttributeError:
+        _cachedbs.cache = {}
+        return _cachedbs.cache
+
 
 class SvnRepository(foreign.ForeignRepository):
     """
@@ -141,9 +151,9 @@ class SvnRepository(foreign.ForeignRepository):
         if use_cache:
             cache_dir = self.create_cache_dir()
             cache_file = os.path.join(cache_dir, 'cache-v%d' % CACHE_DB_VERSION)
-            if not cachedbs.has_key(cache_file):
-                cachedbs[cache_file] = cache.connect_cachefile(cache_file)
-            self.cachedb = cachedbs[cache_file]
+            if not cachedbs().has_key(cache_file):
+                cachedbs()[cache_file] = cache.connect_cachefile(cache_file)
+            self.cachedb = cachedbs()[cache_file]
             self._log = logwalker.CachingLogWalker(self._log, cache_db=self.cachedb)
             cachedir_transport = get_transport(cache_dir)
             self.fileid_map = CachingFileIdMap(cachedir_transport, self.fileid_map)
