@@ -218,6 +218,10 @@ def convert_repository(source_repos, output_url, layout=None,
             (it, it_rev) = tee(it)
         num_revs = 0
         pb = ui.ui_factory.nested_progress_bar()
+        if all:
+            heads = None
+        else:
+            heads = set()
         try:
             for kind, item in it:
                 if kind == "revision":
@@ -226,6 +230,8 @@ def convert_repository(source_repos, output_url, layout=None,
                         layout.is_branch(item.branch_path, project=project) and 
                         not contains_parent_path(deleted, item.branch_path)):
                         existing_branches[item.branch_path] = SvnBranch(source_repos, item.branch_path, revnum=item.revnum, _skip_check=True, mapping=mapping)
+                        if heads is not None:
+                            heads.add(item)
                     num_revs += 1
                 elif kind == "delete":
                     deleted.add(item)
@@ -243,7 +249,7 @@ def convert_repository(source_repos, output_url, layout=None,
                 try:
                     pb.update("checking revisions to fetch", 0, num_revs)
                     revmetas = revfinder.find_iter(filter_revisions(it_rev), 
-                                                       mapping, pb)
+                                                       mapping, heads=heads, pb=pb)
                 finally:
                     pb.finished()
                 inter.fetch(needed=revmetas)

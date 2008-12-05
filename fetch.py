@@ -700,9 +700,14 @@ class FetchRevisionFinder(object):
         except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
             return False
 
-    def find_iter(self, iter, master_mapping, pb=None):
+    def find_iter(self, iter, master_mapping, heads=None, pb=None):
         needed = deque()
-        needed_mappings = defaultdict(lambda: set([master_mapping]))
+        if heads is None:
+            needed_mappings = defaultdict(lambda: set([master_mapping]))
+        else:
+            needed_mappings = defaultdict(set)
+            for head in heads:
+                needed_mappings[head].add(master_mapping)
         for i, revmeta in enumerate(iter):
             if pb is not None:
                 pb.update("checking revisions to fetch", i)
@@ -813,7 +818,7 @@ class InterFromSvnRepository(InterRepository):
         revid = revmeta.get_revision_id(mapping)
         assert revid is not None
         return RevisionBuildEditor(self.source, self.target, revid, 
-            self._get_inventory(revmeta.get_lhs_parent(mapping)), 
+            self._get_inventory(revmeta.get_lhs_parent_revid(mapping)), 
             revmeta, mapping)
 
     def _fetch_revision_switch(self, editor, revmeta, parent_revmeta):

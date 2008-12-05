@@ -85,7 +85,8 @@ def set_revprops(repository, new_mapping, from_revnum=0, to_revnum=None):
                 logcache.drop_revprops(revnum)
             for k, v in changed_revprops.iteritems():
                 repository.transport.change_rev_prop(revnum, k, v)
-            num_changed += 1
+            if changed_revprops != {}:
+                num_changed += 1
             # Might as well update the cache while we're at it
     finally:
         pb.finished()
