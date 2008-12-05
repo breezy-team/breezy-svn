@@ -18,6 +18,10 @@ from bzrlib.plugins.svn.tests import SubversionTestCase
 
 class TestRevisionMetadata(SubversionTestCase):
 
+    def make_provider(self, repos_url):
+        r = Repository.open(repos_url)
+        return r._revmeta_provider
+
     def test_get_changed_properties(self):
         repos_url = self.make_repository('d')
 
@@ -98,4 +102,41 @@ class TestRevisionMetadata(SubversionTestCase):
         self.assertEquals({"bar": ("A", None, -1)}, 
                           revmeta2.get_paths())
 
+    def test_foreign_revid(self):
+        repos_url = self.make_repository('d')
 
+        dc = self.get_commit_editor(repos_url)
+        dc.change_prop("myprop", "data\n")
+        dc.close()
+
+        provider = self.make_provider(repos_url)
+
+        revmeta1 = provider.get_revision("", 1)
+
+        self.assertEquals((provider.repository.uuid, "", 1), 
+                revmeta1.get_foreign_revid())
+
+    def test_get_revprops(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        dc.change_prop("myprop", "data\n")
+        dc.close()
+
+        provider = self.make_provider(repos_url)
+        revmeta1 = provider.get_revision("", 1)
+        self.assertEquals(set(["svn:date", "svn:author", "svn:log"]),
+                          set(revmeta1.get_revprops().keys()))
+
+    def test_is_changes_root(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("bloe")
+        dc.close()
+
+        provider = self.make_provider(repos_url)
+        revmeta1 = provider.get_revision("", 1)
+        self.assertFalse(revmeta1.is_changes_root())
+        revmeta1 = provider.get_revision("bloe", 1)
+        self.assertTrue(revmeta1.is_changes_root())
