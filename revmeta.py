@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Subversion Meta-Revisions."""
+"""Subversion Meta-Revisions. This is where all the magic happens. """
 
 from subvertpy import (
         properties,
@@ -777,6 +777,7 @@ class RevisionMetadataBrowser(object):
         return hash((type(self), self.from_revnum, self.to_revnum, tuple(self.prefixes), hash(self.layout)))
 
     def get_lhs_parent(self, revmeta):
+        """Find the left hand side parent of a revision metadata object."""
         while not revmeta._direct_lhs_parent_known:
             try:
                 self.next()
@@ -886,17 +887,21 @@ class RevisionMetadataBrowser(object):
 
 
 def filter_revisions(it):
+    """Filter out all revisions out of a stream with changes."""
     for kind, rev in it:
         if kind == "revision":
             yield rev
 
 
 def restrict_prefixes(prefixes, prefix):
+    """Trim a list of prefixes down as much as possible."""
+    ret = set()
     for p in prefixes:
         if prefix == "" or p == prefix or p.startswith(prefix+"/"):
-            yield p
+            ret.add(p)
         elif prefix.startswith(p+"/") or p == "":
-            yield prefix
+            ret.add(prefix)
+    return ret
 
 
 class RevisionMetadataProvider(object):
