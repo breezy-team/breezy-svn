@@ -720,7 +720,7 @@ class FetchRevisionFinder(object):
                 if (m != master_mapping and 
                     not m.is_branch_or_tag(revmeta.branch_path)):
                     continue
-                if lhsm != master_mapping:
+                if lhsm != master_mapping or heads is not None:
                     needed_mappings[revmeta.get_direct_lhs_parent_revmeta()].add(lhsm)
                 if self.needs_fetching(revmeta, m):
                     needed.appendleft((revmeta, m))
