@@ -28,6 +28,7 @@ from bzrlib.plugins.svn import errors as svn_errors, format
 from subvertpy import ra
 from bzrlib.plugins.svn.layout.standard import TrunkLayout, RootLayout, CustomLayout
 from bzrlib.plugins.svn.mapping import mapping_registry
+from bzrlib.plugins.svn.revmeta import iter_with_mapping
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 
@@ -176,7 +177,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
             repos.set_layout(CustomLayout(["pygments"]))
         except svn_errors.LayoutUnusable:
             raise TestNotApplicable
-        changes = repos._revmeta_provider.iter_reverse_branch_changes("pygments", 2, 0)
+        changes = [c for c,m in iter_with_mapping(repos._revmeta_provider.iter_reverse_branch_changes("pygments", 2, 0), repos.get_mapping())]
         if repos.get_mapping().is_branch("pykleur"):
             self.assertEquals([('pygments',
                   {'pygments': ('A', 'pykleur', 1)},
