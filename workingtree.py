@@ -792,8 +792,10 @@ class SvnCheckout(BzrDir):
         self.svn_controldir = os.path.join(self.local_path, get_adm_dir())
         self.root_transport = self.transport = transport
 
-    def backup_bzrdir(self, to_directory):
-        self.root_transport.copy_tree(".svn", to_directory)
+    def backup_bzrdir(self):
+        self.root_transport.copy_tree(".svn", ".svn.backup")
+        return (self.root_transport.abspath(".svn"),
+                self.root_transport.abspath(".svn.backup"))
 
     def get_remote_bzrdir(self):
         if self._remote_bzrdir is None:
