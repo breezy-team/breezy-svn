@@ -322,10 +322,11 @@ class BzrSvnMappingv3FileProps(mapping.BzrSvnMappingFileProps, BzrSvnMappingv3):
     def export_text_revisions_fileprops(self, text_revisions, fileprops):
         mapping.BzrSvnMappingFileProps.export_text_revisions_fileprops(self, text_revisions, fileprops)
 
-    def export_revision(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops, svn_fileprops):
-        mapping.BzrSvnMappingFileProps.export_revision(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops, svn_fileprops)
-        if svn_revprops is not None:
-            self.revprop_map.export_revision(branch_root, timestamp, timezone, committer, revprops, None, revno, parent_ids, svn_revprops, svn_fileprops)
+    def export_revision_revprops(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
+        self.revprop_map.export_revision_revprops(branch_root, timestamp, timezone, committer, revprops, None, revno, parent_ids, svn_revprops)
+
+    def export_revision_fileprops(self, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_fileprops):
+        mapping.BzrSvnMappingFileProps.export_revision_fileprops(self, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_fileprops)
 
     def export_fileid_map_fileprops(self, fileids, fileprops):
         mapping.BzrSvnMappingFileProps.export_fileid_map_fileprops(self, fileids, fileprops)

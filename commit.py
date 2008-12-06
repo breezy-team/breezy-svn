@@ -403,10 +403,13 @@ class SvnCommitBuilder(RootCommitBuilder):
         else:
             self._svn_revprops = None
         self._svnprops = lazy_dict({}, lambda: dict(self._base_branch_props.iteritems()))
-        self.mapping.export_revision(
+        revno = self.base_revno + 1
+        self.mapping.export_revision_fileprops(
+            timestamp, timezone, committer, revprops, 
+            revision_id, revno, parents, self._svnprops)
+        self.mapping.export_revision_revprops(
             self.branch_path, timestamp, timezone, committer, revprops, 
-            revision_id, self.base_revno+1, parents, self._svn_revprops, 
-            self._svnprops)
+            revision_id, revno, parents, self._svn_revprops)
 
         if len(merges) > 0:
             old_svk_merges = self._base_branch_props.get(SVN_PROP_SVK_MERGE, "")

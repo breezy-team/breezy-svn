@@ -73,7 +73,7 @@ def set_revprops(repository, new_mapping, from_revnum=0, to_revnum=None):
             rev = revmeta.get_revision(old_mapping)
             revno = graph.find_distance_to_null(rev.revision_id, [])
             assert bp is not None
-            new_mapping.export_revision(bp, rev.timestamp, rev.timezone, rev.committer, rev.properties, rev.revision_id, revno, rev.parent_ids, new_revprops, None)
+            new_mapping.export_revision_revprops(bp, rev.timestamp, rev.timezone, rev.committer, rev.properties, rev.revision_id, revno, rev.parent_ids, new_revprops)
             new_mapping.export_fileid_map_revprops(revmeta.get_fileid_map(old_mapping), new_revprops)
             new_mapping.export_text_parents_revprops(revmeta.get_text_parents(old_mapping), new_revprops)
             new_mapping.export_text_revisions_revprops(revmeta.get_text_revisions(old_mapping), new_revprops)

@@ -508,11 +508,15 @@ class BzrSvnMapping(foreign.VcsMapping):
     def import_text_revisions_fileprops(self, fileprops):
         raise NotImplementedError(self.import_text_revisions_fileprops)
 
-    def export_revision(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops, svn_fileprops):
-        """Determines the revision properties and branch root file 
-        properties.
+    def export_revision_revprops(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
+        """Determines the revision properties.
         """
-        raise NotImplementedError(self.export_revision)
+        raise NotImplementedError(self.export_revision_revprops)
+
+    def export_revision_fileprops(self, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_fileprops):
+        """Determines the branch root file properties.
+        """
+        raise NotImplementedError(self.export_revision_fileprops)
 
     def export_message(self, log, revprops, fileprops):
         raise NotImplementedError(self.export_message)
@@ -681,7 +685,7 @@ class BzrSvnMappingFileProps(object):
 
         return svnprops
  
-    def export_revision(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops, svn_fileprops):
+    def export_revision_fileprops(self, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_fileprops):
 
         # Keep track of what Subversion properties to set later on
         svn_fileprops[SVN_PROP_BZR_REVISION_INFO] = generate_revision_metadata(
@@ -808,7 +812,7 @@ class BzrSvnMappingRevProps(object):
     def export_message(self, message, revprops, fileprops):
         revprops[SVN_REVPROP_BZR_LOG] = message.encode("utf-8")
 
-    def export_revision(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops, svn_fileprops):
+    def export_revision_revprops(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
 
         if timestamp is not None:
             svn_revprops[SVN_REVPROP_BZR_TIMESTAMP] = format_highres_date(timestamp, timezone)
