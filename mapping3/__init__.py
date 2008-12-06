@@ -310,10 +310,11 @@ class BzrSvnMappingv3FileProps(mapping.BzrSvnMappingFileProps, BzrSvnMappingv3):
         BzrSvnMappingv3.__init__(self, scheme, guessed_scheme)
         self.revprop_map = mapping.BzrSvnMappingRevProps()
 
-    def export_text_parents(self, text_parents, svn_revprops, fileprops):
-        mapping.BzrSvnMappingFileProps.export_text_parents(self, text_parents, svn_revprops, fileprops)
-        if svn_revprops is not None:
-            self.revprop_map.export_text_parents(text_parents, svn_revprops, fileprops)
+    def export_text_parents_revprops(self, text_parents, svn_revprops):
+        self.revprop_map.export_text_parents_revprops(text_parents, svn_revprops)
+
+    def export_text_parents_fileprops(self, text_parents, fileprops):
+        mapping.BzrSvnMappingFileProps.export_text_parents_fileprops(self, text_parents, fileprops)
 
     def export_text_revisions_revprops(self, text_revisions, svn_revprops):
         self.revprop_map.export_text_revisions_revprops(text_revisions, svn_revprops)

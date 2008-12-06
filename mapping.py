@@ -470,14 +470,21 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError(self.import_text_parents_fileprops)
 
-    def export_text_parents(self, text_parents, revprops, fileprops):
+    def export_text_parents_revprops(self, text_parents, revprops):
         """Store a text parent map.
 
         :param text_parents: Text parent map
         :param revprops: Revision properties
+        """
+        raise NotImplementedError(self.export_text_parents_revprops)
+
+    def export_text_parents_fileprops(self, text_parents, fileprops):
+        """Store a text parent map.
+
+        :param text_parents: Text parent map
         :param fileprops: File properties
         """
-        raise NotImplementedError(self.export_text_parents)
+        raise NotImplementedError(self.export_text_parents_fileprops)
 
     def export_text_revisions_revprops(self, text_revisions, revprops):
         """Store a text revisions map.
@@ -615,7 +622,10 @@ class BzrSvnMappingFileProps(object):
     def import_text_revisions_revprops(self, svn_revprops):
         return {}
 
-    def export_text_parents(self, text_parents, svn_revprops, fileprops):
+    def export_text_parents_revprops(self, text_parents, revprops):
+        pass
+
+    def export_text_parents_fileprops(self, text_parents, fileprops):
         if text_parents != {}:
             fileprops[SVN_PROP_BZR_TEXT_PARENTS] = generate_text_parents_property(text_parents)
         elif SVN_PROP_BZR_TEXT_PARENTS in fileprops:
@@ -747,7 +757,10 @@ class BzrSvnMappingRevProps(object):
             return {}
         return parse_text_parents_property(svn_revprops[SVN_REVPROP_BZR_TEXT_PARENTS])
 
-    def export_text_parents(self, text_parents, svn_revprops, fileprops):
+    def export_text_parents_fileprops(self, text_parents, fileprops):
+        pass
+
+    def export_text_parents_revprops(self, text_parents, svn_revprops):
         if text_parents != {}:
             svn_revprops[SVN_REVPROP_BZR_TEXT_PARENTS] = generate_text_parents_property(text_parents)
 

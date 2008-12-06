@@ -144,11 +144,11 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
     def export_fileid_map_fileprops(self, fileids, fileprops):
         self.fileprops.export_fileid_map_fileprops(fileids, fileprops)
 
-    def export_text_parents(self, text_parents, revprops, fileprops):
-        if revprops is not None:
-            self.revprops.export_text_parents(text_parents, revprops, fileprops)
-        else:
-            self.fileprops.export_text_parents(text_parents, revprops, fileprops)
+    def export_text_parents_revprops(self, text_parents, revprops):
+        self.revprops.export_text_parents_revprops(text_parents, revprops)
+
+    def export_text_parents_fileprops(self, text_parents, fileprops):
+        self.fileprops.export_text_parents_fileprops(text_parents, fileprops)
 
     def export_text_revisions(self, text_revisions, revprops):
         self.revprops.export_text_revisions(text_revisions, revprops)

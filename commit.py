@@ -543,7 +543,8 @@ class SvnCommitBuilder(RootCommitBuilder):
 
             self.mapping.export_text_revisions_revprops(text_revisions, self._svn_revprops)
             self.mapping.export_text_revisions_fileprops(text_revisions, self._svnprops)
-            self.mapping.export_text_parents(text_parents, self._svn_revprops, self._svnprops)
+            self.mapping.export_text_parents_revprops(text_parents, self._svn_revprops)
+            self.mapping.export_text_parents_fileprops(text_parents, self._svnprops)
             self.mapping.export_fileid_map_revprops(fileids, self._svn_revprops)
             self.mapping.export_fileid_map_fileprops(fileids, self._svnprops)
             if self._config.get_log_strip_trailing_newline():
