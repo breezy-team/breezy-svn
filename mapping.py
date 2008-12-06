@@ -413,7 +413,7 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError(self.get_rhs_parents_revprops)
 
-    def get_rhs_ancestors(self, branch_path, revprops, fileprops):
+    def get_rhs_ancestors(self, fileprops):
         """Obtain the right-hand side ancestors for a revision.
 
         """
@@ -614,7 +614,7 @@ class BzrSvnMappingFileProps(object):
     def get_rhs_parents_revprops(self, revprops):
         return ()
 
-    def get_rhs_ancestors(self, branch_path, revprops, fileprops):
+    def get_rhs_ancestors(self, fileprops):
         ancestry = []
         for l in fileprops.get(SVN_PROP_BZR_ANCESTRY+self.name, (None, ""))[1].splitlines():
             ancestry.extend(l.split("\n"))
@@ -778,7 +778,7 @@ class BzrSvnMappingRevProps(object):
         if fileids != {}:
             revprops[SVN_REVPROP_BZR_FILEIDS] = generate_fileid_property(fileids)
 
-    def get_rhs_ancestors(self, branch_path, revprops, fileprops):
+    def get_rhs_ancestors(self, fileprops):
         raise NotImplementedError(self.get_rhs_ancestors)
 
 
