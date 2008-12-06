@@ -573,8 +573,8 @@ class RevisionMetadata(object):
 
     def get_text_revisions(self, mapping):
         """Return text revision override map for this revision."""
-        return mapping.import_text_revisions(self.get_revprops(), 
-                                             self.get_changed_fileprops())
+        return self._import_from_props(mapping.import_text_revisions_fileprops,
+                                       mapping.import_text_revisions_revprops)
 
     def get_text_parents(self, mapping):
         """Return text revision override map for this revision."""

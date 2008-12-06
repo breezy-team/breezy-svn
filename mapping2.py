@@ -94,7 +94,10 @@ class BzrSvnMappingv1(BzrSvnMapping):
     def import_text_parents_revprops(self, revprops):
         return {}
 
-    def import_text_revisions(self, svn_revprops, fileprops):
+    def import_text_revisions_revprops(self, svn_revprops):
+        return {}
+
+    def import_text_revisions_fileprops(self, fileprops):
         return {}
 
     def get_rhs_parents(self, branch_path, revprops, fileprops):

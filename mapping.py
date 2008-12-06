@@ -455,8 +455,11 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError(self.export_text_revisions)
 
-    def import_text_revisions(self, revprops, fileprops):
-        raise NotImplementedError(self.import_text_revisions)
+    def import_text_revisions_revprops(self, revprops):
+        raise NotImplementedError(self.import_text_revisions_revprops)
+
+    def import_text_revisions_fileprops(self, fileprops):
+        raise NotImplementedError(self.import_text_revisions_fileprops)
 
     def export_revision(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops, svn_fileprops):
         """Determines the revision properties and branch root file 
@@ -555,11 +558,14 @@ class BzrSvnMappingFileProps(object):
     def import_text_parents_revprops(self, svn_revprops):
         return {}
 
-    def import_text_revisions(self, svn_revprops, fileprops):
+    def import_text_revisions_fileprops(self, fileprops):
         metadata = fileprops.get(SVN_PROP_BZR_TEXT_REVISIONS)
         if metadata is None:
             return {}
         return parse_text_revisions_property(metadata[1])
+
+    def import_text_revisions_revprops(self, svn_revprops):
+        return {}
 
     def export_text_parents(self, text_parents, svn_revprops, fileprops):
         if text_parents != {}:
@@ -682,10 +688,13 @@ class BzrSvnMappingRevProps(object):
         if text_parents != {}:
             svn_revprops[SVN_REVPROP_BZR_TEXT_PARENTS] = generate_text_parents_property(text_parents)
 
-    def import_text_revisions(self, svn_revprops, fileprops):
+    def import_text_revisions_revprops(self, svn_revprops):
         if not svn_revprops.has_key(SVN_REVPROP_BZR_TEXT_REVISIONS):
             return {}
         return parse_text_revisions_property(svn_revprops[SVN_REVPROP_BZR_TEXT_REVISIONS])
+
+    def import_text_revisions_fileprops(self, fileprops):
+        return {}
 
     def export_text_revisions(self, text_revisions, svn_revprops, fileprops):
         if text_revisions != {}:
