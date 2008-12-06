@@ -176,7 +176,8 @@ def convert_repository(source_repos, output_url, layout=None,
         try:
             dirs[path] = bzrdir.BzrDir.open_from_transport(nt)
         except NotBranchError:
-            transport_makedirs(to_transport, urlutils.join(to_transport.base, path))
+            transport_makedirs(to_transport, 
+                               urlutils.join(to_transport.base, path))
             dirs[path] = format.initialize_on_transport(nt)
         return dirs[path]
 
@@ -212,9 +213,12 @@ def convert_repository(source_repos, output_url, layout=None,
         mapping = source_repos.get_mapping()
         existing_branches = {}
         deleted = set()
-        it = source_repos._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, to_revnum, from_revnum, project=project, prefix=prefix)
+        it = source_repos._revmeta_provider.iter_all_changes(layout, 
+                mapping.is_branch_or_tag, to_revnum, from_revnum, 
+                project=project, prefix=prefix)
         if create_shared_repo:
-            revfinder = FetchRevisionFinder(source_repos, target_repos, target_repos_is_empty)
+            revfinder = FetchRevisionFinder(source_repos, target_repos, 
+                                            target_repos_is_empty)
             (it, it_rev) = tee(it)
         num_revs = 0
         pb = ui.ui_factory.nested_progress_bar()
@@ -225,11 +229,14 @@ def convert_repository(source_repos, output_url, layout=None,
         try:
             for kind, item in it:
                 if kind == "revision":
-                    pb.update("finding branches", to_revnum-item.revnum, to_revnum-from_revnum)
+                    pb.update("finding branches", to_revnum-item.revnum, 
+                              to_revnum-from_revnum)
                     if (not item.branch_path in existing_branches and 
                         layout.is_branch(item.branch_path, project=project) and 
                         not contains_parent_path(deleted, item.branch_path)):
-                        existing_branches[item.branch_path] = SvnBranch(source_repos, item.branch_path, revnum=item.revnum, _skip_check=True, mapping=mapping)
+                        existing_branches[item.branch_path] = SvnBranch(
+                            source_repos, item.branch_path, revnum=item.revnum,
+                            _skip_check=True, mapping=mapping)
                         if heads is not None:
                             heads.add(item)
                     num_revs += 1
@@ -249,7 +256,7 @@ def convert_repository(source_repos, output_url, layout=None,
                 try:
                     pb.update("checking revisions to fetch", 0, num_revs)
                     revmetas = revfinder.find_iter(filter_revisions(it_rev), 
-                                                       mapping, heads=heads, pb=pb)
+                        mapping, heads=heads, pb=pb)
                 finally:
                     pb.finished()
                 inter.fetch(needed=revmetas)
@@ -300,5 +307,6 @@ def convert_repository(source_repos, output_url, layout=None,
         source_repos.unlock()
 
     if target_repos is not None:
-        put_latest_svn_import_revision(target_repos, source_repos.uuid, to_revnum)
+        put_latest_svn_import_revision(target_repos, source_repos.uuid, 
+                                       to_revnum)
         

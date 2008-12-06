@@ -24,7 +24,10 @@ from bzrlib.versionedfile import ConstantMapper
 
 import urllib
 
-from bzrlib.plugins.svn import changes, errors
+from bzrlib.plugins.svn import (
+        changes, 
+        errors,
+        )
 from bzrlib.plugins.svn.revmeta import (
         iter_with_mapping,
         )

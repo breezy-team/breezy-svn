@@ -318,6 +318,34 @@ class TestFetchWorks(SubversionTestCase):
         finally:
             newrepos.unlock()
 
+    def test_fetch_move_root(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        br1 = dc.add_dir("branch1")
+        br2 = br1.add_dir("branch1/bloe")
+        br2.add_file("branch1/bloe/README").modify("BLA")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("branch2", "branch1")
+        dc.delete("branch1")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        br1 = dc.open_dir("branch2")
+        bloe = br1.open_dir("branch2/bloe")
+        bloe.open_file("branch2/bloe/README").modify("TEST")
+        dc.close()
+
+        oldrepos = Repository.open(repos_url)
+        oldrepos.set_layout(RootLayout())
+        to_bzrdir = BzrDir.create("f", format.get_rich_root_format())
+        repo = to_bzrdir.create_repository()
+        repo.fetch(oldrepos, oldrepos.generate_revision_id(3, "branch2", 
+                   oldrepos.get_mapping()))
+
+
     def test_fetch_replace(self):
         repos_url = self.make_repository('d')
 

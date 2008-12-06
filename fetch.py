@@ -180,6 +180,7 @@ class DeltaBuildEditor(object):
 
 
 class DirectoryBuildEditor(object):
+
     def __init__(self, editor, path):
         self.editor = editor
         self.path = path
@@ -319,13 +320,10 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self.editor._get_text_revid(self.path) is not None):
             assert self.editor.revid is not None
 
-            text_revision = self.editor._get_text_revid(self.path) or self.editor.revid
-            self.new_ie.revision = text_revision
-            text_parents = self.editor._get_text_parents(self.path)
-            if text_parents is None:
-                text_parents = self.parent_revids
+            self.new_ie.revision = self.editor._get_text_revid(self.path) or self.editor.revid
+            text_parents = self.editor._get_text_parents(self.path) or self.parent_ids
             self.editor.texts.add_lines(
-                (self.new_id, text_revision),
+                (self.new_id, self.new_ie.revision),
                 [(self.new_id, revid) for revid in text_parents], [])
             self.editor._inv_delta.append((self.old_path, self.path, self.new_id, self.new_ie))
 
@@ -525,13 +523,15 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
     def _open_root(self, base_revnum):
         assert self.revid is not None
+
         if self.old_inventory.root is None:
             # First time the root is set
             old_file_id = None
-            file_id = self.mapping.generate_file_id(self.revmeta.uuid, self.revmeta.revnum, self.revmeta.branch_path, u"")
+            file_id = self.mapping.generate_file_id(self.revmeta.uuid, 
+                self.revmeta.revnum, self.revmeta.branch_path, u"")
             file_parents = []
         else:
-            assert self.old_inventory.root.revision is not None
+            # Just inherit file id from previous 
             old_file_id = self.old_inventory.root.file_id
             file_id = self._get_id_map().get("", old_file_id)
             file_parents = [self.old_inventory.root.revision]
@@ -543,13 +543,16 @@ class RevisionBuildEditor(DeltaBuildEditor):
             old_path = ""
         else:
             old_path = None
-        return DirectoryRevisionBuildEditor(self, old_path, "", old_file_id, file_id, None, file_parents)
+
+        return DirectoryRevisionBuildEditor(self, old_path, "", old_file_id, 
+            file_id, None, file_parents)
 
     def _get_id_map(self):
         if self._id_map is not None:
             return self._id_map
 
-        self._id_map = self.source.fileid_map.apply_changes(self.revmeta, self.mapping)[0]
+        self._id_map = self.source.fileid_map.apply_changes(self.revmeta, 
+            self.mapping)[0]
 
         return self._id_map
 

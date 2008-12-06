@@ -7,6 +7,7 @@ mappingv4:
 - avoid checking properties in get_appropriate_mappings() unless really necessary
 - in-memory caching of revid mapping (LRUCache ?)
 - warn when retrieving revision properties slowly
+- inventory problem that shows up in bigboard, evolution
 
 more tests:
 - Run all tests against repository with revprop changing allowed and without
