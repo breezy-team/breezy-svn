@@ -39,8 +39,8 @@ from bzrlib.plugins.svn.mapping import (
         find_mapping_fileprops,
         find_mapping_revprops,
         get_roundtrip_ancestor_revids,
-        is_bzr_revision_fileprops, 
         is_bzr_revision_revprops, 
+        is_bzr_revision_fileprops, 
         SVN_REVPROP_BZR_SIGNATURE, 
         )
 from bzrlib.plugins.svn.svk import (
@@ -341,7 +341,7 @@ class RevisionMetadata(object):
         """Find the original mapping that was used to store this revision
         or None if it is not a bzr-svn revision.
         """
-        return self._import_from_props(mapping,
+        return self._import_from_props(None,
                 find_mapping_fileprops,
                 find_mapping_revprops,
                 None)
@@ -402,16 +402,6 @@ class RevisionMetadata(object):
     def estimate_bzr_hidden_fileprop_ancestors(self, mapping):
         return self._estimate_fileprop_ancestors("bzr:hidden", estimate_bzr_ancestors)
 
-    def is_bzr_revision_revprops(self):
-        """Check if any revision properties indicate this is a bzr revision.
-        """
-        return is_bzr_revision_revprops(self.get_revprops())
-
-    def is_bzr_revision_fileprops(self):
-        """Check if any file properties indicate this is a bzr revision.
-        """
-        return is_bzr_revision_fileprops(self.get_changed_fileprops())
-
     def is_changes_root(self):
         """Check whether this revisions root is the root of the changes 
         in this svn revision.
@@ -425,12 +415,10 @@ class RevisionMetadata(object):
         """Check whether this revision should be hidden from Bazaar history."""
         if not mapping.supports_hidden:
             return False
-        if self.estimate_bzr_hidden_fileprop_ancestors(mapping) == 0:
-            if self.check_revprops:
-                return mapping.is_bzr_revision_hidden(self.get_revprops(), {})
-            return False
-        return mapping.is_bzr_revision_hidden(self.get_revprops(), 
-                                              self.get_changed_fileprops())
+        return self._import_from_props(mapping, 
+                mapping.is_bzr_revision_hidden_fileprops,
+                mapping.is_bzr_revision_hidden_revprops,
+                False)
 
     def is_bzr_revision(self):
         """Determine if this is a bzr revision.
@@ -441,13 +429,13 @@ class RevisionMetadata(object):
             return self._is_bzr_revision
         order = []
         # If the server already sent us all revprops, look at those first
-        if self._log.quick_revprops:
-            order.append(self.is_bzr_revision_revprops)
+        if self.knows_revprops():
+            order.append(lambda: is_bzr_revision_revprops(self.get_revprops()))
         if self.consider_bzr_fileprops():
-            order.append(self.is_bzr_revision_fileprops)
+            order.append(lambda: is_bzr_revision_fileprops(self.get_changed_fileprops()))
         # Only look for revprops if they could've been committed
-        if (self.check_revprops and not self.is_bzr_revision_revprops in order):
-            order.append(self.is_bzr_revision_revprops)
+        if (self.check_revprops and not self.knows_revprops()):
+            order.append(lambda: is_bzr_revision_revprops(self.get_revprops()))
         for fn in order:
             ret = fn()
             if ret is not None:
@@ -562,8 +550,10 @@ class RevisionMetadata(object):
 
         rev.svn_meta = self
 
-        mapping.import_revision(self.get_revprops(), 
-                                self.get_changed_fileprops(), 
+        mapping.import_revision_revprops(self.get_revprops(), 
+                                self.get_foreign_revid(), rev)
+
+        mapping.import_revision_fileprops(self.get_changed_fileprops(), 
                                 self.get_foreign_revid(), rev)
 
         return rev
@@ -573,7 +563,7 @@ class RevisionMetadata(object):
         ret = fileprop_fn(self.get_changed_fileprops())
         if ret == default:
             return ret
-        if mapping.get_branch_root(self.get_revprops()) == self.branch_path:
+        if mapping is None or mapping.get_branch_root(self.get_revprops()) == self.branch_path:
             return revprop_fn(self.get_revprops())
         return default
 

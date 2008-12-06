@@ -156,36 +156,36 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
         else:
             self.fileprops.export_text_revisions(text_revisions, revprops, fileprops)
 
-    def import_revision(self, svn_revprops, fileprops, foreign_revid, rev):
+    def import_revision_revprops(self, svn_revprops, foreign_revid, rev):
         if svn_revprops.has_key(mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES):
             features = mapping.parse_required_features_property(svn_revprops[mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES])
             assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
         if svn_revprops.has_key(mapping.SVN_REVPROP_BZR_MAPPING_VERSION):
             assert svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION] == self.name, "unknown mapping: %s" % svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION]
             self.revprops.import_revision(svn_revprops, fileprops, foreign_revid, rev)
-        else:
-            if fileprops.has_key(mapping.SVN_PROP_BZR_REQUIRED_FEATURES):
-                features = mapping.parse_required_features_property(fileprops[mapping.SVN_PROP_BZR_REQUIRED_FEATURES])
-                assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
-            self.fileprops.import_revision(svn_revprops, fileprops, foreign_revid, rev)
+
+    def import_revision_fileprops(self, fileprops, foreign_revid, rev):
+        if fileprops.has_key(mapping.SVN_PROP_BZR_REQUIRED_FEATURES):
+            features = mapping.parse_required_features_property(fileprops[mapping.SVN_PROP_BZR_REQUIRED_FEATURES])
+            assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
+        self.fileprops.import_revision(svn_revprops, fileprops, foreign_revid, rev)
 
     def get_mandated_layout(self, repository):
         return None
 
-    def is_bzr_revision_hidden(self, revprops, changed_fileprops):
-        if revprops.has_key(mapping.SVN_REVPROP_BZR_HIDDEN):
-            return True
-        if (changed_fileprops.has_key(mapping.SVN_PROP_BZR_HIDDEN) and 
-            changed_fileprops.get(mapping.SVN_PROP_BZR_HIDDEN) is not None):
-            return True
-        return False
+    def is_bzr_revision_hidden_revprops(self, revprops):
+        return revprops.has_key(mapping.SVN_REVPROP_BZR_HIDDEN)
+
+    def is_bzr_revision_hidden_fileprops(self, changed_fileprops):
+        return changed_fileprops.has_key(mapping.SVN_PROP_BZR_HIDDEN)
 
     def get_hidden_lhs_ancestors_count(self, fileprops):
         return int(fileprops.get(mapping.SVN_PROP_BZR_HIDDEN, "0"))
 
-    def export_hidden(self, revprops, fileprops):
+    def export_hidden(self, branch_path, revprops, fileprops):
         if revprops is not None:
             revprops[mapping.SVN_REVPROP_BZR_HIDDEN] = ""
+            revprops[mapping.SVN_REVPROP_BZR_ROOT] = branch_path
             return
         old_value = fileprops.get(mapping.SVN_PROP_BZR_HIDDEN, "0")
         fileprops[mapping.SVN_PROP_BZR_HIDDEN] = str(int(old_value)+1)

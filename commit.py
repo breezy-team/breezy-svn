@@ -750,7 +750,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
     fileprops = dict(revmeta.get_fileprops().iteritems())
     if set_metadata:
         assert mapping.supports_hidden
-        mapping.export_hidden(revprops, fileprops)
+        mapping.export_hidden(branch_path, revprops, fileprops)
     parent = urlutils.dirname(branch_path)
 
     bp_parts = branch_path.split("/")

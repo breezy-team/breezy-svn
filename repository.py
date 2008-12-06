@@ -575,7 +575,7 @@ class SvnRepository(foreign.ForeignRepository):
         if self.transport.has_capability("commit-revprops") == False:
             return False
         for revmeta in self._revmeta_provider.iter_all_revisions(self.get_layout(), None, self.get_latest_revnum()):
-            if revmeta.is_bzr_revision_revprops():
+            if is_bzr_revision_revprops(revmeta.get_revprops()):
                 return True
         return False
 

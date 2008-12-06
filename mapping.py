@@ -369,17 +369,26 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError
 
-    def import_revision(self, revprops, fileprops, foreign_revid, rev):
+    def import_revision_revprops(self, revprops, foreign_revid, rev):
         """Update a Revision object from Subversion revision and branch 
         properties.
 
         :param revprops: Dictionary with Subversion revision properties.
+        :param revnum: Revision number in Subversion.
+        :param rev: Revision object to import data into.
+        """
+        raise NotImplementedError(self.import_revision_revprops)
+
+    def import_revision_fileprops(self, fileprops, foreign_revid, rev):
+        """Update a Revision object from Subversion revision and branch 
+        properties.
+
         :param fileprops: Dictionary with Subversion file properties on the 
                           branch root.
         :param revnum: Revision number in Subversion.
         :param rev: Revision object to import data into.
         """
-        raise NotImplementedError(self.import_revision)
+        raise NotImplementedError(self.import_revision_fileprops)
 
     def get_lhs_parent_revprops(self, revprops):
         """Determine the left hand side parent, if it was explicitly recorded.
@@ -500,10 +509,13 @@ class BzrSvnMapping(foreign.VcsMapping):
     def get_test_instance(cls):
         return cls()
 
-    def is_bzr_revision_hidden(self, revprops, changed_fileprops):
+    def is_bzr_revision_hidden_revprops(self, revprops):
+        return False
+    
+    def is_bzr_revision_hidden_fileprops(self, changed_fileprops):
         return False
 
-    def export_hidden(self, revprops, fileprops):
+    def export_hidden(self, branch_path, revprops, fileprops):
         raise NotImplementedError(self.export_hidden)
 
     def show_foreign_revid(self, (uuid, bp, revnum)):
@@ -561,13 +573,15 @@ class BzrSvnMappingFileProps(object):
     def __init__(self, name):
         self.name = name
 
-    def import_revision(self, svn_revprops, fileprops, foreign_revid, rev):
-        parse_svn_revprops(svn_revprops, rev)
+    def import_revision_fileprops(self, fileprops, foreign_revid, rev):
         if SVN_PROP_BZR_LOG in fileprops:
             rev.message = fileprops[SVN_PROP_BZR_LOG][1]
         metadata = fileprops.get(SVN_PROP_BZR_REVISION_INFO)
         if metadata is not None:
             parse_revision_metadata(metadata[1], rev)
+
+    def import_revision_revprops(self, svn_revprops, foreign_revid, rev):
+        parse_svn_revprops(svn_revprops, rev)
 
     def import_text_parents_fileprops(self, fileprops):
         metadata = fileprops.get(SVN_PROP_BZR_TEXT_PARENTS)
@@ -693,9 +707,12 @@ class BzrSvnMappingFileProps(object):
 
 class BzrSvnMappingRevProps(object):
 
-    def import_revision(self, svn_revprops, fileprops, foreign_revid, rev):
+    def import_revision_revprops(self, svn_revprops, foreign_revid, rev):
         parse_svn_revprops(svn_revprops, rev)
         parse_bzr_svn_revprops(svn_revprops, rev)
+
+    def import_revision_fileprops(self, fileprops, foreign_revid, rev):
+        pass
 
     def import_fileid_map_revprops(self, svn_revprops):
         if not svn_revprops.has_key(SVN_REVPROP_BZR_FILEIDS):

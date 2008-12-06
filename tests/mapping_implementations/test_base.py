@@ -106,11 +106,20 @@ class RoundtripMappingTests(TestCase):
                                      {"arevprop": "val" }, "arevid", 4, ["parent", "merge1"], revprops, fileprops)
         targetrev = Revision(None)
         revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
-        self.mapping.import_revision(revprops, changed_props(fileprops), ("someuuid", "somebp", 4), targetrev)
-        self.assertEquals(targetrev.committer, "somebody")
-        self.assertEquals(targetrev.properties, {"arevprop": "val"})
-        self.assertEquals(targetrev.timestamp, 432432432.0)
-        self.assertEquals(targetrev.timezone, 0)
+        if self.mapping.can_use_revprops:
+            self.mapping.import_revision_revprops(revprops, ("someuuid", "somebp", 4), targetrev)
+            self.assertEquals(targetrev.committer, "somebody")
+            self.assertEquals(targetrev.properties, {"arevprop": "val"})
+            self.assertEquals(targetrev.timestamp, 432432432.0)
+            self.assertEquals(targetrev.timezone, 0)
+
+        if self.mapping.can_use_fileprops:
+        self.mapping.import_revision_fileprops(changed_props(fileprops), ("someuuid", "somebp", 4), targetrev)
+            self.assertEquals(targetrev.committer, "somebody")
+            self.assertEquals(targetrev.properties, {"arevprop": "val"})
+            self.assertEquals(targetrev.timestamp, 432432432.0)
+            self.assertEquals(targetrev.timezone, 0)
+
 
     def test_revision_id(self):
         if not self.mapping.roundtripping:
@@ -143,9 +152,9 @@ class RoundtripMappingTests(TestCase):
 
     def test_import_revision_svnprops(self):
         rev = Revision(None)
-        self.mapping.import_revision({"svn:log": "A log msg",
+        self.mapping.import_revision_revprops({"svn:log": "A log msg",
                                       "svn:author": "Somebody",
-                                      "svn:date": "2008-11-03T09:33:00.716938Z"}, {}, ("someuuid", "trunk", 23), rev)
+                                      "svn:date": "2008-11-03T09:33:00.716938Z"}, ("someuuid", "trunk", 23), rev)
         self.assertEquals("Somebody", rev.committer)
         self.assertEquals("A log msg", rev.message)
         self.assertEquals({}, rev.properties)
