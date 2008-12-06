@@ -612,8 +612,8 @@ class SvnWorkingTree(WorkingTree):
             wc.close()
 
     def _get_new_file_ids(self, wc):
-        return self.branch.mapping.import_fileid_map({}, 
-                self._get_changed_branch_props())
+        return self.branch.mapping.import_fileid_map_fileprops(
+            self._get_changed_branch_props())
 
     def _get_svk_merges(self, base_branch_props):
         return base_branch_props.get(svk.SVN_PROP_SVK_MERGE, "")

@@ -402,11 +402,17 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError(self.get_rhs_ancestors)
 
-    def import_fileid_map(self, revprops, fileprops):
+    def import_fileid_map_fileprops(self, fileprops):
         """Obtain the file id map for a revision from the properties.
 
         """
-        raise NotImplementedError(self.import_fileid_map)
+        raise NotImplementedError(self.import_fileid_map_fileprops)
+
+    def import_fileid_map_revprops(self, revprops):
+        """Obtain the file id map for a revision from the properties.
+
+        """
+        raise NotImplementedError(self.import_fileid_map_revprops)
 
     def export_fileid_map(self, fileids, revprops, fileprops):
         """Adjust the properties for a file id map.
@@ -579,7 +585,7 @@ class BzrSvnMappingFileProps(object):
             ancestry.extend(l.split("\n"))
         return ancestry
 
-    def import_fileid_map(self, svn_revprops, fileprops):
+    def import_fileid_map_fileprops(self, fileprops):
         fileids = fileprops.get(SVN_PROP_BZR_FILEIDS, None)
         if fileids is None:
             return {}
@@ -645,11 +651,12 @@ class BzrSvnMappingFileProps(object):
 
 
 class BzrSvnMappingRevProps(object):
+
     def import_revision(self, svn_revprops, fileprops, foreign_revid, rev):
         parse_svn_revprops(svn_revprops, rev)
         parse_bzr_svn_revprops(svn_revprops, rev)
 
-    def import_fileid_map(self, svn_revprops, fileprops):
+    def import_fileid_map_revprops(self, svn_revprops):
         if not svn_revprops.has_key(SVN_REVPROP_BZR_FILEIDS):
             return {}
         return parse_fileid_property(svn_revprops[SVN_REVPROP_BZR_FILEIDS])

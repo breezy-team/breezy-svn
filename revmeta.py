@@ -561,8 +561,10 @@ class RevisionMetadata(object):
 
     def get_fileid_map(self, mapping):
         """Find the file id override map for this revision."""
-        return mapping.import_fileid_map(self.get_revprops(), 
-                                         self.get_changed_fileprops())
+        ret = mapping.import_fileid_map_revprops(self.get_revprops())
+        if ret != {}:
+            return ret
+        return mapping.import_fileid_map_fileprops(self.get_changed_fileprops())
 
     def get_text_revisions(self, mapping):
         """Return text revision override map for this revision."""
