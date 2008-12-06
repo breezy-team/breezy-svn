@@ -92,13 +92,16 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
     def get_branch_root(self, revprops):
         return self.revprops.get_branch_root(revprops)
 
-    def get_lhs_parent(self, branch_path, svn_revprops, fileprops):
-        return self.revprops.get_lhs_parent(branch_path, svn_revprops, fileprops)
+    def get_lhs_parent_fileprops(self, fileprops):
+        return None
+
+    def get_lhs_parent_revprops(self, svn_revprops):
+        return self.revprops.get_lhs_parent(svn_revprops)
 
     def get_rhs_parents_revprops(self, svn_revprops):
         return self.revprops.get_rhs_parents_revprops(svn_revprops)
     
-    def get_rhs_parent_fileprops(self, fileprops):
+    def get_rhs_parents_fileprops(self, fileprops):
         return self.fileprops.get_rhs_parents_fileprops(fileprops)
 
     def get_revision_id(self, branch_path, revprops, fileprops):

@@ -343,8 +343,10 @@ class RevisionMetadata(object):
         return find_mapping(self.get_revprops(), self.get_changed_fileprops())
 
     def _get_stored_lhs_parent_revid(self, mapping):
-        return mapping.get_lhs_parent(self.branch_path, 
-                            self.get_revprops(), self.get_changed_fileprops())
+        return self._import_from_props(mapping, 
+                mapping.get_lhs_parent_fileprops,
+                mapping.get_lhs_parent_revprops, 
+                None)
 
     def get_lhs_parent_revid(self, mapping):
         """Find the revid of the left hand side parent of this revision."""
@@ -453,7 +455,7 @@ class RevisionMetadata(object):
         """Check what Bazaar revisions were merged in this revision."""
         return self._import_from_props(mapping,
             mapping.get_rhs_parents_fileprops,
-            mapping.get_rhs_parent_revprops, ())
+            mapping.get_rhs_parents_revprops, ())
 
     def get_svk_merges(self, mapping):
         """Check what SVK revisions were merged in this revision."""

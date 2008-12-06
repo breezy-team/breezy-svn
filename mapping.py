@@ -381,7 +381,7 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError(self.import_revision)
 
-    def get_lhs_parent(self, branch_path, revprops, fileprops):
+    def get_lhs_parent_revprops(self, revprops):
         """Determine the left hand side parent, if it was explicitly recorded.
 
         If not explicitly recorded, returns None. Returns NULL_REVISION if 
@@ -389,6 +389,17 @@ class BzrSvnMapping(foreign.VcsMapping):
 
         """
         return None
+
+    def get_lhs_parent_fileprops(self, fileprops):
+        """Determine the left hand side parent, if it was explicitly recorded.
+
+        If not explicitly recorded, returns None. Returns NULL_REVISION if 
+        there is no lhs parent.
+
+        """
+        return None
+
+
 
     def get_rhs_parents_fileprops(self, fileprops):
         """Obtain the right-hand side parents for a revision.
@@ -709,10 +720,11 @@ class BzrSvnMappingRevProps(object):
         if text_revisions != {}:
             svn_revprops[SVN_REVPROP_BZR_TEXT_REVISIONS] = generate_text_revisions_property(text_revisions)
 
-    def get_lhs_parent(self, branch_parent, svn_revprops, fileprops):
-        if self.get_branch_root(svn_revprops) != branch_parent:
-            return None
+    def get_lhs_parent_revprops(self, svn_revprops):
         return svn_revprops.get(SVN_REVPROP_BZR_BASE_REVISION)
+
+    def get_lhs_parent_fileprops(self, fileprops):
+        return None
 
     def get_rhs_parents_revprops(self, svn_revprops):
         return tuple(svn_revprops.get(SVN_REVPROP_BZR_MERGE, "").splitlines())
