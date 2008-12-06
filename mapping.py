@@ -487,8 +487,11 @@ class BzrSvnMapping(foreign.VcsMapping):
     def export_message(self, log, revprops, fileprops):
         raise NotImplementedError(self.export_message)
 
-    def get_revision_id(self, branch_path, revprops, fileprops):
-        raise NotImplementedError(self.get_revision_id)
+    def get_revision_id_revprops(self, revprops):
+        raise NotImplementedError(self.get_revision_id_revprops)
+
+    def get_revision_id_fileprops(self, fileprops):
+        raise NotImplementedError(self.get_revision_id_fileprops)
 
     def supports_tags(self):
         raise NotImplementedError(self.supports_tags)
@@ -655,7 +658,10 @@ class BzrSvnMappingFileProps(object):
     def export_message(self, message, revprops, fileprops):
         fileprops[SVN_PROP_BZR_LOG] = message.encode("utf-8")
 
-    def get_revision_id(self, branch_path, revprops, fileprops):
+    def get_revision_id_revprops(self, revprops):
+        return (None, None)
+
+    def get_revision_id_fileprops(self, fileprops):
         # Lookup the revision from the bzr:revision-id-vX property
         text = fileprops.get(SVN_PROP_BZR_REVISION_ID+self.name, None)
         if text is None:
@@ -735,10 +741,12 @@ class BzrSvnMappingRevProps(object):
     def get_branch_root(self, revprops):
         return revprops.get(SVN_REVPROP_BZR_ROOT)
 
-    def get_revision_id(self, branch_path, revprops, fileprops):
-        if not is_bzr_revision_revprops(revprops) or not SVN_REVPROP_BZR_REVISION_ID in revprops:
-            return (None, None)
-        if self.get_branch_root(revprops) != branch_path:
+    def get_revision_id_fileprops(self, fileprops):
+        return (None, None)
+
+    def get_revision_id_revprops(self, revprops):
+        if (not is_bzr_revision_revprops(revprops) or 
+            not SVN_REVPROP_BZR_REVISION_ID in revprops):
             return (None, None)
         revid = revprops[SVN_REVPROP_BZR_REVISION_ID]
         revno = int(revprops[SVN_REVPROP_BZR_REVNO])

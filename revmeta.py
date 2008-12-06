@@ -160,8 +160,10 @@ class RevisionMetadata(object):
         """
         if mapping.roundtripping:
             # See if there is a bzr:revision-id revprop set
-            (_, revid) = mapping.get_revision_id(self.branch_path, 
-                self.get_revprops(), self.get_changed_fileprops())
+            (_, revid) = self._import_from_props(mapping, 
+                    mapping.get_revision_id_fileprops,
+                    mapping.get_revision_id_revprops,
+                    (None, None))
         else:
             revid = None
 
@@ -486,8 +488,10 @@ class RevisionMetadata(object):
         side NULL_REVISION, if known.
         """
         if mapping.roundtripping:
-            (bzr_revno, _) = mapping.get_revision_id(self.branch_path, 
-                self.get_revprops(), self.get_changed_fileprops())
+            (bzr_revno, _) = self._import_from_props(mapping, 
+                    mapping.get_revision_id_fileprops,
+                    mapping.get_revision_id_revprops,
+                    (None, None))
             if bzr_revno is not None:
                 return bzr_revno
         return None
