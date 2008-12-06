@@ -69,19 +69,27 @@ class RoundtripMappingTests(TestCase):
             self.assertEquals(text_parents,
                 self.mapping.import_text_parents_fileprops(changed_props(fileprops)))
 
-    def test_text_revisions(self):
+    def test_text_revisions_fileprops(self):
         if not self.mapping.roundtripping:
             raise TestNotApplicable
-        revprops = {}
+        if not self.mapping.can_use_fileprops:
+            raise TestNotApplicable
         fileprops = {}
         text_revisions = {"bla": "bloe", "ll": "12"}
-        self.mapping.export_text_revisions(text_revisions, revprops, fileprops)
-        if self.mapping.can_use_revprops:
-            self.assertEquals(text_revisions,
-                self.mapping.import_text_revisions_revprops(revprops))
-        if self.mapping.can_use_fileprops:
-            self.assertEquals(text_revisions,
-                self.mapping.import_text_revisions_fileprops(changed_props(fileprops)))
+        self.mapping.export_text_revisions_fileprops(text_revisions, fileprops)
+        self.assertEquals(text_revisions,
+            self.mapping.import_text_revisions_fileprops(changed_props(fileprops)))
+
+    def test_text_revisions_revprops(self):
+        if not self.mapping.roundtripping:
+            raise TestNotApplicable
+        if not self.mapping.can_use_revprops:
+            raise TestNotApplicable
+        revprops = {}
+        text_revisions = {"bla": "bloe", "ll": "12"}
+        self.mapping.export_text_revisions_revprops(text_revisions, revprops)
+        self.assertEquals(text_revisions,
+            self.mapping.import_text_revisions_revprops(revprops))
 
     def test_message(self):
         if not self.mapping.roundtripping:

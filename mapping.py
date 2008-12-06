@@ -479,14 +479,21 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError(self.export_text_parents)
 
-    def export_text_revisions(self, text_revisions, revprops, fileprops):
+    def export_text_revisions_revprops(self, text_revisions, revprops):
         """Store a text revisions map.
 
         :param text_parents: Text revision map
         :param revprops: Revision properties
+        """
+        raise NotImplementedError(self.export_text_revisions_revprops)
+
+    def export_text_revisions_fileprops(self, text_revisions, fileprops):
+        """Store a text revisions map.
+
+        :param text_parents: Text revision map
         :param fileprops: File properties
         """
-        raise NotImplementedError(self.export_text_revisions)
+        raise NotImplementedError(self.export_text_revisions_fileprops)
 
     def import_text_revisions_revprops(self, revprops):
         raise NotImplementedError(self.import_text_revisions_revprops)
@@ -614,11 +621,14 @@ class BzrSvnMappingFileProps(object):
         elif SVN_PROP_BZR_TEXT_PARENTS in fileprops:
             fileprops[SVN_PROP_BZR_TEXT_PARENTS] = ""
 
-    def export_text_revisions(self, text_revisions, svn_revprops, fileprops):
+    def export_text_revisions_fileprops(self, text_revisions, fileprops):
         if text_revisions != {}:
             fileprops[SVN_PROP_BZR_TEXT_REVISIONS] = generate_text_revisions_property(text_revisions)
         elif SVN_PROP_BZR_TEXT_REVISIONS in fileprops:
             fileprops[SVN_PROP_BZR_TEXT_REVISIONS] = ""
+
+    def export_text_revisions_revprops(self, text_revisions, revprops):
+        pass
 
     def get_rhs_parents_fileprops(self, fileprops):
         bzr_merges = fileprops.get(SVN_PROP_BZR_ANCESTRY+self.name, None)
@@ -749,9 +759,12 @@ class BzrSvnMappingRevProps(object):
     def import_text_revisions_fileprops(self, fileprops):
         return {}
 
-    def export_text_revisions(self, text_revisions, svn_revprops, fileprops):
+    def export_text_revisions_revprops(self, text_revisions, svn_revprops):
         if text_revisions != {}:
             svn_revprops[SVN_REVPROP_BZR_TEXT_REVISIONS] = generate_text_revisions_property(text_revisions)
+
+    def export_text_revisions_fileprops(self, text_revisions, fileprops):
+        pass
 
     def get_lhs_parent_revprops(self, svn_revprops):
         return svn_revprops.get(SVN_REVPROP_BZR_BASE_REVISION)

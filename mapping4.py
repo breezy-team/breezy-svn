@@ -150,11 +150,11 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
         else:
             self.fileprops.export_text_parents(text_parents, revprops, fileprops)
 
-    def export_text_revisions(self, text_revisions, revprops, fileprops):
-        if revprops is not None:
-            self.revprops.export_text_revisions(text_revisions, revprops, fileprops)
-        else:
-            self.fileprops.export_text_revisions(text_revisions, revprops, fileprops)
+    def export_text_revisions(self, text_revisions, revprops):
+        self.revprops.export_text_revisions(text_revisions, revprops)
+
+    def export_text_revisions_fileprops(self, text_revisions, fileprops):
+        self.fileprops.export_text_revisions(text_revisions, fileprops)
 
     def import_revision_revprops(self, svn_revprops, foreign_revid, rev):
         if svn_revprops.has_key(mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES):

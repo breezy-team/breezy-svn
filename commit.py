@@ -541,7 +541,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         if self.push_metadata:
             (fileids, text_revisions, text_parents) = self._determine_texts_identity()
 
-            self.mapping.export_text_revisions(text_revisions, self._svn_revprops, self._svnprops)
+            self.mapping.export_text_revisions_revprops(text_revisions, self._svn_revprops)
+            self.mapping.export_text_revisions_fileprops(text_revisions, self._svnprops)
             self.mapping.export_text_parents(text_parents, self._svn_revprops, self._svnprops)
             self.mapping.export_fileid_map_revprops(fileids, self._svn_revprops)
             self.mapping.export_fileid_map_fileprops(fileids, self._svnprops)
