@@ -570,7 +570,7 @@ class SvnWorkingTree(WorkingTree):
             assert isinstance(id, str)
             new_entries[path] = id
         fileprops = self._get_branch_props()
-        self.branch.mapping.export_fileid_map(new_entries, None, fileprops)
+        self.branch.mapping.export_fileid_map_fileprops(new_entries, fileprops)
         self._set_branch_props(subwc, fileprops)
         if wc is None:
             subwc.close()

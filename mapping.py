@@ -440,14 +440,21 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError(self.import_fileid_map_revprops)
 
-    def export_fileid_map(self, fileids, revprops, fileprops):
+    def export_fileid_map_revprops(self, fileids, revprops):
         """Adjust the properties for a file id map.
 
         :param fileids: Dictionary
         :param revprops: Subversion revision properties
+        """
+        raise NotImplementedError(self.export_fileid_map_revprops)
+
+    def export_fileid_map_fileprops(self, fileids, fileprops):
+        """Adjust the properties for a file id map.
+
+        :param fileids: Dictionary
         :param fileprops: File properties
         """
-        raise NotImplementedError(self.export_fileid_map)
+        raise NotImplementedError(self.export_fileid_map_fileprops)
 
     def import_text_parents_revprops(self, revprops):
         """Obtain a text parent map from properties.
@@ -697,12 +704,15 @@ class BzrSvnMappingFileProps(object):
             mutter(str(e))
             return (None, None)
 
-    def export_fileid_map(self, fileids, revprops, fileprops):
+    def export_fileid_map_fileprops(self, fileids, fileprops):
         if fileids != {}:
             file_id_text = generate_fileid_property(fileids)
             fileprops[SVN_PROP_BZR_FILEIDS] = file_id_text
         elif SVN_PROP_BZR_FILEIDS in fileprops:
             fileprops[SVN_PROP_BZR_FILEIDS] = ""
+
+    def export_fileid_map_revprops(self, fileids, revprops):
+        pass
 
 
 class BzrSvnMappingRevProps(object):
@@ -799,9 +809,12 @@ class BzrSvnMappingRevProps(object):
         svn_revprops[SVN_REVPROP_BZR_REVNO] = str(revno)
         svn_revprops[SVN_REVPROP_BZR_USER_AGENT] = get_client_string()
 
-    def export_fileid_map(self, fileids, revprops, fileprops):
+    def export_fileid_map_revprops(self, fileids, revprops):
         if fileids != {}:
             revprops[SVN_REVPROP_BZR_FILEIDS] = generate_fileid_property(fileids)
+
+    def export_fileid_map_fileprops(self, fileids, fileprops):
+        pass
 
     def get_rhs_ancestors(self, fileprops):
         raise NotImplementedError(self.get_rhs_ancestors)

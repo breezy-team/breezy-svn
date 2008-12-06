@@ -325,10 +325,11 @@ class BzrSvnMappingv3FileProps(mapping.BzrSvnMappingFileProps, BzrSvnMappingv3):
         if svn_revprops is not None:
             self.revprop_map.export_revision(branch_root, timestamp, timezone, committer, revprops, None, revno, parent_ids, svn_revprops, svn_fileprops)
 
-    def export_fileid_map(self, fileids, revprops, fileprops):
-        mapping.BzrSvnMappingFileProps.export_fileid_map(self, fileids, revprops, fileprops)
-        if revprops is not None:
-            self.revprop_map.export_fileid_map(fileids, revprops, fileprops)
+    def export_fileid_map_fileprops(self, fileids, fileprops):
+        mapping.BzrSvnMappingFileProps.export_fileid_map_fileprops(self, fileids, fileprops)
+
+    def export_fileid_map_revprops(self, fileids, revprops):
+        self.revprop_map.export_fileid_map(fileids, revprops)
 
     def export_message(self, log, revprops, fileprops):
         mapping.BzrSvnMappingFileProps.export_message(self, log, revprops, fileprops)

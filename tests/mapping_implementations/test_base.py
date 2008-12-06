@@ -44,7 +44,8 @@ class RoundtripMappingTests(TestCase):
         revprops = {}
         fileprops = {}
         self.mapping.export_revision("branchp", 432432432.0, 0, "somebody", {}, "arevid", 4, ["merge1"], revprops, fileprops)
-        self.mapping.export_fileid_map(fileids, revprops, fileprops)
+        self.mapping.export_fileid_map_fileprops(fileids, fileprops)
+        self.mapping.export_fileid_map_revprops(fileids, revprops)
         revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
         if self.mapping.can_use_revprops:
             self.assertEquals(fileids, 
@@ -52,6 +53,7 @@ class RoundtripMappingTests(TestCase):
         if self.mapping.can_use_fileprops:
             self.assertEquals(fileids, 
                     self.mapping.import_fileid_map_fileprops(changed_props(fileprops)))
+
 
     def test_text_parents(self):
         if not self.mapping.roundtripping:
