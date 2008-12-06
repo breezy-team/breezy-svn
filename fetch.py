@@ -321,7 +321,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             assert self.editor.revid is not None
 
             self.new_ie.revision = self.editor._get_text_revid(self.path) or self.editor.revid
-            text_parents = self.editor._get_text_parents(self.path) or self.parent_ids
+            text_parents = self.editor._get_text_parents(self.path) or self.parent_revids
             self.editor.texts.add_lines(
                 (self.new_id, self.new_ie.revision),
                 [(self.new_id, revid) for revid in text_parents], [])
@@ -936,13 +936,15 @@ class InterFromSvnRepository(InterRepository):
             try:
                 # FIXME: Specify target_is_empt
                 target_is_empty = False
-                revisionfinder = FetchRevisionFinder(self.source, self.target, target_is_empty)
+                revisionfinder = FetchRevisionFinder(self.source, self.target,
+                                                     target_is_empty)
                 if needed is None:
                     if revision_id is None:
                         needed = revisionfinder.find_all(self.source.get_mapping(), pb=nested_pb)
                     else:
                         foreign_revid, mapping = self.source.lookup_revision_id(revision_id)
-                        needed = revisionfinder.find_until(foreign_revid, mapping, find_ghosts, pb=nested_pb)
+                        needed = revisionfinder.find_until(foreign_revid,
+                            mapping, find_ghosts, pb=nested_pb)
             finally:
                 nested_pb.finished()
 

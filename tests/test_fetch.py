@@ -345,7 +345,6 @@ class TestFetchWorks(SubversionTestCase):
         repo.fetch(oldrepos, oldrepos.generate_revision_id(3, "branch2", 
                    oldrepos.get_mapping()))
 
-
     def test_fetch_replace(self):
         repos_url = self.make_repository('d')
 
