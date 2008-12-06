@@ -451,8 +451,9 @@ class RevisionMetadata(object):
 
     def get_bzr_merges(self, mapping):
         """Check what Bazaar revisions were merged in this revision."""
-        return mapping.get_rhs_parents(self.branch_path, self.get_revprops(), 
-                                       self.get_changed_fileprops())
+        return self._import_from_props(mapping,
+            mapping.get_rhs_parents_fileprops,
+            mapping.get_rhs_parent_revprops, ())
 
     def get_svk_merges(self, mapping):
         """Check what SVK revisions were merged in this revision."""
@@ -559,27 +560,32 @@ class RevisionMetadata(object):
 
         return rev
 
-    def _import_from_props(self, fileprop_fn, revprop_fn):
+    def _import_from_props(self, mapping, fileprop_fn, revprop_fn, default):
         # FIXME: Magic happens here
         ret = fileprop_fn(self.get_changed_fileprops())
-        if ret != {}:
+        if ret == default:
             return ret
-        return revprop_fn(self.get_revprops())
+        if mapping.get_branch_root(self.get_revprops()) == self.branch_path:
+            return revprop_fn(self.get_revprops())
+        return default
 
     def get_fileid_map(self, mapping):
         """Find the file id override map for this revision."""
-        return self._import_from_props(mapping.import_fileid_map_fileprops, 
-                                       mapping.import_fileid_map_revprops)
+        return self._import_from_props(mapping, 
+            mapping.import_fileid_map_fileprops, 
+            mapping.import_fileid_map_revprops, {})
 
     def get_text_revisions(self, mapping):
         """Return text revision override map for this revision."""
-        return self._import_from_props(mapping.import_text_revisions_fileprops,
-                                       mapping.import_text_revisions_revprops)
+        return self._import_from_props(mapping,
+            mapping.import_text_revisions_fileprops,
+            mapping.import_text_revisions_revprops, {})
 
     def get_text_parents(self, mapping):
         """Return text revision override map for this revision."""
-        return self._import_from_props(mapping.import_text_parents_fileprops, 
-                                       mapping.import_text_parents_revprops)
+        return self._import_from_props(mapping,
+            mapping.import_text_parents_fileprops, 
+            mapping.import_text_parents_revprops, {})
 
     def consider_bzr_fileprops(self):
         """See if any bzr file properties should be checked at all.

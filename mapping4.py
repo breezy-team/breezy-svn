@@ -95,11 +95,11 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
     def get_lhs_parent(self, branch_path, svn_revprops, fileprops):
         return self.revprops.get_lhs_parent(branch_path, svn_revprops, fileprops)
 
-    def get_rhs_parents(self, branch_path, svn_revprops, fileprops):
-        if svn_revprops.has_key(mapping.SVN_REVPROP_BZR_MAPPING_VERSION):
-            return self.revprops.get_rhs_parents(branch_path, svn_revprops, fileprops)
-        else:
-            return self.fileprops.get_rhs_parents(branch_path, svn_revprops, fileprops)
+    def get_rhs_parents_revprops(self, svn_revprops):
+        return self.revprops.get_rhs_parents_revprops(svn_revprops)
+    
+    def get_rhs_parent_fileprops(self, fileprops):
+        return self.fileprops.get_rhs_parents_fileprops(fileprops)
 
     def get_revision_id(self, branch_path, revprops, fileprops):
         if revprops.has_key(mapping.SVN_REVPROP_BZR_MAPPING_VERSION):
@@ -114,10 +114,10 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
         return self.revprops.import_text_parents_revprops(svn_revprops)
 
     def import_text_revisions_revprops(self, svn_revprops):
-        return self.revprops.import_text_revisions(svn_revprops)
+        return self.revprops.import_text_revisions_revprops(svn_revprops)
 
     def import_text_revisions_fileprops(self, fileprops):
-        return self.fileprops.import_text_revisions(fileprops)
+        return self.fileprops.import_text_revisions_fileprops(fileprops)
 
     def import_fileid_map_fileprops(self, fileprops):
         return self.fileprops.import_fileid_map_fileprops(fileprops)

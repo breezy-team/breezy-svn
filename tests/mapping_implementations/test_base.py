@@ -63,7 +63,7 @@ class RoundtripMappingTests(TestCase):
         if self.mapping.can_use_revprops:
             self.assertEquals(text_parents,
                 self.mapping.import_text_parents_revprops(revprops))
-            if self.mapping.can_use_fileprops:
+        if self.mapping.can_use_fileprops:
             self.assertEquals(text_parents,
                 self.mapping.import_text_parents_fileprops(changed_props(fileprops)))
 

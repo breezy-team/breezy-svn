@@ -390,11 +390,17 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         return None
 
-    def get_rhs_parents(self, branch_path, revprops, fileprops):
+    def get_rhs_parents_fileprops(self, fileprops):
         """Obtain the right-hand side parents for a revision.
 
         """
-        raise NotImplementedError(self.get_rhs_parents)
+        raise NotImplementedError(self.get_rhs_parents_fileprops)
+
+    def get_rhs_parents_revprops(self, revprops):
+        """Obtain the right-hand side parents for a revision.
+
+        """
+        raise NotImplementedError(self.get_rhs_parents_revprops)
 
     def get_rhs_ancestors(self, branch_path, revprops, fileprops):
         """Obtain the right-hand side ancestors for a revision.
@@ -579,7 +585,7 @@ class BzrSvnMappingFileProps(object):
         elif SVN_PROP_BZR_TEXT_REVISIONS in fileprops:
             fileprops[SVN_PROP_BZR_TEXT_REVISIONS] = ""
 
-    def get_rhs_parents(self, branch_path, revprops, fileprops):
+    def get_rhs_parents_fileprops(self, fileprops):
         bzr_merges = fileprops.get(SVN_PROP_BZR_ANCESTRY+self.name, None)
         if bzr_merges is not None:
             try:
@@ -592,6 +598,9 @@ class BzrSvnMappingFileProps(object):
                 return ()
             return parse_merge_property(new_lines[0])
 
+        return ()
+
+    def get_rhs_parents_revprops(self, revprops):
         return ()
 
     def get_rhs_ancestors(self, branch_path, revprops, fileprops):
@@ -705,10 +714,11 @@ class BzrSvnMappingRevProps(object):
             return None
         return svn_revprops.get(SVN_REVPROP_BZR_BASE_REVISION)
 
-    def get_rhs_parents(self, branch_path, svn_revprops, fileprops):
-        if self.get_branch_root(svn_revprops) != branch_path:
-            return ()
+    def get_rhs_parents_revprops(self, svn_revprops):
         return tuple(svn_revprops.get(SVN_REVPROP_BZR_MERGE, "").splitlines())
+
+    def get_rhs_parents_fileprops(self, fileprops):
+        return ()
 
     def get_branch_root(self, revprops):
         return revprops.get(SVN_REVPROP_BZR_ROOT)
