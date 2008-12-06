@@ -60,8 +60,12 @@ class RoundtripMappingTests(TestCase):
         fileprops = {}
         text_parents = {"bla": ["bloe"], "ll": ["12", "bli"]}
         self.mapping.export_text_parents(text_parents, revprops, fileprops)
-        self.assertEquals(text_parents,
-            self.mapping.import_text_parents(revprops, changed_props(fileprops)))
+        if self.mapping.can_use_revprops:
+            self.assertEquals(text_parents,
+                self.mapping.import_text_parents_revprops(revprops))
+            if self.mapping.can_use_fileprops:
+            self.assertEquals(text_parents,
+                self.mapping.import_text_parents_fileprops(changed_props(fileprops)))
 
     def test_text_revisions(self):
         if not self.mapping.roundtripping:

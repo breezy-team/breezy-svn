@@ -423,13 +423,19 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError(self.export_fileid_map)
 
-    def import_text_parents(self, revprops, fileprops):
+    def import_text_parents_revprops(self, revprops):
         """Obtain a text parent map from properties.
 
         :param revprops: Subversion revision properties.
+        """
+        raise NotImplementedError(self.import_text_parents_revprops)
+
+    def import_text_parents_fileprops(self, fileprops):
+        """Obtain a text parent map from properties.
+
         :param fileprops: File properties.
         """
-        raise NotImplementedError(self.import_text_parents)
+        raise NotImplementedError(self.import_text_parents_fileprops)
 
     def export_text_parents(self, text_parents, revprops, fileprops):
         """Store a text parent map.
@@ -540,11 +546,14 @@ class BzrSvnMappingFileProps(object):
         if metadata is not None:
             parse_revision_metadata(metadata[1], rev)
 
-    def import_text_parents(self, svn_revprops, fileprops):
+    def import_text_parents_fileprops(self, fileprops):
         metadata = fileprops.get(SVN_PROP_BZR_TEXT_PARENTS)
         if metadata is None:
             return {}
         return parse_text_parents_property(metadata[1])
+
+    def import_text_parents_revprops(self, svn_revprops):
+        return {}
 
     def import_text_revisions(self, svn_revprops, fileprops):
         metadata = fileprops.get(SVN_PROP_BZR_TEXT_REVISIONS)
@@ -661,7 +670,10 @@ class BzrSvnMappingRevProps(object):
             return {}
         return parse_fileid_property(svn_revprops[SVN_REVPROP_BZR_FILEIDS])
 
-    def import_text_parents(self, svn_revprops, fileprops):
+    def import_text_parents_fileprops(self, fileprops):
+        return {}
+
+    def import_text_parents_revprops(self, svn_revprops):
         if not svn_revprops.has_key(SVN_REVPROP_BZR_TEXT_PARENTS):
             return {}
         return parse_text_parents_property(svn_revprops[SVN_REVPROP_BZR_TEXT_PARENTS])

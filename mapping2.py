@@ -82,10 +82,16 @@ class BzrSvnMappingv1(BzrSvnMapping):
             return ROOT_ID
         return "%s-%s" % (self.revision_id_foreign_to_bzr((uuid, branch, revnum)), escape_svn_path(inv_path.encode("utf-8")))
 
-    def import_fileid_map(self, revprops, fileprops):
+    def import_fileid_map_revprops(self, revprops):
         return {}
 
-    def import_text_parents(self, revprops, fileprops):
+    def import_fileid_map_fileprops(self, fileprops):
+        return {}
+
+    def import_text_parents_fileprops(self, fileprops):
+        return {}
+
+    def import_text_parents_revprops(self, revprops):
         return {}
 
     def import_text_revisions(self, svn_revprops, fileprops):

@@ -559,12 +559,17 @@ class RevisionMetadata(object):
 
         return rev
 
-    def get_fileid_map(self, mapping):
-        """Find the file id override map for this revision."""
-        ret = mapping.import_fileid_map_revprops(self.get_revprops())
+    def _import_from_props(self, fileprop_fn, revprop_fn):
+        # FIXME: Magic happens here
+        ret = fileprop_fn(self.get_changed_fileprops())
         if ret != {}:
             return ret
-        return mapping.import_fileid_map_fileprops(self.get_changed_fileprops())
+        return revprop_fn(self.get_revprops())
+
+    def get_fileid_map(self, mapping):
+        """Find the file id override map for this revision."""
+        return self._import_from_props(mapping.import_fileid_map_fileprops, 
+                                       mapping.import_fileid_map_revprops)
 
     def get_text_revisions(self, mapping):
         """Return text revision override map for this revision."""
@@ -573,8 +578,8 @@ class RevisionMetadata(object):
 
     def get_text_parents(self, mapping):
         """Return text revision override map for this revision."""
-        return mapping.import_text_parents(self.get_revprops(), 
-                                           self.get_changed_fileprops())
+        return self._import_from_props(mapping.import_text_parents_fileprops, 
+                                       mapping.import_text_parents_revprops)
 
     def consider_bzr_fileprops(self):
         """See if any bzr file properties should be checked at all.
