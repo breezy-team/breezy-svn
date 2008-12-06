@@ -36,7 +36,8 @@ from bzrlib.plugins.svn import (
         )
 from bzrlib.plugins.svn.mapping import (
         estimate_bzr_ancestors, 
-        find_mapping,
+        find_mapping_fileprops,
+        find_mapping_revprops,
         get_roundtrip_ancestor_revids,
         is_bzr_revision_fileprops, 
         is_bzr_revision_revprops, 
@@ -340,9 +341,10 @@ class RevisionMetadata(object):
         """Find the original mapping that was used to store this revision
         or None if it is not a bzr-svn revision.
         """
-        if not self.is_bzr_revision():
-            return None
-        return find_mapping(self.get_revprops(), self.get_changed_fileprops())
+        return self._import_from_props(mapping,
+                find_mapping_fileprops,
+                find_mapping_revprops,
+                None)
 
     def _get_stored_lhs_parent_revid(self, mapping):
         return self._import_from_props(mapping, 

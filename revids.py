@@ -26,7 +26,6 @@ from bzrlib.plugins.svn.errors import (
 from bzrlib.plugins.svn.mapping import (
         BzrSvnMapping,
         SVN_PROP_BZR_REVISION_ID,
-        find_mapping,
         find_new_lines,
         is_bzr_revision_revprops,
         mapping_registry,

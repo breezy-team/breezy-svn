@@ -861,16 +861,6 @@ def find_mapping_fileprops(changed_fileprops):
     return None
 
 
-def find_mapping(revprops, changed_fileprops):
-    """Find a mapping instance based on the revprops and fileprops set on a revision.
-
-    :param revprops: Revision properties.
-    :param fileprops: File properties set on branch root.
-    :return: BzrSvnMapping instance or None if no mapping found.
-    """
-    return find_mapping_revprops(revprops) or find_mapping_fileprops(changed_fileprops)
-
-
 def is_bzr_revision_revprops(revprops):
     """Check if the specified revision properties 
     contain bzr-svn metadata."""
