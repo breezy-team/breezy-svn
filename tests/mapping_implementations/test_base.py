@@ -114,7 +114,7 @@ class RoundtripMappingTests(TestCase):
             self.assertEquals(targetrev.timezone, 0)
 
         if self.mapping.can_use_fileprops:
-        self.mapping.import_revision_fileprops(changed_props(fileprops), ("someuuid", "somebp", 4), targetrev)
+            self.mapping.import_revision_fileprops(changed_props(fileprops), ("someuuid", "somebp", 4), targetrev)
             self.assertEquals(targetrev.committer, "somebody")
             self.assertEquals(targetrev.properties, {"arevprop": "val"})
             self.assertEquals(targetrev.timestamp, 432432432.0)

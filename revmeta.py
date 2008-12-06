@@ -548,13 +548,13 @@ class RevisionMetadata(object):
                               revision_id=self.get_revision_id(mapping), 
                               parent_ids=parent_ids)
 
-        rev.svn_meta = self
-
         mapping.import_revision_revprops(self.get_revprops(), 
                                 self.get_foreign_revid(), rev)
 
         mapping.import_revision_fileprops(self.get_changed_fileprops(), 
                                 self.get_foreign_revid(), rev)
+
+        rev.svn_meta = self
 
         return rev
 
