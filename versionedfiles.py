@@ -87,7 +87,7 @@ class SvnTexts(VersionedFiles):
         if path is None:
             return
 
-        text_parents = mapping.import_text_parents(revmeta.get_revprops(), revmeta.get_changed_fileprops())
+        text_parents = revmeta.get_text_revisions(mapping)
         if path in text_parents:
             return text_parents[path]
 

@@ -589,12 +589,12 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
     def _get_text_revid(self, path):
         if self._text_revids is None:
-            self._text_revids = self.mapping.import_text_revisions(self.revmeta.get_revprops(), self.revmeta.get_changed_fileprops())
+            self._text_revids = self.revmeta.get_text_revisions(self.mapping)
         return self._text_revids.get(path)
 
     def _get_text_parents(self, path):
         if self._text_parents is None:
-            self._text_parents = self.mapping.import_text_parents(self.revmeta.get_revprops(), self.revmeta.get_changed_fileprops())
+            self._text_parents = self.revmeta.get_text_parents(self.mapping)
         return self._text_parents.get(path)
 
 
