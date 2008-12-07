@@ -179,7 +179,7 @@ class RevisionMetadata(object):
             (_, revid) = self._import_from_props(mapping, 
                     mapping.get_revision_id_fileprops,
                     mapping.get_revision_id_revprops,
-                    (None, None))
+                    (None, None), self.consider_bzr_fileprops)
         else:
             revid = None
 
@@ -359,13 +359,13 @@ class RevisionMetadata(object):
         return self._import_from_props(None,
                 find_mapping_fileprops,
                 find_mapping_revprops,
-                None)
+                None, self.consider_bzr_fileprops)
 
     def _get_stored_lhs_parent_revid(self, mapping):
         return self._import_from_props(mapping, 
                 mapping.get_lhs_parent_fileprops,
                 mapping.get_lhs_parent_revprops, 
-                None)
+                None, self.consider_bzr_fileprops)
 
     def get_lhs_parent_revid(self, mapping):
         """Find the revid of the left hand side parent of this revision."""
@@ -414,7 +414,7 @@ class RevisionMetadata(object):
         """Estimate how many svk ancestors this revision has."""
         return self._estimate_fileprop_ancestors("svk:merge", estimate_svk_ancestors)
 
-    def estimate_bzr_hidden_fileprop_ancestors(self, mapping):
+    def estimate_bzr_hidden_fileprop_ancestors(self):
         return self._estimate_fileprop_ancestors("bzr:hidden", estimate_bzr_ancestors)
 
     def is_changes_root(self):
@@ -433,7 +433,7 @@ class RevisionMetadata(object):
         return self._import_from_props(mapping, 
                 mapping.is_bzr_revision_hidden_fileprops,
                 mapping.is_bzr_revision_hidden_revprops,
-                False)
+                False, consider_fileprops_fn=self.consider_bzr_hidden_fileprops)
 
     def is_bzr_revision(self):
         """Determine if this is a bzr revision.
@@ -462,7 +462,7 @@ class RevisionMetadata(object):
         """Check what Bazaar revisions were merged in this revision."""
         return self._import_from_props(mapping,
             mapping.get_rhs_parents_fileprops,
-            mapping.get_rhs_parents_revprops, ())
+            mapping.get_rhs_parents_revprops, (), self.consider_bzr_fileprops)
 
     def get_svk_merges(self, mapping):
         """Check what SVK revisions were merged in this revision."""
@@ -496,7 +496,7 @@ class RevisionMetadata(object):
             (bzr_revno, _) = self._import_from_props(mapping, 
                     mapping.get_revision_id_fileprops,
                     mapping.get_revision_id_revprops,
-                    (None, None))
+                    (None, None), self.consider_bzr_fileprops)
             if bzr_revno is not None:
                 return bzr_revno
         return None
@@ -567,23 +567,25 @@ class RevisionMetadata(object):
         self._import_from_props(mapping, 
             lambda changed_fileprops: mapping.import_revision_fileprops(changed_fileprops, rev),
             lambda revprops: mapping.import_revision_revprops(revprops, rev),
-            False, check_branch_root=False)
+            False, self.consider_bzr_fileprops, check_branch_root=False)
 
         rev.svn_meta = self
 
         return rev
 
     def _import_from_props(self, mapping, fileprop_fn, revprop_fn, default,
-                           check_branch_root=True):
+                           consider_fileprops_fn, check_branch_root=True):
         can_use_revprops = (mapping is None or mapping.can_use_revprops)
         can_use_fileprops = (mapping is None or mapping.can_use_fileprops)
+
         # Check revprops if self.knows_revprops() and can_use_revprops
         if can_use_revprops and self.knows_revprops():
-            if (mapping is None or not check_branch_root or 
-                mapping.get_branch_root(self.get_revprops()) == self.branch_path):
-                ret = revprop_fn(self.get_revprops())
-                if ret != default:
-                    return ret
+            revprops = self.get_revprops()
+            if (mapping is None or 
+                (not check_branch_root and mapping.revprops_complete(revprops)) or
+                mapping.get_branch_root(revprops) == self.branch_path):
+                return revprop_fn(revprops)
+            can_use_revprops = False
 
         # Check changed_fileprops if self.knows_changed_fileprops() and 
         # can_use_fileprops
@@ -591,20 +593,21 @@ class RevisionMetadata(object):
             ret = fileprop_fn(self.get_changed_fileprops())
             if ret != default:
                 return ret
+            can_use_fileprops = False
 
         # Check revprops if the last descendant has bzr:check-revprops set;
         #   if it has and the revnum there is < self.revnum
         if can_use_revprops and self.consider_bzr_revprops():
             warn_slow_revprops()
-            if (mapping is None or not check_branch_root or 
-                mapping.get_branch_root(self.get_revprops()) == self.branch_path):
-                ret = revprop_fn(self.get_revprops())
-                if ret != default:
-                    return ret
+            revprops = self.get_revprops()
+            if (mapping is None or 
+                (not check_branch_root and mapping.revprops_complete(revprops)) or 
+                mapping.get_branch_root(revprops) == self.branch_path):
+                return revprop_fn(revprops)
 
         # Check whether we should consider file properties at all 
         # for this revision, if we should -> check fileprops
-        if can_use_fileprops and self.consider_bzr_fileprops():
+        if can_use_fileprops and consider_fileprops_fn():
             ret = fileprop_fn(self.get_changed_fileprops())
             if ret != default:
                 return ret
@@ -615,19 +618,21 @@ class RevisionMetadata(object):
         """Find the file id override map for this revision."""
         return self._import_from_props(mapping, 
             mapping.import_fileid_map_fileprops, 
-            mapping.import_fileid_map_revprops, {})
+            mapping.import_fileid_map_revprops, {}, self.consider_bzr_fileprops)
 
     def get_text_revisions(self, mapping):
         """Return text revision override map for this revision."""
         return self._import_from_props(mapping,
             mapping.import_text_revisions_fileprops,
-            mapping.import_text_revisions_revprops, {})
+            mapping.import_text_revisions_revprops, {}, 
+            self.consider_bzr_fileprops)
 
     def get_text_parents(self, mapping):
         """Return text revision override map for this revision."""
         return self._import_from_props(mapping,
             mapping.import_text_parents_fileprops, 
-            mapping.import_text_parents_revprops, {})
+            mapping.import_text_parents_revprops, {}, 
+            self.consider_bzr_fileprops)
 
     def consider_bzr_revprops(self):
         """See if bzr revision properties should be checked at all.
@@ -637,11 +642,18 @@ class RevisionMetadata(object):
             return self._consider_bzr_revprops
         if not self.is_changes_root():
             self._consider_bzr_revprops = False
+        elif not self._log._transport.has_capability("commit-revprops"):
+            self._consider_bzr_revprops = False
         else:
             # FIXME: Check nearest descendant with bzr:see-revprops set
             # and return True if revnum in that property < self.revnum
             self._consider_bzr_revprops = True
         return self._consider_bzr_revprops
+
+    def consider_bzr_hidden_fileprops(self):
+        if not self.is_changes_root():
+            return False
+        return (self.estimate_bzr_hidden_fileprop_ancestors() > 0) 
 
     def consider_bzr_fileprops(self):
         """See if any bzr file properties should be checked at all.
@@ -661,10 +673,7 @@ class RevisionMetadata(object):
 
         This will try to avoid extra network traffic if at all possible.
         """
-        if self._consider_svk_fileprops is not None:
-            return self._consider_svk_fileprops
-        self._consider_svk_fileprops = (self.estimate_svk_fileprop_ancestors() > 0)
-        return self._consider_svk_fileprops
+        return (self.estimate_svk_fileprop_ancestors() > 0)
 
     def get_roundtrip_ancestor_revids(self):
         """Return the number of fileproperty roundtrip ancestors.

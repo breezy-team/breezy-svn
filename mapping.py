@@ -417,8 +417,6 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         return None
 
-
-
     def get_rhs_parents_fileprops(self, fileprops):
         """Obtain the right-hand side parents for a revision.
 
@@ -563,6 +561,9 @@ class BzrSvnMapping(foreign.VcsMapping):
 
     def export_revprop_redirect(self, revnum, fileprops):
         raise NotImplementedError(self.export_revprop_redirect)
+
+    def revprops_complete(self, revprops):
+        raise NotImplementedError(self.revprops_complete)
 
 
 def parse_fileid_property(text):

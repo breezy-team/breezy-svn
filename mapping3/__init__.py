@@ -319,7 +319,10 @@ class BzrSvnMappingv3FileProps(mapping.BzrSvnMappingFileProps, BzrSvnMappingv3):
         self.revprop_map.export_text_revisions_revprops(text_revisions, svn_revprops)
 
     def export_revision_revprops(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
-        self.revprop_map.export_revision_revprops(branch_root, timestamp, timezone, committer, revprops, None, revno, parent_ids, svn_revprops)
+        self.revprop_map.export_revision_revprops(branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops)
+
+    def revprops_complete(self, revprops):
+        return (self.get_revision_id_revprops(revprops) is not None)
 
     def export_fileid_map_revprops(self, fileids, revprops):
         self.revprop_map.export_fileid_map_revprops(fileids, revprops)

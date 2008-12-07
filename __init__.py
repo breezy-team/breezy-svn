@@ -506,12 +506,13 @@ class cmd_svn_set_revprops(Command):
                                  help="New mapping to upgrade to.",
                                  registry=mapping_registry,
                                  title="Subversion mapping",
-                                 value_switches=True)]
+                                 value_switches=True),
+                     Option('upgrade', help='Upgrade to new mapping version rather than setting revision properties for the current mapping')]
 
-    def run(self, location=".", mapping=None):
+    def run(self, location=".", upgrade=False, mapping=None):
         from bzrlib.errors import BzrCommandError
         from bzrlib.repository import Repository
-        from bzrlib.plugins.svn.upgrade import set_revprops
+        from bzrlib.plugins.svn.upgrade import set_revprops, upgrade_revprops
         from bzrlib.plugins.svn.mapping import mapping_registry
         repos = Repository.open(location) 
         if not repos.transport.has_capability("commit-revprops"):
@@ -522,7 +523,10 @@ class cmd_svn_set_revprops(Command):
         if not new_mapping.can_use_revprops:
             raise BzrCommandError("Please specify a different mapping, %s doesn't support revision properties." % new_mapping.name)
 
-        num = set_revprops(repos, new_mapping)
+        if upgrade:
+            num = upgrade_revprops(repos, new_mapping)
+        else:
+            num = set_revprops(repos)
         self.outf.write("Revision properties set for %d revisions.\n" % num)
         self.outf.write("Please restore the hooks/pre-revprop-change script "
                         "to refuse changes to most revision properties.\n")

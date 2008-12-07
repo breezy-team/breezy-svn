@@ -193,3 +193,6 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
     def export_revprop_redirect(self, revnum, fileprops):
         if not mapping.SVN_PROP_BZR_REVPROP_REDIRECT in fileprops:
             fileprops[mapping.SVN_PROP_BZR_REVPROP_REDIRECT] = str(revnum)
+
+    def revprops_complete(self, revprops):
+        return (self.get_revision_id_revprops(revprops) is not None)
