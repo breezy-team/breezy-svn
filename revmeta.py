@@ -37,6 +37,9 @@ from bzrlib.plugins.svn import (
         errors as svn_errors, 
         logwalker,
         )
+from bzrlib.plugins.svn.logwalker import (
+        CachingLogWalker,
+        )
 from bzrlib.plugins.svn.mapping import (
         estimate_bzr_ancestors, 
         find_mapping_fileprops,
@@ -248,7 +251,7 @@ class RevisionMetadata(object):
     def knows_revprops(self):
         """Check whether all revision properties can be cheaply retrieved."""
         revprops = self.get_revprops()
-        return isinstance(revprops, dict) or revprops.is_loaded
+        return isinstance(revprops, dict) or revprops.is_loaded or (isinstance(self._log, CachingLogWalker) and self._log.cache.has_all_revprops(self.revnum))
 
     def get_previous_fileprops(self):
         """Return the file properties set on the branch root before this 
