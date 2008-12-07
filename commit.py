@@ -397,23 +397,19 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         self._svn_revprops = {}
         self._svnprops = lazy_dict({}, lambda: dict(self._base_branch_props.iteritems()))
-        if self.supports_custom_revprops and self.mapping.can_use_revprops:
-            self.set_custom_revprops = True
-            self.set_custom_fileprops = self.mapping.must_use_fileprops
+        (self.set_custom_revprops, self.set_custom_fileprops) = self.repository._properties_to_set(mapping)
+        if self.supports_custom_revprops:
             # If possible, submit signature directly
             if opt_signature is not None:
                 self._svn_revprops[mapping.SVN_REVPROP_BZR_SIGNATURE] = opt_signature
             # Set hint for potential clients that they have to check revision 
             # properties
             if (not self.set_custom_fileprops and 
-                self.repository.transport.has_capability("log-revprops")):
+                not self.repository.transport.has_capability("log-revprops")):
                 # Tell clients about first approximate use of revision 
                 # properties
                 self.mapping.export_revprop_redirect(
                     self.repository.get_latest_revnum()+1, self._svnprops)
-        else:
-            self.set_custom_fileprops = True
-            self.set_custom_revprops = False
         revno = self.base_revno + 1
         if self.set_custom_fileprops:
             self.mapping.export_revision_fileprops(
@@ -771,8 +767,17 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
     fileprops = dict(revmeta.get_fileprops().iteritems())
     if set_metadata:
         assert mapping.supports_hidden
-        mapping.export_hidden_revprops(branch_path, revprops)
-        mapping.export_hidden_fileprops(fileprops)
+        (set_custom_revprops, set_custom_fileprops) = repository._properties_to_set(mapping)
+        if set_custom_revprops:
+            mapping.export_hidden_revprops(branch_path, revprops)
+            if (not set_custom_fileprops and 
+                not repository.transport.has_capability("log-revprops")):
+                # Tell clients about first approximate use of revision 
+                # properties
+                mapping.export_revprop_redirect(
+                    repository.get_latest_revnum()+1, fileprops)
+        if set_custom_fileprops:
+            mapping.export_hidden_fileprops(fileprops)
     parent = urlutils.dirname(branch_path)
 
     bp_parts = branch_path.split("/")

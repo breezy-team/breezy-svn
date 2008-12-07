@@ -4,7 +4,7 @@ mappingv4:
  - cope with old mappings in find_tags_between_*
  - set-revprops upgrades v3 stuff as well?
  - set-revprops should refuse to work when there is no commit-revprops capability
- - special fileproperty bzr:use-revprops for use when quick_revprops is not available
+ - use special fileproperty bzr:use-revprops for when log-revprops is not available
 - automatically disable cache in some situations, allow partial cache?
 - in-memory caching of revid mapping (LRUCache ?)
 - warn when retrieving revision properties slowly
