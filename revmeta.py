@@ -441,59 +441,6 @@ class RevisionMetadata(object):
                 mapping.is_bzr_revision_hidden_revprops,
                 False, consider_fileprops_fn=self.consider_bzr_hidden_fileprops)
 
-    def is_bzr_revision(self):
-        """Determine if this is a bzr revision.
-
-        Optimized to use as few network requests as possible.
-        """
-        if self._is_bzr_revision is not None:
-            return self._is_bzr_revision
-        order = []
-        # If the server already sent us all revprops, look at those first
-        if self.knows_revprops():
-            order.append(lambda: is_bzr_revision_revprops(self.get_revprops()))
-        if self.consider_bzr_fileprops():
-            order.append(lambda: is_bzr_revision_fileprops(self.get_changed_fileprops()))
-        # Only look for revprops if they could've been committed
-        if (self.check_revprops and not self.knows_revprops()):
-            order.append(lambda: is_bzr_revision_revprops(self.get_revprops()))
-        for fn in order:
-            ret = fn()
-            if ret is not None:
-                self._is_bzr_revision = ret
-                return ret
-        return None
-
-    def get_bzr_merges(self, mapping):
-        """Check what Bazaar revisions were merged in this revision."""
-        return self._import_from_props(mapping,
-            mapping.get_rhs_parents_fileprops,
-            mapping.get_rhs_parents_revprops, (), self.consider_bzr_fileprops)
-
-    def get_svk_merges(self, mapping):
-        """Check what SVK revisions were merged in this revision."""
-        if not self.consider_svk_fileprops():
-            return ()
-
-        if not self.changes_branch_root():
-            return ()
-        
-        changed_fileprops = self.get_changed_fileprops()
-        previous, current = changed_fileprops.get(SVN_PROP_SVK_MERGE, ("", ""))
-        if current == "":
-            return ()
-
-        ret = []
-        for feature in svk_features_merged_since(current, previous or ""):
-            # We assume svk:merge is only relevant on non-bzr-svn revisions. 
-            # If this is a bzr-svn revision, the bzr-svn properties 
-            # would be parsed instead.
-            revid = svk_feature_to_revision_id(feature, mapping)
-            if revid is not None:
-                ret.append(revid)
-
-        return tuple(ret)
-
     def get_distance_to_null(self, mapping):
         """Return the number of revisions between this one and the left hand 
         side NULL_REVISION, if known.
@@ -533,10 +480,32 @@ class RevisionMetadata(object):
         """Determine the right hand side parents for this revision.
 
         """
-        if self.is_bzr_revision():
-            return self.get_bzr_merges(mapping)
+        def consider_fileprops():
+            return (self.consider_bzr_fileprops() or 
+                    self.consider_svk_fileprops())
 
-        return self.get_svk_merges(mapping)
+        def get_svk_merges(changed_fileprops):
+            """Check what SVK revisions were merged in this revision."""
+            previous, current = changed_fileprops.get(SVN_PROP_SVK_MERGE, ("", ""))
+            ret = []
+            for feature in svk_features_merged_since(current, previous or ""):
+                # We assume svk:merge is only relevant on non-bzr-svn revisions. 
+                # If this is a bzr-svn revision, the bzr-svn properties 
+                # would be parsed instead.
+                revid = svk_feature_to_revision_id(feature, mapping)
+                if revid is not None:
+                    ret.append(revid)
+
+            return tuple(ret)
+
+        def get_fileprops(fileprops):
+            return (mapping.get_rhs_parents_fileprops(fileprops) or 
+                    get_svk_merges(fileprops))
+
+        return self._import_from_props(mapping,
+            get_fileprops,
+            mapping.get_rhs_parents_revprops, (), 
+            consider_fileprops)
 
     def get_parent_ids(self, mapping):
         """Return the parent ids for this revision. """
@@ -692,7 +661,8 @@ class RevisionMetadata(object):
 
         This will try to avoid extra network traffic if at all possible.
         """
-        return (self.estimate_svk_fileprop_ancestors() > 0)
+        return (self.changes_branch_root() and 
+                self.estimate_svk_fileprop_ancestors() > 0)
 
     def get_roundtrip_ancestor_revids(self):
         """Return the number of fileproperty roundtrip ancestors.

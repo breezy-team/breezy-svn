@@ -149,6 +149,8 @@ class SvnRepository(foreign.ForeignRepository):
         use_cache = self.get_config().get_use_cache()
 
         if use_cache is None:
+            # TODO: Don't enable log cache in some situations, e.g. 
+            # for large repositories ?
             use_cache = set(["fileids", "revids", "log"])
 
         if use_cache:
@@ -161,16 +163,20 @@ class SvnRepository(foreign.ForeignRepository):
             self.cachedb = cachedbs()[cache_file]
 
         if "log" in use_cache:
-            self._log = logwalker.CachingLogWalker(self._log, cache_db=self.cachedb)
+            self._log = logwalker.CachingLogWalker(self._log,
+                cache_db=self.cachedb)
 
         if "fileids" in use_cache:
             cachedir_transport = get_transport(cache_dir)
-            self.fileid_map = CachingFileIdMap(cachedir_transport, self.fileid_map)
+            self.fileid_map = CachingFileIdMap(cachedir_transport, 
+                self.fileid_map)
         if "revids" in use_cache:
             self.revmap = CachingRevidMap(self.revmap, self.cachedb)
-            self._real_parents_provider = DiskCachingParentsProvider(self._real_parents_provider, cachedir_transport)
+            self._real_parents_provider = DiskCachingParentsProvider(
+                self._real_parents_provider, cachedir_transport)
 
-        self._parents_provider = graph.CachingParentsProvider(self._real_parents_provider)
+        self._parents_provider = graph.CachingParentsProvider(
+            self._real_parents_provider)
         self.texts = SvnTexts(self)
         self.revisions = VirtualRevisionTexts(self)
         self.inventories = VirtualInventoryTexts(self)
