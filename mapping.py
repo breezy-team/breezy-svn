@@ -291,6 +291,7 @@ class BzrSvnMapping(foreign.VcsMapping):
     roundtripping = False
     can_use_revprops = False
     can_use_fileprops = False
+    must_use_fileprops = False
     supports_hidden = False
     restricts_branch_paths = False
 
@@ -543,8 +544,11 @@ class BzrSvnMapping(foreign.VcsMapping):
     def is_bzr_revision_hidden_fileprops(self, changed_fileprops):
         return False
 
-    def export_hidden(self, branch_path, revprops, fileprops):
-        raise NotImplementedError(self.export_hidden)
+    def export_hidden_revprops(self, branch_root, revprops):
+        raise NotImplementedError(self.export_hidden_revprops)
+
+    def export_hidden_fileprops(self, fileprops):
+        raise NotImplementedError(self.export_hidden_fileprops)
 
     def show_foreign_revid(self, (uuid, bp, revnum)):
         return { "svn revno": "%d (on /%s)" % (revnum, bp)}

@@ -170,6 +170,8 @@ class BzrSvnMappingv3(mapping.BzrSvnMapping):
     revid_prefix = "svn-v3-"
     roundtripping = True
     can_use_fileprops = True
+    must_use_fileprops = True
+    can_use_revprops = True
     restricts_branch_paths = True
 
     def __init__(self, scheme, guessed_scheme=None):
@@ -334,8 +336,9 @@ class BzrSvnMappingv3FileProps(mapping.BzrSvnMappingFileProps, BzrSvnMappingv3):
     def export_fileid_map_revprops(self, fileids, revprops):
         self.revprop_map.export_fileid_map(fileids, revprops)
 
-    def export_message(self, log, revprops, fileprops):
-        mapping.BzrSvnMappingFileProps.export_message(self, log, revprops, fileprops)
-        if revprops is not None:
-            self.revprop_map.export_message(log, revprops, fileprops)
+    def export_message_fileprops(self, log, fileprops):
+        mapping.BzrSvnMappingFileProps.export_message_fileprops(self, log, fileprops)
+
+    def export_message_revprops(self, log, revprops):
+        self.revprop_map.export_message(log, revprops)
 

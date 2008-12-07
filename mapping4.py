@@ -179,11 +179,11 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
     def get_hidden_lhs_ancestors_count(self, fileprops):
         return int(fileprops.get(mapping.SVN_PROP_BZR_HIDDEN, "0"))
 
-    def export_hidden(self, branch_path, revprops, fileprops):
-        if revprops is not None:
-            revprops[mapping.SVN_REVPROP_BZR_HIDDEN] = ""
-            revprops[mapping.SVN_REVPROP_BZR_ROOT] = branch_path
-            return
+    def export_hidden_revprops(self, branch_root, revprops):
+        revprops[mapping.SVN_REVPROP_BZR_HIDDEN] = ""
+        revprops[mapping.SVN_REVPROP_BZR_ROOT] = branch_root
+
+    def export_hidden_fileprops(self, fileprops):
         old_value = fileprops.get(mapping.SVN_PROP_BZR_HIDDEN, "0")
         fileprops[mapping.SVN_PROP_BZR_HIDDEN] = str(int(old_value)+1)
 

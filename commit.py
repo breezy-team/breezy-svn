@@ -757,7 +757,8 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
     fileprops = dict(revmeta.get_fileprops().iteritems())
     if set_metadata:
         assert mapping.supports_hidden
-        mapping.export_hidden(branch_path, revprops, fileprops)
+        mapping.export_hidden_revprops(branch_path, revprops)
+        mapping.export_hidden_fileprops(fileprops)
     parent = urlutils.dirname(branch_path)
 
     bp_parts = branch_path.split("/")
@@ -774,8 +775,8 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
                 root.delete_entry(urlutils.basename(branch_path))
             branch_dir = root.add_directory(urlutils.basename(branch_path), 
                     _url_escape_uri(urlutils.join(repository.base, revmeta.branch_path)), revmeta.revnum)
-            for k, v in properties.diff(fileprops, revmeta.get_fileprops()).iteritems():
-                branch_dir.change_prop(k, v)
+            for k, (ov, nv) in properties.diff(fileprops, revmeta.get_fileprops()).iteritems():
+                branch_dir.change_prop(k, nv)
             branch_dir.close()
             root.close()
         except:

@@ -113,7 +113,7 @@ class RoundtripMappingTests(TestCase):
         self.mapping.export_revision_fileprops(432432432.0, 0, "somebody", 
                                      {"arevprop": "val"}, "arevid", 4, ["merge1"], fileprops)
         try:
-            self.mapping.export_message("My Commit message", None, fileprops)
+            self.mapping.export_message_fileprops("My Commit message", fileprops)
         except NotImplementedError:
             raise TestNotApplicable
         targetrev = Revision(None)
@@ -130,7 +130,7 @@ class RoundtripMappingTests(TestCase):
                                      {"arevprop": "val"}, "arevid", 4, ["merge1"], revprops)
         revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
         try:
-            self.mapping.export_message("My Commit message", revprops)
+            self.mapping.export_message_revprops("My Commit message", revprops)
         except NotImplementedError:
             raise TestNotApplicable
         targetrev = Revision(None)
