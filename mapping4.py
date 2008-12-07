@@ -104,7 +104,7 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
     def get_rhs_parents_fileprops(self, fileprops):
         return self.fileprops.get_rhs_parents_fileprops(fileprops)
 
-    def get_revision_id_fileprops(self, revprops):
+    def get_revision_id_revprops(self, revprops):
         return self.revprops.get_revision_id_revprops(revprops)
 
     def get_revision_id_fileprops(self, fileprops):
@@ -128,8 +128,7 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
     def import_fileid_map_revprops(self, revprops):
         return self.revprops.import_fileid_map_revprops(revprops)
 
-    def export_revision_revprops(self, branch_root, timestamp, timezone, committer, revprops, revision_id, 
-                        revno, parent_ids, svn_revprops, svn_fileprops):
+    def export_revision_revprops(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
         self.revprops.export_revision_revprops(branch_root, timestamp, timezone, committer, 
                                       revprops, revision_id, revno, parent_ids, svn_revprops)
         svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION] = self.name
@@ -149,19 +148,18 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
     def export_text_parents_fileprops(self, text_parents, fileprops):
         self.fileprops.export_text_parents_fileprops(text_parents, fileprops)
 
-    def export_text_revisions(self, text_revisions, revprops):
-        self.revprops.export_text_revisions(text_revisions, revprops)
+    def export_text_revisions_revprops(self, text_revisions, revprops):
+        self.revprops.export_text_revisions_revprops(text_revisions, revprops)
 
     def export_text_revisions_fileprops(self, text_revisions, fileprops):
-        self.fileprops.export_text_revisions(text_revisions, fileprops)
+        self.fileprops.export_text_revisions_fileprops(text_revisions, fileprops)
 
     def import_revision_revprops(self, svn_revprops, foreign_revid, rev):
         if svn_revprops.has_key(mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES):
             features = mapping.parse_required_features_property(svn_revprops[mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES])
             assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
-        if svn_revprops.has_key(mapping.SVN_REVPROP_BZR_MAPPING_VERSION):
-            assert svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION] == self.name, "unknown mapping: %s" % svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION]
-            self.revprops.import_revision_revprops(svn_revprops, foreign_revid, rev)
+        assert svn_revprops.get(mapping.SVN_REVPROP_BZR_MAPPING_VERSION) in (None, self.name), "unknown mapping: %s" % svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION]
+        self.revprops.import_revision_revprops(svn_revprops, foreign_revid, rev)
 
     def import_revision_fileprops(self, fileprops, foreign_revid, rev):
         if fileprops.has_key(mapping.SVN_PROP_BZR_REQUIRED_FEATURES):

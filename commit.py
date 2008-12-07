@@ -551,7 +551,8 @@ class SvnCommitBuilder(RootCommitBuilder):
             self.mapping.export_fileid_map_revprops(fileids, self._svn_revprops)
             self.mapping.export_fileid_map_fileprops(fileids, self._svnprops)
             if self._config.get_log_strip_trailing_newline():
-                self.mapping.export_message(message, self._svn_revprops, self._svnprops)
+                self.mapping.export_message_revprops(message, self._svn_revprops)
+                self.mapping.export_message_fileprops(message, self._svnprops)
                 message = message.rstrip("\n")
         if not self.supports_custom_revprops:
             self._svn_revprops = {}

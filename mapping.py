@@ -518,8 +518,11 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError(self.export_revision_fileprops)
 
-    def export_message(self, log, revprops, fileprops):
-        raise NotImplementedError(self.export_message)
+    def export_message_revprops(self, log, revprops):
+        raise NotImplementedError(self.export_message_revprops)
+
+    def export_message_fileprops(self, log, fileprops):
+        raise NotImplementedError(self.export_message_fileprops)
 
     def get_revision_id_revprops(self, revprops):
         raise NotImplementedError(self.get_revision_id_revprops)
@@ -700,7 +703,7 @@ class BzrSvnMappingFileProps(object):
             old = svn_fileprops.get(SVN_PROP_BZR_REVISION_ID+self.name, "")
             svn_fileprops[SVN_PROP_BZR_REVISION_ID+self.name] = old + "%d %s\n" % (revno, revision_id)
 
-    def export_message(self, message, revprops, fileprops):
+    def export_message_fileprops(self, message, fileprops):
         fileprops[SVN_PROP_BZR_LOG] = message.encode("utf-8")
 
     def get_revision_id_revprops(self, revprops):
@@ -809,7 +812,7 @@ class BzrSvnMappingRevProps(object):
         revno = int(revprops[SVN_REVPROP_BZR_REVNO])
         return (revno, revid)
 
-    def export_message(self, message, revprops, fileprops):
+    def export_message_revprops(self, message, revprops):
         revprops[SVN_REVPROP_BZR_LOG] = message.encode("utf-8")
 
     def export_revision_revprops(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
