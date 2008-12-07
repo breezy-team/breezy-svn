@@ -362,7 +362,9 @@ class RevisionMetadata(object):
         return self._import_from_props(None,
                 find_mapping_fileprops,
                 find_mapping_revprops,
-                None, self.consider_bzr_fileprops)
+                None, self.consider_bzr_fileprops,
+                revprops_acceptable=lambda x: True, 
+                revprops_sufficient=lambda x: True)
 
     def _get_stored_lhs_parent_revid(self, mapping):
         return self._import_from_props(mapping, 
@@ -570,24 +572,33 @@ class RevisionMetadata(object):
         self._import_from_props(mapping, 
             lambda changed_fileprops: mapping.import_revision_fileprops(changed_fileprops, rev),
             lambda revprops: mapping.import_revision_revprops(revprops, rev),
-            False, self.consider_bzr_fileprops, check_branch_root=False)
+            False, self.consider_bzr_fileprops, 
+            lambda x: True)
 
         rev.svn_meta = self
 
         return rev
 
     def _import_from_props(self, mapping, fileprop_fn, revprop_fn, default,
-                           consider_fileprops_fn, check_branch_root=True):
+                           consider_fileprops_fn, 
+                           revprops_acceptable=None,
+                           revprops_sufficient=None):
         can_use_revprops = (mapping is None or mapping.can_use_revprops)
         can_use_fileprops = (mapping is None or mapping.can_use_fileprops)
+        if revprops_acceptable is None:
+            def revprops_acceptable(revprops):
+                return (mapping.get_branch_root(revprops) == self.branch_path)
+        if revprops_sufficient is None:
+            def revprops_sufficient(revprops):
+                return mapping.revprops_complete(revprops)
 
         # Check revprops if self.knows_revprops() and can_use_revprops
         if can_use_revprops and self.knows_revprops():
             revprops = self.get_revprops()
-            if (mapping is None or 
-                (not check_branch_root and mapping.revprops_complete(revprops)) or
-                mapping.get_branch_root(revprops) == self.branch_path):
-                return revprop_fn(revprops)
+            if revprops_acceptable(revprops):
+                ret = revprop_fn(revprops)
+                if revprops_sufficient(revprops):
+                    return ret
             can_use_revprops = False
 
         # Check changed_fileprops if self.knows_changed_fileprops() and 
@@ -601,12 +612,14 @@ class RevisionMetadata(object):
         # Check revprops if the last descendant has bzr:check-revprops set;
         #   if it has and the revnum there is < self.revnum
         if can_use_revprops and self.consider_bzr_revprops():
-            warn_slow_revprops()
+            if self.revnum > 0:
+                # revision 0 is not included by svn_ra_get_log()
+                warn_slow_revprops()
             revprops = self.get_revprops()
-            if (mapping is None or 
-                (not check_branch_root and mapping.revprops_complete(revprops)) or 
-                mapping.get_branch_root(revprops) == self.branch_path):
-                return revprop_fn(revprops)
+            if revprops_acceptable(revprops):
+                ret = revprop_fn(revprops)
+                if revprops_sufficient(revprops):
+                    return ret
 
         # Check whether we should consider file properties at all 
         # for this revision, if we should -> check fileprops
