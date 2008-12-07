@@ -114,6 +114,16 @@ class ReposConfigTests(TestCaseInTempDir):
         c.set_user_option("default-mapping", "v8")
         self.assertEquals("v8", c.get_default_mapping())
 
+    def test_use_cache(self):
+        c = SvnRepositoryConfig("blabla-cache")
+        self.assertEquals(None, c.get_use_cache())
+        c.set_user_option("use-cache", "True")
+        self.assertEquals(set(["log", "revids", "fileids"]), c.get_use_cache())
+        c.set_user_option("use-cache", ["log", "revids"])
+        self.assertEquals(set(["log", "revids"]), c.get_use_cache())
+        c.set_user_option("use-cache", "False")
+        self.assertEquals(set([]), c.get_use_cache())
+
 
 class BranchConfigTests(SubversionTestCase):
     def setUp(self):

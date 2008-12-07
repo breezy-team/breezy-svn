@@ -156,8 +156,9 @@ class SvnRepositoryConfig(IniBasedConfig):
                 ret = set([val])
             else:
                 ret = set(val)
-            if len(ret - set(["log", "fileids", "revids"])) == 0:
+            if len(ret - set(["log", "fileids", "revids"])) != 0:
                 raise BzrError("Invalid setting 'use-cache': %r" % val)
+            return ret
         except KeyError:
             return None
 

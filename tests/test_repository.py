@@ -112,59 +112,51 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         self.assertFalse(repos.seen_bzr_revprops())
 
     def test_find_children_empty(self):
-        repos_url = self.make_repository("a")
-
-        cb = self.get_commit_editor(repos_url)
+        cb = self.get_commit_editor(self.repos_url)
         cb.add_dir("trunk")
         cb.close()
 
-        walker = Repository.open(repos_url)
+        walker = Repository.open(self.repos_url)
 
         self.assertEqual([], list(walker.find_children("trunk", 1)))
 
     def test_find_children_one(self):
-        repos_url = self.make_repository("a")
-
-        cb = self.get_commit_editor(repos_url)
+        cb = self.get_commit_editor(self.repos_url)
         t = cb.add_dir("trunk")
         t.add_file("trunk/data")
         cb.close()
 
-        walker = Repository.open(repos_url)
+        walker = Repository.open(self.repos_url)
 
         self.assertEqual(['trunk/data'], list(walker.find_children("trunk", 1)))
 
     def test_find_children_nested(self):
-        repos_url = self.make_repository("a")
-
-        cb = self.get_commit_editor(repos_url)
+        cb = self.get_commit_editor(self.repos_url)
         t = cb.add_dir("trunk")
         td = t.add_dir("trunk/data")
         td.add_file("trunk/data/bla")
         t.add_file("trunk/file")
         cb.close()
 
-        walker = Repository.open(repos_url)
+        walker = Repository.open(self.repos_url)
 
         self.assertEqual(
                 set(['trunk/data', 'trunk/data/bla', 'trunk/file']), 
                 set(walker.find_children("trunk", 1)))
 
     def test_find_children_later(self):
-        repos_url = self.make_repository("a")
-
-        cb = self.get_commit_editor(repos_url)
+        cb = self.get_commit_editor(self.repos_url)
         t = cb.add_dir("trunk")
         td = t.add_dir("trunk/data")
         td.add_file("trunk/data/bla")
         cb.close()
 
-        cb = self.get_commit_editor(repos_url)
+        cb = self.get_commit_editor(self.repos_url)
         t = cb.open_dir("trunk")
         t.add_file("trunk/file")
         cb.close()
         
-        walker = Repository.open(repos_url)
+        walker = Repository.open(self.repos_url)
 
         self.assertEqual(set(['trunk/data', 'trunk/data/bla']), 
                 set(walker.find_children("trunk", 1)))
@@ -173,9 +165,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
 
 
     def test_find_children_copy(self):
-        repos_url = self.make_repository("a")
-
-        cb = self.get_commit_editor(repos_url)
+        cb = self.get_commit_editor(self.repos_url)
         t = cb.add_dir("trunk")
         td = t.add_dir("trunk/data")
         td.add_file("trunk/data/bla").modify()
@@ -184,13 +174,13 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         db.add_file("trunk/db/f2").modify()
         cb.close()
 
-        cb = self.get_commit_editor(repos_url)
+        cb = self.get_commit_editor(self.repos_url)
         t = cb.open_dir("trunk")
         td = t.open_dir("trunk/data")
         td.add_dir("trunk/data/fg", "trunk/db")
         cb.close()
 
-        walker = Repository.open(repos_url)
+        walker = Repository.open(self.repos_url)
 
         self.assertEqual(set(['trunk/data', 'trunk/data/bla', 
                           'trunk/data/fg', 'trunk/data/fg/f1', 
@@ -199,9 +189,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
                 set(walker.find_children("trunk", 2)))
 
     def test_find_children_copy_del(self):
-        repos_url = self.make_repository("a")
-
-        cb = self.get_commit_editor(repos_url)
+        cb = self.get_commit_editor(self.repos_url)
         t = cb.add_dir("trunk")
         td = t.add_dir("trunk/data")
         td.add_file("trunk/data/bla")
@@ -210,20 +198,20 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         db.add_file("trunk/db/f2")
         cb.close()
 
-        cb = self.get_commit_editor(repos_url)
+        cb = self.get_commit_editor(self.repos_url)
         t = cb.open_dir("trunk")
         td = t.open_dir("trunk/data")
         td.add_dir("trunk/data/fg", "trunk/db")
         cb.close()
 
-        cb = self.get_commit_editor(repos_url)
+        cb = self.get_commit_editor(self.repos_url)
         t = cb.open_dir("trunk")
         td = t.open_dir("trunk/data")
         fg = td.open_dir("trunk/data/fg")
         fg.delete("trunk/data/fg/f2")
         cb.close()
 
-        walker = Repository.open(repos_url)
+        walker = Repository.open(self.repos_url)
 
         self.assertEqual(set(['trunk/data', 'trunk/data/bla', 
                           'trunk/data/fg', 'trunk/data/fg/f1', 'trunk/db',

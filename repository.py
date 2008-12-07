@@ -149,10 +149,7 @@ class SvnRepository(foreign.ForeignRepository):
         use_cache = self.get_config().get_use_cache()
 
         if use_cache is None:
-            use_cache = set(["fileids", "revids"])
-            if (self.transport.has_capability("commit-revprops") and not 
-                self.transport.has_capability("log-revprops")):
-                use_cache.add("log")
+            use_cache = set(["fileids", "revids", "log"])
 
         if use_cache:
             cache_dir = self.create_cache_dir()
