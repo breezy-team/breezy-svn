@@ -31,6 +31,9 @@ from bzrlib.config import (
         STORE_GLOBAL,
         STORE_LOCATION,
         )
+from bzrlib.errors import (
+        BzrError,
+        )
 
 import os
 
@@ -142,10 +145,21 @@ class SvnRepositoryConfig(IniBasedConfig):
             return None
 
     def get_use_cache(self):
+        parser = self._get_parser()
         try:
-            return self._get_parser().get_bool(self.uuid, "use-cache")
+            if parser.get_bool(self.uuid, "use-cache"):
+                return set(["log", "fileids", "revids"])
+            return set()
+        except ValueError:
+            val = parser.get_value(self.uuid, "use-cache")
+            if not isinstance(val, list):
+                ret = set([val])
+            else:
+                ret = set(val)
+            if len(ret - set(["log", "fileids", "revids"])) == 0:
+                raise BzrError("Invalid setting 'use-cache': %r" % val)
         except KeyError:
-            return True
+            return None
 
     def get_log_strip_trailing_newline(self):
         """Check whether or not trailing newlines should be stripped in the 

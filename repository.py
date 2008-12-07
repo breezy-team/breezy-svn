@@ -148,15 +148,28 @@ class SvnRepository(foreign.ForeignRepository):
 
         use_cache = self.get_config().get_use_cache()
 
+        if use_cache is None:
+            use_cache = set(["fileids", "revids"])
+            if (self.transport.has_capability("commit-revprops") and not 
+                self.transport.has_capability("log-revprops")):
+                use_cache.add("log")
+
         if use_cache:
             cache_dir = self.create_cache_dir()
+
+        if "log" in use_cache or "revids" in use_cache:
             cache_file = os.path.join(cache_dir, 'cache-v%d' % CACHE_DB_VERSION)
             if not cachedbs().has_key(cache_file):
                 cachedbs()[cache_file] = cache.connect_cachefile(cache_file)
             self.cachedb = cachedbs()[cache_file]
+
+        if "log" in use_cache:
             self._log = logwalker.CachingLogWalker(self._log, cache_db=self.cachedb)
+
+        if "fileids" in use_cache:
             cachedir_transport = get_transport(cache_dir)
             self.fileid_map = CachingFileIdMap(cachedir_transport, self.fileid_map)
+        if "revids" in use_cache:
             self.revmap = CachingRevidMap(self.revmap, self.cachedb)
             self._real_parents_provider = DiskCachingParentsProvider(self._real_parents_provider, cachedir_transport)
 

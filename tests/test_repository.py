@@ -118,7 +118,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         cb.add_dir("trunk")
         cb.close()
 
-        walker = Repository.open(repos_url))
+        walker = Repository.open(repos_url)
 
         self.assertEqual([], list(walker.find_children("trunk", 1)))
 
@@ -130,7 +130,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         t.add_file("trunk/data")
         cb.close()
 
-        walker = Repository.open(repos_url))
+        walker = Repository.open(repos_url)
 
         self.assertEqual(['trunk/data'], list(walker.find_children("trunk", 1)))
 
@@ -144,7 +144,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         t.add_file("trunk/file")
         cb.close()
 
-        walker = Repository.open(repos_url))
+        walker = Repository.open(repos_url)
 
         self.assertEqual(
                 set(['trunk/data', 'trunk/data/bla', 'trunk/file']), 
@@ -164,7 +164,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         t.add_file("trunk/file")
         cb.close()
         
-        walker = Repository.open(repos_url))
+        walker = Repository.open(repos_url)
 
         self.assertEqual(set(['trunk/data', 'trunk/data/bla']), 
                 set(walker.find_children("trunk", 1)))
@@ -190,7 +190,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         td.add_dir("trunk/data/fg", "trunk/db")
         cb.close()
 
-        walker = Repository.open(repos_url))
+        walker = Repository.open(repos_url)
 
         self.assertEqual(set(['trunk/data', 'trunk/data/bla', 
                           'trunk/data/fg', 'trunk/data/fg/f1', 
@@ -223,7 +223,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         fg.delete("trunk/data/fg/f2")
         cb.close()
 
-        walker = Repository.open(repos_url))
+        walker = Repository.open(repos_url)
 
         self.assertEqual(set(['trunk/data', 'trunk/data/bla', 
                           'trunk/data/fg', 'trunk/data/fg/f1', 'trunk/db',
