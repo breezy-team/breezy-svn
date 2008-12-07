@@ -533,7 +533,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
         else:
             # Just inherit file id from previous 
             old_file_id = self.old_inventory.root.file_id
-            file_id = self._get_id_map().get("", old_file_id)
+            # At the moment, the root file id NEVER changes, except for the 
+            # first commit.
+            # file_id = self._get_map_id("")
+            file_id = old_file_id
             file_parents = [self.old_inventory.root.revision]
 
         assert isinstance(file_id, str)

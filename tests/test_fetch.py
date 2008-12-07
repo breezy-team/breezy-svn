@@ -342,8 +342,13 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(RootLayout())
         to_bzrdir = BzrDir.create("f", format.get_rich_root_format())
         repo = to_bzrdir.create_repository()
-        repo.fetch(oldrepos, oldrepos.generate_revision_id(3, "branch2", 
-                   oldrepos.get_mapping()))
+        last_rev = oldrepos.generate_revision_id(3, "branch2", 
+            oldrepos.get_mapping())
+        repo.fetch(oldrepos, last_rev)
+        self.assertEquals(repo.get_inventory(last_rev).root.file_id,
+            oldrepos.get_mapping().generate_file_id(
+                oldrepos.uuid, 1, "branch1", u""))
+
 
     def test_fetch_replace(self):
         repos_url = self.make_repository('d')
