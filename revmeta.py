@@ -29,6 +29,9 @@ from bzrlib.foreign import (
 from bzrlib.revision import (
         NULL_REVISION, 
         )
+from bzrlib.trace import (
+        warning,
+        )
 from bzrlib.plugins.svn import (
         changes, 
         errors as svn_errors, 
@@ -43,6 +46,7 @@ from bzrlib.plugins.svn.mapping import (
         is_bzr_revision_fileprops, 
         parse_svn_revprops,
         SVN_REVPROP_BZR_SIGNATURE, 
+        SVN_PROP_BZR_REVPROP_REDIRECT,
         )
 from bzrlib.plugins.svn.svk import (
         estimate_svk_ancestors,
@@ -55,6 +59,15 @@ import bisect
 from collections import defaultdict
 from functools import partial
 from itertools import ifilter, imap
+
+
+_warned_slow_revprops = False
+
+def warn_slow_revprops():
+    global _warned_slow_revprops
+    if not _warned_slow_revprops:
+        warning("Upgrade to Subversion 1.5 or higher for faster retrieving of revision properties.")
+        _warned_slow_revprops = True
 
 
 class MetaHistoryIncomplete(Exception):
@@ -105,6 +118,7 @@ class RevisionMetadata(object):
         self._is_bzr_revision = None
         self._direct_lhs_parent_known = False
         self._consider_bzr_fileprops = None
+        self._consider_bzr_revprops = None
         self._consider_svk_fileprops = None
         self._estimated_fileprop_ancestors = {}
         self.metaiterators = set()
@@ -553,24 +567,48 @@ class RevisionMetadata(object):
         self._import_from_props(mapping, 
             lambda changed_fileprops: mapping.import_revision_fileprops(changed_fileprops, rev),
             lambda revprops: mapping.import_revision_revprops(revprops, rev),
-            False)
+            False, check_branch_root=False)
 
         rev.svn_meta = self
 
         return rev
 
-    def _import_from_props(self, mapping, fileprop_fn, revprop_fn, default):
-        # FIXME: Magic happens here
-        # FIXME: Check whatever is available first
-        if mapping is None or mapping.can_use_fileprops:
+    def _import_from_props(self, mapping, fileprop_fn, revprop_fn, default,
+                           check_branch_root=True):
+        can_use_revprops = (mapping is None or mapping.can_use_revprops)
+        can_use_fileprops = (mapping is None or mapping.can_use_fileprops)
+        # Check revprops if self.knows_revprops() and can_use_revprops
+        if can_use_revprops and self.knows_revprops():
+            if (mapping is None or not check_branch_root or 
+                mapping.get_branch_root(self.get_revprops()) == self.branch_path):
+                ret = revprop_fn(self.get_revprops())
+                if ret != default:
+                    return ret
+
+        # Check changed_fileprops if self.knows_changed_fileprops() and 
+        # can_use_fileprops
+        if can_use_fileprops and self.knows_changed_fileprops():
             ret = fileprop_fn(self.get_changed_fileprops())
             if ret != default:
                 return ret
-        if mapping is not None and mapping.must_use_fileprops:
-            return default
-        if mapping is None or mapping.can_use_revprops:
-            if mapping is None or mapping.get_branch_root(self.get_revprops()) == self.branch_path:
-                return revprop_fn(self.get_revprops())
+
+        # Check revprops if the last descendant has bzr:check-revprops set;
+        #   if it has and the revnum there is < self.revnum
+        if can_use_revprops and self.consider_bzr_revprops():
+            warn_slow_revprops()
+            if (mapping is None or not check_branch_root or 
+                mapping.get_branch_root(self.get_revprops()) == self.branch_path):
+                ret = revprop_fn(self.get_revprops())
+                if ret != default:
+                    return ret
+
+        # Check whether we should consider file properties at all 
+        # for this revision, if we should -> check fileprops
+        if can_use_fileprops and self.consider_bzr_fileprops():
+            ret = fileprop_fn(self.get_changed_fileprops())
+            if ret != default:
+                return ret
+
         return default
 
     def get_fileid_map(self, mapping):
@@ -590,6 +628,20 @@ class RevisionMetadata(object):
         return self._import_from_props(mapping,
             mapping.import_text_parents_fileprops, 
             mapping.import_text_parents_revprops, {})
+
+    def consider_bzr_revprops(self):
+        """See if bzr revision properties should be checked at all.
+
+        """
+        if self._consider_bzr_revprops is not None:
+            return self._consider_bzr_revprops
+        if not self.is_changes_root():
+            self._consider_bzr_revprops = False
+        else:
+            # FIXME: Check nearest descendant with bzr:see-revprops set
+            # and return True if revnum in that property < self.revnum
+            self._consider_bzr_revprops = True
+        return self._consider_bzr_revprops
 
     def consider_bzr_fileprops(self):
         """See if any bzr file properties should be checked at all.

@@ -5,9 +5,9 @@ mappingv4:
  - set-revprops upgrades v3 stuff as well?
  - set-revprops should refuse to work when there is no commit-revprops capability
  - use special fileproperty bzr:use-revprops for when log-revprops is not available
+- make distinction between "don't know" and "empty" in _import_from_properties
 - automatically disable cache in some situations, allow partial cache?
 - in-memory caching of revid mapping (LRUCache ?)
-- warn when retrieving revision properties slowly
 - inventory problem that shows up in bigboard, evolution
 
 more tests:
