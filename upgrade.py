@@ -16,20 +16,25 @@
 """Upgrading revisions made with older versions of the mapping."""
 
 from bzrlib import ui
+from bzrlib.trace import mutter
 
 from itertools import ifilter
 
-from subvertpy import SubversionException, ERR_FS_NOT_DIRECTORY
+from subvertpy import SubversionException, ERR_FS_NOT_DIRECTORY, properties
+
+from bzrlib.plugins.svn import changes, logwalker, mapping
+from bzrlib.plugins.svn.commit import set_svn_revprops
 
 
-def export_as_mapping(revmeta, revno, old_mapping, new_mapping):
+def export_as_mapping(revmeta, graph, old_mapping, new_mapping):
     new_revprops = dict(revmeta.get_revprops().iteritems())
     rev = revmeta.get_revision(old_mapping)
-    new_mapping.export_revision_revprops(bp, rev.timestamp, rev.timezone, rev.committer, rev.properties, rev.revision_id, revno, rev.parent_ids, new_revprops)
+    revno = graph.find_distance_to_null(rev.revision_id, [])
+    new_mapping.export_revision_revprops(revmeta.branch_path, rev.timestamp, rev.timezone, rev.committer, rev.properties, rev.revision_id, revno, rev.parent_ids, new_revprops)
     new_mapping.export_fileid_map_revprops(revmeta.get_fileid_map(new_mapping), new_revprops)
     new_mapping.export_text_parents_revprops(revmeta.get_text_parents(new_mapping), new_revprops)
     new_mapping.export_text_revisions_revprops(revmeta.get_text_revisions(new_mapping), new_revprops)
-    if rev.message != mapping.parse_svn_log(revprops.get(properties.PROP_REVISION_LOG)):
+    if rev.message != mapping.parse_svn_log(revmeta.get_revprops().get(properties.PROP_REVISION_LOG)):
         new_mapping.export_message_revprops(rev.message, new_revprops)
     return new_revprops
 
@@ -40,26 +45,23 @@ def upgrade_revprops(repository, new_mapping, from_revnum=0, to_revnum=None):
     raise NotImplementedError()
 
 
-def set_revprops_current(repository, from_revnum=0, to_revnum=None):
+def set_revprops(repository, from_revnum=0, to_revnum=None):
     """Set bzr-svn revision properties for existing bzr-svn revisions.
 
     :param repository: Subversion Repository object.
     :param new_mapping: Mapping to upgrade to
     """
-    from bzrlib.plugins.svn import changes, logwalker, mapping
-    from subvertpy import properties
     num_changed = 0
     def set_skip_revprop(revnum, revprops):
         if not mapping.SVN_REVPROP_BZR_SKIP in revprops:
-            repository.transport.change_rev_prop(revnum, mapping.SVN_REVPROP_BZR_SKIP, "")
+            set_svn_revprops(repository, revnum, {mapping.SVN_REVPROP_BZR_SKIP: ""})
             return 1
-        return 1
+        return 0
     if to_revnum is None:
         to_revnum = repository.get_latest_revnum()
     graph = repository.get_graph()
     assert from_revnum <= to_revnum
     pb = ui.ui_factory.nested_progress_bar()
-    logcache = getattr(repository._log, "cache", None)
     try:
         for (paths, revnum, revprops) in repository._log.iter_changes(None, to_revnum, from_revnum, pb=pb):
             if revnum == 0:
@@ -76,7 +78,7 @@ def set_revprops_current(repository, from_revnum=0, to_revnum=None):
                 continue
             revmeta = repository._revmeta_provider.get_revision(bp, revnum, paths, revprops)
             try:
-                old_mapping = revmeta.get_original_mapping()
+                old_mapping = mapping.find_mapping_fileprops(revmeta.get_changed_fileprops())
             except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                 num_changed += set_skip_revprop(revnum, revprops)
                 continue
@@ -85,13 +87,9 @@ def set_revprops_current(repository, from_revnum=0, to_revnum=None):
                 continue
             assert old_mapping.can_use_revprops or bp is not None
             assert bp is not None
-            revno = graph.find_distance_to_null(rev.revision_id, [])
-            new_revprops = export_as_mapping(revmeta, revno, old_mapping, old_mapping)
-            changed_revprops = dict(ifilter(lambda (k,v): k not in revprops or revprops[k] != v, new_revprops.iteritems()))
-            if logcache is not None:
-                logcache.drop_revprops(revnum)
-            for k, v in changed_revprops.iteritems():
-                repository.transport.change_rev_prop(revnum, k, v)
+            new_revprops = export_as_mapping(revmeta, graph, old_mapping, old_mapping)
+            changed_revprops = dict(((k,v) for k,v in new_revprops.iteritems() if k not in revprops or revprops[k] != v))
+            set_svn_revprops(repository, revnum, changed_revprops)
             if changed_revprops != {}:
                 num_changed += 1
             # Might as well update the cache while we're at it

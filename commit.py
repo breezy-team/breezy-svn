@@ -132,7 +132,7 @@ def update_mergeinfo(repository, graph, oldvalue, baserevid, merges):
     return None
 
 
-def set_svn_revprops(transport, revnum, revprops):
+def set_svn_revprops(repository, revnum, revprops):
     """Attempt to change the revision properties on the
     specified revision.
 
@@ -140,9 +140,12 @@ def set_svn_revprops(transport, revnum, revprops):
     :param revnum: Revision number of revision to change metadata of.
     :param revprops: Dictionary with revision properties to set.
     """
+    logcache = getattr(repository._log, "cache", None)
     for (name, value) in revprops.iteritems():
         try:
-            transport.change_rev_prop(revnum, name, value)
+            repository.transport.change_rev_prop(revnum, name, value)
+            if logcache is not None:
+                logcache.insert_revprop(revnum, name, value)
         except SubversionException, (_, ERR_REPOS_DISABLED_FEATURE):
             raise RevpropChangeFailed(name)
 
@@ -397,7 +400,7 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         self._svn_revprops = {}
         self._svnprops = lazy_dict({}, lambda: dict(self._base_branch_props.iteritems()))
-        (self.set_custom_revprops, self.set_custom_fileprops) = self.repository._properties_to_set(mapping)
+        (self.set_custom_revprops, self.set_custom_fileprops) = self.repository._properties_to_set(self.mapping)
         if self.supports_custom_revprops:
             # If possible, submit signature directly
             if opt_signature is not None:
@@ -660,7 +663,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 new_revprops[properties.PROP_REVISION_AUTHOR] = self._committer.encode("utf-8")
             if properties.PROP_REVISION_DATE in self._override_svn_revprops:
                 new_revprops[properties.PROP_REVISION_DATE] = properties.time_to_cstring(1000000*self._timestamp)
-            set_svn_revprops(self.repository.transport, result_revision, new_revprops)
+            set_svn_revprops(self.repository, result_revision, new_revprops)
             self._svn_revprops.update(new_revprops)
 
         self.revmeta = self.repository._revmeta_provider.get_revision(self.branch_path, result_revision, 
