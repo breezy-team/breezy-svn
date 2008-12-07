@@ -96,7 +96,7 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
         return None
 
     def get_lhs_parent_revprops(self, svn_revprops):
-        return self.revprops.get_lhs_parent(svn_revprops)
+        return self.revprops.get_lhs_parent_revprops(svn_revprops)
 
     def get_rhs_parents_revprops(self, svn_revprops):
         return self.revprops.get_rhs_parents_revprops(svn_revprops)
@@ -154,18 +154,18 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
     def export_text_revisions_fileprops(self, text_revisions, fileprops):
         self.fileprops.export_text_revisions_fileprops(text_revisions, fileprops)
 
-    def import_revision_revprops(self, svn_revprops, foreign_revid, rev):
+    def import_revision_revprops(self, svn_revprops, rev):
         if svn_revprops.has_key(mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES):
             features = mapping.parse_required_features_property(svn_revprops[mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES])
             assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
         assert svn_revprops.get(mapping.SVN_REVPROP_BZR_MAPPING_VERSION) in (None, self.name), "unknown mapping: %s" % svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION]
-        self.revprops.import_revision_revprops(svn_revprops, foreign_revid, rev)
+        self.revprops.import_revision_revprops(svn_revprops, rev)
 
-    def import_revision_fileprops(self, fileprops, foreign_revid, rev):
+    def import_revision_fileprops(self, fileprops, rev):
         if fileprops.has_key(mapping.SVN_PROP_BZR_REQUIRED_FEATURES):
             features = mapping.parse_required_features_property(fileprops[mapping.SVN_PROP_BZR_REQUIRED_FEATURES])
             assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
-        self.fileprops.import_revision_fileprops(fileprops, foreign_revid, rev)
+        self.fileprops.import_revision_fileprops(fileprops, rev)
 
     def get_mandated_layout(self, repository):
         return None

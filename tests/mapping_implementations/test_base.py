@@ -117,7 +117,7 @@ class RoundtripMappingTests(TestCase):
         except NotImplementedError:
             raise TestNotApplicable
         targetrev = Revision(None)
-        self.mapping.import_revision_fileprops(changed_props(fileprops), ("someuuid", "somebp", 4), targetrev)
+        self.mapping.import_revision_fileprops(changed_props(fileprops), targetrev)
         self.assertEquals("My Commit message", targetrev.message)
 
     def test_message_revprops(self):
@@ -134,7 +134,7 @@ class RoundtripMappingTests(TestCase):
         except NotImplementedError:
             raise TestNotApplicable
         targetrev = Revision(None)
-        self.mapping.import_revision_revprops(revprops, ("someuuid", "somebp", 4), targetrev)
+        self.mapping.import_revision_revprops(revprops, targetrev)
         self.assertEquals("My Commit message", targetrev.message)
 
     def test_revision_fileprops(self):
@@ -147,7 +147,7 @@ class RoundtripMappingTests(TestCase):
         self.mapping.export_revision_fileprops(432432432.0, 0, "somebody", 
                                      {"arevprop": "val" }, "arevid", 4, ["parent", "merge1"], fileprops)
         targetrev = Revision(None)
-        self.mapping.import_revision_fileprops(changed_props(fileprops), ("someuuid", "somebp", 4), targetrev)
+        self.mapping.import_revision_fileprops(changed_props(fileprops), targetrev)
         self.assertEquals(targetrev.committer, "somebody")
         self.assertEquals(targetrev.properties, {"arevprop": "val"})
         self.assertEquals(targetrev.timestamp, 432432432.0)
@@ -163,7 +163,7 @@ class RoundtripMappingTests(TestCase):
                                      {"arevprop": "val" }, "arevid", 4, ["parent", "merge1"], revprops)
         targetrev = Revision(None)
         revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
-        self.mapping.import_revision_revprops(revprops, ("someuuid", "somebp", 4), targetrev)
+        self.mapping.import_revision_revprops(revprops, targetrev)
         self.assertEquals(targetrev.committer, "somebody")
         self.assertEquals(targetrev.properties, {"arevprop": "val"})
         self.assertEquals(targetrev.timestamp, 432432432.0)
@@ -209,7 +209,7 @@ class RoundtripMappingTests(TestCase):
         rev = Revision(None)
         self.mapping.import_revision_revprops({"svn:log": "A log msg",
                                       "svn:author": "Somebody",
-                                      "svn:date": "2008-11-03T09:33:00.716938Z"}, ("someuuid", "trunk", 23), rev)
+                                      "svn:date": "2008-11-03T09:33:00.716938Z"},  rev)
         self.assertEquals("Somebody", rev.committer)
         self.assertEquals("A log msg", rev.message)
         self.assertEquals({}, rev.properties)

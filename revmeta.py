@@ -41,6 +41,7 @@ from bzrlib.plugins.svn.mapping import (
         get_roundtrip_ancestor_revids,
         is_bzr_revision_revprops, 
         is_bzr_revision_fileprops, 
+        parse_svn_revprops,
         SVN_REVPROP_BZR_SIGNATURE, 
         )
 from bzrlib.plugins.svn.svk import (
@@ -548,11 +549,10 @@ class RevisionMetadata(object):
                               revision_id=self.get_revision_id(mapping), 
                               parent_ids=parent_ids)
 
-        mapping.import_revision_revprops(self.get_revprops(), 
-                                self.get_foreign_revid(), rev)
+        parse_svn_revprops(self.get_revprops(), rev)
+        mapping.import_revision_revprops(self.get_revprops(), rev)
 
-        mapping.import_revision_fileprops(self.get_changed_fileprops(), 
-                                self.get_foreign_revid(), rev)
+        mapping.import_revision_fileprops(self.get_changed_fileprops(), rev)
 
         rev.svn_meta = self
 
@@ -560,11 +560,15 @@ class RevisionMetadata(object):
 
     def _import_from_props(self, mapping, fileprop_fn, revprop_fn, default):
         # FIXME: Magic happens here
-        ret = fileprop_fn(self.get_changed_fileprops())
-        if ret == default:
-            return ret
-        if mapping is None or mapping.get_branch_root(self.get_revprops()) == self.branch_path:
-            return revprop_fn(self.get_revprops())
+        if mapping is None or mapping.can_use_fileprops:
+            ret = fileprop_fn(self.get_changed_fileprops())
+            if ret != default:
+                return ret
+        if mapping is not None and mapping.must_use_file_props:
+            return default
+        if mapping is None or mapping.can_use_revprops:
+            if mapping is None or mapping.get_branch_root(self.get_revprops()) == self.branch_path:
+                return revprop_fn(self.get_revprops())
         return default
 
     def get_fileid_map(self, mapping):

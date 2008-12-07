@@ -370,23 +370,21 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError
 
-    def import_revision_revprops(self, revprops, foreign_revid, rev):
+    def import_revision_revprops(self, revprops, rev):
         """Update a Revision object from Subversion revision and branch 
         properties.
 
         :param revprops: Dictionary with Subversion revision properties.
-        :param revnum: Revision number in Subversion.
         :param rev: Revision object to import data into.
         """
         raise NotImplementedError(self.import_revision_revprops)
 
-    def import_revision_fileprops(self, fileprops, foreign_revid, rev):
+    def import_revision_fileprops(self, fileprops, rev):
         """Update a Revision object from Subversion revision and branch 
         properties.
 
         :param fileprops: Dictionary with Subversion file properties on the 
                           branch root.
-        :param revnum: Revision number in Subversion.
         :param rev: Revision object to import data into.
         """
         raise NotImplementedError(self.import_revision_fileprops)
@@ -605,15 +603,15 @@ class BzrSvnMappingFileProps(object):
     def __init__(self, name):
         self.name = name
 
-    def import_revision_fileprops(self, fileprops, foreign_revid, rev):
+    def import_revision_fileprops(self, fileprops, rev):
         if SVN_PROP_BZR_LOG in fileprops:
             rev.message = fileprops[SVN_PROP_BZR_LOG][1]
         metadata = fileprops.get(SVN_PROP_BZR_REVISION_INFO)
         if metadata is not None:
             parse_revision_metadata(metadata[1], rev)
 
-    def import_revision_revprops(self, svn_revprops, foreign_revid, rev):
-        parse_svn_revprops(svn_revprops, rev)
+    def import_revision_revprops(self, svn_revprops, rev):
+        pass
 
     def import_text_parents_fileprops(self, fileprops):
         metadata = fileprops.get(SVN_PROP_BZR_TEXT_PARENTS)
@@ -748,11 +746,10 @@ class BzrSvnMappingFileProps(object):
 
 class BzrSvnMappingRevProps(object):
 
-    def import_revision_revprops(self, svn_revprops, foreign_revid, rev):
-        parse_svn_revprops(svn_revprops, rev)
+    def import_revision_revprops(self, svn_revprops, rev):
         parse_bzr_svn_revprops(svn_revprops, rev)
 
-    def import_revision_fileprops(self, fileprops, foreign_revid, rev):
+    def import_revision_fileprops(self, fileprops, rev):
         pass
 
     def import_fileid_map_revprops(self, svn_revprops):

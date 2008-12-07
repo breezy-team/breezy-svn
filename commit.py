@@ -395,21 +395,26 @@ class SvnCommitBuilder(RootCommitBuilder):
             self.repository.seen_bzr_revprops()):
             raise BzrError("Please upgrade your Subversion client libraries to 1.5 or higher to be able to commit with Subversion mapping %s" % self.mapping.name)
 
-        if self.supports_custom_revprops == True:
-            self._svn_revprops = {}
+        self._svn_revprops = {}
+        if self.supports_custom_revprops and self.mapping.can_use_revprops:
+            self.set_custom_revprops = True
+            self.set_custom_fileprops = self.mapping.must_use_fileprops
             # If possible, submit signature directly
             if opt_signature is not None:
                 self._svn_revprops[mapping.SVN_REVPROP_BZR_SIGNATURE] = opt_signature
         else:
-            self._svn_revprops = None
+            self.set_custom_fileprops = True
+            self.set_custom_revprops = False
         self._svnprops = lazy_dict({}, lambda: dict(self._base_branch_props.iteritems()))
         revno = self.base_revno + 1
-        self.mapping.export_revision_fileprops(
-            timestamp, timezone, committer, revprops, 
-            revision_id, revno, parents, self._svnprops)
-        self.mapping.export_revision_revprops(
-            self.branch_path, timestamp, timezone, committer, revprops, 
-            revision_id, revno, parents, self._svn_revprops)
+        if self.set_custom_fileprops:
+            self.mapping.export_revision_fileprops(
+                timestamp, timezone, committer, revprops, 
+                revision_id, revno, parents, self._svnprops)
+        if self.set_custom_revprops:
+            self.mapping.export_revision_revprops(
+                self.branch_path, timestamp, timezone, committer, revprops, 
+                revision_id, revno, parents, self._svn_revprops)
 
         if len(merges) > 0:
             old_svk_merges = self._base_branch_props.get(SVN_PROP_SVK_MERGE, "")
@@ -543,19 +548,20 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         if self.push_metadata:
             (fileids, text_revisions, text_parents) = self._determine_texts_identity()
-
-            self.mapping.export_text_revisions_revprops(text_revisions, self._svn_revprops)
-            self.mapping.export_text_revisions_fileprops(text_revisions, self._svnprops)
-            self.mapping.export_text_parents_revprops(text_parents, self._svn_revprops)
-            self.mapping.export_text_parents_fileprops(text_parents, self._svnprops)
-            self.mapping.export_fileid_map_revprops(fileids, self._svn_revprops)
-            self.mapping.export_fileid_map_fileprops(fileids, self._svnprops)
+            if self.set_custom_revprops:
+                self.mapping.export_text_revisions_revprops(text_revisions, self._svn_revprops)
+                self.mapping.export_text_parents_revprops(text_parents, self._svn_revprops)
+                self.mapping.export_fileid_map_revprops(fileids, self._svn_revprops)
+            if self.set_custom_fileprops:
+                self.mapping.export_text_revisions_fileprops(text_revisions, self._svnprops)
+                self.mapping.export_text_parents_fileprops(text_parents, self._svnprops)
+                self.mapping.export_fileid_map_fileprops(fileids, self._svnprops)
             if self._config.get_log_strip_trailing_newline():
-                self.mapping.export_message_revprops(message, self._svn_revprops)
-                self.mapping.export_message_fileprops(message, self._svnprops)
+                if self.set_custom_revprops:
+                    self.mapping.export_message_revprops(message, self._svn_revprops)
+                if self.set_custom_fileprops:
+                    self.mapping.export_message_fileprops(message, self._svnprops)
                 message = message.rstrip("\n")
-        if not self.supports_custom_revprops:
-            self._svn_revprops = {}
         self._svn_revprops[properties.PROP_REVISION_LOG] = message.encode("utf-8")
 
         try:

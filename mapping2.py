@@ -23,7 +23,6 @@ from bzrlib.plugins.svn.mapping import (
         BzrSvnMapping,
         escape_svn_path,
         unescape_svn_path,
-        parse_svn_revprops,
         )
 
 SVN_PROP_BZR_MERGE = 'bzr:merge'
@@ -39,6 +38,7 @@ class BzrSvnMappingv1(BzrSvnMapping):
     roundtripping = False
     revid_prefix = "svn-v1"
     restricts_branch_paths = True
+    can_use_fileprops= True
 
     def __init__(self, layout):
         super(BzrSvnMappingv1, self).__init__()
@@ -74,10 +74,10 @@ class BzrSvnMappingv1(BzrSvnMapping):
     def is_tag(self, tag_path):
         return False
 
-    def import_revision_revprops(self, svn_revprops, foreign_revid, rev):
-        parse_svn_revprops(svn_revprops, rev)
+    def import_revision_revprops(self, svn_revprops, rev):
+        pass
 
-    def import_revision_fileprops(self, fileprops, foreign_revid, rev):
+    def import_revision_fileprops(self, fileprops, rev):
         pass
 
     def generate_file_id(self, uuid, revnum, branch, inv_path):
@@ -148,6 +148,7 @@ class BzrSvnMappingv2(BzrSvnMappingv1):
     roundtripping = False
     revid_prefix = "svn-v2"
     restricts_branch_paths = True
+    can_use_fileprops = True
 
     @classmethod
     def revision_id_bzr_to_foreign(cls, revid):
