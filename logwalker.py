@@ -302,7 +302,7 @@ class CachingLogWalker(CacheTable):
             else:
                 next = changes.find_prev_location(revpaths, path, revnum)
 
-            revprops = lazy_dict({}, self.revprop_list, revnum)
+            revprops = self.revprop_list(revnum)
 
             if path == "" or changes.changes_path(revpaths, path, True):
                 assert isinstance(revnum, int)

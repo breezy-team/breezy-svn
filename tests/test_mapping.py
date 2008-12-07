@@ -29,7 +29,7 @@ from bzrlib.plugins.svn.mapping import (generate_revision_metadata, parse_revisi
                      escape_svn_path, unescape_svn_path, is_bzr_revision_fileprops,
                      get_roundtrip_ancestor_revids, is_bzr_revision_revprops)
 from bzrlib.plugins.svn.mapping2 import BzrSvnMappingv1, BzrSvnMappingv2
-from bzrlib.plugins.svn.mapping3 import BzrSvnMappingv3FileProps
+from bzrlib.plugins.svn.mapping3 import BzrSvnMappingv3
 from bzrlib.plugins.svn.mapping4 import BzrSvnMappingv4
 
 
@@ -154,11 +154,11 @@ class ParseRevisionIdTests(object):
                 mapping_registry.parse_revision_id("svn-v3:uuid:trunk:1"))
 
     def test_v3(self):
-        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv3FileProps(TrunkBranchingScheme())), 
+        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv3(TrunkBranchingScheme())), 
                 mapping_registry.parse_revision_id("svn-v3-trunk0:uuid:trunk:1"))
 
     def test_v3_undefined(self):
-        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv3FileProps(TrunkBranchingScheme())), 
+        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv3(TrunkBranchingScheme())), 
                 mapping_registry.parse_revision_id("svn-v3-undefined:uuid:trunk:1"))
 
     def test_v2(self):

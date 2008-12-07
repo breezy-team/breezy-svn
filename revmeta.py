@@ -251,7 +251,7 @@ class RevisionMetadata(object):
     def knows_revprops(self):
         """Check whether all revision properties can be cheaply retrieved."""
         revprops = self.get_revprops()
-        return isinstance(revprops, dict) or revprops.is_loaded or (isinstance(self._log, CachingLogWalker) and self._log.cache.has_all_revprops(self.revnum))
+        return isinstance(revprops, dict) or revprops.is_loaded
 
     def get_previous_fileprops(self):
         """Return the file properties set on the branch root before this 

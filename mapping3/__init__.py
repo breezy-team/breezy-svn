@@ -158,7 +158,7 @@ def config_set_scheme(repository, scheme, guessed_scheme, mandatory=False):
                             guessed_scheme_str, mandatory=mandatory)
 
 
-class BzrSvnMappingv3(mapping.BzrSvnMapping):
+class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevProps, mapping.BzrSvnMapping):
     """The third version of the mappings as used in the 0.4.x series.
 
     Relies exclusively on file properties, though 
@@ -191,7 +191,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMapping):
 
     @classmethod
     def from_revprops(cls, revprops):
-        return None
+        return cls()
 
     def get_mandated_layout(self, repository):
         return SchemeDerivedLayout(repository, self.scheme)
@@ -304,44 +304,3 @@ class BzrSvnMappingv3(mapping.BzrSvnMapping):
     @classmethod
     def get_test_instance(cls):
         return cls(NoBranchingScheme())
-
-
-class BzrSvnMappingv3FileProps(mapping.BzrSvnMappingFileProps, BzrSvnMappingv3):
-
-    def __init__(self, scheme, guessed_scheme=None):
-        BzrSvnMappingv3.__init__(self, scheme, guessed_scheme)
-        self.revprop_map = mapping.BzrSvnMappingRevProps()
-
-    def export_text_parents_revprops(self, text_parents, svn_revprops):
-        self.revprop_map.export_text_parents_revprops(text_parents, svn_revprops)
-
-    def export_text_revisions_revprops(self, text_revisions, svn_revprops):
-        self.revprop_map.export_text_revisions_revprops(text_revisions, svn_revprops)
-
-    def export_revision_revprops(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
-        self.revprop_map.export_revision_revprops(branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops)
-        svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION] = self.name
-
-    def revprops_complete(self, revprops):
-        return (mapping.SVN_REVPROP_BZR_MAPPING_VERSION in revprops)
-
-    def export_fileid_map_revprops(self, fileids, revprops):
-        self.revprop_map.export_fileid_map_revprops(fileids, revprops)
-
-    def import_fileid_map_revprops(self, revprops):
-        return self.revprop_map.import_fileid_map_revprops(revprops)
-
-    def import_text_revisions_revprops(self, revprops):
-        return self.revprop_map.import_text_revisions_revprops(revprops)
-
-    def import_text_parents_revprops(self, revprops):
-        return self.revprop_map.import_text_parents_revprops(revprops)
-
-    def import_revision_revprops(self, revprops, rev):
-        return self.revprop_map.import_revision_revprops(revprops, rev)
-
-    def export_message_revprops(self, log, revprops):
-        self.revprop_map.export_message_revprops(log, revprops)
-
-    def get_revision_id_revprops(self, revprops):
-        return self.revprop_map.get_revision_id_revprops(revprops)

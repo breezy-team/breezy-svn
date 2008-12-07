@@ -26,7 +26,7 @@ from bzrlib.plugins.svn import format
 from subvertpy import ra
 from bzrlib.plugins.svn.layout.standard import TrunkLayout, RootLayout
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_REVISION_ID, mapping_registry
-from bzrlib.plugins.svn.mapping3 import BzrSvnMappingv3FileProps, SVN_PROP_BZR_BRANCHING_SCHEME, set_property_scheme
+from bzrlib.plugins.svn.mapping3 import BzrSvnMappingv3, SVN_PROP_BZR_BRANCHING_SCHEME, set_property_scheme
 from bzrlib.plugins.svn.mapping3.scheme import NoBranchingScheme, ListBranchingScheme, InvalidSvnBranchPath
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.tests.test_mapping import sha1
@@ -35,32 +35,32 @@ from copy import copy
 
 class Mappingv3FilePropTests(TestCase):
     def setUp(self):
-        self.mapping = BzrSvnMappingv3FileProps(NoBranchingScheme())
+        self.mapping = BzrSvnMappingv3(NoBranchingScheme())
 
     def test_generate_revid(self):
         self.assertEqual("svn-v3-undefined:myuuid:branch:5", 
-                         BzrSvnMappingv3FileProps._generate_revision_id("myuuid", 5, "branch", "undefined"))
+                         BzrSvnMappingv3._generate_revision_id("myuuid", 5, "branch", "undefined"))
 
     def test_generate_revid_nested(self):
         self.assertEqual("svn-v3-undefined:myuuid:branch%2Fpath:5", 
-                  BzrSvnMappingv3FileProps._generate_revision_id("myuuid", 5, "branch/path", "undefined"))
+                  BzrSvnMappingv3._generate_revision_id("myuuid", 5, "branch/path", "undefined"))
 
     def test_generate_revid_special_char(self):
         self.assertEqual("svn-v3-undefined:myuuid:branch%2C:5", 
-             BzrSvnMappingv3FileProps._generate_revision_id("myuuid", 5, "branch\x2c", "undefined"))
+             BzrSvnMappingv3._generate_revision_id("myuuid", 5, "branch\x2c", "undefined"))
 
     def test_generate_revid_nordic(self):
         self.assertEqual("svn-v3-undefined:myuuid:branch%C3%A6:5", 
-             BzrSvnMappingv3FileProps._generate_revision_id("myuuid", 5, u"branch\xe6".encode("utf-8"), "undefined"))
+             BzrSvnMappingv3._generate_revision_id("myuuid", 5, u"branch\xe6".encode("utf-8"), "undefined"))
 
     def test_parse_revid_simple(self):
         self.assertEqual(("uuid", "", 4, "undefined"),
-                         BzrSvnMappingv3FileProps._parse_revision_id(
+                         BzrSvnMappingv3._parse_revision_id(
                              "svn-v3-undefined:uuid::4"))
 
     def test_parse_revid_nested(self):
         self.assertEqual(("uuid", "bp/data", 4, "undefined"),
-                         BzrSvnMappingv3FileProps._parse_revision_id(
+                         BzrSvnMappingv3._parse_revision_id(
                      "svn-v3-undefined:uuid:bp%2Fdata:4"))
 
     def test_generate_file_id_root(self):

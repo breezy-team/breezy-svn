@@ -78,8 +78,11 @@ class RevidMap(object):
         for revmeta in self.repos._revmeta_provider.iter_all_revisions(layout, None, from_revnum, to_revnum):
             if is_bzr_revision_revprops(revmeta.get_revprops()):
                 mapping = revmeta.get_original_mapping()
+                assert mapping is not None
                 revid = revmeta.get_revision_id(mapping)
                 if revid is not None:
+                    if mapping.get_branch_root(revmeta.get_revprops()) is None:
+                        import pdb; pdb.set_trace()
                     yield (revid, mapping.get_branch_root(revmeta.get_revprops()).strip("/"), revmeta.revnum, revmeta.revnum, mapping)
 
     def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None):

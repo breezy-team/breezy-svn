@@ -785,7 +785,7 @@ class BzrSvnMappingRevProps(object):
         revprops[SVN_REVPROP_BZR_LOG] = message.encode("utf-8")
 
     def export_revision_revprops(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
-
+        svn_revprops[SVN_REVPROP_BZR_MAPPING_VERSION] = self.name
         if timestamp is not None:
             svn_revprops[SVN_REVPROP_BZR_TIMESTAMP] = format_highres_date(timestamp, timezone)
 
@@ -810,6 +810,9 @@ class BzrSvnMappingRevProps(object):
         
         svn_revprops[SVN_REVPROP_BZR_REVNO] = str(revno)
         svn_revprops[SVN_REVPROP_BZR_USER_AGENT] = get_client_string()
+
+    def revprops_complete(self, revprops):
+        return (SVN_REVPROP_BZR_MAPPING_VERSION in revprops)
 
     def export_fileid_map_revprops(self, fileids, revprops):
         if fileids != {}:
@@ -851,7 +854,7 @@ mapping_registry.register_lazy('v2', 'bzrlib.plugins.svn.mapping2',
                                'BzrSvnMappingv2', 
                                'Second format (bzr-svn 0.3.x)')
 mapping_registry.register_lazy('v3', 'bzrlib.plugins.svn.mapping3', 
-                               'BzrSvnMappingv3FileProps', 
+                               'BzrSvnMappingv3', 
                                'Third format (bzr-svn 0.4.x)')
 mapping_registry.register_lazy('v4', 'bzrlib.plugins.svn.mapping4', 
                                'BzrSvnMappingv4',
@@ -861,16 +864,7 @@ mapping_registry.set_default('v4')
 
 def find_mapping_revprops(revprops):
     if SVN_REVPROP_BZR_MAPPING_VERSION in revprops:
-        try:
-            cls = mapping_registry.get(revprops[SVN_REVPROP_BZR_MAPPING_VERSION])
-            ret = cls.from_revprops(revprops)
-        except KeyError:
-            pass
-        except NotImplementedError:
-            pass
-        else:
-            if ret is not None:
-                return ret
+        return mapping_registry.parse_mapping_name("svn-" + revprops[SVN_REVPROP_BZR_MAPPING_VERSION])
     return None
 
 
