@@ -169,7 +169,7 @@ class RevisionMetadata(object):
                 # (anything < v4) restricts what paths can be valid branches
                 paths = dict(self._paths.items())
                 lazypaths = logwalker.lazy_dict(paths, full_paths, 
-                    self.repository._log.find_children, paths, 
+                    self.repository.find_children, paths, 
                     self.branch_path, next[0], next[1])
                 paths[self.branch_path] = ('A', None, -1)
                 return lazypaths
