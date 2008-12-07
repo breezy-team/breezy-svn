@@ -94,6 +94,8 @@ class RevidMap(object):
             assert isinstance(revno, int)
             # Look at their bzr:revision-id-vX
             revids = set()
+            if self.repos.transport.check_path(branch, revno) != 2:
+                import pdb; pdb.set_trace()
             try:
                 revmeta = self.repos._revmeta_provider.lookup_revision(branch, revno)
                 if revmeta.consider_bzr_fileprops():

@@ -737,6 +737,8 @@ class SvnRepository(foreign.ForeignRepository):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for (paths, i, revprops) in self._log.iter_changes(prefixes, from_revnum, to_revnum):
+                if (isinstance(revprops, dict) or revprops.is_loaded) and is_bzr_revision_revprops(revprops):
+                    continue
                 pb.update("finding branches", i, to_revnum)
                 for p in sorted(paths.keys()):
                     if layout.is_branch_or_tag(p, project):
@@ -798,12 +800,9 @@ class SvnRepository(foreign.ForeignRepository):
             it = iter([])
             it = chain(it, layout.get_branches(self, to_revnum, project))
             it = chain(it, layout.get_tags(self, to_revnum, project))
-            for (project, branch, nick) in it:
-                yield (branch, to_revnum, True)
+            return iter(((branch, to_revnum, True) for (project, branch, nick) in it))
         else:
-            for (branch, revno, exists) in self.find_branchpaths(
-                    layout, from_revnum, to_revnum, project):
-                yield (branch, revno, exists)
+            return iter(self.find_branchpaths(layout, from_revnum, to_revnum, project))
 
     def abort_write_group(self, suppress_errors=False):
         """See Repository.abort_write_group()."""

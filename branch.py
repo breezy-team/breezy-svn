@@ -140,7 +140,7 @@ class SvnBranch(ForeignBranch):
         if revnum is None:
             return self._branch_path
 
-        last_revmeta = self.last_revmeta()
+        last_revmeta, _ = self.last_revmeta()
         if revnum == last_revmeta.revnum:
             return last_revmeta.branch_path
 
@@ -155,15 +155,15 @@ class SvnBranch(ForeignBranch):
 
         :return: Revision number
         """
-        return self.last_revmeta().revnum
+        return self.last_revmeta()[0].revnum
 
     def last_revmeta(self):
         """Return the revmeta element for the last revision in this branch.
         """
         for revmeta, mapping in self._revision_meta_history():
             if not revmeta.is_hidden(mapping):
-                return revmeta
-        return None
+                return revmeta, mapping
+        return None, None
 
     def check(self):
         """See Branch.Check.
@@ -368,8 +368,7 @@ class SvnBranch(ForeignBranch):
         """See Branch.last_revision()."""
         # Shortcut for finding the tip. This avoids expensive generation time
         # on large branches.
-        last_revmeta = self.last_revmeta()
-        mapping = last_revmeta.get_appropriate_mappings(self.mapping)[0]
+        last_revmeta, mapping = self.last_revmeta()
         return last_revmeta.get_revision_id(mapping)
 
     @needs_write_lock

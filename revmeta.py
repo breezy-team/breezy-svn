@@ -50,6 +50,7 @@ from bzrlib.plugins.svn.mapping import (
         parse_svn_revprops,
         SVN_REVPROP_BZR_SIGNATURE, 
         SVN_PROP_BZR_REVPROP_REDIRECT,
+        SVN_REVPROP_BZR_ROOT,
         )
 from bzrlib.plugins.svn.svk import (
         estimate_svk_ancestors,
@@ -363,7 +364,7 @@ class RevisionMetadata(object):
                 find_mapping_fileprops,
                 find_mapping_revprops,
                 None, self.consider_bzr_fileprops,
-                revprops_acceptable=lambda x: True, 
+                revprops_acceptable=lambda revprops: revprops.get(SVN_REVPROP_BZR_ROOT) == self.branch_path,
                 revprops_sufficient=lambda x: True)
 
     def _get_stored_lhs_parent_revid(self, mapping):

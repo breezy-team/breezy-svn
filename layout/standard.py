@@ -22,6 +22,7 @@ from bzrlib.plugins.svn.layout import (
         )
 
 from functools import partial
+from subvertpy import NODE_DIR
 
 class TrunkLayout(RepositoryLayout):
 
@@ -183,6 +184,12 @@ class RootLayout(RepositoryLayout):
         """
         return ('branch', '', '', path)
 
+    def is_branch_path(self, bp, project=None):
+        return (bp == "")
+
+    def is_tag_path(self, tp, project=None):
+        return False
+
     def get_branches(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
@@ -269,14 +276,14 @@ class CustomLayout(RepositoryLayout):
 
         :result: Iterator over tuples with (project, branch path)
         """
-        return [(project, b, b.split("/")[-1]) for b in self.branches]
+        return [(project, b, b.split("/")[-1]) for b in self.branches if repository.transport.check_path(b, revnum) == NODE_DIR]
 
     def get_tags(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
         :result: Iterator over tuples with (project, branch path)
         """
-        return [(project, t, t.split("/")[-1]) for t in self.tags]
+        return [(project, t, t.split("/")[-1]) for t in self.tags if repository.transport.check_path(t, revnum) == NODE_DIR]
 
     def __repr__(self):
         return "%s(%r,%r)" % (self.__class__.__name__, self.branches, self.tags)

@@ -94,7 +94,6 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
         if svn_revprops.has_key(mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES):
             features = mapping.parse_required_features_property(svn_revprops[mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES])
             assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
-        assert svn_revprops.get(mapping.SVN_REVPROP_BZR_MAPPING_VERSION) in (None, self.name), "unknown mapping: %s" % svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION]
         return mapping.BzrSvnMappingRevProps.import_revision_revprops(self, svn_revprops, rev)
 
     def import_revision_fileprops(self, fileprops, rev):
