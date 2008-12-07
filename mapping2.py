@@ -74,19 +74,13 @@ class BzrSvnMappingv1(BzrSvnMapping):
     def is_tag(self, tag_path):
         return False
 
-    def import_revision_revprops(self, svn_revprops, rev):
-        pass
-
     def import_revision_fileprops(self, fileprops, rev):
-        pass
+        return True
 
     def generate_file_id(self, uuid, revnum, branch, inv_path):
         if inv_path == u"":
             return ROOT_ID
         return "%s-%s" % (self.revision_id_foreign_to_bzr((uuid, branch, revnum)), escape_svn_path(inv_path.encode("utf-8")))
-
-    def import_fileid_map_revprops(self, revprops):
-        return {}
 
     def import_fileid_map_fileprops(self, fileprops):
         return {}
@@ -94,17 +88,8 @@ class BzrSvnMappingv1(BzrSvnMapping):
     def import_text_parents_fileprops(self, fileprops):
         return {}
 
-    def import_text_parents_revprops(self, revprops):
-        return {}
-
-    def import_text_revisions_revprops(self, svn_revprops):
-        return {}
-
     def import_text_revisions_fileprops(self, fileprops):
         return {}
-
-    def get_rhs_parents_revprops(self, revprops):
-        return ()
 
     def get_rhs_parent_fileprops(self, fileprops):
         value = fileprops.get(SVN_PROP_BZR_MERGE, "")

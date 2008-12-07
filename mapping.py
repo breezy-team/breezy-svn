@@ -37,6 +37,7 @@ SVN_PROP_BZR_TEXT_PARENTS = 'bzr:text-parents'
 SVN_PROP_BZR_LOG = 'bzr:log'
 SVN_PROP_BZR_REQUIRED_FEATURES = 'bzr:required-features'
 SVN_PROP_BZR_HIDDEN = 'bzr:hidden'
+SVN_PROP_BZR_REVPROP_REDIRECT = 'bzr:see-revprops'
 
 SVN_REVPROP_BZR_COMMITTER = 'bzr:committer'
 SVN_REVPROP_BZR_FILEIDS = 'bzr:file-ids'
@@ -266,18 +267,25 @@ def parse_bzr_svn_revprops(props, rev):
     :param props: Dictionary with Subversion revision properties.
     :param rev: Revision object
     """
+    changed = False
     if props.has_key(SVN_REVPROP_BZR_TIMESTAMP):
         (rev.timestamp, rev.timezone) = unpack_highres_date(props[SVN_REVPROP_BZR_TIMESTAMP])
+        changed = True
 
     if props.has_key(SVN_REVPROP_BZR_COMMITTER):
         rev.committer = props[SVN_REVPROP_BZR_COMMITTER].decode("utf-8")
+        changed = True
 
     if props.has_key(SVN_REVPROP_BZR_LOG):
         rev.message = props[SVN_REVPROP_BZR_LOG]
+        changed = True
 
     for name, value in props.iteritems():
         if name.startswith(SVN_REVPROP_BZR_REVPROP_PREFIX):
             rev.properties[name[len(SVN_REVPROP_BZR_REVPROP_PREFIX):]] = value
+        changed = True
+
+    return changed
 
 
 def parse_required_features_property(text):
@@ -376,6 +384,7 @@ class BzrSvnMapping(foreign.VcsMapping):
 
         :param revprops: Dictionary with Subversion revision properties.
         :param rev: Revision object to import data into.
+        :return: Whether or not any metadata was found
         """
         raise NotImplementedError(self.import_revision_revprops)
 
@@ -386,6 +395,7 @@ class BzrSvnMapping(foreign.VcsMapping):
         :param fileprops: Dictionary with Subversion file properties on the 
                           branch root.
         :param rev: Revision object to import data into.
+        :return: Whether or not any metadata was found
         """
         raise NotImplementedError(self.import_revision_fileprops)
 
@@ -551,6 +561,9 @@ class BzrSvnMapping(foreign.VcsMapping):
     def show_foreign_revid(self, (uuid, bp, revnum)):
         return { "svn revno": "%d (on /%s)" % (revnum, bp)}
 
+    def export_revprop_redirect(self, revnum, fileprops):
+        raise NotImplementedError(self.export_revprop_redirect)
+
 
 def parse_fileid_property(text):
     """Pares a fileid file or revision property.
@@ -609,9 +622,8 @@ class BzrSvnMappingFileProps(object):
         metadata = fileprops.get(SVN_PROP_BZR_REVISION_INFO)
         if metadata is not None:
             parse_revision_metadata(metadata[1], rev)
-
-    def import_revision_revprops(self, svn_revprops, rev):
-        pass
+            return True
+        return False
 
     def import_text_parents_fileprops(self, fileprops):
         metadata = fileprops.get(SVN_PROP_BZR_TEXT_PARENTS)
@@ -619,20 +631,11 @@ class BzrSvnMappingFileProps(object):
             return {}
         return parse_text_parents_property(metadata[1])
 
-    def import_text_parents_revprops(self, svn_revprops):
-        return {}
-
     def import_text_revisions_fileprops(self, fileprops):
         metadata = fileprops.get(SVN_PROP_BZR_TEXT_REVISIONS)
         if metadata is None:
             return {}
         return parse_text_revisions_property(metadata[1])
-
-    def import_text_revisions_revprops(self, svn_revprops):
-        return {}
-
-    def export_text_parents_revprops(self, text_parents, revprops):
-        pass
 
     def export_text_parents_fileprops(self, text_parents, fileprops):
         if text_parents != {}:
@@ -645,9 +648,6 @@ class BzrSvnMappingFileProps(object):
             fileprops[SVN_PROP_BZR_TEXT_REVISIONS] = generate_text_revisions_property(text_revisions)
         elif SVN_PROP_BZR_TEXT_REVISIONS in fileprops:
             fileprops[SVN_PROP_BZR_TEXT_REVISIONS] = ""
-
-    def export_text_revisions_revprops(self, text_revisions, revprops):
-        pass
 
     def get_rhs_parents_fileprops(self, fileprops):
         bzr_merges = fileprops.get(SVN_PROP_BZR_ANCESTRY+self.name, None)
@@ -662,9 +662,6 @@ class BzrSvnMappingFileProps(object):
                 return ()
             return parse_merge_property(new_lines[0])
 
-        return ()
-
-    def get_rhs_parents_revprops(self, revprops):
         return ()
 
     def get_rhs_ancestors(self, fileprops):
@@ -708,9 +705,6 @@ class BzrSvnMappingFileProps(object):
     def export_message_fileprops(self, message, fileprops):
         fileprops[SVN_PROP_BZR_LOG] = message.encode("utf-8")
 
-    def get_revision_id_revprops(self, revprops):
-        return (None, None)
-
     def get_revision_id_fileprops(self, fileprops):
         # Lookup the revision from the bzr:revision-id-vX property
         text = fileprops.get(SVN_PROP_BZR_REVISION_ID+self.name, None)
@@ -740,33 +734,21 @@ class BzrSvnMappingFileProps(object):
         elif SVN_PROP_BZR_FILEIDS in fileprops:
             fileprops[SVN_PROP_BZR_FILEIDS] = ""
 
-    def export_fileid_map_revprops(self, fileids, revprops):
-        pass
-
 
 class BzrSvnMappingRevProps(object):
 
     def import_revision_revprops(self, svn_revprops, rev):
-        parse_bzr_svn_revprops(svn_revprops, rev)
-
-    def import_revision_fileprops(self, fileprops, rev):
-        pass
+        return parse_bzr_svn_revprops(svn_revprops, rev)
 
     def import_fileid_map_revprops(self, svn_revprops):
         if not svn_revprops.has_key(SVN_REVPROP_BZR_FILEIDS):
             return {}
         return parse_fileid_property(svn_revprops[SVN_REVPROP_BZR_FILEIDS])
 
-    def import_text_parents_fileprops(self, fileprops):
-        return {}
-
     def import_text_parents_revprops(self, svn_revprops):
         if not svn_revprops.has_key(SVN_REVPROP_BZR_TEXT_PARENTS):
             return {}
         return parse_text_parents_property(svn_revprops[SVN_REVPROP_BZR_TEXT_PARENTS])
-
-    def export_text_parents_fileprops(self, text_parents, fileprops):
-        pass
 
     def export_text_parents_revprops(self, text_parents, svn_revprops):
         if text_parents != {}:
@@ -777,33 +759,18 @@ class BzrSvnMappingRevProps(object):
             return {}
         return parse_text_revisions_property(svn_revprops[SVN_REVPROP_BZR_TEXT_REVISIONS])
 
-    def import_text_revisions_fileprops(self, fileprops):
-        return {}
-
     def export_text_revisions_revprops(self, text_revisions, svn_revprops):
         if text_revisions != {}:
             svn_revprops[SVN_REVPROP_BZR_TEXT_REVISIONS] = generate_text_revisions_property(text_revisions)
 
-    def export_text_revisions_fileprops(self, text_revisions, fileprops):
-        pass
-
     def get_lhs_parent_revprops(self, svn_revprops):
         return svn_revprops.get(SVN_REVPROP_BZR_BASE_REVISION)
-
-    def get_lhs_parent_fileprops(self, fileprops):
-        return None
 
     def get_rhs_parents_revprops(self, svn_revprops):
         return tuple(svn_revprops.get(SVN_REVPROP_BZR_MERGE, "").splitlines())
 
-    def get_rhs_parents_fileprops(self, fileprops):
-        return ()
-
     def get_branch_root(self, revprops):
         return revprops.get(SVN_REVPROP_BZR_ROOT)
-
-    def get_revision_id_fileprops(self, fileprops):
-        return (None, None)
 
     def get_revision_id_revprops(self, revprops):
         if (not is_bzr_revision_revprops(revprops) or 
@@ -846,12 +813,6 @@ class BzrSvnMappingRevProps(object):
     def export_fileid_map_revprops(self, fileids, revprops):
         if fileids != {}:
             revprops[SVN_REVPROP_BZR_FILEIDS] = generate_fileid_property(fileids)
-
-    def export_fileid_map_fileprops(self, fileids, fileprops):
-        pass
-
-    def get_rhs_ancestors(self, fileprops):
-        raise NotImplementedError(self.get_rhs_ancestors)
 
 
 class SubversionMappingRegistry(foreign.VcsMappingRegistry):

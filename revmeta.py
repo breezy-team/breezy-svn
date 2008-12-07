@@ -550,9 +550,10 @@ class RevisionMetadata(object):
                               parent_ids=parent_ids)
 
         parse_svn_revprops(self.get_revprops(), rev)
-        mapping.import_revision_revprops(self.get_revprops(), rev)
-
-        mapping.import_revision_fileprops(self.get_changed_fileprops(), rev)
+        self._import_from_props(mapping, 
+            lambda changed_fileprops: mapping.import_revision_fileprops(changed_fileprops, rev),
+            lambda revprops: mapping.import_revision_revprops(revprops, rev),
+            False)
 
         rev.svn_meta = self
 
@@ -560,11 +561,12 @@ class RevisionMetadata(object):
 
     def _import_from_props(self, mapping, fileprop_fn, revprop_fn, default):
         # FIXME: Magic happens here
+        # FIXME: Check whatever is available first
         if mapping is None or mapping.can_use_fileprops:
             ret = fileprop_fn(self.get_changed_fileprops())
             if ret != default:
                 return ret
-        if mapping is not None and mapping.must_use_file_props:
+        if mapping is not None and mapping.must_use_fileprops:
             return default
         if mapping is None or mapping.can_use_revprops:
             if mapping is None or mapping.get_branch_root(self.get_revprops()) == self.branch_path:

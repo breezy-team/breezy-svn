@@ -17,7 +17,7 @@ from bzrlib.errors import InvalidRevisionId
 from bzrlib.revision import Revision
 from bzrlib.tests import TestCase, TestNotApplicable
 
-from bzrlib.plugins.svn.mapping import mapping_registry
+from bzrlib.plugins.svn.mapping import mapping_registry, parse_svn_revprops
 from subvertpy import properties
 
 def changed_props(props):
@@ -56,9 +56,9 @@ class RoundtripMappingTests(TestCase):
             raise TestNotApplicable
         fileids = {"": "some-id", "bla/blie": "other-id"}
         revprops = {}
+        revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
         self.mapping.export_revision_revprops("branchp", 432432432.0, 0, "somebody", {}, "arevid", 4, ["merge1"], revprops)
         self.mapping.export_fileid_map_revprops(fileids, revprops)
-        revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
         self.assertEquals(fileids, 
                 self.mapping.import_fileid_map_revprops(revprops))
 
@@ -163,6 +163,7 @@ class RoundtripMappingTests(TestCase):
                                      {"arevprop": "val" }, "arevid", 4, ["parent", "merge1"], revprops)
         targetrev = Revision(None)
         revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
+        parse_svn_revprops(revprops, targetrev)
         self.mapping.import_revision_revprops(revprops, targetrev)
         self.assertEquals(targetrev.committer, "somebody")
         self.assertEquals(targetrev.properties, {"arevprop": "val"})
@@ -205,14 +206,4 @@ class RoundtripMappingTests(TestCase):
                 self.mapping.revision_id_foreign_to_bzr(("myuuid", "bla", 5))))
 
 
-    def test_import_revision_svnprops(self):
-        rev = Revision(None)
-        self.mapping.import_revision_revprops({"svn:log": "A log msg",
-                                      "svn:author": "Somebody",
-                                      "svn:date": "2008-11-03T09:33:00.716938Z"},  rev)
-        self.assertEquals("Somebody", rev.committer)
-        self.assertEquals("A log msg", rev.message)
-        self.assertEquals({}, rev.properties)
-        self.assertEquals(1225704780.716938, rev.timestamp)
-        self.assertEquals(0.0, rev.timezone)
 

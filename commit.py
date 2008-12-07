@@ -396,16 +396,24 @@ class SvnCommitBuilder(RootCommitBuilder):
             raise BzrError("Please upgrade your Subversion client libraries to 1.5 or higher to be able to commit with Subversion mapping %s" % self.mapping.name)
 
         self._svn_revprops = {}
+        self._svnprops = lazy_dict({}, lambda: dict(self._base_branch_props.iteritems()))
         if self.supports_custom_revprops and self.mapping.can_use_revprops:
             self.set_custom_revprops = True
             self.set_custom_fileprops = self.mapping.must_use_fileprops
             # If possible, submit signature directly
             if opt_signature is not None:
                 self._svn_revprops[mapping.SVN_REVPROP_BZR_SIGNATURE] = opt_signature
+            # Set hint for potential clients that they have to check revision 
+            # properties
+            if (not self.set_custom_fileprops and 
+                self.repository.transport.has_capability("log-revprops")):
+                # Tell clients about first approximate use of revision 
+                # properties
+                self.mapping.export_revprop_redirect(
+                    self.repository.get_latest_revnum()+1, self._svnprops)
         else:
             self.set_custom_fileprops = True
             self.set_custom_revprops = False
-        self._svnprops = lazy_dict({}, lambda: dict(self._base_branch_props.iteritems()))
         revno = self.base_revno + 1
         if self.set_custom_fileprops:
             self.mapping.export_revision_fileprops(

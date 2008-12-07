@@ -725,8 +725,6 @@ class SvnRepository(foreign.ForeignRepository):
         try:
             for (paths, i, revprops) in self._log.iter_changes(prefixes, from_revnum, to_revnum):
                 pb.update("finding branches", i, to_revnum)
-                if self.transport.has_capability("log-revprops") and is_bzr_revision_revprops(revprops) is not None:
-                    continue
                 for p in sorted(paths.keys()):
                     if layout.is_branch_or_tag(p, project):
                         if paths[p][0] in ('R', 'D') and p in created_branches:

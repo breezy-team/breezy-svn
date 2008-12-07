@@ -159,13 +159,13 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
             features = mapping.parse_required_features_property(svn_revprops[mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES])
             assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
         assert svn_revprops.get(mapping.SVN_REVPROP_BZR_MAPPING_VERSION) in (None, self.name), "unknown mapping: %s" % svn_revprops[mapping.SVN_REVPROP_BZR_MAPPING_VERSION]
-        self.revprops.import_revision_revprops(svn_revprops, rev)
+        return self.revprops.import_revision_revprops(svn_revprops, rev)
 
     def import_revision_fileprops(self, fileprops, rev):
         if fileprops.has_key(mapping.SVN_PROP_BZR_REQUIRED_FEATURES):
             features = mapping.parse_required_features_property(fileprops[mapping.SVN_PROP_BZR_REQUIRED_FEATURES])
             assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
-        self.fileprops.import_revision_fileprops(fileprops, rev)
+        return self.fileprops.import_revision_fileprops(fileprops, rev)
 
     def get_mandated_layout(self, repository):
         return None
@@ -189,3 +189,7 @@ class BzrSvnMappingv4(mapping.BzrSvnMapping):
 
     def supports_tags(self):
         return True
+
+    def export_revprop_redirect(self, revnum, fileprops):
+        if not mapping.SVN_PROP_BZR_REVPROP_REDIRECT in fileprops:
+            fileprops[mapping.SVN_PROP_BZR_REVPROP_REDIRECT] = str(revnum)
