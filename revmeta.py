@@ -601,6 +601,8 @@ class RevisionMetadata(object):
                     return ret
             can_use_revprops = False
 
+        can_use_fileprops = can_use_fileprops and self.is_changes_root()
+
         # Check changed_fileprops if self.knows_changed_fileprops() and 
         # can_use_fileprops
         if can_use_fileprops and self.knows_changed_fileprops():
@@ -608,6 +610,11 @@ class RevisionMetadata(object):
             if ret != default:
                 return ret
             can_use_fileprops = False
+
+        # No point in looking any further if file properties should be there
+        if (mapping is not None and mapping.must_use_fileprops and
+            not can_use_fileprops):
+            return default
 
         # Check revprops if the last descendant has bzr:check-revprops set;
         #   if it has and the revnum there is < self.revnum
@@ -667,8 +674,6 @@ class RevisionMetadata(object):
         return self._consider_bzr_revprops
 
     def consider_bzr_hidden_fileprops(self):
-        if not self.is_changes_root():
-            return False
         return (self.estimate_bzr_hidden_fileprop_ancestors() > 0) 
 
     def consider_bzr_fileprops(self):
@@ -678,10 +683,7 @@ class RevisionMetadata(object):
         """
         if self._consider_bzr_fileprops is not None:
             return self._consider_bzr_fileprops
-        if not self.is_changes_root():
-            self._consider_bzr_fileprops = False
-        else:
-            self._consider_bzr_fileprops = (self.estimate_bzr_fileprop_ancestors() > 0)
+        self._consider_bzr_fileprops = (self.estimate_bzr_fileprop_ancestors() > 0)
         return self._consider_bzr_fileprops
 
     def consider_svk_fileprops(self):

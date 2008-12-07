@@ -812,7 +812,8 @@ class BzrSvnMappingRevProps(object):
         svn_revprops[SVN_REVPROP_BZR_USER_AGENT] = get_client_string()
 
     def revprops_complete(self, revprops):
-        return (SVN_REVPROP_BZR_MAPPING_VERSION in revprops)
+        return (SVN_REVPROP_BZR_MAPPING_VERSION in revprops or 
+                SVN_REVPROP_BZR_HIDDEN in revprops)
 
     def export_fileid_map_revprops(self, fileids, revprops):
         if fileids != {}:
