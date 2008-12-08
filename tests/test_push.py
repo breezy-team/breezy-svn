@@ -114,7 +114,7 @@ class TestDPush(SubversionTestCase):
         wt.add(["foo/bliel"])
         newid2 = wt.commit(message="Commit from Bzr")
 
-        revid_map = dpush(self.svndir.open_branch(), self.bzrdir.open_branch())
+        revid_map, fileid_map = dpush(self.svndir.open_branch(), self.bzrdir.open_branch())
 
         self.assertEquals(set([newid1, newid2]), set(revid_map.keys()))
         repos = self.svndir.find_repository()

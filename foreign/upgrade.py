@@ -78,6 +78,31 @@ def determine_fileid_renames(old_tree, new_tree):
             yield new_tree.id2path(new_file_id), old_file_id, new_file_id
 
 
+def update_workingtree_fileids(wt, old_tree, new_tree):
+    """Update all file ids in wt according to old_tree/new_tree. 
+
+    old_tree and new_tree should be two RevisionTree's that differ only
+    in file ids.
+    """
+    fileid_renames = dict([(path, (old_fileid, new_fileid)) for (path, old_fileid, new_fileid) in determine_fileid_renames(old_tree, new_tree)])
+    old_fileids = []
+    new_fileids = []
+    new_root_id = None
+    # Adjust file ids in working tree
+    for path in sorted(fileid_renames.keys(), reverse=True):
+        if path != "":
+            old_fileids.append(fileid_renames[path][0])
+            new_fileids.append((path, fileid_renames[path][1]))
+        else:
+            new_root_id = fileid_renames[path][1]
+    new_fileids.reverse()
+    wt.unversion(old_fileids)
+    if new_root_id is not None:
+        wt.set_root_id(new_root_id)
+    wt.add([x[0] for x in new_fileids], [x[1] for x in new_fileids])
+    wt.set_last_revision(new_tree.get_revision_id())
+
+
 def upgrade_workingtree(wt, foreign_repository, new_mapping, mapping_registry, 
                         allow_changes=False, verbose=False):
     """Upgrade a working tree.
@@ -93,24 +118,10 @@ def upgrade_workingtree(wt, foreign_repository, new_mapping, mapping_registry,
         last_revid = wt.branch.last_revision()
         if old_revid == last_revid:
             return revid_renames
-
-        fileid_renames = dict([(path, (old_fileid, new_fileid)) for (path, old_fileid, new_fileid) in determine_fileid_renames(wt.branch.repository.revision_tree(old_revid), wt.branch.repository.revision_tree(last_revid))])
-        old_fileids = []
-        new_fileids = []
-        new_root_id = None
-        # Adjust file ids in working tree
-        for path in sorted(fileid_renames.keys(), reverse=True):
-            if path != "":
-                old_fileids.append(fileid_renames[path][0])
-                new_fileids.append((path, fileid_renames[path][1]))
-            else:
-                new_root_id = fileid_renames[path][1]
-        new_fileids.reverse()
-        wt.unversion(old_fileids)
-        if new_root_id is not None:
-            wt.set_root_id(new_root_id)
-        wt.add([x[0] for x in new_fileids], [x[1] for x in new_fileids])
-        wt.set_last_revision(last_revid)
+        
+        old_tree = wt.branch.repository.revision_tree(old_revid)
+        new_tree = wt.branch.repository.revision_tree(last_revid)
+        update_workingtree_fileids(wt, old_tree, new_tree)
     finally:
         wt.unlock()
 
