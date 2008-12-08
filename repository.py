@@ -60,7 +60,7 @@ from bzrlib.plugins.svn.mapping import (
         parse_svn_dateprop,
         )
 from bzrlib.plugins.svn.parents import DiskCachingParentsProvider
-from bzrlib.plugins.svn.revids import CachingRevidMap, RevidMap
+from bzrlib.plugins.svn.revids import DiskCachingRevidMap, MemoryCachingRevidMap, RevidMap
 from bzrlib.plugins.svn.revmeta import iter_with_mapping
 from bzrlib.plugins.svn.tree import SvnRevisionTree
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
@@ -171,9 +171,11 @@ class SvnRepository(foreign.ForeignRepository):
             self.fileid_map = CachingFileIdMap(cachedir_transport, 
                 self.fileid_map)
         if "revids" in use_cache:
-            self.revmap = CachingRevidMap(self.revmap, self.cachedb)
+            self.revmap = DiskCachingRevidMap(self.revmap, self.cachedb)
             self._real_parents_provider = DiskCachingParentsProvider(
                 self._real_parents_provider, cachedir_transport)
+        else:
+            self.revmap = MemoryCachingRevidMap(self.revmap)
 
         self._parents_provider = graph.CachingParentsProvider(
             self._real_parents_provider)
@@ -588,12 +590,26 @@ class SvnRepository(foreign.ForeignRepository):
         :param layout: Optional repository layout to use when searching for 
                        revisions
         :raises: NoSuchRevision
-        :return: Tuple with branch path, revision number and mapping.
+        :return: Tuple with foreign revision id and mapping.
         """
         # FIXME: Use ancestry
         # If there is no entry in the map, walk over all branches:
         if layout is None:
             layout = self.get_layout()
+
+        # Try a simple parse
+        try:
+            (uuid, branch_path, revnum), mapping = mapping_registry.parse_revision_id(revid)
+            assert isinstance(branch_path, str)
+            assert isinstance(mapping, BzrSvnMapping)
+            if uuid == self.uuid:
+                return (self.uuid, branch_path, revnum), mapping
+            # If the UUID doesn't match, this may still be a valid revision
+            # id; a revision from another SVN repository may be pushed into 
+            # this one.
+        except bzr_errors.InvalidRevisionId:
+            pass
+
         return self.revmap.get_branch_revnum(revid, layout, project)
 
     def seen_bzr_revprops(self):

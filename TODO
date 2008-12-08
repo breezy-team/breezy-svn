@@ -1,13 +1,10 @@
-mappingv4:
 - fix update_after_commit test
-- handle upgrades from v3 properly
- - cope with old mappings in find_tags_between_*
 - automatically disable cache in some situations, allow partial cache?
-- in-memory caching of revid mapping (LRUCache ?)
 
 more tests:
 - Run all tests against repository with revprop changing allowed and without
 - performance tests (count roundtrips?)
+- upgrades from v3
 - bzr:hidden
 - bzr svn-set-revprops
 

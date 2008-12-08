@@ -17,6 +17,7 @@
 """Revision id generation and caching."""
 
 from bzrlib.errors import InvalidRevisionId, NoSuchRevision
+from bzrlib.lru_cache import LRUCache
 
 from bzrlib.plugins.svn.cache import CacheTable
 from bzrlib.plugins.svn.errors import (
@@ -36,31 +37,21 @@ import subvertpy
 from subvertpy import ERR_FS_NOT_DIRECTORY
 
 class RevidMap(object):
-
+    
     def __init__(self, repos):
         self.repos = repos
 
     def get_branch_revnum(self, revid, layout, project=None):
-        """Find the (branch, revnum) tuple for a revision id."""
-        # Try a simple parse
-        try:
-            (uuid, branch_path, revnum), mapping = mapping_registry.parse_revision_id(revid)
-            assert isinstance(branch_path, str)
-            assert isinstance(mapping, BzrSvnMapping)
-            if uuid == self.repos.uuid:
-                return (self.repos.uuid, branch_path, revnum), mapping
-            # If the UUID doesn't match, this may still be a valid revision
-            # id; a revision from another SVN repository may be pushed into 
-            # this one.
-        except InvalidRevisionId:
-            pass
-
+        """Find the (branch, revnum) tuple for a revision id.
+        
+        :return: Tuple with foreign revision id and mapping.
+        """
         last_revnum = self.repos.get_latest_revnum()
         fileprops_to_revnum = last_revnum
-        for entry_revid, branch, min_revno, max_revno, mapping in self.discover_revprop_revids(layout, last_revnum, 0):
+        for entry_revid, branch, revnum, mapping in self.discover_revprop_revids(layout, last_revnum, 0):
             if revid == entry_revid:
-                return (self.repos.uuid, branch, min_revno, max_revno), mapping
-            fileprops_to_revnum = min(fileprops_to_revnum, min_revno)
+                return (self.repos.uuid, branch, revnum), mapping
+            fileprops_to_revnum = min(fileprops_to_revnum, revnum)
 
         for entry_revid, branch, min_revno, max_revno, mapping in self.discover_fileprop_revids(layout, 0, fileprops_to_revnum, project):
             if revid == entry_revid:
@@ -81,7 +72,7 @@ class RevidMap(object):
                 assert mapping is not None
                 revid = revmeta.get_revision_id(mapping)
                 if revid is not None:
-                    yield (revid, mapping.get_branch_root(revmeta.get_revprops()).strip("/"), revmeta.revnum, revmeta.revnum, mapping)
+                    yield (revid, mapping.get_branch_root(revmeta.get_revprops()).strip("/"), revmeta.revnum, mapping)
 
     def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None):
         reuse_policy = self.repos.get_config().get_reuse_revisions()
@@ -112,7 +103,7 @@ class RevidMap(object):
         :param branch_path: Branch path at which to start searching
         :param min_revnum: Last revnum to check
         :param max_revnum: First revnum to check
-        :return: Tuple with actual branchpath, revnum and mapping
+        :return: Tuple with foreign revision id and mapping
         """
         assert min_revnum <= max_revnum
         # Find the branch property between min_revnum and max_revnum that 
@@ -145,7 +136,37 @@ class RevidMap(object):
         raise InvalidBzrSvnRevision(revid)
 
 
-class CachingRevidMap(object):
+class MemoryCachingRevidMap(object):
+
+    def __init__(self, actual):
+        self.actual = actual
+        self._cache = LRUCache()
+        self._nonexistant_revnum = None
+        self._nonexistant = set()
+
+    def get_branch_revnum(self, revid, layout, project=None):
+        if revid in self._cache:
+            return self._cache[revid]
+
+        last_revnum = self.actual.repos.get_latest_revnum()
+        if self._nonexistant_revnum is not None:
+            if last_revnum <= self._nonexistant_revnum:
+                if revid in self._nonexistant:
+                    raise NoSuchRevision(self, revid)
+
+        try:
+            ret = self.actual.get_branch_revnum(revid, layout, project)
+        except NoSuchRevision:
+            if self._nonexistant_revnum != last_revnum:
+                self._nonexistant_revnum = last_revnum
+                self._nonexistant = set()
+            self._nonexistant.add(revid)
+            raise
+        else:
+            self._cache[revid] = ret
+
+
+class DiskCachingRevidMap(object):
 
     def __init__(self, actual, cachedb=None):
         self.cache = RevisionIdMapCache(cachedb)
@@ -153,19 +174,6 @@ class CachingRevidMap(object):
         self.revid_seen = set()
 
     def get_branch_revnum(self, revid, layout, project=None):
-        # Try a simple parse
-        try:
-            (uuid, branch_path, revnum), mapping = mapping_registry.parse_revision_id(revid)
-            assert isinstance(branch_path, str)
-            assert isinstance(mapping, BzrSvnMapping)
-            if uuid == self.actual.repos.uuid:
-                return (uuid, branch_path, revnum), mapping
-            # If the UUID doesn't match, this may still be a valid revision
-            # id; a revision from another SVN repository may be pushed into 
-            # this one.
-        except InvalidRevisionId:
-            pass
-
         # Check the record out of the cache, if it exists
         try:
             (branch_path, min_revnum, max_revnum, \
@@ -186,12 +194,12 @@ class CachingRevidMap(object):
                 raise e
             found = None
             fileprops_to_revnum = last_revnum
-            for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_revprop_revids(layout, last_revnum, last_checked):
-                fileprops_to_revnum = min(fileprops_to_revnum, min_revno)
+            for entry_revid, branch, revnum, mapping in self.actual.discover_revprop_revids(layout, last_revnum, last_checked):
+                fileprops_to_revnum = min(fileprops_to_revnum, revnum)
                 if entry_revid == revid:
-                    found = (branch, min_revno, max_revno, mapping)
+                    found = (branch, revnum, revnum, mapping)
                 if entry_revid not in self.revid_seen:
-                    self.cache.insert_revid(entry_revid, branch, min_revno, max_revno, mapping.name)
+                    self.cache.insert_revid(entry_revid, branch, revnum, revnum, mapping.name)
                     self.revid_seen.add(entry_revid)
             for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_fileprop_revids(layout, last_checked, fileprops_to_revnum, project):
                 min_revno = max(last_checked, min_revno)
