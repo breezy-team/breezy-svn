@@ -389,6 +389,21 @@ class RevisionMetadata(object):
 
     def _fold_children_fileprops(self, get_memoized, calc_from_child, 
                                  calc_final, memoize):
+        """Like foldr() in haskell except it works over (some) line 
+        of descendants of this RevisionMetadata object. It continues 
+        walking the descendants until it either finds one 
+        that knows its file properties, already knows whatever has to 
+        be calculated or until there are no more descendants.
+
+        :param get_memoized(x) -> object: Function that returns the memoized 
+            value for a given RevisionMetadata object or None if not memoized 
+            yet.
+        :param calc_from_child(x, child_val) -> object: Function that 
+            calculates the value for x from a child value.
+        :param calc_final(props): Determine the actual value from a file 
+            properties dictionary.
+        :param memoize(x, val): Memoize value for x
+        """
         # FIXME: Use BFS here rather than DFS ?
         if get_memoized(self) is not None:
             # Simple shortcut..
