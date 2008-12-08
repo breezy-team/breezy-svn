@@ -85,6 +85,10 @@ def _url_escape_uri(url):
     return urlparse.urlunsplit((scheme, netloc, path, query, fragment))
 
 
+def url_join_unescaped_path(url, path):
+    return _url_escape_uri(urlutils.join(url, path))
+
+
 svnplus_warning_showed = False
 
 def warn_svnplus(url):

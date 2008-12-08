@@ -39,7 +39,7 @@ from bzrlib.plugins.svn.foreign import escape_commit_message
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_PREFIX
 from bzrlib.plugins.svn.repository import SvnRepository, SvnRepositoryFormat
 from bzrlib.plugins.svn.revmeta import iter_with_mapping
-from bzrlib.plugins.svn.transport import _url_escape_uri
+from bzrlib.plugins.svn.transport import url_join_unescaped_path
 
 FETCH_COMMIT_WRITE_SIZE = 500
 
@@ -852,7 +852,7 @@ class InterFromSvnRepository(InterRepository):
 
             if parent_branch != revmeta.branch_path:
                 reporter = conn.do_switch(revmeta.revnum, "", True, 
-                    _url_escape_uri(urlutils.join(conn.get_repos_root(), revmeta.branch_path)), 
+                    url_join_unescaped_path(conn.get_repos_root(), revmeta.branch_path), 
                     editor)
             else:
                 reporter = conn.do_update(revmeta.revnum, "", True, editor)

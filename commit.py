@@ -57,7 +57,7 @@ from bzrlib.plugins.svn.svk import (
 from bzrlib.plugins.svn.logwalker import lazy_dict
 from bzrlib.plugins.svn.repository import SvnRepositoryFormat, SvnRepository
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
-from bzrlib.plugins.svn.transport import _url_escape_uri
+from bzrlib.plugins.svn.transport import url_join_unescaped_path
 
 
 def _revision_id_to_svk_feature(revid):
@@ -227,7 +227,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
                               old_inv.id2path(child_ie.file_id), 
                               new_child_path)
             child_editor = dir_editor.add_file(full_new_child_path, 
-                _url_escape_uri(urlutils.join(base_url, old_inv.id2path(child_ie.file_id))),
+                url_join_unescaped_path(base_url, old_inv.id2path(child_ie.file_id)),
                 base_revnum)
 
         # open if they existed at the same location
@@ -290,7 +290,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
             mutter('copy dir %r -> %r', old_child_path, new_child_path)
             child_editor = dir_editor.add_directory(
                 branch_relative_path(new_child_path),
-                _url_escape_uri(urlutils.join(base_url, old_child_path)), base_revnum)
+                url_join_unescaped_path(base_url, old_child_path), base_revnum)
 
         # open if they existed at the same location and 
         # the directory was touched
@@ -611,7 +611,6 @@ class SvnCommitBuilder(RootCommitBuilder):
                 else:
                     base_url = None
 
-                # TODO: Accept create_prefix argument
                 branch_editors = self.open_branch_editors(root, bp_parts,
                     existing_bp_parts, base_url, self.base_revnum, 
                     replace_existing)
@@ -796,7 +795,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
             if deletefirst:
                 root.delete_entry(urlutils.basename(branch_path))
             branch_dir = root.add_directory(urlutils.basename(branch_path), 
-                    _url_escape_uri(urlutils.join(repository.base, revmeta.branch_path)), revmeta.revnum)
+                    url_join_unescaped_path(repository.base, revmeta.branch_path), revmeta.revnum)
             for k, (ov, nv) in properties.diff(fileprops, revmeta.get_fileprops()).iteritems():
                 branch_dir.change_prop(k, nv)
             branch_dir.close()
@@ -1036,7 +1035,8 @@ class InterToSvnRepository(InterRepository):
             graph = self.target.get_graph()
             for revision_id in todo:
                 if pb is not None:
-                    pb.update("pushing revisions", todo.index(revision_id), len(todo))
+                    pb.update("pushing revisions", todo.index(revision_id), 
+                        len(todo))
                 rev = self.source.get_revision(revision_id)
 
                 mutter('pushing %r', revision_id)
@@ -1045,7 +1045,7 @@ class InterToSvnRepository(InterRepository):
 
                 (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
                 if target_branch is None:
-                    target_branch = Branch.open(_url_escape_uri(urlutils.join(self.target.base, bp)))
+                    target_branch = Branch.open(url_join_unescaped_path(self.target.base, bp))
                 if target_branch.get_branch_path() != bp:
                     target_branch.set_branch_path(bp)
 
@@ -1053,12 +1053,13 @@ class InterToSvnRepository(InterRepository):
                 if (layout.push_merged_revisions(target_branch.project) and 
                     len(rev.parent_ids) > 1 and
                     target_config.get_push_merged_revisions()):
-                    push_ancestors(self.target, self.source, layout, "", rev.parent_ids, graph,
-                                   create_prefix=True)
+                    push_ancestors(self.target, self.source, layout, "", 
+                        rev.parent_ids, graph, create_prefix=True)
 
-                push_revision_tree(graph, target_branch.repository, target_branch.get_branch_path(), 
-                                   target_config, self.source, parent_revid, revision_id, rev,
-                                   append_revisions_only=target_branch._get_append_revisions_only())
+                push_revision_tree(graph, target_branch.repository, 
+                    target_branch.get_branch_path(), target_config, 
+                    self.source, parent_revid, revision_id, rev, 
+                    append_revisions_only=target_branch._get_append_revisions_only())
         finally:
             self.source.unlock()
  
