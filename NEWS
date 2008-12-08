@@ -11,6 +11,9 @@ bzr-svn 0.5.0~rc2				UNRELEASED
 
    * Pass utf-8 connect string to sqlite3() connect function. (#262923)
 
+   * Fix pushing to repositories not allowing the setting of revision 
+     properties.
+
 bzr-svn 0.5.0~rc1			2008-12-08
 
   CHANGES

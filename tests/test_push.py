@@ -104,6 +104,22 @@ class TestDPush(SubversionTestCase):
                 "", 
                 r.get_mapping()) for rev in (c.get_latest_revnum()-1, c.get_latest_revnum())]), 
                 set(revid_map.values()))
+
+    def test_dpush_add(self):
+        wt = self.bzrdir.open_workingtree()
+        self.build_tree({'dc/foo/blal': 'other data'})
+        wt.add(["foo/blal"])
+        newid1 = wt.commit(message="Commit from Bzr")
+        self.build_tree({'dc/foo/bliel': 'yet other data'})
+        wt.add(["foo/bliel"])
+        newid2 = wt.commit(message="Commit from Bzr")
+
+        revid_map = dpush(self.svndir.open_branch(), self.bzrdir.open_branch())
+
+        self.assertEquals(set([newid1, newid2]), set(revid_map.keys()))
+        repos = self.svndir.find_repository()
+        revmeta = repos._revmeta_provider.get_revision("", 3)
+        self.assertEquals(revmeta.get_paths(), {"foo/bliel": ('A', None, -1)})
  
     def test_diverged(self):
         dc = self.commit_editor()
