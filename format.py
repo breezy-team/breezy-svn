@@ -91,7 +91,8 @@ class SvnRemoteFormat(BzrDirFormat):
         try: 
             return remote.SvnRemoteAccess(transport, self)
         except subvertpy.SubversionException, (_, num):
-            if num in (errors.ERR_RA_DAV_REQUEST_FAILED, subvertpy.ERR_RA_DAV_NOT_VCC):
+            if num in (subvertpy.ERR_RA_DAV_REQUEST_FAILED, 
+                       subvertpy.ERR_RA_DAV_NOT_VCC):
                 raise bzr_errors.NotBranchError(transport.base)
             raise
 
