@@ -16,9 +16,16 @@
 """Subversion cache directory access."""
 
 import bzrlib
-from bzrlib import debug
-from bzrlib.config import config_dir, ensure_config_dir_exists
+from bzrlib import (
+    debug, 
+    osutils,
+    )
+from bzrlib.config import (
+    config_dir,
+    ensure_config_dir_exists,
+    )
 from bzrlib.trace import mutter, warning
+
 from bzrlib.plugins.svn import version_info
 
 import os, sys
@@ -41,8 +48,13 @@ def create_cache_dir():
         except ImportError:
             base_cache_dir = config_dir()
         else:
-            base_cache_dir = get_local_appdata_location()
-            assert base_cache_dir is not None
+            s = get_local_appdata_location()
+            assert s is not None
+            # This can return a unicode string or a plain string in 
+            # user encoding
+            if type(s) == str:
+                s = s.decode(osutils.get_user_encoding())
+            base_cache_dir = s.encode(osutils._fs_enc)
     else:
         base_cache_dir = config_dir()
     cache_dir = os.path.join(base_cache_dir, name)
