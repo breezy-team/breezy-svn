@@ -83,6 +83,7 @@ def get_client_string():
 try:
     import subvertpy 
 except ImportError:
+    # Apparently running from the source directory
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "subvertpy"))
     import subvertpy
 
