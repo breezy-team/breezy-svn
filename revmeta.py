@@ -638,10 +638,25 @@ class RevisionMetadata(object):
         elif not self._log._transport.has_capability("commit-revprops"):
             self._consider_bzr_revprops = False
         else:
-            # FIXME: Check nearest descendant with bzr:see-revprops set
+            # Check nearest descendant with bzr:see-revprops set
             # and return True if revnum in that property < self.revnum
-            self._consider_bzr_revprops = True
+            revprop_redirect = self._get_revprop_redirect_revnum()
+            self._consider_bzr_revprops = (revprop_redirect is not None and
+                                          revprop_redirect <= self.revnum)
         return self._consider_bzr_revprops
+
+    def _get_revprop_redirect_revnum(self):
+        if getattr(self, "_revprop_redirect_revnum", None) is not None:
+            return self._revprop_redirect_revnum
+        if self.knows_fileprops() or not self.children:
+            if SVN_PROP_BZR_REVPROP_REDIRECT in self.get_fileprops():
+                self._revprop_redirect_revnum = int(self.get_fileprops()[SVN_PROP_BZR_REVPROP_REDIRECT])
+            else:
+                self._revprop_redirect_revnum = None
+            else:
+                next = iter(self.children).next()
+                self._revprop_redirect_revnum = next._get_revprop_redirect_revnum()
+        return self._revprop_redirect_revnum
 
     def consider_bzr_hidden_fileprops(self):
         return (self.estimate_bzr_hidden_fileprop_ancestors() > 0) 

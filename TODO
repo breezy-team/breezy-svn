@@ -2,7 +2,6 @@ mappingv4:
 - fix update_after_commit test
 - handle upgrades from v3 properly
  - cope with old mappings in find_tags_between_*
- - use special fileproperty bzr:use-revprops for when log-revprops is not available
 - automatically disable cache in some situations, allow partial cache?
 - in-memory caching of revid mapping (LRUCache ?)
 
