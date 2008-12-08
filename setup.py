@@ -10,7 +10,7 @@ from setup import subvertpy_modules, install_lib_with_dlls
 setup(name='bzr-svn',
       description='Support for Subversion branches in Bazaar',
       keywords='plugin bzr svn',
-      version='0.5.0',
+      version='0.5.0rc1',
       url='http://bazaar-vcs.org/BzrForeignBranches/Subversion',
       download_url='http://bazaar-vcs.org/BzrSvn',
       license='GPL',

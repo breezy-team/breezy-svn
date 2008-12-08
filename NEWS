@@ -1,4 +1,4 @@
-bzr-svn 0.5.0			UNRELEASED
+bzr-svn 0.5.0~rc1			2008-12-08
 
   CHANGES
 
@@ -17,6 +17,8 @@ bzr-svn 0.5.0			UNRELEASED
      only closely related paths. (#158657)
 
   FEATURES
+
+   * Performance has been improved *significantly*.
 
    * Add bzr:skip revision property to allow skipping 
      more detailed analysis of revisions not created by bzr.
