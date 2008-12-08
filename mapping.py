@@ -813,6 +813,7 @@ class BzrSvnMappingRevProps(object):
 
     def revprops_complete(self, revprops):
         return (SVN_REVPROP_BZR_MAPPING_VERSION in revprops or 
+                SVN_REVPROP_BZR_HIDDEN in revprops or
                 SVN_REVPROP_BZR_HIDDEN in revprops)
 
     def export_fileid_map_revprops(self, fileids, revprops):
