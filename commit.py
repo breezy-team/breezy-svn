@@ -905,7 +905,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo, bas
     """
     assert rev.revision_id in (None, revision_id)
     old_tree = source_repo.revision_tree(revision_id)
-    base_tree = source_repo.revision_tree(rev.parent_ids[0])
+    base_tree = source_repo.revision_tree(rev.parent_ids[0] if rev.parent_ids else NULL_REVISION)
 
     if push_metadata:
         base_revids = rev.parent_ids
