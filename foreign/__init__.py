@@ -48,6 +48,7 @@ class ForeignBranch(Branch):
 
         :param source: Source branch
         :param stop_revision: Revision to pull, defaults to last revision.
+        :return: Revision id map and file id map
         """
         raise NotImplementedError(self.pull)
 
@@ -158,7 +159,7 @@ class cmd_dpush(Command):
             target_branch.pull(source_branch)
             no_rebase = True
         else:
-            revid_map = target_branch.dpull(source_branch)
+            revid_map, fileid_map = target_branch.dpull(source_branch)
         # We successfully created the target, remember it
         if source_branch.get_push_location() is None or remember:
             source_branch.set_push_location(target_branch.base)

@@ -857,6 +857,7 @@ def dpush(target, source, stop_revision=None):
     :param stop_revision: If not None, stop at this revision.
     :return: Map of old revids to new revids.
     """
+    fileid_map = {} # FIXME: Fill in fileid_map
     source.lock_write()
     try:
         if stop_revision is None:
@@ -885,7 +886,7 @@ def dpush(target, source, stop_revision=None):
                 target._clear_cached_state()
         finally:
             pb.finished()
-        return revid_map
+        return revid_map, fileid_map
     finally:
         source.unlock()
 
