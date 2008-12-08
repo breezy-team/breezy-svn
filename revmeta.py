@@ -635,8 +635,12 @@ class RevisionMetadata(object):
             return self._consider_bzr_revprops
         if not self.is_changes_root():
             self._consider_bzr_revprops = False
-        elif not self._log._transport.has_capability("commit-revprops"):
+        elif self._log._transport.has_capability("commit-revprops") == False:
+            # Server doesn't support setting revision properties
             self._consider_bzr_revprops = False
+        elif self._log._transport.has_capability("log-revprops") is None:
+            # Client doesn't know log-revprops capability
+            self._consider_bzr_revprops = True
         else:
             # Check nearest descendant with bzr:see-revprops set
             # and return True if revnum in that property < self.revnum
@@ -653,9 +657,9 @@ class RevisionMetadata(object):
                 self._revprop_redirect_revnum = int(self.get_fileprops()[SVN_PROP_BZR_REVPROP_REDIRECT])
             else:
                 self._revprop_redirect_revnum = None
-            else:
-                next = iter(self.children).next()
-                self._revprop_redirect_revnum = next._get_revprop_redirect_revnum()
+        else:
+            next = iter(self.children).next()
+            self._revprop_redirect_revnum = next._get_revprop_redirect_revnum()
         return self._revprop_redirect_revnum
 
     def consider_bzr_hidden_fileprops(self):
