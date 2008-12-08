@@ -72,6 +72,8 @@ def _url_unescape_uri(url):
     if scheme in ("http", "https"):
         # Without this, URLs with + in them break
         path = urllib.unquote(path)
+    while "//" in path:
+        path = path.replace("//", "/")
     return urlparse.urlunsplit((scheme, netloc, path, query, fragment))
 
 

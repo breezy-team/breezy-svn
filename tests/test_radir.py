@@ -44,6 +44,13 @@ class TestRemoteAccess(SubversionTestCase):
         x = BzrDir.open(repos_url)
         x.break_lock()
 
+    def test_too_much_slashes(self):
+        repos_url = self.make_repository("d")
+
+        repos_url = repos_url[:-1] + "///d"
+
+        BzrDir.open(repos_url)
+
     def test_open_workingtree(self):
         repos_url = self.make_repository("d")
         x = BzrDir.open(repos_url)
