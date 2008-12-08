@@ -471,6 +471,28 @@ class TestPush(SubversionTestCase):
         self.assertEquals("/branches/mybranch", 
             self.client_log("%s/trunk" % self.repos_url, 0, 5)[5][0]['/trunk'][1])
 
+    def test_comics(self):
+        dc = self.commit_editor()
+        trunk = dc.add_dir("trunk")
+        comics = trunk.add_dir("trunk/comics")
+        comics.add_dir("trunk/comics/bin")
+        dc.close()
+
+        self.svndir = BzrDir.open("%s/trunk" % self.repos_url)
+        os.mkdir("mybranch")
+        self.bzrdir = self.svndir.sprout("mybranch")
+        wt = self.bzrdir.open_workingtree()
+
+        wt.rename_one("comics", "old-comics")
+        wt.mkdir("comics")
+        wt.rename_one("old-comics", "comics/core")
+        wt.rename_one("comics/core/bin", "comics/bin")
+
+        wt.commit("Strange comics")
+
+        self.svndir.open_branch().pull(wt.branch)
+
+
 class PushNewBranchTests(SubversionTestCase):
     def test_single_revision(self):
         repos_url = self.make_repository("a")
