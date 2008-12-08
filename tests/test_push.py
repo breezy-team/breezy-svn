@@ -986,6 +986,24 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertEquals(svnbranch.last_revision(), wt.branch.last_revision())
         self.assertEquals(["myfile"], svndir.root_transport.list_dir("."))
 
+    def test_push_pointless(self):
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.add_dir("trunk")
+        dc.close()
+
+        os.mkdir("dc")
+        svndir = BzrDir.open(repos_url+"/trunk")
+        bzrdir = svndir.sprout("dc")
+
+        wt = bzrdir.open_workingtree()
+        wt.lock_write()
+        wt.commit("This is pointless.")
+        svnbranch = svndir.open_branch()
+        svnbranch.pull(wt.branch)
+        self.assertEquals(svnbranch.last_revision(), wt.branch.last_revision())
+ 
 
 class TestPushTwice(SubversionTestCase):
     def test_push_twice(self):
