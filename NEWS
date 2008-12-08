@@ -1,3 +1,12 @@
+bzr-svn 0.5.0~rc2				UNRELEASED
+
+  BUG FIXES
+
+   * Install subvertpy as separate module rather than as part of 
+     bzrlib.plugins.svn. (#306145)
+
+   * Fix some tests when running overall bzr testsuite. (#306158)
+
 bzr-svn 0.5.0~rc1			2008-12-08
 
   CHANGES
