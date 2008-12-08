@@ -650,8 +650,10 @@ class RevisionMetadata(object):
         return self._consider_bzr_revprops
 
     def _get_revprop_redirect_revnum(self):
-        if getattr(self, "_revprop_redirect_revnum", None) is not None:
+        try:
             return self._revprop_redirect_revnum
+        except AttributeError:
+            pass
         if self.knows_fileprops() or not self.children:
             if SVN_PROP_BZR_REVPROP_REDIRECT in self.get_fileprops():
                 self._revprop_redirect_revnum = int(self.get_fileprops()[SVN_PROP_BZR_REVPROP_REDIRECT])
