@@ -60,7 +60,7 @@ from bzrlib.plugins.svn.svk import (
         )
 
 import bisect
-from collections import defaultdict
+from collections import defaultdict, deque
 from functools import partial
 from itertools import ifilter, imap
 
@@ -387,28 +387,53 @@ class RevisionMetadata(object):
             lhs_mapping = mapping
         return parentrevmeta.get_revision_id(lhs_mapping)
 
+    def _fold_children_fileprops(self, get_memoized, calc_from_child, 
+                                 calc_final, memoize):
+        # FIXME: Use BFS here rather than DFS ?
+        if get_memoized(self) is not None:
+            # Simple shortcut..
+            return get_memoized(self)
+        lm = self
+        todo = list()
+        while (lm.children and not lm.knows_fileprops() and 
+               get_memoized(lm) is None):
+            todo.append(lm)
+            lm = iter(lm.children).next()
+        if get_memoized(lm) is not None:
+            val = get_memoized(lm)
+        else:
+            val = calc_final(lm.get_fileprops())
+        memoize(lm, val)
+        while todo:
+            lm = todo.pop()
+            val = calc_from_child(lm, val)
+            memoize(lm, val)
+        assert lm == self, "%r != %r" % (lm, self)
+        return val
+
     def _estimate_fileprop_ancestors(self, key, estimate_fn):
         """Count the number of lines in file properties, estimating how many 
         still exist in the worst case in a revision."""
-        if key in self._estimated_fileprop_ancestors:
-            return self._estimated_fileprop_ancestors[key]
-        if self.knows_fileprops() or not self.children:
-            # If we already have the file properties, just don't guess
-            ret = estimate_fn(self.get_fileprops())
-        else:
-            # FIXME: Use BFS here rather than DFS ?
-            # TODO: Use loop rather than recursive call?
-            next = iter(self.children).next()
-            ret = next._estimate_fileprop_ancestors(key, estimate_fn)
-            if ret == 0:
-                ret = 0
-            else:
-                if self.changes_branch_root():
-                    ret -= 1
-                if ret == 0:
-                    ret = estimate_fn(self.get_fileprops())
-        self._estimated_fileprop_ancestors[key] = ret
-        return ret
+        def calc_from_child(x, val):
+            if val == 0:
+                return 0
+            if x.changes_branch_root():
+                val -= 1
+            if val == 0:
+                val = estimate_fn(x.get_fileprops())
+            return val
+
+        def memoize(x, val):
+            x._estimated_fileprop_ancestors[key] = val
+
+        def get_memoized(x):
+            return x._estimated_fileprop_ancestors.get(key)
+
+        return self._fold_children_fileprops(
+                get_memoized=get_memoized,
+                calc_from_child=calc_from_child,
+                calc_final=estimate_fn,
+                memoize=memoize)
 
     def estimate_bzr_fileprop_ancestors(self):
         """Estimate how many ancestors with bzr fileprops this revision has.
@@ -645,24 +670,24 @@ class RevisionMetadata(object):
             # Check nearest descendant with bzr:see-revprops set
             # and return True if revnum in that property < self.revnum
             revprop_redirect = self._get_revprop_redirect_revnum()
-            self._consider_bzr_revprops = (revprop_redirect is not None and
+            self._consider_bzr_revprops = (revprop_redirect >= 0 and
                                           revprop_redirect <= self.revnum)
         return self._consider_bzr_revprops
 
     def _get_revprop_redirect_revnum(self):
-        try:
-            return self._revprop_redirect_revnum
-        except AttributeError:
-            pass
-        if self.knows_fileprops() or not self.children:
-            if SVN_PROP_BZR_REVPROP_REDIRECT in self.get_fileprops():
-                self._revprop_redirect_revnum = int(self.get_fileprops()[SVN_PROP_BZR_REVPROP_REDIRECT])
-            else:
-                self._revprop_redirect_revnum = None
-        else:
-            next = iter(self.children).next()
-            self._revprop_redirect_revnum = next._get_revprop_redirect_revnum()
-        return self._revprop_redirect_revnum
+        def get_memoized(x):
+            return getattr(x, "_revprop_redirect_revnum", None)
+        def memoize(x, val):
+            x._revprop_redirect_revnum = val
+        def calc(fileprops):
+            if SVN_PROP_BZR_REVPROP_REDIRECT in fileprops:
+                return int(fileprops[SVN_PROP_BZR_REVPROP_REDIRECT])
+            return -1
+        return self._fold_children_fileprops(
+                get_memoized=get_memoized,
+                calc_from_child=lambda x, val: val,
+                calc_final=calc,
+                memoize=memoize)
 
     def consider_bzr_hidden_fileprops(self):
         return (self.estimate_bzr_hidden_fileprop_ancestors() > 0) 
