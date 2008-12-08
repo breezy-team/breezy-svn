@@ -44,6 +44,8 @@ from bzrlib.plugins.svn.errors import convert_svn_error, NoSvnRepositoryPresent,
 
 svn_config = get_config()
 
+disabled_capabilities = set()
+
 
 # Don't run any tests on SvnTransport as it is not intended to be 
 # a full implementation of Transport
@@ -415,6 +417,8 @@ class SvnRaTransport(Transport):
             self.add_connection(conn)
 
     def has_capability(self, cap):
+        if cap in disabled_capabilities:
+            return False
         if cap in self.capabilities:
             return self.capabilities[cap]
         conn = self.get_connection()

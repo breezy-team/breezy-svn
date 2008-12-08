@@ -28,7 +28,7 @@ from bzrlib.trace import mutter
 
 import os
 
-from bzrlib.plugins.svn import format
+from bzrlib.plugins.svn import format, transport
 from bzrlib.plugins.svn.errors import MissingPrefix
 from bzrlib.plugins.svn.commit import push, dpush
 from bzrlib.plugins.svn.layout.standard import RootLayout
@@ -40,6 +40,7 @@ from subvertpy import ra
 class TestDPush(SubversionTestCase):
     def setUp(self):
         super(TestDPush, self).setUp()
+        transport.disabled_capabilities.update(["commit-revprops", "log-revprops"])
         self.repos_url = self.make_repository('d')
 
         dc = self.commit_editor()
@@ -50,6 +51,10 @@ class TestDPush(SubversionTestCase):
         self.svndir = BzrDir.open(self.repos_url)
         os.mkdir("dc")
         self.bzrdir = self.svndir.sprout("dc")
+
+
+    def tearDown(self):
+        transport.disabled_capabilities = set()
 
     def commit_editor(self):
         return self.get_commit_editor(self.repos_url)

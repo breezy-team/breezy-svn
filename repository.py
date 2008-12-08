@@ -307,7 +307,7 @@ class SvnRepository(foreign.ForeignRepository):
         if supports_custom_revprops and mapping.can_use_revprops:
             return (True, mapping.must_use_fileprops)
         else:
-            return (mapping.can_use_fileprops, False)
+            return (False, mapping.can_use_fileprops)
 
     def get_mapping(self):
         """Get the default mapping that is used for this repository."""
