@@ -5,7 +5,6 @@ mappingv4:
  - use special fileproperty bzr:use-revprops for when log-revprops is not available
 - automatically disable cache in some situations, allow partial cache?
 - in-memory caching of revid mapping (LRUCache ?)
-- inventory problem that shows up in bigboard, evolution
 
 more tests:
 - Run all tests against repository with revprop changing allowed and without

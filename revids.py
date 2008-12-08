@@ -81,8 +81,6 @@ class RevidMap(object):
                 assert mapping is not None
                 revid = revmeta.get_revision_id(mapping)
                 if revid is not None:
-                    if mapping.get_branch_root(revmeta.get_revprops()) is None:
-                        import pdb; pdb.set_trace()
                     yield (revid, mapping.get_branch_root(revmeta.get_revprops()).strip("/"), revmeta.revnum, revmeta.revnum, mapping)
 
     def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None):
@@ -94,8 +92,6 @@ class RevidMap(object):
             assert isinstance(revno, int)
             # Look at their bzr:revision-id-vX
             revids = set()
-            if self.repos.transport.check_path(branch, revno) != 2:
-                import pdb; pdb.set_trace()
             try:
                 revmeta = self.repos._revmeta_provider.lookup_revision(branch, revno)
                 if revmeta.consider_bzr_fileprops():
