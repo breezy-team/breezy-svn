@@ -21,6 +21,7 @@ from bzrlib import (
         branch,
         errors as bzr_errors,
         graph,
+        osutils,
         ui,
         urlutils,
         xml6,
@@ -159,7 +160,7 @@ class SvnRepository(foreign.ForeignRepository):
         if "log" in use_cache or "revids" in use_cache:
             cache_file = os.path.join(cache_dir, 'cache-v%d' % CACHE_DB_VERSION)
             if not cachedbs().has_key(cache_file):
-                cachedbs()[cache_file] = cache.connect_cachefile(cache_file)
+                cachedbs()[cache_file] = cache.connect_cachefile(cache_file.decode(osutils._fs_enc).encode("utf-8"))
             self.cachedb = cachedbs()[cache_file]
 
         if "log" in use_cache:
