@@ -65,6 +65,7 @@ class SvnRemoteFormat(BzrDirFormat):
     @classmethod
     def probe_transport(klass, transport):
         from bzrlib.plugins.svn.transport import get_svn_ra_transport
+        from bzrlib.plugins.svn.errors import DavRequestFailed
         from bzrlib.transport.local import LocalTransport
         import subvertpy
         format = klass()
@@ -82,7 +83,12 @@ class SvnRemoteFormat(BzrDirFormat):
                         transport, msg)
                 raise bzr_errors.NotBranchError(path=transport.base)
         except bzr_errors.InvalidURL:
+            raise bzr_errors.NotBranchError(path=transport.base)
+        except DavRequestFailed, e:
+            if "501 Unsupported method" in e.msg:
                 raise bzr_errors.NotBranchError(path=transport.base)
+            else:
+                raise
 
         return format
 
