@@ -16,11 +16,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from bzrlib import osutils
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import AlreadyBranchError, BzrError, DivergedBranches
+from bzrlib.inventory import InventoryDirectory
 from bzrlib.merge import Merger, Merge3Merger
-from bzrlib.osutils import has_symlinks
 from bzrlib.progress import DummyProgress
 from bzrlib.repository import Repository
 from bzrlib.trace import mutter
@@ -28,12 +29,13 @@ from bzrlib.trace import mutter
 import os
 
 from bzrlib.plugins.svn import format
-from subvertpy import ra
 from bzrlib.plugins.svn.errors import MissingPrefix
 from bzrlib.plugins.svn.commit import push, dpush
 from bzrlib.plugins.svn.layout.standard import RootLayout
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_REVISION_ID
 from bzrlib.plugins.svn.tests import SubversionTestCase
+
+from subvertpy import ra
 
 class TestDPush(SubversionTestCase):
     def setUp(self):
@@ -237,7 +239,7 @@ class TestPush(SubversionTestCase):
                         self.svndir.open_branch().last_revision())
 
     def test_symlink(self):
-        if not has_symlinks():
+        if not osutils.has_symlinks():
             return
         os.symlink("bla", "dc/south")
         assert os.path.islink("dc/south")
@@ -957,6 +959,32 @@ class PushNewBranchTests(SubversionTestCase):
         os.mkdir("n")
         BzrDir.open(repos_url+"/trunk").sprout("n")
 
+    def test_subdir_becomes_branch_root(self):
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.add_dir("trunk")
+        subdir = trunk.add_dir("trunk/mysubdir")
+        subdir.add_file("trunk/mysubdir/myfile").modify("blabla")
+        dc.close()
+
+        os.mkdir("dc")
+        svndir = BzrDir.open(repos_url+"/trunk")
+        bzrdir = svndir.sprout("dc")
+        wt = bzrdir.open_workingtree()
+        wt.lock_write()
+        wt.apply_inventory_delta([
+            ("", None, wt.inventory.root.file_id, None),
+            ("mysubdir", "", wt.inventory.path2id("mysubdir"), 
+                InventoryDirectory(wt.inventory.path2id("mysubdir"), "", None))])
+        os.rename("dc/mysubdir/myfile", "dc/myfile")
+        osutils.rmtree("dc/mysubdir")
+        wt.unlock()
+        wt.commit("Change branch root")
+        svnbranch = svndir.open_branch()
+        svnbranch.pull(wt.branch)
+        self.assertEquals(svnbranch.last_revision(), wt.branch.last_revision())
+        self.assertEquals(["myfile"], svndir.root_transport.list_dir("."))
 
 
 class TestPushTwice(SubversionTestCase):
