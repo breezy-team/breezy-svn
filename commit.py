@@ -382,11 +382,6 @@ class SvnCommitBuilder(RootCommitBuilder):
         else:
             self.old_inv = old_inv
 
-        # Not all repositories appear to set Inventory.revision_id, 
-        # so allow None as well.
-        assert self.old_inv.revision_id in (None, self.base_revid), \
-                "%s != %s" % (self.old_inv.revision_id, self.base_revid)
-
         # Determine revisions merged in this one
         merges = filter(lambda x: x != self.base_revid, parents)
 
@@ -857,7 +852,6 @@ def dpush(target, source, stop_revision=None):
     :param stop_revision: If not None, stop at this revision.
     :return: Map of old revids to new revids.
     """
-    fileid_map = {} # FIXME: Fill in fileid_map
     source.lock_write()
     try:
         if stop_revision is None:
@@ -886,7 +880,7 @@ def dpush(target, source, stop_revision=None):
                 target._clear_cached_state()
         finally:
             pb.finished()
-        return revid_map, fileid_map
+        return revid_map
     finally:
         source.unlock()
 
@@ -911,7 +905,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo, bas
     """
     assert rev.revision_id in (None, revision_id)
     old_tree = source_repo.revision_tree(revision_id)
-    base_tree = source_repo.revision_tree(base_revid)
+    base_tree = source_repo.revision_tree(rev.parent_ids[0])
 
     if push_metadata:
         base_revids = rev.parent_ids
@@ -923,11 +917,6 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo, bas
     except NoSuchRevision:
         opt_signature = None
 
-    if base_revids == rev.parent_ids:
-        parent_trees = [base_tree]
-    else:
-        parent_trees = source_repo.revision_trees(rev.parent_ids)
-
     builder = SvnCommitBuilder(target_repo, branch_path, base_revids,
                                config, rev.timestamp,
                                rev.timezone, rev.committer, rev.properties, 
@@ -938,7 +927,12 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo, bas
                                texts=source_repo.texts,
                                append_revisions_only=append_revisions_only,
                                override_svn_revprops=override_svn_revprops)
-                         
+    parent_trees = [base_tree]
+    for p in rev.parent_ids[1:]:
+        try:
+            parent_trees.append(source_repo.revision_tree(p))
+        except NoSuchRevision:
+            pass # Ghost, ignore
     replay_delta(builder, parent_trees, old_tree)
     try:
         revid = builder.commit(rev.message)
