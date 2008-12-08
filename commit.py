@@ -944,7 +944,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo, bas
         revid = builder.commit(rev.message)
     except SubversionException, (_, num):
         if num == ERR_FS_TXN_OUT_OF_DATE:
-            raise DivergedBranches(source, target_repo)
+            raise DivergedBranches(source_repo, target_repo)
         raise
     except ChangesRootLHSHistory:
         raise BzrError("Unable to push revision %r because it would change the ordering of existing revisions on the Subversion repository root. Use rebase and try again or push to a non-root path" % revision_id)
