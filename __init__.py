@@ -568,7 +568,7 @@ class cmd_svn_serve(Command):
     ]
 
     def run(self, inet=None, port=None, directory=None):
-        from subvertpy.ra_svn import SVNServer, TCPSVNServer
+        from subvertpy.ra_svn import SVNServer, TCPSVNServer, SVN_PORT
         from bzrlib.plugins.svn.server import BzrServerBackend
         from bzrlib.trace import warning
 
@@ -585,7 +585,9 @@ class cmd_svn_serve(Command):
             server = SVNServer(backend, sys.stdin.read, send_fn, 
                                self.outf)
         else:
-            server = TCPSVNServer(backend, port, self.outf)
+            if port is None:
+                port = SVN_PORT
+            server = TCPSVNServer(backend, ('0.0.0.0', port), self.outf)
         server.serve()
 
 register_command(cmd_svn_serve)
