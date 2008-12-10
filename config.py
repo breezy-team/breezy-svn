@@ -83,13 +83,13 @@ class SvnRepositoryConfig(IniBasedConfig):
         branches_str = self._get_user_option("branches", use_global=False)
         if branches_str is None:
             return None
-        return filter(lambda b: b != "", branches_str.split(";"))
+        return [b.encode("utf-8") for b in branches_str.split(";") if b != ""]
 
     def get_tags(self):
         tags_str = self._get_user_option("tags", use_global=False)
         if tags_str is None:
             return None
-        return filter(lambda b: b != "", tags_str.split(";"))
+        return [t.encode("utf-8") for t in tags_str.split(";") if t != ""]
 
     def _get_user_option(self, name, use_global=True):
         try:
