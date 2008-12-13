@@ -213,6 +213,7 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None, pb=Non
         return [d for d in dirents if dirents[d]['kind'] == subvertpy.NODE_DIR]
 
     for idx, pattern in enumerate(itemlist):
+        assert isinstance(pattern, str)
         if pb is not None:
             pb.update("finding branches", idx, len(itemlist))
         for bp in expand_branch_pattern([], pattern.strip("/").split("/"), check_path,

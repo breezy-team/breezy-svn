@@ -294,6 +294,7 @@ class WildcardLayout(RepositoryLayout):
     def __init__(self, branches=[], tags=[]):
         self.branches = [b.strip("/") for b in branches]
         self.tags = [t.strip("/") for t in tags]
+        assert all([isinstance(b, str) for b in self.branches + self.tags])
 
     def supports_tags(self):
         return (self.tags != [])
@@ -336,7 +337,7 @@ class WildcardLayout(RepositoryLayout):
 
     def is_branch(self, path, project=None):
         for bp in self.branches:
-            if wildcard_matches(path, bp):
+           if wildcard_matches(path, bp):
                 return True
         return False
 
@@ -349,8 +350,8 @@ class WildcardLayout(RepositoryLayout):
     def parse(self, path):
         """Parse a path.
 
-        :return: Tuple with type ('tag', 'branch'), project name, branch path and path 
-            inside the branch
+        :return: Tuple with type ('tag', 'branch'), project name, branch path
+            and path inside the branch
         """
         path = path.strip("/")
         parts = path.split("/")

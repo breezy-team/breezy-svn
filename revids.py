@@ -164,6 +164,7 @@ class MemoryCachingRevidMap(object):
             raise
         else:
             self._cache[revid] = ret
+            return ret
 
 
 class DiskCachingRevidMap(object):
