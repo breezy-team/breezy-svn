@@ -635,7 +635,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                             continue
                         self._changed_fileprops[prop] = (oldvalue, newvalue)
                 if (not self.modified_files and not self.visit_dirs and 
-                    self._changed_fileprops == {}):
+                    self._changed_fileprops == {} and self.push_metadata):
                     prop = "bzr:pointless"
                     self._svnprops[prop] = "%d" % (int(self._svnprops.get(prop, "0"))+1)
                     self._changed_fileprops[prop] = (None, self._svnprops[prop])
