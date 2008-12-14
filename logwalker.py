@@ -42,6 +42,13 @@ class lazy_dict(object):
             self.create_fn = None
             self.is_loaded = True
 
+    def setdefault(self, key, default):
+        try:
+            return self[key]
+        except KeyError:
+            self[key] = default
+            return self[key]
+
     def __len__(self):
         self._ensure_init()
         return len(self.dict)

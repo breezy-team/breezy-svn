@@ -634,6 +634,13 @@ class SvnCommitBuilder(RootCommitBuilder):
                         if oldvalue == newvalue:
                             continue
                         self._changed_fileprops[prop] = (oldvalue, newvalue)
+                if (not self.modified_files and not self.visit_dirs and 
+                    self._changed_fileprops == {}):
+                    prop = "bzr:pointless"
+                    self._svnprops[prop] = "%d" % (int(self._svnprops.get(prop, "0"))+1)
+                    self._changed_fileprops[prop] = (None, self._svnprops[prop])
+
+                for prop, (oldvalue, newvalue) in self._changed_fileprops.iteritems():
                         if not properties.is_valid_property_name(prop):
                             warning("Setting property %r with invalid characters in name", prop)
                         assert isinstance(newvalue, str)
