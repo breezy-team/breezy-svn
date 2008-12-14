@@ -20,6 +20,7 @@ from bzrlib.bzrdir import BzrDir
 from bzrlib.repository import Repository
 from bzrlib.trace import mutter
 from bzrlib.tests import TestCase
+from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn.fileids import simple_apply_changes
 from bzrlib.plugins.svn.layout.standard import TrunkLayout, RootLayout
@@ -425,3 +426,38 @@ class GetMapTests(SubversionTestCase):
           "bar/file": (self.mapping.generate_file_id(self.repos.uuid, 3, "trunk", u"bar/file"), 
               self.repos.generate_revision_id(3, "trunk", self.mapping))},
             self.repos.get_fileid_map(rm_provider.get_revision("trunk", 3), self.mapping))
+
+    def test_304134(self):
+        self.make_checkout(self.repos_url, 'svn-co')
+        self.build_tree({
+            'svn-co/subdir1/file1': '', 
+            'svn-co/subdir1/file2': '',
+            'svn-co/subdir2/file3': '',
+            'svn-co/subdir2/file4': ''})
+        self.client_add('svn-co/subdir1')
+        self.client_add('svn-co/subdir2')
+        self.client_commit('svn-co', "Initial tree.")
+        self.build_tree({'svn-co/subdir1/subdir3/file5': '',
+                         'svn-co/subdir1/subdir3/file6': ''})
+        self.client_add('svn-co/subdir1/subdir3')
+        self.client_commit('svn-co', "More files.")
+        self.build_tree({
+            'svn-co/subdir2/file3': 'addaline',
+            'svn-co/subdir2/file4': 'addbline',
+            'svn-co/subdir2/file7': ''})
+        self.client_add('svn-co/subdir2/file7')
+        self.client_set_prop("svn-co/subdir2/file4", "svn:executable", "true")
+        self.client_copy("svn-co/subdir2", "svn-co/subdir1")
+        self.client_delete("svn-co/subdir2")
+        self.client_commit("svn-co", "Directory move with modifications.")
+        self.client_update("svn-co")
+        wt = WorkingTree.open("svn-co")
+        wt.lock_write()
+        wt.update()
+        wt.unlock()
+        wt = None
+        wt = WorkingTree.open("svn-co/subdir1")
+        wt.lock_write()
+        #wt.update()
+        wt.unlock()
+

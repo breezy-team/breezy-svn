@@ -1028,6 +1028,8 @@ class PushNewBranchTests(SubversionTestCase):
         svnbranch.pull(wt.branch)
         self.assertEquals(svnbranch.last_revision(), wt.branch.last_revision())
         self.assertEquals(["myfile"], svndir.root_transport.list_dir("."))
+        paths = svnbranch.repository._revmeta_provider.get_paths()
+        self.assertEquals(('R', "trunk/mysubdir", 3), paths['trunk'])
 
     def test_push_pointless(self):
         repos_url = self.make_repository("a")

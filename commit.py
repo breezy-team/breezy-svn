@@ -442,7 +442,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         """See CommitBuilder.finish_inventory()."""
 
     def open_branch_editors(self, root, elements, existing_elements, 
-                           base_url, base_rev, replace_existing):
+                           base_url, base_rev, root_from, replace_existing):
         """Open a specified directory given an editor for the repository root.
 
         :param root: Editor for the repository root
@@ -450,6 +450,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         :param existing_elements: List of directory names that exist
         :param base_url: URL to base top-level branch on
         :param base_rev: Revision of path to base top-level branch on
+        :param root_from: Path inside the branch to copy the root from, 
+            or None if it should be created from scratch.
         :param replace_existing: Whether the current branch should be replaced
         """
         ret = [root]
@@ -467,13 +469,14 @@ class SvnCommitBuilder(RootCommitBuilder):
             len(existing_elements)+1 != len(elements)):
             raise MissingPrefix("/".join(elements), "/".join(existing_elements))
 
+        replace_existing |= (root_from is not None and root_from != "")
+
         # Branch already exists and stayed at the same location, open:
         # TODO: What if the branch didn't change but the new revision 
         # was based on an older revision of the branch?
         # This needs to also check that base_rev was the latest version of 
         # branch_path.
-        if (len(existing_elements) == len(elements) and 
-            not replace_existing):
+        if len(existing_elements) == len(elements) and not replace_existing:
             ret.append(ret[-1].open_directory(
                 "/".join(elements), base_rev))
         else: # Branch has to be created
@@ -485,8 +488,12 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self.mutter("removing branch dir %r", name)
                 ret[-1].delete_entry(name, -1)
             self.mutter("adding branch dir %r", name)
+            if base_url is None:
+                copyfrom_url = None
+            else:
+                copyfrom_url = urlutils.join(base_url, root_from)
             ret.append(ret[-1].add_directory(
-                name, base_url, base_rev))
+                name, copyfrom_url, base_rev))
 
         return ret
 
@@ -606,8 +613,13 @@ class SvnCommitBuilder(RootCommitBuilder):
                 else:
                     base_url = None
 
+                if self.new_inventory.root.file_id in self.old_inv:
+                    root_from = self.old_inv.id2path(self.new_inventory.root.file_id)
+                else:
+                    root_from = None
+
                 branch_editors = self.open_branch_editors(root, bp_parts,
-                    existing_bp_parts, base_url, self.base_revnum, 
+                    existing_bp_parts, base_url, self.base_revnum, root_from,
                     replace_existing)
 
                 dir_editor_send_changes(self.old_inv, self.new_inventory, 
