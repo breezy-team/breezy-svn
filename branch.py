@@ -77,12 +77,12 @@ class SvnBranch(ForeignBranch):
         """
         self.repository = repository
         self._format = SvnBranchFormat()
+        self.layout = self.repository.get_layout()
         assert isinstance(self.repository, SvnRepository)
         super(SvnBranch, self).__init__(mapping or self.repository.get_mapping())
         self.control_files = FakeControlFiles()
         self._lock_mode = None
         self._lock_count = 0
-        self.layout = self.repository.get_layout()
         self._branch_path = branch_path.strip("/")
         self.base = urlutils.join(self.repository.base, 
                         self._branch_path).rstrip("/")
@@ -105,6 +105,12 @@ class SvnBranch(ForeignBranch):
             raise NotBranchError(branch_path)
         if type not in ('branch', 'tag') or ip != '':
             raise NotBranchError(branch_path)
+
+    def supports_tags(self):
+        """See Branch.supports_tags()."""
+        return (self._format.supports_tags() and 
+                self.mapping.supports_tags() and
+                self.layout.supports_tags())
 
     def _make_tags(self):
         if self.supports_tags():

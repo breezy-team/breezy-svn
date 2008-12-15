@@ -19,7 +19,7 @@
 from bzrlib import urlutils
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import NoSuchFile, NoSuchRevision, NotBranchError, NoSuchTag
+from bzrlib.errors import NoSuchFile, NoSuchRevision, NotBranchError, NoSuchTag, TagsNotSupported
 from bzrlib.repository import Repository
 from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import mutter
@@ -90,6 +90,19 @@ class WorkingSubversionBranch(SubversionTestCase):
         b.tags.delete_tag(u"foo")
         b = Branch.open(repos_url + "/trunk")
         self.assertEquals([], b.tags.get_tag_dict().keys())
+
+    def test_tag_set_not_supported(self):
+        repos_url = self.make_repository('a')
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.add_dir("trunk")
+        trunk.add_dir("trunk/gui")
+        dc.close()
+
+        b = Branch.open(repos_url + "/trunk/gui")
+        self.assertRaises(TagsNotSupported,
+                b.tags.set_tag, u"mytag", 
+                b.repository.generate_revision_id(1, "trunk/gui", b.repository.get_mapping()))
 
     def test_tag_lookup(self):
         repos_url = self.make_repository("a")
