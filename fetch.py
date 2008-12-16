@@ -34,7 +34,7 @@ from cStringIO import StringIO
 from subvertpy import properties, SubversionException
 from subvertpy.delta import apply_txdelta_handler
 
-from bzrlib.plugins.svn.errors import InvalidFileName
+from bzrlib.plugins.svn.errors import InvalidFileName, FileIdMapIncomplete
 from bzrlib.plugins.svn.foreign import escape_commit_message
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_PREFIX
 from bzrlib.plugins.svn.repository import SvnRepository, SvnRepositoryFormat
@@ -568,10 +568,16 @@ class RevisionBuildEditor(DeltaBuildEditor):
         basename = urlutils.basename(old_path)
         parent_id_basename_index = getattr(self.old_inventory, "parent_id_basename_to_file_id", None)
         if parent_id_basename_index is None:
-            return self.old_inventory[parent_id].children[basename].file_id
+            try:
+                return self.old_inventory[parent_id].children[basename].file_id
+            except KeyError:
+                raise FileIdMapIncomplete(basename, self.old_inventory.id2path(parent_id), self.revmeta) 
         else:
             ret = parent_id_basename_index.iteritems([(parent_id, basename)])
-            return ret.next()[1]
+            try:
+                return ret.next()[1]
+            except IndexError:
+                raise FileIdMapIncomplete(basename, self.old_inventory.id2path(parent_id), self.revmeta) 
 
     def _get_existing_id(self, old_parent_id, new_parent_id, path):
         assert isinstance(path, unicode)

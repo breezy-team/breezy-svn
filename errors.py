@@ -170,3 +170,12 @@ class AppendRevisionsOnlyViolation(bzrlib.errors.AppendRevisionsOnlyViolation):
            ' branch "%(location)s".')
 
 
+class FileIdMapIncomplete(BzrError):
+    _fmt = """Unable to find file id for child '%(child)s' in '%(parent)s' in %(revmeta)r."""
+
+    def __init__(self, child, parent, revmeta):
+        BzrError.__init__(self)
+        self.child = child
+        self.parent = parent
+        self.revmeta = revmeta
+
