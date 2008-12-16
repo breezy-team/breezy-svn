@@ -71,6 +71,12 @@ from bzrlib.plugins.svn.foreign.versionedfiles import (
         VirtualSignatureTexts,
         )
 
+LAYOUT_SOURCE_GUESSED = 'guess'
+LAYOUT_SOURCE_CONFIG = 'config'
+LAYOUT_SOURCE_REGISTRY = 'registry'
+LAYOUT_SOURCE_OVERRIDDEN = 'overridden'
+LAYOUT_SOURCE_MAPPING_MANDATED = 'mapping-mandated'
+
 class SvnRepositoryFormat(RepositoryFormat):
     """Repository format for Subversion repositories (accessed using svn_ra).
     """
@@ -129,6 +135,7 @@ class SvnRepository(foreign.ForeignRepository):
         self._lock_mode = None
         self._lock_count = 0
         self._layout = None
+        self._layout_source = None
         self._guessed_layout = None
         self._guessed_appropriate_layout = None
         self.transport = transport
@@ -214,6 +221,7 @@ class SvnRepository(foreign.ForeignRepository):
         self._cached_tags = {}
         self._cached_revnum = revnum
         self._layout = None
+        self._layout_source = None
         self._parents_provider = graph.CachingParentsProvider(self._real_parents_provider)
 
     def lock_write(self):
@@ -360,11 +368,13 @@ class SvnRepository(foreign.ForeignRepository):
         """Set the layout that should be used by default by this instance."""
         self.get_mapping().check_layout(self, layout)
         self._layout = layout
+        self._layout_source = LAYOUT_SOURCE_OVERRIDDEN
 
     def store_layout(self, layout):
         """Permanantly store the layout for this repository."""
         self.set_layout(layout)
         self.get_config().set_layout(layout)
+        self._layout_source= LAYOUT_SOURCE_CONFIG
 
     def get_layout(self):
         """Determine layout to use for this repository.
@@ -372,25 +382,33 @@ class SvnRepository(foreign.ForeignRepository):
         This will use whatever layout the user has specified, or 
         otherwise the layout that was guessed by bzr-svn.
         """
+        return self.get_layout_source()[0]
+
+    def get_layout_source(self):
         if self._layout is None:
+            self._layout_source = LAYOUT_SOURCE_MAPPING_MANDATED
             self._layout = self.get_mapping().get_mandated_layout(self)
         if self._layout is None:
             layoutname = self.get_config().get_layout()
             if layoutname is not None:
+                self._layout_source = LAYOUT_SOURCE_CONFIG
                 self._layout = layout.layout_registry.get(layoutname)()
         if self._layout is None:
             branches = self.get_config().get_branches()
             tags = self.get_config().get_tags()
             if branches is not None:
+                self._layout_source = LAYOUT_SOURCE_CONFIG
                 self._layout = WildcardLayout(branches, tags or [])
         if self._layout is None:
             self._layout = layout.repository_registry.get(self.uuid)
+            self._layout_source = LAYOUT_SOURCE_REGISTRY
         if self._layout is None:
             if self._guessed_appropriate_layout is None:
                 (self._guessed_layout, self._guessed_appropriate_layout) = repository_guess_layout(self, 
                     self.get_latest_revnum(), self._hinted_branch_path)
+            self._layout_source =  LAYOUT_SOURCE_GUESSED
             self._layout = self._guessed_appropriate_layout
-        return self._layout
+        return self._layout, self._layout_source
 
     def get_guessed_layout(self):
         """Retrieve the layout bzr-svn deems most appropriate for this repo.
