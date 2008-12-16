@@ -65,6 +65,9 @@ class BzrSvnMappingv1(BzrSvnMapping):
     def __eq__(self, other):
         return type(self) == type(other)
 
+    def __ne__(self, other):
+        return type(self) != type(other)
+
     def __hash__(self):
         return hash(type(self))
 
@@ -153,6 +156,9 @@ class BzrSvnMappingv2(BzrSvnMappingv1):
 
     def __eq__(self, other):
         return type(self) == type(other)
+
+    def __ne__(self, other):
+        return type(self) != type(other)
 
     def __hash__(self):
         return hash(type(self))

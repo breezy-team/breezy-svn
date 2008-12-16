@@ -135,6 +135,9 @@ class RevisionMetadata(object):
         return (type(self) == type(other) and 
                 self.get_foreign_revid() == other.get_foreign_revid())
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __cmp__(self, other):
         return cmp((self.uuid, self.revnum, self.branch_path),
                    (other.uuid, other.revnum, other.branch_path))
@@ -833,6 +836,9 @@ class RevisionMetadataBranch(object):
                 ((self._revs == [] and other._revs == []) or 
                  (self._revs != [] and other._revs != [] and self._revs[0] == other._revs[0])))
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __hash__(self):
         if len(self._revs) == 0:
             return hash((type(self), self._history_limit))
@@ -918,6 +924,9 @@ class RevisionMetadataBrowser(object):
                 self.to_revnum == other.to_revnum and
                 self.prefixes == other.prefixes and
                 self.layout == other.layout)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __hash__(self):
         return hash((type(self), self.from_revnum, self.to_revnum, tuple(self.prefixes), hash(self.layout)))

@@ -222,6 +222,9 @@ class ListBranchingScheme(BranchingScheme):
         return (self.branch_list == other.branch_list and \
                 self.tag_list == other.tag_list)
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def to_lines(self):
         return self.branch_list
 
