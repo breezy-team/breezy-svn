@@ -536,7 +536,12 @@ register_command(cmd_svn_set_revprops)
 
 
 class cmd_svn_layout(Command):
+    """Print the repository layout in use for a repository.
 
+    This will print the name of the repository layout. See 
+    "bzr help svn-layout" for more information about repository 
+    layouts.
+    """
     takes_args = ["repos_url"]
 
     def run(self, repos_url):
