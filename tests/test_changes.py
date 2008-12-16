@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from bzrlib.tests import TestCase
-from bzrlib.plugins.svn.changes import path_is_child, find_prev_location, changes_root
+from bzrlib.plugins.svn.changes import path_is_child, find_prev_location, changes_root, apply_reverse_changes
 
 class PathIsChildTests(TestCase):
     def test_both_empty(self):
@@ -74,3 +74,10 @@ class ChangesRootTests(TestCase):
 
     def test_multiple_roots(self):
         self.assertEquals(None, changes_root(["bla", "blie"]))
+
+
+class ApplyReverseChangesTests(TestCase):
+
+    def test_parent_rename(self):
+        self.assertEquals([('tags/2.5-M2', 'geotools/tags/2.5-M2', 5617)],
+            list(apply_reverse_changes(['trunk/geotools2', 'tags/2.5-M2', 'trunk'], {'tags': (u'A', 'geotools/tags', 5617), 'geotools/tags': (u'D', None, -1)})))

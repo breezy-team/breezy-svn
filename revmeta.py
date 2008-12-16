@@ -1022,11 +1022,17 @@ class RevisionMetadataBrowser(object):
                     # didn't exist previously
                     if new_name in self._metabranches:
                         if self._metabranches[new_name]._revs:
-                            self._metabranches[new_name]._revs[-1]._set_direct_lhs_parent_revmeta(None)
+                            rev = self._metabranches[new_name]._revs[-1]
+                            assert rev.branch_path == new_name
+                            rev._set_direct_lhs_parent_revmeta(None)
                         del self._metabranches[new_name]
+                        if new_name in metabranches_history[revnum]:
+                            del metabranches_history[revnum][new_name]
                 else:
                     data = self._metabranches[new_name]
                     del self._metabranches[new_name]
+                    if new_name in metabranches_history[revnum]:
+                        del metabranches_history[revnum][new_name]
                     metabranches_history[old_rev][old_name].add(data)
                     if not self.layout.is_branch_or_tag(old_name, project):
                         unusual_history[old_rev].add(old_name)
@@ -1039,6 +1045,7 @@ class RevisionMetadataBrowser(object):
                 yield "revision", revmeta
             self._last_revnum = revnum
             remembered = metabranches_history[revnum]
+            del metabranches_history[revnum]
 
 
 def filter_revisions(it):
