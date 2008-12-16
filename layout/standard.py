@@ -225,7 +225,7 @@ class CustomLayout(RepositoryLayout):
 
         :param name: Name of the tag. 
         :param project: Optional name of the project the tag is for. Can include slashes.
-        :return: Path of the tag."
+        :return: Path of the tag.
         """
         return None
 
