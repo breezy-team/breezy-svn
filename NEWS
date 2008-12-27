@@ -26,6 +26,8 @@ bzr-svn 0.5.0~rc2				UNRELEASED
    * Make sure branches are properly removed in iter_all_changes(). 
      (#306288, #300006)
 
+   * Handle pushing empty branches using dpush. (#311613)
+
 bzr-svn 0.5.0~rc1			2008-12-08
 
   CHANGES
