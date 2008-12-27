@@ -28,6 +28,8 @@ bzr-svn 0.5.0~rc2				UNRELEASED
 
    * Handle pushing empty branches using dpush. (#311613)
 
+   * Cope with unicode filenames in manual file id detection. (#311744)
+
 bzr-svn 0.5.0~rc1			2008-12-08
 
   CHANGES

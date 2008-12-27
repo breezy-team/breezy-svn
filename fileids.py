@@ -94,6 +94,7 @@ def simple_apply_changes(new_file_id, changes, find_children=None):
             if not inv_p in map:
                 map[inv_p] = None
         if data[0] in ('A', 'R'):
+            assert isinstance(inv_p, unicode)
             map[inv_p] = new_file_id(inv_p)
 
             if data[1] is not None:
@@ -101,7 +102,8 @@ def simple_apply_changes(new_file_id, changes, find_children=None):
                 if find_children is not None:
                     for c in find_children(data[1], data[2]):
                         inv_c = c.decode("utf-8")
-                        path = c.replace(data[1].decode("utf-8"), inv_p+"/", 1).replace(u"//", u"/")
+                        path = inv_c.replace(data[1].decode("utf-8"), inv_p+"/", 1).replace(u"//", u"/")
+                        assert isinstance(path, unicode)
                         map[path] = new_file_id(path)
                         mutter('added mapping %r -> %r', path, map[path])
 
@@ -195,10 +197,12 @@ class FileIdMap(object):
         :param changes: Changes in revid.
         """
         for p in changes:
+            inv_p = p.decode("utf-8")
             if changes[p][0] == 'M' and not delta.has_key(p):
-                delta[p] = map[p][0]
+                delta[inv_p] = map[inv_p][0]
         
         for x in sorted(delta.keys(), reverse=True):
+            assert isinstance(x, unicode)
             if delta[x] is None:
                 del map[x]
                 for p in map.keys():
