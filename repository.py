@@ -26,6 +26,7 @@ from bzrlib import (
         urlutils,
         xml6,
         )
+from bzrlib.foreign import ForeignRepository
 from bzrlib.inventory import Inventory
 from bzrlib.lockable_files import LockableFiles, TransportLock
 from bzrlib.repository import Repository, RepositoryFormat, needs_read_lock
@@ -114,7 +115,7 @@ def cachedbs():
         return _cachedbs.cache
 
 
-class SvnRepository(foreign.ForeignRepository):
+class SvnRepository(ForeignRepository):
     """
     Provides a simplified interface to a Subversion repository 
     by using the RA (remote access) API from subversion
