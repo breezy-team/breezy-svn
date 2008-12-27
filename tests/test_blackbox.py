@@ -105,6 +105,13 @@ class TestBranch(ExternalBase, SubversionTestCase):
         self.run_bzr("push --overwrite -d dc %s/trunk" % repos_url)
         self.check_output("", "status dc")
 
+    def test_dpush_empty(self):
+        repos_url = self.make_repository('d')
+        
+        self.run_bzr("init dc" % repos_url)
+        os.chdir("dc")
+        self.run_bzr("dpush %s" % repos_url)
+
     def test_dpush(self):
         repos_url = self.make_repository('d')
         

@@ -847,12 +847,17 @@ def push_new(graph, target_repository, target_branch_path, source, stop_revision
         start_revid_parent = rev.parent_ids[0]
     # If this is just intended to create a new branch
     mapping = target_repository.get_mapping()
-    if (start_revid != NULL_REVISION and start_revid_parent != NULL_REVISION and stop_revision == start_revid and mapping.supports_hidden):
-        if target_repository.has_revision(start_revid) or start_revid == NULL_REVISION:
+    if (start_revid != NULL_REVISION and 
+        start_revid_parent != NULL_REVISION and 
+        stop_revision == start_revid and mapping.supports_hidden):
+        if (target_repository.has_revision(start_revid) or 
+            start_revid == NULL_REVISION):
             revid = start_revid
         else:
             revid = start_revid_parent
-        create_branch_with_hidden_commit(target_repository, target_branch_path, revid, set_metadata=True, deletefirst=False)
+        create_branch_with_hidden_commit(target_repository, target_branch_path,
+                                         revid, set_metadata=True, 
+                                         deletefirst=False)
     else:
         return push_revision_tree(graph, target_repository, target_branch_path, 
                               target_repository.get_config(), 
@@ -876,12 +881,12 @@ def dpush(target, source, stop_revision=None):
         if stop_revision is None:
             stop_revision = ensure_null(source.last_revision())
         if target.last_revision() in (stop_revision, source.last_revision()):
-            return {}
+            return { source.last_revision(): source.last_revision() }
         graph = target.repository.get_graph()
         if not source.repository.get_graph().is_ancestor(target.last_revision(), 
                                                         stop_revision):
             if graph.is_ancestor(stop_revision, target.last_revision()):
-                return {}
+                return { source.last_revision(): source.last_revision() }
             raise DivergedBranches(source, target)
         todo = target.mainline_missing_revisions(source, stop_revision)
         revid_map = {}
@@ -899,6 +904,8 @@ def dpush(target, source, stop_revision=None):
                 target._clear_cached_state()
         finally:
             pb.finished()
+        assert stop_revision in revid_map
+        assert len(revid_map.keys()) > 0
         return revid_map
     finally:
         source.unlock()
