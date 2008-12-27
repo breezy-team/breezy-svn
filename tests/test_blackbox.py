@@ -111,7 +111,7 @@ class TestBranch(ExternalBase, SubversionTestCase):
 
     def test_dpush_empty(self):
         repos_url = self.make_repository('dp')
-        self.run_bzr("init dc")
+        self.run_bzr("init --rich-root-pack dc")
         os.chdir("dc")
         self.run_bzr("dpush %s" % repos_url)
 
