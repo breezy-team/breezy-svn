@@ -27,6 +27,10 @@ from bzrlib.plugins.svn.tests import SubversionTestCase
 import os, sys
 
 class TestBranch(ExternalBase, SubversionTestCase):
+
+    def make_repository(self, path):
+        return SubversionTestCase.make_repository(self, path)
+
     def test_branch_empty(self):
         repos_url = self.make_repository('d')
         self.run_bzr("branch %s dc" % repos_url)
@@ -106,9 +110,8 @@ class TestBranch(ExternalBase, SubversionTestCase):
         self.check_output("", "status dc")
 
     def test_dpush_empty(self):
-        repos_url = self.make_repository('d')
-        
-        self.run_bzr("init dc" % repos_url)
+        repos_url = self.make_repository('dp')
+        self.run_bzr("init dc")
         os.chdir("dc")
         self.run_bzr("dpush %s" % repos_url)
 
