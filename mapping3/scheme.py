@@ -219,8 +219,8 @@ class ListBranchingScheme(BranchingScheme):
         raise InvalidSvnBranchPath(path, self)
 
     def __eq__(self, other):
-        return (self.branch_list == other.branch_list and \
-                self.tag_list == other.tag_list)
+        return (self.branch_list == getattr(other, "branch_list", None) and \
+                self.tag_list == getattr(other, "tag_list", None))
 
     def __ne__(self, other):
         return not self.__eq__(other)

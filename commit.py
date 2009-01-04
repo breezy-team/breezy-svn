@@ -200,7 +200,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
                 child_ie.parent_id != new_inv[child_ie.file_id].parent_id or
                 # ... name changed
                 new_inv[child_ie.file_id].name != child_name):
-                mutter('removing %r(%r)', (child_name, child_ie.file_id))
+                mutter('removing %r(%r)', child_name, child_ie.file_id)
                 dir_editor.delete_entry(
                     branch_relative_path(path, child_name), 
                     base_revnum)

@@ -72,7 +72,7 @@ class TestBranch(ExternalBase, SubversionTestCase):
         dc.close()
 
         self.run_bzr("branch %s dc" % repos_url)
-        self.build_tree({"dc/foo": "blaaaa"})
+        self.build_tree(("dc/foo", "blaaaa"))
         self.run_bzr("commit -m msg dc")
         self.run_bzr("push -d dc %s" % repos_url)
         self.check_output("", "status dc")
@@ -103,7 +103,7 @@ class TestBranch(ExternalBase, SubversionTestCase):
         dc.close()
 
         self.run_bzr("init dc")
-        self.build_tree({"dc/bar": "blaaaa"})
+        self.build_tree(("dc/bar", "blaaaa"))
         self.run_bzr("add dc/bar")
         self.run_bzr("commit -m msg dc")
         self.run_bzr("push --overwrite -d dc %s/trunk" % repos_url)
@@ -123,7 +123,7 @@ class TestBranch(ExternalBase, SubversionTestCase):
         dc.close()
 
         self.run_bzr("branch %s dc" % repos_url)
-        self.build_tree({"dc/foo": "blaaaa"})
+        self.build_tree(("dc/foo", "blaaaa"))
         self.run_bzr("commit -m msg dc")
         self.run_bzr("dpush -d dc %s" % repos_url)
         self.check_output("", "status dc")
@@ -136,7 +136,7 @@ class TestBranch(ExternalBase, SubversionTestCase):
         dc.close()
 
         self.run_bzr("branch %s dc" % repos_url)
-        self.build_tree({"dc/foofile": "blaaaa"})
+        self.build_tree(("dc/foofile", "blaaaa"))
         self.run_bzr("add dc/foofile")
         self.run_bzr("commit -m msg dc")
         self.run_bzr("dpush -d dc %s" % repos_url)
@@ -152,10 +152,10 @@ class TestBranch(ExternalBase, SubversionTestCase):
         dc.close()
 
         self.run_bzr("branch %s dc" % repos_url)
-        self.build_tree({"dc/foofile": "blaaaa"})
+        self.build_tree(("dc/foofile", "blaaaa"))
         self.run_bzr("add dc/foofile")
         self.run_bzr("commit -m msg dc")
-        self.build_tree({"dc/foofile": "blaaaal"})
+        self.build_tree(("dc/foofile", "blaaaal"))
         self.run_bzr("dpush -d dc %s" % repos_url)
         self.check_output('modified:\n  foofile\n', "status dc")
 
@@ -354,7 +354,7 @@ Node-copyfrom-path: x
 
     def test_lightweight_checkout_lightweight_checkout(self):
         repos_url = self.make_client("a", "dc")
-        self.build_tree({'dc/foo': "test", 'dc/bla': "ha"})
+        self.build_tree(('dc/foo', "test"), ('dc/bla', "ha"))
         self.client_add("dc/foo")
         self.client_add("dc/bla")
         self.client_commit("dc", "Msg")
@@ -362,7 +362,7 @@ Node-copyfrom-path: x
 
     def test_commit(self):
         repos_url = self.make_client('d', 'de')
-        self.build_tree({'de/foo': 'bla'})
+        self.build_tree(('de/foo', 'bla'))
         self.run_bzr("add de/foo")
         self.run_bzr("commit -m test de")
         self.check_output("2\n", "revno de")
