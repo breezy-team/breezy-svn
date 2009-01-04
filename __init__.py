@@ -205,7 +205,9 @@ class cmd_svn_import(Command):
         from bzrlib.errors import BzrCommandError, NoRepositoryPresent
         from bzrlib import osutils, urlutils
         from bzrlib.plugins.svn.convert import convert_repository
+        from bzrlib.plugins.svn.remote import SvnRemoteAccess
         from bzrlib.plugins.svn.repository import SvnRepository
+        from bzrlib.plugins.svn.workingtree import SvnCheckout
         from bzrlib.trace import info
 
         if to_location is None:
@@ -226,6 +228,11 @@ class cmd_svn_import(Command):
             tmp_repos = None
 
         from_dir = BzrDir.open(from_location)
+
+        if not (isinstance(from_dir, SvnRemoteAccess) or 
+                isinstance(from_dir, SvnCheckout)):
+            raise BzrCommandError("Source repository is not a Subversion repository.")
+
         try:
             from_repos = from_dir.open_repository()
         except NoRepositoryPresent, e:
@@ -236,9 +243,6 @@ class cmd_svn_import(Command):
             assert from_location.startswith(from_repos.base)
             prefix = from_location[len(from_repos.base):].strip("/")
             prefix = prefix.encode("utf-8")
-
-        if not isinstance(from_repos, SvnRepository):
-            raise BzrCommandError("Source repository is not a Subversion repository.")
 
         if until is None:
             to_revnum = from_repos.get_latest_revnum()

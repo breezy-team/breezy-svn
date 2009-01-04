@@ -326,6 +326,14 @@ Node-copyfrom-path: x
                 mapping.revision_id_foreign_to_bzr((uuid, "", 5)))
         self.assertNotEqual(inv1.path2id("y"), inv2.path2id("y"))
 
+    def test_svn_import_bzr_branch(self):
+        self.run_bzr('init foo')
+        self.run_bzr_error('bzr: ERROR: Source repository is not a Subversion repository.\n', 'svn-import foo dc')
+
+    def test_svn_import_bzr_repo(self):
+        self.run_bzr('init-repo foo')
+        self.run_bzr('init foo/bar')
+        self.run_bzr_error('bzr: ERROR: Source repository is not a Subversion repository.\n', 'svn-import foo/bar dc')
 
     def test_list(self):
         repos_url = self.make_repository("a")
