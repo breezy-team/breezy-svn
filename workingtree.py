@@ -832,7 +832,7 @@ class SvnCheckout(BzrDir):
     def open_repository(self):
         raise NoRepositoryPresent(self)
 
-    def find_repository(self):
+    def find_repository(self, _ignore_branch_path=False):
         raise NoRepositoryPresent(self)
 
     def _find_repository(self):
