@@ -30,15 +30,17 @@ from bzrlib.plugins.svn import cache
 
 import subvertpy.tests
 
-class SubversionTestCase(subvertpy.tests.SubversionTestCase):
+class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
     def setUp(self):
-        super(SubversionTestCase, self).setUp()
+        subvertpy.tests.SubversionTestCase.setUp(self)
+        subvertpy.tests.SubversionTestCase.tearDown(self)
+        TestCaseInTempDir.setUp(self)
         self._old_connect_cachefile = cache.connect_cachefile
         cache.connect_cachefile = lambda path: cache.sqlite3.connect(":memory:")
 
     def tearDown(self):
-        super(SubversionTestCase, self).tearDown()
+        TestCaseInTempDir.tearDown(self)
         cache.connect_cachefile = self._old_connect_cachefile
 
     def make_local_bzrdir(self, repos_path, relpath):
