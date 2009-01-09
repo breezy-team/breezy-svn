@@ -32,6 +32,9 @@ import subvertpy.tests
 
 class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
+    def make_repository(self, *args, **kwargs):
+        return subvertpy.tests.SubversionTestCase.make_repository(self, *args, **kwargs)
+
     def setUp(self):
         subvertpy.tests.SubversionTestCase.setUp(self)
         subvertpy.tests.SubversionTestCase.tearDown(self)
