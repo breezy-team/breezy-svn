@@ -273,7 +273,10 @@ class LogCache(CacheTable):
 
         :param revnum: Revision number of the revision.
         """
-        return self.cachedb.execute("select all_revprops from revinfo where rev = ?", (revnum,)).fetchone()[0]
+        row = self.cachedb.execute("select all_revprops from revinfo where rev = ?", (revnum,)).fetchone()
+        if row is None:
+            return False
+        return row[0]
 
     def insert_revinfo(self, rev, all_revprops):
         """Insert metadata for a revision.
