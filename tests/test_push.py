@@ -492,6 +492,13 @@ class TestPush(SubversionTestCase):
 
         self.svndir.open_branch().pull(wt.branch)
 
+        paths = self.svndir.find_repository()._revmeta_provider.get_revision("", 3).get_paths()
+        self.assertEquals({
+            'trunk/comics': (u'R', None, -1),
+            'trunk/comics/bin': (u'A', 'trunk/comics/bin', 2),
+            'trunk/comics/core': (u'A', 'trunk/comics', 2),
+            'trunk/comics/core/bin': (u'D', None, -1)}, paths)
+
 
 class PushNewBranchTests(SubversionTestCase):
     def test_single_revision(self):

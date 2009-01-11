@@ -285,7 +285,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
                 branch_relative_path(new_child_path))
 
         # copy if they existed at different location
-        elif old_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path:
+        elif old_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or old_inv[child_ie.file_id].parent_id != child_ie.parent_id:
             old_child_path = old_inv.id2path(child_ie.file_id).encode("utf-8")
             mutter('copy dir %r -> %r', old_child_path, new_child_path)
             child_editor = dir_editor.add_directory(
