@@ -255,3 +255,15 @@ class MetadataBrowserTests(TestCase):
         self.assertEquals(('revision', FakeRevision('branches/foo',2)), browser.next())
         self.assertEquals(('revision', FakeRevision('trunk',1)), browser.next())
         self.assertRaises(StopIteration, browser.next)
+
+    def test_subdir_becomes_branch_root(self):
+        browser = self.get_browser(None, 2, 0, TrunkLayout(), 
+                { 1: { "trunk": ('A', None, -1),
+                       "trunk/mysubdir": ('A', None, -1),
+                       "trunk/mysubdir/myfile": ('A', None, -1)},
+                  2: { "trunk": ('R', "trunk/mysubdir", 1) }})
+        self.assertEquals(('delete', 'trunk'), browser.next())
+        self.assertEquals(('revision', FakeRevision('trunk',2)), browser.next())
+        self.assertEquals(('revision', FakeRevision('trunk/mysubdir',1)), browser.next())
+        self.assertEquals(('revision', FakeRevision('trunk',1)), browser.next())
+        self.assertRaises(StopIteration, browser.next)

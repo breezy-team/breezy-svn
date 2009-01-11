@@ -685,8 +685,6 @@ class SvnCommitBuilder(RootCommitBuilder):
                 changed_fileprops=self._changed_fileprops,
                 fileprops=self._svnprops,
                 )
-        self.revmeta._set_direct_lhs_parent_revmeta(self._base_revmeta)
-
         revid = self.revmeta.get_revision_id(self.mapping)
 
         assert not self.push_metadata or self._new_revision_id is None or self._new_revision_id == revid
