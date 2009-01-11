@@ -16,9 +16,16 @@
 from bzrlib.repository import Repository
 from bzrlib.tests import TestCase
 
+from bzrlib.plugins.svn.logwalker import (
+        DictBasedLogWalker,
+        )
+from bzrlib.plugins.svn.layout.standard import (
+        RootLayout,
+        )
 from bzrlib.plugins.svn.revmeta import (
         filter_revisions,
         restrict_prefixes,
+        RevisionMetadataBrowser,
         )
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
@@ -165,3 +172,49 @@ class RestrictPrefixesTests(TestCase):
 
     def test_prefix_restricts(self):
         self.assertEquals(set(["a/d"]), restrict_prefixes(["a", "b/c"], "a/d"))
+
+
+class FakeRevision(object):
+
+    def __init__(self, path, revnum):
+        self.path = path
+        self.revnum = revnum
+        self._parent_revmeta_set = False
+        self.parent_revmeta = None
+        self.children = set()
+
+    def _set_direct_lhs_parent_revmeta(self, revmeta):
+        assert not self._parent_revmeta_set or revmeta == self.parent_revmeta, \
+                "%r != %r" % (self.parent_revmeta, revmeta)
+        self._parent_revmeta_set = True
+        self.parent_revmeta = revmeta
+        if revmeta is not None:
+            revmeta.children.add(self)
+
+    def __repr__(self):
+        return "FakeRevision(%r,%r)" % (self.path, self.revnum)
+
+    def __eq__(self, other):
+        return (type(self) == type(other) and 
+                self.path == other.path and 
+                self.revnum == other.revnum)
+
+
+class MetadataBrowserTests(TestCase):
+
+    def get_revision(self, path, revnum, changes=None, revprops=None,
+                     changed_fileprops=None, fileprops=None, metaiterator=None):
+        return FakeRevision(path, revnum)
+
+    def get_browser(self, prefixes, from_revnum, to_revnum, layout, paths, revprops):
+        self._log = DictBasedLogWalker(paths, revprops)
+        return RevisionMetadataBrowser(prefixes, from_revnum, to_revnum, layout, self)
+
+    def test_root_layout_simple(self):
+        browser = self.get_browser(None, 1, 0, RootLayout(), 
+                { 1: { "bla": ('A', None, -1)}},
+                { 1: { "svn:log": "msg"} })
+        self.assertEquals(('revision', FakeRevision('',1)), browser.next())
+        self.assertEquals(('revision', FakeRevision('',0)), browser.next())
+        self.assertRaises(StopIteration, browser.next)
+
