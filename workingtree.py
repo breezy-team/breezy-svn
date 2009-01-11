@@ -35,6 +35,7 @@ from bzrlib.errors import (
         NoRepositoryPresent,
         NoWorkingTree,
         UnsupportedFormatError,
+        UninitializableFormat,
         )
 from bzrlib.inventory import (
         Inventory,
@@ -828,6 +829,9 @@ class SvnCheckout(BzrDir):
         branch.sprout(result, revision_id)
         result.create_workingtree(hardlink=hardlink)
         return result
+
+    def create_repository(self, shared=False):
+        raise UninitializableFormat(self._format)
 
     def open_repository(self):
         raise NoRepositoryPresent(self)

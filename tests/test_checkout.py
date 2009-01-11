@@ -65,6 +65,11 @@ class TestCheckout(SubversionTestCase):
         x = BzrDir.open("dc")
         self.assertRaises(NoRepositoryPresent, x.open_repository)
 
+    def test_create_repository(self):
+        self.make_client("d", "dc")
+        x = BzrDir.open("dc")
+        self.assertRaises(UninitializableFormat, x.create_repository)
+
     def test_find_repository(self):
         self.make_client("d", "dc")
         x = BzrDir.open("dc")
