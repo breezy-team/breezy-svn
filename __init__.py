@@ -56,7 +56,7 @@ else:
     version_string = '%d.%d.%d%s%d' % version_info
 __version__ = version_string
 
-COMPATIBLE_BZR_VERSIONS = [(1, 10, 0), (1, 11, 0)]
+COMPATIBLE_BZR_VERSIONS = [(1, 11, 0)]
 
 
 def check_subversion_version(subvertpy):
