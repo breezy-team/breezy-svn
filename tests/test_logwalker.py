@@ -93,8 +93,8 @@ class TestLogWalker(SubversionTestCase):
     def test_get_branch_invalid_revision(self):
         repos_url = self.make_repository("a")
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
-        self.assertRaises(NoSuchRevision, list, 
-                          walker.iter_changes(["/"], 20))
+        self.assertRaises(NoSuchRevision, lambda: list(
+                          walker.iter_changes(["/"], 20)))
 
     def test_branch_log_all(self):
         repos_url = self.make_repository("a")
@@ -399,8 +399,7 @@ class TestLogWalker(SubversionTestCase):
             self.assertTrue(rev == 0 or paths.has_key("foo"))
             self.assertTrue(rev in (0, 1))
 
-        iter = walker.iter_changes([""], 2)
-        self.assertRaises(NoSuchRevision, list, iter)
+        self.assertRaises(NoSuchRevision, lambda: list(walker.iter_changes([""], 2)))
 
     def test_get_branch_log_follow(self):
         repos_url = self.make_repository("a")
@@ -536,3 +535,19 @@ class TestLogCache(TestCase):
         self.cache.insert_path(42, "foo", "A")
         self.assertEquals(42, self.cache.find_latest_change("foo", 42))
         self.assertEquals(42, self.cache.find_latest_change("foo", 45))
+
+
+
+class DictBasedLogwalkerTestCase(TestCase):
+
+    def test_empty(self):
+        lw = logwalker.DictBasedLogWalker({}, {})
+        self.assertEquals([({'': ('A', None, -1)}, 0, {})], 
+                list(lw.iter_changes([""], 0)))
+
+    def test_simple_root(self):
+        lw = logwalker.DictBasedLogWalker({1:{"/": ('A', None, -1)}}, 
+                {1:{"svn:log": "foo"}})
+        self.assertEquals([({'/': ('A', None, -1)}, 1, {'svn:log': 'foo'}),
+            ({'': ('A', None, -1)}, 0, {})], 
+                list(lw.iter_changes([""], 1)))

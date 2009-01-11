@@ -126,6 +126,57 @@ class lazy_dict(object):
         return self.dict.update(other)
 
 
+def iter_changes(paths, from_revnum, to_revnum, get_revision_paths, 
+    revprop_list, limit=0, pb=None):
+    ascending = (to_revnum > from_revnum)
+
+    revnum = from_revnum
+
+    if paths is None:
+        path = ""
+    else:
+        assert len(paths) == 1
+        path = paths[0].strip("/")
+
+    assert from_revnum >= to_revnum or path == ""
+
+    i = 0
+
+    while ((not ascending and revnum >= to_revnum) or
+           (ascending and revnum <= to_revnum)):
+        if pb is not None:
+            if ascending:
+                pb.update("determining changes", revnum, to_revnum)
+            else:
+                pb.update("determining changes", from_revnum-revnum, from_revnum-to_revnum)
+        assert revnum > 0 or path == "", "Inconsistent path,revnum: %r,%r" % (revnum, path)
+        revpaths = get_revision_paths(revnum)
+
+        if ascending:
+            next = (path, revnum+1)
+        else:
+            next = changes.find_prev_location(revpaths, path, revnum)
+
+        revprops = revprop_list(revnum)
+
+        if path == "" or changes.changes_path(revpaths, path, True):
+            assert isinstance(revnum, int)
+            yield (revpaths, revnum, revprops)
+            i += 1
+            if limit != 0 and i == limit:
+                break
+
+        if next is None:
+            break
+
+        assert (ascending and next[1] > revnum) or \
+               (not ascending and next[1] < revnum)
+        (path, revnum) = next
+        assert isinstance(path, str)
+        assert isinstance(revnum, int)
+
+
+
 class LogCache(CacheTable):
     """Log browser cache table manager. The methods of this class
     encapsulate the SQL commands used by CachingLogWalker to access
@@ -279,56 +330,11 @@ class CachingLogWalker(CacheTable):
             in revnum.
         """
         assert from_revnum >= 0 and to_revnum >= 0
-
-        ascending = (to_revnum > from_revnum)
-
-        revnum = from_revnum
-
         self.mutter("iter changes %r->%r (%r)", from_revnum, to_revnum, paths)
-
-        if paths is None:
-            path = ""
-        else:
-            assert len(paths) == 1
-            path = paths[0].strip("/")
-
-        assert from_revnum >= to_revnum or path == ""
-
         self._fetch_revisions(max(from_revnum, to_revnum), pb=pb)
-        i = 0
 
-        while ((not ascending and revnum >= to_revnum) or
-               (ascending and revnum <= to_revnum)):
-            if pb is not None:
-                if ascending:
-                    pb.update("determining changes", revnum, to_revnum)
-                else:
-                    pb.update("determining changes", from_revnum-revnum, from_revnum-to_revnum)
-            assert revnum > 0 or path == "", "Inconsistent path,revnum: %r,%r" % (revnum, path)
-            revpaths = self.get_revision_paths(revnum)
-
-            if ascending:
-                next = (path, revnum+1)
-            else:
-                next = changes.find_prev_location(revpaths, path, revnum)
-
-            revprops = self.revprop_list(revnum)
-
-            if path == "" or changes.changes_path(revpaths, path, True):
-                assert isinstance(revnum, int)
-                yield (revpaths, revnum, revprops)
-                i += 1
-                if limit != 0 and i == limit:
-                    break
-
-            if next is None:
-                break
-
-            assert (ascending and next[1] > revnum) or \
-                   (not ascending and next[1] < revnum)
-            (path, revnum) = next
-            assert isinstance(path, str)
-            assert isinstance(revnum, int)
+        return iter(iter_changes(paths, from_revnum, to_revnum, 
+            self.get_revision_paths, self.revprop_list, limit, pb))
 
     def get_revision_paths(self, revnum):
         if revnum == 0:
@@ -528,4 +534,25 @@ class LogWalker(object):
                     revision="Revision number %d" % revnum)
             raise
 
+
+class DictBasedLogWalker(object):
+
+    def __init__(self, paths, revprops):
+        self.paths = paths
+        self.revprops = revprops
+
+    def iter_changes(self, paths, from_revnum, to_revnum=0, limit=0, pb=None):
+        return iter(iter_changes(paths, from_revnum, to_revnum, 
+            self.get_revision_paths, self.revprop_list, limit, pb))
+
+    def get_revision_paths(self, revnum):
+        if revnum == 0:
+            return changes.REV0_CHANGES
+
+        return self.paths[revnum]
+
+    def revprop_list(self, revnum):
+        if revnum == 0:
+            return { }
+        return self.revprops[revnum]
 
