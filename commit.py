@@ -202,7 +202,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
                 new_inv[child_ie.file_id].name != child_name):
                 mutter('removing %r(%r)', child_name, child_ie.file_id)
                 dir_editor.delete_entry(
-                    branch_relative_path(path, child_name), 
+                    branch_relative_path(path, child_name.encode("utf-8")), 
                     base_revnum)
 
     # Loop over file children of file_id in new_inv
@@ -221,13 +221,13 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
             child_editor = dir_editor.add_file(full_new_child_path)
 
         # copy if they existed at different location
-        elif (old_inv.id2path(child_ie.file_id) != new_child_path or
+        elif (old_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
                 old_inv[child_ie.file_id].parent_id != child_ie.parent_id):
             mutter('copy %s %r -> %r', child_ie.kind, 
                               old_inv.id2path(child_ie.file_id), 
                               new_child_path)
             child_editor = dir_editor.add_file(full_new_child_path, 
-                url_join_unescaped_path(base_url, old_inv.id2path(child_ie.file_id)),
+                url_join_unescaped_path(base_url, old_inv.id2path(child_ie.file_id).encode("utf-8")),
                 base_revnum)
 
         # open if they existed at the same location
@@ -285,8 +285,8 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
                 branch_relative_path(new_child_path))
 
         # copy if they existed at different location
-        elif old_inv.id2path(child_ie.file_id) != new_child_path:
-            old_child_path = old_inv.id2path(child_ie.file_id)
+        elif old_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path:
+            old_child_path = old_inv.id2path(child_ie.file_id).encode("utf-8")
             mutter('copy dir %r -> %r', old_child_path, new_child_path)
             child_editor = dir_editor.add_directory(
                 branch_relative_path(new_child_path),

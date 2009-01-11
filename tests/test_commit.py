@@ -307,6 +307,16 @@ class TestPush(SubversionTestCase):
         self.assertEqual(1, int(self.olddir.open_branch().pull(
                                 self.newdir.open_branch())))
 
+    def test_rename_from_unicode_filename(self):
+        self.build_tree({u'dc/I²C': 'other data'})
+        wt = self.newdir.open_workingtree()
+        wt.add(u'I²C')
+        wt.commit(message="Commit from Bzr")
+        wt.rename_one(u'I²C', u'I²C2')
+        wt.commit(message="Commit from Bzr2")
+        self.assertEqual(2, int(self.olddir.open_branch().pull(
+                                self.newdir.open_branch())))
+
     def test_change(self):
         self.build_tree({'dc/foo/bla': 'other data'})
         wt = self.newdir.open_workingtree()
