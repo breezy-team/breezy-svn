@@ -21,6 +21,7 @@ from bzrlib.plugins.svn.logwalker import (
         )
 from bzrlib.plugins.svn.layout.standard import (
         RootLayout,
+        TrunkLayout,
         )
 from bzrlib.plugins.svn.revmeta import (
         filter_revisions,
@@ -206,15 +207,51 @@ class MetadataBrowserTests(TestCase):
                      changed_fileprops=None, fileprops=None, metaiterator=None):
         return FakeRevision(path, revnum)
 
-    def get_browser(self, prefixes, from_revnum, to_revnum, layout, paths, revprops):
+    def get_browser(self, prefixes, from_revnum, to_revnum, layout, paths):
+        revprops = {}
+        for revnum in paths:
+            revprops[revnum] = { "svn:log": "Revision %d" % revnum }
         self._log = DictBasedLogWalker(paths, revprops)
         return RevisionMetadataBrowser(prefixes, from_revnum, to_revnum, layout, self)
 
     def test_root_layout_simple(self):
         browser = self.get_browser(None, 1, 0, RootLayout(), 
-                { 1: { "bla": ('A', None, -1)}},
-                { 1: { "svn:log": "msg"} })
+                { 1: { "bla": ('A', None, -1)}})
         self.assertEquals(('revision', FakeRevision('',1)), browser.next())
         self.assertEquals(('revision', FakeRevision('',0)), browser.next())
         self.assertRaises(StopIteration, browser.next)
 
+    def test_trunk_layout_simple(self):
+        browser = self.get_browser(None, 2, 0, TrunkLayout(), 
+                { 1: { "trunk": ('A', None, -1)},
+                  2: { "trunk": ('M', None, -1)}})
+        self.assertEquals(('revision', FakeRevision('trunk',2)), browser.next())
+        self.assertEquals(('revision', FakeRevision('trunk',1)), browser.next())
+        self.assertRaises(StopIteration, browser.next)
+
+    def test_trunk_layout_movefrom_non_branch(self):
+        browser = self.get_browser(None, 2, 0, TrunkLayout(), 
+                { 1: { "old-trunk": ('A', None, -1)},
+                  2: { "trunk": ('A', "old-trunk", 1)}})
+        self.assertEquals(('revision', FakeRevision('trunk',2)), browser.next())
+        self.assertEquals(('revision', FakeRevision('old-trunk',1)), browser.next())
+        self.assertRaises(StopIteration, browser.next)
+
+    def test_trunk_layout_movefrom_oldbranch(self):
+        browser = self.get_browser(None, 3, 0, TrunkLayout(), 
+                { 1: { "old-trunk": ('A', None, -1)},
+                  2: { "old-trunk": ('D', None, -1)},
+                  3: { "trunk": ('A', "old-trunk", 1)}})
+        self.assertEquals(('revision', FakeRevision('trunk',3)), browser.next())
+        self.assertEquals(('delete', "old-trunk"), browser.next())
+        self.assertEquals(('revision', FakeRevision('old-trunk',1)), browser.next())
+        self.assertRaises(StopIteration, browser.next)
+
+    def test_trunk_layout_copiedbranch(self):
+        browser = self.get_browser(None, 2, 0, TrunkLayout(), 
+                { 1: { "trunk": ('A', None, -1)},
+                  2: { "branches": ('A', None, -1),
+                       "branches/foo": ('A', "trunk", 1)}})
+        self.assertEquals(('revision', FakeRevision('branches/foo',2)), browser.next())
+        self.assertEquals(('revision', FakeRevision('trunk',1)), browser.next())
+        self.assertRaises(StopIteration, browser.next)
