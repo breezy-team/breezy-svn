@@ -899,9 +899,23 @@ class RevisionMetadataBranch(object):
 
 
 class RevisionMetadataBrowser(object):
+    """Object can that can iterate over the meta revisions in a 
+    revision range.
+
+    """
 
     def __init__(self, prefixes, from_revnum, to_revnum, layout, provider,
             project=None, pb=None):
+        """Create a new browser
+
+        :param prefixes: Prefixes of branches over which to iterate
+        :param from_revnum: Start side of revnum
+        :param to_revnum: Stop side of revnum
+        :param layout: Layout
+        :param provider: Object with get_revision and iter_changes functions
+        :param project: Project name
+        :param pb: Optional progress bar
+        """
         self.prefixes = prefixes
         self.from_revnum = from_revnum
         self.to_revnum = to_revnum
