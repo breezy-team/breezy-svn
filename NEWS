@@ -18,8 +18,6 @@ bzr-svn 0.5.0~rc2				UNRELEASED
 
    * Fix handling of custom layouts, which used unicode internally. (#306629)
 
-   * Mark as compatible with Bazaar 1.11.
-
    * Fix pointless commits when using roundtripping using revision 
      properties. (#299943)
 
@@ -110,6 +108,12 @@ bzr-svn 0.5.0~rc1			2008-12-08
    * Remove custom commit code for working tree. 
 
     + Standard commit code provides commit notification. (#79333)
+
+bzr-svn 0.4.17	2008-01-13
+
+  BUG FIXES
+
+   * Mark as compatible with Bazaar 1.11.
 
 bzr-svn 0.4.16	2008-12-06
 
