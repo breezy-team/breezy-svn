@@ -1276,6 +1276,48 @@ Node-copyfrom-path: x
                 oldrepos.generate_revision_id(5, "", mapping))
         self.assertNotEqual(inv1.path2id("y"), inv2.path2id("y"))
 
+    def test_fetch_dir_replace_self(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("branches")
+        trunk = dc.add_dir("trunk")
+        dir1 = trunk.add_dir("trunk/dir1")
+        dir2 = dir1.add_dir("trunk/dir1/dir2")
+        dir3 = dir2.add_dir("trunk/dir1/dir2/dir3")
+        file = dir3.add_file("trunk/dir1/dir2/dir3/file.txt")
+        file.modify()
+        file = dir1.add_file("trunk/dir1/file.txt")
+        file.modify()
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        dir1 = trunk.open_dir("trunk/dir1")
+        dir1.open_file("trunk/dir1/file.txt").modify()
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        dir1 = trunk.open_dir("trunk/dir1")
+        dir2 = dir1.open_dir("trunk/dir1/dir2")
+        dir3 = dir1.open_dir("trunk/dir1/dir2/dir3")
+        dir3.open_file("trunk/dir1/dir2/dir3/file.txt").modify()
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        branches = dc.open_dir("branches")
+        branch1 = branches.add_dir("branches/1.0", "trunk", 3)
+        branch1.delete("branches/1.0/dir1")
+        branch1.add_dir("branches/1.0/dir1", "trunk/dir1", 2)
+        dc.close()
+
+        oldrepos = Repository.open(repos_url)
+        oldrepos.set_layout(TrunkLayout(0))
+        dir = BzrDir.create("f", format.get_rich_root_format())
+        newrepos = dir.create_repository()
+        oldrepos.copy_content_into(newrepos)
+
     def test_fetch_dir_upgrade(self):
         repos_url = self.make_repository('d')
 
