@@ -845,7 +845,10 @@ class RevisionMetadataBranch(object):
         return hash((type(self), self._history_limit, self._revs[0]))
 
     def __repr__(self):
-        return "<RevisionMetadataBranch starting at %s revision %d>" % (self._revs[0].branch_path, self._revs[0].revnum)
+        if len(self._revs) == 0:
+            return "<Empty RevisionMetadataBranch>"
+        else:
+            return "<RevisionMetadataBranch starting at %s revision %d>" % (self._revs[0].branch_path, self._revs[0].revnum)
 
     def __iter__(self):
         return ListBuildingIterator(self._revs, self.next)
