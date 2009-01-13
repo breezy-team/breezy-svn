@@ -798,6 +798,9 @@ class SvnCheckout(BzrDir):
         return (self.root_transport.abspath(".svn"),
                 self.root_transport.abspath(".svn.backup"))
 
+    def is_control_filename(self, filename):
+        return filename == '.svn' or filename.startswith('.svn/')
+
     def get_remote_bzrdir(self):
         if self._remote_bzrdir is None:
             self._remote_bzrdir = SvnRemoteAccess(self.get_remote_transport())

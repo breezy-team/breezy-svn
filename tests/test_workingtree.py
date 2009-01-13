@@ -95,6 +95,13 @@ class TestWorkingTree(SubversionTestCase):
         self.assertTrue(inv.has_filename("bl"))
         self.assertFalse(inv.has_filename("aa"))
 
+    def test_is_control_filename(self):
+        self.make_client('a', 'dc')
+        bzrdir = BzrDir.open("dc")
+        self.assertTrue(bzrdir.is_control_filename(".svn"))
+        self.assertTrue(bzrdir.is_control_filename(".svn/lock"))
+        self.assertFalse(bzrdir.is_control_filename("lock"))
+
     def test_smart_add_recurse(self):
         self.make_client('a', 'dc')
         self.build_tree({"dc/bl/foo": "data"})
