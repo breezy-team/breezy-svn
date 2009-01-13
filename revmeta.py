@@ -992,7 +992,6 @@ class RevisionMetadataBrowser(object):
             return revmeta
 
         unusual = set()
-        remembered = dict()
         for (paths, revnum, revprops) in self._provider._log.iter_changes(
                 self.prefixes, self.from_revnum, self.to_revnum, pb=pb):
             bps = {}
@@ -1001,8 +1000,13 @@ class RevisionMetadataBrowser(object):
                 pb.update("discovering revisions", revnum-self.to_revnum, 
                           self.from_revnum-self.to_revnum)
 
-            for bp, mbs in remembered.iteritems():
-                metabranches_history[revnum][bp].update(mbs)
+            # Import all metabranches_history where key > revnum
+            from bzrlib.trace import mutter
+            mutter('size %r' % len(metabranches_history))
+            for x in [r for r in metabranches_history if r > revnum]:
+                for bp in metabranches_history[x].keys():
+                    metabranches_history[revnum][bp].update(metabranches_history[x][bp])
+                    del metabranches_history[x][bp]
             for bp, mbs in metabranches_history[revnum].iteritems():
                 if not bp in self._metabranches:
                     self._metabranches[bp] = iter(mbs).next()
@@ -1029,6 +1033,13 @@ class RevisionMetadataBrowser(object):
             # Mention deletes
             for d in deletes:
                 yield ("delete", p)
+
+            for bp, mb in bps.items():
+                revmeta = process_new_rev(bp, mb, revnum, paths, revprops)
+                if (bp in paths and paths[bp][0] in ('A', 'R') and 
+                    paths[bp][1] is None):
+                    revmeta._set_direct_lhs_parent_revmeta(None)
+                yield "revision", revmeta
             
             # Apply renames and the like for the next round
             for new_name, old_name, old_rev in changes.apply_reverse_changes(
@@ -1053,16 +1064,7 @@ class RevisionMetadataBrowser(object):
                     metabranches_history[old_rev][old_name].add(data)
                     if not self.layout.is_branch_or_tag(old_name, project):
                         unusual_history[old_rev].add(old_name)
-
-            for bp, mb in bps.items():
-                revmeta = process_new_rev(bp, mb, revnum, paths, revprops)
-                if (bp in paths and paths[bp][0] in ('A', 'R') and 
-                    paths[bp][1] is None):
-                    revmeta._set_direct_lhs_parent_revmeta(None)
-                yield "revision", revmeta
             self._last_revnum = revnum
-            remembered = metabranches_history[revnum]
-            del metabranches_history[revnum]
 
 
 def filter_revisions(it):

@@ -178,7 +178,7 @@ class RestrictPrefixesTests(TestCase):
 class FakeRevision(object):
 
     def __init__(self, path, revnum):
-        self.path = path
+        self.branch_path = path
         self.revnum = revnum
         self._parent_revmeta_set = False
         self.parent_revmeta = None
@@ -193,11 +193,11 @@ class FakeRevision(object):
             revmeta.children.add(self)
 
     def __repr__(self):
-        return "FakeRevision(%r,%r)" % (self.path, self.revnum)
+        return "FakeRevision(%r,%r)" % (self.branch_path, self.revnum)
 
     def __eq__(self, other):
         return (type(self) == type(other) and 
-                self.path == other.path and 
+                self.branch_path == other.branch_path and 
                 self.revnum == other.revnum)
 
 
@@ -304,7 +304,7 @@ class MetadataBrowserTests(TestCase):
                   4: { "python/tags/bla": ('A', 'python/trunk', 2)}})
         rev1 = browser.next()
         self.assertEquals(('revision', FakeRevision('python/tags/bla',4)), rev1)
-        self.assertTrue(rev1[1]._parent_revmeta_set)
         rev2 = browser.next()
         self.assertEquals(('revision', FakeRevision('python/trunk',1)), rev2)
         self.assertRaises(StopIteration, browser.next)
+        self.assertTrue(rev1[1]._parent_revmeta_set)
