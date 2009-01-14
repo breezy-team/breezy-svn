@@ -18,7 +18,7 @@
 __author__ = "Jelmer Vernooij <jelmer@samba.org>"
 __docformat__ = "restructuredText"
 
-from bzrlib.osutils import md5
+import md5
 
 TXDELTA_SOURCE = 0
 TXDELTA_TARGET = 1
@@ -58,7 +58,7 @@ SEND_STREAM_BLOCK_SIZE = 1024 * 1024 # 1 Mb
 
 
 def send_stream(stream, handler, block_size=SEND_STREAM_BLOCK_SIZE):
-    hash = md5()
+    hash = md5.new()
     text = stream.read(block_size)
     while text != "":
         hash.update(text)

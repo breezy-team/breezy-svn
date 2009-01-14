@@ -112,7 +112,7 @@ def is_keychain_provider_available():
     """
     abd = apr_build_data()
     sbd = svn_build_data()
-    gcc_command_args = ['gcc'] + ['-I' + inc for inc in sbd[0]] + ['-L' + lib for lib in sbd[1]] + ['-I' + abd[0], '-lsvn_subr-1', '-o', '.keychain_check', '-x', 'c', '-']
+    gcc_command_args = ['gcc'] + ['-I' + inc for inc in sbd[0]] + ['-L' + lib for lib in sbd[1]] + ['-I' + abd[0], '-lsvn_subr-1', '-x', 'c', '-']
     (gcc_in, gcc_out, gcc_err) = os.popen3(gcc_command_args)
     gcc_in.write("""
 #include <svn_auth.h>
@@ -122,8 +122,6 @@ int main(int argc, const char* arv[]) {
 """)
     gcc_in.close()
     gcc_out.read()
-    if os.path.exists('.keychain_check'):
-        os.remove('.keychain_check')
     return (gcc_out.close() is None)
 
 class VersionQuery(object):
@@ -321,4 +319,3 @@ if __name__ == "__main__":
           ext_modules=subvertpy_modules("subvertpy"),
           cmdclass = { 'install_lib': install_lib_with_dlls },
           )
-
