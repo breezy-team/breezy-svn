@@ -465,6 +465,31 @@ class TestWorkingTree(SubversionTestCase):
         tree = WorkingTree.open("dc")
         self.assertFalse(tree.inventory.has_filename("bl"))
 
+    def test_fileid_missing(self):
+        self.make_client("repos", "svn-wc")
+        self.build_tree({"svn-wc/parent": None})
+        self.client_add("svn-wc/parent")
+        self.client_commit("svn-wc", "Added parent.")
+
+        self.build_tree({"svn-wc/peer": None})
+        self.client_add("svn-wc/peer")
+        self.client_commit("svn-wc", "Added peer")
+
+        self.build_tree({"svn-wc/peer/file": "A"})
+        self.client_add("svn-wc/peer/file")
+        self.client_commit("svn-wc", "Added file")
+        self.client_update("svn-wc")
+
+        self.build_tree({"svn-wc/peer/file": "B"})
+        self.client_copy("svn-wc/peer", "svn-wc/parent/child")
+        self.client_delete("svn-wc/peer")
+        self.client_commit("svn-wc", "Made peer a child, with mods.")
+        self.client_update("svn-wc")
+
+        WorkingTree.open("svn-wc").update()
+        self.client_update("svn-wc/parent")
+        WorkingTree.open("svn-wc").update()
+
     def test_extras(self):
         self.make_client('a', 'dc')
         self.build_tree({"dc/bl": None})

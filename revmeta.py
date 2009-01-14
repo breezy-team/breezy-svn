@@ -1007,6 +1007,7 @@ class RevisionMetadataBrowser(object):
                 for bp in metabranches_history[x].keys():
                     metabranches_history[revnum][bp].update(metabranches_history[x][bp])
                     del metabranches_history[x][bp]
+                del metabranches_history[x]
             for bp, mbs in metabranches_history[revnum].iteritems():
                 if not bp in self._metabranches:
                     self._metabranches[bp] = iter(mbs).next()
