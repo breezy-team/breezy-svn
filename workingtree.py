@@ -109,7 +109,6 @@ class SvnWorkingTree(WorkingTree):
         self.bzrdir = bzrdir
         self._branch = branch
         self.base_revnum = 0
-        self._get_wc()
         max_rev = revision_status(self.basedir, None, True)[1]
         self._update_base_revnum(max_rev)
         self._detect_case_handling()
@@ -226,16 +225,16 @@ class SvnWorkingTree(WorkingTree):
     def move(self, from_paths, to_dir=None, after=False, **kwargs):
         """Move files to a new location."""
         # FIXME: Use after argument
-        if after == True:
+        if after:
             raise NotImplementedError("move after not supported")
         for entry in from_paths:
+            to_wc = self._get_wc(to_dir, write_lock=True)
             try:
-                to_wc = self._get_wc(to_dir, write_lock=True)
                 to_wc.copy(self.abspath(entry), os.path.basename(entry))
             finally:
                 to_wc.close()
+            from_wc = self._get_wc(write_lock=True)
             try:
-                from_wc = self._get_wc(write_lock=True)
                 from_wc.delete(self.abspath(entry))
             finally:
                 from_wc.close()
@@ -247,20 +246,25 @@ class SvnWorkingTree(WorkingTree):
 
     def rename_one(self, from_rel, to_rel, after=False):
         # FIXME: Use after
-        if after == True:
+        if after:
             raise NotImplementedError("rename_one after not supported")
+        from_wc = None
         (to_wc, to_file) = self._get_rel_wc(to_rel, write_lock=True)
-        if os.path.dirname(from_rel) == os.path.dirname(to_rel):
-            # Prevent lock contention
-            from_wc = to_wc
-        else:
-            (from_wc, _) = self._get_rel_wc(from_rel, write_lock=True)
-        from_id = self.inventory.path2id(from_rel)
         try:
-            to_wc.copy(self.abspath(from_rel), to_file)
-            from_wc.delete(self.abspath(from_rel))
+            if os.path.dirname(from_rel) == os.path.dirname(to_rel):
+                # Prevent lock contention
+                from_wc = to_wc
+            else:
+                (from_wc, _) = self._get_rel_wc(from_rel, write_lock=True)
+            try:
+                from_id = self.inventory.path2id(from_rel)
+                to_wc.copy(self.abspath(from_rel), to_file)
+                from_wc.delete(self.abspath(from_rel))
+            finally:
+                from_wc.close()
         finally:
-            to_wc.close()
+            if from_wc != to_wc:
+                to_wc.close()
         self._change_fileid_mapping(None, from_rel)
         self._change_fileid_mapping(from_id, to_rel)
         self.read_working_inventory()
@@ -325,19 +329,21 @@ class SvnWorkingTree(WorkingTree):
             :return: Yields all copies
             """
             wc = self._get_wc(relpath)
-            entries = wc.entries_read(False)
-            for entry in entries.values():
-                subrelpath = os.path.join(relpath, entry.name)
-                if entry.name == "" or entry.kind != 'directory':
-                    if ((entry.copyfrom_url == url or entry.url == url) and 
-                        not (entry.schedule in (SCHEDULE_DELETE,
-                                                SCHEDULE_REPLACE))):
-                        yield os.path.join(
-                                self.branch.get_branch_path().strip("/"), 
-                                subrelpath)
-                else:
-                    find_copies(subrelpath)
-            wc.close()
+            try:
+                entries = wc.entries_read(False)
+                for entry in entries.values():
+                    subrelpath = os.path.join(relpath, entry.name)
+                    if entry.name == "" or entry.kind != 'directory':
+                        if ((entry.copyfrom_url == url or entry.url == url) and 
+                            not (entry.schedule in (SCHEDULE_DELETE,
+                                                    SCHEDULE_REPLACE))):
+                            yield os.path.join(
+                                    self.branch.get_branch_path().strip("/"), 
+                                    subrelpath)
+                    else:
+                        find_copies(subrelpath)
+            finally:
+                wc.close()
 
         def find_ids(entry, rootwc):
             relpath = urllib.unquote(entry.url[len(entry.repos):].strip("/"))
@@ -563,23 +569,25 @@ class SvnWorkingTree(WorkingTree):
             subwc = self._get_wc(write_lock=True)
         else:
             subwc = wc
-        new_entries = self._get_new_file_ids(subwc)
-        if id is None:
-            if new_entries.has_key(path):
-                del new_entries[path]
-        else:
-            assert isinstance(id, str)
-            new_entries[path] = id
-        fileprops = self._get_branch_props()
-        self.branch.mapping.export_fileid_map_fileprops(new_entries, fileprops)
-        self._set_branch_props(subwc, fileprops)
-        if wc is None:
-            subwc.close()
+        try:
+            new_entries = self._get_new_file_ids(subwc)
+            if id is None:
+                if new_entries.has_key(path):
+                    del new_entries[path]
+            else:
+                assert isinstance(id, str)
+                new_entries[path] = id
+            fileprops = self._get_branch_props()
+            self.branch.mapping.export_fileid_map_fileprops(new_entries, fileprops)
+            self._set_branch_props(subwc, fileprops)
+        finally:
+            if wc is None:
+                subwc.close()
 
     def _get_changed_branch_props(self):
         wc = self._get_wc()
-        ret = {}
         try:
+            ret = {}
             (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir)
             for k,v in prop_changes:
                 ret[k] = (orig_props.get(k), v)
