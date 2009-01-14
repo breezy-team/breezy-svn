@@ -328,6 +328,7 @@ class SvnWorkingTree(WorkingTree):
             :param relpath: Optional subpath to search in
             :return: Yields all copies
             """
+            ret = []
             wc = self._get_wc(relpath)
             try:
                 entries = wc.entries_read(False)
@@ -337,13 +338,14 @@ class SvnWorkingTree(WorkingTree):
                         if ((entry.copyfrom_url == url or entry.url == url) and 
                             not (entry.schedule in (SCHEDULE_DELETE,
                                                     SCHEDULE_REPLACE))):
-                            yield os.path.join(
+                            ret.append(os.path.join(
                                     self.branch.get_branch_path().strip("/"), 
-                                    subrelpath)
+                                    subrelpath))
                     else:
                         find_copies(subrelpath)
             finally:
                 wc.close()
+            return ret
 
         def find_ids(entry, rootwc):
             relpath = urllib.unquote(entry.url[len(entry.repos):].strip("/"))
