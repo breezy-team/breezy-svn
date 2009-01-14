@@ -16,12 +16,11 @@ Python
 
 You need Python 2.5 or higher.
 
-Subversion development files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+subvertpy
+^^^^^^^^^
 
-You need the Subversion libraries, including the development files. This should
-be readily packaged for most platforms. The package name for Debian 
-and Debian-based distributions such as Ubuntu is ``libsvn-dev``. 
+You need the subvertpy Python module. This may be packaged for your 
+distribution, or otherwise available from http://launchpad.net/subvertpy.
 
 bzr-rebase
 ^^^^^^^^^^
@@ -37,7 +36,7 @@ Building
 
 Simply place this directory in ~/.bazaar/plugins and you should be able 
 to check out branches from Subversion using bzr. Make sure the directory 
-name is 'svn'. The plugin has to be built as well by running ``make``.
+name is 'svn'. 
 
 Packages
 ~~~~~~~~

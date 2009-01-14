@@ -41,6 +41,8 @@ bzr-svn 0.5.0~rc2				UNRELEASED
 
    * Follow copied tags correctly. (#312272)
 
+   * No longer includes subvertpy, but rather depends on external installation.
+
 bzr-svn 0.5.0~rc1			2008-12-08
 
   CHANGES

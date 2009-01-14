@@ -83,9 +83,8 @@ def get_client_string():
 try:
     import subvertpy 
 except ImportError:
-    # Apparently running from the source directory
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "subvertpy"))
-    import subvertpy
+    warning("unable to find subvertpy. Please install from http://launchpad.net/subvertpy.")
+    raise
 
 check_subversion_version(subvertpy)
 
@@ -579,7 +578,6 @@ class cmd_svn_serve(Command):
     def run(self, inet=None, port=None, directory=None):
         from subvertpy.ra_svn import SVNServer, TCPSVNServer, SVN_PORT
         from bzrlib.plugins.svn.server import BzrServerBackend
-        from bzrlib.trace import warning
 
         warning("server support in bzr-svn is experimental.")
 

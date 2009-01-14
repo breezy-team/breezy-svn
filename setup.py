@@ -4,8 +4,6 @@
 
 from distutils.core import setup
 import os, sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "subvertpy"))
-from setup import subvertpy_modules, install_lib_with_dlls
 
 setup(name='bzr-svn',
       description='Support for Subversion branches in Bazaar',
@@ -21,17 +19,12 @@ setup(name='bzr-svn',
       committing to Subversion repositories from 
       Bazaar.
       """,
-      package_dir={'bzrlib.plugins.svn':'.',
-                   'subvertpy':'subvertpy/subvertpy'},
+      package_dir={'bzrlib.plugins.svn':'.' },
       packages=['bzrlib.plugins.svn', 
                 'bzrlib.plugins.svn.foreign', 
                 'bzrlib.plugins.svn.layout', 
                 'bzrlib.plugins.svn.mapping3', 
-                'subvertpy', 
-                'subvertpy.tests', 
                 'bzrlib.plugins.svn.tests',
                 'bzrlib.plugins.svn.tests.mapping3',
                 'bzrlib.plugins.svn.tests.mapping_implementations'],
-      ext_modules=subvertpy_modules("subvertpy"),
-      cmdclass = { 'install_lib': install_lib_with_dlls },
       )
