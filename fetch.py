@@ -614,7 +614,13 @@ class RevisionBuildEditor(DeltaBuildEditor):
         ret = self._get_id_map().get(path)
         if ret is not None:
             return ret
-        return self._get_old_id(old_parent_id, path)
+        # If there was no explicit mention of this file id in the map, then 
+        # this file_id can only stay the same if the parent file id 
+        # didn't change
+        if old_parent_id == new_parent_id:
+            return self._get_old_id(old_parent_id, path)
+        else:
+            return self._get_new_id(path)
 
     def _get_new_id(self, new_path):
         assert isinstance(new_path, unicode)
