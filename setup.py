@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Setup file for bzr-svn
-# Copyright (C) 2005-2008 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
 
 from distutils.core import setup
 import os, sys
