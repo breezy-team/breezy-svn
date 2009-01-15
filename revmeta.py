@@ -1001,8 +1001,6 @@ class RevisionMetadataBrowser(object):
                           self.from_revnum-self.to_revnum)
 
             # Import all metabranches_history where key > revnum
-            from bzrlib.trace import mutter
-            mutter('size %r' % len(metabranches_history))
             for x in [r for r in metabranches_history if r > revnum]:
                 for bp in metabranches_history[x].keys():
                     metabranches_history[revnum][bp].update(metabranches_history[x][bp])
