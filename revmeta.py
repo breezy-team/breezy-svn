@@ -1050,7 +1050,8 @@ class RevisionMetadataBrowser(object):
                     if new_name in self._metabranches:
                         if self._metabranches[new_name]._revs:
                             rev = self._metabranches[new_name]._revs[-1]
-                            assert rev.branch_path == new_name
+                            if rev.branch_path != new_name:
+                                raise AssertionError("Revision %d has invalid branch path %s, expected %s" % (revnum, rev.branch_path, new_name))
                             rev._set_direct_lhs_parent_revmeta(None)
                         del self._metabranches[new_name]
                         if new_name in metabranches_history[revnum]:
