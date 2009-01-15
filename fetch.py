@@ -312,7 +312,8 @@ class FileBuildEditor(object):
 
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
-    def __init__(self, editor, old_path, path, old_id, new_id, parent_file_id, parent_revids=[]):
+    def __init__(self, editor, old_path, path, old_id, new_id, parent_file_id, 
+        parent_revids=[]):
         super(DirectoryRevisionBuildEditor, self).__init__(editor, path)
         assert isinstance(new_id, str)
         self.old_id = old_id
@@ -368,7 +369,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_path = None
             old_file_id = None
 
-        return DirectoryRevisionBuildEditor(self.editor, old_path, path, old_file_id, file_id, self.new_id, [])
+        return DirectoryRevisionBuildEditor(self.editor, old_path, path, 
+            old_file_id, file_id, self.new_id, [])
 
     def _open_directory(self, path, base_revnum):
         base_file_id = self.editor._get_old_id(self.old_id, path)
@@ -381,7 +383,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_path = None
             file_parents = []
             self._delete_entry(path, base_revnum)
-        return DirectoryRevisionBuildEditor(self.editor, old_path, path, base_file_id, file_id, self.new_id, file_parents)
+        return DirectoryRevisionBuildEditor(self.editor, old_path, path, 
+            base_file_id, file_id, self.new_id, file_parents)
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         file_id = self.editor._get_new_id(path)
@@ -421,13 +424,13 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_path = None
             file_parents = []
             self._delete_entry(path, base_revnum)
-        return FileRevisionBuildEditor(self.editor, old_path, path, file_id, self.new_id,
-                file_parents, file_data, is_symlink=is_symlink)
+        return FileRevisionBuildEditor(self.editor, old_path, path, file_id, 
+            self.new_id, file_parents, file_data, is_symlink=is_symlink)
 
 
 class FileRevisionBuildEditor(FileBuildEditor):
-    def __init__(self, editor, old_path, path, file_id, parent_file_id, file_parents=[], data="", 
-                 is_symlink=False):
+    def __init__(self, editor, old_path, path, file_id, parent_file_id, 
+        file_parents=[], data="", is_symlink=False):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
         self.old_path = old_path
         self.file_id = file_id
@@ -456,7 +459,8 @@ class FileRevisionBuildEditor(FileBuildEditor):
         actual_checksum = md5_strings(lines)
         assert checksum is None or checksum == actual_checksum
 
-        text_revision = self.editor._get_text_revid(self.path) or self.editor.revid
+        text_revision = (self.editor._get_text_revid(self.path) or 
+                         self.editor.revid)
         text_parents = self.editor._get_text_parents(self.path)
         if text_parents is None:
             text_parents = self.file_parents
@@ -464,10 +468,11 @@ class FileRevisionBuildEditor(FileBuildEditor):
                 [(self.file_id, revid) for revid in text_parents], lines)
 
         if self.is_special is not None:
-            self.is_symlink = (self.is_special and len(lines) > 0 and lines[0].startswith("link "))
+            self.is_symlink = (self.is_special and 
+                len(lines) > 0 and lines[0].startswith("link "))
         elif (len(lines) > 0 and lines[0].startswith("link ")):
-            # This file just might be a file that is svn:special but didn't contain a symlink
-            # but does now
+            # This file just might be a file that is svn:special but didn't 
+            # contain a symlink but does now
             if not self.is_symlink:
                 pass # FIXME: Query whether this file has svn:special set.
         else:
@@ -640,7 +645,8 @@ class FileTreeDeltaBuildEditor(FileBuildEditor):
 
     def _close(self, checksum=None):
         text_changed = (self.base_checksum != checksum)
-        metadata_changed = (self.is_special is not None or self.is_executable is not None)
+        metadata_changed = (self.is_special is not None or 
+                            self.is_executable is not None)
         if self.is_special:
             # FIXME: A special file doesn't necessarily mean a symlink
             # we need to fetch it and see if it starts with "link "...
