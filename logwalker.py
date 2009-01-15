@@ -29,6 +29,7 @@ from bzrlib.plugins.svn.transport import SvnRaTransport
 MAX_OVERHEAD_FETCH = 1000
 
 class lazy_dict(object):
+
     def __init__(self, initial, create_fn, *args):
         self.initial = initial
         self.create_fn = create_fn
@@ -236,6 +237,8 @@ class LogCache(CacheTable):
         """
         assert action in ("A", "R", "D", "M")
         assert not path.startswith("/")
+        assert isinstance(path, unicode)
+        assert copyfrom_path is None or isinstance(copyfrom_path, unicode)
         self.cachedb.execute("replace into changed_path (rev, path, action, copyfrom_path, copyfrom_rev) values (?, ?, ?, ?, ?)", (rev, path, action, copyfrom_path, copyfrom_rev))
 
     def drop_revprops(self, revnum):
@@ -398,9 +401,9 @@ class CachingLogWalker(CacheTable):
             for p in orig_paths:
                 copyfrom_path = orig_paths[p][1]
                 if copyfrom_path is not None:
-                    copyfrom_path = copyfrom_path.strip("/")
+                    copyfrom_path = copyfrom_path.strip("/").decode("utf-8")
 
-                self.cache.insert_path(revision, p.strip("/"), orig_paths[p][0], copyfrom_path, orig_paths[p][2])
+                self.cache.insert_path(revision, p.strip("/").decode("utf-8"), orig_paths[p][0], copyfrom_path, orig_paths[p][2])
             self.cache.insert_revprops(revision, revprops)
             self.cache.insert_revinfo(revision, todo_revprops is None)
             self.saved_revnum = revision
@@ -444,6 +447,7 @@ def strip_slashes(changed_paths):
 
 class LogWalker(object):
     """Easy way to access the history of a Subversion repository."""
+
     def __init__(self, transport, limit=None):
         """Create a new instance.
 

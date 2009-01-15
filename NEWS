@@ -46,6 +46,8 @@ bzr-svn 0.5.0~rc2				UNRELEASED
    * Properly determine file ids of children of directories that are replaced 
      by an older copy of themselves. (#316384)
 
+   * Use unicode objects internally for sqlite. (#296868)
+
 bzr-svn 0.5.0~rc1			2008-12-08
 
   CHANGES
