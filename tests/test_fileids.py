@@ -183,7 +183,7 @@ class TestComplexFileids(SubversionTestCase):
 
 class TestFileMapping(TestCase):
     def setUp(self):
-        self.generate_file_id = lambda uuid, revnum, bp, ip: "%d@%s:%s:%s" % (revnum, uuid, bp, ip)
+        self.generate_file_id = lambda (uuid, bp, revnum), ip: "%d@%s:%s:%s" % (revnum, uuid, bp, ip)
 
     def apply_mappings(self, mappings, find_children=None, renames={}):
         map = {}
@@ -194,7 +194,7 @@ class TestFileMapping(TestCase):
             def new_file_id(x):
                 if renames.has_key(r) and renames[r].has_key(x):
                     return renames[r][x]
-                return self.generate_file_id("uuid", revnum, branchpath, x)
+                return self.generate_file_id(("uuid", branchpath, revnum), x)
             revmap = simple_apply_changes(new_file_id, mappings[r], find_children)
             map.update(dict([(x, (revmap[x], r)) for x in revmap]))
         return map
@@ -276,7 +276,7 @@ class GetMapTests(SubversionTestCase):
         self.repos.set_layout(RootLayout())
         self.mapping = self.repos.get_mapping()
         rm_provider = self.repos._revmeta_provider
-        self.assertEqual({"": (self.mapping.generate_file_id(self.repos.uuid, 0, "", u""), self.repos.generate_revision_id(0, "", self.mapping))}, 
+        self.assertEqual({"": (self.mapping.generate_file_id((self.repos.uuid, "", 0), u""), self.repos.generate_revision_id(0, "", self.mapping))}, 
                          self.repos.get_fileid_map(rm_provider.get_revision("", 0), self.mapping))
 
     def test_empty_trunk(self):
@@ -287,7 +287,7 @@ class GetMapTests(SubversionTestCase):
         dc.close()
 
         rm_provider = self.repos._revmeta_provider
-        self.assertEqual({"": (self.mapping.generate_file_id(self.repos.uuid, 1, "trunk", u""), self.repos.generate_revision_id(1, "trunk", self.mapping))}, 
+        self.assertEqual({"": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), self.repos.generate_revision_id(1, "trunk", self.mapping))}, 
                 self.repos.get_fileid_map(rm_provider.get_revision("trunk", 1), self.mapping))
 
     def test_change_parent(self):
@@ -305,9 +305,9 @@ class GetMapTests(SubversionTestCase):
         rm_provider = self.repos._revmeta_provider
 
         self.assertEqual({
-            "": (self.mapping.generate_file_id(self.repos.uuid, 1, "trunk", u""), 
+            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), 
                  self.repos.generate_revision_id(1, "trunk", self.mapping)), 
-            "file": (self.mapping.generate_file_id(self.repos.uuid, 2, "trunk", u"file"), 
+            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"), 
                      self.repos.generate_revision_id(2, "trunk", self.mapping))}, 
             self.repos.get_fileid_map(rm_provider.get_revision("trunk", 2), self.mapping))
 
@@ -329,9 +329,9 @@ class GetMapTests(SubversionTestCase):
         rm_provider = self.repos._revmeta_provider
 
         self.assertEqual({
-            "": (self.mapping.generate_file_id(self.repos.uuid, 1, "trunk", u""), 
+            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), 
                  self.repos.generate_revision_id(1, "trunk", self.mapping)), 
-            "file": (self.mapping.generate_file_id(self.repos.uuid, 2, "trunk", u"file"), 
+            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"), 
                      self.repos.generate_revision_id(3, "trunk", self.mapping))}, 
             self.repos.get_fileid_map(rm_provider.get_revision("trunk", 3), self.mapping))
 
@@ -356,11 +356,11 @@ class GetMapTests(SubversionTestCase):
 
         rm_provider = self.repos._revmeta_provider
         self.assertEqual({
-            "": (self.mapping.generate_file_id(self.repos.uuid, 1, "trunk", u""), 
+            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), 
                  self.repos.generate_revision_id(1, "trunk", self.mapping)), 
-            "bar": (self.mapping.generate_file_id(self.repos.uuid, 2, "trunk", u"bar"), 
+            "bar": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"bar"), 
                     self.repos.generate_revision_id(2, "trunk", self.mapping)), 
-            "file": (self.mapping.generate_file_id(self.repos.uuid, 2, "trunk", u"file"), 
+            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"), 
                      self.repos.generate_revision_id(3, "trunk", self.mapping))}, 
             self.repos.get_fileid_map(rm_provider.get_revision("trunk", 3), self.mapping))
 
@@ -385,11 +385,11 @@ class GetMapTests(SubversionTestCase):
         rm_provider = self.repos._revmeta_provider
 
         self.assertEqual({
-            "": (self.mapping.generate_file_id(self.repos.uuid, 1, "trunk", u""), 
+            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), 
                  self.repos.generate_revision_id(1, "trunk", self.mapping)), 
-            "bar": (self.mapping.generate_file_id(self.repos.uuid, 3, "trunk", u"bar"), 
+            "bar": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar"), 
                     self.repos.generate_revision_id(3, "trunk", self.mapping)), 
-            "file": (self.mapping.generate_file_id(self.repos.uuid, 2, "trunk", u"file"), 
+            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"), 
                      self.repos.generate_revision_id(2, "trunk", self.mapping))}, self.repos.get_fileid_map(rm_provider.get_revision("trunk", 3), self.mapping))
 
     def test_copy_nested_modified(self):
@@ -415,15 +415,15 @@ class GetMapTests(SubversionTestCase):
         rm_provider = self.repos._revmeta_provider
 
         self.assertEqual({
-          "": (self.mapping.generate_file_id(self.repos.uuid, 1, "trunk", u""), 
+          "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), 
             self.repos.generate_revision_id(1, "trunk", self.mapping)), 
-          "dir": (self.mapping.generate_file_id(self.repos.uuid, 2, "trunk", u"dir"), 
+          "dir": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"dir"), 
                 self.repos.generate_revision_id(2, "trunk", self.mapping)),
-          "dir/file": (self.mapping.generate_file_id(self.repos.uuid, 2, "trunk", u"dir/file"), 
+          "dir/file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"dir/file"), 
               self.repos.generate_revision_id(2, "trunk", self.mapping)),
-          "bar": (self.mapping.generate_file_id(self.repos.uuid, 3, "trunk", u"bar"), 
+          "bar": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar"), 
               self.repos.generate_revision_id(3, "trunk", self.mapping)),
-          "bar/file": (self.mapping.generate_file_id(self.repos.uuid, 3, "trunk", u"bar/file"), 
+          "bar/file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar/file"), 
               self.repos.generate_revision_id(3, "trunk", self.mapping))},
             self.repos.get_fileid_map(rm_provider.get_revision("trunk", 3), self.mapping))
 

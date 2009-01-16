@@ -111,37 +111,36 @@ class FileIdMap(object):
             assert path in map
             map[path] = (map[path][0], revid)
 
-    def apply_changes(self, revmeta, mapping):
+    def apply_changes(self, map, revmeta, mapping):
         """Change file id map to incorporate specified changes.
 
         :param revmeta: RevisionMetadata object for revision with changes
-        :param renames: List of renames (known file ids for particular paths)
         :param mapping: Mapping
         """
-        renames = revmeta.get_fileid_map(mapping)
         changes = get_local_changes(revmeta.get_paths(mapping), revmeta.branch_path, mapping,
                     self.repos.get_layout(),
                     self.repos.generate_revision_id)
 
         def new_file_id(x):
-            return mapping.generate_file_id(revmeta.uuid, revmeta.revnum, revmeta.branch_path, x)
+            return mapping.generate_file_id(revmeta.get_foreign_revid(), x)
          
         idmap = self.apply_changes_fn(new_file_id, changes)
-        idmap.update(renames)
-        return (idmap, changes)
+        idmap.update(revmeta.get_fileid_map(mapping))
+        self.update_map(map, revmeta.get_revision_id(mapping), idmap, changes)
 
-    def get_map(self, (uuid, branch, revnum), mapping):
+    def get_map(self, foreign_revid, mapping):
         """Make sure the map is up to date until revnum."""
+        (uuid, branch, revnum) = foreign_revid
         # First, find the last cached map
         if revnum == 0:
             assert branch == ""
-            return {"": (mapping.generate_file_id(uuid, 0, "", u""), 
+            return {"": (mapping.generate_file_id(foreign_revid, u""), 
               self.repos.generate_revision_id(0, "", mapping))}
 
         todo = []
         next_parent_revs = []
         if mapping.is_branch(""):
-            map = {u"": (mapping.generate_file_id(uuid, 0, "", u""), NULL_REVISION)}
+            map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION)}
         else:
             map = {}
 
@@ -155,13 +154,10 @@ class FileIdMap(object):
                 pb.update('generating file id map', i, len(todo))
                 if revmeta.is_hidden(mapping):
                     continue
-                revid = revmeta.get_revision_id(mapping)
-                (idmap, changes) = self.apply_changes(revmeta, 
-                        mapping)
-                self.update_map(map, revid, idmap, changes)
+                self.apply_changes(map, revmeta, mapping)
                 self._use_text_revids(mapping, revmeta, map)
                 parent_revs = next_parent_revs
-                next_parent_revs = [revid]
+                next_parent_revs = [revmeta.get_revision_id(mapping)]
         finally:
             pb.finished()
         return map
@@ -265,7 +261,7 @@ class CachingFileIdMap(object):
 
         if len(next_parent_revs) == 0:
             if mapping.is_branch(""):
-                map = {u"": (mapping.generate_file_id(uuid, 0, "", u""), NULL_REVISION)}
+                map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION)}
             else:
                 map = {}
 
@@ -274,18 +270,11 @@ class CachingFileIdMap(object):
         try:
             for i, (revmeta, mapping) in enumerate(reversed(todo)):
                 pb.update('generating file id map', i, len(todo))
-                revid = revmeta.get_revision_id(mapping)
-
-                (idmap, changes) = self.actual.apply_changes(
-                        revmeta, mapping)
-
-                self.actual.update_map(map, revid, idmap, changes)
+                self.actual.apply_changes(map, revmeta, mapping)
                 self._use_text_revids(mapping, revmeta, map)
-
                 parent_revs = next_parent_revs
-                       
                 self.cache.save(revid, parent_revs, map)
-                next_parent_revs = [revid]
+                next_parent_revs = [revmeta.get_revision_id(mapping)]
         finally:
             pb.finished()
         return map

@@ -90,7 +90,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos = Repository.open(repos_url)
         mapping = repos.get_mapping()
         rm_provider = repos._revmeta_provider
-        self.assertEqual({u"": (mapping.generate_file_id(repos.uuid, 0, "", u""), mapping.revision_id_foreign_to_bzr((repos.uuid, "", 0)))}, repos.get_fileid_map(rm_provider.get_revision("", 0), mapping))
+        self.assertEqual({u"": (mapping.generate_file_id((repos.uuid, "", 0), u""), mapping.revision_id_foreign_to_bzr((repos.uuid, "", 0)))}, repos.get_fileid_map(rm_provider.get_revision("", 0), mapping))
 
     def test_add_revision(self):
         repos_url = self.make_repository("a")
@@ -1002,7 +1002,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         ch = list(b.repository.item_keys_introduced_by([b.last_revision()]))
         revid = b.last_revision()
         self.assertEquals([
-            ('file', mapping.generate_file_id(b.repository.uuid, 1, "", u"foo"), set([revid])),
+            ('file', mapping.generate_file_id((b.repository.uuid, "", 1), u"foo"), set([revid])),
             ('inventory', None, [revid]),
             ('signatures', None, set([revid])),
             ('revisions', None, [revid])], ch)

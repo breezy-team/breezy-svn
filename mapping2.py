@@ -80,10 +80,10 @@ class BzrSvnMappingv1(BzrSvnMapping):
     def import_revision_fileprops(self, fileprops, rev):
         return True
 
-    def generate_file_id(self, uuid, revnum, branch, inv_path):
+    def generate_file_id(self, foreign_revid, inv_path):
         if inv_path == u"":
             return ROOT_ID
-        return "%s-%s" % (self.revision_id_foreign_to_bzr((uuid, branch, revnum)), escape_svn_path(inv_path.encode("utf-8")))
+        return "%s-%s" % (self.revision_id_foreign_to_bzr(foreign_revid), escape_svn_path(inv_path.encode("utf-8")))
 
     def import_fileid_map_fileprops(self, fileprops):
         return {}

@@ -347,7 +347,7 @@ class TestFetchWorks(SubversionTestCase):
         repo.fetch(oldrepos, last_rev)
         self.assertEquals(repo.get_inventory(last_rev).root.file_id,
             oldrepos.get_mapping().generate_file_id(
-                oldrepos.uuid, 1, "branch1", u""))
+                (oldrepos.uuid, "branch1", 1), u""))
 
 
     def test_fetch_replace(self):
@@ -1491,7 +1491,7 @@ Node-copyfrom-path: x
         tree = repos.revision_tree(
              repos.generate_revision_id(3, "branches/foobranch", mapping))
 
-        self.assertEqual(mapping.generate_file_id(repos.uuid, 1, "trunk", u""), tree.inventory.root.file_id)
+        self.assertEqual(mapping.generate_file_id((repos.uuid, "trunk", 1), u""), tree.inventory.root.file_id)
 
     def test_fetch_odd(self):
         repos_url = self.make_repository('d')
