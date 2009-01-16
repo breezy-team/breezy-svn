@@ -143,7 +143,7 @@ class UpgradeTests(SubversionTestCase):
         upgrade_repository(newrepos, oldrepos, new_mapping=mapping, mapping_registry=mapping_registry, allow_changes=True)
         tree = newrepos.revision_tree("customrev%s-upgrade" % mapping.upgrade_suffix)
         self.assertEqual("specificid", tree.inventory.path2id("a"))
-        self.assertEqual(mapping.generate_file_id(oldrepos.uuid, 1, "", u"a"), 
+        self.assertEqual(mapping.generate_file_id((oldrepos.uuid, "", 1), u"a"), 
                          tree.inventory.path2id("b"))
 
     @skip_no_rebase

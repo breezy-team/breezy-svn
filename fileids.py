@@ -146,24 +146,25 @@ class FileIdMap(object):
             get_children = None
 
         def new_file_id(x):
-            return mapping.generate_file_id(revmeta.uuid, revmeta.revnum, revmeta.branch_path, x)
+            return mapping.generate_file_id(revmeta.get_foreign_revid(), x)
          
         idmap = self.apply_changes_fn(new_file_id, changes, get_children)
         idmap.update(renames)
         return (idmap, changes)
 
-    def get_map(self, (uuid, branch, revnum), mapping):
+    def get_map(self, foreign_revid, mapping):
         """Make sure the map is up to date until revnum."""
+        (uuid, branch, revnum) = foreign_revid
         # First, find the last cached map
         if revnum == 0:
             assert branch == ""
-            return {"": (mapping.generate_file_id(uuid, 0, "", u""), 
+            return {"": (mapping.generate_file_id(foreign_revid, u""), 
               self.repos.generate_revision_id(0, "", mapping))}
 
         todo = []
         next_parent_revs = []
         if mapping.is_branch(""):
-            map = {u"": (mapping.generate_file_id(uuid, 0, "", u""), NULL_REVISION)}
+            map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION)}
         else:
             map = {}
 
@@ -287,7 +288,7 @@ class CachingFileIdMap(object):
 
         if len(next_parent_revs) == 0:
             if mapping.is_branch(""):
-                map = {u"": (mapping.generate_file_id(uuid, 0, "", u""), NULL_REVISION)}
+                map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION)}
             else:
                 map = {}
 

@@ -555,8 +555,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         if self.old_inventory.root is None:
             # First time the root is set
             old_file_id = None
-            file_id = self.mapping.generate_file_id(self.revmeta.uuid, 
-                self.revmeta.revnum, self.revmeta.branch_path, u"")
+            file_id = self.mapping.generate_file_id(self.revmeta.get_foreign_revid(), u"")
             file_parents = []
         else:
             # Just inherit file id from previous 
@@ -627,8 +626,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         ret = self._get_map_id(new_path)
         if ret is not None:
             return ret
-        return self.mapping.generate_file_id(self.revmeta.uuid, self.revmeta.revnum, 
-                                             self.revmeta.branch_path, new_path)
+        return self.mapping.generate_file_id(self.revmeta.get_foreign_revid(), new_path)
 
     def _get_text_revid(self, path):
         if self._text_revids is None:

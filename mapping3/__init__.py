@@ -227,7 +227,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.scheme)
 
-    def generate_file_id(self, uuid, revnum, branch, inv_path):
+    def generate_file_id(self, (uuid, branch, revnum), inv_path):
         assert isinstance(uuid, str)
         assert isinstance(revnum, int)
         assert isinstance(branch, str)

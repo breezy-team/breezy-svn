@@ -368,7 +368,7 @@ class BzrSvnMapping(foreign.VcsMapping):
         return self.is_branch(path) or self.is_tag(path)
 
     @staticmethod
-    def generate_file_id(uuid, revnum, branch, inv_path):
+    def generate_file_id((uuid, branch, revnum), inv_path):
         """Create a file id identifying a Subversion file.
 
         :param uuid: UUID of the repository

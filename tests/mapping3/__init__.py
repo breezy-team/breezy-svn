@@ -64,40 +64,40 @@ class Mappingv3FilePropTests(TestCase):
                      "svn-v3-undefined:uuid:bp%2Fdata:4"))
 
     def test_generate_file_id_root(self):
-        self.assertEqual("2@uuid:bp:", self.mapping.generate_file_id("uuid", 2, "bp", u""))
+        self.assertEqual("2@uuid:bp:", self.mapping.generate_file_id(("uuid", "bp", 2), u""))
 
     def test_generate_file_id_path(self):
         self.assertEqual("2@uuid:bp:mypath", 
-                self.mapping.generate_file_id("uuid", 2, "bp", u"mypath"))
+                self.mapping.generate_file_id(("uuid", "bp", 2), u"mypath"))
 
     def test_generate_file_id_long(self):
         dir = "this/is/a" + ("/very"*40) + "/long/path/"
         self.assertEqual("2@uuid:bp;" + sha1(dir+"filename"), 
-                self.mapping.generate_file_id("uuid", 2, "bp", dir+u"filename"))
+                self.mapping.generate_file_id(("uuid", "bp", 2), dir+u"filename"))
 
     def test_generate_file_id_long_nordic(self):
         dir = "this/is/a" + ("/very"*40) + "/long/path/"
         self.assertEqual("2@uuid:bp;" + sha1((dir+u"filename\x2c\x8a").encode('utf-8')), 
-                self.mapping.generate_file_id("uuid", 2, "bp", dir+u"filename\x2c\x8a"))
+                self.mapping.generate_file_id(("uuid", "bp", 2), dir+u"filename\x2c\x8a"))
 
     def test_generate_file_id_special_char(self):
         self.assertEqual("2@uuid:bp:mypath%2C%C2%8A",
-                         self.mapping.generate_file_id("uuid", 2, "bp", u"mypath\x2c\x8a"))
+                         self.mapping.generate_file_id(("uuid", "bp", 2), u"mypath\x2c\x8a"))
 
     def test_generate_file_id_spaces(self):
-        self.assertFalse(" " in self.mapping.generate_file_id("uuid", 1, "b p", u"my path"))
+        self.assertFalse(" " in self.mapping.generate_file_id(("uuid", "b p", 1), u"my path"))
 
     def test_generate_svn_file_id(self):
         self.assertEqual("2@uuid:bp:path", 
-                self.mapping.generate_file_id("uuid", 2, "bp", u"path"))
+                self.mapping.generate_file_id(("uuid", "bp", 3), u"path"))
 
     def test_generate_svn_file_id_nordic(self):
         self.assertEqual("2@uuid:bp:%C3%A6%C3%B8%C3%A5", 
-                self.mapping.generate_file_id("uuid", 2, "bp", u"\xe6\xf8\xe5"))
+                self.mapping.generate_file_id(("uuid", "bp", 2), u"\xe6\xf8\xe5"))
 
     def test_generate_svn_file_id_nordic_branch(self):
         self.assertEqual("2@uuid:%C3%A6:%C3%A6%C3%B8%C3%A5", 
-                self.mapping.generate_file_id("uuid", 2, u"\xe6".encode('utf-8'), u"\xe6\xf8\xe5"))
+                self.mapping.generate_file_id(("uuid", u"\xe6".encode('utf-8'), 2), u"\xe6\xf8\xe5"))
 
 
 class RepositoryTests(SubversionTestCase):
