@@ -126,14 +126,13 @@ class FileIdMap(object):
             assert path in map
             map[path] = (map[path][0], revid)
 
-    def apply_changes(self, revmeta, mapping, find_children=None):
+    def get_idmap_delta(self, revmeta, mapping, find_children=None):
         """Change file id map to incorporate specified changes.
 
         :param revmeta: RevisionMetadata object for revision with changes
         :param renames: List of renames (known file ids for particular paths)
         :param mapping: Mapping
         """
-        renames = revmeta.get_fileid_map(mapping)
         changes = get_local_changes(revmeta.get_paths(mapping), revmeta.branch_path, mapping,
                     self.repos.get_layout(),
                     self.repos.generate_revision_id, find_children)
@@ -149,7 +148,7 @@ class FileIdMap(object):
             return mapping.generate_file_id(revmeta.get_foreign_revid(), x)
          
         idmap = self.apply_changes_fn(new_file_id, changes, get_children)
-        idmap.update(renames)
+        idmap.update(revmeta.get_fileid_map(mapping))
         return (idmap, changes)
 
     def get_map(self, foreign_revid, mapping):
@@ -179,7 +178,7 @@ class FileIdMap(object):
                 if revmeta.is_hidden(mapping):
                     continue
                 revid = revmeta.get_revision_id(mapping)
-                (idmap, changes) = self.apply_changes(revmeta, 
+                (idmap, changes) = self.get_idmap_delta(revmeta, 
                         mapping, self.repos.find_children)
                 self.update_map(map, revid, idmap, changes)
                 self._use_text_revids(mapping, revmeta, map)
@@ -299,7 +298,7 @@ class CachingFileIdMap(object):
                 pb.update('generating file id map', i, len(todo))
                 revid = revmeta.get_revision_id(mapping)
 
-                (idmap, changes) = self.actual.apply_changes(
+                (idmap, changes) = self.actual.get_idmap_delta(
                         revmeta, mapping, self.repos.find_children)
 
                 self.actual.update_map(map, revid, idmap, changes)
