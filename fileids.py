@@ -32,8 +32,7 @@ from bzrlib.plugins.svn.revmeta import (
         iter_with_mapping,
         )
 
-def get_local_changes(paths, branch, mapping, layout, generate_revid, 
-                      get_children=None):
+def get_local_changes(paths, branch, mapping, layout, generate_revid):
     """Obtain all of the changes relative to a particular path
     (usually a branch path).
 
@@ -42,13 +41,10 @@ def get_local_changes(paths, branch, mapping, layout, generate_revid,
     :param mapping: Mapping to use to determine what are valid branch paths
     :param layout: Layout to use 
     :param generate_revid: Function for generating revision id from svn revnum
-    :param get_children: Function for obtaining the children of a path
     """
     if (branch in paths and 
         paths[branch][0] == 'A' and 
-        paths[branch][1] is None and get_children is None):
-        # Avoid finding all file ids if we're returning unusual 
-        # file ids only (get_children is None)
+        paths[branch][1] is None):
         return {}
     new_paths = {}
     for p in sorted(paths.keys(), reverse=False):
@@ -69,10 +65,6 @@ def get_local_changes(paths, branch, mapping, layout, generate_revid,
             except errors.NotSvnBranchPath:
                 # Copied from outside of a known branch
                 # Make it look like the files were added in this revision
-                if get_children is not None:
-                    for c in get_children(data[1], data[2]):
-                        mutter('oops: %r child %r', data[1], c)
-                        new_paths[changes.rebase_path(c, data[1], new_p)] = (data[0], None, -1)
                 data = (data[0], None, -1)
 
         new_paths[new_p] = data
@@ -81,7 +73,7 @@ def get_local_changes(paths, branch, mapping, layout, generate_revid,
 
 FILEIDMAP_VERSION = 2
 
-def simple_apply_changes(new_file_id, changes, find_children=None):
+def simple_apply_changes(new_file_id, changes):
     """Simple function that generates a dictionary with file id changes.
     
     Does not track renames. """
@@ -99,13 +91,6 @@ def simple_apply_changes(new_file_id, changes, find_children=None):
 
             if data[1] is not None:
                 mutter('%r copied from %r:%s', inv_p, data[1], data[2])
-                if find_children is not None:
-                    for c in find_children(data[1], data[2]):
-                        inv_c = c.decode("utf-8")
-                        path = inv_c.replace(data[1].decode("utf-8"), inv_p+"/", 1).replace(u"//", u"/")
-                        assert isinstance(path, unicode)
-                        map[path] = new_file_id(path)
-                        mutter('added mapping %r -> %r', path, map[path])
 
     return map
 
@@ -126,7 +111,7 @@ class FileIdMap(object):
             assert path in map
             map[path] = (map[path][0], revid)
 
-    def apply_changes(self, revmeta, mapping, find_children=None):
+    def apply_changes(self, revmeta, mapping):
         """Change file id map to incorporate specified changes.
 
         :param revmeta: RevisionMetadata object for revision with changes
@@ -136,19 +121,12 @@ class FileIdMap(object):
         renames = revmeta.get_fileid_map(mapping)
         changes = get_local_changes(revmeta.get_paths(mapping), revmeta.branch_path, mapping,
                     self.repos.get_layout(),
-                    self.repos.generate_revision_id, find_children)
-        if find_children is not None:
-            def get_children(path, revid):
-                (uuid, bp, revnum), mapping = self.repos.lookup_revision_id(revid)
-                for p in find_children(bp+"/"+path, revnum):
-                    yield p[len(bp):].strip("/")
-        else:
-            get_children = None
+                    self.repos.generate_revision_id)
 
         def new_file_id(x):
             return mapping.generate_file_id(revmeta.uuid, revmeta.revnum, revmeta.branch_path, x)
          
-        idmap = self.apply_changes_fn(new_file_id, changes, get_children)
+        idmap = self.apply_changes_fn(new_file_id, changes)
         idmap.update(renames)
         return (idmap, changes)
 
@@ -179,7 +157,7 @@ class FileIdMap(object):
                     continue
                 revid = revmeta.get_revision_id(mapping)
                 (idmap, changes) = self.apply_changes(revmeta, 
-                        mapping, self.repos.find_children)
+                        mapping)
                 self.update_map(map, revid, idmap, changes)
                 self._use_text_revids(mapping, revmeta, map)
                 parent_revs = next_parent_revs
@@ -299,7 +277,7 @@ class CachingFileIdMap(object):
                 revid = revmeta.get_revision_id(mapping)
 
                 (idmap, changes) = self.actual.apply_changes(
-                        revmeta, mapping, self.repos.find_children)
+                        revmeta, mapping)
 
                 self.actual.update_map(map, revid, idmap, changes)
                 self._use_text_revids(mapping, revmeta, map)
