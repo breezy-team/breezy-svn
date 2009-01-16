@@ -202,18 +202,13 @@ class FileIdMap(object):
 
         # No history -> empty map
         todo = self.repos.get_mainline(branch, revnum, mapping)
-   
         pb = ui.ui_factory.nested_progress_bar()
-
         try:
             for i, (revmeta, mapping) in enumerate(reversed(todo)):
                 pb.update('generating file id map', i, len(todo))
                 if revmeta.is_hidden(mapping):
                     continue
-                revid = revmeta.get_revision_id(mapping)
                 self.update_idmap(map, revmeta, mapping, self.repos.find_children)
-                parent_revs = next_parent_revs
-                next_parent_revs = [revid]
         finally:
             pb.finished()
         return map
