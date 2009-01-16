@@ -1317,6 +1317,9 @@ Node-copyfrom-path: x
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
+        lastrevid = oldrepos.generate_revision_id(4, "branches/1.0", oldrepos.get_mapping())
+        tree = newrepos.revision_tree(lastrevid)
+        self.assertTrue(tree.path2id("dir1/file.txt") is not None)
 
     def test_fetch_dir_upgrade(self):
         repos_url = self.make_repository('d')
