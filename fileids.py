@@ -36,10 +36,10 @@ from bzrlib.plugins.svn.revmeta import (
 def apply_idmap_delta(map, revid, delta, changes):
     """Update a file id map.
 
-    :param map: Existing file id map.
+    :param map: Existing file id map that needs to be updated
     :param revid: Revision id of the id map
-    :param delta: Id map for just the delta
-    :param changes: Changes in revid.
+    :param delta: Id map delta.
+    :param changes: Changes for the revision in question.
     """
     for p in changes:
         inv_p = p.decode("utf-8")
@@ -169,8 +169,9 @@ class FileIdMap(object):
         else:
             get_children = None
 
+        foreign_revid = revmeta.get_foreign_revid()
         def new_file_id(x):
-            return mapping.generate_file_id(revmeta.get_foreign_revid(), x)
+            return mapping.generate_file_id(foreign_revid, x)
          
         idmap = self.apply_changes_fn(new_file_id, changes, get_children)
         idmap.update(revmeta.get_fileid_map(mapping))
