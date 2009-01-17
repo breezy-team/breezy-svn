@@ -89,7 +89,7 @@ class Mappingv3FilePropTests(TestCase):
 
     def test_generate_svn_file_id(self):
         self.assertEqual("2@uuid:bp:path", 
-                self.mapping.generate_file_id(("uuid", "bp", 3), u"path"))
+                self.mapping.generate_file_id(("uuid", "bp", 2), u"path"))
 
     def test_generate_svn_file_id_nordic(self):
         self.assertEqual("2@uuid:bp:%C3%A6%C3%B8%C3%A5", 

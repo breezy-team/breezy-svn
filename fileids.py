@@ -32,6 +32,36 @@ from bzrlib.plugins.svn.revmeta import (
         iter_with_mapping,
         )
 
+
+def apply_idmap_delta(map, revid, delta, changes):
+    """Update a file id map.
+
+    :param map: Existing file id map that needs to be updated
+    :param revid: Revision id of the id map
+    :param delta: Id map delta.
+    :param changes: Changes for the revision in question.
+    """
+    for p in changes:
+        inv_p = p.decode("utf-8")
+        if changes[p][0] == 'M' and not delta.has_key(p):
+            delta[inv_p] = map[inv_p][0]
+    
+    for x in sorted(delta.keys(), reverse=True):
+        assert isinstance(x, unicode)
+        if delta[x] is None:
+            del map[x]
+            for p in map.keys():
+                if p.startswith(u"%s/" % x):
+                    del map[p]
+
+    for x in sorted(delta.keys()):
+        if (delta[x] is not None and 
+            # special case - we change metadata in svn at the branch root path
+            # but that's not reflected as a bzr metadata change in bzr
+            (x != "" or not "" in map or map[x][1] == NULL_REVISION)):
+            map[x] = (str(delta[x]), revid)
+
+
 def get_local_changes(paths, branch, mapping, layout, generate_revid):
     """Obtain all of the changes relative to a particular path
     (usually a branch path).
@@ -45,6 +75,7 @@ def get_local_changes(paths, branch, mapping, layout, generate_revid):
     if (branch in paths and 
         paths[branch][0] == 'A' and 
         paths[branch][1] is None):
+        # Avoid finding all file ids
         return {}
     new_paths = {}
     for p in sorted(paths.keys(), reverse=False):
@@ -106,27 +137,32 @@ class FileIdMap(object):
         self.apply_changes_fn = apply_changes_fn
         self.repos = repos
 
-    def _use_text_revids(self, mapping, revmeta, map):
-        for path, revid in revmeta.get_text_revisions(mapping).iteritems():
-            assert path in map
-            map[path] = (map[path][0], revid)
-
-    def apply_changes(self, map, revmeta, mapping):
+    def get_idmap_delta(self, revmeta, mapping):
         """Change file id map to incorporate specified changes.
 
         :param revmeta: RevisionMetadata object for revision with changes
+        :param renames: List of renames (known file ids for particular paths)
         :param mapping: Mapping
         """
         changes = get_local_changes(revmeta.get_paths(mapping), revmeta.branch_path, mapping,
                     self.repos.get_layout(),
                     self.repos.generate_revision_id)
 
+        foreign_revid = revmeta.get_foreign_revid()
         def new_file_id(x):
-            return mapping.generate_file_id(revmeta.get_foreign_revid(), x)
+            return mapping.generate_file_id(foreign_revid, x)
          
         idmap = self.apply_changes_fn(new_file_id, changes)
         idmap.update(revmeta.get_fileid_map(mapping))
-        self.update_map(map, revmeta.get_revision_id(mapping), idmap, changes)
+        return (idmap, changes)
+
+    def update_idmap(self, map, revmeta, mapping):
+        (idmap, changes) = self.get_idmap_delta(revmeta, 
+                mapping)
+        apply_idmap_delta(map, revmeta.get_revision_id(mapping), idmap, changes)
+        for path, revid in revmeta.get_text_revisions(mapping).iteritems():
+            assert path in map
+            map[path] = (map[path][0], revid)
 
     def get_map(self, foreign_revid, mapping):
         """Make sure the map is up to date until revnum."""
@@ -146,49 +182,16 @@ class FileIdMap(object):
 
         # No history -> empty map
         todo = self.repos.get_mainline(branch, revnum, mapping)
-   
         pb = ui.ui_factory.nested_progress_bar()
-
         try:
             for i, (revmeta, mapping) in enumerate(reversed(todo)):
                 pb.update('generating file id map', i, len(todo))
                 if revmeta.is_hidden(mapping):
                     continue
-                self.apply_changes(map, revmeta, mapping)
-                self._use_text_revids(mapping, revmeta, map)
-                parent_revs = next_parent_revs
-                next_parent_revs = [revmeta.get_revision_id(mapping)]
+                self.update_idmap(map, revmeta, mapping)
         finally:
             pb.finished()
         return map
-
-    def update_map(self, map, revid, delta, changes):
-        """Update a file id map.
-
-        :param map: Existing file id map.
-        :param revid: Revision id of the id map
-        :param delta: Id map for just the delta
-        :param changes: Changes in revid.
-        """
-        for p in changes:
-            inv_p = p.decode("utf-8")
-            if changes[p][0] == 'M' and not delta.has_key(p):
-                delta[inv_p] = map[inv_p][0]
-        
-        for x in sorted(delta.keys(), reverse=True):
-            assert isinstance(x, unicode)
-            if delta[x] is None:
-                del map[x]
-                for p in map.keys():
-                    if p.startswith(u"%s/" % x):
-                        del map[p]
-
-        for x in sorted(delta.keys()):
-            if (delta[x] is not None and 
-                # special case - we change metadata in svn at the branch root path
-                # but that's not reflected as a bzr metadata change in bzr
-                (x != "" or not "" in map or map[x][1] == NULL_REVISION)):
-                map[x] = (str(delta[x]), revid)
 
 
 class FileIdMapCache(object):
@@ -224,9 +227,8 @@ class CachingFileIdMap(object):
     def __init__(self, cache_transport, actual):
         self.cache = FileIdMapCache(cache_transport)
         self.actual = actual
-        self.apply_changes = actual.apply_changes
-        self._use_text_revids = actual._use_text_revids
         self.repos = actual.repos
+        self.get_idmap_delta = actual.get_idmap_delta
 
     def get_map(self, (uuid, branch, revnum), mapping):
         """Make sure the map is up to date until revnum."""
@@ -270,11 +272,11 @@ class CachingFileIdMap(object):
         try:
             for i, (revmeta, mapping) in enumerate(reversed(todo)):
                 pb.update('generating file id map', i, len(todo))
-                self.actual.apply_changes(map, revmeta, mapping)
-                self._use_text_revids(mapping, revmeta, map)
+                revid = revmeta.get_revision_id(mapping)
+                self.actual.update_idmap(map, revmeta, mapping)
                 parent_revs = next_parent_revs
                 self.cache.save(revid, parent_revs, map)
-                next_parent_revs = [revmeta.get_revision_id(mapping)]
+                next_parent_revs = [revid]
         finally:
             pb.finished()
         return map
