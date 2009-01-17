@@ -200,70 +200,70 @@ class TestFileMapping(TestCase):
         return map
 
     def test_simple(self):
-        map = self.apply_mappings({(1, ""): {"foo": ('A', None, None)}})
-        self.assertEqual({ 'foo': ("1@uuid::foo",
+        map = self.apply_mappings({(1, ""): {u"foo": ('A', None, None)}})
+        self.assertEqual({ u'foo': ("1@uuid::foo",
                                        (1, ""))
                          }, map)
 
     def test_simple_add(self):
-        map = self.apply_mappings({(1, ""): {"": ('A', None, None), "foo": ('A', None, None)}})
+        map = self.apply_mappings({(1, ""): {u"": ('A', None, None), u"foo": ('A', None, None)}})
         self.assertEqual({
-            '': ('1@uuid::', (1, "")),
-            'foo': ("1@uuid::foo", (1, "")) 
+            u'': ('1@uuid::', (1, "")),
+            u'foo': ("1@uuid::foo", (1, "")) 
             }, map)
 
     def test_copy(self):
         def find_children(path, revid):
-            if path == "foo":
-                yield "foo/blie"
-                yield "foo/bla"
+            if path == u"foo":
+                yield u"foo/blie"
+                yield u"foo/bla"
         map = self.apply_mappings({
                 (1, ""): {
-                                   "foo": ('A', None, None), 
-                                   "foo/blie": ('A', None, None),
-                                   "foo/bla": ('A', None, None)},
+                                   u"foo": ('A', None, None), 
+                                   u"foo/blie": ('A', None, None),
+                                   u"foo/bla": ('A', None, None)},
                 (2, ""): {
-                                   "foob": ('A', 'foo', 1), 
-                                   "foob/bla": ('M', None, None)}
+                                   u"foob": ('A', 'foo', 1), 
+                                   u"foob/bla": ('M', None, None)}
                 }, find_children)
-        self.assertTrue(map.has_key("foob/bla"))
-        self.assertTrue(map.has_key("foob/blie"))
+        self.assertTrue(map.has_key(u"foob/bla"))
+        self.assertTrue(map.has_key(u"foob/blie"))
 
     def test_touchparent(self):
         map = self.apply_mappings(
                 {(1, ""): {
-                                   "foo": ('A', None, None), 
-                                   "foo/bla": ('A', None, None)},
+                                   u"foo": ('A', None, None), 
+                                   u"foo/bla": ('A', None, None)},
                  (2, ""): {
-                                   "foo/bla": ('M', None, None)}
+                                   u"foo/bla": ('M', None, None)}
                 })
         self.assertEqual((1, ""), 
-                         map["foo"][1])
+                         map[u"foo"][1])
         self.assertEqual((1, ""), 
-                         map["foo/bla"][1])
+                         map[u"foo/bla"][1])
 
     def test_usemap(self):
         map = self.apply_mappings(
                 {(1, ""): {
-                                   "foo": ('A', None, None), 
-                                   "foo/bla": ('A', None, None)},
+                                   u"foo": ('A', None, None), 
+                                   u"foo/bla": ('A', None, None)},
                  (2, ""): {
-                                   "foo/bla": ('M', None, None)}
+                                   u"foo/bla": ('M', None, None)}
                  }, 
-                renames={(1, ""): {"foo": "myid"}})
-        self.assertEqual("myid", map["foo"][0])
+                renames={(1, ""): {u"foo": "myid"}})
+        self.assertEqual("myid", map[u"foo"][0])
 
     def test_usemap_later(self):
         map = self.apply_mappings(
                 {(1, ""): {
-                                   "foo": ('A', None, None), 
-                                   "foo/bla": ('A', None, None)},
+                                   u"foo": ('A', None, None), 
+                                   u"foo/bla": ('A', None, None)},
                  (2, ""): {
-                                   "foo/bla": ('M', None, None)}
+                                   u"foo/bla": ('M', None, None)}
                  }, 
-                renames={(2, ""): {"foo": "myid"}})
-        self.assertEqual("1@uuid::foo", map["foo"][0])
-        self.assertEqual((1, ""), map["foo"][1])
+                renames={(2, ""): {u"foo": "myid"}})
+        self.assertEqual("1@uuid::foo", map[u"foo"][0])
+        self.assertEqual((1, ""), map[u"foo"][1])
 
 
 class GetMapTests(SubversionTestCase):

@@ -22,6 +22,7 @@ from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import mutter
 from bzrlib.versionedfile import ConstantMapper
 
+from collections import defaultdict
 import urllib
 
 from bzrlib.plugins.svn import (
@@ -32,34 +33,48 @@ from bzrlib.plugins.svn.revmeta import (
         iter_with_mapping,
         )
 
+# idmap: dictionary mapping unicode paths to tuples with file id and revision id
+# idmap delta: dictionary mapping unicode paths to new file id assignments
+# text revision map: dictionary mapping unicode paths to text revisions (usually revision ids)
 
-def apply_idmap_delta(map, revid, delta, changes):
+def determine_text_revisions(changes, default_revid, specific_revids):
+    """Create a text revision map.
+
+    :param changes: Local changes dictionary
+    :param default_revid: Default revision id, if none is explicitly specified
+    :param specific_revids: Dictionary with explicit text revisions to use
+    :return: text revision map
+    """
+    ret = {}
+    ret.update(specific_revids)
+    for p, data in changes.iteritems():
+        assert isinstance(p, unicode)
+        if data[0] in ('A', 'R', 'M') and p not in ret:
+            ret[p] = default_revid
+    return ret
+
+
+def apply_idmap_delta(map, text_revisions, delta, changes, default_revid):
     """Update a file id map.
 
     :param map: Existing file id map that needs to be updated
-    :param revid: Revision id of the id map
+    :param text_revisions: Text revisions for the map
     :param delta: Id map delta.
     :param changes: Changes for the revision in question.
     """
-    for p in changes:
-        inv_p = p.decode("utf-8")
-        if changes[p][0] == 'M' and not delta.has_key(p):
-            delta[inv_p] = map[inv_p][0]
-    
-    for x in sorted(delta.keys(), reverse=True):
-        assert isinstance(x, unicode)
-        if delta[x] is None:
-            del map[x]
-            for p in map.keys():
-                if p.startswith(u"%s/" % x):
-                    del map[p]
+    for p, data in changes.iteritems():
+        if data[0] in ('D', 'R') and not p in delta:
+            del map[p]
+            for xp in map.keys():
+                if xp.startswith(u"%s/" % p) and not xp in delta:
+                    del map[xp]
 
-    for x in sorted(delta.keys()):
-        if (delta[x] is not None and 
-            # special case - we change metadata in svn at the branch root path
+    for x in sorted(text_revisions.keys() + delta.keys()):
+        assert isinstance(x, unicode)
+        if (# special case - we change metadata in svn at the branch root path
             # but that's not reflected as a bzr metadata change in bzr
             (x != "" or not "" in map or map[x][1] == NULL_REVISION)):
-            map[x] = (str(delta[x]), revid)
+            map[x] = (delta.get(x) or map[x][0], text_revisions.get(x) or default_revid)
 
 
 def get_local_changes(paths, branch, mapping, layout, generate_revid, 
@@ -102,10 +117,10 @@ def get_local_changes(paths, branch, mapping, layout, generate_revid,
                 if get_children is not None:
                     for c in get_children(data[1], data[2]):
                         mutter('oops: %r child %r', data[1], c)
-                        new_paths[changes.rebase_path(c, data[1], new_p)] = (data[0], None, -1)
+                        new_paths[changes.rebase_path(c, data[1], new_p).decode("utf-8")] = (data[0], None, -1)
                 data = (data[0], None, -1)
 
-        new_paths[new_p] = data
+        new_paths[new_p.decode("utf-8")] = data
     return new_paths
 
 
@@ -115,29 +130,21 @@ def simple_apply_changes(new_file_id, changes, find_children=None):
     """Simple function that generates a dictionary with file id changes.
     
     Does not track renames. """
-    map = {}
+    delta = {}
     for p in sorted(changes.keys(), reverse=False):
         data = changes[p]
-
-        inv_p = p.decode("utf-8")
-        if data[0] in ('D', 'R'):
-            if not inv_p in map:
-                map[inv_p] = None
+        assert isinstance(p, unicode)
         if data[0] in ('A', 'R'):
-            assert isinstance(inv_p, unicode)
-            map[inv_p] = new_file_id(inv_p)
-
+            delta[p] = new_file_id(p)
             if data[1] is not None:
-                mutter('%r copied from %r:%s', inv_p, data[1], data[2])
+                mutter('%r copied from %r:%s', p, data[1], data[2])
                 if find_children is not None:
                     for c in find_children(data[1], data[2]):
-                        inv_c = c.decode("utf-8")
-                        path = inv_c.replace(data[1].decode("utf-8"), inv_p+"/", 1).replace(u"//", u"/")
+                        path = c.replace(data[1], p+"/", 1).replace(u"//", u"/")
                         assert isinstance(path, unicode)
-                        map[path] = new_file_id(path)
-                        mutter('added mapping %r -> %r', path, map[path])
-
-    return map
+                        delta[path] = new_file_id(path)
+                        mutter('added mapping %r -> %r', path, delta[path])
+    return delta 
 
 
 class FileIdMap(object):
@@ -151,21 +158,18 @@ class FileIdMap(object):
         self.apply_changes_fn = apply_changes_fn
         self.repos = repos
 
-    def get_idmap_delta(self, revmeta, mapping, find_children=None):
+    def get_idmap_delta(self, changes, revmeta, mapping, find_children=None):
         """Change file id map to incorporate specified changes.
 
         :param revmeta: RevisionMetadata object for revision with changes
         :param renames: List of renames (known file ids for particular paths)
         :param mapping: Mapping
         """
-        changes = get_local_changes(revmeta.get_paths(mapping), revmeta.branch_path, mapping,
-                    self.repos.get_layout(),
-                    self.repos.generate_revision_id, find_children)
         if find_children is not None:
             def get_children(path, revid):
                 (uuid, bp, revnum), mapping = self.repos.lookup_revision_id(revid)
-                for p in find_children(bp+"/"+path, revnum):
-                    yield p[len(bp):].strip("/")
+                for p in find_children(bp+"/"+path.encode("utf-8"), revnum):
+                    yield p[len(bp):].strip("/").decode("utf-8")
         else:
             get_children = None
 
@@ -175,15 +179,19 @@ class FileIdMap(object):
          
         idmap = self.apply_changes_fn(new_file_id, changes, get_children)
         idmap.update(revmeta.get_fileid_map(mapping))
-        return (idmap, changes)
+        return idmap
 
     def update_idmap(self, map, revmeta, mapping, find_children=None):
-        (idmap, changes) = self.get_idmap_delta(revmeta, 
+        local_changes = get_local_changes(revmeta.get_paths(mapping), 
+                    revmeta.branch_path, mapping,
+                    self.repos.get_layout(),
+                    self.repos.generate_revision_id, find_children)
+        idmap = self.get_idmap_delta(local_changes, revmeta, 
                 mapping, find_children)
-        apply_idmap_delta(map, revmeta.get_revision_id(mapping), idmap, changes)
-        for path, revid in revmeta.get_text_revisions(mapping).iteritems():
-            assert path in map
-            map[path] = (map[path][0], revid)
+        revid = revmeta.get_revision_id(mapping)
+        text_revisions = determine_text_revisions(local_changes, revid, 
+                revmeta.get_text_revisions(mapping))
+        apply_idmap_delta(map, text_revisions, idmap, local_changes, revid)
 
     def get_map(self, foreign_revid, mapping):
         """Make sure the map is up to date until revnum."""

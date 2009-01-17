@@ -35,6 +35,7 @@ from subvertpy import properties, SubversionException
 from subvertpy.delta import apply_txdelta_handler
 
 from bzrlib.plugins.svn.errors import InvalidFileName, FileIdMapIncomplete
+from bzrlib.plugins.svn.fileids import get_local_changes
 from bzrlib.plugins.svn.foreign import escape_commit_message
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_PREFIX
 from bzrlib.plugins.svn.repository import SvnRepository, SvnRepositoryFormat
@@ -581,8 +582,12 @@ class RevisionBuildEditor(DeltaBuildEditor):
         if self._id_map is not None:
             return self._id_map
 
-        self._id_map = self.source.fileid_map.get_idmap_delta(self.revmeta, 
-            self.mapping)[0]
+        local_changes = get_local_changes(self.revmeta.get_paths(self.mapping), 
+                    self.revmeta.branch_path, self.mapping,
+                    self.source.get_layout(),
+                    self.source.generate_revision_id)
+        self._id_map = self.source.fileid_map.get_idmap_delta(local_changes, self.revmeta, 
+            self.mapping)
 
         return self._id_map
 
@@ -629,11 +634,13 @@ class RevisionBuildEditor(DeltaBuildEditor):
         return self.mapping.generate_file_id(self.revmeta.get_foreign_revid(), new_path)
 
     def _get_text_revid(self, path):
+        assert isinstance(path, unicode)
         if self._text_revids is None:
             self._text_revids = self.revmeta.get_text_revisions(self.mapping)
         return self._text_revids.get(path)
 
     def _get_text_parents(self, path):
+        assert isinstance(path, unicode)
         if self._text_parents is None:
             self._text_parents = self.revmeta.get_text_parents(self.mapping)
         return self._text_parents.get(path)
