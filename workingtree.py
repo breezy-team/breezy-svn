@@ -63,6 +63,7 @@ from bzrlib.plugins.svn import (
         )
 from bzrlib.plugins.svn.branch import SvnBranch
 from bzrlib.plugins.svn.commit import _revision_id_to_svk_feature
+from bzrlib.plugins.svn.fileids import idmap_lookup
 from bzrlib.plugins.svn.format import get_rich_root_format
 from bzrlib.plugins.svn.mapping import escape_svn_path
 from bzrlib.plugins.svn.remote import SvnRemoteAccess
@@ -280,7 +281,7 @@ class SvnWorkingTree(WorkingTree):
         assert isinstance(path, str)
 
         rp = self.branch.unprefix(path)
-        entry = self.basis_tree().id_map[rp.decode("utf-8")]
+        entry = idmap_lookup(self.basis_tree().id_map, rp.decode("utf-8"))
         assert entry[0] is not None
         assert isinstance(entry[0], str), "fileid %r for %r is not a string" % (entry[0], path)
         return entry

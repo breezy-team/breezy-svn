@@ -37,6 +37,16 @@ from bzrlib.plugins.svn.revmeta import (
 # idmap delta: dictionary mapping unicode paths to new file id assignments
 # text revision map: dictionary mapping unicode paths to text revisions (usually revision ids)
 
+def idmap_lookup(idmap, path):
+    """Lookup a path in an idmap.
+
+    :param idmap: The idmap to look up in.
+    :param path: Path to look up
+    :return: Tuple with file id and text revision
+    """
+    return idmap[path]
+
+
 def determine_text_revisions(changes, default_revid, specific_revids):
     """Create a text revision map.
 
