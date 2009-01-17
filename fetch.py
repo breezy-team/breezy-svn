@@ -35,6 +35,7 @@ from subvertpy import properties, SubversionException
 from subvertpy.delta import apply_txdelta_handler
 
 from bzrlib.plugins.svn.errors import InvalidFileName, FileIdMapIncomplete
+from bzrlib.plugins.svn.fileids import get_local_changes
 from bzrlib.plugins.svn.foreign import escape_commit_message
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_PREFIX
 from bzrlib.plugins.svn.repository import SvnRepository, SvnRepositoryFormat
@@ -336,7 +337,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _close(self):
         if (not self.editor.old_inventory.has_id(self.new_id) or 
-            (self._metadata_changed and self.path != "") or 
+            (self._metadata_changed and self.path != u"") or 
             self.new_ie != self.editor.old_inventory[self.new_id] or
             self.old_path != self.path or 
             self.editor._get_text_revid(self.path) is not None):
@@ -349,7 +350,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                 [(self.new_id, revid) for revid in text_parents], [])
             self.editor._inv_delta.append((self.old_path, self.path, self.new_id, self.new_ie))
 
-        if self.path == "":
+        if self.path == u"":
             self.editor._finish_commit()
 
     def _add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
@@ -570,19 +571,23 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
         if self.old_inventory.root is not None and \
                 file_id == self.old_inventory.root.file_id:
-            old_path = ""
+            old_path = u""
         else:
             old_path = None
 
-        return DirectoryRevisionBuildEditor(self, old_path, "", old_file_id, 
+        return DirectoryRevisionBuildEditor(self, old_path, u"", old_file_id, 
             file_id, None, file_parents)
 
     def _get_id_map(self):
         if self._id_map is not None:
             return self._id_map
 
-        self._id_map = self.source.fileid_map.get_idmap_delta(self.revmeta, 
-            self.mapping)[0]
+        local_changes = get_local_changes(self.revmeta.get_paths(self.mapping), 
+                    self.revmeta.branch_path, self.mapping,
+                    self.source.get_layout(),
+                    self.source.generate_revision_id)
+        self._id_map = self.source.fileid_map.get_idmap_delta(local_changes, self.revmeta, 
+            self.mapping)
 
         return self._id_map
 
@@ -629,11 +634,13 @@ class RevisionBuildEditor(DeltaBuildEditor):
         return self.mapping.generate_file_id(self.revmeta.get_foreign_revid(), new_path)
 
     def _get_text_revid(self, path):
+        assert isinstance(path, unicode)
         if self._text_revids is None:
             self._text_revids = self.revmeta.get_text_revisions(self.mapping)
         return self._text_revids.get(path)
 
     def _get_text_parents(self, path):
+        assert isinstance(path, unicode)
         if self._text_parents is None:
             self._text_parents = self.revmeta.get_text_parents(self.mapping)
         return self._text_parents.get(path)
@@ -711,7 +718,7 @@ class TreeDeltaBuildEditor(DeltaBuildEditor):
         self.delta.unchanged = None
 
     def _open_root(self, base_revnum):
-        return DirectoryTreeDeltaBuildEditor(self, "")
+        return DirectoryTreeDeltaBuildEditor(self, u"")
 
     def _was_renamed(self, path):
         fileid = self._get_new_id(path)

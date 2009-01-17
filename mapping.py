@@ -593,7 +593,7 @@ def parse_text_parents_property(text):
     for line in text.splitlines():
         parts = line.split("\t")
         entry = parts[0]
-        ret[urllib.unquote(entry)] = filter(lambda x: x != "", [osutils.safe_revision_id(parent_revid) for parent_revid in parts[1:]])
+        ret[urllib.unquote(entry).decode("utf-8")] = filter(lambda x: x != "", [osutils.safe_revision_id(parent_revid) for parent_revid in parts[1:]])
     return ret
 
 
@@ -601,7 +601,7 @@ def parse_text_revisions_property(text):
     ret = {}
     for line in text.splitlines():
         (entry, revid) = line.split("\t", 1)
-        ret[urllib.unquote(entry)] = osutils.safe_revision_id(revid)
+        ret[urllib.unquote(entry).decode("utf-8")] = osutils.safe_revision_id(revid)
     return ret
 
 
