@@ -260,8 +260,9 @@ class FileIdMapCache(object):
 
     def load(self, revid):
         map = {}
-        for ((create_revid,), line) in self.idmap_knit.annotate((revid,)):
-            (filename, id, create_revid) = line.rstrip("\n").split("\t", 3)
+        for ((from_revid,), line) in self.idmap_knit.annotate((revid,)):
+            entries = line.rstrip("\n").split("\t", 4)
+            (filename, id, create_revid) = entries
             map[urllib.unquote(filename).decode("utf-8")] = (urllib.unquote(id), urllib.unquote(create_revid), None)
             assert isinstance(map[urllib.unquote(filename).decode("utf-8")][0], str)
 

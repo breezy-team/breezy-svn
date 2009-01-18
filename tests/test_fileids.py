@@ -17,12 +17,13 @@
 """File id tests."""
 
 from bzrlib.bzrdir import BzrDir
+from bzrlib.errors import RevisionNotPresent
 from bzrlib.repository import Repository
 from bzrlib.trace import mutter
-from bzrlib.tests import TestCase
+from bzrlib.tests import TestCase, TestCaseWithMemoryTransport
 from bzrlib.workingtree import WorkingTree
 
-from bzrlib.plugins.svn.fileids import simple_apply_changes
+from bzrlib.plugins.svn.fileids import simple_apply_changes, FileIdMapCache
 from bzrlib.plugins.svn.layout.standard import TrunkLayout, RootLayout
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
@@ -476,4 +477,37 @@ class GetMapTests(SubversionTestCase):
         wt.lock_write()
         #wt.update()
         wt.unlock()
+
+
+class FileIdMapCacheTests(TestCaseWithMemoryTransport):
+
+    def setUp(self):
+        super(FileIdMapCacheTests, self).setUp()
+        self.cache = FileIdMapCache(self.get_transport())
+
+    def test_nonexisting(self):
+        self.assertRaises(RevisionNotPresent, self.cache.load, "bla")
+
+    def test_empty(self):
+        self.cache.save("bla", [], {})
+        self.assertEquals({}, self.cache.load("bla"))
+
+    def test_simple(self):
+        data = {u"bla": ("myfileid", "myrev", None)}
+        self.cache.save("bla", [], data)
+        self.assertEquals(data, self.cache.load("bla"))
+
+    def test_multiple(self):
+        data = {u"bla": ("myfileid", "myrev", None),
+                u"bloe/blie": ("otherfileid", "myrev", None)}
+        self.cache.save("bla", [], data)
+        self.assertEquals(data, self.cache.load("bla"))
+
+    def test_parents(self):
+        data1 = {u"bla": ("myfileid", "myrev", None)}
+        data2 = {u"bla": ("myfileid", "mynewrev", None)}
+        self.cache.save("bla1", [], data1)
+        self.cache.save("bla2", ["bla1"], data2)
+        self.assertEquals(data1, self.cache.load("bla1"))
+        self.assertEquals(data2, self.cache.load("bla2"))
 
