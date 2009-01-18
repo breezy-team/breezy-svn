@@ -66,7 +66,8 @@ def determine_text_revisions(changes, default_revid, specific_revids):
     return ret
 
 
-def apply_idmap_delta(map, text_revisions, delta, changes, default_revid):
+def apply_idmap_delta(map, text_revisions, delta, changes, default_revid, 
+                      foreign_revid):
     """Update a file id map.
 
     :param map: Existing file id map that needs to be updated
@@ -87,7 +88,11 @@ def apply_idmap_delta(map, text_revisions, delta, changes, default_revid):
             # but that's not reflected as a bzr metadata change in bzr
             (x != "" or not "" in map or map[x][1] == NULL_REVISION)):
             if x in delta and (not x in map or map[x][0] != delta[x]):
-                map[x] = (delta[x], text_revisions.get(x) or default_revid, None)
+                if x in changes and changes[x][1] is not None:
+                    child_create_revid = foreign_revid
+                else:
+                    child_create_revid = None
+                map[x] = (delta[x], text_revisions.get(x) or default_revid, child_create_revid)
             else:
                 map[x] = (map[x][0], text_revisions.get(x) or default_revid, map[x][2])
 
@@ -206,7 +211,8 @@ class FileIdMap(object):
         revid = revmeta.get_revision_id(mapping)
         text_revisions = determine_text_revisions(local_changes, revid, 
                 revmeta.get_text_revisions(mapping))
-        apply_idmap_delta(map, text_revisions, idmap, local_changes, revid)
+        apply_idmap_delta(map, text_revisions, idmap, local_changes, revid,
+                          revmeta.get_foreign_revid())
 
     def get_map(self, foreign_revid, mapping):
         """Make sure the map is up to date until revnum."""
@@ -248,22 +254,38 @@ class FileIdMapCache(object):
     def save(self, revid, parent_revids, _map):
         mutter('saving file id map for %r', revid)
 
-        for path, (id, changed_revid, created_revid)  in _map.iteritems():
+        lines = []
+
+        for path in sorted(_map.keys()):
+            (id, changed_revid, created_revid) = _map[path]
             assert isinstance(path, unicode)
             assert isinstance(id, str)
             assert isinstance(changed_revid, str)
             assert created_revid is None or isinstance(created_revid, tuple)
+            if created_revid is None:
+                optional_child_create_revid = ""
+            else:
+                optional_child_create_revid = "\t%s:%d:%s" % (created_revid[0], created_revid[2], created_revid[1])
+            lines.append("%s\t%s\t%s%s\n" % (urllib.quote(path.encode("utf-8")), 
+                                           urllib.quote(id), 
+                                           urllib.quote(changed_revid),
+                                           optional_child_create_revid))
 
         self.idmap_knit.add_lines((revid,), [(r, ) for r in parent_revids], 
-                ["%s\t%s\t%s\n" % (urllib.quote(filename.encode("utf-8")), urllib.quote(_map[filename][0]), 
-                                        urllib.quote(_map[filename][1])) for filename in sorted(_map.keys())])
+                                  lines)
 
     def load(self, revid):
         map = {}
         for ((from_revid,), line) in self.idmap_knit.annotate((revid,)):
             entries = line.rstrip("\n").split("\t", 4)
-            (filename, id, create_revid) = entries
-            map[urllib.unquote(filename).decode("utf-8")] = (urllib.unquote(id), urllib.unquote(create_revid), None)
+            if len(entries) == 3:
+                (filename, id, changed_revid) = entries
+                child_create_revid = None
+            else:
+                (filename, id, changed_revid, child_create_text) = entries
+                (uuid, revnum, bp) = child_create_text.split(":", 3)
+                child_create_revid = (uuid, bp, int(revnum))
+            map[urllib.unquote(filename).decode("utf-8")] = (urllib.unquote(id), urllib.unquote(changed_revid), child_create_revid)
             assert isinstance(map[urllib.unquote(filename).decode("utf-8")][0], str)
 
         return map

@@ -398,7 +398,7 @@ class GetMapTests(SubversionTestCase):
                  None), 
             "bar": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar"), 
                     self.repos.generate_revision_id(3, "trunk", self.mapping),
-                    None), 
+                    (self.repos.uuid, "trunk", 3)), 
             "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"), 
                      self.repos.generate_revision_id(2, "trunk", self.mapping),
                      None)}, 
@@ -438,7 +438,7 @@ class GetMapTests(SubversionTestCase):
               None),
           "bar": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar"), 
               self.repos.generate_revision_id(3, "trunk", self.mapping),
-              None),
+              (self.repos.uuid, "trunk", 3)),
           "bar/file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar/file"), 
               self.repos.generate_revision_id(3, "trunk", self.mapping),
               None)},
@@ -510,4 +510,10 @@ class FileIdMapCacheTests(TestCaseWithMemoryTransport):
         self.cache.save("bla2", ["bla1"], data2)
         self.assertEquals(data1, self.cache.load("bla1"))
         self.assertEquals(data2, self.cache.load("bla2"))
+
+    def test_store_child_create_revid(self):
+        data = {u"bla": ("myfileid", "mynewrev", 
+                    ("myuuid", "mybp", 42))}
+        self.cache.save("bla", [], data)
+        self.assertEquals(data, self.cache.load("bla"))
 
