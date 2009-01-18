@@ -49,8 +49,6 @@ bzr-svn 0.5.0~rc2				UNRELEASED
    * Use unicode objects internally for sqlite. (#296868)
 
    * New implicit file id handling for copied directories.
-    + Handles children implicitly copied when replacing a directory with an older copy 
-       of itself (but a copy that is still present in the tree). (#308353)
     + Correctly handles implicit children when parent is copied from outside of the 
 	  branch. (#304134)
     + Correctly handles file id map generation for some stacked branches. (#310916)
