@@ -66,6 +66,21 @@ def idmap_lookup(idmap, mapping, path):
         raise AssertionError("Unable to determine file id for %r" % path)
 
 
+def idmap_reverse_lookup(idmap, mapping, fileid):
+    """Lookup a file id in an idmap.
+
+    :param idmap: The idmap to lookup in.
+    :param mapping: Mapping
+    :param fileid: The file id to look up
+    :return: Path
+    """
+    # Unfortunately, the map is the other way around
+    for k, (v, ck, child_create_foreign_revid) in idmap.iteritems():
+        if v == fileid:
+            return k
+    raise KeyError(fileid)
+
+
 def determine_text_revisions(changes, default_revid, specific_revids):
     """Create a text revision map.
 

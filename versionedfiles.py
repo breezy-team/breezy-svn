@@ -23,6 +23,7 @@ from cStringIO import StringIO
 import subvertpy
 
 from bzrlib.plugins.svn.errors import convert_svn_error
+from bzrlib.plugins.svn.fileids import idmap_reverse_lookup
 
 _warned_experimental = False
 
@@ -56,23 +57,17 @@ class SvnTexts(VersionedFiles):
         for (fileid, revid) in list(keys):
             revmeta, mapping = self.repository._get_revmeta(revid)
             map = self.repository.get_fileid_map(revmeta, mapping)
-            # Unfortunately, the map is the other way around
-            lines = None
-            for k, (v, ck, child_create_foreign_revid) in map.iteritems():
-                if v == fileid:
-                    try:
-                        stream = StringIO()
-                        self.repository.transport.get_file(urlutils.join(revmeta.branch_path, k).strip("/"), stream, revmeta.revnum)
-                        stream.seek(0)
-                        lines = stream.readlines()
-                    except subvertpy.SubversionException, (_, num):
-                        if num == subvertpy.ERR_FS_NOT_FILE:
-                            lines = []
-                        else:
-                            raise
-                    break
-            if lines is None:
-                raise Exception("Inconsistent key specified: (%r,%r)" % (fileid, revid))
+            path = idmap_reverse_lookup(map, mapping, fileid)
+            try:
+                stream = StringIO()
+                self.repository.transport.get_file(urlutils.join(revmeta.branch_path, path).strip("/"), stream, revmeta.revnum)
+                stream.seek(0)
+                lines = stream.readlines()
+            except subvertpy.SubversionException, (_, num):
+                if num == subvertpy.ERR_FS_NOT_FILE:
+                    lines = []
+                else:
+                    raise
             yield FulltextContentFactory((fileid, revid), None, 
                         sha1=osutils.sha_strings(lines),
                         text=''.join(lines))
@@ -80,18 +75,16 @@ class SvnTexts(VersionedFiles):
     def _get_parent(self, fileid, revid):
         revmeta, mapping = self.repository._get_revmeta(revid)
         fileidmap = self.repository.get_fileid_map(revmeta, mapping)
-        path = None
-        for k, (v_fileid, v_revid, v_creatid) in fileidmap.iteritems():
-            if v_fileid == fileid:
-                path = k
-        if path is None:
-            return
+        try:
+            path = idmap_reverse_lookup(fileidmap, mapping, fileid)
+        except KeyError:
+            return None
 
         text_parents = revmeta.get_text_revisions(mapping)
         if path in text_parents:
             return text_parents[path]
 
-        # Not explicitly record - so find the last place where this file was modified
+        # TODO: Not explicitly record - so find the last place where this file was modified
         # and report that.
 
         return 
