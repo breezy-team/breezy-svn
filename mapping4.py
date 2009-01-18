@@ -16,6 +16,7 @@
 from bzrlib import errors
 
 from bzrlib.plugins.svn import mapping
+from bzrlib.plugins.svn.errors import InvalidFileId
 
 supported_features = set()
 
@@ -35,6 +36,7 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
     can_use_fileprops = True
     supports_hidden = True
     restricts_branch_paths = False
+    parseable_file_ids = True
 
     def __init__(self):
         self.name = "v4"
@@ -80,6 +82,16 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
 
     def generate_file_id(self, (uuid, branch, revnum), inv_path):
         return "%d@%s:%s" % (revnum, uuid, mapping.escape_svn_path("%s/%s" % (branch, inv_path.encode("utf-8"))))
+
+    def parse_file_id(self, fileid):
+        try:
+            (revnum_str, rest) = fileid.split("@", 1)
+            revnum = int(revnum_str)
+            (uuid, path_escaped) = rest.split(":", 1)
+        except ValueError:
+            raise InvalidFileId(fileid)
+        path = mapping.unescape_svn_path(path_escaped).strip("/")
+        return (uuid, revnum, path)
 
     def is_branch(self, branch_path):
         return True

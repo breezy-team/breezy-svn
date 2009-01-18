@@ -179,3 +179,10 @@ class FileIdMapIncomplete(BzrError):
         self.parent = parent
         self.revmeta = revmeta
 
+
+class InvalidFileId(BzrError):
+    _fmt = """Unable to parse file id %(fileid)s."""
+
+    def __init__(self, fileid):
+        BzrError.__init__(self)
+        self.fileid = fileid

@@ -74,10 +74,26 @@ def idmap_reverse_lookup(idmap, mapping, fileid):
     :param fileid: The file id to look up
     :return: Path
     """
+    if mapping.parseable_file_ids:
+        try:
+            (uuid, revnum, path) = mapping.parse_file_id(fileid)
+        except errors.InvalidFileId:
+            uuid = None
+    else:
+        uuid = None
     # Unfortunately, the map is the other way around
-    for k, (v, ck, child_create_foreign_revid) in idmap.iteritems():
+    for k in sorted(idmap.keys()):
+        (v, ck, child_create_foreign_revid) = idmap[k]
         if v == fileid:
             return k
+        if (child_create_foreign_revid is not None and 
+            child_create_foreign_revid[0] == uuid and
+            child_create_foreign_revid[2] == revnum and
+            path.startswith("%s/" % child_create_foreign_revid[1])):
+            inv_p = path[len(child_create_foreign_revid[1]):].strip("/").decode("utf-8")
+            if mapping.generate_file_id((uuid, child_create_foreign_revid[1], revnum), inv_p) == fileid:
+                return inv_p
+
     raise KeyError(fileid)
 
 

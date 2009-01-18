@@ -173,6 +173,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
     must_use_fileprops = True
     can_use_revprops = True
     restricts_branch_paths = True
+    parseable_file_ids = True
 
     def __init__(self, scheme, guessed_scheme=None):
         mapping.BzrSvnMapping.__init__(self)
@@ -241,6 +242,15 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
                                 osutils.sha(inv_path).hexdigest())
         assert isinstance(ret, str)
         return osutils.safe_file_id(ret)
+
+    def parse_file_id(self, file_id):
+        try:
+            (revnum_str, rest) = file_id.split("@", 1)
+            revnum = int(revnum_str)
+            (uuid, bp, ip) = rest.split(":", 2)
+        except ValueError:
+            raise errors.InvalidFileId(file_id)
+        return (uuid, revnum, ("%s/%s" % (mapping.unescape_svn_path(bp), mapping.unescape_svn_path(ip))).strip("/"))
 
     @classmethod
     def _parse_revision_id(cls, revid):

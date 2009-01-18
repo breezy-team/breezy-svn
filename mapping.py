@@ -302,6 +302,7 @@ class BzrSvnMapping(foreign.VcsMapping):
     must_use_fileprops = False
     supports_hidden = False
     restricts_branch_paths = False
+    parseable_file_ids = False
 
     def __init__(self):
         if (version_info[3] == 'exp' or self.experimental) and not BzrSvnMapping._warned_experimental:
@@ -375,6 +376,15 @@ class BzrSvnMapping(foreign.VcsMapping):
         :param revnum: Revision number at which the file was introduced.
         :param branch: Branch path of the branch in which the file was introduced.
         :param inv_path: Original path of the file within the inventory
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def parse_file_id(fileid):
+        """Parse a file id created by bzr-svn.
+
+        :param fileid: The file id to parse
+        :return: Tuple with (uuid, revnum, path)
         """
         raise NotImplementedError
 
