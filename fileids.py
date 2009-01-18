@@ -63,7 +63,7 @@ def idmap_lookup(idmap, mapping, path):
                 return (mapping.generate_file_id(create_revid, path),
                         mapping.revision_id_foreign_to_bzr(create_revid),
                         create_revid)
-        raise AssertionError("Unable to determine file id for %r" % path)
+        raise KeyError("Unable to determine file id for %r" % path)
 
 
 def idmap_reverse_lookup(idmap, mapping, fileid):

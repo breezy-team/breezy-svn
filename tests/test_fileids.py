@@ -23,7 +23,8 @@ from bzrlib.trace import mutter
 from bzrlib.tests import TestCase, TestCaseWithMemoryTransport
 from bzrlib.workingtree import WorkingTree
 
-from bzrlib.plugins.svn.fileids import simple_apply_changes, FileIdMapCache
+from bzrlib.plugins.svn.fileids import simple_apply_changes, FileIdMapCache, idmap_lookup
+from bzrlib.plugins.svn.mapping import mapping_registry
 from bzrlib.plugins.svn.layout.standard import TrunkLayout, RootLayout
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
@@ -516,3 +517,26 @@ class FileIdMapCacheTests(TestCaseWithMemoryTransport):
         self.cache.save("bla", [], data)
         self.assertEquals(data, self.cache.load("bla"))
 
+
+class LookupTests(TestCase):
+
+    def test_trivial(self):
+        idmap = {"filename": ("myfileid", "myrev", None)}
+        self.assertEquals(("myfileid", "myrev", None), idmap_lookup(idmap, None, "filename"))
+
+    def test_nonexistent(self):
+        idmap = {}
+        self.assertRaises(KeyError, idmap_lookup, idmap, None, "filename")
+
+    def test_implicit(self):
+        idmap = {"parent": ("parentfileid", "parentrev", ("someuuid", "somebp", 42))}
+        mapping = mapping_registry.get_default()()
+        self.assertEquals((mapping.generate_file_id(("someuuid", "somebp", 42), u"parent/foo"),
+                           mapping.revision_id_foreign_to_bzr(("someuuid", "somebp", 42)),
+                         ('someuuid', 'somebp', 42)),
+                          idmap_lookup(idmap, mapping, u"parent/foo"))
+
+    def test_not_implicit_asserts(self):
+        idmap = {"parent": ("parentfileid", "parentrev", None)}
+        mapping = mapping_registry.get_default()()
+        self.assertRaises(AssertionError, idmap_lookup, idmap, mapping, u"parent/foo")
