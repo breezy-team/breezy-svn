@@ -543,9 +543,9 @@ class MutteringRemoteAccess(object):
         mutter('svn get-dir -r%d %s' % (revnum, path))
         return self.actual.get_dir(path, revnum, fields)
 
-    def get_file(self, path, revnum):
+    def get_file(self, path, stream, revnum):
         mutter('svn get-file -r%d %s' % (revnum, path))
-        return self.actual.get_file(path, revnum)
+        return self.actual.get_file(path, stream, revnum)
 
     def revprop_list(self, revnum):
         mutter('svn revprop-list -r%d' % (revnum,))
