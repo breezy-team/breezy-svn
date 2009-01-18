@@ -52,14 +52,17 @@ def idmap_lookup(idmap, mapping, path):
     except KeyError:
         base = path
         while base != "":
-            base = base.rsplit("/", 1)[0]
+            if u"/" in base:
+                base = base.rsplit("/", 1)[0]
+            else:
+                base = u""
             if base in idmap:
-                child_create_foreign_revid = idmap[base][2]
-                if child_create_foreign_revid is None:
+                create_revid = idmap[base][2]
+                if create_revid is None:
                     raise AssertionError("Inconsistency; child %s appeared while parent was never copied" % path)
-                return (mapping.generate_file_id(child_create_foreign_revid, path),
-                        mapping.revision_id_foreign_to_bzr(child_create_foreign_revid),
-                        child_create_foreign_revid)
+                return (mapping.generate_file_id(create_revid, path),
+                        mapping.revision_id_foreign_to_bzr(create_revid),
+                        create_revid)
         raise AssertionError("Unable to determine file id for %r" % path)
 
 
@@ -140,7 +143,7 @@ def get_local_changes(paths, branch, mapping, layout, generate_revid):
             except errors.NotSvnBranchPath:
                 # Copied from outside of a known branch
                 # Make it look like the files were added in this revision
-                data = (data[0], None, -1)
+                data = (data[0], data[1], None)
 
         new_paths[new_p.decode("utf-8")] = data
     return new_paths
