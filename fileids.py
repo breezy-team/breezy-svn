@@ -35,7 +35,7 @@ from bzrlib.plugins.svn.revmeta import (
 
 # idmap: dictionary mapping unicode paths to tuples with file id, 
 #   revision id and the foreign_revid it was introduced in, if it 
-#   can have unknown children (None otherwise)
+#   can have implicit children (None otherwise)
 # idmap delta: dictionary mapping unicode paths to new file id assignments
 # text revision map: dictionary mapping unicode paths to text revisions (usually revision ids)
 
@@ -192,8 +192,6 @@ def simple_apply_changes(new_file_id, changes):
         assert isinstance(p, unicode)
         if data[0] in ('A', 'R'):
             delta[p] = new_file_id(p)
-            if data[1] is not None:
-                mutter('%r copied from %r:%s', p, data[1], data[2])
     return delta 
 
 
