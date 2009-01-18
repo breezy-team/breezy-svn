@@ -223,8 +223,11 @@ class TestFileMapping(TestCase):
                                    u"foob": ('A', 'foo', 1), 
                                    u"foob/bla": ('M', None, None)}
                 })
-        self.assertTrue(map.has_key(u"foob/bla"))
-        self.assertTrue(map.has_key(u"foob/blie"))
+        self.assertEquals(map,
+            {u'foo': (u'1@uuid::foo', (1, '')),
+             u'foo/bla': (u'1@uuid::foo/bla', (1, '')),
+             u'foo/blie': (u'1@uuid::foo/blie', (1, '')),
+             u'foob': (u'2@uuid::foob', (2, ''))})
 
     def test_touchparent(self):
         map = self.apply_mappings(
