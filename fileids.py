@@ -55,6 +55,8 @@ def idmap_lookup(idmap, mapping, path):
             base = base.rsplit("/", 1)[0]
             if base in idmap:
                 child_create_foreign_revid = idmap[base][2]
+                if child_create_foreign_revid is None:
+                    raise AssertionError("Inconsistency; child %s appeared while parent was never copied" % path)
                 return (mapping.generate_file_id(child_create_foreign_revid, path),
                         mapping.revision_id_foreign_to_bzr(child_create_foreign_revid),
                         child_create_foreign_revid)
