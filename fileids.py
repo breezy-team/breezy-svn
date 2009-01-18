@@ -33,7 +33,9 @@ from bzrlib.plugins.svn.revmeta import (
         iter_with_mapping,
         )
 
-# idmap: dictionary mapping unicode paths to tuples with file id and revision id
+# idmap: dictionary mapping unicode paths to tuples with file id, 
+#   revision id and the foreign_revid it was introduced in, if it 
+#   can have unknown children (None otherwise)
 # idmap delta: dictionary mapping unicode paths to new file id assignments
 # text revision map: dictionary mapping unicode paths to text revisions (usually revision ids)
 
@@ -44,7 +46,7 @@ def idmap_lookup(idmap, path):
     :param path: Path to look up
     :return: Tuple with file id and text revision
     """
-    return idmap[path]
+    return idmap[path][:2]
 
 
 def determine_text_revisions(changes, default_revid, specific_revids):
@@ -64,7 +66,8 @@ def determine_text_revisions(changes, default_revid, specific_revids):
     return ret
 
 
-def apply_idmap_delta(map, text_revisions, delta, changes, default_revid):
+def apply_idmap_delta(map, text_revisions, delta, changes, default_revid, 
+                      foreign_revid):
     """Update a file id map.
 
     :param map: Existing file id map that needs to be updated
@@ -84,7 +87,14 @@ def apply_idmap_delta(map, text_revisions, delta, changes, default_revid):
         if (# special case - we change metadata in svn at the branch root path
             # but that's not reflected as a bzr metadata change in bzr
             (x != "" or not "" in map or map[x][1] == NULL_REVISION)):
-            map[x] = (delta.get(x) or map[x][0], text_revisions.get(x) or default_revid)
+            if x in delta and (not x in map or map[x][0] != delta[x]):
+                if x in changes and changes[x][1] is not None:
+                    child_create_revid = foreign_revid
+                else:
+                    child_create_revid = None
+                map[x] = (delta[x], text_revisions.get(x) or default_revid, child_create_revid)
+            else:
+                map[x] = (map[x][0], text_revisions.get(x) or default_revid, map[x][2])
 
 
 def get_local_changes(paths, branch, mapping, layout, generate_revid):
@@ -127,7 +137,7 @@ def get_local_changes(paths, branch, mapping, layout, generate_revid):
     return new_paths
 
 
-FILEIDMAP_VERSION = 2
+FILEIDMAP_VERSION = 3
 
 def simple_apply_changes(new_file_id, changes):
     """Simple function that generates a dictionary with file id changes.
@@ -180,7 +190,8 @@ class FileIdMap(object):
         revid = revmeta.get_revision_id(mapping)
         text_revisions = determine_text_revisions(local_changes, revid, 
                 revmeta.get_text_revisions(mapping))
-        apply_idmap_delta(map, text_revisions, idmap, local_changes, revid)
+        apply_idmap_delta(map, text_revisions, idmap, local_changes, revid,
+                          revmeta.get_foreign_revid())
 
     def get_map(self, foreign_revid, mapping):
         """Make sure the map is up to date until revnum."""
@@ -189,12 +200,13 @@ class FileIdMap(object):
         if revnum == 0:
             assert branch == ""
             return {"": (mapping.generate_file_id(foreign_revid, u""), 
-              self.repos.generate_revision_id(0, "", mapping))}
+                self.repos.generate_revision_id(0, "", mapping), 
+                None)}
 
         todo = []
         next_parent_revs = []
         if mapping.is_branch(""):
-            map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION)}
+            map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION, None)}
         else:
             map = {}
 
@@ -221,20 +233,38 @@ class FileIdMapCache(object):
     def save(self, revid, parent_revids, _map):
         mutter('saving file id map for %r', revid)
 
-        for path, (id, created_revid)  in _map.iteritems():
+        lines = []
+
+        for path in sorted(_map.keys()):
+            (id, changed_revid, created_revid) = _map[path]
             assert isinstance(path, unicode)
             assert isinstance(id, str)
-            assert isinstance(created_revid, str)
+            assert isinstance(changed_revid, str)
+            assert created_revid is None or isinstance(created_revid, tuple)
+            if created_revid is None:
+                optional_child_create_revid = ""
+            else:
+                optional_child_create_revid = "\t%s:%d:%s" % (created_revid[0], created_revid[2], created_revid[1])
+            lines.append("%s\t%s\t%s%s\n" % (urllib.quote(path.encode("utf-8")), 
+                                           urllib.quote(id), 
+                                           urllib.quote(changed_revid),
+                                           optional_child_create_revid))
 
         self.idmap_knit.add_lines((revid,), [(r, ) for r in parent_revids], 
-                ["%s\t%s\t%s\n" % (urllib.quote(filename.encode("utf-8")), urllib.quote(_map[filename][0]), 
-                                        urllib.quote(_map[filename][1])) for filename in sorted(_map.keys())])
+                                  lines)
 
     def load(self, revid):
         map = {}
-        for ((create_revid,), line) in self.idmap_knit.annotate((revid,)):
-            (filename, id, create_revid) = line.rstrip("\n").split("\t", 3)
-            map[urllib.unquote(filename).decode("utf-8")] = (urllib.unquote(id), urllib.unquote(create_revid))
+        for ((from_revid,), line) in self.idmap_knit.annotate((revid,)):
+            entries = line.rstrip("\n").split("\t", 4)
+            if len(entries) == 3:
+                (filename, id, changed_revid) = entries
+                child_create_revid = None
+            else:
+                (filename, id, changed_revid, child_create_text) = entries
+                (uuid, revnum, bp) = child_create_text.split(":", 3)
+                child_create_revid = (uuid, bp, int(revnum))
+            map[urllib.unquote(filename).decode("utf-8")] = (urllib.unquote(id), urllib.unquote(changed_revid), child_create_revid)
             assert isinstance(map[urllib.unquote(filename).decode("utf-8")][0], str)
 
         return map
@@ -242,6 +272,7 @@ class FileIdMapCache(object):
 
 class CachingFileIdMap(object):
     """A file id map that uses a cache."""
+
     def __init__(self, cache_transport, actual):
         self.cache = FileIdMapCache(cache_transport)
         self.actual = actual
@@ -281,7 +312,7 @@ class CachingFileIdMap(object):
 
         if len(next_parent_revs) == 0:
             if mapping.is_branch(""):
-                map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION)}
+                map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION, None)}
             else:
                 map = {}
 
