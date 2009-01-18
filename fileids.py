@@ -46,7 +46,7 @@ def idmap_lookup(idmap, path):
     :param path: Path to look up
     :return: Tuple with file id and text revision
     """
-    return idmap[path][:2]
+    return idmap[path]
 
 
 def determine_text_revisions(changes, default_revid, specific_revids):
@@ -93,7 +93,8 @@ def apply_idmap_delta(map, text_revisions, delta, changes, default_revid,
                     child_create_revid = None
                 map[x] = (delta[x], text_revisions.get(x) or default_revid, child_create_revid)
             else:
-                map[x] = (map[x][0], text_revisions.get(x) or default_revid, map[x][2])
+                prev_entry = idmap_lookup(map, x)
+                map[x] = (prev_entry[0], text_revisions.get(x) or default_revid, prev_entry[2])
 
 
 def get_local_changes(paths, branch, mapping, layout, generate_revid, 

@@ -107,7 +107,7 @@ class TreeBuildEditor(object):
         self.revnum = revnum
 
     def open_root(self, revnum):
-        file_id, revision_id = idmap_lookup(self.tree.id_map, "")
+        file_id, revision_id, _ = idmap_lookup(self.tree.id_map, "")
         ie = self.tree._inventory.add_path("", 'directory', file_id)
         ie.revision = revision_id
         return DirectoryTreeEditor(self.tree, file_id)
@@ -126,7 +126,7 @@ class DirectoryTreeEditor(object):
 
     def add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         path = path.decode("utf-8")
-        file_id, revision_id = idmap_lookup(self.tree.id_map, path)
+        file_id, revision_id, _ = idmap_lookup(self.tree.id_map, path)
         ie = self.tree._inventory.add_path(path, 'directory', file_id)
         ie.revision = revision_id
         return DirectoryTreeEditor(self.tree, file_id)
@@ -183,7 +183,7 @@ class FileTreeEditor(object):
             mutter('unsupported file property %r', name)
 
     def close(self, checksum=None):
-        file_id, revision_id = idmap_lookup(self.tree.id_map, self.path)
+        file_id, revision_id, _ = idmap_lookup(self.tree.id_map, self.path)
 
         if self.file_stream:
             self.file_stream.seek(0)
@@ -263,7 +263,7 @@ class SvnBasisTree(RevisionTree):
             if entry.schedule in (wc.SCHEDULE_NORMAL, 
                                   wc.SCHEDULE_DELETE, 
                                   wc.SCHEDULE_REPLACE):
-                return idmap_lookup(self.id_map, workingtree.branch.unprefix(relpath.decode("utf-8")))
+                return idmap_lookup(self.id_map, workingtree.branch.unprefix(relpath.decode("utf-8")))[:2]
             return (None, None)
 
         def add_dir_to_inv(relpath, adm, parent_id):
