@@ -68,7 +68,7 @@ def determine_text_revisions(changes, default_revid, specific_revids):
 
 
 def apply_idmap_delta(map, text_revisions, delta, changes, default_revid, 
-                      foreign_revid):
+                      mapping, foreign_revid):
     """Update a file id map.
 
     :param map: Existing file id map that needs to be updated
@@ -94,7 +94,7 @@ def apply_idmap_delta(map, text_revisions, delta, changes, default_revid,
                     child_create_revid = None
                 map[x] = (delta[x], text_revisions.get(x) or default_revid, child_create_revid)
             else:
-                prev_entry = idmap_lookup(map, None, x)
+                prev_entry = idmap_lookup(map, mapping, x)
                 map[x] = (prev_entry[0], text_revisions.get(x) or default_revid, prev_entry[2])
 
 
@@ -213,7 +213,7 @@ class FileIdMap(object):
         text_revisions = determine_text_revisions(local_changes, revid, 
                 revmeta.get_text_revisions(mapping))
         apply_idmap_delta(map, text_revisions, idmap, local_changes, revid,
-                          revmeta.get_foreign_revid())
+                          mapping, revmeta.get_foreign_revid())
 
     def get_map(self, foreign_revid, mapping):
         """Make sure the map is up to date until revnum."""
