@@ -53,11 +53,12 @@ The standard `Windows installers for Bazaar`_ include bzr-svn.
 
 Debian/Ubuntu GNU/Linux
 ^^^^^^^^^^^^^^^^^^^^^^^
-Debian/Ubuntu packages are available from `Jelmer's Debian repository`_. 
 
-.. _Jelmer's Debian repository: http://samba.org/~jelmer/debian/
+Debian sid or experimental have packages for the latest release (packages 
+are uploaded to Debian as part of the release process). 
 
-Ubuntu's in-development release and Debian sid usually also contain the latest release.
+Ubuntu's in-development release usually also has the latest version, synced from 
+Debian.
 
 GoboLinux
 ^^^^^^^^^
