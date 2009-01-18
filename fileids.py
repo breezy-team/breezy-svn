@@ -33,7 +33,9 @@ from bzrlib.plugins.svn.revmeta import (
         iter_with_mapping,
         )
 
-# idmap: dictionary mapping unicode paths to tuples with file id and revision id
+# idmap: dictionary mapping unicode paths to tuples with file id, 
+#   revision id and the foreign_revid it was introduced in, if it 
+#   can have unknown children (None otherwise)
 # idmap delta: dictionary mapping unicode paths to new file id assignments
 # text revision map: dictionary mapping unicode paths to text revisions (usually revision ids)
 
@@ -44,7 +46,7 @@ def idmap_lookup(idmap, path):
     :param path: Path to look up
     :return: Tuple with file id and text revision
     """
-    return idmap[path]
+    return idmap[path][:2]
 
 
 def determine_text_revisions(changes, default_revid, specific_revids):
@@ -84,7 +86,10 @@ def apply_idmap_delta(map, text_revisions, delta, changes, default_revid):
         if (# special case - we change metadata in svn at the branch root path
             # but that's not reflected as a bzr metadata change in bzr
             (x != "" or not "" in map or map[x][1] == NULL_REVISION)):
-            map[x] = (delta.get(x) or map[x][0], text_revisions.get(x) or default_revid)
+            if x in delta and (not x in map or map[x][0] != delta[x]):
+                map[x] = (delta[x], text_revisions.get(x) or default_revid, None)
+            else:
+                map[x] = (map[x][0], text_revisions.get(x) or default_revid, map[x][2])
 
 
 def get_local_changes(paths, branch, mapping, layout, generate_revid, 
@@ -210,12 +215,13 @@ class FileIdMap(object):
         if revnum == 0:
             assert branch == ""
             return {"": (mapping.generate_file_id(foreign_revid, u""), 
-              self.repos.generate_revision_id(0, "", mapping))}
+                self.repos.generate_revision_id(0, "", mapping), 
+                None)}
 
         todo = []
         next_parent_revs = []
         if mapping.is_branch(""):
-            map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION)}
+            map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION, None)}
         else:
             map = {}
 
@@ -242,10 +248,11 @@ class FileIdMapCache(object):
     def save(self, revid, parent_revids, _map):
         mutter('saving file id map for %r', revid)
 
-        for path, (id, created_revid)  in _map.iteritems():
+        for path, (id, changed_revid, created_revid)  in _map.iteritems():
             assert isinstance(path, unicode)
             assert isinstance(id, str)
-            assert isinstance(created_revid, str)
+            assert isinstance(changed_revid, str)
+            assert created_revid is None or isinstance(created_revid, tuple)
 
         self.idmap_knit.add_lines((revid,), [(r, ) for r in parent_revids], 
                 ["%s\t%s\t%s\n" % (urllib.quote(filename.encode("utf-8")), urllib.quote(_map[filename][0]), 
@@ -255,7 +262,7 @@ class FileIdMapCache(object):
         map = {}
         for ((create_revid,), line) in self.idmap_knit.annotate((revid,)):
             (filename, id, create_revid) = line.rstrip("\n").split("\t", 3)
-            map[urllib.unquote(filename).decode("utf-8")] = (urllib.unquote(id), urllib.unquote(create_revid))
+            map[urllib.unquote(filename).decode("utf-8")] = (urllib.unquote(id), urllib.unquote(create_revid), None)
             assert isinstance(map[urllib.unquote(filename).decode("utf-8")][0], str)
 
         return map
@@ -263,6 +270,7 @@ class FileIdMapCache(object):
 
 class CachingFileIdMap(object):
     """A file id map that uses a cache."""
+
     def __init__(self, cache_transport, actual):
         self.cache = FileIdMapCache(cache_transport)
         self.actual = actual
@@ -302,7 +310,7 @@ class CachingFileIdMap(object):
 
         if len(next_parent_revs) == 0:
             if mapping.is_branch(""):
-                map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION)}
+                map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION, None)}
             else:
                 map = {}
 

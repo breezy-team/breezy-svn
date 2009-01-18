@@ -90,7 +90,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos = Repository.open(repos_url)
         mapping = repos.get_mapping()
         rm_provider = repos._revmeta_provider
-        self.assertEqual({u"": (mapping.generate_file_id((repos.uuid, "", 0), u""), mapping.revision_id_foreign_to_bzr((repos.uuid, "", 0)))}, repos.get_fileid_map(rm_provider.get_revision("", 0), mapping))
+        self.assertEqual({u"": (mapping.generate_file_id((repos.uuid, "", 0), u""), mapping.revision_id_foreign_to_bzr((repos.uuid, "", 0)), None)}, repos.get_fileid_map(rm_provider.get_revision("", 0), mapping))
 
     def test_add_revision(self):
         repos_url = self.make_repository("a")
