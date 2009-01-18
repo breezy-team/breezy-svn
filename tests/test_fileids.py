@@ -186,7 +186,7 @@ class TestFileMapping(TestCase):
     def setUp(self):
         self.generate_file_id = lambda (uuid, bp, revnum), ip: "%d@%s:%s:%s" % (revnum, uuid, bp, ip)
 
-    def apply_mappings(self, mappings, find_children=None, renames={}):
+    def apply_mappings(self, mappings, renames={}):
         map = {}
         brns = mappings.keys()
         brns.sort()
@@ -196,7 +196,7 @@ class TestFileMapping(TestCase):
                 if renames.has_key(r) and renames[r].has_key(x):
                     return renames[r][x]
                 return self.generate_file_id(("uuid", branchpath, revnum), x)
-            revmap = simple_apply_changes(new_file_id, mappings[r], find_children)
+            revmap = simple_apply_changes(new_file_id, mappings[r])
             map.update(dict([(x, (revmap[x], r)) for x in revmap]))
         return map
 
@@ -214,10 +214,6 @@ class TestFileMapping(TestCase):
             }, map)
 
     def test_copy(self):
-        def find_children(path, revid):
-            if path == u"foo":
-                yield u"foo/blie"
-                yield u"foo/bla"
         map = self.apply_mappings({
                 (1, ""): {
                                    u"foo": ('A', None, None), 
@@ -226,7 +222,7 @@ class TestFileMapping(TestCase):
                 (2, ""): {
                                    u"foob": ('A', 'foo', 1), 
                                    u"foob/bla": ('M', None, None)}
-                }, find_children)
+                })
         self.assertTrue(map.has_key(u"foob/bla"))
         self.assertTrue(map.has_key(u"foob/blie"))
 
