@@ -144,7 +144,7 @@ def get_local_changes(paths, branch, mapping, layout, generate_revid,
     return new_paths
 
 
-FILEIDMAP_VERSION = 2
+FILEIDMAP_VERSION = 3
 
 def simple_apply_changes(new_file_id, changes, find_children=None):
     """Simple function that generates a dictionary with file id changes.
