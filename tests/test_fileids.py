@@ -437,7 +437,7 @@ class GetMapTests(SubversionTestCase):
               (self.repos.uuid, "trunk", 3)),
           "bar/file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar/file"), 
               self.repos.generate_revision_id(3, "trunk", self.mapping),
-              None)},
+              (self.repos.uuid, "trunk", 3))},
             self.repos.get_fileid_map(rm_provider.get_revision("trunk", 3), self.mapping))
 
     def test_304134(self):

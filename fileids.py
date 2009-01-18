@@ -15,7 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Generation of file-ids."""
 
-from bzrlib import ui
+from bzrlib import ui, urlutils
 from bzrlib.errors import RevisionNotPresent
 from bzrlib.knit import make_file_factory
 from bzrlib.revision import NULL_REVISION
@@ -39,14 +39,26 @@ from bzrlib.plugins.svn.revmeta import (
 # idmap delta: dictionary mapping unicode paths to new file id assignments
 # text revision map: dictionary mapping unicode paths to text revisions (usually revision ids)
 
-def idmap_lookup(idmap, path):
+def idmap_lookup(idmap, mapping, path):
     """Lookup a path in an idmap.
 
     :param idmap: The idmap to look up in.
+    :param mapping: Mapping
     :param path: Path to look up
     :return: Tuple with file id and text revision
     """
-    return idmap[path]
+    try:
+        return idmap[path]
+    except KeyError:
+        base = path
+        while base != "":
+            base = base.rsplit("/", 1)[0]
+            if base in idmap:
+                child_create_foreign_revid = idmap[base][2]
+                return (mapping.generate_file_id(child_create_foreign_revid, path),
+                        mapping.revision_id_foreign_to_bzr(child_create_foreign_revid),
+                        child_create_foreign_revid)
+        raise AssertionError("Unable to determine file id for %r" % path)
 
 
 def determine_text_revisions(changes, default_revid, specific_revids):
@@ -67,7 +79,7 @@ def determine_text_revisions(changes, default_revid, specific_revids):
 
 
 def apply_idmap_delta(map, text_revisions, delta, changes, default_revid, 
-                      foreign_revid):
+                      mapping, foreign_revid):
     """Update a file id map.
 
     :param map: Existing file id map that needs to be updated
@@ -93,7 +105,7 @@ def apply_idmap_delta(map, text_revisions, delta, changes, default_revid,
                     child_create_revid = None
                 map[x] = (delta[x], text_revisions.get(x) or default_revid, child_create_revid)
             else:
-                prev_entry = idmap_lookup(map, x)
+                prev_entry = idmap_lookup(map, mapping, x)
                 map[x] = (prev_entry[0], text_revisions.get(x) or default_revid, prev_entry[2])
 
 
@@ -186,7 +198,7 @@ class FileIdMap(object):
         text_revisions = determine_text_revisions(local_changes, revid, 
                 revmeta.get_text_revisions(mapping))
         apply_idmap_delta(map, text_revisions, idmap, local_changes, revid,
-                          revmeta.get_foreign_revid())
+                          mapping, revmeta.get_foreign_revid())
 
     def get_map(self, foreign_revid, mapping):
         """Make sure the map is up to date until revnum."""

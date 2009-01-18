@@ -728,10 +728,10 @@ class TreeDeltaBuildEditor(DeltaBuildEditor):
         return False
 
     def _get_old_id(self, path):
-        return idmap_lookup(self._parent_idmap, path)[0]
+        return idmap_lookup(self._parent_idmap, self.mapping, path)[0]
 
     def _get_new_id(self, path):
-        return idmap_lookup(self._idmap, path)[0]
+        return idmap_lookup(self._idmap, self.mapping, path)[0]
 
 
 def report_inventory_contents(reporter, revnum, start_empty):

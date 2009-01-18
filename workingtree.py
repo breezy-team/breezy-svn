@@ -281,7 +281,7 @@ class SvnWorkingTree(WorkingTree):
         assert isinstance(path, str)
 
         rp = self.branch.unprefix(path)
-        entry = idmap_lookup(self.basis_tree().id_map, rp.decode("utf-8"))
+        entry = idmap_lookup(self.basis_tree().id_map, self.basis_tree().workingtree.branch.mapping, rp.decode("utf-8"))
         assert entry[0] is not None
         assert isinstance(entry[0], str), "fileid %r for %r is not a string" % (entry[0], path)
         return entry[:2]
