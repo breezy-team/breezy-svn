@@ -38,6 +38,13 @@ from bzrlib.plugins.svn.revmeta import (
 #   can have implicit children (None otherwise)
 # idmap delta: dictionary mapping unicode paths to new file id assignments
 # text revision map: dictionary mapping unicode paths to text revisions (usually revision ids)
+# implicit children: children that don't show up in the svn log when a copy is done, e.g.:
+#
+# = rev1
+#    A /foo
+#    A /foo/bar
+# = rev 2
+#    A /bla (from /foo:1)
 
 def idmap_lookup(idmap, mapping, path):
     """Lookup a path in an idmap.
@@ -136,6 +143,8 @@ def apply_idmap_delta(map, text_revisions, delta, changes, default_revid,
             (x != "" or not "" in map or map[x][1] == NULL_REVISION)):
             if x in delta and (not x in map or map[x][0] != delta[x]):
                 if x in changes and changes[x][1] is not None:
+                    # if this was a copy from somewhere else there can be 
+                    # implicit children
                     child_create_revid = foreign_revid
                 else:
                     child_create_revid = None
