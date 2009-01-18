@@ -78,7 +78,7 @@ def apply_idmap_delta(map, text_revisions, delta, changes, default_revid,
     for p, data in changes.iteritems():
         if data[0] in ('D', 'R'):
             for xp in map.keys():
-                if p == xp or xp.startswith(u"%s/" % p) and not xp in delta:
+                if (p == xp or xp.startswith(u"%s/" % p)) and not xp in delta:
                     del map[xp]
 
     for x in sorted(text_revisions.keys() + delta.keys()):
