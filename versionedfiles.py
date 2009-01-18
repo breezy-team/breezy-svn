@@ -16,6 +16,7 @@
 """Fake versionedfiles implementation for Subversion."""
 
 from bzrlib import osutils, urlutils
+from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import warning
 from bzrlib.versionedfile import FulltextContentFactory, VersionedFiles
 
@@ -23,7 +24,7 @@ from cStringIO import StringIO
 import subvertpy
 
 from bzrlib.plugins.svn.errors import convert_svn_error
-from bzrlib.plugins.svn.fileids import idmap_reverse_lookup
+from bzrlib.plugins.svn.fileids import idmap_reverse_lookup, idmap_lookup
 
 _warned_experimental = False
 
@@ -80,14 +81,30 @@ class SvnTexts(VersionedFiles):
         except KeyError:
             return None
 
-        text_parents = revmeta.get_text_revisions(mapping)
+        text_parents = revmeta.get_text_parents(mapping)
         if path in text_parents:
             return text_parents[path]
 
-        # TODO: Not explicitly record - so find the last place where this file was modified
-        # and report that.
+        # Not explicitly recorded - so just return the text revisions 
+        # present in the parents of the mentioned revision.
+        ret = []
+        rev_parent_revids = revmeta.get_parent_ids(mapping)
+        for revid in rev_parent_revids:
+            revmeta, mapping = self.repository._get_revmeta(revid)
+            fileidmap = self.repository.get_fileid_map(revmeta, mapping)
+            try:
+                path = idmap_reverse_lookup(fileidmap, mapping, fileid)
+            except KeyError:
+                pass
+            else:
+                text_parent = idmap_lookup(fileidmap, mapping, path)[1]
+                if text_parent not in ret:
+                    ret.append(text_parent)
 
-        return 
+        if ret == []:
+            return (NULL_REVISION,)
+        else:
+            return tuple(ret)
 
     def get_parent_map(self, keys):
         invs = {}
