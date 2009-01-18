@@ -173,7 +173,6 @@ def get_local_changes(paths, branch, mapping, layout, generate_revid):
                                   data[2], cbp, mapping))
             except errors.NotSvnBranchPath:
                 # Copied from outside of a known branch
-                # Make it look like the files were added in this revision
                 data = (data[0], data[1], None)
 
         new_paths[new_p.decode("utf-8")] = data
@@ -181,6 +180,7 @@ def get_local_changes(paths, branch, mapping, layout, generate_revid):
 
 
 FILEIDMAP_VERSION = 3
+FILEID_MAP_SAVE_INTERVAL = 1000
 
 def simple_apply_changes(new_file_id, changes):
     """Simple function that generates a dictionary with file id changes.
@@ -218,7 +218,7 @@ class FileIdMap(object):
             return mapping.generate_file_id(foreign_revid, x)
          
         idmap = self.apply_changes_fn(new_file_id, changes)
-        idmap.update(revmeta.get_fileid_map(mapping))
+        idmap.update(revmeta.get_fileid_overrides(mapping))
         return idmap
 
     def update_idmap(self, map, revmeta, mapping):
@@ -365,7 +365,8 @@ class CachingFileIdMap(object):
                 revid = revmeta.get_revision_id(mapping)
                 self.actual.update_idmap(map, revmeta, mapping)
                 parent_revs = next_parent_revs
-                self.cache.save(revid, parent_revs, map)
+                if revnum % FILEID_MAP_SAVE_INTERVAL == 0 or revnum == revmeta.revnum:
+                    self.cache.save(revid, parent_revs, map)
                 next_parent_revs = [revid]
         finally:
             pb.finished()

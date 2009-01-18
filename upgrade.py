@@ -31,7 +31,7 @@ def export_as_mapping(revmeta, graph, old_mapping, new_mapping):
     rev = revmeta.get_revision(old_mapping)
     revno = graph.find_distance_to_null(rev.revision_id, [])
     new_mapping.export_revision_revprops(revmeta.branch_path, rev.timestamp, rev.timezone, rev.committer, rev.properties, rev.revision_id, revno, rev.parent_ids, new_revprops)
-    new_mapping.export_fileid_map_revprops(revmeta.get_fileid_map(new_mapping), new_revprops)
+    new_mapping.export_fileid_map_revprops(revmeta.get_fileid_overrides(new_mapping), new_revprops)
     new_mapping.export_text_parents_revprops(revmeta.get_text_parents(new_mapping), new_revprops)
     new_mapping.export_text_revisions_revprops(revmeta.get_text_revisions(new_mapping), new_revprops)
     if rev.message != mapping.parse_svn_log(revmeta.get_revprops().get(properties.PROP_REVISION_LOG)):

@@ -650,7 +650,7 @@ class RevisionMetadata(object):
 
         return default
 
-    def get_fileid_map(self, mapping):
+    def get_fileid_overrides(self, mapping):
         """Find the file id override map for this revision."""
         return self._import_from_props(mapping, 
             mapping.import_fileid_map_fileprops, 
@@ -997,7 +997,7 @@ class RevisionMetadataBrowser(object):
             bps = {}
             deletes = []
             if pb:
-                pb.update("discovering revisions", revnum-self.to_revnum, 
+                pb.update("discovering revisions", self.to_revnum-revnum, 
                           self.from_revnum-self.to_revnum)
 
             # Import all metabranches_history where key > revnum
