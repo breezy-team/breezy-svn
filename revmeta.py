@@ -1120,6 +1120,11 @@ class RevisionMetadataProvider(object):
             mb.fetch_until(revnum)
         return self.get_revision(path, revnum, revprops=revprops)
 
+
+    def finish_metaiterators(self):
+        for mb in self._open_metaiterators:
+            mb.fetch_until(0)
+
     def get_revision(self, path, revnum, changes=None, revprops=None, 
                      changed_fileprops=None, fileprops=None, metaiterator=None):
         """Return a RevisionMetadata object for a specific svn (path,revnum)."""
