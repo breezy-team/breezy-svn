@@ -799,6 +799,9 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
     if (len(bp_parts) not in (len(existing_bp_parts), len(existing_bp_parts)+1)):
         raise MissingPrefix("/".join(bp_parts), "/".join(existing_bp_parts))
 
+    if deletefirst is None:
+        deletefirst = (bp_parts == existing_bp_parts)
+
     conn = repository.transport.get_connection(parent)
     try:
         ci = convert_svn_error(conn.get_commit_editor)(revprops)
@@ -855,7 +858,7 @@ def push_new(graph, target_repository, target_branch_path, source, stop_revision
             revid = start_revid_parent
         create_branch_with_hidden_commit(target_repository, target_branch_path,
                                          revid, set_metadata=True, 
-                                         deletefirst=False)
+                                         deletefirst=None)
     else:
         return push_revision_tree(graph, target_repository, target_branch_path, 
                               target_repository.get_config(), 
