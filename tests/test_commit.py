@@ -150,7 +150,7 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEquals(1, paths["/bar"][2])
         svnrepo = Repository.open(repos_url)
         self.assertEquals({u"bar": oldid}, 
-                svnrepo._revmeta_provider.get_revision("", 2).get_fileid_map(svnrepo.get_mapping()))
+                svnrepo._revmeta_provider.get_revision("", 2).get_fileid_overrides(svnrepo.get_mapping()))
 
     def test_commit_rename_file_from_directory(self):
         repos_url = self.make_client('d', 'dc')
@@ -546,9 +546,9 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         rm_provider = master_branch.repository._revmeta_provider
         mapping = master_branch.repository.get_mapping()
         self.assertEquals({u"file": oldid}, 
-                rm_provider.get_revision("", 1).get_fileid_map(mapping))
+                rm_provider.get_revision("", 1).get_fileid_overrides(mapping))
         self.assertEquals({u"file2": oldid}, 
-                rm_provider.get_revision("", 2).get_fileid_map(mapping))
+                rm_provider.get_revision("", 2).get_fileid_overrides(mapping))
         tree1 = master_branch.repository.revision_tree(revid1)
         tree2 = master_branch.repository.revision_tree(revid2)
         delta = tree2.changes_from(tree1)
@@ -576,7 +576,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         mapping = master_branch.repository.get_mapping()
         self.assertEquals({"dir": dirid, 
                           "dir/file": fileid},
-                          rm_provider.get_revision("", 1).get_fileid_map(mapping))
+                          rm_provider.get_revision("", 1).get_fileid_overrides(mapping))
 
 
 class RevpropTests(SubversionTestCase):

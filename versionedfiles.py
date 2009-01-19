@@ -90,6 +90,8 @@ class SvnTexts(VersionedFiles):
         ret = []
         rev_parent_revids = revmeta.get_parent_ids(mapping)
         for revid in rev_parent_revids:
+            if revid == NULL_REVISION:
+                continue # Nothing exists in NULL_REVISION
             revmeta, mapping = self.repository._get_revmeta(revid)
             fileidmap = self.repository.get_fileid_map(revmeta, mapping)
             try:
