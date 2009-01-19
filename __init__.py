@@ -79,18 +79,22 @@ def get_client_string():
     return "bzr%s+bzr-svn%s" % (bzrlib.__version__, __version__)
 
 
-# Find subvertpy, somehow
-try:
-    import subvertpy 
-except ImportError:
-    warning("unable to find subvertpy. Please install from http://launchpad.net/subvertpy.")
-    raise
 
-check_subversion_version(subvertpy)
+def init_subvertpy():
+    # Find subvertpy, somehow
+    global subvertpy
+    try:
+        import subvertpy
+    except ImportError:
+        warning("unable to find subvertpy. Please install from http://launchpad.net/subvertpy.")
+        raise
 
-import subvertpy.ra_svn
-import bzrlib.transport.ssh
-subvertpy.ra_svn.get_ssh_vendor = bzrlib.transport.ssh._get_ssh_vendor
+    check_subversion_version(subvertpy)
+
+    import subvertpy.ra_svn
+    import bzrlib.transport.ssh
+    subvertpy.ra_svn.get_ssh_vendor = bzrlib.transport.ssh._get_ssh_vendor
+
 
 from bzrlib.plugins.svn import format, revspec
 
@@ -133,6 +137,7 @@ def lazy_check_versions():
     if _versions_checked:
         return
     _versions_checked = True
+    init_subvertpy()
     bzrlib.api.require_any_api(bzrlib, COMPATIBLE_BZR_VERSIONS)
 
 
@@ -576,6 +581,7 @@ class cmd_svn_serve(Command):
     ]
 
     def run(self, inet=None, port=None, directory=None):
+        lazy_check_versions()
         from subvertpy.ra_svn import SVNServer, TCPSVNServer, SVN_PORT
         from bzrlib.plugins.svn.server import BzrServerBackend
 

@@ -28,8 +28,11 @@ from bzrlib.errors import (
         UnexpectedEndOfContainerError,
         )
 
+from bzrlib.lazy_import import lazy_import
 import urllib
+lazy_import(globals(), """
 import subvertpy
+""")
 
 
 class InvalidBzrSvnRevision(NoSuchRevision):
