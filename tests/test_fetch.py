@@ -1921,6 +1921,40 @@ Node-copyfrom-path: x
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
 
+    def test_fetch_replace_self_open_older(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.add_dir("trunk")
+        adir = trunk.add_dir("trunk/adir")
+        adir.add_file("trunk/adir/afile").modify()
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        trunk.open_dir("trunk/adir").add_dir("trunk/adir/cdir")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        trunk.delete("trunk/adir")
+        newdir = trunk.add_dir("trunk/adir", "trunk/adir", 1)
+        newdir.add_file("trunk/adir/foofile").modify()
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        adir = trunk.open_dir("trunk/adir")
+        adir.open_file("trunk/adir/afile").modify()
+        dc.close()
+
+        oldrepos = Repository.open(repos_url)
+        self.assertEquals({'trunk/adir': (u'R', 'trunk/adir', 1), 'trunk/adir/foofile': (u'A', None, -1)}, 
+                          oldrepos._revmeta_provider.get_revision("trunk", 3).get_paths())
+        oldrepos.set_layout(TrunkLayout(0))
+        dir = BzrDir.create("f", format.get_rich_root_format())
+        newrepos = dir.create_repository()
+        oldrepos.copy_content_into(newrepos)
 
     def test_fetch_crosscopy(self):
         repos_url = self.make_repository('d')

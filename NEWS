@@ -53,6 +53,9 @@ bzr-svn 0.5.0~rc2				UNRELEASED
 	  branch. (#304134)
     + Correctly handles file id map generation for some stacked branches. (#310916)
 
+  * Handle children implicitly copied when replacing a directory with an older copy 
+    of itself. (#308353)
+
   PERFORMANCE
 
    * Stop iterating over non-visible children of files when determining file ids. (#306259)

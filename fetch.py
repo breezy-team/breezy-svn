@@ -58,10 +58,10 @@ FETCH_COMMIT_WRITE_SIZE = 500
 
 def inventory_ancestors(inv, fileid):
     ret = list()
-    for ie in inv[fileid].values():
-        ret.append(ie.file_id)
+    for ie in inv[fileid].children.values():
+        ret.append(inv.id2path(ie.file_id))
         if ie.kind == "directory":
-            ret.extend(inv_ancestors(inv, ie.file_id))
+            ret.extend(inventory_ancestors(inv, ie.file_id))
     return ret
 
 
@@ -334,7 +334,7 @@ class FileBuildEditor(object):
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def __init__(self, editor, old_path, path, old_id, new_id, parent_file_id, 
-        parent_revids=[]):
+        parent_revids=[], renew_fileids=None):
         super(DirectoryRevisionBuildEditor, self).__init__(editor, path)
         assert isinstance(new_id, str)
         self.old_id = old_id
@@ -342,13 +342,18 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         self.old_path = old_path
         self.parent_revids = parent_revids
         self._metadata_changed = False
+        self._renew_fileids = renew_fileids
         self.new_ie = InventoryDirectory(self.new_id, urlutils.basename(self.path), parent_file_id)
         if self.editor.old_inventory.has_id(self.new_id):
             self.new_ie.revision = self.editor.old_inventory[self.new_id].revision
 
     def _delete_entry(self, path, revnum):
+        if path in self.editor._deleted:
+            return
+        self.editor._deleted.add(path)
         def rec_del(ie):
-            self.editor._inv_delta.append((self.editor.old_inventory.id2path(ie.file_id), None, ie.file_id, None))
+            p = self.editor.old_inventory.id2path(ie.file_id)
+            self.editor._inv_delta.append((p, None, ie.file_id, None))
             if ie.kind != 'directory':
                 return
             for c in ie.children.values():
@@ -369,6 +374,15 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                 (self.new_id, self.new_ie.revision),
                 [(self.new_id, revid) for revid in text_parents], [])
             self.editor._inv_delta.append((self.old_path, self.path, self.new_id, self.new_ie))
+        if self._renew_fileids:
+            # Make sure files get re-added that weren't mentioned explicitly
+            # A bit expensive (O(d)), but this should be very rare
+            delta_new_paths = set([e[1] for e in self.editor._inv_delta])
+            for path in self._renew_fileids:
+                if isinstance(path, str):
+                    path = unicode(path)
+                if path not in delta_new_paths and not path in self.editor._deleted:
+                    self.editor._renew_fileid(path)
 
         if self.path == u"":
             self.editor._finish_commit()
@@ -400,12 +414,16 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         if file_id == base_file_id:
             file_parents = [base_revid]
             old_path = path
+            renew_fileids = None
         else:
             old_path = None
             file_parents = []
             self._delete_entry(path, base_revnum)
+            # If a directory is replaced by a copy of itself, we need
+            # to make sure all children get readded with a new file id
+            renew_fileids = inventory_ancestors(self.editor.old_inventory, base_file_id)
         return DirectoryRevisionBuildEditor(self.editor, old_path, path, 
-            base_file_id, file_id, self.new_id, file_parents)
+            base_file_id, file_id, self.new_id, file_parents, renew_fileids=renew_fileids)
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         file_id = self.editor._get_new_id(path)
@@ -539,6 +557,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self._text_parents = None
         self.old_inventory = prev_inventory
         self._inv_delta = []
+        self._deleted = set()
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
 
     def _finish_commit(self):
@@ -600,6 +619,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
     def _renew_fileid(self, path):
         """'renew' the fileid of a path."""
+        assert isinstance(path, unicode)
         old_file_id = self.old_inventory.path2id(path)
         old_ie = self.old_inventory[old_file_id]
         new_ie = old_ie.copy()
@@ -610,7 +630,6 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self.texts.add_lines(
                 (new_ie.file_id, new_ie.revision),
                 [], osutils.split_lines(record.get_bytes_as('fulltext')))
-        self._inv_delta.append((path, None, old_ie.file_id, None))
         self._inv_delta.append((None, path, new_ie.file_id, new_ie))
 
     def _get_id_map(self):
