@@ -56,6 +56,15 @@ from bzrlib.plugins.svn.transport import url_join_unescaped_path
 FETCH_COMMIT_WRITE_SIZE = 500
 
 
+def inventory_ancestors(inv, fileid):
+    ret = list()
+    for ie in inv[fileid].values():
+        ret.append(ie.file_id)
+        if ie.kind == "directory":
+            ret.extend(inv_ancestors(inv, ie.file_id))
+    return ret
+
+
 def check_inventory_delta(delta):
     """Check the internal consistency of an inventory delta.
 
@@ -588,6 +597,21 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
         return DirectoryRevisionBuildEditor(self, old_path, u"", old_file_id, 
             file_id, None, file_parents)
+
+    def _renew_fileid(self, path):
+        """'renew' the fileid of a path."""
+        old_file_id = self.old_inventory.path2id(path)
+        old_ie = self.old_inventory[old_file_id]
+        new_ie = old_ie.copy()
+        new_ie.file_id = self._get_new_id(path)
+        new_ie.parent_id = self._get_new_id(urlutils.split(path)[0])
+        record = self.texts.get_record_stream([(old_ie.file_id, old_ie.revision)], 
+                                                'unordered', True).next()
+        self.texts.add_lines(
+                (new_ie.file_id, new_ie.revision),
+                [], osutils.split_lines(record.get_bytes_as('fulltext')))
+        self._inv_delta.append((path, None, old_ie.file_id, None))
+        self._inv_delta.append((None, path, new_ie.file_id, new_ie))
 
     def _get_id_map(self):
         if self._id_map is not None:
