@@ -15,49 +15,60 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Committing and pushing to Subversion repositories."""
 
-from bzrlib import debug, urlutils, trace, ui
+from bzrlib import (
+    debug, 
+    urlutils, 
+    trace, 
+    ui,
+    )
 from bzrlib.branch import Branch
 from bzrlib.errors import (
-        BzrError, 
-        InvalidRevisionId, 
-        DivergedBranches, 
-        UnrelatedBranches, 
-        NoSuchRevision,
-        )
+    BzrError, 
+    InvalidRevisionId, 
+    DivergedBranches, 
+    UnrelatedBranches, 
+    NoSuchRevision,
+    )
 from bzrlib.inventory import Inventory
 from bzrlib.repository import (
-        RootCommitBuilder, 
-        InterRepository, 
-        Repository,
-        )
+    RootCommitBuilder, 
+    InterRepository, 
+    Repository,
+    )
 from bzrlib.revision import NULL_REVISION, ensure_null
 from bzrlib.trace import mutter, warning
 
 from cStringIO import StringIO
 
 from subvertpy import (
-        SubversionException, 
-        delta, 
-        NODE_DIR, 
-        properties, 
-        ERR_FS_TXN_OUT_OF_DATE,
-        )
+    delta, 
+    properties, 
+    ERR_FS_TXN_OUT_OF_DATE,
+    NODE_DIR, 
+    SubversionException, 
+    )
 
-from bzrlib.plugins.svn.errors import (
-        ChangesRootLHSHistory, 
-        MissingPrefix, 
-        RevpropChangeFailed, 
-        convert_svn_error, 
-        AppendRevisionsOnlyViolation,
-        )
 from bzrlib.plugins.svn import mapping
-from bzrlib.plugins.svn.svk import (
-    generate_svk_feature, serialize_svk_features, 
-    parse_svk_features, SVN_PROP_SVK_MERGE)
+from bzrlib.plugins.svn.errors import (
+    convert_svn_error, 
+    AppendRevisionsOnlyViolation,
+    ChangesRootLHSHistory, 
+    MissingPrefix, 
+    RevpropChangeFailed, 
+    )
 from bzrlib.plugins.svn.logwalker import lazy_dict
-from bzrlib.plugins.svn.repository import SvnRepositoryFormat, SvnRepository
-from bzrlib.plugins.svn.versionedfiles import SvnTexts
+from bzrlib.plugins.svn.repository import (
+    SvnRepositoryFormat, 
+    SvnRepository,
+    )
+from bzrlib.plugins.svn.svk import (
+    generate_svk_feature, 
+    parse_svk_features, 
+    serialize_svk_features, 
+    SVN_PROP_SVK_MERGE
+    )
 from bzrlib.plugins.svn.transport import url_join_unescaped_path
+from bzrlib.plugins.svn.versionedfiles import SvnTexts
 
 
 def _revision_id_to_svk_feature(revid):
@@ -161,7 +172,7 @@ def file_editor_send_changes(file_id, contents, file_editor):
     txdelta = file_editor.apply_textdelta()
     digest = delta.send_stream(StringIO(contents), txdelta)
     if 'validate' in debug.debug_flags:
-        from fetch import md5_strings
+        from bzrlib.plugins.svn.fetch import md5_strings
         assert digest == md5_strings(contents)
 
 

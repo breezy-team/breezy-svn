@@ -15,15 +15,20 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Fetching revisions from Subversion repositories in batches."""
 
-from bzrlib import debug, delta, osutils, ui, urlutils
+from bzrlib import (
+    debug,
+    delta,
+    osutils,
+    ui,
+    urlutils,
+    )
 from bzrlib.errors import NoSuchRevision
 from bzrlib.inventory import (
-        Inventory, 
-        InventoryDirectory, 
-        InventoryFile,
-        InventoryLink,
-        )
-from bzrlib.osutils import md5
+    Inventory, 
+    InventoryDirectory, 
+    InventoryFile,
+    InventoryLink,
+    )
 from bzrlib.revision import NULL_REVISION
 from bzrlib.repository import InterRepository
 from bzrlib.trace import mutter
@@ -34,8 +39,14 @@ from cStringIO import StringIO
 from subvertpy import properties, SubversionException
 from subvertpy.delta import apply_txdelta_handler
 
-from bzrlib.plugins.svn.errors import InvalidFileName, FileIdMapIncomplete
-from bzrlib.plugins.svn.fileids import get_local_changes, idmap_lookup
+from bzrlib.plugins.svn.errors import (
+    FileIdMapIncomplete,
+    InvalidFileName,
+    )
+from bzrlib.plugins.svn.fileids import (
+    get_local_changes,
+    idmap_lookup,
+    )
 from bzrlib.plugins.svn.foreign import escape_commit_message
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_PREFIX
 from bzrlib.plugins.svn.repository import SvnRepository, SvnRepositoryFormat
@@ -71,7 +82,7 @@ def md5_strings(strings):
     :param strings: Strings to find the MD5sum of.
     :return: MD5sum
     """
-    s = md5()
+    s = osutils.md5()
     map(s.update, strings)
     return s.hexdigest()
 
@@ -442,7 +453,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
         self.parent_file_id = parent_file_id
 
     def _apply_textdelta(self, base_checksum=None):
-        actual_checksum = md5(self.file_data).hexdigest()
+        actual_checksum = osutils.md5(self.file_data).hexdigest()
         assert (base_checksum is None or base_checksum == actual_checksum,
             "base checksum mismatch: %r != %r" % (base_checksum, 
                                                   actual_checksum))
