@@ -882,7 +882,7 @@ class InterFromSvnRepository(InterRepository):
             return Inventory(root_id=None)
         if self._prev_inv is not None and self._prev_inv.revision_id == revid:
             return self._prev_inv
-        if "validate" in debug.debug_flags:
+        if "check" in debug.debug_flags:
             assert self.target.has_revision(revid)
         return self.target.get_inventory(revid)
 

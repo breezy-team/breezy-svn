@@ -171,7 +171,7 @@ def file_editor_send_changes(file_id, contents, file_editor):
     assert file_editor is not None
     txdelta = file_editor.apply_textdelta()
     digest = delta.send_stream(StringIO(contents), txdelta)
-    if 'validate' in debug.debug_flags:
+    if 'check' in debug.debug_flags:
         from bzrlib.plugins.svn.fetch import md5_strings
         assert digest == md5_strings(contents)
 
@@ -1024,7 +1024,7 @@ def push(graph, target, source_repo, revision_id, push_metadata=True,
 
     assert revid == revision_id or not push_metadata
 
-    if 'validate' in debug.debug_flags and push_metadata:
+    if 'check' in debug.debug_flags and push_metadata:
         crev = target.repository.get_revision(revision_id)
         ctree = target.repository.revision_tree(revision_id)
         assert crev.committer == rev.committer
