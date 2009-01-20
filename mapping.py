@@ -57,6 +57,7 @@ SVN_REVPROP_BZR_REQUIRED_FEATURES = 'bzr:required-features'
 SVN_REVPROP_BZR_BASE_REVISION = 'bzr:base-revision'
 SVN_REVPROP_BZR_SKIP = 'bzr:skip'
 SVN_REVPROP_BZR_HIDDEN = 'bzr:hidden'
+SVN_REVPROP_BZR_REPOS_UUID = 'bzr:repository-uuid'
 
 
 def find_new_lines((oldvalue, newvalue)):
@@ -525,7 +526,7 @@ class BzrSvnMapping(foreign.VcsMapping):
     def import_text_revisions_fileprops(self, fileprops):
         raise NotImplementedError(self.import_text_revisions_fileprops)
 
-    def export_revision_revprops(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
+    def export_revision_revprops(self, uuid, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
         """Determines the revision properties.
         """
         raise NotImplementedError(self.export_revision_revprops)
@@ -794,7 +795,7 @@ class BzrSvnMappingRevProps(object):
     def export_message_revprops(self, message, revprops):
         revprops[SVN_REVPROP_BZR_LOG] = message.encode("utf-8")
 
-    def export_revision_revprops(self, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
+    def export_revision_revprops(self, uuid, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
         svn_revprops[SVN_REVPROP_BZR_MAPPING_VERSION] = self.name
         if timestamp is not None:
             svn_revprops[SVN_REVPROP_BZR_TIMESTAMP] = format_highres_date(timestamp, timezone)
@@ -807,6 +808,7 @@ class BzrSvnMappingRevProps(object):
                 svn_revprops[SVN_REVPROP_BZR_REVPROP_PREFIX+name] = value.encode("utf-8")
 
         svn_revprops[SVN_REVPROP_BZR_ROOT] = branch_root
+        svn_revprops[SVN_REVPROP_BZR_REPOS_UUID] = uuid
 
         if revision_id is not None:
             svn_revprops[SVN_REVPROP_BZR_REVISION_ID] = revision_id

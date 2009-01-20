@@ -426,6 +426,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 revision_id, revno, parents, self._svnprops)
         if self.set_custom_revprops:
             self.mapping.export_revision_revprops(
+                self.repository.uuid,
                 self.branch_path, timestamp, timezone, committer, revprops, 
                 revision_id, revno, parents, self._svn_revprops)
 

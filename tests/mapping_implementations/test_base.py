@@ -57,7 +57,7 @@ class RoundtripMappingTests(TestCase):
         fileids = {"": "some-id", "bla/blie": "other-id"}
         revprops = {}
         revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
-        self.mapping.export_revision_revprops("branchp", 432432432.0, 0, "somebody", {}, "arevid", 4, ["merge1"], revprops)
+        self.mapping.export_revision_revprops("someuuid", "branchp", 432432432.0, 0, "somebody", {}, "arevid", 4, ["merge1"], revprops)
         self.mapping.export_fileid_map_revprops(fileids, revprops)
         self.assertEquals(fileids, 
                 self.mapping.import_fileid_map_revprops(revprops))
@@ -126,7 +126,7 @@ class RoundtripMappingTests(TestCase):
         if not self.mapping.can_use_revprops:
             raise TestNotApplicable
         revprops = {}
-        self.mapping.export_revision_revprops("branchp", 432432432.0, 0, "somebody", 
+        self.mapping.export_revision_revprops("someuuid", "branchp", 432432432.0, 0, "somebody", 
                                      {"arevprop": "val"}, "arevid", 4, ["merge1"], revprops)
         revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
         try:
@@ -159,7 +159,7 @@ class RoundtripMappingTests(TestCase):
         if not self.mapping.can_use_revprops:
             raise TestNotApplicable
         revprops = {}
-        self.mapping.export_revision_revprops("branchp", 432432432.0, 0, "somebody", 
+        self.mapping.export_revision_revprops("someuuid", "branchp", 432432432.0, 0, "somebody", 
                                      {"arevprop": "val" }, "arevid", 4, ["parent", "merge1"], revprops)
         targetrev = Revision(None)
         revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
@@ -185,7 +185,7 @@ class RoundtripMappingTests(TestCase):
         if not self.mapping.can_use_revprops:
             raise TestNotApplicable
         revprops = {}
-        self.mapping.export_revision_revprops("branchp", 432432432.0, 0, "somebody", {}, "arevid", 4, ["parent", "merge1"], revprops)
+        self.mapping.export_revision_revprops("someuuid", "branchp", 432432432.0, 0, "somebody", {}, "arevid", 4, ["parent", "merge1"], revprops)
         self.assertEquals((4, "arevid"), self.mapping.get_revision_id_revprops(revprops))
     
     def test_revision_id_none(self):
