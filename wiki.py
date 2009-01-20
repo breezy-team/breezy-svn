@@ -29,8 +29,8 @@ def write_releaselist(f):
 
     for release in b.tags.get_tag_dict():
         (name, version) = release.rsplit("-", 1)
-        assert name == "bzr-svn"
-        versions.append(version)
+        if name == "bzr-svn":
+            versions.append(version)
 
     def version_sort(a, b):
         def versiontuple(a):
