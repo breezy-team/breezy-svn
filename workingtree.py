@@ -304,7 +304,7 @@ class SvnWorkingTree(WorkingTree):
             if os.path.islink(self.abspath(relpath)):
                 file = InventoryLink(id, os.path.basename(relpath), parent_id)
                 file.revision = revid
-                file.symlink_target = os.readlink(self.abspath(relpath))
+                file.symlink_target = os.readlink(self.abspath(relpath).encode(osutils._fs_enc))
                 file.text_sha1 = None
                 file.text_size = None
                 file.executable = False
@@ -658,7 +658,7 @@ class SvnWorkingTree(WorkingTree):
         elif kind == 'directory':
             return kind, None, None, None
         elif kind == 'symlink':
-            return ('symlink', None, None, os.readlink(abspath))
+            return ('symlink', None, None, os.readlink(abspath.encode(osutils._fs_enc)))
         else:
             return (kind, None, None, None)
 

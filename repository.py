@@ -375,7 +375,7 @@ class SvnRepository(ForeignRepository):
         """Permanantly store the layout for this repository."""
         self.set_layout(layout)
         self.get_config().set_layout(layout)
-        self._layout_source= LAYOUT_SOURCE_CONFIG
+        self._layout_source = LAYOUT_SOURCE_CONFIG
 
     def get_layout(self):
         """Determine layout to use for this repository.

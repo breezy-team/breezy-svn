@@ -716,6 +716,21 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({'de/some strange file': 'data-y'})
         self.assertRaises(OutOfDateTree, lambda: tree.commit("bar"))
 
+    def test_unicode_symlink(self):
+        if not has_symlinks():
+            return
+        repos_url = self.make_client('a', 'dc')
+        self.build_tree({u"dc/\U00020001": ""})
+        os.symlink(u"\U00020001", "dc/a")
+        self.build_tree({"dc/b": ""})
+        os.symlink("b", u"dc/\U00020002")
+        self.client_add("dc/a")
+        self.client_add("dc/b")
+        self.client_add(u"dc/\U00020001".encode("utf-8"))
+        self.client_add(u"dc/\U00020002".encode("utf-8"))
+        self.client_commit("dc", "Added files and links")
+        WorkingTree.open("dc").read_working_inventory()
+
 
 class IgnoreListTests(TestCase):
     def test_empty(self):

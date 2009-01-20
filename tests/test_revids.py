@@ -20,6 +20,7 @@ from bzrlib.tests import TestCase
 from bzrlib.plugins.svn.revids import RevisionIdMapCache
 
 class TestRevidMapCache(TestCase):
+
     def test_create(self):
         revidmap = RevisionIdMapCache()
 

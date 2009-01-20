@@ -59,6 +59,8 @@ bzr-svn 0.5.0~rc2				UNRELEASED
   * Invalidate revision ids of bzr-roundtripped revisions when the 
     Subversion repository's UUID changes. (#318940, Debian #512325)
 
+  * Handle unicode symlinks. (#319317)
+
   PERFORMANCE
 
    * Stop iterating over non-visible children of files when determining file ids. (#306259)
