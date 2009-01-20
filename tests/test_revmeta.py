@@ -19,6 +19,13 @@ from bzrlib.tests import TestCase
 from bzrlib.plugins.svn.logwalker import (
         DictBasedLogWalker,
         )
+from bzrlib.plugins.svn.mapping import (
+        SVN_REVPROP_BZR_BASE_REVISION,
+        SVN_REVPROP_BZR_REPOS_UUID,
+        SVN_REVPROP_BZR_ROOT,
+        SVN_REVPROP_BZR_MAPPING_VERSION,
+        mapping_registry,
+        )
 from bzrlib.plugins.svn.layout.standard import (
         RootLayout,
         TrunkLayout,
@@ -27,10 +34,28 @@ from bzrlib.plugins.svn.revmeta import (
         filter_revisions,
         restrict_prefixes,
         RevisionMetadataBrowser,
+        RevisionMetadata,
         )
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
-class TestRevisionMetadata(SubversionTestCase):
+
+class TestWithoutRepository(TestCase):
+
+    def test_checks_uuid(self):
+        mapping = mapping_registry.get_default()()
+        r = RevisionMetadata(repository=None, check_revprops=None, 
+                get_fileprops_fn=None, logwalker=None,
+                uuid="someuuid", branch_path="bp", revnum=3, 
+                paths={ "bp/la": ("M", None, -1) }, revprops={
+                    SVN_REVPROP_BZR_REPOS_UUID: "otheruuid",
+                    SVN_REVPROP_BZR_ROOT: "bp",
+                    SVN_REVPROP_BZR_MAPPING_VERSION: mapping.name,
+                    SVN_REVPROP_BZR_BASE_REVISION: "therealbaserevid" }
+                )
+        self.assertEquals(mapping.revision_id_foreign_to_bzr(("someuuid", "bp", 2)), r.get_lhs_parent_revid(mapping))
+
+
+class TestWithRepository(SubversionTestCase):
 
     def make_provider(self, repos_url):
         r = Repository.open(repos_url)

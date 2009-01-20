@@ -600,7 +600,8 @@ class RevisionMetadata(object):
         can_use_fileprops = (mapping is None or mapping.can_use_fileprops)
         if revprops_acceptable is None:
             def revprops_acceptable(revprops):
-                return (mapping.get_branch_root(revprops) == self.branch_path)
+                return (mapping.get_branch_root(revprops) == self.branch_path and 
+                        mapping.get_repository_uuid(revprops) in (None, self.uuid))
         if revprops_sufficient is None:
             def revprops_sufficient(revprops):
                 return mapping.revprops_complete(revprops)

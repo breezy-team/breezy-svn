@@ -363,6 +363,14 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         return None
 
+    def get_repository_uuid(self, revprops):
+        """Determine the uuid of the repository in which this 
+        round-tripped revision was originally committed.
+
+        :note: REturn None if no uuid is set.
+        """
+        return None
+
     def is_tag(self, tag_path):
         raise NotImplementedError(self.is_tag)
 
@@ -783,6 +791,9 @@ class BzrSvnMappingRevProps(object):
 
     def get_branch_root(self, revprops):
         return revprops.get(SVN_REVPROP_BZR_ROOT)
+
+    def get_repository_uuid(self, revprops):
+        return revprops.get(SVN_REVPROP_BZR_REPOS_UUID)
 
     def get_revision_id_revprops(self, revprops):
         if (not is_bzr_revision_revprops(revprops) or 
