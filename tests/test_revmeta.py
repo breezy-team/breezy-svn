@@ -38,21 +38,8 @@ from bzrlib.plugins.svn.revmeta import (
         )
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
-
-class TestWithoutRepository(TestCase):
-
-    def test_checks_uuid(self):
-        mapping = mapping_registry.get_default()()
-        r = RevisionMetadata(repository=None, check_revprops=None, 
-                get_fileprops_fn=None, logwalker=None,
-                uuid="someuuid", branch_path="bp", revnum=3, 
-                paths={ "bp/la": ("M", None, -1) }, revprops={
-                    SVN_REVPROP_BZR_REPOS_UUID: "otheruuid",
-                    SVN_REVPROP_BZR_ROOT: "bp",
-                    SVN_REVPROP_BZR_MAPPING_VERSION: mapping.name,
-                    SVN_REVPROP_BZR_BASE_REVISION: "therealbaserevid" }
-                )
-        self.assertEquals(mapping.revision_id_foreign_to_bzr(("someuuid", "bp", 2)), r.get_lhs_parent_revid(mapping))
+from subvertpy.ra import RemoteAccess
+from subvertpy.tests import TestCommitEditor
 
 
 class TestWithRepository(SubversionTestCase):
@@ -60,6 +47,31 @@ class TestWithRepository(SubversionTestCase):
     def make_provider(self, repos_url):
         r = Repository.open(repos_url)
         return r._revmeta_provider
+
+    def test_checks_uuid(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("bp")
+        dc.close()
+
+        mapping = mapping_registry.get_default()()
+        ra = RemoteAccess(repos_url.encode("utf-8"))
+        revnum = ra.get_latest_revnum()
+        revprops = { SVN_REVPROP_BZR_REPOS_UUID: "otheruuid",
+                    "svn:log": "bla",
+                    SVN_REVPROP_BZR_ROOT: "bp",
+                    SVN_REVPROP_BZR_MAPPING_VERSION: mapping.name,
+                    SVN_REVPROP_BZR_BASE_REVISION: "therealbaserevid" }
+        dc = TestCommitEditor(ra.get_commit_editor(revprops), ra.url, revnum)
+        dc.open_dir("bp").add_file("bp/la").modify()
+        dc.close()
+
+        repos = Repository.open(repos_url)
+
+        revmeta2 = repos._revmeta_provider.get_revision("bp", 2)
+
+        self.assertEquals(mapping.revision_id_foreign_to_bzr((repos.uuid, "bp", 1)), revmeta2.get_lhs_parent_revid(mapping))
 
     def test_get_changed_properties(self):
         repos_url = self.make_repository('d')
