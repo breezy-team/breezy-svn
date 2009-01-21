@@ -61,6 +61,8 @@ bzr-svn 0.5.0~rc2				UNRELEASED
 
   * Handle unicode symlinks. (#319317)
 
+  * Handle unicode in working tree names and some directory names. (#319313)
+
   PERFORMANCE
 
    * Stop iterating over non-visible children of files when determining file ids. (#306259)

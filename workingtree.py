@@ -151,7 +151,7 @@ class SvnWorkingTree(WorkingTree):
 
                 subprefix = os.path.join(prefix, entry)
 
-                subwc = WorkingCopy(wc, self.abspath(subprefix))
+                subwc = WorkingCopy(wc, self.abspath(subprefix).encode("utf-8"))
                 try:
                     dir_add(subwc, subprefix, urlutils.joinpath(patprefix, entry))
                 finally:
@@ -215,7 +215,7 @@ class SvnWorkingTree(WorkingTree):
 
     def _get_wc(self, relpath="", write_lock=False):
         """Open a working copy handle."""
-        return WorkingCopy(None, self.abspath(relpath).rstrip("/"), 
+        return WorkingCopy(None, self.abspath(relpath).rstrip("/").encode("utf-8"), 
                                 write_lock)
 
     def _get_rel_wc(self, relpath, write_lock=False):
@@ -389,8 +389,8 @@ class SvnWorkingTree(WorkingTree):
             assert isinstance(id, str), "%r is not a string" % id
 
             # First handle directory itself
-            inv.add_path(relpath.decode("utf-8"), 'directory', id, parent_id).revision = revid
-            if relpath == "":
+            inv.add_path(relpath, 'directory', id, parent_id).revision = revid
+            if relpath == u"":
                 inv.revision_id = revid
 
             for name in entries:
@@ -403,7 +403,7 @@ class SvnWorkingTree(WorkingTree):
                 assert entry
                 
                 if entry.kind == subvertpy.NODE_DIR:
-                    subwc = WorkingCopy(wc, self.abspath(subrelpath))
+                    subwc = WorkingCopy(wc, self.abspath(subrelpath).encode("utf-8"))
                     try:
                         assert isinstance(subrelpath, unicode)
                         add_dir_to_inv(subrelpath, subwc, id)
@@ -739,7 +739,7 @@ class SvnWorkingTree(WorkingTree):
                 fileid = newrevtree.inventory.path2id(child_path)
 
                 if newrevtree.inventory[fileid].kind == 'directory':
-                    subwc = WorkingCopy(wc, self.abspath(child_path).rstrip("/"), write_lock=True)
+                    subwc = WorkingCopy(wc, self.abspath(child_path).rstrip("/").encode("utf-8"), write_lock=True)
                     try:
                         update_settings(subwc, child_path)
                     finally:
