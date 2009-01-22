@@ -69,7 +69,7 @@ from bzrlib.plugins.svn.mapping import escape_svn_path
 from bzrlib.plugins.svn.remote import SvnRemoteAccess
 from bzrlib.plugins.svn.repository import SvnRepository
 from bzrlib.plugins.svn.transport import SvnRaTransport, svn_config
-from bzrlib.plugins.svn.tree import SvnBasisTree
+from bzrlib.plugins.svn.tree import SvnBasisTree, SubversionTree
 
 def update_wc(adm, basedir, conn, revnum):
     # FIXME: honor SVN_CONFIG_SECTION_HELPERS:SVN_CONFIG_OPTION_DIFF3_CMD
@@ -81,6 +81,15 @@ def update_wc(adm, basedir, conn, revnum):
     adm.crawl_revisions(basedir, reporter, restore_files=False, 
                         recurse=True, use_commit_times=False)
     # FIXME: handle externals
+
+
+def apply_prop_changes(orig_props, prop_changes):
+    for k,v in prop_changes:
+        if v is None:
+            del orig_props[k]
+        else:
+            orig_props[k] = v
+    return orig_props
 
 
 def generate_ignore_list(ignore_map):
@@ -100,7 +109,7 @@ def generate_ignore_list(ignore_map):
     return ignores
 
 
-class SvnWorkingTree(WorkingTree):
+class SvnWorkingTree(WorkingTree, SubversionTree):
     """WorkingTree implementation that uses a svn working copy for storage."""
     def __init__(self, bzrdir, local_path, branch):
         version = check_wc(local_path)
@@ -561,6 +570,12 @@ class SvnWorkingTree(WorkingTree):
         self._update_base_revnum(fetched)
         return result
 
+    def get_file_properties(self, file_id, path=None):
+        if not path:
+            path = self._inventory.id2path(file_id)
+        (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir)
+        return apply_prop_changes(orig_props, prop_changes)
+
     def get_file_sha1(self, file_id, path=None, stat_value=None):
         """Determine the SHA1 for a file."""
         if not path:
@@ -602,12 +617,7 @@ class SvnWorkingTree(WorkingTree):
         wc = self._get_wc()
         try:
             (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir)
-            for k,v in prop_changes:
-                if v is None:
-                    del orig_props[k]
-                else:
-                    orig_props[k] = v
-            return orig_props
+            return apply_prop_changes(orig_props, prop_changes)
         finally:
             wc.close()
 

@@ -31,6 +31,11 @@ from subvertpy import delta, wc, NODE_DIR, properties
 
 from bzrlib.plugins.svn.fileids import idmap_lookup
 
+class SubversionTree(object):
+
+    def get_file_properties(self, file_id, path=None):
+        raise NotImplementedError(self.get_file_properties)
+
 
 def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     """Add an svn:externals entry to an inventory as a tree-reference.
@@ -66,7 +71,7 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     inv.add(ie)
 
 
-class SvnRevisionTree(RevisionTree):
+class SvnRevisionTree(RevisionTree, SubversionTree):
     """A tree that existed in a historical Subversion revision."""
     def __init__(self, repository, revision_id):
         self._repository = repository
@@ -77,6 +82,7 @@ class SvnRevisionTree(RevisionTree):
         self.id_map = repository.get_fileid_map(self._revmeta, self.mapping)
         editor = TreeBuildEditor(self)
         self.file_data = {}
+        self.file_properties = {}
         root_repos = repository.transport.get_svn_repos_root()
         conn = repository.transport.get_connection()
         try:
@@ -94,6 +100,9 @@ class SvnRevisionTree(RevisionTree):
 
     def get_file_text(self, file_id, path=None):
         return self.file_data[file_id]
+
+    def get_file_properties(self, file_id):
+        return self.file_properties[file_id]
 
 
 class TreeBuildEditor(object):
@@ -124,6 +133,7 @@ class DirectoryTreeEditor(object):
     def __init__(self, tree, file_id):
         self.tree = tree
         self.file_id = file_id
+        self.file_properties[file_id] = {}
 
     def add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         path = path.decode("utf-8")
@@ -134,6 +144,7 @@ class DirectoryTreeEditor(object):
         return DirectoryTreeEditor(self.tree, file_id)
 
     def change_prop(self, name, value):
+        self.file_properties[file_id][name] = value
         if name in (properties.PROP_ENTRY_COMMITTED_DATE,
                     properties.PROP_ENTRY_LAST_AUTHOR,
                     properties.PROP_ENTRY_LOCK_TOKEN,
@@ -163,8 +174,10 @@ class FileTreeEditor(object):
         self.is_special = None
         self.is_symlink = False
         self.last_file_rev = None
+        self.file_properties[file_id] = {}
 
     def change_prop(self, name, value):
+        self.file_properties[file_id][name] = value
         if name == properties.PROP_EXECUTABLE:
             self.is_executable = (value != None)
         elif name == properties.PROP_SPECIAL:
@@ -226,8 +239,9 @@ class FileTreeEditor(object):
         return delta.apply_txdelta_handler("", self.file_stream)
 
 
-class SvnBasisTree(RevisionTree):
+class SvnBasisTree(RevisionTree, SubversionTree):
     """Optimized version of SvnRevisionTree."""
+
     def __init__(self, workingtree):
         mutter("opening basistree for %r at %d; %s" % (workingtree, workingtree.base_revnum, workingtree.base_revid))
         self.workingtree = workingtree
@@ -322,6 +336,12 @@ class SvnBasisTree(RevisionTree):
         if path is None:
             path = self.id2path(file_id)
         return self.get_file_byname(path).read()
+
+    def get_file_properties(self, file_id, path=None):
+        if path is None:
+            path = self.id2path(file_id)
+        (_, orig_props) = wc.get_prop_diffs(self.workingtree.abspath(path).encode("utf-8"))
+        return orig_props
 
     def annotate_iter(self, file_id,
                       default_revision=CURRENT_REVISION):
