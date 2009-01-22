@@ -364,7 +364,7 @@ class SubversionBuildPackageConfig(object):
         self.tree = tree
 
     def get_merge_with_upstream(self):
-        props = tree.get_file_properties(tree.path2id(path), path)
+        props = tree.get_file_properties(tree.path2id("debian"), "debian")
         return "mergeWithUpstream" in props
 
     def __getitem__(self, option_name):
