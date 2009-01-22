@@ -361,12 +361,27 @@ class SubversionBuildPackageConfig(object):
             self.option_source = PropertyConfig(tree, "debian", "svn-bp:")
         else:
             raise NoSubversionBuildPackageConfig()
+        self.tree = tree
+
+    def get_merge_with_upstream(self):
+        props = tree.get_file_properties(tree.path2id(path), path)
+        return "mergeWithUpstream" in props
 
     def __getitem__(self, option_name):
+        if self.option_source is None:
+            raise KeyError
         return self.option_source[option_name]
 
     def __contains__(self, option_name):
+        if self.option_source is None:
+            return False
         return (option_name in self.option_source)
+
+    def get(self, option_name, default=None):
+        try:
+            return self[option_name]
+        except KeyError:
+            return default
 
     def __setitem__(self, option_name, value):
         self.option_source[option_name] = value
