@@ -290,16 +290,6 @@ class BranchConfig(Config):
         return self._get_user_option('email')
 
     def get_option(self, key, section=None):
-        if section == "BUILDDEB" and key == "merge":
-            revnum = self.branch.get_revnum()
-            try:
-                props = self.branch.repository.transport.get_dir(urlutils.join(self.branch.get_branch_path(revnum), "debian"), revnum)[2]
-                if props.has_key("mergeWithUpstream"):
-                    return "True"
-                else:
-                    return "False"
-            except SubversionException:
-                return None
         return None
 
     def set_user_option(self, name, value, store=STORE_LOCATION,
@@ -342,6 +332,9 @@ class PropertyConfig(object):
     def __setitem__(self, option_name, value):
         raise NotImplementedError(self.set_user_option) # Should be setting the property..
 
+    def __contains__(self, option_name):
+        return option_name in self.properties
+
 
 class SubversionBuildPackageConfig(object):
     """Configuration object that behaves similar to svn-buildpackage when it reads its config."""
@@ -352,8 +345,7 @@ class SubversionBuildPackageConfig(object):
             self.wt_layout_path = os.path.join(tree.local_abspath("."), ".svn", "svn-layout")
             self.option_source = ConfigObj(self.wt_layout_path, encoding="utf-8")
         elif tree.has_filename("debian/svn-layout"):
-            self.option_source = ConfigObj(tree.get_file(tree.path2id("debian/svn-layout"), 
-                "debian/svn-layout"), encoding="utf-8")
+            self.option_source = ConfigObj(tree.get_file_byname("debian/svn-layout"), encoding="utf-8")
         elif isinstance(tree, SubversionTree) and tree.has_filename("debian"):
             self.option_source = PropertyConfig(tree, "debian")
         else:
