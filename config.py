@@ -335,6 +335,16 @@ class PropertyConfig(object):
     def __contains__(self, option_name):
         return option_name in self.properties
 
+    def get(self, option_name, default=None):
+        try:
+            return self[option_name]
+        except KeyError:
+            return default
+
+
+class NoSubversionBuildPackageConfig(Exception):
+    """Raised when no svn-buildpackage configuration can be found."""
+
 
 class SubversionBuildPackageConfig(object):
     """Configuration object that behaves similar to svn-buildpackage when it reads its config."""
@@ -349,7 +359,7 @@ class SubversionBuildPackageConfig(object):
         elif isinstance(tree, SubversionTree) and tree.has_filename("debian"):
             self.option_source = PropertyConfig(tree, "debian")
         else:
-            self.option_source = None
+            raise NoSubversionBuildPackageConfig()
 
     def _get_user_option(self, option_name):
         if self.option_source is None:
