@@ -63,6 +63,9 @@ bzr-svn 0.5.0~rc2				UNRELEASED
 
   * Handle unicode in working tree names and some directory names. (#319313)
 
+  * Cope with missing keys properly when branching based on VersionedFiles 
+    (#311997)
+
   PERFORMANCE
 
    * Stop iterating over non-visible children of files when determining file ids. (#306259)
