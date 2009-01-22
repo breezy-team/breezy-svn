@@ -101,7 +101,7 @@ class SvnRevisionTree(RevisionTree, SubversionTree):
     def get_file_text(self, file_id, path=None):
         return self.file_data[file_id]
 
-    def get_file_properties(self, file_id):
+    def get_file_properties(self, file_id, path=None):
         return self.file_properties[file_id]
 
 
@@ -133,7 +133,7 @@ class DirectoryTreeEditor(object):
     def __init__(self, tree, file_id):
         self.tree = tree
         self.file_id = file_id
-        self.file_properties[file_id] = {}
+        self.tree.file_properties[file_id] = {}
 
     def add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         path = path.decode("utf-8")
@@ -144,7 +144,7 @@ class DirectoryTreeEditor(object):
         return DirectoryTreeEditor(self.tree, file_id)
 
     def change_prop(self, name, value):
-        self.file_properties[file_id][name] = value
+        self.tree.file_properties[self.file_id][name] = value
         if name in (properties.PROP_ENTRY_COMMITTED_DATE,
                     properties.PROP_ENTRY_LAST_AUTHOR,
                     properties.PROP_ENTRY_LOCK_TOKEN,
@@ -167,6 +167,7 @@ class DirectoryTreeEditor(object):
 
 
 class FileTreeEditor(object):
+
     def __init__(self, tree, path):
         self.tree = tree
         self.path = path
@@ -174,10 +175,12 @@ class FileTreeEditor(object):
         self.is_special = None
         self.is_symlink = False
         self.last_file_rev = None
-        self.file_properties[file_id] = {}
+        self.file_id, self.revision_id, _ = idmap_lookup(self.tree.id_map, 
+                                               self.tree.mapping, self.path)
+        self.tree.file_properties[self.file_id] = {}
 
     def change_prop(self, name, value):
-        self.file_properties[file_id][name] = value
+        self.tree.file_properties[self.file_id][name] = value
         if name == properties.PROP_EXECUTABLE:
             self.is_executable = (value != None)
         elif name == properties.PROP_SPECIAL:
@@ -198,8 +201,6 @@ class FileTreeEditor(object):
             mutter('unsupported file property %r', name)
 
     def close(self, checksum=None):
-        file_id, revision_id, _ = idmap_lookup(self.tree.id_map, 
-                                               self.tree.mapping, self.path)
 
         if self.file_stream:
             self.file_stream.seek(0)
@@ -211,10 +212,10 @@ class FileTreeEditor(object):
             self.is_symlink = (self.is_special and file_data.startswith("link "))
 
         if self.is_symlink:
-            ie = self.tree._inventory.add_path(self.path, 'symlink', file_id)
+            ie = self.tree._inventory.add_path(self.path, 'symlink', self.file_id)
         else:
-            ie = self.tree._inventory.add_path(self.path, 'file', file_id)
-        ie.revision = revision_id
+            ie = self.tree._inventory.add_path(self.path, 'file', self.file_id)
+        ie.revision = self.revision_id
 
         actual_checksum = md5(file_data).hexdigest()
         assert(checksum is None or checksum == actual_checksum,
@@ -229,7 +230,7 @@ class FileTreeEditor(object):
         else:
             ie.text_sha1 = osutils.sha_string(file_data)
             ie.text_size = len(file_data)
-            self.tree.file_data[file_id] = file_data
+            self.tree.file_data[self.file_id] = file_data
             ie.executable = self.is_executable
 
         self.file_stream = None

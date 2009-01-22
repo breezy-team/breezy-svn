@@ -21,6 +21,7 @@ from bzrlib import (
         trace,
         )
 from bzrlib.config import (
+        ConfigObj,
         IniBasedConfig,
         config_dir,
         ensure_config_dir_exists,
@@ -327,3 +328,38 @@ class BranchConfig(Config):
     def get_push_merged_revisions(self):
         """Check whether merged revisions should be pushed."""
         return self._get_repository_config().get_push_merged_revisions()
+
+
+class PropertyConfig(object):
+    """ConfigObj-like class that looks at Subversion file ids."""
+
+    def __init__(self, tree, path):
+        self.properties = tree.get_file_properties(tree.path2id(path), path)
+
+    def __getitem__(self, option_name):
+        return self.properties[option_name]
+
+    def __setitem__(self, option_name, value):
+        raise NotImplementedError(self.set_user_option) # Should be setting the property..
+
+
+class SubversionBuildPackageConfig(object):
+    """Configuration object that behaves similar to svn-buildpackage when it reads its config."""
+
+    def __init__(self, tree):
+        if (isinstance(tree, SvnWorkingTree) and 
+            os.path.exists(os.path.join(tree.local_abspath("."), ".svn", "svn-layout"))):
+            self.wt_layout_path = os.path.join(tree.local_abspath("."), ".svn", "svn-layout")
+            self.option_source = ConfigObj(self.wt_layout_path, encoding="utf-8")
+        elif tree.has_filename("debian/svn-layout"):
+            self.option_source = ConfigObj(tree.get_file(tree.path2id("debian/svn-layout"), 
+                "debian/svn-layout"), encoding="utf-8")
+        elif isinstance(tree, SubversionTree) and tree.has_filename("debian"):
+            self.option_source = PropertyConfig(tree, "debian")
+        else:
+            self.option_source = None
+
+    def _get_user_option(self, option_name):
+        if self.option_source is None:
+            return None
+        return self.option_source.get(option_name)

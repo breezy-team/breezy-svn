@@ -17,7 +17,8 @@
 """Config tests."""
 
 from bzrlib.branch import Branch
-from bzrlib.plugins.svn.config import SvnRepositoryConfig, BranchConfig
+from bzrlib.repository import Repository
+from bzrlib.plugins.svn.config import SvnRepositoryConfig, BranchConfig, PropertyConfig
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
@@ -134,5 +135,23 @@ class BranchConfigTests(SubversionTestCase):
     def test_set_option(self):
         self.config.set_user_option("append_revisions_only", "True")
         self.assertEquals("True", self.config.get_user_option("append_revisions_only"))
+
+
+class PropertyConfigTests(SubversionTestCase):
+
+    def test_getitem(self):
+        repos_url = self.make_repository("d")
+
+        dc = self.get_commit_editor(repos_url)
+        f = dc.add_file("foo")
+        f.change_prop("bla", "bar")
+        f.modify()
+        dc.close()
+
+        repos = Repository.open(repos_url)
+
+        cfg = PropertyConfig(repos.revision_tree(repos.generate_revision_id(1, "", repos.get_mapping())), "foo")
+
+        self.assertEquals("bar", cfg["bla"])
 
 
