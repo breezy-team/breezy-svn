@@ -149,7 +149,6 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.check_output("", "status dc")
 
     def test_dpush_wt_diff(self):
-        raise KnownFailure
         repos_url = self.make_repository('d')
         
         dc = self.get_commit_editor(repos_url)
