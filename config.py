@@ -323,17 +323,18 @@ class BranchConfig(Config):
 class PropertyConfig(object):
     """ConfigObj-like class that looks at Subversion file ids."""
 
-    def __init__(self, tree, path):
+    def __init__(self, tree, path, prefix=""):
         self.properties = tree.get_file_properties(tree.path2id(path), path)
+        self.prefix = prefix
 
     def __getitem__(self, option_name):
-        return self.properties[option_name]
+        return self.properties[self.prefix+option_name]
 
     def __setitem__(self, option_name, value):
         raise NotImplementedError(self.set_user_option) # Should be setting the property..
 
     def __contains__(self, option_name):
-        return option_name in self.properties
+        return (self.prefix+option_name) in self.properties
 
     def get(self, option_name, default=None):
         try:
@@ -357,11 +358,15 @@ class SubversionBuildPackageConfig(object):
         elif tree.has_filename("debian/svn-layout"):
             self.option_source = ConfigObj(tree.get_file_byname("debian/svn-layout"), encoding="utf-8")
         elif isinstance(tree, SubversionTree) and tree.has_filename("debian"):
-            self.option_source = PropertyConfig(tree, "debian")
+            self.option_source = PropertyConfig(tree, "debian", "svn-bp:")
         else:
             raise NoSubversionBuildPackageConfig()
 
-    def _get_user_option(self, option_name):
-        if self.option_source is None:
-            return None
-        return self.option_source.get(option_name)
+    def __getitem__(self, option_name):
+        return self.option_source[option_name]
+
+    def __contains__(self, option_name):
+        return (option_name in self.option_source)
+
+    def __setitem__(self, option_name, value):
+        self.option_source[option_name] = value
