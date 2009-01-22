@@ -351,12 +351,14 @@ class SubversionBuildPackageConfig(object):
     """Configuration object that behaves similar to svn-buildpackage when it reads its config."""
 
     def __init__(self, tree):
+        from bzrlib.plugins.svn.workingtree import SvnWorkingTree
+        from bzrlib.plugins.svn.tree import SubversionTree
         if (isinstance(tree, SvnWorkingTree) and 
             os.path.exists(os.path.join(tree.local_abspath("."), ".svn", "svn-layout"))):
             self.wt_layout_path = os.path.join(tree.local_abspath("."), ".svn", "svn-layout")
             self.option_source = ConfigObj(self.wt_layout_path, encoding="utf-8")
         elif tree.has_filename("debian/svn-layout"):
-            self.option_source = ConfigObj(tree.get_file_byname("debian/svn-layout"), encoding="utf-8")
+            self.option_source = ConfigObj(tree.get_file(tree.path2id("debian/svn-layout"), "debian/svn-layout"), encoding="utf-8")
         elif isinstance(tree, SubversionTree) and tree.has_filename("debian"):
             self.option_source = PropertyConfig(tree, "debian", "svn-bp:")
         else:
@@ -364,7 +366,7 @@ class SubversionBuildPackageConfig(object):
         self.tree = tree
 
     def get_merge_with_upstream(self):
-        props = tree.get_file_properties(tree.path2id("debian"), "debian")
+        props = self.tree.get_file_properties(self.tree.path2id("debian"), "debian")
         return "mergeWithUpstream" in props
 
     def __getitem__(self, option_name):

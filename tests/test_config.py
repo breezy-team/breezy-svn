@@ -18,7 +18,7 @@
 
 from bzrlib.branch import Branch
 from bzrlib.repository import Repository
-from bzrlib.plugins.svn.config import SvnRepositoryConfig, BranchConfig, PropertyConfig
+from bzrlib.plugins.svn.config import SvnRepositoryConfig, BranchConfig, PropertyConfig, NoSubversionBuildPackageConfig, SubversionBuildPackageConfig
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
@@ -155,3 +155,46 @@ class PropertyConfigTests(SubversionTestCase):
         self.assertEquals("bar", cfg["bla"])
 
 
+class SvnBpConfigTests(SubversionTestCase):
+
+    def test_no_debian_dir(self):
+        repos_url = self.make_repository("d")
+        self.assertRaises(NoSubversionBuildPackageConfig, 
+                SubversionBuildPackageConfig, Branch.open(repos_url).basis_tree())
+
+    def test_mergeWithUpstream(self):
+        repos_url = self.make_repository("d")
+        
+        dc = self.get_commit_editor(repos_url)
+        f = dc.add_dir("debian")
+        f.change_prop("mergeWithUpstream", "1")
+        dc.close()
+
+        cfg = SubversionBuildPackageConfig(Branch.open(repos_url).basis_tree())
+
+        self.assertEquals(True, cfg.get_merge_with_upstream())
+
+    def test_get_property_val(self):
+        repos_url = self.make_repository("d")
+        
+        dc = self.get_commit_editor(repos_url)
+        f = dc.add_dir("debian")
+        f.change_prop("svn-bp:origDir", "myorigdir")
+        dc.close()
+
+        cfg = SubversionBuildPackageConfig(Branch.open(repos_url).basis_tree())
+
+        self.assertEquals("myorigdir", cfg.get("origDir"))
+
+    def test_get_intree_val(self):
+        repos_url = self.make_repository("d")
+        
+        dc = self.get_commit_editor(repos_url)
+        d = dc.add_dir("debian")
+        f = d.add_file("debian/svn-layout")
+        f.modify("origDir = aorigdir\n")
+        dc.close()
+
+        cfg = SubversionBuildPackageConfig(Branch.open(repos_url).basis_tree())
+
+        self.assertEquals("aorigdir", cfg.get("origDir"))
