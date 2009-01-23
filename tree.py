@@ -341,7 +341,11 @@ class SvnBasisTree(RevisionTree, SubversionTree):
     def get_file_properties(self, file_id, path=None):
         if path is None:
             path = self.id2path(file_id)
-        (_, orig_props) = wc.get_prop_diffs(self.workingtree.abspath(path).encode("utf-8"))
+        wc = self.workingtree._get_wc(path)
+        try:
+            (_, orig_props) = wc.get_prop_diffs(self.workingtree.abspath(path).encode("utf-8"))
+        finally:
+            wc.close()
         return orig_props
 
     def annotate_iter(self, file_id,
