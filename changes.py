@@ -147,3 +147,9 @@ def rebase_path(path, orig_parent, new_parent):
     """Rebase a path on a different parent."""
     return (new_parent+"/"+path[len(orig_parent):].strip("/")).strip("/")
 
+def changes_outside_branch_path(branch_path, paths):
+    """Check whether there are any paths that are not under branch_path."""
+    for p in paths:
+        if not path_is_child(self.branch_path, p):
+            return True
+    return False

@@ -475,6 +475,11 @@ class RevisionMetadata(object):
         """
         return changes.changes_root(self.get_paths().keys()) == self.branch_path
 
+    def changes_outside_root(self):
+        """Check if there are any changes in this svn revision not under 
+        this revmeta's root."""
+        return changes.changes_outside_branch_path(self.branch_path, self.get_paths().keys())
+
     def is_hidden(self, mapping):
         """Check whether this revision should be hidden from Bazaar history."""
         if not mapping.supports_hidden:
@@ -677,14 +682,14 @@ class RevisionMetadata(object):
         """
         if self._consider_bzr_revprops is not None:
             return self._consider_bzr_revprops
-        if not self.is_changes_root():
-            self._consider_bzr_revprops = False
-        elif self._log._transport.has_capability("commit-revprops") == False:
+        if self._log._transport.has_capability("commit-revprops") == False:
             # Server doesn't support setting revision properties
             self._consider_bzr_revprops = False
         elif self._log._transport.has_capability("log-revprops") is None:
             # Client doesn't know log-revprops capability
             self._consider_bzr_revprops = True
+        elif self.changes_outside_root():
+            self._consider_bzr_revprops = False
         else:
             # Check nearest descendant with bzr:see-revprops set
             # and return True if revnum in that property < self.revnum
