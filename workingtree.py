@@ -160,7 +160,7 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
 
                 subprefix = os.path.join(prefix, entry)
 
-                subwc = self._get_wc(subprefix, wc)
+                subwc = self._get_wc(subprefix, base=wc)
                 try:
                     dir_add(subwc, subprefix, urlutils.joinpath(patprefix, entry))
                 finally:
