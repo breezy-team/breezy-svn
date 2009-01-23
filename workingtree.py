@@ -185,7 +185,7 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
         if revnum is None:
             # FIXME: should be able to use -1 here
             revnum = self.branch.get_revnum()
-        adm = self._get_wc(write_lock=True)
+        adm = self._get_wc(write_lock=True, depth=-1)
         try:
             conn = self.branch.repository.transport.get_connection(self.branch.get_branch_path())
             try:
@@ -222,10 +222,11 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
             self._change_fileid_mapping(None, file)
         self.read_working_inventory()
 
-    def _get_wc(self, relpath="", write_lock=False):
+    def _get_wc(self, relpath="", write_lock=False, depth=0):
         """Open a working copy handle."""
-        return WorkingCopy(None, self.abspath(relpath).rstrip("/").encode("utf-8"), 
-                                write_lock)
+        return WorkingCopy(None, 
+            self.abspath(relpath).rstrip("/").encode("utf-8"), 
+            write_lock, depth)
 
     def _get_rel_wc(self, relpath, write_lock=False):
         dir = os.path.dirname(relpath)
