@@ -310,8 +310,7 @@ class SvnBasisTree(RevisionTree, SubversionTree):
                 assert entry
                 
                 if entry.kind == NODE_DIR:
-                    subwc = wc.WorkingCopy(adm, 
-                            self.workingtree.abspath(subrelpath).encode("utf-8"))
+                    subwc = self.workingtree._get_wc(subrelpath)
                     try:
                         add_dir_to_inv(subrelpath, subwc, id)
                     finally:
