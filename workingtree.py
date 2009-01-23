@@ -573,7 +573,11 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
     def get_file_properties(self, file_id, path=None):
         if not path:
             path = self._inventory.id2path(file_id)
-        (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir)
+        wc = self._get_wc()
+        try:
+            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir)
+        finally:
+            wc.close()
         return apply_prop_changes(orig_props, prop_changes)
 
     def get_file_sha1(self, file_id, path=None, stat_value=None):
