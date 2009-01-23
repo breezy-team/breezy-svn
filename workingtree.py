@@ -84,6 +84,12 @@ def update_wc(adm, basedir, conn, revnum):
 
 
 def apply_prop_changes(orig_props, prop_changes):
+    """Apply a set of property changes to a properties dictionary.
+    
+    :param orig_props: Dictionary with original properties (will be modified)
+    :param prop_changes: Dictionary of new property values (None for deletion)
+    :return: New dictionary
+    """
     for k,v in prop_changes:
         if v is None:
             del orig_props[k]
@@ -111,6 +117,7 @@ def generate_ignore_list(ignore_map):
 
 class SvnWorkingTree(WorkingTree, SubversionTree):
     """WorkingTree implementation that uses a svn working copy for storage."""
+
     def __init__(self, bzrdir, local_path, branch):
         version = check_wc(local_path)
         self._format = SvnWorkingTreeFormat(version)
