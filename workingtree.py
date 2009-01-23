@@ -160,7 +160,7 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
 
                 subprefix = os.path.join(prefix, entry)
 
-                subwc = WorkingCopy(wc, self.abspath(subprefix).encode("utf-8"))
+                subwc = self._get_wc(subprefix, wc)
                 try:
                     dir_add(subwc, subprefix, urlutils.joinpath(patprefix, entry))
                 finally:
@@ -222,9 +222,9 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
             self._change_fileid_mapping(None, file)
         self.read_working_inventory()
 
-    def _get_wc(self, relpath="", write_lock=False, depth=0):
+    def _get_wc(self, relpath="", write_lock=False, depth=0, base=None):
         """Open a working copy handle."""
-        return WorkingCopy(None, 
+        return WorkingCopy(base, 
             self.abspath(relpath).rstrip("/").encode("utf-8"), 
             write_lock, depth)
 
@@ -413,7 +413,7 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
                 assert entry
                 
                 if entry.kind == subvertpy.NODE_DIR:
-                    subwc = WorkingCopy(wc, self.abspath(subrelpath).encode("utf-8"))
+                    subwc = self._get_wc(subrelpath, base=wc)
                     try:
                         assert isinstance(subrelpath, unicode)
                         add_dir_to_inv(subrelpath, subwc, id)
@@ -759,7 +759,7 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
                 fileid = newrevtree.inventory.path2id(child_path)
 
                 if newrevtree.inventory[fileid].kind == 'directory':
-                    subwc = WorkingCopy(wc, self.abspath(child_path).rstrip("/").encode("utf-8"), write_lock=True)
+                    subwc = self._get_wc(child_path, write_lock=True, base=wc)
                     try:
                         update_settings(subwc, child_path)
                     finally:
