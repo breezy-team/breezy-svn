@@ -18,7 +18,7 @@
 from bzrlib import osutils, urlutils
 from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import warning
-from bzrlib.versionedfile import FulltextContentFactory, VersionedFiles
+from bzrlib.versionedfile import FulltextContentFactory, VersionedFiles, AbsentContentFactory
 
 from cStringIO import StringIO
 import subvertpy
@@ -55,23 +55,27 @@ class SvnTexts(VersionedFiles):
         # not be able to report them.
         # TODO: Sort keys by file id and issue just one get_file_revs() call 
         # per file-id ?
-        for (fileid, revid) in list(keys):
-            revmeta, mapping = self.repository._get_revmeta(revid)
-            map = self.repository.get_fileid_map(revmeta, mapping)
-            path = idmap_reverse_lookup(map, mapping, fileid)
-            try:
-                stream = StringIO()
-                self.repository.transport.get_file(urlutils.join(revmeta.branch_path, path).strip("/"), stream, revmeta.revnum)
-                stream.seek(0)
-                lines = stream.readlines()
-            except subvertpy.SubversionException, (_, num):
-                if num == subvertpy.ERR_FS_NOT_FILE:
-                    lines = []
-                else:
-                    raise
-            yield FulltextContentFactory((fileid, revid), None, 
-                        sha1=osutils.sha_strings(lines),
-                        text=''.join(lines))
+        for k in list(keys):
+            if len(k) != 2:
+                yield AbsentContentFactory(k)
+            else:
+                (fileid, revid) = k
+                revmeta, mapping = self.repository._get_revmeta(revid)
+                map = self.repository.get_fileid_map(revmeta, mapping)
+                path = idmap_reverse_lookup(map, mapping, fileid)
+                try:
+                    stream = StringIO()
+                    self.repository.transport.get_file(urlutils.join(revmeta.branch_path, path).strip("/"), stream, revmeta.revnum)
+                    stream.seek(0)
+                    lines = stream.readlines()
+                except subvertpy.SubversionException, (_, num):
+                    if num == subvertpy.ERR_FS_NOT_FILE:
+                        lines = []
+                    else:
+                        raise
+                yield FulltextContentFactory((fileid, revid), None, 
+                            sha1=osutils.sha_strings(lines),
+                            text=''.join(lines))
 
     def _get_parent(self, fileid, revid):
         revmeta, mapping = self.repository._get_revmeta(revid)
@@ -113,8 +117,14 @@ class SvnTexts(VersionedFiles):
 
         # First, figure out the revision number/path
         ret = {}
-        for (fileid, revid) in keys:
-            ret[(fileid, revid)] = self._get_parent(fileid, revid)
+        for k in keys:
+            if k == NULL_REVISION:
+                ret[k] = ()
+            elif len(k) == 2: # We only know how to handle this
+                (fileid, revid) = k
+                ret[k] = self._get_parent(fileid, revid)
+            else:
+                ret[k] = None
         return ret
 
     # TODO: annotate, get_sha1s, iter_lines_added_or_present_in_keys, keys

@@ -68,6 +68,8 @@ bzr-svn 0.5.0~rc2				UNRELEASED
 
   * Properly determine whether to analyse revision properties. 
 
+  * Handle null: keys in Repository.texts.
+
   PERFORMANCE
 
    * Stop iterating over non-visible children of files when determining file ids. (#306259)
