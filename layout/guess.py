@@ -140,7 +140,7 @@ def repository_guess_layout(repository, revnum, branch_path=None):
     pb = ui.ui_factory.nested_progress_bar()
     try:
         (guessed_layout, layout) = guess_layout_from_history(
-            repository._log.iter_changes(None, revnum, max(0, revnum-GUESS_SAMPLE_SIZE), pb=pb), revnum, branch_path)
+            repository._log.iter_changes(None, revnum, max(0, revnum-GUESS_SAMPLE_SIZE)), revnum, branch_path)
     finally:
         pb.finished()
     mutter("Guessed repository layout: %r, guess layout to use: %r" % 
