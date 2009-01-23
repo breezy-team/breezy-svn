@@ -147,7 +147,7 @@ def iter_changes(paths, from_revnum, to_revnum, get_revision_paths,
            (ascending and revnum <= to_revnum)):
         if pb is not None:
             if ascending:
-                pb.update("determining changes", revnum, to_revnum)
+                pb.update("determining changes", revnum-from_revnum, to_revnum-from_revnum)
             else:
                 pb.update("determining changes", from_revnum-revnum, from_revnum-to_revnum)
         assert revnum > 0 or path == "", "Inconsistent path,revnum: %r,%r" % (revnum, path)
