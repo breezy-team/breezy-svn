@@ -730,6 +730,12 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
         newrevtree = self.branch.repository.revision_tree(new_revid)
         svn_revprops = self.branch.repository._log.revprop_list(rev)
 
+        def process_committed(wc, relpath, revid, svn_revprops):
+            wc.process_committed(self.abspath(relpath).rstrip("/"),
+                False, self.branch.lookup_revision_id(revid),
+                svn_revprops[properties.PROP_REVISION_DATE], 
+                svn_revprops.get(properties.PROP_REVISION_AUTHOR, ""))
+
         def update_settings(wc, path):
             id = newrevtree.inventory.path2id(path)
             mutter("Updating settings for %r", id)
@@ -744,10 +750,9 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
                 if name == "":
                     continue
 
-                wc.process_committed(self.abspath(path).rstrip("/"), 
-                              False, self.branch.lookup_revision_id(newrevtree.inventory[id].revision),
-                              svn_revprops[properties.PROP_REVISION_DATE], 
-                              svn_revprops.get(properties.PROP_REVISION_AUTHOR, ""))
+                process_committed(wc, path, 
+                              newrevtree.inventory[id].revision,
+                              svn_revprops)
 
                 child_path = os.path.join(path, name.decode("utf-8"))
 
@@ -763,10 +768,9 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
         # Set proper version for all files in the wc
         wc = self._get_wc(write_lock=True)
         try:
-            wc.process_committed(self.basedir,
-                          False, self.branch.lookup_revision_id(newrevtree.inventory.root.revision),
-                          svn_revprops[properties.PROP_REVISION_DATE], 
-                          svn_revprops.get(properties.PROP_REVISION_AUTHOR, ""))
+            process_committed(wc, self.basedir,
+                          newrevtree.inventory.root.revision,
+                          svn_revprops)
             update_settings(wc, "")
         finally:
             wc.close()
