@@ -54,7 +54,7 @@ bzr-svn 0.5.0~rc2				UNRELEASED
     + Correctly handles file id map generation for some stacked branches. (#310916)
 
   * Handle children implicitly copied when replacing a directory with an older 
-    copy of itself. (#308353)
+    copy of itself. (#308353, #318935)
 
   * Invalidate revision ids of bzr-roundtripped revisions when the 
     Subversion repository's UUID changes. (#318940, Debian #512325)

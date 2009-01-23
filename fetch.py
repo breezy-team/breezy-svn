@@ -625,6 +625,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         new_ie = old_ie.copy()
         new_ie.file_id = self._get_new_id(path)
         new_ie.parent_id = self._get_new_id(urlutils.split(path)[0])
+        new_ie.revision = self._get_text_revid(path) or self.revid
         record = self.texts.get_record_stream([(old_ie.file_id, old_ie.revision)], 
                                                 'unordered', True).next()
         self.texts.add_lines(
