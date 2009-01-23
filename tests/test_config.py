@@ -18,6 +18,7 @@
 
 from bzrlib.branch import Branch
 from bzrlib.repository import Repository
+from bzrlib.workingtree import WorkingTree
 from bzrlib.plugins.svn.config import SvnRepositoryConfig, BranchConfig, PropertyConfig, NoSubversionBuildPackageConfig, SubversionBuildPackageConfig
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.tests import SubversionTestCase
@@ -198,3 +199,14 @@ class SvnBpConfigTests(SubversionTestCase):
         cfg = SubversionBuildPackageConfig(Branch.open(repos_url).basis_tree())
 
         self.assertEquals("aorigdir", cfg.get("origDir"))
+
+    def test_get_controldir_val(self):
+        repos_url = self.make_client("d", "dc")
+
+        f = open('dc/.svn/svn-layout', 'w')
+        f.write("buildArea = build-gebied\n")
+        f.close()
+        
+        cfg = SubversionBuildPackageConfig(WorkingTree.open("dc"))
+
+        self.assertEquals("build-gebied", cfg.get("buildArea"))

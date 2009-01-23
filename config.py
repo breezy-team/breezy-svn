@@ -354,8 +354,8 @@ class SubversionBuildPackageConfig(object):
         from bzrlib.plugins.svn.workingtree import SvnWorkingTree
         from bzrlib.plugins.svn.tree import SubversionTree
         if (isinstance(tree, SvnWorkingTree) and 
-            os.path.exists(os.path.join(tree.local_abspath("."), ".svn", "svn-layout"))):
-            self.wt_layout_path = os.path.join(tree.local_abspath("."), ".svn", "svn-layout")
+            os.path.exists(os.path.join(tree.abspath("."), ".svn", "svn-layout"))):
+            self.wt_layout_path = os.path.join(tree.abspath("."), ".svn", "svn-layout")
             self.option_source = ConfigObj(self.wt_layout_path, encoding="utf-8")
         elif tree.has_filename("debian/svn-layout"):
             self.option_source = ConfigObj(tree.get_file(tree.path2id("debian/svn-layout"), "debian/svn-layout"), encoding="utf-8")
