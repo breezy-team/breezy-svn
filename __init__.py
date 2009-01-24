@@ -57,6 +57,7 @@ else:
 __version__ = version_string
 
 COMPATIBLE_BZR_VERSIONS = [(1, 11, 0)]
+MINIMUM_SUBVERTPY_VERSION = (0, 6, 1)
 
 
 def check_subversion_version(subvertpy):
@@ -64,14 +65,19 @@ def check_subversion_version(subvertpy):
 
     """
     # Installed ?
-    from subvertpy import ra
+    from subvertpy import ra, __version__ as subvertpy_version
     ra_version = ra.version()
     if (ra_version[0] >= 5 and getattr(ra, 'SVN_REVISION', None) and 
         27729 <= ra.SVN_REVISION < 31470):
-        warning('Installed Subversion has buggy svn.ra.get_log() '
+        warning('bzr-svn: Installed Subversion has buggy svn.ra.get_log() '
                 'implementation, please install newer.')
 
     mutter("bzr-svn: using Subversion %d.%d.%d (%s)" % ra_version)
+
+    if subvertpy_version < MINIMUM_SUBVERTPY_VERSION:
+        warning("bzr-svn: at least subvertpy %d.%d.%d is required",
+                subvertpy_version)
+        raise ImportError
 
 
 def get_client_string():
