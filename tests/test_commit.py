@@ -30,6 +30,7 @@ from copy import copy
 import os
 
 from subvertpy import ra
+from bzrlib.plugins.svn import format
 from bzrlib.plugins.svn.commit import set_svn_revprops, _revision_id_to_svk_feature
 from bzrlib.plugins.svn.errors import RevpropChangeFailed
 from subvertpy.properties import time_to_cstring
@@ -477,6 +478,44 @@ class TestPush(SubversionTestCase):
         paths = self.client_log(self.repos_url, 3, 0)[3][0]
         mutter('paths %r' % paths)
         self.assertEquals('D', paths["/adir/foob"][0])
+
+
+class JoinedCommitTests(SubversionTestCase):
+
+    def test_commit_join(self):
+        repos_url = self.make_client('d', 'sc')
+
+        self.build_tree({'sc/trunk/foo/bla': "data"})
+        self.client_add("sc/trunk")
+        self.client_commit("sc", "foo")
+
+        self.olddir = BzrDir.open("sc/trunk")
+        os.mkdir("dc")
+        self.newdir = self.olddir.sprout("dc")
+
+        dc = self.get_commit_editor(repos_url)
+        branches = dc.add_dir("branches")
+        newdir = branches.add_dir("branches/newbranch")
+        newdir.add_file("branches/newbranch/foob").modify()
+        dc.close()
+
+        wt = self.newdir.open_workingtree()
+        self.build_tree({"dc/lala": "data"})
+        wt.add(["lala"])
+        wt.commit(message="init")
+        joinedwt = BzrDir.create_standalone_workingtree("dc/newdir", 
+            format=format.get_rich_root_format())
+        joinedwt.pull(Branch.open(repos_url+"/branches/newbranch"))
+        self.build_tree({'dc/newdir/foob': "data"})
+        joinedwt.add("foob")
+        joinedwt.commit(message="data")
+        wt.subsume(joinedwt)
+        wt.commit(message="doe")
+
+        self.olddir.open_branch().pull(self.newdir.open_branch())
+        paths = self.client_log(repos_url, 4, 0)[4][0]
+        mutter('paths %r' % paths)
+        self.assertEquals(('A', "branches/newbranch", 3), paths["/trunk/newdir"])
 
 
 class TestPushNested(SubversionTestCase):
