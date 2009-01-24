@@ -116,7 +116,9 @@ def determine_text_revisions(changes, default_revid, specific_revids):
     ret.update(specific_revids)
     for p, data in changes.iteritems():
         assert isinstance(p, unicode)
-        if data[0] in ('A', 'R', 'M') and p not in ret:
+        # The root changes often because of file properties, so we don't 
+        # consider it really changing.
+        if data[0] in ('A', 'R', 'M') and p not in ret and p != u"":
             ret[p] = default_revid
     return ret
 
@@ -138,20 +140,17 @@ def apply_idmap_delta(map, text_revisions, delta, changes, default_revid,
 
     for x in sorted(text_revisions.keys() + delta.keys()):
         assert isinstance(x, unicode)
-        if (# special case - we change metadata in svn at the branch root path
-            # but that's not reflected as a bzr metadata change in bzr
-            (x != "" or not "" in map or map[x][1] == NULL_REVISION)):
-            if x in delta and (not x in map or map[x][0] != delta[x]):
-                if x in changes and changes[x][1] is not None:
-                    # if this was a copy from somewhere else there can be 
-                    # implicit children
-                    child_create_revid = foreign_revid
-                else:
-                    child_create_revid = None
-                map[x] = (delta[x], text_revisions.get(x) or default_revid, child_create_revid)
+        if x in delta and (not x in map or map[x][0] != delta[x]):
+            if x in changes and changes[x][1] is not None:
+                # if this was a copy from somewhere else there can be 
+                # implicit children
+                child_create_revid = foreign_revid
             else:
-                prev_entry = idmap_lookup(map, mapping, x)
-                map[x] = (prev_entry[0], text_revisions.get(x) or default_revid, prev_entry[2])
+                child_create_revid = None
+            map[x] = (delta[x], text_revisions.get(x) or default_revid, child_create_revid)
+        else:
+            prev_entry = idmap_lookup(map, mapping, x)
+            map[x] = (prev_entry[0], text_revisions.get(x) or default_revid, prev_entry[2])
 
 
 def get_local_changes(paths, branch, mapping, layout, generate_revid):
@@ -199,7 +198,8 @@ def simple_apply_changes(new_file_id, changes):
     for p in sorted(changes.keys(), reverse=False):
         data = changes[p]
         assert isinstance(p, unicode)
-        if data[0] in ('A', 'R'):
+        # Only generate new file ids for root if it's new
+        if data[0] in ('A', 'R') and (p != u"" or data[1] is None):
             delta[p] = new_file_id(p)
     return delta 
 
@@ -235,8 +235,7 @@ class FileIdMap(object):
                     revmeta.branch_path, mapping,
                     self.repos.get_layout(),
                     self.repos.generate_revision_id)
-        idmap = self.get_idmap_delta(local_changes, revmeta, 
-                mapping)
+        idmap = self.get_idmap_delta(local_changes, revmeta, mapping)
         revid = revmeta.get_revision_id(mapping)
         text_revisions = determine_text_revisions(local_changes, revid, 
                 revmeta.get_text_revisions(mapping))

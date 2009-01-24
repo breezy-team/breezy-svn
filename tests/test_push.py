@@ -31,7 +31,7 @@ import os
 from bzrlib.plugins.svn import format, transport
 from bzrlib.plugins.svn.errors import MissingPrefix
 from bzrlib.plugins.svn.commit import push, dpush
-from bzrlib.plugins.svn.layout.standard import RootLayout
+from bzrlib.plugins.svn.layout.standard import RootLayout, TrunkLayout
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_REVISION_ID
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
@@ -501,14 +501,37 @@ class TestPush(SubversionTestCase):
 
 
 class PushNewBranchTests(SubversionTestCase):
-    def test_single_revision(self):
-        repos_url = self.make_repository("a")
+
+    def _create_single_rev_bzrwt(self):
         bzrwt = BzrDir.create_standalone_workingtree("c", 
             format=format.get_rich_root_format())
         self.build_tree({'c/test': "Tour"})
         bzrwt.add("test")
         revid = bzrwt.commit("Do a commit")
+        return bzrwt, revid
+
+    def test_fetch_after_push(self):
+        repos_url = self.make_repository("a")
         newdir = BzrDir.open("%s/trunk" % repos_url)
+        bzrwt, revid = self._create_single_rev_bzrwt()
+        newbranch = newdir.import_branch(bzrwt.branch)
+
+        oldrepos = Repository.open(repos_url)
+        oldrepos.set_layout(TrunkLayout(0))
+        dir = BzrDir.create("f", format.get_rich_root_format())
+        newrepos = dir.create_repository()
+        oldrepos.copy_content_into(newrepos)
+        newtree = newrepos.revision_tree(revid)
+
+        bzrwt.lock_read()
+        self.assertEquals(bzrwt.inventory.root.file_id,
+                          newtree.inventory.root.file_id)
+        bzrwt.unlock()
+
+    def test_single_revision(self):
+        repos_url = self.make_repository("a")
+        newdir = BzrDir.open("%s/trunk" % repos_url)
+        bzrwt, revid = self._create_single_rev_bzrwt()
         newbranch = newdir.import_branch(bzrwt.branch)
         newtree = newbranch.repository.revision_tree(revid)
         bzrwt.lock_read()

@@ -595,15 +595,12 @@ class RevisionBuildEditor(DeltaBuildEditor):
         if self.old_inventory.root is None:
             # First time the root is set
             old_file_id = None
-            file_id = self.mapping.generate_file_id(self.revmeta.get_foreign_revid(), u"")
+            file_id = self._get_new_id(u"")
             file_parents = []
         else:
             # Just inherit file id from previous 
-            old_file_id = self.old_inventory.root.file_id
-            # At the moment, the root file id NEVER changes, except for the 
-            # first commit.
-            # file_id = self._get_map_id("")
-            file_id = old_file_id
+            old_file_id = self._get_old_id(None, u"")
+            file_id = self._get_existing_id(None, None, u"")
             file_parents = [self.old_inventory.root.revision]
 
         assert isinstance(file_id, str)
@@ -651,7 +648,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
     def _get_old_id(self, parent_id, old_path):
         assert isinstance(old_path, unicode)
-        assert isinstance(parent_id, str)
+        assert (isinstance(parent_id, str) or 
+                (parent_id is None and old_path == ""))
+        if old_path == "":
+            return self.old_inventory.root.file_id
         basename = urlutils.basename(old_path)
         parent_id_basename_index = getattr(self.old_inventory, "parent_id_basename_to_file_id", None)
         if parent_id_basename_index is None:
@@ -668,8 +668,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
     def _get_existing_id(self, old_parent_id, new_parent_id, path):
         assert isinstance(path, unicode)
-        assert isinstance(old_parent_id, str)
-        assert isinstance(new_parent_id, str)
+        assert isinstance(old_parent_id, str) or old_parent_id is None
+        assert isinstance(new_parent_id, str) or new_parent_id is None
         ret = self._get_id_map().get(path)
         if ret is not None:
             return ret
