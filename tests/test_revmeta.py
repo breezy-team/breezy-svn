@@ -88,11 +88,16 @@ class TestWithRepository(SubversionTestCase):
         dc.change_prop("myp2", "newdata\n")
         dc.close()
 
+        dc = self.get_commit_editor(repos_url)
+        dc.change_prop("myp2", None)
+        dc.close()
+
         repos = Repository.open(repos_url)
 
         revmeta1 = repos._revmeta_provider.get_revision("", 1)
         revmeta2 = repos._revmeta_provider.get_revision("", 2)
         revmeta3 = repos._revmeta_provider.get_revision("", 3)
+        revmeta4 = repos._revmeta_provider.get_revision("", 4)
 
         self.assertFalse(revmeta1.knows_changed_fileprops())
 
@@ -113,6 +118,9 @@ class TestWithRepository(SubversionTestCase):
 
         self.assertEquals((None, "newdata\n"), 
                           revmeta3.get_changed_fileprops()["myp2"])
+
+        self.assertEquals(("newdata\n", None),
+                          revmeta4.get_changed_fileprops().get("myp2", ("newdata\n", None)))
 
     def test_changes_branch_root(self):
         repos_url = self.make_repository('d')
