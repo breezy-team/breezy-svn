@@ -65,7 +65,7 @@ class MetadataMarshallerTests(TestCase):
     def test_parse_revision_metadata_with_colon(self):
         rev = Revision('someid')
         parse_revision_metadata("committer: some: body\n", rev)
-        self.assertEquals("some:body", rev.committer)
+        self.assertEquals(u"some: body", rev.committer)
 
     def test_parse_revision_metadata_timestamp(self):
         rev = Revision('someid')
