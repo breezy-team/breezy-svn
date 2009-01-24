@@ -641,6 +641,7 @@ class BzrSvnMappingFileProps(object):
             rev.message = fileprops[SVN_PROP_BZR_LOG][1]
         metadata = fileprops.get(SVN_PROP_BZR_REVISION_INFO)
         if metadata is not None:
+            assert isinstance(metadata, tuple)
             parse_revision_metadata(metadata[1], rev)
             return True
         return False
@@ -649,12 +650,14 @@ class BzrSvnMappingFileProps(object):
         metadata = fileprops.get(SVN_PROP_BZR_TEXT_PARENTS)
         if metadata is None:
             return {}
+        assert isinstance(metadata, tuple)
         return parse_text_parents_property(metadata[1])
 
     def import_text_revisions_fileprops(self, fileprops):
         metadata = fileprops.get(SVN_PROP_BZR_TEXT_REVISIONS)
         if metadata is None:
             return {}
+        assert isinstance(metadata, tuple)
         return parse_text_revisions_property(metadata[1])
 
     def export_text_parents_fileprops(self, text_parents, fileprops):
@@ -685,8 +688,12 @@ class BzrSvnMappingFileProps(object):
         return ()
 
     def get_rhs_ancestors(self, fileprops):
+        change = fileprops.get(SVN_PROP_BZR_ANCESTRY+self.name)
+        if change is None:
+            return []
+        assert isinstance(change, tuple)
         ancestry = []
-        for l in fileprops.get(SVN_PROP_BZR_ANCESTRY+self.name, (None, ""))[1].splitlines():
+        for l in change[1].splitlines():
             ancestry.extend(l.split("\n"))
         return ancestry
 
@@ -694,6 +701,7 @@ class BzrSvnMappingFileProps(object):
         fileids = fileprops.get(SVN_PROP_BZR_FILEIDS, None)
         if fileids is None:
             return {}
+        assert isinstance(fileids, tuple)
         return parse_fileid_property(fileids[1])
 
     def _record_merges(self, merges, fileprops):
