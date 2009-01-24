@@ -292,8 +292,13 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
         # add them if they didn't exist in old_inv 
         if not child_ie.file_id in old_inv:
             mutter('adding dir %r', child_ie.name)
+            
+            # TODO: Do a copy operation if at all possible, to make 
+            # the log a bit easier to read for Subversion people
             child_editor = dir_editor.add_directory(
                 branch_relative_path(new_child_path))
+
+            child_old_inv = old_inv
 
         # copy if they existed at different location
         elif old_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or old_inv[child_ie.file_id].parent_id != child_ie.parent_id:
@@ -303,6 +308,7 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
                 branch_relative_path(new_child_path),
                 url_join_unescaped_path(base_url, old_child_path), base_revnum)
 
+            child_old_inv = old_inv
         # open if they existed at the same location and 
         # the directory was touched
         elif child_ie.file_id in visit_dirs:
@@ -311,13 +317,16 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
             child_editor = dir_editor.open_directory(
                     branch_relative_path(new_child_path), 
                     base_revnum)
+            
+            child_old_inv = old_inv
         else:
             continue
 
         # Handle this directory
-        dir_editor_send_changes(old_inv, new_inv, new_child_path, 
+        dir_editor_send_changes(child_old_inv, new_inv, new_child_path, 
                             child_ie.file_id, child_editor, base_url, 
-                            base_revnum, branch_path, modified_files, visit_dirs)
+                            base_revnum, branch_path, modified_files, 
+                            visit_dirs)
 
         child_editor.close()
 
@@ -721,6 +730,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 accessed when the entry has a revision of None - that is when 
                 it is a candidate to commit.
         """
+        # TODO: This code is a bit hairy, it needs to be rewritten
         if self._texts is None:
             self._text_parents[ie.file_id] = [parent_inv[ie.file_id].revision for parent_inv in parent_invs if ie.file_id in parent_inv]
         elif isinstance(self._texts, SvnTexts):
