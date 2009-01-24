@@ -70,6 +70,9 @@ bzr-svn 0.5.0~rc2				UNRELEASED
 
   * Handle null: keys in Repository.texts.
 
+  * Cope with ": " in bzr-svn revision metadata stored in file properties.
+    (#300105)
+
   PERFORMANCE
 
    * Stop iterating over non-visible children of files when determining file ids. (#306259)

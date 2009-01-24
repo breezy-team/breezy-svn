@@ -201,11 +201,10 @@ def parse_revision_metadata(text, rev):
     """
     in_properties = False
     for l in text.splitlines():
-        try:
-            key, value = l.split(": ", 2)
-        except ValueError:
+        if not ": " in l:
             raise errors.InvalidPropertyValue(SVN_PROP_BZR_REVISION_INFO, 
-                    "Missing : in revision metadata")
+                    "Missing : in revision metadata in %r" % l)
+        key, value = l.split(": ", 1)
         if key == "committer":
             rev.committer = value.decode("utf-8")
         elif key == "timestamp":
@@ -253,10 +252,16 @@ def generate_revision_metadata(timestamp, timezone, committer, revprops):
     if timestamp is not None:
         text += "timestamp: %s\n" % format_highres_date(timestamp, timezone) 
     if committer is not None:
+        if "\n" in committer:
+            raise AssertionError("Invalid committer: contains newline")
         text += "committer: %s\n" % committer.encode("utf-8")
     if revprops is not None and revprops != {}:
         text += "properties: \n"
         for k, v in sorted(revprops.iteritems()):
+            if "\n" in k:
+                raise AssertionError("Invalid property name: %s" % k)
+            if "\n" in v:
+                raise AssertionError("Invalid property %s: %s" % (k, v))
             text += "\t%s: %s\n" % (k.encode("utf-8"), v.encode("utf-8"))
     assert isinstance(text, str)
     return text
