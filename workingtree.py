@@ -151,7 +151,7 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
 
         def dir_add(wc, prefix, patprefix):
             ignorestr = wc.prop_get(properties.PROP_IGNORE, 
-                                    self.abspath(prefix).rstrip("/"))
+                                    self.abspath(prefix).encode("utf-8").rstrip("/"))
             if ignorestr is not None:
                 for pat in ignorestr.splitlines():
                     ignores.add(urlutils.joinpath(patprefix, pat))
@@ -221,7 +221,7 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
         wc = self._get_wc(write_lock=True)
         try:
             for file in files:
-                wc.delete(self.abspath(file))
+                wc.delete(self.abspath(file).encode("utf-8"))
         finally:
             wc.close()
 
@@ -248,12 +248,12 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
         for entry in from_paths:
             to_wc = self._get_wc(to_dir, write_lock=True)
             try:
-                to_wc.copy(self.abspath(entry), os.path.basename(entry))
+                to_wc.copy(self.abspath(entry).encode("utf-8"), os.path.basename(entry))
             finally:
                 to_wc.close()
             from_wc = self._get_wc(write_lock=True)
             try:
-                from_wc.delete(self.abspath(entry))
+                from_wc.delete(self.abspath(entry).encode("utf-8"))
             finally:
                 from_wc.close()
             new_name = urlutils.join(to_dir, os.path.basename(entry))
@@ -276,8 +276,8 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
                 (from_wc, _) = self._get_rel_wc(from_rel, write_lock=True)
             try:
                 from_id = self.inventory.path2id(from_rel)
-                to_wc.copy(self.abspath(from_rel), to_file)
-                from_wc.delete(self.abspath(from_rel))
+                to_wc.copy(self.abspath(from_rel).encode("utf-8"), to_file)
+                from_wc.delete(self.abspath(from_rel).encode("utf-8"))
             finally:
                 from_wc.close()
         finally:
@@ -538,7 +538,7 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
             wc = self._get_wc(os.path.dirname(f), write_lock=True)
             try:
                 try:
-                    wc.add(self.abspath(f))
+                    wc.add(self.abspath(f).encode("utf-8"))
                     if ids is not None:
                         self._change_fileid_mapping(ids.next(), f, wc)
                 except subvertpy.SubversionException, (_, num):
@@ -739,7 +739,7 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
 
         def process_committed(wc, relpath, revid, svn_revprops):
             mutter("process %r -> %r", relpath, revid)
-            wc.process_committed(self.abspath(relpath).rstrip("/"),
+            wc.process_committed(self.abspath(relpath).encode("utf-8").rstrip("/"),
                 False, self.branch.lookup_revision_id(revid),
                 svn_revprops[properties.PROP_REVISION_DATE], 
                 svn_revprops.get(properties.PROP_REVISION_AUTHOR, ""))
