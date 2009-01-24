@@ -758,7 +758,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         # If nothing changed since the lhs parent, return:
         if (ie.file_id in self.old_inv and ie == self.old_inv[ie.file_id] and 
             (ie.kind != 'directory' or ie.children == self.old_inv[ie.file_id].children)):
-            return self._get_delta(ie, self.old_inv, self.new_inventory.id2path(ie.file_id)), version_recorded
+            return self._get_delta(ie, self.old_inv, self.new_inventory.id2path(ie.file_id)), version_recorded, None
         def get_symlink_contents(ie):
             return "link %s" % ie.symlink_target
         def get_file_contents(ie):
