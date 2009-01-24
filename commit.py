@@ -500,7 +500,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self.mutter("removing branch dir %r", name)
                 ret[-1].delete_entry(name, -1)
             self.mutter("adding branch dir %r", name)
-            if base_url is None:
+            if base_url is None or root_from is None:
                 copyfrom_url = None
             else:
                 copyfrom_url = urlutils.join(base_url, root_from)
@@ -615,6 +615,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                     if self.base_path is None or self.base_path.strip("/") != "/".join(bp_parts).strip("/"):
                         replace_existing = True
                     elif self.base_revnum < self.repository._log.find_latest_change(self.branch_path, repository_latest_revnum):
+                        replace_existing = True
+                    elif self.old_inv.root.file_id != self.new_inventory.root.file_id:
                         replace_existing = True
 
                 if replace_existing and self._append_revisions_only:
@@ -978,7 +980,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo, bas
     replay_delta(builder, parent_trees, old_tree)
     try:
         revid = builder.commit(rev.message)
-    except SubversionException, (_, num):
+    except SubversionException, (msg, num):
         if num == ERR_FS_TXN_OUT_OF_DATE:
             raise DivergedBranches(source_repo, target_repo)
         raise

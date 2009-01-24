@@ -24,6 +24,7 @@ from bzrlib.inventory import InventoryDirectory
 from bzrlib.merge import Merger, Merge3Merger
 from bzrlib.progress import DummyProgress
 from bzrlib.repository import Repository
+from bzrlib.tests import KnownFailure
 from bzrlib.trace import mutter
 
 import os
@@ -936,7 +937,63 @@ class PushNewBranchTests(SubversionTestCase):
         BzrDir.open(repos_url+"/trunk").sprout("n")
         copybranch = Branch.open("n")
         check(copybranch)
-    
+
+    def _create_bzrwt_with_changed_root(self):
+        bzrwt = BzrDir.create_standalone_workingtree("c", 
+            format=format.get_rich_root_format())
+
+        self.build_tree({"c/foo": "bla"})
+        bzrwt.add(["foo"])
+        revid1 = bzrwt.commit("Initial")
+        bzrwt.lock_write()
+        old_ie = bzrwt.inventory.root.copy()
+        new_ie = bzrwt.inventory.root.copy()
+        foo_ie = bzrwt.inventory[bzrwt.path2id("foo")].copy()
+        new_ie.file_id = "mynewroot"
+        foo_ie.parent_id = new_ie.file_id
+        bzrwt.apply_inventory_delta([
+            ("", None, old_ie.file_id, None),
+            (None, "", new_ie.file_id, new_ie),
+            ("foo", "foo", foo_ie.file_id, foo_ie)])
+        bzrwt.unlock()
+        revid2 = bzrwt.commit(message="Commit from Bzr")
+        return bzrwt, old_ie, new_ie, foo_ie, revid1, revid2
+
+    def test_change_root(self):
+        repos_url = self.make_repository("a")
+        bzrwt, old_ie, new_ie, foo_ie, revid1, revid2 = self._create_bzrwt_with_changed_root()
+        newdir = BzrDir.open(repos_url+"/trunk")
+        newbranch = newdir.import_branch(bzrwt.branch)
+        self.assertEquals({"trunk": ("R", None, -1), 
+                           "trunk/foo": ("A", "trunk/foo", 1)},
+            newbranch.repository._revmeta_provider.get_revision("trunk", 2).get_paths())
+        tree1 = newbranch.repository.revision_tree(revid1)
+        tree2 = newbranch.repository.revision_tree(revid2)
+        self.assertEquals(tree1.path2id(""), old_ie.file_id)
+        self.assertEquals(tree2.path2id(""), new_ie.file_id)
+        self.assertEquals(tree1.path2id("foo"), foo_ie.file_id)
+        self.assertEquals(tree2.path2id("foo"), foo_ie.file_id)
+
+    def test_change_root_fetch(self):
+        raise KnownFailure
+        repos_url = self.make_repository("a")
+        bzrwt, old_ie, new_ie, foo_ie, revid1, revid2 = self._create_bzrwt_with_changed_root()
+        newdir = BzrDir.open(repos_url+"/trunk")
+        newbranch = newdir.import_branch(bzrwt.branch)
+
+        oldrepos = Repository.open(repos_url)
+        oldrepos.set_layout(TrunkLayout(0))
+        dir = BzrDir.create("f", format.get_rich_root_format())
+        newrepos = dir.create_repository()
+        oldrepos.copy_content_into(newrepos)
+
+        tree1 = newrepos.revision_tree(revid1)
+        tree2 = newrepos.revision_tree(revid2)
+        self.assertEquals(tree1.path2id(""), old_ie.file_id)
+        self.assertEquals(tree2.path2id(""), new_ie.file_id)
+        self.assertEquals(tree1.path2id("foo"), foo_ie.file_id)
+        self.assertEquals(tree2.path2id("foo"), foo_ie.file_id)
+
     def test_rename_dir(self):
         repos_url = self.make_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c", 
