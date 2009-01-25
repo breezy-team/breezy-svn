@@ -231,7 +231,7 @@ class FakeRevision(object):
 
     def _set_direct_lhs_parent_revmeta(self, revmeta):
         assert not self._parent_revmeta_set or revmeta == self.parent_revmeta, \
-                "%r != %r" % (self.parent_revmeta, revmeta)
+                "%r != %r for %r" % (self.parent_revmeta, revmeta, self)
         self._parent_revmeta_set = True
         self.parent_revmeta = revmeta
         if revmeta is not None:
@@ -351,5 +351,55 @@ class MetadataBrowserTests(TestCase):
         self.assertEquals(('revision', FakeRevision('python/tags/bla',4)), rev1)
         rev2 = browser.next()
         self.assertEquals(('revision', FakeRevision('python/trunk',1)), rev2)
+        self.assertRaises(StopIteration, browser.next)
+        self.assertTrue(rev1[1]._parent_revmeta_set)
+
+    def test_chaco(self):
+        rev1 = { "packages": ("A", None, -1) }
+        rev2 = { "packages/chaco2": ("A", None, -1),
+              "packages/chaco2/trunk": ("A", None, -1),
+              "packages/chaco2/trunk/debian": ("A", None, -1),
+              "packages/chaco2/trunk/debian/changelog": ("A", None, -1),
+              "packages/chaco2/trunk/debian/compat": ("A", None, -1),
+              "packages/chaco2/trunk/debian/control": ("A", None, -1),
+              "packages/chaco2/trunk/debian/copyright": ("A", None, -1),
+              "packages/chaco2/trunk/debian/docs": ("A", None, -1),
+              "packages/chaco2/trunk/debian/examples": ("A", None, -1),
+              "packages/chaco2/trunk/debian/pycompat": ("A", None, -1),
+              "packages/chaco2/trunk/debian/rules": ("A", None, -1),
+              "packages/chaco2/trunk/debian/watch": ("A", None, -1) }
+        rev3 = { 
+              "packages/chaco2/trunk/debian/changelog": ("M", None, -1),
+              "packages/chaco2/trunk/debian/control": ("M", None, -1),
+              "packages/chaco2/trunk/debian/rules": ("M", None, -1)}
+        rev4 = {
+              "packages/chaco2": ("D", None, -1),
+              "packages/enthought-chaco2": ("A", "packages/chaco2", 3),
+              "packages/enthought-chaco2/trunk": ("D", None, -1)}
+        rev5 = {
+                "packages/enthought-chaco2/trunk": ("A", None, -1),
+                "packages/enthought-chaco2/trunk/debian": ("A", None, -1),
+                "packages/enthought-chaco2/trunk/debian/changelog": ("A", None, -1),
+                "packages/enthought-chaco2/trunk/debian/compat": ("A", None, -1),
+                "packages/enthought-chaco2/trunk/debian/control": ("A", None, -1),
+                "packages/enthought-chaco2/trunk/debian/copyright": ("A", None, -1),
+                "packages/enthought-chaco2/trunk/debian/docs": ("A", None, -1),
+                "packages/enthought-chaco2/trunk/debian/examples": ("A", None, -1),
+                "packages/enthought-chaco2/trunk/debian/pycompat": ("A", None, -1),
+                "packages/enthought-chaco2/trunk/debian/rules": ("A", None, -1),
+                "packages/enthought-chaco2/trunk/debian/watch": ("A", None ,-1)}
+        browser = self.get_browser(["packages"], 5, 0, TrunkLayout(2), 
+                { 1: rev1, 2: rev2, 3: rev3, 4: rev4, 5: rev5 })
+        rev1 = browser.next()
+        self.assertEquals(('revision', 
+            FakeRevision('packages/enthought-chaco2/trunk',5)), rev1)
+        rev2 = browser.next()
+        self.assertEquals(('delete', 'packages/enthought-chaco2/trunk'), rev2)
+        rev3 = browser.next()
+        self.assertEquals(('delete', 'packages/enthought-chaco2/trunk'), rev3)
+        rev4 = browser.next()
+        self.assertEquals((), rev4)
+        rev5 = browser.next()
+        self.assertEquals((), rev5)
         self.assertRaises(StopIteration, browser.next)
         self.assertTrue(rev1[1]._parent_revmeta_set)
