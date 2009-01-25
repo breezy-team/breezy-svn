@@ -277,7 +277,8 @@ class cmd_svn_import(Command):
                 raise BzrCommandError(
                         "Not a Subversion repository: %s" % from_location)
 
-            if from_repos.transport.check_path(prefix, to_revnum) == NODE_NONE:
+            if (prefix is not None and 
+                from_repos.transport.check_path(prefix, to_revnum) == NODE_NONE):
                 raise BzrCommandError("Prefix %s does not exist" % prefix)
 
             def filter_branch(branch):
