@@ -360,17 +360,9 @@ class MetadataBrowserTests(TestCase):
               "packages/chaco2/trunk": ("A", None, -1),
               "packages/chaco2/trunk/debian": ("A", None, -1),
               "packages/chaco2/trunk/debian/changelog": ("A", None, -1),
-              "packages/chaco2/trunk/debian/compat": ("A", None, -1),
-              "packages/chaco2/trunk/debian/control": ("A", None, -1),
-              "packages/chaco2/trunk/debian/copyright": ("A", None, -1),
-              "packages/chaco2/trunk/debian/docs": ("A", None, -1),
-              "packages/chaco2/trunk/debian/examples": ("A", None, -1),
-              "packages/chaco2/trunk/debian/pycompat": ("A", None, -1),
-              "packages/chaco2/trunk/debian/rules": ("A", None, -1),
               "packages/chaco2/trunk/debian/watch": ("A", None, -1) }
         rev3 = { 
               "packages/chaco2/trunk/debian/changelog": ("M", None, -1),
-              "packages/chaco2/trunk/debian/control": ("M", None, -1),
               "packages/chaco2/trunk/debian/rules": ("M", None, -1)}
         rev4 = {
               "packages/chaco2": ("D", None, -1),
@@ -380,13 +372,6 @@ class MetadataBrowserTests(TestCase):
                 "packages/enthought-chaco2/trunk": ("A", None, -1),
                 "packages/enthought-chaco2/trunk/debian": ("A", None, -1),
                 "packages/enthought-chaco2/trunk/debian/changelog": ("A", None, -1),
-                "packages/enthought-chaco2/trunk/debian/compat": ("A", None, -1),
-                "packages/enthought-chaco2/trunk/debian/control": ("A", None, -1),
-                "packages/enthought-chaco2/trunk/debian/copyright": ("A", None, -1),
-                "packages/enthought-chaco2/trunk/debian/docs": ("A", None, -1),
-                "packages/enthought-chaco2/trunk/debian/examples": ("A", None, -1),
-                "packages/enthought-chaco2/trunk/debian/pycompat": ("A", None, -1),
-                "packages/enthought-chaco2/trunk/debian/rules": ("A", None, -1),
                 "packages/enthought-chaco2/trunk/debian/watch": ("A", None ,-1)}
         browser = self.get_browser(["packages"], 5, 0, TrunkLayout(2), 
                 { 1: rev1, 2: rev2, 3: rev3, 4: rev4, 5: rev5 })
