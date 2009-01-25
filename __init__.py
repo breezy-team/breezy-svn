@@ -85,7 +85,6 @@ def get_client_string():
     return "bzr%s+bzr-svn%s" % (bzrlib.__version__, __version__)
 
 
-# Find subvertpy, somehow
 try:
     import subvertpy 
 except ImportError:
