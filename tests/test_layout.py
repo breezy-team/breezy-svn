@@ -44,6 +44,12 @@ class TrunkLayoutTests(TestCase,LayoutTests):
     def setUp(self):
         self.layout = TrunkLayout()
 
+    def test_is_branch_parent(self):
+        self.assertEquals(True, self.layout.is_branch_parent("foo/bar"))
+
+    def test_is_tag_parent(self):
+        self.assertEquals(True, self.layout.is_tag_parent("foo/bar"))
+
     def test_parse_trunk(self):
         self.assertEquals(("branch", "", "trunk", ""), 
                           self.layout.parse("trunk"))
@@ -62,6 +68,30 @@ class TrunkLayoutTests(TestCase,LayoutTests):
 
     def test_parse_branches(self):
         self.assertRaises(NotSvnBranchPath, self.layout.parse, "branches")
+
+
+class Trunk2LayoutTests(TestCase):
+
+    def setUp(self):
+        self.layout = TrunkLayout(2)
+
+    def test_is_branch_parent_trunk(self):
+        self.assertEquals(False, self.layout.is_branch_parent("foo/bar/trunk"))
+
+    def test_is_branch_parent_lev2(self):
+        self.assertEquals(True, self.layout.is_branch_parent("foo/bar"))
+
+    def test_is_branch_parent_lev1(self):
+        self.assertEquals(True, self.layout.is_branch_parent("foo"))
+
+    def test_is_branch_parent_lev3(self):
+        self.assertEquals(False, self.layout.is_branch_parent("foo/bar/blie"))
+
+    def test_is_branch_parent_branches(self):
+        self.assertEquals(True, self.layout.is_branch_parent("foo/bar/branches"))
+
+    def test_is_branch_parent_tags(self):
+        self.assertEquals(False, self.layout.is_branch_parent("foo/bar/tags"))
 
 
 class WildcardLayoutTests(TestCase):

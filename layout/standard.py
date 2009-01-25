@@ -42,6 +42,18 @@ class TrunkLayout(RepositoryLayout):
             return subpath
         return urlutils.join(project, subpath)
 
+    def is_branch_parent(self, path, project=""):
+        parts = path.strip("/").split("/")
+        return (self.level is None or 
+                len(parts) <= self.level or
+                (len(parts) == self.level+1 and parts[-1] == "branches"))
+
+    def is_tag_parent(self, path, project=""):
+        parts = path.strip("/").split("/")
+        return (self.level is None or 
+                len(parts) <= self.level or
+                (len(parts) == self.level+1 and parts[-1] == "tags"))
+
     def get_tag_name(self, path, project=""):
         """Determine the tag name from a tag path.
 
