@@ -9,7 +9,7 @@ more tests:
 - bzr svn-set-revprops
 
 performance:
-- generate deltas rather than fulltexts when creating file id maps
+- generate deltas rather than fulltexts when creating file id maps for the cache
 - fix copyfrom in replay and replay_range
 - implement SvnWorkingTree.apply_inventory_delta()
 

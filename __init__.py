@@ -214,6 +214,7 @@ class cmd_svn_import(Command):
         from bzrlib.plugins.svn.repository import SvnRepository
         from bzrlib.plugins.svn.workingtree import SvnCheckout
         from bzrlib.trace import info
+        from subvertpy import NODE_NONE
 
         if to_location is None:
             to_location = os.path.basename(from_location.rstrip("/\\"))
@@ -245,8 +246,8 @@ class cmd_svn_import(Command):
                 raise BzrCommandError("Path inside repository specified "
                                       "and --prefix specified")
             from_repos = from_dir.find_repository(_ignore_branch_path=True)
-            assert from_location.startswith(from_repos.base)
-            prefix = from_location[len(from_repos.base):].strip("/")
+            assert from_dir.root_transport.base.startswith(from_repos.base)
+            prefix = from_dir.root_transport.base[len(from_repos.base):].strip("/")
             prefix = prefix.encode("utf-8")
 
         if until is None:
@@ -275,6 +276,9 @@ class cmd_svn_import(Command):
             if not isinstance(from_repos, SvnRepository):
                 raise BzrCommandError(
                         "Not a Subversion repository: %s" % from_location)
+
+            if from_repos.transport.check_path(prefix, to_revnum) == NODE_NONE:
+                raise BzrCommandError("Prefix %s does not exist" % prefix)
 
             def filter_branch(branch):
                 if (prefix is not None and 
