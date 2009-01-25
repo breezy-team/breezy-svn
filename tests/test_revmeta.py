@@ -355,18 +355,14 @@ class MetadataBrowserTests(TestCase):
         self.assertTrue(rev1[1]._parent_revmeta_set)
 
     def test_chaco(self):
-        rev1 = { "packages": ("A", None, -1) }
-        rev2 = { "packages/chaco2": ("A", None, -1),
-              "packages/chaco2/trunk": ("A", None, -1),
-              "packages/chaco2/trunk/debian": ("A", None, -1) }
         rev3 = { "packages/chaco2/trunk/debian/rules": ("M", None, -1)}
         rev4 = { "packages/chaco2": ("D", None, -1),
               "packages/enthought-chaco2": ("A", "packages/chaco2", 3),
               "packages/enthought-chaco2/trunk": ("D", None, -1)}
         rev5 = { "packages/enthought-chaco2/trunk": ("A", None, -1),
                 "packages/enthought-chaco2/trunk/debian": ("A", None, -1)}
-        browser = self.get_browser(["packages"], 5, 0, TrunkLayout(2), 
-                { 1: rev1, 2: rev2, 3: rev3, 4: rev4, 5: rev5 })
+        browser = self.get_browser(["packages"], 5, 3, TrunkLayout(2), 
+                { 3: rev3, 4: rev4, 5: rev5 })
         rev1 = browser.next()
         self.assertEquals(('revision', 
             FakeRevision('packages/enthought-chaco2/trunk',5)), rev1)
