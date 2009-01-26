@@ -1006,6 +1006,11 @@ class RevisionMetadataBrowser(object):
             c._set_direct_lhs_parent_revmeta(revmeta)
         return revmeta
 
+    def _remove_metabranch(self, name, revnum):
+        del self._metabranches[name]
+        if name in self._metabranches_history[revnum]:
+            del self._metabranches_history[revnum][name]
+
     def do(self, project=None, pb=None):
         for (paths, revnum, revprops) in self._provider._log.iter_changes(
                 self.prefixes, self.from_revnum, self.to_revnum, pb=pb):
@@ -1048,6 +1053,7 @@ class RevisionMetadataBrowser(object):
             for d in deletes:
                 yield ("delete", p)
 
+            # Report the new revisions
             for bp, mb in bps.items():
                 revmeta = self._process_new_rev(bp, mb, revnum, paths, revprops)
                 if (bp in paths and paths[bp][0] in ('A', 'R') and 
@@ -1068,14 +1074,10 @@ class RevisionMetadataBrowser(object):
                             if rev.branch_path != new_name:
                                 raise AssertionError("Revision %d has invalid branch path %s, expected %s" % (revnum, rev.branch_path, new_name))
                             rev._set_direct_lhs_parent_revmeta(None)
-                        del self._metabranches[new_name]
-                        if new_name in self._metabranches_history[revnum]:
-                            del self._metabranches_history[revnum][new_name]
+                        self._remove_metabranch(new_name, revnum)
                 else:
                     data = self._metabranches[new_name]
-                    del self._metabranches[new_name]
-                    if new_name in self._metabranches_history[revnum]:
-                        del self._metabranches_history[revnum][new_name]
+                    self._remove_metabranch(new_name, revnum)
                     self._metabranches_history[old_rev][old_name].add(data)
                     if not self.layout.is_branch_or_tag(old_name, project):
                         self._unusual_history[old_rev].add(old_name)
