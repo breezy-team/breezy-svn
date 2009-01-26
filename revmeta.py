@@ -1120,6 +1120,9 @@ class RevisionMetadataProvider(object):
     def create_revision(self, path, revnum, changes=None, revprops=None, 
                         changed_fileprops=None, fileprops=None, 
                         metaiterator=None):
+        """Create a new RevisionMetadata instance, assuming this 
+        revision isn't cached yet.
+        """
         return self._revmeta_cls(self.repository, self.check_revprops, 
                                  self._get_fileprops_fn, self._log, 
                                  self.repository.uuid, path, revnum, changes, 
@@ -1136,7 +1139,6 @@ class RevisionMetadataProvider(object):
                 break
             mb.fetch_until(revnum)
         return self.get_revision(path, revnum, revprops=revprops)
-
 
     def finish_metaiterators(self):
         for mb in self._open_metaiterators:
@@ -1227,7 +1229,8 @@ class RevisionMetadataProvider(object):
 
         Layout decides which ones to pick up.
         """
-        return filter_revisions(self.iter_all_changes(layout, check_unusual_path, from_revnum, to_revnum, project, pb))
+        return filter_revisions(self.iter_all_changes(layout,
+            check_unusual_path, from_revnum, to_revnum, project, pb))
 
     def iter_all_changes(self, layout, check_unusual_path, from_revnum, 
                          to_revnum=0, project=None, pb=None, prefix=None):
@@ -1261,6 +1264,9 @@ class RevisionMetadataProvider(object):
 def iter_with_mapping(it, mapping):
     """Iterate through a stream of RevisionMetadata objects, newest first and 
     add the appropriate mapping.
+
+    :param it: Iterator over revision metadata objects
+    :param mapping: Mapping to start out with
     """
     for revmeta in it:
         (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(mapping)
