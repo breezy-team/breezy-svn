@@ -20,9 +20,16 @@ from bzrlib.errors import (ConnectionError, ConnectionReset, LockError,
 from bzrlib.tests import TestCase
 
 import subvertpy
-from bzrlib.plugins.svn.errors import *
+from bzrlib.plugins.svn.errors import (
+        convert_error, 
+        convert_svn_error, 
+        DavRequestFailed, 
+        InvalidPropertyValue,
+        NotSvnBranchPath,
+        )
 
 class TestConvertError(TestCase):
+
     def test_decorator_unknown(self):
         @convert_svn_error
         def test_throws_svn():
