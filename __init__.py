@@ -75,7 +75,7 @@ def check_subversion_version(subvertpy):
     mutter("bzr-svn: using Subversion %d.%d.%d (%s)" % ra_version)
 
     if subvertpy_version < MINIMUM_SUBVERTPY_VERSION:
-        warning("bzr-svn: at least subvertpy %d.%d.%d is required" % subvertpy_version)
+        warning("bzr-svn: at least subvertpy %d.%d.%d is required, %d.%d.%d is installed." % (MINIMUM_SUBVERTPY_VERSION + subvertpy_version))
         raise ImportError
 
 
