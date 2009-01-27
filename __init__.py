@@ -31,7 +31,7 @@ For more information about bzr-svn, see the bzr-svn FAQ.
 
 """
 import bzrlib
-from bzrlib import api, bzrdir, repository
+from bzrlib import api, bzrdir, config, repository
 import bzrlib.api, bzrlib.repository
 from bzrlib.bzrdir import BzrDirFormat, format_registry
 from bzrlib.errors import BzrError
@@ -129,6 +129,10 @@ bzrdir.format_registry.register("subversion-wc", format.SvnWorkingTreeDirFormat,
                          "Subversion working copy. ", 
                          native=False, hidden=True)
 SPEC_TYPES.append(revspec.RevisionSpec_svn)
+
+config.credential_store_registry.register_lazy(
+    "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
+    help=__doc__)
 
 _versions_checked = False
 def lazy_check_versions():

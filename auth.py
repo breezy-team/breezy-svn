@@ -17,6 +17,7 @@
 
 from bzrlib.config import (
         AuthenticationConfig,
+        CredentialStore,
         )
 from bzrlib.trace import (
         mutter,
@@ -198,3 +199,19 @@ def create_auth_baton(url):
         if password is not None:
             auth_baton.set_parameter(AUTH_PARAM_DEFAULT_PASSWORD, password)
     return auth_baton
+
+
+class SubversionCredentialStore(CredentialStore):
+    """Credentials provider that reads ~/.subversion/auth/"""
+
+    def __init__(self):
+        super(SubversionCredentialStore, self).__init__()
+        self.auth = ra.Auth([ra.get_simple_provider()])
+
+    def decode_password(self, credentials):
+        (username, password, may_save) = self.auth.credentials("svn.simple", credentials["realm"])
+        if credentials.get("user") not in (username, None):
+            # Subversion changed the username
+            return None
+        return password
+
