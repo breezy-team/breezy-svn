@@ -97,6 +97,21 @@ def init_subvertpy():
     import bzrlib.transport.ssh
     subvertpy.ra_svn.get_ssh_vendor = bzrlib.transport.ssh._get_ssh_vendor
 
+_versions_checked = False
+def lazy_check_versions():
+    """Check whether all dependencies have the right versions.
+    
+    :note: Only checks once, caches the result."""
+    global _versions_checked
+    if _versions_checked:
+        return
+    _versions_checked = True
+    init_subvertpy()
+    bzrlib.api.require_any_api(bzrlib, COMPATIBLE_BZR_VERSIONS)
+
+# Required for now, since we import format and revspec here.
+lazy_check_versions()
+
 from bzrlib.plugins.svn import format, revspec
 
 register_transport_proto('svn+ssh://', 
@@ -133,20 +148,7 @@ config.credential_store_registry.register_lazy(
     "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
     help=__doc__)
 
-_versions_checked = False
-def lazy_check_versions():
-    """Check whether all dependencies have the right versions.
-    
-    :note: Only checks once, caches the result."""
-    global _versions_checked
-    if _versions_checked:
-        return
-    _versions_checked = True
-    init_subvertpy()
-    bzrlib.api.require_any_api(bzrlib, COMPATIBLE_BZR_VERSIONS)
-
-
-_optimizers_registered = False
+optimizers_registered = False
 def lazy_register_optimizers():
     """Register optimizers for fetching between Subversion and Bazaar 
     repositories.
