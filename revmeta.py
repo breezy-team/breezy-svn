@@ -936,7 +936,8 @@ class RevisionMetadataBrowser(object):
         self._unusual_history = defaultdict(set)
         self._provider = provider
         self._actions = []
-        self._iter = iter(self.do(project, pb))
+        self._iter_log = self._provider._log.iter_changes(self.prefixes, self.from_revnum, self.to_revnum, pb=pb)
+        self._iter = self.do(project, pb)
 
     def __iter__(self):
         return ListBuildingIterator(self._actions, self.next)
@@ -1012,8 +1013,7 @@ class RevisionMetadataBrowser(object):
             del self._metabranches_history[revnum][name]
 
     def do(self, project=None, pb=None):
-        for (paths, revnum, revprops) in self._provider._log.iter_changes(
-                self.prefixes, self.from_revnum, self.to_revnum, pb=pb):
+        for (paths, revnum, revprops) in self._iter_log:
             bps = {}
             deletes = []
             if pb:
