@@ -148,7 +148,7 @@ config.credential_store_registry.register_lazy(
     "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
     help=__doc__)
 
-optimizers_registered = False
+_optimizers_registered = False
 def lazy_register_optimizers():
     """Register optimizers for fetching between Subversion and Bazaar 
     repositories.
