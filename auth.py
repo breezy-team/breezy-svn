@@ -209,7 +209,9 @@ class SubversionCredentialStore(CredentialStore):
         self.auth = ra.Auth([ra.get_simple_provider()])
 
     def decode_password(self, credentials):
-        (username, password, may_save) = self.auth.credentials("svn.simple", credentials["realm"])
+        svn_realm = "<%(scheme)s://%(host)s:%(port)s> %(realm)s" % credentials
+        creds = self.auth.credentials("svn.simple", svn_realm)
+        (username, password, may_save) = creds.next()
         if credentials.get("user") not in (username, None):
             # Subversion changed the username
             return None
