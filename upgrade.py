@@ -27,6 +27,15 @@ from bzrlib.plugins.svn.commit import set_svn_revprops
 
 
 def export_as_mapping(revmeta, graph, old_mapping, new_mapping):
+    """Determine the new revision properties for an older revision.
+
+    :param revmeta: Revision metadata object
+    :param graph: Graph walker object for the repository
+    :param old_mapping: Previous mapping used
+    :param new_mapping: New mapping to use
+    :return: Dictionary with revision properties
+    """
+    assert new_mapping.can_use_revprops
     new_revprops = dict(revmeta.get_revprops().iteritems())
     rev = revmeta.get_revision(old_mapping)
     revno = graph.find_distance_to_null(rev.revision_id, [])
