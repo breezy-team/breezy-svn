@@ -937,7 +937,9 @@ class RevisionMetadataBrowser(object):
         self._provider = provider
         self._actions = []
         self._iter_log = self._provider._log.iter_changes(self.prefixes, self.from_revnum, self.to_revnum, pb=pb)
-        self._iter = self.do(project, pb)
+        self._project = project
+        self._pb = pb
+        self._iter = self.do()
 
     def __iter__(self):
         return ListBuildingIterator(self._actions, self.next)
@@ -959,7 +961,11 @@ class RevisionMetadataBrowser(object):
         return hash((type(self), self.from_revnum, self.to_revnum, tuple(self.prefixes), hash(self.layout)))
 
     def get_lhs_parent(self, revmeta):
-        """Find the left hand side parent of a revision metadata object."""
+        """Find the *direct* left hand side parent of a revision metadata object.
+        
+        :param revmeta: RevisionMetadata object
+        :return: RevisionMetadata object for the *direct* left hand side parent
+        """
         while not revmeta._direct_lhs_parent_known:
             try:
                 self.next()
@@ -972,7 +978,10 @@ class RevisionMetadataBrowser(object):
         return revmeta._direct_lhs_parent_revmeta
 
     def fetch_until(self, revnum):
-        """Fetch at least all revisions until revnum."""
+        """Fetch at least all revisions until revnum.
+        
+        :param revnum: Revision until which to fetch.
+        """
         try:
             while self._last_revnum is None or self._last_revnum > revnum:
                 self.next()
@@ -980,6 +989,10 @@ class RevisionMetadataBrowser(object):
             return
 
     def next(self):
+        """Return the next action.
+
+        :return: Tuple with action string and object.
+        """
         ret = self._iter.next()
         self._actions.append(ret)
         return ret
@@ -1008,16 +1021,21 @@ class RevisionMetadataBrowser(object):
         return revmeta
 
     def _remove_metabranch(self, name, revnum):
+        """Remove the specified metabranch.
+
+        :param name: Name of the metabranch
+        :param revnum: Revision number
+        """
         del self._metabranches[name]
         if name in self._metabranches_history[revnum]:
             del self._metabranches_history[revnum][name]
 
-    def do(self, project=None, pb=None):
+    def do(self):
         for (paths, revnum, revprops) in self._iter_log:
             bps = {}
             deletes = []
-            if pb:
-                pb.update("discovering revisions", self.to_revnum-revnum, 
+            if self._pb:
+                self._pb.update("discovering revisions", self.to_revnum-revnum, 
                           self.from_revnum-self.to_revnum)
 
             # Import all metabranches_history where key > revnum
@@ -1035,7 +1053,7 @@ class RevisionMetadataBrowser(object):
                 action = paths[p][0]
 
                 try:
-                    (_, bp, ip) = self.layout.split_project_path(p, project)
+                    (_, bp, ip) = self.layout.split_project_path(p, self._project)
                 except svn_errors.NotSvnBranchPath:
                     pass
                 else:
@@ -1045,8 +1063,8 @@ class RevisionMetadataBrowser(object):
                     if (p == u and not action in ('D', 'R')) or p.startswith("%s/" % u):
                         bps[u] = self._metabranches[u]
                 if action in ('R', 'D') and (
-                    self.layout.is_branch_or_tag(p, project) or 
-                    self.layout.is_branch_or_tag_parent(p, project)):
+                    self.layout.is_branch_or_tag(p, self._project) or 
+                    self.layout.is_branch_or_tag_parent(p, self._project)):
                     deletes.append(p)
 
             # Mention deletes
@@ -1079,7 +1097,7 @@ class RevisionMetadataBrowser(object):
                     data = self._metabranches[new_name]
                     self._remove_metabranch(new_name, revnum)
                     self._metabranches_history[old_rev][old_name].add(data)
-                    if not self.layout.is_branch_or_tag(old_name, project):
+                    if not self.layout.is_branch_or_tag(old_name, self._project):
                         self._unusual_history[old_rev].add(old_name)
             self._last_revnum = revnum
 
