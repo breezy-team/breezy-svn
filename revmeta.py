@@ -75,7 +75,10 @@ def warn_slow_revprops():
 
 
 class MetaHistoryIncomplete(Exception):
-    """No revision metadata branch."""
+    """No revision metadata branch: %(msg)s"""
+
+    def __init__(self, msg):
+        self.msg = msg
 
 
 def full_paths(find_children, paths, bp, from_bp, from_rev):
@@ -871,9 +874,9 @@ class RevisionMetadataBranch(object):
 
     def next(self):
         if self._get_next is None:
-            raise MetaHistoryIncomplete()
+            raise MetaHistoryIncomplete("No function to retrieve next revision")
         if self._history_limit and len(self._revs) >= self._history_limit:
-            raise MetaHistoryIncomplete()
+            raise MetaHistoryIncomplete("Limited to %d revisions" % self._history_limit)
         try:
             ret = self._get_next()
         except StopIteration:
@@ -971,9 +974,9 @@ class RevisionMetadataBrowser(object):
                 self.next()
             except StopIteration:
                 if self.to_revnum > 0:
-                    raise MetaHistoryIncomplete()
+                    raise MetaHistoryIncomplete("Reached revision 0")
                 if not any([x for x in self.prefixes if revmeta.branch_path.startswith(x+"/") or x == revmeta.branch_path or x == ""]):
-                    raise MetaHistoryIncomplete()
+                    raise MetaHistoryIncomplete("Invalid prefix %r for prefixes %r" % (revmeta.branch_path, self.prefixes))
                 raise AssertionError("Unable to find direct lhs parent for %r" % revmeta)
         return revmeta._direct_lhs_parent_revmeta
 
