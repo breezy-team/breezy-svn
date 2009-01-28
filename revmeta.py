@@ -839,6 +839,9 @@ class RevisionMetadataBranch(object):
         self._revmeta_provider = revmeta_provider
         self._get_next = None
 
+    def __len__(self):
+        return len(self._revs)
+
     def __eq__(self, other):
         return (type(self) == type(other) and 
                 self._history_limit == other._history_limit and
@@ -933,7 +936,6 @@ class RevisionMetadataBrowser(object):
         self.to_revnum = to_revnum
         self._last_revnum = None
         self.layout = layout
-        self._metabranches = dict()
         self._metabranches_history = defaultdict(lambda: defaultdict(set))
         self._unusual = set()
         self._unusual_history = defaultdict(set)
@@ -1000,7 +1002,7 @@ class RevisionMetadataBrowser(object):
         self._actions.append(ret)
         return ret
 
-    def _process_new_rev(self, bp, mb, revnum, paths, revprops):
+    def _process_new_rev(self, bp, mbs, revnum, paths, revprops):
         """Process the changes for a new revision and update the 
         branches it is on.
         
@@ -1013,12 +1015,12 @@ class RevisionMetadataBrowser(object):
         """
         revmeta = self._provider.get_revision(bp, revnum, paths, revprops, 
                                               metaiterator=self)
+        children = set()
         assert revmeta is not None
-        children = set([c._revs[-1] for c in self._metabranches_history[revnum][bp]])
-        del self._metabranches_history[revnum][bp]
-        if mb._revs:
-            children.add(mb._revs[-1])
-        mb.append(revmeta)
+        for mb in mbs:
+            if mb._revs:
+                children.add(mb._revs[-1])
+            mb.append(revmeta)
         for c in children:
             c._set_direct_lhs_parent_revmeta(revmeta)
         return revmeta
@@ -1029,14 +1031,12 @@ class RevisionMetadataBrowser(object):
         :param name: Name of the metabranch
         :param revnum: Revision number
         """
-        del self._metabranches[name]
-        if name in self._metabranches_history[revnum]:
-            del self._metabranches_history[revnum][name]
+        del self._metabranches_history[revnum][name]
 
     def _get_metabranch(self, name, revnum):
-        if not name in self._metabranches:
-            self._metabranches[name] = RevisionMetadataBranch()
-        return self._metabranches[name]
+        if not name in self._metabranches_history[revnum]:
+            self._metabranches_history[revnum][name].add(RevisionMetadataBranch())
+        return self._metabranches_history[revnum][name]
 
     def do(self):
         for (paths, revnum, revprops) in self._iter_log:
@@ -1053,9 +1053,6 @@ class RevisionMetadataBrowser(object):
                     self._metabranches_history[revnum][bp].update(self._metabranches_history[x][bp])
                     del self._metabranches_history[x][bp]
                 del self._metabranches_history[x]
-            for bp, mbs in self._metabranches_history[revnum].iteritems():
-                if not bp in self._metabranches:
-                    self._metabranches[bp] = iter(mbs).next()
             self._unusual.update(self._unusual_history[revnum])
 
             # Find out what branches have changed
@@ -1083,8 +1080,8 @@ class RevisionMetadataBrowser(object):
                 yield ("delete", p)
 
             # Report the new revisions
-            for bp, mb in changed_bps.items():
-                revmeta = self._process_new_rev(bp, mb, revnum, paths, revprops)
+            for bp, mbs in changed_bps.items():
+                revmeta = self._process_new_rev(bp, mbs, revnum, paths, revprops)
                 # If this branch was started here, terminate it
                 if (bp in paths and paths[bp][0] in ('A', 'R') and 
                     paths[bp][1] is None):
@@ -1093,22 +1090,23 @@ class RevisionMetadataBrowser(object):
             
             # Apply renames and the like for the next round
             for new_name, old_name, old_rev in changes.apply_reverse_changes(
-                self._metabranches.keys(), paths):
+                self._metabranches_history[revnum].keys(), paths):
                 if new_name in self._unusual:
                     self._unusual.remove(new_name)
                 if old_name is None: 
                     # didn't exist previously
-                    if new_name in self._metabranches:
-                        if self._metabranches[new_name]._revs:
-                            rev = self._metabranches[new_name]._revs[-1]
+                    for mb in self._metabranches_history[revnum][new_name]:
+                        if mb._revs:
+                            rev = mb._revs[-1]
                             if rev.branch_path != new_name:
                                 raise AssertionError("Revision %d has invalid branch path %s, expected %s" % (revnum, rev.branch_path, new_name))
                             rev._set_direct_lhs_parent_revmeta(None)
                         self._remove_metabranch(new_name, revnum)
                 else:
-                    data = self._metabranches[new_name]
+                    # was originated somewhere else
+                    data = self._metabranches_history[revnum][new_name]
                     self._remove_metabranch(new_name, revnum)
-                    self._metabranches_history[old_rev][old_name].add(data)
+                    self._metabranches_history[old_rev][old_name].update(data)
                     if not self.layout.is_branch_or_tag(old_name, self._project):
                         self._unusual_history[old_rev].add(old_name)
             self._last_revnum = revnum
