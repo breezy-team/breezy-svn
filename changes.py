@@ -122,9 +122,15 @@ def changes_root(paths):
     return root
 
 def apply_reverse_changes(branches, changes):
-    """
+    """Apply the specified changes on a set of branch names in reverse.
+    (E.g. as if we were applying the reverse of a delta)
 
-    :return: [(new_name, old_name, old_rev)]
+    :return: [(new_name, old_name, new_rev)]
+    :note: new_name is the name before these changes, 
+           old_name is the name after the changes.
+           new_rev is the revision that the changes were 
+            copied from (new_name), or -1 if the previous revnum
+
     """
     branches = set(branches)
     for p in sorted(changes):

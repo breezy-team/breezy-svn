@@ -80,4 +80,31 @@ class ApplyReverseChangesTests(TestCase):
 
     def test_parent_rename(self):
         self.assertEquals([('tags/2.5-M2', 'geotools/tags/2.5-M2', 5617)],
-            list(apply_reverse_changes(['trunk/geotools2', 'tags/2.5-M2', 'trunk'], {'tags': (u'A', 'geotools/tags', 5617), 'geotools/tags': (u'D', None, -1)})))
+            list(apply_reverse_changes(['trunk/geotools2', 'tags/2.5-M2', 'trunk'], 
+                {'tags': (u'A', 'geotools/tags', 5617), 'geotools/tags': (u'D', None, -1)}))
+            )
+
+    def test_simple_rename(self):
+        self.assertEquals([("newname", "oldname", 2)],
+            list(apply_reverse_changes(["newname"], 
+                {"newname": (u"A", "oldname", 2)})))
+
+    def test_simple_rename_nonexistant(self):
+        self.assertEquals([],
+            list(apply_reverse_changes([], 
+                {"newname": (u"A", "oldname", 2)})))
+
+    def test_modify(self):
+        self.assertEquals([],
+            list(apply_reverse_changes(["somename"], 
+                {"somename": (u"M", None, -1)})))
+
+    def test_delete(self):
+        self.assertEquals([("somename/bloe", None, -1)],
+            list(apply_reverse_changes(["somename/bloe"], 
+                {"somename": (u"D", None, -1)})))
+
+    def test_add(self):
+        self.assertEquals([],
+            list(apply_reverse_changes(["somename"], 
+                {"somename": (u"A", None, -1)})))
