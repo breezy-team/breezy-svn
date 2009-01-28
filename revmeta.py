@@ -1035,7 +1035,8 @@ class RevisionMetadataBrowser(object):
 
     def do(self):
         for (paths, revnum, revprops) in self._iter_log:
-            bps = {}
+            # Dictionary mapping branch paths to Metabranches
+            changed_bps = {}
             deletes = []
             if self._pb:
                 self._pb.update("discovering revisions", self.to_revnum-revnum, 
@@ -1052,6 +1053,7 @@ class RevisionMetadataBrowser(object):
                     self._metabranches[bp] = iter(mbs).next()
             self._unusual.update(self._unusual_history[revnum])
 
+            # Find out what branches have changed
             for p in sorted(paths):
                 action = paths[p][0]
 
@@ -1060,11 +1062,12 @@ class RevisionMetadataBrowser(object):
                 except svn_errors.NotSvnBranchPath:
                     pass
                 else:
+                    # Did something change inside a branch?
                     if action != 'D' or ip != "":
-                        bps[bp] = self._metabranches[bp]
+                        changed_bps[bp] = self._metabranches[bp]
                 for u in self._unusual:
                     if (p == u and not action in ('D', 'R')) or p.startswith("%s/" % u):
-                        bps[u] = self._metabranches[u]
+                        changed_bps[u] = self._metabranches[u]
                 if action in ('R', 'D') and (
                     self.layout.is_branch_or_tag(p, self._project) or 
                     self.layout.is_branch_or_tag_parent(p, self._project)):
@@ -1075,8 +1078,9 @@ class RevisionMetadataBrowser(object):
                 yield ("delete", p)
 
             # Report the new revisions
-            for bp, mb in bps.items():
+            for bp, mb in changed_bps.items():
                 revmeta = self._process_new_rev(bp, mb, revnum, paths, revprops)
+                # If this branch was started here, terminate it
                 if (bp in paths and paths[bp][0] in ('A', 'R') and 
                     paths[bp][1] is None):
                     revmeta._set_direct_lhs_parent_revmeta(None)
