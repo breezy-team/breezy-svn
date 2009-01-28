@@ -60,7 +60,7 @@ COMPATIBLE_BZR_VERSIONS = [(1, 11, 0)]
 MINIMUM_SUBVERTPY_VERSION = (0, 6, 1)
 
 
-def check_subversion_version(subvertpy):
+def check_subversion_version():
     """Check that Subversion is compatible.
 
     """
@@ -91,7 +91,7 @@ def init_subvertpy():
         warning("unable to find subvertpy. Please install from http://launchpad.net/subvertpy.")
         raise
 
-    check_subversion_version(subvertpy)
+    check_subversion_version()
 
     import subvertpy.ra_svn
     import bzrlib.transport.ssh
