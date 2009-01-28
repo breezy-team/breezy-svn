@@ -314,6 +314,7 @@ class BzrSvnMapping(foreign.VcsMapping):
     parseable_file_ids = False
 
     def __init__(self):
+        super(BzrSvnMapping, self).__init__(foreign_vcs_svn)
         if (version_info[3] == 'exp' or self.experimental) and not BzrSvnMapping._warned_experimental:
             from bzrlib.trace import warning
             warning("using experimental bzr-svn mappings; may break existing branches in the most horrible ways")
