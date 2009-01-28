@@ -933,7 +933,7 @@ class RevisionMetadataBrowser(object):
         self.to_revnum = to_revnum
         self._last_revnum = None
         self.layout = layout
-        self._metabranches = defaultdict(RevisionMetadataBranch)
+        self._metabranches = dict()
         self._metabranches_history = defaultdict(lambda: defaultdict(set))
         self._unusual = set()
         self._unusual_history = defaultdict(set)
@@ -1033,6 +1033,11 @@ class RevisionMetadataBrowser(object):
         if name in self._metabranches_history[revnum]:
             del self._metabranches_history[revnum][name]
 
+    def _get_metabranch(self, name, revnum):
+        if not name in self._metabranches:
+            self._metabranches[name] = RevisionMetadataBranch()
+        return self._metabranches[name]
+
     def do(self):
         for (paths, revnum, revprops) in self._iter_log:
             # Dictionary mapping branch paths to Metabranches
@@ -1064,10 +1069,10 @@ class RevisionMetadataBrowser(object):
                 else:
                     # Did something change inside a branch?
                     if action != 'D' or ip != "":
-                        changed_bps[bp] = self._metabranches[bp]
+                        changed_bps[bp] = self._get_metabranch(bp, revnum)
                 for u in self._unusual:
                     if (p == u and not action in ('D', 'R')) or p.startswith("%s/" % u):
-                        changed_bps[u] = self._metabranches[u]
+                        changed_bps[u] = self._get_metabranch(u, revnum)
                 if action in ('R', 'D') and (
                     self.layout.is_branch_or_tag(p, self._project) or 
                     self.layout.is_branch_or_tag_parent(p, self._project)):
