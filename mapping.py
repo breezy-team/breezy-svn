@@ -584,9 +584,6 @@ class BzrSvnMapping(foreign.VcsMapping):
     def export_hidden_fileprops(self, fileprops):
         raise NotImplementedError(self.export_hidden_fileprops)
 
-    def show_foreign_revid(self, (uuid, bp, revnum)):
-        return { "svn revno": "%d (on /%s)" % (revnum, bp)}
-
     def export_revprop_redirect(self, revnum, fileprops):
         raise NotImplementedError(self.export_revprop_redirect)
 
@@ -971,4 +968,14 @@ def get_roundtrip_ancestor_revids(fileprops):
             except errors.InvalidPropertyValue, ie:
                 mutter(str(ie))
 
-foreign_vcs_svn = foreign.ForeignVcs(mapping_registry)
+
+class ForeignSubversion(foreign.ForeignVcs):
+
+    def __init__(self):
+        super(ForeignSubversion, self).__init__(mapping_registry)
+
+    def show_foreign_revid(self, (uuid, bp, revnum)):
+        return { "svn revno": "%d (on /%s)" % (revnum, bp)}
+
+
+foreign_vcs_svn = ForeignSubversion()
