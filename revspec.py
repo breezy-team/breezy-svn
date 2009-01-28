@@ -18,6 +18,8 @@
 from bzrlib.errors import BzrError, InvalidRevisionSpec, NoSuchRevision
 from bzrlib.revisionspec import RevisionSpec, RevisionInfo
 
+from bzrlib.plugins.svn import lazy_check_versions
+
 class RevisionSpec_svn(RevisionSpec):
     """Selects a revision using a Subversion revision number."""
 
@@ -33,6 +35,7 @@ class RevisionSpec_svn(RevisionSpec):
     prefix = 'svn:'
 
     def _match_on(self, branch, revs):
+        lazy_check_versions()
         loc = self.spec.find(':')
         if not getattr(branch.repository, 'uuid', None):
             raise BzrError("the svn: revisionspec can only be used with Subversion branches")

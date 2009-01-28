@@ -39,7 +39,7 @@ from bzrlib.foreign import foreign_vcs_registry
 from bzrlib.commands import Command, register_command, display_command
 from bzrlib.help_topics import topic_registry
 from bzrlib.option import Option, RegistryOption
-from bzrlib.revisionspec import SPEC_TYPES
+from bzrlib.revisionspec import revspec_registry
 from bzrlib.trace import warning, mutter
 from bzrlib.transport import register_lazy_transport, register_transport_proto
 
@@ -112,7 +112,7 @@ def lazy_check_versions():
 # Required for now, since we import format and revspec here.
 lazy_check_versions()
 
-from bzrlib.plugins.svn import format, revspec
+from bzrlib.plugins.svn import format
 
 register_transport_proto('svn+ssh://', 
     help="Access using the Subversion smart server tunneled over SSH.")
@@ -142,7 +142,8 @@ bzrdir.format_registry.register("subversion", format.SvnRemoteFormat,
 bzrdir.format_registry.register("subversion-wc", format.SvnWorkingTreeDirFormat, 
                          "Subversion working copy. ", 
                          native=False, hidden=True)
-SPEC_TYPES.append(revspec.RevisionSpec_svn)
+revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec", 
+    "RevisionSpec_svn")
 
 config.credential_store_registry.register_lazy(
     "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
