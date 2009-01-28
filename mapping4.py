@@ -39,6 +39,7 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
     parseable_file_ids = True
 
     def __init__(self):
+        mapping.BzrSvnMapping.__init__(self)
         self.name = "v4"
 
     def __eq__(self, other):
