@@ -177,9 +177,8 @@ def file_editor_send_changes(file_id, contents, file_editor):
 
 
 
-def dir_editor_send_changes(base_inv, new_inv, path, file_id, dir_editor,
-                            base_url, base_revnum, branch_path, 
-                            modified_files, visit_dirs):
+def dir_editor_send_changes((base_inv, base_url, base_revnum), new_inv, path, file_id, dir_editor,
+                            branch_path, modified_files, visit_dirs):
     """Pass the changes to a directory to the commit editor.
 
     :param path: Path (from repository root) to the directory.
@@ -323,9 +322,10 @@ def dir_editor_send_changes(base_inv, new_inv, path, file_id, dir_editor,
             continue
 
         # Handle this directory
-        dir_editor_send_changes(child_base_inv, new_inv, new_child_path, 
-                            child_ie.file_id, child_editor, base_url, 
-                            base_revnum, branch_path, modified_files, 
+        dir_editor_send_changes((child_base_inv, base_url, base_revnum),
+                            new_inv, new_child_path, 
+                            child_ie.file_id, child_editor, 
+                            branch_path, modified_files, 
                             visit_dirs)
 
         child_editor.close()
@@ -645,9 +645,10 @@ class SvnCommitBuilder(RootCommitBuilder):
                     existing_bp_parts, base_url, self.base_revnum, root_from,
                     replace_existing)
 
-                dir_editor_send_changes(self.old_inv, self.new_inventory, 
+                dir_editor_send_changes((self.old_inv, base_url, self.base_revnum), 
+                        self.new_inventory, 
                         "", self.new_inventory.root.file_id, branch_editors[-1],
-                        base_url, self.base_revnum, self.branch_path,
+                        self.branch_path,
                         self.modified_files, self.visit_dirs)
 
                 # Set all the revprops
