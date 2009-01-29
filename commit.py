@@ -177,7 +177,7 @@ def file_editor_send_changes(file_id, contents, file_editor):
 
 
 
-def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
+def dir_editor_send_changes(base_inv, new_inv, path, file_id, dir_editor,
                             base_url, base_revnum, branch_path, 
                             modified_files, visit_dirs):
     """Pass the changes to a directory to the commit editor.
@@ -197,12 +197,12 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
             return urlutils.join(branch_path, *args)
 
     assert dir_editor is not None
-    # Loop over entries of file_id in old_inv
+    # Loop over entries of file_id in base_inv
     # remove if they no longer exist with the same name
     # or parents
-    if file_id in old_inv and old_inv[file_id].kind == 'directory':
-        for child_name in old_inv[file_id].children:
-            child_ie = old_inv.get_child(file_id, child_name)
+    if file_id in base_inv and base_inv[file_id].kind == 'directory':
+        for child_name in base_inv[file_id].children:
+            child_ie = base_inv.get_child(file_id, child_name)
             # remove if...
             if (
                 # ... path no longer exists
@@ -226,19 +226,19 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
 
         new_child_path = new_inv.id2path(child_ie.file_id).encode("utf-8")
         full_new_child_path = branch_relative_path(new_child_path)
-        # add them if they didn't exist in old_inv 
-        if not child_ie.file_id in old_inv:
+        # add them if they didn't exist in base_inv 
+        if not child_ie.file_id in base_inv:
             mutter('adding %s %r', child_ie.kind, new_child_path)
             child_editor = dir_editor.add_file(full_new_child_path)
 
         # copy if they existed at different location
-        elif (old_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
-                old_inv[child_ie.file_id].parent_id != child_ie.parent_id):
+        elif (base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
+                base_inv[child_ie.file_id].parent_id != child_ie.parent_id):
             mutter('copy %s %r -> %r', child_ie.kind, 
-                              old_inv.id2path(child_ie.file_id), 
+                              base_inv.id2path(child_ie.file_id), 
                               new_child_path)
             child_editor = dir_editor.add_file(full_new_child_path, 
-                url_join_unescaped_path(base_url, old_inv.id2path(child_ie.file_id).encode("utf-8")),
+                url_join_unescaped_path(base_url, base_inv.id2path(child_ie.file_id).encode("utf-8")),
                 base_revnum)
 
         # open if they existed at the same location
@@ -252,9 +252,9 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
             # Old copy of the file was retained. No need to send changes
             child_editor = None
 
-        if child_ie.file_id in old_inv:
-            old_executable = old_inv[child_ie.file_id].executable
-            old_special = (old_inv[child_ie.file_id].kind == 'symlink')
+        if child_ie.file_id in base_inv:
+            old_executable = base_inv[child_ie.file_id].executable
+            old_special = (base_inv[child_ie.file_id].kind == 'symlink')
         else:
             old_special = False
             old_executable = False
@@ -289,8 +289,8 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
             continue
 
         new_child_path = new_inv.id2path(child_ie.file_id)
-        # add them if they didn't exist in old_inv 
-        if not child_ie.file_id in old_inv:
+        # add them if they didn't exist in base_inv 
+        if not child_ie.file_id in base_inv:
             mutter('adding dir %r', child_ie.name)
             
             # TODO: Do a copy operation if at all possible, to make 
@@ -298,17 +298,17 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
             child_editor = dir_editor.add_directory(
                 branch_relative_path(new_child_path))
 
-            child_old_inv = old_inv
+            child_base_inv = base_inv
 
         # copy if they existed at different location
-        elif old_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or old_inv[child_ie.file_id].parent_id != child_ie.parent_id:
-            old_child_path = old_inv.id2path(child_ie.file_id).encode("utf-8")
+        elif base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or base_inv[child_ie.file_id].parent_id != child_ie.parent_id:
+            old_child_path = base_inv.id2path(child_ie.file_id).encode("utf-8")
             mutter('copy dir %r -> %r', old_child_path, new_child_path)
             child_editor = dir_editor.add_directory(
                 branch_relative_path(new_child_path),
                 url_join_unescaped_path(base_url, old_child_path), base_revnum)
 
-            child_old_inv = old_inv
+            child_base_inv = base_inv
         # open if they existed at the same location and 
         # the directory was touched
         elif child_ie.file_id in visit_dirs:
@@ -318,12 +318,12 @@ def dir_editor_send_changes(old_inv, new_inv, path, file_id, dir_editor,
                     branch_relative_path(new_child_path), 
                     base_revnum)
             
-            child_old_inv = old_inv
+            child_base_inv = base_inv
         else:
             continue
 
         # Handle this directory
-        dir_editor_send_changes(child_old_inv, new_inv, new_child_path, 
+        dir_editor_send_changes(child_base_inv, new_inv, new_child_path, 
                             child_ie.file_id, child_editor, base_url, 
                             base_revnum, branch_path, modified_files, 
                             visit_dirs)
