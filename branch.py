@@ -41,6 +41,9 @@ from bzrlib.revision import (
         is_null,
         ensure_null,
         )
+from bzrlib.trace import (
+        mutter,
+        )
 from bzrlib.workingtree import (
         WorkingTree,
         )
@@ -347,7 +350,7 @@ class SvnBranch(ForeignBranch):
 
     def set_push_location(self, location):
         """See Branch.set_push_location()."""
-        raise NotImplementedError(self.set_push_location)
+        mutter("setting push location for %s to %s", self.base, location)
 
     def get_push_location(self):
         """See Branch.get_push_location()."""
