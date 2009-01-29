@@ -51,6 +51,7 @@ from bzrlib.plugins.svn import mapping
 from bzrlib.plugins.svn.errors import (
     convert_svn_error, 
     AppendRevisionsOnlyViolation,
+    CantPushGhosts,
     ChangesRootLHSHistory, 
     MissingPrefix, 
     RevpropChangeFailed, 
@@ -1147,8 +1148,7 @@ class InterToSvnRepository(InterRepository):
                 try:
                     revision_id = self.source.get_parent_map([revision_id])[revision_id][0]
                 except KeyError:
-                    # We hit a ghost
-                    break
+                    raise CantPushGhosts(revision_id)
             if todo == []:
                 # Nothing to do
                 return
@@ -1169,6 +1169,7 @@ class InterToSvnRepository(InterRepository):
                 else:
                     parent_revid = rev.parent_ids[0]
 
+                if parent_revid == NULL_REVISION:
                 (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
                 if target_branch is None:
                     target_branch = Branch.open(url_join_unescaped_path(self.target.base, bp))
