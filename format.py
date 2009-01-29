@@ -83,7 +83,7 @@ class SvnRemoteFormat(SvnControlFormat):
             transport.has(".") and not transport.has("format")):
             raise bzr_errors.NotBranchError(path=transport.base)
 
-        self._check_versions()
+        klass._check_versions()
         from bzrlib.plugins.svn.transport import get_svn_ra_transport
         from bzrlib.plugins.svn.errors import DavRequestFailed
         import subvertpy
