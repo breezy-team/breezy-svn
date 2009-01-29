@@ -150,6 +150,7 @@ def find_suitable_base(parents, ie):
     :return: Tuple with the most suitable (inventory, url, revnum) instance
         or None if none was found
     """
+    import pdb; pdb.set_trace()
     candidates = []
     # Filter out which parents have this file id
     for (inv, url, revnum) in parents:
@@ -200,7 +201,7 @@ def file_editor_send_changes(file_id, contents, file_editor):
 
 
 
-def dir_editor_send_changes((base_inv, base_url, base_revnum), new_inv, path, file_id, dir_editor,
+def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv, path, file_id, dir_editor,
                             branch_path, modified_files, visit_dirs):
     """Pass the changes to a directory to the commit editor.
 
@@ -372,7 +373,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), new_inv, path, fi
             continue
 
         # Handle this directory
-        dir_editor_send_changes(child_base, 
+        dir_editor_send_changes(child_base, parents,
                             new_inv, new_child_path, 
                             child_ie.file_id, child_editor, 
                             branch_path, modified_files, 
@@ -435,6 +436,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             self._base_branch_props = {}
             self.base_revnum = -1
             self.base_path = None
+            self.base_url = None
             self.base_mapping = repository.get_mapping()
         else:
             (uuid, self.base_path, self.base_revnum), self.base_mapping = \
@@ -442,9 +444,12 @@ class SvnCommitBuilder(RootCommitBuilder):
             self._base_revmeta = self.repository._revmeta_provider.lookup_revision(self.base_path, self.base_revnum)
             self._base_branch_props = self._base_revmeta.get_fileprops()
 
+        self.base_url = urlutils.join(self.repository.transport.svn_url, self.base_path)
+
         self.mapping = self.repository.get_mapping() 
         # FIXME: Check that self.mapping >= self.base_mapping
 
+        self._parent_invs = None
         if self.base_revid == NULL_REVISION:
             self.old_inv = Inventory(root_id=None)
         elif old_inv is None:
@@ -500,6 +505,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self.base_revid, merges)
             if new_mergeinfo is not None:
                 self._svnprops[properties.PROP_MERGEINFO] = new_mergeinfo
+
 
     @staticmethod
     def mutter(text, *args):
@@ -608,6 +614,27 @@ class SvnCommitBuilder(RootCommitBuilder):
                 text_parents[path] = parents
         return (fileids, text_revisions, text_parents)
 
+    def _get_parents_tuples(self):
+        ret = []
+        for p in self.parents:
+            if p == self.old_inv.revision_id:
+                ret.append((self.old_inv, self.base_url, self.base_revnum))
+                continue
+            try:
+                (uuid, base_path, base_revnum), base_mapping = \
+                    self.repository.lookup_revision_id(p)
+            except NoSuchRevision:
+                continue
+            if self._parent_invs is not None:
+                for pinv in self._parent_invs:
+                    if pinv.revision_id == p:
+                        inv = pinv
+                        break
+            else:
+                inv = self.repository.get_inventory(p)
+            ret.append((inv, urlutils.join(self.repository.transport.svn_url, base_path), base_revnum))
+        return ret
+
     def commit(self, message):
         """Finish the commit.
 
@@ -681,21 +708,17 @@ class SvnCommitBuilder(RootCommitBuilder):
                 if replace_existing and self._append_revisions_only:
                     raise AppendRevisionsOnlyViolation(urlutils.join(self.repository.base, self.branch_path))
 
-                if self.base_path is not None:
-                    base_url = urlutils.join(self.repository.transport.svn_url, self.base_path)
-                else:
-                    base_url = None
-
                 if self.new_inventory.root.file_id in self.old_inv:
                     root_from = self.old_inv.id2path(self.new_inventory.root.file_id)
                 else:
                     root_from = None
 
                 branch_editors = self.open_branch_editors(root, bp_parts,
-                    existing_bp_parts, base_url, self.base_revnum, root_from,
+                    existing_bp_parts, self.base_url, self.base_revnum, root_from,
                     replace_existing)
 
-                dir_editor_send_changes((self.old_inv, base_url, self.base_revnum), 
+                dir_editor_send_changes((self.old_inv, self.base_url, self.base_revnum), 
+                        self._get_parents_tuples(),
                         self.new_inventory, 
                         "", self.new_inventory.root.file_id, branch_editors[-1],
                         self.branch_path,
@@ -781,6 +804,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                 accessed when the entry has a revision of None - that is when 
                 it is a candidate to commit.
         """
+        assert self._parent_invs is None or self._parent_invs == parent_invs
+        self._parent_invs = parent_invs
         # TODO: This code is a bit hairy, it needs to be rewritten
         if self._texts is None:
             self._text_parents[ie.file_id] = [parent_inv[ie.file_id].revision for parent_inv in parent_invs if ie.file_id in parent_inv]
