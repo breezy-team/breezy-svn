@@ -915,7 +915,7 @@ class RevisionMetadataBranch(object):
 
 class RevisionMetadataBrowser(object):
     """Object can that can iterate over the meta revisions in a 
-    revision range.
+    revision range, under a specific path.
 
     """
 
@@ -936,6 +936,8 @@ class RevisionMetadataBrowser(object):
         self.to_revnum = to_revnum
         self._last_revnum = None
         self.layout = layout
+        # Two-dimensional dictionary for each set of revision meta 
+        # branches that exist *after* a revision
         self._metabranches_history = defaultdict(lambda: defaultdict(set))
         self._unusual = set()
         self._unusual_history = defaultdict(set)
@@ -1086,15 +1088,16 @@ class RevisionMetadataBrowser(object):
                 if (bp in paths and paths[bp][0] in ('A', 'R') and 
                     paths[bp][1] is None):
                     revmeta._set_direct_lhs_parent_revmeta(None)
+                    self._remove_metabranch(bp, revnum)
                 yield "revision", revmeta
             
-            # Apply renames and the like for the next round
+            # Apply reverse renames and the like for the next round
             for new_name, old_name, old_rev in changes.apply_reverse_changes(
                 self._metabranches_history[revnum].keys(), paths):
                 if new_name in self._unusual:
                     self._unusual.remove(new_name)
                 if old_name is None: 
-                    # didn't exist previously
+                    # Didn't exist previously, mark as beginning and remove.
                     for mb in self._metabranches_history[revnum][new_name]:
                         if mb._revs:
                             rev = mb._revs[-1]

@@ -108,3 +108,10 @@ class ApplyReverseChangesTests(TestCase):
         self.assertEquals([],
             list(apply_reverse_changes(["somename"], 
                 {"somename": (u"A", None, -1)})))
+
+    def test_chaco(self):
+        self.assertEquals([('packages/enthought-chaco2/trunk', 'packages/chaco2/trunk', 3)],
+            list(apply_reverse_changes(['packages/enthought-chaco2/trunk'],
+                { "packages/chaco2": ("D", None, -1),
+                    "packages/enthought-chaco2": ("A", "packages/chaco2", 3),
+                    "packages/enthought-chaco2/trunk": ("D", None, -1)})))
