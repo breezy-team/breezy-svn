@@ -142,6 +142,29 @@ def update_mergeinfo(repository, graph, oldvalue, baserevid, merges):
         return newvalue
     return None
 
+def find_suitable_base(parents, ie):
+    """Find a suitable base inventory and path to copy from.
+
+    :param parents: List with (inventory, url, revnum) tuples. 
+    :param ie: Inventory entry to find a base for
+    :return: Tuple with the most suitable (inventory, url, revnum) instance
+        or None if none was found
+    """
+    candidates = []
+    # Filter out which parents have this file id
+    for (inv, url, revnum) in parents:
+        if ie.file_id in inv:
+            candidates.append((inv, url, revnum))
+    if candidates == []:
+        return None
+    # Check if there's any candidate that has the *exact* revision we need
+    for (inv, url, revnum) in candidates:
+        if inv[ie.file_id].revision == ie.revision:
+            return (inv, url, revnum)
+    # TODO: Ideally we should now pick the candidate with the least changes
+    # for now, just pick the first candidate
+    return candidates[0]
+
 
 def set_svn_revprops(repository, revnum, revprops):
     """Attempt to change the revision properties on the
@@ -228,7 +251,21 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), new_inv, path, fi
         # add them if they didn't exist in base_inv 
         if not child_ie.file_id in base_inv:
             mutter('adding %s %r', child_ie.kind, new_child_path)
-            child_editor = dir_editor.add_file(full_new_child_path)
+
+            # Do a copy operation if at all possible, to make 
+            # the log a bit easier to read for Subversion people
+            new_base = find_suitable_base(parents, child_ie)
+            if new_base is not None:
+                child_base_path = new_base[0].id2path(child_ie.file_id).encode("utf-8")
+                copyfrom_url = url_join_unescaped_path(new_base[1], child_base_path)
+                copyfrom_revnum = new_base[2]
+            else:
+                # No suitable base found
+                copyfrom_url = None
+                copyfrom_revnum = -1
+
+            child_editor = dir_editor.add_file(full_new_child_path,
+                        copyfrom_url, copyfrom_revnum)
 
         # copy if they existed at different location
         elif (base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
@@ -292,22 +329,35 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), new_inv, path, fi
         if not child_ie.file_id in base_inv:
             mutter('adding dir %r', child_ie.name)
             
-            # TODO: Do a copy operation if at all possible, to make 
+            # Do a copy operation if at all possible, to make 
             # the log a bit easier to read for Subversion people
-            child_editor = dir_editor.add_directory(
-                branch_relative_path(new_child_path))
+            new_base = find_suitable_base(parents, child_ie)
+            if new_base is not None:
+                child_base = new_base
+                child_base_path = new_base[0].id2path(child_ie.file_id).encode("utf-8")
+                copyfrom_url = url_join_unescaped_path(new_base[1], child_base_path)
+                copyfrom_revnum = new_base[2]
+            else:
+                # No suitable base found
+                child_base = (base_inv, base_url, base_revnum)
+                copyfrom_url = None
+                copyfrom_revnum = -1
 
-            child_base_inv = base_inv
+            child_editor = dir_editor.add_directory(
+                branch_relative_path(new_child_path), copyfrom_url, copyfrom_revnum)
 
         # copy if they existed at different location
         elif base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or base_inv[child_ie.file_id].parent_id != child_ie.parent_id:
             old_child_path = base_inv.id2path(child_ie.file_id).encode("utf-8")
             mutter('copy dir %r -> %r', old_child_path, new_child_path)
+            copyfrom_url = url_join_unescaped_path(base_url, old_child_path)
+            copyfrom_revnum = base_revnum
+
             child_editor = dir_editor.add_directory(
                 branch_relative_path(new_child_path),
-                url_join_unescaped_path(base_url, old_child_path), base_revnum)
+                copyfrom_url, copyfrom_revnum)
 
-            child_base_inv = base_inv
+            child_base = (base_inv, base_url, base_revnum)
         # open if they existed at the same location and 
         # the directory was touched
         elif child_ie.file_id in visit_dirs:
@@ -317,12 +367,12 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), new_inv, path, fi
                     branch_relative_path(new_child_path), 
                     base_revnum)
             
-            child_base_inv = base_inv
+            child_base = (base_inv, base_url, base_revnum)
         else:
             continue
 
         # Handle this directory
-        dir_editor_send_changes((child_base_inv, base_url, base_revnum),
+        dir_editor_send_changes(child_base, 
                             new_inv, new_child_path, 
                             child_ie.file_id, child_editor, 
                             branch_path, modified_files, 
