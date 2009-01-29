@@ -42,16 +42,37 @@ def get_nested_tree_format():
     return format
 
 
-class SvnRemoteFormat(BzrDirFormat):
-    """Format for the Subversion smart server."""
+class SvnControlFormat(BzrDirFormat):
+    """Format for a Subversion control dir."""
     _lock_class = TransportLock
 
     def __init__(self):
-        super(SvnRemoteFormat, self).__init__()
+        super(SvnControlFormat, self).__init__()
+        self.__repository_format = None
+
+    @classmethod
+    def _check_versions(cls):
         from bzrlib.plugins.svn import lazy_check_versions
         lazy_check_versions()
-        from bzrlib.plugins.svn.repository import SvnRepositoryFormat
-        self.repository_format = SvnRepositoryFormat()
+
+    @property
+    def repository_format(self):
+        if self.__repository_format is None:
+            self._check_versions()
+            from bzrlib.plugins.svn.repository import SvnRepositoryFormat
+            self.__repository_format = SvnRepositoryFormat()
+        return self.__repository_format
+
+    def is_supported(self):
+        """See BzrDir.is_supported()."""
+        return True
+ 
+
+class SvnRemoteFormat(SvnControlFormat):
+    """Format for the Subversion smart server."""
+
+    def __init__(self):
+        super(SvnRemoteFormat, self).__init__()
 
     @classmethod
     def probe_transport(klass, transport):
@@ -62,6 +83,7 @@ class SvnRemoteFormat(BzrDirFormat):
             transport.has(".") and not transport.has("format")):
             raise bzr_errors.NotBranchError(path=transport.base)
 
+        self._check_versions()
         from bzrlib.plugins.svn.transport import get_svn_ra_transport
         from bzrlib.plugins.svn.errors import DavRequestFailed
         import subvertpy
@@ -85,6 +107,7 @@ class SvnRemoteFormat(BzrDirFormat):
         return format
 
     def _open(self, transport):
+        self._check_versions()
         import subvertpy
         from bzrlib.plugins.svn import remote
         try: 
@@ -103,6 +126,7 @@ class SvnRemoteFormat(BzrDirFormat):
 
     def initialize_on_transport(self, transport):
         """See BzrDir.initialize_on_transport()."""
+        self._check_versions()
         from bzrlib.plugins.svn.transport import get_svn_ra_transport
         from bzrlib.transport.local import LocalTransport
         import os
@@ -121,19 +145,9 @@ class SvnRemoteFormat(BzrDirFormat):
         os.chmod(revprop_hook, os.stat(revprop_hook).st_mode | 0111)
         return self.open(get_svn_ra_transport(transport), _found=True)
 
-    def is_supported(self):
-        """See BzrDir.is_supported()."""
-        return True
 
-
-class SvnWorkingTreeDirFormat(BzrDirFormat):
+class SvnWorkingTreeDirFormat(SvnControlFormat):
     """Working Tree implementation that uses Subversion working copies."""
-    _lock_class = TransportLock
-
-    def __init__(self):
-        super(SvnWorkingTreeDirFormat, self).__init__()
-        from bzrlib.plugins.svn.repository import SvnRepositoryFormat
-        self.repository_format = SvnRepositoryFormat()
 
     @classmethod
     def probe_transport(klass, transport):
@@ -147,6 +161,7 @@ class SvnWorkingTreeDirFormat(BzrDirFormat):
         raise bzr_errors.NotBranchError(path=transport.base)
 
     def _open(self, transport):
+        self._check_versions()
         from bzrlib.plugins.svn.workingtree import SvnCheckout
         from bzrlib.plugins.svn import errors
         import subvertpy
@@ -168,6 +183,7 @@ class SvnWorkingTreeDirFormat(BzrDirFormat):
 
     def get_converter(self, format=None):
         """See BzrDirFormat.get_converter()."""
+        self._check_versions()
         if format is None:
             format = get_rich_root_format()
         from bzrlib.plugins.svn.workingtree import SvnCheckoutConverter

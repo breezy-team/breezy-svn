@@ -109,9 +109,6 @@ def lazy_check_versions():
     init_subvertpy()
     bzrlib.api.require_any_api(bzrlib, COMPATIBLE_BZR_VERSIONS)
 
-# Required for now, since we import format and revspec here.
-lazy_check_versions()
-
 from bzrlib.plugins.svn import format
 
 register_transport_proto('svn+ssh://', 
@@ -136,10 +133,10 @@ topic_registry.register_lazy('svn-layout',
                              'help_layout', 'Subversion repository layouts')
 BzrDirFormat.register_control_format(format.SvnRemoteFormat)
 BzrDirFormat.register_control_format(format.SvnWorkingTreeDirFormat)
-bzrdir.format_registry.register("subversion", format.SvnRemoteFormat, 
+bzrdir.format_registry.register_lazy("subversion", "bzrlib.plugins.svn.format", "SvnRemoteFormat", 
                          "Subversion repository. ", 
                          native=False)
-bzrdir.format_registry.register("subversion-wc", format.SvnWorkingTreeDirFormat, 
+bzrdir.format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.format", "SvnWorkingTreeDirFormat", 
                          "Subversion working copy. ", 
                          native=False, hidden=True)
 revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec", 
