@@ -39,7 +39,6 @@ from bzrlib.foreign import foreign_vcs_registry
 from bzrlib.commands import Command, register_command, display_command
 from bzrlib.help_topics import topic_registry
 from bzrlib.option import Option, RegistryOption
-from bzrlib.revisionspec import revspec_registry
 from bzrlib.trace import warning, mutter
 from bzrlib.transport import register_lazy_transport, register_transport_proto
 
@@ -56,7 +55,7 @@ else:
     version_string = '%d.%d.%d%s%d' % version_info
 __version__ = version_string
 
-COMPATIBLE_BZR_VERSIONS = [(1, 12, 0)]
+COMPATIBLE_BZR_VERSIONS = [(1, 11, 0), (1, 12, 0)]
 MINIMUM_SUBVERTPY_VERSION = (0, 6, 1)
 
 
@@ -139,8 +138,16 @@ bzrdir.format_registry.register_lazy("subversion", "bzrlib.plugins.svn.format", 
 bzrdir.format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.format", "SvnWorkingTreeDirFormat", 
                          "Subversion working copy. ", 
                          native=False, hidden=True)
-revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec", 
-    "RevisionSpec_svn")
+try:
+    from bzrlib.revisionspec import revspec_registry
+    revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec", 
+        "RevisionSpec_svn")
+except ImportError:
+    # Bzr < 1.12
+    from bzrlib.revisionspec import SPEC_TYPES
+    lazy_check_versions()
+    from bzrlib.plugins.svn.revspec import RevisionSpec_svn
+    SPEC_TYPES.append(RevisionSpec_svn)
 
 config.credential_store_registry.register_lazy(
     "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
