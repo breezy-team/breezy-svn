@@ -16,18 +16,9 @@
 """Subversion BzrDir formats."""
 
 from bzrlib.bzrdir import BzrDirFormat, format_registry
-from bzrlib.errors import UninitializableFormat
-from bzrlib.lazy_import import lazy_import
+from bzrlib import errors as bzr_errors
 from bzrlib.lockable_files import TransportLock
 from bzrlib.trace import mutter
-
-import os
-
-lazy_import(globals(), """
-from bzrlib.plugins.svn import errors, remote
-
-from bzrlib import errors as bzr_errors
-""")
 
 def get_rich_root_format():
     format = BzrDirFormat.get_default_format()
@@ -64,15 +55,16 @@ class SvnRemoteFormat(BzrDirFormat):
 
     @classmethod
     def probe_transport(klass, transport):
-        from bzrlib.plugins.svn.transport import get_svn_ra_transport
-        from bzrlib.plugins.svn.errors import DavRequestFailed
         from bzrlib.transport.local import LocalTransport
-        import subvertpy
         format = klass()
 
         if (isinstance(transport, LocalTransport) and 
             transport.has(".") and not transport.has("format")):
             raise bzr_errors.NotBranchError(path=transport.base)
+
+        from bzrlib.plugins.svn.transport import get_svn_ra_transport
+        from bzrlib.plugins.svn.errors import DavRequestFailed
+        import subvertpy
         try:
             transport = get_svn_ra_transport(transport)
         except subvertpy.SubversionException, (msg, num):
@@ -94,6 +86,7 @@ class SvnRemoteFormat(BzrDirFormat):
 
     def _open(self, transport):
         import subvertpy
+        from bzrlib.plugins.svn import remote
         try: 
             return remote.SvnRemoteAccess(transport, self)
         except subvertpy.SubversionException, (_, num):
@@ -112,6 +105,7 @@ class SvnRemoteFormat(BzrDirFormat):
         """See BzrDir.initialize_on_transport()."""
         from bzrlib.plugins.svn.transport import get_svn_ra_transport
         from bzrlib.transport.local import LocalTransport
+        import os
         from subvertpy import repos
 
         if not isinstance(transport, LocalTransport):
@@ -144,17 +138,17 @@ class SvnWorkingTreeDirFormat(BzrDirFormat):
     @classmethod
     def probe_transport(klass, transport):
         from bzrlib.transport.local import LocalTransport
-        from subvertpy import wc
         format = klass()
 
         if isinstance(transport, LocalTransport) and \
-            transport.has(wc.get_adm_dir()):
+            transport.has(".svn"):
             return format
 
         raise bzr_errors.NotBranchError(path=transport.base)
 
     def _open(self, transport):
         from bzrlib.plugins.svn.workingtree import SvnCheckout
+        from bzrlib.plugins.svn import errors
         import subvertpy
         try:
             return SvnCheckout(transport, self)
@@ -170,7 +164,7 @@ class SvnWorkingTreeDirFormat(BzrDirFormat):
         return 'Subversion Local Checkout'
 
     def initialize_on_transport(self, transport):
-        raise UninitializableFormat(self)
+        raise bzr_errors.UninitializableFormat(self)
 
     def get_converter(self, format=None):
         """See BzrDirFormat.get_converter()."""
