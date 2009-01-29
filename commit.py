@@ -26,7 +26,6 @@ from bzrlib.errors import (
     BzrError, 
     InvalidRevisionId, 
     DivergedBranches, 
-    UnrelatedBranches, 
     NoSuchRevision,
     )
 from bzrlib.inventory import Inventory
@@ -1143,13 +1142,13 @@ class InterToSvnRepository(InterRepository):
             todo = []
             while not self.target.has_revision(revision_id):
                 todo.append(revision_id)
+                if revision_id == NULL_REVISION:
+                    break
                 try:
                     revision_id = self.source.get_parent_map([revision_id])[revision_id][0]
                 except KeyError:
                     # We hit a ghost
                     break
-                if revision_id == NULL_REVISION:
-                    raise UnrelatedBranches()
             if todo == []:
                 # Nothing to do
                 return
@@ -1165,7 +1164,10 @@ class InterToSvnRepository(InterRepository):
 
                 mutter('pushing %r', revision_id)
 
-                parent_revid = rev.parent_ids[0]
+                if rev.parent_ids == []:
+                    parent_revid = NULL_REVISION
+                else:
+                    parent_revid = rev.parent_ids[0]
 
                 (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
                 if target_branch is None:
