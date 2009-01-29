@@ -150,7 +150,6 @@ def find_suitable_base(parents, ie):
     :return: Tuple with the most suitable (inventory, url, revnum) instance
         or None if none was found
     """
-    import pdb; pdb.set_trace()
     candidates = []
     # Filter out which parents have this file id
     for (inv, url, revnum) in parents:

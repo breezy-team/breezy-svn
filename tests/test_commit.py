@@ -506,16 +506,13 @@ class JoinedCommitTests(SubversionTestCase):
         joinedwt = BzrDir.create_standalone_workingtree("dc/newdir", 
             format=format.get_rich_root_format())
         joinedwt.pull(Branch.open(repos_url+"/branches/newbranch"))
-        self.build_tree({'dc/newdir/foob': "data"})
-        joinedwt.add("foob")
-        joinedwt.commit(message="data")
         wt.subsume(joinedwt)
         wt.commit(message="doe")
 
         self.olddir.open_branch().pull(self.newdir.open_branch())
         paths = self.client_log(repos_url, 4, 0)[4][0]
         mutter('paths %r' % paths)
-        self.assertEquals(('A', "branches/newbranch", 3), paths["/trunk/newdir"])
+        self.assertEquals(('A', "/branches/newbranch", 2), paths["/trunk/newdir"])
 
 
 class TestPushNested(SubversionTestCase):

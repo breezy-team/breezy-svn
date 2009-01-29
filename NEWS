@@ -90,6 +90,10 @@ bzr-svn 0.5.0~rc2				UNRELEASED
    * Bazaar can now use credentials stored in ~/.subversion/auth/, but this 
      requires pending changes in Bazaar to pass the realm along to 
 	 credentials providers.
+   
+   * When possible, bzr-svn will now copy from existing paths in the repository
+     when committing/pushing rather than duplicating the contents. 
+	 (generic implementation that also fixes #320742)
 
 bzr-svn 0.5.0~rc1			2008-12-08
 
