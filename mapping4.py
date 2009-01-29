@@ -30,7 +30,7 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
     """
     revid_prefix = "svn-v4"
     upgrade_suffix = "-svn4"
-    experimental = True
+    experimental = False
     roundtripping = True
     can_use_revprops = True
     can_use_fileprops = True
