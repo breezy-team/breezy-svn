@@ -303,7 +303,7 @@ class WorkingSubversionBranch(SubversionTestCase):
     def test_set_push_location(self):
         repos_url = self.make_repository('a')
         branch = Branch.open(repos_url)
-        self.assertRaises(NotImplementedError, branch.set_push_location, [])
+        branch.set_push_location("http://bar/bloe")
 
     def test_get_parent(self):
         repos_url = self.make_repository('a')
