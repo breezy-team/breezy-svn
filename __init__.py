@@ -180,7 +180,7 @@ plugin_cmds.register_lazy('cmd_svn_layout', [],
 plugin_cmds.register_lazy('cmd_svn_serve', [], 
                           'bzrlib.plugins.svn.commands')
 
-plugin_cmds.register_lazy('cmd_svn_dpush', [], 'bzrlib.plugins.svn.foreign')
+plugin_cmds.register_lazy('cmd_dpush', [], 'bzrlib.plugins.svn.foreign')
 
 def test_suite():
     """Returns the testsuite for bzr-svn."""
