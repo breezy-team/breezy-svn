@@ -737,22 +737,23 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
         newrevtree = self.branch.repository.revision_tree(new_revid)
         svn_revprops = self.branch.repository._log.revprop_list(rev)
 
-        def process_committed(wc, relpath, revid, svn_revprops):
+        def process_committed(adm, relpath, revid, svn_revprops):
             mutter("process %r -> %r", relpath, revid)
-            wc.process_committed(self.abspath(relpath).encode("utf-8").rstrip("/"),
+            abspath = self.abspath(relpath).encode("utf-8").rstrip("/")
+            adm.process_committed(abspath,
                 False, self.branch.lookup_revision_id(revid),
                 svn_revprops[properties.PROP_REVISION_DATE], 
                 svn_revprops.get(properties.PROP_REVISION_AUTHOR, ""))
             mutter("doneprocess %r -> %r", relpath, revid)
 
-        def update_settings(wc, path, id):
+        def update_settings(adm, path, id):
             if newrevtree.inventory[id].kind != 'directory':
                 return
 
-            entries = wc.entries_read(True)
+            entries = adm.entries_read(False)
             for name, entry in entries.iteritems():
                 if name == "":
-                    process_committed(wc, path, 
+                    process_committed(adm, path, 
                                   newrevtree.inventory[id].revision,
                                   svn_revprops)
                     continue
@@ -761,23 +762,35 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
 
                 child_id = newrevtree.inventory.path2id(child_path)
 
-                if newrevtree.inventory[child_id].kind == 'directory':
-                    subwc = self._get_wc(child_path, write_lock=True, base=wc)
+                child_abspath = self.abspath(child_path).encode("utf-8").rstrip("/")
+
+                if not child_id in newrevtree.inventory:
+                    pass
+                elif newrevtree.inventory[child_id].kind == 'directory':
+                    subwc = self._get_wc(child_path, write_lock=True, base=adm)
                     try:
                         update_settings(subwc, child_path, child_id)
                     finally:
                         subwc.close()
                 else:
-                    process_committed(wc, child_path, 
+                    pristine_abspath = get_pristine_copy_path(child_abspath)
+                    if os.path.exists(pristine_abspath):
+                        os.remove(pristine_abspath)
+                    source_f = open(child_abspath, "r")
+                    target_f = open(pristine_abspath, "w")
+                    target_f.write(source_f.read())
+                    target_f.close()
+                    source_f.close()
+                    process_committed(adm, child_path, 
                                   newrevtree.inventory[child_id].revision,
                                   svn_revprops)
 
         # Set proper version for all files in the wc
-        wc = self._get_wc(write_lock=True)
+        adm = self._get_wc(write_lock=True)
         try:
-            update_settings(wc, "", newrevtree.inventory.root.file_id)
+            update_settings(adm, "", newrevtree.inventory.root.file_id)
         finally:
-            wc.close()
+            adm.close()
 
         self.set_parent_ids([new_revid])
 
