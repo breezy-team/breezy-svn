@@ -442,8 +442,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 repository.lookup_revision_id(self.base_revid)
             self._base_revmeta = self.repository._revmeta_provider.lookup_revision(self.base_path, self.base_revnum)
             self._base_branch_props = self._base_revmeta.get_fileprops()
-
-        self.base_url = urlutils.join(self.repository.transport.svn_url, self.base_path)
+            self.base_url = urlutils.join(self.repository.transport.svn_url, self.base_path)
 
         self.mapping = self.repository.get_mapping() 
         # FIXME: Check that self.mapping >= self.base_mapping
@@ -624,12 +623,13 @@ class SvnCommitBuilder(RootCommitBuilder):
                     self.repository.lookup_revision_id(p)
             except NoSuchRevision:
                 continue
+            inv = None
             if self._parent_invs is not None:
                 for pinv in self._parent_invs:
                     if pinv.revision_id == p:
                         inv = pinv
                         break
-            else:
+            if inv is None:
                 inv = self.repository.get_inventory(p)
             ret.append((inv, urlutils.join(self.repository.transport.svn_url, base_path), base_revnum))
         return ret
@@ -1142,9 +1142,9 @@ class InterToSvnRepository(InterRepository):
             # Go back over the LHS parent until we reach a revid we know
             todo = []
             while not self.target.has_revision(revision_id):
-                todo.append(revision_id)
                 if revision_id == NULL_REVISION:
                     break
+                todo.append(revision_id)
                 try:
                     revision_id = self.source.get_parent_map([revision_id])[revision_id][0]
                 except KeyError:
@@ -1156,7 +1156,7 @@ class InterToSvnRepository(InterRepository):
             target_branch = None
             layout = self.target.get_layout()
             graph = self.target.get_graph()
-            for revision_id in todo:
+            for revision_id in reversed(todo):
                 if pb is not None:
                     pb.update("pushing revisions", todo.index(revision_id), 
                         len(todo))
@@ -1170,23 +1170,27 @@ class InterToSvnRepository(InterRepository):
                     parent_revid = rev.parent_ids[0]
 
                 if parent_revid == NULL_REVISION:
-                (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
-                if target_branch is None:
-                    target_branch = Branch.open(url_join_unescaped_path(self.target.base, bp))
-                if target_branch.get_branch_path() != bp:
-                    target_branch.set_branch_path(bp)
+                    branch_path = determine_branch_path(rev, layout, None)
+                    push_new(graph, self.target, branch_path, self.source, revision_id, 
+                             append_revisions_only=False)
+                else:
+                    (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
+                    if target_branch is None:
+                        target_branch = Branch.open(url_join_unescaped_path(self.target.base, bp))
+                    if target_branch.get_branch_path() != bp:
+                        target_branch.set_branch_path(bp)
 
-                target_config = target_branch.get_config()
-                if (layout.push_merged_revisions(target_branch.project) and 
-                    len(rev.parent_ids) > 1 and
-                    target_config.get_push_merged_revisions()):
-                    push_ancestors(self.target, self.source, layout, "", 
-                        rev.parent_ids, graph, create_prefix=True)
+                    target_config = target_branch.get_config()
+                    if (layout.push_merged_revisions(target_branch.project) and 
+                        len(rev.parent_ids) > 1 and
+                        target_config.get_push_merged_revisions()):
+                        push_ancestors(self.target, self.source, layout, "", 
+                            rev.parent_ids, graph, create_prefix=True)
 
-                push_revision_tree(graph, target_branch.repository, 
-                    target_branch.get_branch_path(), target_config, 
-                    self.source, parent_revid, revision_id, rev, 
-                    append_revisions_only=target_branch._get_append_revisions_only())
+                    push_revision_tree(graph, target_branch.repository, 
+                        target_branch.get_branch_path(), target_config, 
+                        self.source, parent_revid, revision_id, rev, 
+                        append_revisions_only=target_branch._get_append_revisions_only())
         finally:
             self.source.unlock()
  
@@ -1199,6 +1203,14 @@ class InterToSvnRepository(InterRepository):
     def is_compatible(source, target):
         """Be compatible with SvnRepository."""
         return isinstance(target, SvnRepository)
+
+
+def determine_branch_path(rev, layout, project=None):
+    nick = (rev.properties.get('branch-nick') or "merged").encode("utf-8").replace("/","_")
+    if project is None:
+        return layout.get_branch_path(nick)
+    else:
+        return layout.get_branch_path(nick, project)
 
 
 def push_ancestors(target_repo, source_repo, layout, project, parent_revids, 
@@ -1222,8 +1234,7 @@ def push_ancestors(target_repo, source_repo, layout, project, parent_revids,
             if target_repo.has_revision(x):
                 continue
             rev = source_repo.get_revision(x)
-            nick = (rev.properties.get('branch-nick') or "merged").encode("utf-8").replace("/","_")
-            rhs_branch_path = layout.get_branch_path(nick, project)
+            rhs_branch_path = determine_branch_path(rev, layout, project)
             try:
                 push_new(graph, target_repo, rhs_branch_path, source_repo, x, 
                          append_revisions_only=False)
