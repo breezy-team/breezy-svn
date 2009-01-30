@@ -47,7 +47,7 @@ import os, sys
 # versions ending in 'exp' mean experimental mappings
 # versions ending in 'dev' mean development version
 # versions ending in 'final' mean release (well tested, etc)
-version_info = (0, 5, 0, 'candidate', 1)
+version_info = (0, 5, 0, 'candidate', 2)
 
 if version_info[3] == 'final':
     version_string = '%d.%d.%d' % version_info[:3]
