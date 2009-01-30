@@ -323,6 +323,7 @@ class SvnBranch(ForeignBranch):
         if not overwrite:
             return None
         else:
+            missing.reverse()
             return missing
  
     def last_revision_info(self):
@@ -463,17 +464,17 @@ class SvnBranch(ForeignBranch):
         if _push_merged is None:
             _push_merged = (self.layout.push_merged_revisions(self.project) and 
                             self.get_config().get_push_merged_revisions())
-        self._push_missing_revisions(graph, other, other_graph, todo, 
-                                     _push_merged, _override_svn_revprops)
+        if self.mapping.supports_hidden and self.repository.has_revision(stop_revision):
+            create_branch_with_hidden_commit(self.repository, 
+                self.get_branch_path(), stop_revision, set_metadata=True,
+                deletefirst=True)
+            self._clear_cached_state()
+        else:
+            self._push_missing_revisions(graph, other, other_graph, todo, 
+                                         _push_merged, _override_svn_revprops)
 
     def _push_missing_revisions(self, my_graph, other, other_graph, todo, 
                                 push_merged=False, _override_svn_revprops=None):
-        if self.repository.has_revision(todo[-1]) and self.mapping.supports_hidden:
-            create_branch_with_hidden_commit(self.repository, 
-                self.get_branch_path(), todo[-1], set_metadata=True,
-                deletefirst=True)
-            self._clear_cached_state()
-            return
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for revid in todo:
