@@ -49,15 +49,40 @@ def subversion_config_filename():
     return osutils.pathjoin(config_dir(), 'subversion.conf')
 
 
-class SvnRepositoryConfig(IniBasedConfig):
-    """Per-repository settings."""
+class SubversionUUIDConfig(IniBasedConfig):
+    """UUID-based Subversion configuration."""
 
     def __init__(self, uuid):
         name_generator = subversion_config_filename
-        super(SvnRepositoryConfig, self).__init__(name_generator)
+        super(SubversionUUIDConfig, self).__init__(name_generator)
         self.uuid = uuid
         if not self.uuid in self._get_parser():
             self._get_parser()[self.uuid] = {}
+
+    def _get_user_option(self, name, use_global=True):
+        try:
+            return self._get_parser()[self.uuid][name]
+        except KeyError:
+            if not use_global:
+                return None
+            return GlobalConfig()._get_user_option(name)
+
+    def set_user_option(self, name, value):
+        """Change a user option.
+
+        :param name: Name of the option.
+        :param value: Value of the option.
+        """
+        conf_dir = os.path.dirname(self._get_filename())
+        ensure_config_dir_exists(conf_dir)
+        self._get_parser()[self.uuid][name] = value
+        f = open(self._get_filename(), 'wb')
+        self._get_parser().write(f)
+        f.close()
+
+
+class SvnRepositoryConfig(SubversionUUIDConfig):
+    """Per-repository settings."""
 
     def set_branching_scheme(self, scheme, guessed_scheme, mandatory=False):
         """Change the branching scheme.
@@ -91,14 +116,6 @@ class SvnRepositoryConfig(IniBasedConfig):
         if tags_str is None:
             return None
         return [t.encode("utf-8") for t in tags_str.split(";") if t != ""]
-
-    def _get_user_option(self, name, use_global=True):
-        try:
-            return self._get_parser()[self.uuid][name]
-        except KeyError:
-            if not use_global:
-                return None
-            return GlobalConfig()._get_user_option(name)
 
     def get_reuse_revisions(self):
         ret = self._get_user_option("reuse-revisions")
@@ -235,21 +252,11 @@ class SvnRepositoryConfig(IniBasedConfig):
         locations.add(location.rstrip("/"))
         self.set_user_option('locations', ";".join(list(locations)))
 
-    def set_user_option(self, name, value):
-        """Change a user option.
-
-        :param name: Name of the option.
-        :param value: Value of the option.
-        """
-        conf_dir = os.path.dirname(self._get_filename())
-        ensure_config_dir_exists(conf_dir)
-        self._get_parser()[self.uuid][name] = value
-        f = open(self._get_filename(), 'wb')
-        self._get_parser().write(f)
-        f.close()
 
 
 class BranchConfig(Config):
+    """Subversion branch configuration."""
+
     def __init__(self, branch):
         super(BranchConfig, self).__init__()
         self._location_config = None
