@@ -481,9 +481,9 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
     def _apply_textdelta(self, base_checksum=None):
         actual_checksum = osutils.md5(self.file_data).hexdigest()
-        assert (base_checksum is None or base_checksum == actual_checksum,
+        assert base_checksum is None or base_checksum == actual_checksum, \
             "base checksum mismatch: %r != %r" % (base_checksum, 
-                                                  actual_checksum))
+                                                  actual_checksum)
         self.file_stream = StringIO()
         return apply_txdelta_handler(self.file_data, self.file_stream)
 

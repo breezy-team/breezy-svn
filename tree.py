@@ -218,8 +218,8 @@ class FileTreeEditor(object):
         ie.revision = self.revision_id
 
         actual_checksum = md5(file_data).hexdigest()
-        assert(checksum is None or checksum == actual_checksum,
-                "checksum mismatch: %r != %r" % (checksum, actual_checksum))
+        assert checksum is None or checksum == actual_checksum, \
+                "checksum mismatch: %r != %r" % (checksum, actual_checksum)
 
         if self.is_symlink:
             ie.symlink_target = file_data[len("link "):]
