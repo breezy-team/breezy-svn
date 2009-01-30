@@ -236,6 +236,9 @@ class RevisionMetadata(object):
                 r._fileprops = lm._fileprops
         return self._fileprops
 
+    def check(self):
+        """Check the bazaar metadata on this revision."""
+
     def get_revprops(self):
         """Get the revision properties set on the revision."""
         if self._revprops is None:

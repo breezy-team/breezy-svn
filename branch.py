@@ -66,6 +66,9 @@ from bzrlib.plugins.svn.transport import bzr_to_svn_url
 
 import os
 
+class SubversionBranchCheckResult(BranchCheckResult):
+    """Result of checking a Subversion branch."""
+
 class SvnBranch(ForeignBranch):
     """Maps to a Branch in a Subversion repository """
     def __init__(self, repository, branch_path, revnum=None, _skip_check=False,
@@ -180,7 +183,7 @@ class SvnBranch(ForeignBranch):
         Doesn't do anything for Subversion repositories at the moment (yet).
         """
         # TODO: Check svn file properties?
-        return BranchCheckResult(self)
+        return SubversionBranchCheckResult(self)
 
     def _create_heavyweight_checkout(self, to_location, revision_id=None, 
                                      hardlink=False):

@@ -115,6 +115,10 @@ def cachedbs():
         return _cachedbs.cache
 
 
+class SubversionRepositoryCheckResult(branch.BranchCheckResult):
+    """Results of checking a Subversion repository."""
+
+
 class SvnRepository(ForeignRepository):
     """
     Provides a simplified interface to a Subversion repository 
@@ -440,7 +444,14 @@ class SvnRepository(ForeignRepository):
         return dir
 
     def _check(self, revision_ids):
-        return branch.BranchCheckResult(self)
+        if revision_ids is not None:
+            for revid in revision_ids:
+                revmeta, mapping = self._get_revmeta(revid)
+                revmeta.check()
+        else:
+            for revmeta in self._revmeta_provider.iter_all_revisions(self.get_layout(), self.get_mapping().is_branch_or_tag, self.get_latest_revnum()):
+                revmeta.check()
+        return SubversionRepositoryCheckResult(self)
 
     def get_inventory(self, revision_id):
         """See Repository.get_inventory()."""
