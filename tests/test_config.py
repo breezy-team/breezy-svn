@@ -26,56 +26,60 @@ from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.tests import TestCaseInTempDir
 
 class ReposConfigTests(TestCaseInTempDir):
+
+    def get_config(self, name):
+        return SvnRepositoryConfig(name)
+
     def test_create(self):
-        SvnRepositoryConfig("blabla")
+        self.get_config("blabla")
 
     def test_get_empty_locations(self):
-        c = SvnRepositoryConfig("blabla6")
+        c = self.get_config("blabla6")
         self.assertEquals(set(), c.get_locations())
 
     def test_get_location_one(self):
-        c = SvnRepositoryConfig("blabla5")
+        c = self.get_config("blabla5")
         c.add_location("foobar")
         self.assertEquals(set(["foobar"]), c.get_locations())
 
     def test_get_location_two(self):
-        c = SvnRepositoryConfig("blabla4")
+        c = self.get_config("blabla4")
         c.add_location("foobar")
         c.add_location("brainslug")
         self.assertEquals(set(["foobar", "brainslug"]), c.get_locations())
 
     def test_get_branches(self):
-        c = SvnRepositoryConfig("blabla3") 
+        c = self.get_config("blabla3") 
         c.set_user_option("branches", "bla;blie")
         self.assertEquals(["bla", "blie"], c.get_branches())
 
     def test_get_tags(self):
-        c = SvnRepositoryConfig("blabla3") 
+        c = self.get_config("blabla3") 
         c.set_user_option("tags", "bla;blie")
         self.assertEquals(["bla", "blie"], c.get_tags())
 
     def test_get_scheme_none(self):
-        c = SvnRepositoryConfig("blabla3")
+        c = self.get_config("blabla3")
         self.assertEquals(None, c.get_branching_scheme())
 
     def test_get_scheme_set(self):
-        c = SvnRepositoryConfig("blabla2")
+        c = self.get_config("blabla2")
         c.set_branching_scheme(TrunkBranchingScheme(), None)
         self.assertEquals("trunk0", str(c.get_branching_scheme()))
 
     def test_get_scheme_mandatory_none(self):
-        c = SvnRepositoryConfig("blabla3")
+        c = self.get_config("blabla3")
         self.assertEquals(False, c.branching_scheme_is_mandatory())
 
     def test_get_scheme_mandatory_set(self):
-        c = SvnRepositoryConfig("blabla3")
+        c = self.get_config("blabla3")
         c.set_branching_scheme(TrunkBranchingScheme(), None, mandatory=True)
         self.assertEquals(True, c.branching_scheme_is_mandatory())
         c.set_branching_scheme(TrunkBranchingScheme(), None, mandatory=False)
         self.assertEquals(False, c.branching_scheme_is_mandatory())
 
     def test_override_revprops(self):
-        c = SvnRepositoryConfig("blabla2")
+        c = self.get_config("blabla2")
         self.assertEquals(None, c.get_override_svn_revprops())
         c.set_user_option("override-svn-revprops", "True")
         self.assertEquals(["svn:date", "svn:author"], c.get_override_svn_revprops())
@@ -87,7 +91,7 @@ class ReposConfigTests(TestCaseInTempDir):
         self.assertEquals(["svn:author"], c.get_override_svn_revprops())
 
     def test_get_append_revisions_only(self):
-        c = SvnRepositoryConfig("blabla2")
+        c = self.get_config("blabla2")
         self.assertEquals(None, c.get_append_revisions_only())
         c.set_user_option("append_revisions_only", "True")
         self.assertEquals(True, c.get_append_revisions_only())
@@ -95,7 +99,7 @@ class ReposConfigTests(TestCaseInTempDir):
         self.assertEquals(False, c.get_append_revisions_only())
 
     def test_log_strip_trailing_newline(self):
-        c = SvnRepositoryConfig("blabla3")
+        c = self.get_config("blabla3")
         self.assertEquals(False, c.get_log_strip_trailing_newline())
         c.set_user_option("log-strip-trailing-newline", "True")
         self.assertEquals(True, c.get_log_strip_trailing_newline())
@@ -103,7 +107,7 @@ class ReposConfigTests(TestCaseInTempDir):
         self.assertEquals(False, c.get_log_strip_trailing_newline())
 
     def test_supports_change_revprop(self):
-        c = SvnRepositoryConfig("blabla2")
+        c = self.get_config("blabla2")
         self.assertEquals(None, c.get_supports_change_revprop())
         c.set_user_option("supports-change-revprop", "True")
         self.assertEquals(True, c.get_supports_change_revprop())
@@ -111,13 +115,13 @@ class ReposConfigTests(TestCaseInTempDir):
         self.assertEquals(False, c.get_supports_change_revprop())
 
     def test_default_mapping(self):
-        c = SvnRepositoryConfig("blabla2")
+        c = self.get_config("blabla2")
         self.assertEquals(None, c.get_default_mapping())
         c.set_user_option("default-mapping", "v8")
         self.assertEquals("v8", c.get_default_mapping())
 
     def test_use_cache(self):
-        c = SvnRepositoryConfig("blabla-cache")
+        c = self.get_config("blabla-cache")
         self.assertEquals(None, c.get_use_cache())
         c.set_user_option("use-cache", "True")
         self.assertEquals(set(["log", "revids", "fileids"]), c.get_use_cache())
