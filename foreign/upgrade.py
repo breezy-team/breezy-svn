@@ -183,7 +183,7 @@ def check_revision_changed(oldrev, newrev):
         raise UpgradeChangesContent(oldrev.revision_id)
 
 
-def generate_upgrade_map(new_mapping, revs, mapping_registry):
+def generate_upgrade_map(revs, mapping_registry, determine_upgraded_revid):
     """Generate an upgrade map for use by bzr-rebase.
 
     :param new_mapping: Mapping to upgrade revisions to.
@@ -196,15 +196,14 @@ def generate_upgrade_map(new_mapping, revs, mapping_registry):
     for revid in revs:
         assert isinstance(revid, str)
         try:
-            (foreign_revid, _) = mapping_registry.parse_revision_id(revid)
+            (foreign_revid, old_mapping) = mapping_registry.parse_revision_id(revid)
         except InvalidRevisionId:
             # Not a foreign revision, nothing to do
             continue
-        newrevid = new_mapping.revision_id_foreign_to_bzr(foreign_revid)
-        if revid == newrevid:
+        newrevid = determine_upgraded_revid(foreign_revid)
+        if newrevid in (revid, None):
             continue
         rename_map[revid] = newrevid
-
     return rename_map
 
 MIN_REBASE_VERSION = (0, 4)
@@ -231,7 +230,7 @@ def create_upgrade_plan(repository, foreign_repository, new_mapping,
     else:
         potential = itertools.imap(lambda (rev, parents): rev, 
                 graph.iter_ancestry([revision_id]))
-    upgrade_map = generate_upgrade_map(new_mapping, potential, mapping_registry)
+    upgrade_map = generate_upgrade_map(potential, mapping_registry, new_mapping.revision_id_foreign_to_bzr)
    
     # Make sure all the required current version revisions are present
     for revid in upgrade_map.values():
