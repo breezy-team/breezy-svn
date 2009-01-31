@@ -59,13 +59,14 @@ class SubversionUUIDConfig(IniBasedConfig):
         if not self.uuid in self._get_parser():
             self._get_parser()[self.uuid] = {}
 
-    def _get_user_option(self, name, use_global=True):
-        try:
-            return self._get_parser()[self.uuid][name]
-        except KeyError:
-            if not use_global:
-                return None
-            return GlobalConfig()._get_user_option(name)
+    def __getitem__(self, name):
+        return self._get_parser()[self.uuid][name]
+
+    def __setitem__(self, name, value):
+        self._get_parser()[self.uuid][name] = value
+
+    def get_bool(self, name):
+        return self._get_parser().get_bool(self.uuid, name)
 
     def set_user_option(self, name, value):
         """Change a user option.
@@ -75,7 +76,7 @@ class SubversionUUIDConfig(IniBasedConfig):
         """
         conf_dir = os.path.dirname(self._get_filename())
         ensure_config_dir_exists(conf_dir)
-        self._get_parser()[self.uuid][name] = value
+        self[name] = value
         f = open(self._get_filename(), 'wb')
         self._get_parser().write(f)
         f.close()
@@ -98,6 +99,14 @@ class SvnRepositoryConfig(SubversionUUIDConfig):
         if (mandatory or 
             self.get_user_option('branching-scheme-mandatory') is not None):
             self.set_user_option('branching-scheme-mandatory', str(mandatory))
+
+    def _get_user_option(self, name, use_global=True):
+        try:
+            return self[name]
+        except KeyError:
+            if not use_global:
+                return None
+            return GlobalConfig()._get_user_option(name)
 
     def get_layout(self):
         return self._get_user_option("layout", use_global=False)
@@ -158,7 +167,7 @@ class SvnRepositoryConfig(SubversionUUIDConfig):
         """Check whether or not the repository supports changing existing 
         revision properties."""
         try:
-            return self._get_parser().get_bool(self.uuid, "supports-change-revprop")
+            return self.get_bool("supports-change-revprop")
         except KeyError:
             return None
 
@@ -184,7 +193,7 @@ class SvnRepositoryConfig(SubversionUUIDConfig):
         """Check whether or not trailing newlines should be stripped in the 
         Subversion log message (where support by the bzr<->svn mapping used)."""
         try:
-            return self._get_parser().get_bool(self.uuid, "log-strip-trailing-newline")
+            return self.get_bool("log-strip-trailing-newline")
         except KeyError:
             return False
 
@@ -193,7 +202,7 @@ class SvnRepositoryConfig(SubversionUUIDConfig):
         is mandatory.
         """
         try:
-            return self._get_parser().get_bool(self.uuid, "branching-scheme-mandatory")
+            return self.get_bool("branching-scheme-mandatory")
         except KeyError:
             return False
 
@@ -222,7 +231,7 @@ class SvnRepositoryConfig(SubversionUUIDConfig):
         """Check whether it is possible to remove revisions from the mainline.
         """
         try:
-            return self._get_parser().get_bool(self.uuid, "append_revisions_only")
+            return self.get_bool("append_revisions_only")
         except KeyError:
             return None
 
@@ -239,7 +248,7 @@ class SvnRepositoryConfig(SubversionUUIDConfig):
     def get_push_merged_revisions(self):
         """Check whether merged revisions should be pushed."""
         try:
-            return self._get_parser().get_bool(self.uuid, "push_merged_revisions")
+            return self.get_bool("push_merged_revisions")
         except KeyError:
             return None
 
