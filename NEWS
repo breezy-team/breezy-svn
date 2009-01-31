@@ -1,3 +1,14 @@
+bzr-svn 0.5.0					UNRELEASED
+
+  BUG FIXES
+
+   * Fixed too assertions that were always true. (#323305)
+
+  FEATURES
+
+   * Added basic implemention of "bzr check" on Subversion
+     repositories.
+
 bzr-svn 0.5.0~rc2				2009-01-30
 
   BUG FIXES
