@@ -19,7 +19,7 @@ class KDELayout(InverseTrunkLayout):
     """Layout for the KDE repository."""
 
     def __init__(self):
-        InverseTrunkLayout.__init__(1)
+        InverseTrunkLayout.__init__(self, 1)
 
 
 class ApacheLayout(TrunkLayout):
