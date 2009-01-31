@@ -65,6 +65,12 @@ class SubversionUUIDConfig(IniBasedConfig):
     def __setitem__(self, name, value):
         self._get_parser()[self.uuid][name] = value
 
+    def _get_user_option(self, option_name):
+        try:
+            return self[option_name]
+        except KeyError:
+            return None
+
     def get_bool(self, name):
         return self._get_parser().get_bool(self.uuid, name)
 
@@ -82,8 +88,26 @@ class SubversionUUIDConfig(IniBasedConfig):
         f.close()
 
 
-class SvnRepositoryConfig(SubversionUUIDConfig):
+class SvnRepositoryConfig(Config):
     """Per-repository settings."""
+
+    def __init__(self, uuid):
+        super(SvnRepositoryConfig, self).__init__()
+        self.uuid = uuid
+        self._uuid_config = None
+        self._global_config = None
+        self.option_sources = (self._get_uuid_config,
+                               self._get_global_config)
+
+    def _get_global_config(self):
+        if self._global_config is None:
+            self._global_config = GlobalConfig()
+        return self._global_config
+
+    def _get_uuid_config(self):
+        if self._uuid_config is None:
+            self._uuid_config = SubversionUUIDConfig(self.uuid)
+        return self._uuid_config
 
     def set_branching_scheme(self, scheme, guessed_scheme, mandatory=False):
         """Change the branching scheme.
@@ -100,13 +124,28 @@ class SvnRepositoryConfig(SubversionUUIDConfig):
             self.get_user_option('branching-scheme-mandatory') is not None):
             self.set_user_option('branching-scheme-mandatory', str(mandatory))
 
-    def _get_user_option(self, name, use_global=True):
-        try:
-            return self[name]
-        except KeyError:
-            if not use_global:
-                return None
-            return GlobalConfig()._get_user_option(name)
+    def _get_user_option(self, option_name, use_global=True):
+        """See Config._get_user_option."""
+        for source in self.option_sources:
+            if not use_global and source == self._get_global_config:
+                continue
+            value = source()._get_user_option(option_name)
+            if value is not None:
+                return value
+        return None
+
+    def get_bool(self, option_name, use_global=True):
+        """See Config.get_bool."""
+        for source in self.option_sources:
+            if not use_global and source == self._get_global_config:
+                continue
+            value = source().get_bool(option_name)
+            if value is not None:
+                return value
+        return None
+
+    def set_user_option(self, name, value):
+        self._get_uuid_config().set_user_option(name, value)
 
     def get_layout(self):
         return self._get_user_option("layout", use_global=False)
@@ -172,13 +211,12 @@ class SvnRepositoryConfig(SubversionUUIDConfig):
             return None
 
     def get_use_cache(self):
-        parser = self._get_parser()
         try:
-            if parser.get_bool(self.uuid, "use-cache"):
+            if self.get_bool("use-cache"):
                 return set(["log", "fileids", "revids"])
             return set()
         except ValueError:
-            val = parser.get_value(self.uuid, "use-cache")
+            val = self._get_user_option("use-cache")
             if not isinstance(val, list):
                 ret = set([val])
             else:
@@ -209,23 +247,17 @@ class SvnRepositoryConfig(SubversionUUIDConfig):
     def get_override_svn_revprops(self):
         """Check whether or not bzr-svn should attempt to override Subversion revision 
         properties after committing."""
-        def get_list(parser, section):
-            try:
-                if parser.get_bool(section, "override-svn-revprops"):
-                    return [properties.PROP_REVISION_DATE, properties.PROP_REVISION_AUTHOR]
-                return []
-            except ValueError:
-                val = parser.get_value(section, "override-svn-revprops")
-                if not isinstance(val, list):
-                    return [val]
-                return val
-            except KeyError:
-                return None
-        ret = get_list(self._get_parser(), self.uuid)
-        if ret is not None:
-            return ret
-        global_config = GlobalConfig()
-        return get_list(global_config._get_parser(), global_config._get_section())
+        try:
+            if self.get_bool("override-svn-revprops"):
+                return [properties.PROP_REVISION_DATE, properties.PROP_REVISION_AUTHOR]
+            return []
+        except ValueError:
+            val = self._get_user_option("override-svn-revprops")
+            if not isinstance(val, list):
+                return [val]
+            return val
+        except KeyError:
+            return None
 
     def get_append_revisions_only(self):
         """Check whether it is possible to remove revisions from the mainline.
