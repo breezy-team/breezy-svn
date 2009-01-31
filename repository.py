@@ -33,7 +33,7 @@ from bzrlib.repository import Repository, RepositoryFormat, needs_read_lock
 from bzrlib.revisiontree import RevisionTree
 from bzrlib.revision import NULL_REVISION, ensure_null
 from bzrlib.transport import Transport, get_transport
-from bzrlib.trace import info
+from bzrlib.trace import info, note
 
 from collections import defaultdict
 from itertools import chain
@@ -117,6 +117,33 @@ def cachedbs():
 
 class SubversionRepositoryCheckResult(branch.BranchCheckResult):
     """Results of checking a Subversion repository."""
+
+    def __init__(self, repository):
+        self.repository = repository
+        self.checked_rev_cnt = 0
+        self.checked_roundtripped_cnt = 0
+        self.hidden_rev_cnt = 0
+
+    def report_results(self, verbose):
+        note('checked repository %s format %s',
+             self.repository.bzrdir.root_transport,
+             self.repository._format)
+        note('%6d revisions', self.checked_rev_cnt)
+        if self.checked_roundtripped_cnt > 0:
+            note('%6d revisions originating in bzr', self.checked_roundtripped_cnt)
+        if self.hidden_rev_cnt > 0:
+            note('%6d hidden bzr-created revisions', self.hidden_rev_cnt)
+
+    def check_revmeta(self, revmeta):
+        self.checked_rev_cnt += 1
+        mapping = revmeta.get_original_mapping()
+        if mapping is None:
+            return
+        self.checked_roundtripped_cnt += 1
+        if revmeta.is_hidden(mapping):
+            self.hidden_rev_cnt += 1
+        # TODO: Check inconsistencies in file properties
+
 
 
 class SvnRepository(ForeignRepository):
@@ -444,14 +471,22 @@ class SvnRepository(ForeignRepository):
         return dir
 
     def _check(self, revision_ids):
-        if revision_ids is not None:
-            for revid in revision_ids:
-                revmeta, mapping = self._get_revmeta(revid)
-                revmeta.check()
-        else:
-            for revmeta in self._revmeta_provider.iter_all_revisions(self.get_layout(), self.get_mapping().is_branch_or_tag, self.get_latest_revnum()):
-                revmeta.check()
-        return SubversionRepositoryCheckResult(self)
+        ret = SubversionRepositoryCheckResult(self)
+        pb = ui.ui_factory.nested_progress_bar()
+        try:
+            if revision_ids is not None:
+                for i, revid in enumerate(revision_ids):
+                    pb.update("checking revisions", i, len(revision_ids))
+                    revmeta, mapping = self._get_revmeta(revid)
+                    ret.check_revmeta(revmeta)
+            else:
+                last_revnum = self.get_latest_revnum()
+                for revmeta in self._revmeta_provider.iter_all_revisions(self.get_layout(), self.get_mapping().is_branch_or_tag, last_revnum):
+                    pb.update("checking revisions", last_revnum-revmeta.revnum, last_revnum)
+                    ret.check_revmeta(revmeta)
+        finally:
+            pb.finished()
+        return ret
 
     def get_inventory(self, revision_id):
         """See Repository.get_inventory()."""
