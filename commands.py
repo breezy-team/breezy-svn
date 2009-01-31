@@ -19,6 +19,8 @@
 from bzrlib.commands import Command, display_command
 from bzrlib.option import Option, RegistryOption
 
+import os, sys
+
 def get_layout(layoutname):
     """Parse layout name and return a layout.
     
