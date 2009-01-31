@@ -692,7 +692,7 @@ class SvnRepository(ForeignRepository):
 
     def get_config(self):
         if self._config is None:
-            self._config = SvnRepositoryConfig(self.uuid)
+            self._config = SvnRepositoryConfig(self.base, self.uuid)
         return self._config
 
     def has_signature_for_revision_id(self, revision_id):

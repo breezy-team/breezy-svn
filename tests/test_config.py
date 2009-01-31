@@ -29,63 +29,61 @@ from bzrlib.plugins.svn.config import (
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
-from bzrlib.tests import TestCaseInTempDir
+class ReposConfigTests(SubversionTestCase):
 
-class ReposConfigTests(TestCaseInTempDir):
+    def setUp(self):
+        super(ReposConfigTests, self).setUp()
+        self.repos_url = self.make_repository("d")
+        self.repos = Repository.open(self.repos_url)
+        self.config = self.repos.get_config()
 
-    def get_config(self, name):
-        return SvnRepositoryConfig(name)
-
-    def test_create(self):
-        self.get_config("blabla")
-
-    def test_get_empty_locations(self):
-        c = self.get_config("blabla6")
-        self.assertEquals(set(), c.get_locations())
+    def test_get_default_locations(self):
+        c = self.config
+        self.assertEquals(set([self.repos.base.rstrip("/")]), c.get_locations())
 
     def test_get_location_one(self):
-        c = self.get_config("blabla5")
+        c = self.config
         c.add_location("foobar")
-        self.assertEquals(set(["foobar"]), c.get_locations())
+        self.assertEquals(set(["foobar", self.repos.base.rstrip("/")]), c.get_locations())
 
     def test_get_location_two(self):
-        c = self.get_config("blabla4")
+        c = self.config
         c.add_location("foobar")
         c.add_location("brainslug")
-        self.assertEquals(set(["foobar", "brainslug"]), c.get_locations())
+        self.assertEquals(set(["foobar", "brainslug", self.repos.base.rstrip("/")]), c.get_locations())
 
     def test_get_branches(self):
-        c = self.get_config("blabla3") 
+        c = self.config 
         c.set_user_option("branches", "bla;blie")
         self.assertEquals(["bla", "blie"], c.get_branches())
 
     def test_get_tags(self):
-        c = self.get_config("blabla3") 
+        c = self.config 
         c.set_user_option("tags", "bla;blie")
         self.assertEquals(["bla", "blie"], c.get_tags())
 
     def test_get_scheme_none(self):
-        c = self.get_config("blabla3")
+        c = self.config
         self.assertEquals(None, c.get_branching_scheme())
 
     def test_get_scheme_set(self):
-        c = self.get_config("blabla2")
+        c = self.config
         c.set_branching_scheme(TrunkBranchingScheme(), None)
         self.assertEquals("trunk0", str(c.get_branching_scheme()))
 
     def test_get_scheme_mandatory_none(self):
-        c = self.get_config("blabla3")
+        c = self.config
         self.assertEquals(False, c.branching_scheme_is_mandatory())
 
     def test_get_scheme_mandatory_set(self):
-        c = self.get_config("blabla3")
+        c = self.config
         c.set_branching_scheme(TrunkBranchingScheme(), None, mandatory=True)
         self.assertEquals(True, c.branching_scheme_is_mandatory())
         c.set_branching_scheme(TrunkBranchingScheme(), None, mandatory=False)
         self.assertEquals(False, c.branching_scheme_is_mandatory())
 
     def test_supports_change_revprop(self):
-        c = self.get_config("blabla2")
+        c = self.config
         self.assertEquals(None, c.get_supports_change_revprop())
         c.set_user_option("supports-change-revprop", "True")
         self.assertEquals(True, c.get_supports_change_revprop())
@@ -93,13 +91,13 @@ class ReposConfigTests(TestCaseInTempDir):
         self.assertEquals(False, c.get_supports_change_revprop())
 
     def test_default_mapping(self):
-        c = self.get_config("blabla2")
+        c = self.config
         self.assertEquals(None, c.get_default_mapping())
         c.set_user_option("default-mapping", "v8")
         self.assertEquals("v8", c.get_default_mapping())
 
     def test_use_cache(self):
-        c = self.get_config("blabla-cache")
+        c = self.config
         self.assertEquals(None, c.get_use_cache())
         c.set_user_option("use-cache", "True")
         self.assertEquals(set(["log", "revids", "fileids"]), c.get_use_cache())

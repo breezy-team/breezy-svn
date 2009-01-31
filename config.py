@@ -111,13 +111,21 @@ class SubversionUUIDConfig(IniBasedConfig):
 class SvnRepositoryConfig(Config):
     """Per-repository settings."""
 
-    def __init__(self, uuid):
+    def __init__(self, url, uuid):
         super(SvnRepositoryConfig, self).__init__()
+        self.url = url
         self.uuid = uuid
         self._uuid_config = None
+        self._location_config = None
         self._global_config = None
-        self.option_sources = (self._get_uuid_config,
+        self.option_sources = (self._get_location_config,
+                               self._get_uuid_config,
                                self._get_global_config)
+
+    def _get_location_config(self):
+        if self._location_config is None:
+            self._location_config = LocationConfig(self.url)
+        return self._location_config
 
     def _get_global_config(self):
         if self._global_config is None:
