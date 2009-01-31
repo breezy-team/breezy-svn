@@ -69,26 +69,40 @@ def create_upgraded_revid(revid, mapping_suffix, upgrade_suffix="-upgrade"):
         return revid + mapping_suffix + upgrade_suffix
 
 
-def determine_fileid_renames(old_tree, new_tree):
-    for old_file_id in old_tree:
-        new_file_id = new_tree.path2id(old_tree.id2path(old_file_id))
-        if old_file_id == new_file_id:
-            continue
-        if new_file_id is not None:
-            yield new_tree.id2path(new_file_id), old_file_id, new_file_id
+def determine_fileid_renames(old_inv, new_inv):
+    """Determine the file ids based on a old and a new inventory that 
+    are equal in content.
+
+    :param old_inv: Old inventory
+    :param new_inv: New inventory
+    :return: Dictionary a (old_id, new_id) tuple for each path in the 
+        inventories.
+    """
+    ret = {}
+    if len(old_inv) != len(new_inv):
+        raise AssertionError("Inventories are not of the same size")
+    for old_file_id in old_inv:
+        new_file_id = new_inv.path2id(old_inv.id2path(old_file_id))
+        if new_file_id is None:
+            raise AssertionError(
+                "Unable to find %s in new inventory" % old_file_id)
+        if new_file_id != old_file_id:
+            ret[new_inv.id2path(new_file_id)] = (old_file_id, new_file_id)
+    return ret
 
 
-def update_workingtree_fileids(wt, old_tree, new_tree):
+def update_workinginv_fileids(wt, old_inv, new_inv):
     """Update all file ids in wt according to old_tree/new_tree. 
 
     old_tree and new_tree should be two RevisionTree's that differ only
     in file ids.
     """
-    fileid_renames = dict([(path, (old_fileid, new_fileid)) for (path, old_fileid, new_fileid) in determine_fileid_renames(old_tree, new_tree)])
+    fileid_renames = determine_fileid_renames(old_inv, new_inv)
     old_fileids = []
     new_fileids = []
     new_root_id = None
     # Adjust file ids in working tree
+    # Sorted, so we process parents before children
     for path in sorted(fileid_renames.keys(), reverse=True):
         if path != "":
             old_fileids.append(fileid_renames[path][0])
@@ -100,7 +114,7 @@ def update_workingtree_fileids(wt, old_tree, new_tree):
     if new_root_id is not None:
         wt.set_root_id(new_root_id)
     wt.add([x[0] for x in new_fileids], [x[1] for x in new_fileids])
-    wt.set_last_revision(new_tree.get_revision_id())
+    wt.set_last_revision(new_inv.revision_id)
 
 
 def upgrade_workingtree(wt, foreign_repository, new_mapping, mapping_registry, 
@@ -118,10 +132,9 @@ def upgrade_workingtree(wt, foreign_repository, new_mapping, mapping_registry,
         last_revid = wt.branch.last_revision()
         if old_revid == last_revid:
             return revid_renames
-        
-        old_tree = wt.branch.repository.revision_tree(old_revid)
-        new_tree = wt.branch.repository.revision_tree(last_revid)
-        update_workingtree_fileids(wt, old_tree, new_tree)
+        old_inv = wt.branch.repository.get_inventory(old_revid)
+        new_inv = wt.branch.repository.get_inventory(last_revid)
+        update_workinginv_fileids(wt, old_inv, new_inv)
     finally:
         wt.unlock()
 
@@ -131,18 +144,19 @@ def upgrade_workingtree(wt, foreign_repository, new_mapping, mapping_registry,
 def upgrade_tags(tags, repository, foreign_repository, new_mapping, mapping_registry, 
                  allow_changes=False, verbose=False, branch_renames=None):
     """Upgrade a tags dictionary."""
+    renames = {}
+    if branch_renames is not None:
+        renames.update(branch_renames)
     pb = ui.ui_factory.nested_progress_bar()
     try:
         tags_dict = tags.get_tag_dict()
         for i, (name, revid) in enumerate(tags_dict.items()):
             pb.update("upgrading tags", i, len(tags_dict))
-            if branch_renames is not None and revid in branch_renames:
-                renames = branch_renames
-            else:
-                renames = upgrade_repository(repository, foreign_repository, 
+            if not revid in renames:
+                renames.update(upgrade_repository(repository, foreign_repository, 
                       revision_id=revid, new_mapping=new_mapping,
                       mapping_registry=mapping_registry,
-                      allow_changes=allow_changes, verbose=verbose)
+                      allow_changes=allow_changes, verbose=verbose))
             if revid in renames:
                 tags.set_tag(name, renames[revid])
     finally:
