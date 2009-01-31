@@ -268,7 +268,7 @@ class SvnBranch(ForeignBranch):
         raise NoSuchRevision(self, revnum)
 
     def get_config(self):
-        return BranchConfig(self)
+        return BranchConfig(self.base, self.repository.uuid)
        
     def _get_nick(self, local=False, possible_master_transports=None):
         """Find the nick name for this branch.

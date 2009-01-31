@@ -48,6 +48,9 @@ from subvertpy import (
     )
 
 from bzrlib.plugins.svn import mapping
+from bzrlib.plugins.svn.config import (
+    BranchConfig,
+    )
 from bzrlib.plugins.svn.errors import (
     convert_svn_error, 
     AppendRevisionsOnlyViolation,
@@ -960,7 +963,8 @@ def push_new(graph, target_repository, target_branch_path, source, stop_revision
                                          deletefirst=None)
     else:
         return push_revision_tree(graph, target_repository, target_branch_path, 
-                              target_repository.get_config(), 
+                              BranchConfig(urlutils.join(target_repository.base, target_branch_path),
+                                  target_repository.uuid), 
                               source, start_revid_parent, start_revid, 
                               rev, push_metadata=push_metadata,
                               append_revisions_only=append_revisions_only,

@@ -114,7 +114,7 @@ class BranchConfigTests(SubversionTestCase):
     def setUp(self):
         super(BranchConfigTests, self).setUp()
         self.repos_url = self.make_repository("d")
-        self.config = BranchConfig(Branch.open(self.repos_url))
+        self.config = Branch.open(self.repos_url).get_config()
 
     def test_set_option(self):
         self.config.set_user_option("append_revisions_only", "True")

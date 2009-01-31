@@ -277,24 +277,25 @@ class SvnRepositoryConfig(Config):
 class BranchConfig(Config):
     """Subversion branch configuration."""
 
-    def __init__(self, branch):
+    def __init__(self, url, uuid):
         super(BranchConfig, self).__init__()
         self._location_config = None
         self._uuid_config = None
         self._global_config = None
-        self.branch = branch
+        self.url = url
+        self.uuid = uuid
         self.option_sources = (self._get_location_config, 
                                self._get_uuid_config,
                                self._get_global_config)
 
     def _get_location_config(self):
         if self._location_config is None:
-            self._location_config = LocationConfig(self.branch.base)
+            self._location_config = LocationConfig(self.url)
         return self._location_config
 
     def _get_uuid_config(self):
         if self._uuid_config is None:
-            self._uuid_config = SubversionUUIDConfig(self.branch.repository.uuid)
+            self._uuid_config = SubversionUUIDConfig(self.uuid)
         return self._uuid_config
 
     def _get_global_config(self):
