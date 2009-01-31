@@ -132,8 +132,7 @@ class SvnBranch(ForeignBranch):
         self._branch_path = branch_path.strip("/")
 
     def _get_append_revisions_only(self):
-        value = self.get_config().get_user_option('append_revisions_only')
-        return value == 'True'
+        return self.get_config().get_append_revisions_only()
 
     def unprefix(self, relpath):
         """Remove the branch path from a relpath.

@@ -84,34 +84,6 @@ class ReposConfigTests(TestCaseInTempDir):
         c.set_branching_scheme(TrunkBranchingScheme(), None, mandatory=False)
         self.assertEquals(False, c.branching_scheme_is_mandatory())
 
-    def test_override_revprops(self):
-        c = self.get_config("blabla2")
-        self.assertEquals(None, c.get_override_svn_revprops())
-        c.set_user_option("override-svn-revprops", "True")
-        self.assertEquals(["svn:date", "svn:author"], c.get_override_svn_revprops())
-        c.set_user_option("override-svn-revprops", "False")
-        self.assertEquals([], c.get_override_svn_revprops())
-        c.set_user_option("override-svn-revprops", ["svn:author", "svn:date"])
-        self.assertEquals(["svn:author", "svn:date"], c.get_override_svn_revprops())
-        c.set_user_option("override-svn-revprops", ["svn:author"])
-        self.assertEquals(["svn:author"], c.get_override_svn_revprops())
-
-    def test_get_append_revisions_only(self):
-        c = self.get_config("blabla2")
-        self.assertEquals(None, c.get_append_revisions_only())
-        c.set_user_option("append_revisions_only", "True")
-        self.assertEquals(True, c.get_append_revisions_only())
-        c.set_user_option("append_revisions_only", "False")
-        self.assertEquals(False, c.get_append_revisions_only())
-
-    def test_log_strip_trailing_newline(self):
-        c = self.get_config("blabla3")
-        self.assertEquals(False, c.get_log_strip_trailing_newline())
-        c.set_user_option("log-strip-trailing-newline", "True")
-        self.assertEquals(True, c.get_log_strip_trailing_newline())
-        c.set_user_option("log-strip-trailing-newline", "False")
-        self.assertEquals(False, c.get_log_strip_trailing_newline())
-
     def test_supports_change_revprop(self):
         c = self.get_config("blabla2")
         self.assertEquals(None, c.get_supports_change_revprop())
@@ -138,6 +110,7 @@ class ReposConfigTests(TestCaseInTempDir):
 
 
 class BranchConfigTests(SubversionTestCase):
+
     def setUp(self):
         super(BranchConfigTests, self).setUp()
         self.repos_url = self.make_repository("d")
@@ -146,6 +119,31 @@ class BranchConfigTests(SubversionTestCase):
     def test_set_option(self):
         self.config.set_user_option("append_revisions_only", "True")
         self.assertEquals("True", self.config.get_user_option("append_revisions_only"))
+
+    def test_log_strip_trailing_newline(self):
+        self.assertEquals(False, self.config.get_log_strip_trailing_newline())
+        self.config.set_user_option("log-strip-trailing-newline", "True")
+        self.assertEquals(True, self.config.get_log_strip_trailing_newline())
+        self.config.set_user_option("log-strip-trailing-newline", "False")
+        self.assertEquals(False, self.config.get_log_strip_trailing_newline())
+
+    def test_override_revprops(self):
+        self.assertEquals(None, self.config.get_override_svn_revprops())
+        self.config.set_user_option("override-svn-revprops", "True")
+        self.assertEquals(["svn:date", "svn:author"], self.config.get_override_svn_revprops())
+        self.config.set_user_option("override-svn-revprops", "False")
+        self.assertEquals([], self.config.get_override_svn_revprops())
+        self.config.set_user_option("override-svn-revprops", ["svn:author", "svn:date"])
+        self.assertEquals(["svn:author", "svn:date"], self.config.get_override_svn_revprops())
+        self.config.set_user_option("override-svn-revprops", ["svn:author"])
+        self.assertEquals(["svn:author"], self.config.get_override_svn_revprops())
+
+    def test_get_append_revisions_only(self):
+        self.assertEquals(None, self.config.get_append_revisions_only())
+        self.config.set_user_option("append_revisions_only", "True")
+        self.assertEquals(True, self.config.get_append_revisions_only())
+        self.config.set_user_option("append_revisions_only", "False")
+        self.assertEquals(False, self.config.get_append_revisions_only())
 
 
 class PropertyConfigTests(SubversionTestCase):

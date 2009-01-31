@@ -11,6 +11,8 @@ bzr-svn 0.5.0					UNRELEASED
    * Added basic implemention of "bzr check" on Subversion
      repositories.
 
+   * Allow overriding over revision-properties on a per-branch basis. (#319819)
+
 bzr-svn 0.5.0~rc2				2009-01-30
 
   BUG FIXES

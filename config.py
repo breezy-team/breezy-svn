@@ -40,6 +40,26 @@ import os
 
 from subvertpy import SubversionException, properties
 
+
+def as_bool(str):
+    """Parse a string as a boolean. 
+
+    FIXME: This must be duplicated somewhere. 
+    """
+    if str is None:
+        return None
+    _bools = { 'yes': True, 'no': False,
+               'on': True, 'off': False,
+               '1': True, '0': False,
+               'true': True, 'false': False }
+    if isinstance(str, list):
+        raise ValueError
+    try:
+        return _bools[str.lower()]
+    except KeyError:
+        raise ValueError
+
+
 # Settings are stored by UUID. 
 # Data stored includes default branching scheme and locations the repository 
 # was seen at.
@@ -136,13 +156,10 @@ class SvnRepositoryConfig(Config):
 
     def get_bool(self, option_name, use_global=True):
         """See Config.get_bool."""
-        for source in self.option_sources:
-            if not use_global and source == self._get_global_config:
-                continue
-            value = source().get_bool(option_name)
-            if value is not None:
-                return value
-        return None
+        ret = self._get_user_option(option_name, use_global)
+        if ret is None:
+            raise KeyError
+        return as_bool(ret)
 
     def set_user_option(self, name, value):
         self._get_uuid_config().set_user_option(name, value)
@@ -227,14 +244,6 @@ class SvnRepositoryConfig(Config):
         except KeyError:
             return None
 
-    def get_log_strip_trailing_newline(self):
-        """Check whether or not trailing newlines should be stripped in the 
-        Subversion log message (where support by the bzr<->svn mapping used)."""
-        try:
-            return self.get_bool("log-strip-trailing-newline")
-        except KeyError:
-            return False
-
     def branching_scheme_is_mandatory(self):
         """Check whether or not the branching scheme for this repository 
         is mandatory.
@@ -243,29 +252,6 @@ class SvnRepositoryConfig(Config):
             return self.get_bool("branching-scheme-mandatory")
         except KeyError:
             return False
-
-    def get_override_svn_revprops(self):
-        """Check whether or not bzr-svn should attempt to override Subversion revision 
-        properties after committing."""
-        try:
-            if self.get_bool("override-svn-revprops"):
-                return [properties.PROP_REVISION_DATE, properties.PROP_REVISION_AUTHOR]
-            return []
-        except ValueError:
-            val = self._get_user_option("override-svn-revprops")
-            if not isinstance(val, list):
-                return [val]
-            return val
-        except KeyError:
-            return None
-
-    def get_append_revisions_only(self):
-        """Check whether it is possible to remove revisions from the mainline.
-        """
-        try:
-            return self.get_bool("append_revisions_only")
-        except KeyError:
-            return None
 
     def get_locations(self):
         """Find the locations this repository has been seen at.
@@ -276,13 +262,6 @@ class SvnRepositoryConfig(Config):
         if val is None:
             return set()
         return set(val.split(";"))
-
-    def get_push_merged_revisions(self):
-        """Check whether merged revisions should be pushed."""
-        try:
-            return self.get_bool("push_merged_revisions")
-        except KeyError:
-            return None
 
     def add_location(self, location):
         """Add a location for this repository.
@@ -301,44 +280,79 @@ class BranchConfig(Config):
     def __init__(self, branch):
         super(BranchConfig, self).__init__()
         self._location_config = None
-        self._repository_config = None
+        self._uuid_config = None
+        self._global_config = None
         self.branch = branch
         self.option_sources = (self._get_location_config, 
-                               self._get_repository_config)
+                               self._get_uuid_config,
+                               self._get_global_config)
 
     def _get_location_config(self):
         if self._location_config is None:
             self._location_config = LocationConfig(self.branch.base)
         return self._location_config
 
-    def _get_repository_config(self):
-        if self._repository_config is None:
-            self._repository_config = SvnRepositoryConfig(self.branch.repository.uuid)
-        return self._repository_config
+    def _get_uuid_config(self):
+        if self._uuid_config is None:
+            self._uuid_config = SubversionUUIDConfig(self.branch.repository.uuid)
+        return self._uuid_config
+
+    def _get_global_config(self):
+        if self._global_config is None:
+            self._global_config = GlobalConfig()
+        return self._global_config
 
     def get_log_strip_trailing_newline(self):
-        return self._get_repository_config().get_log_strip_trailing_newline()
+        """Check whether or not trailing newlines should be stripped in the 
+        Subversion log message (where support by the bzr<->svn mapping used)."""
+        try:
+            return self.get_bool("log-strip-trailing-newline")
+        except KeyError:
+            return False
+
+    def get_bool(self, option_name, use_global=True):
+        """See Config.get_bool."""
+        ret = self._get_user_option(option_name, use_global)
+        if ret is None:
+            raise KeyError
+        return as_bool(ret)
 
     def get_override_svn_revprops(self):
-        return self._get_repository_config().get_override_svn_revprops()
+        """Check whether or not bzr-svn should attempt to override Subversion revision 
+        properties after committing."""
+        try:
+            if self.get_bool("override-svn-revprops"):
+                return [properties.PROP_REVISION_DATE, properties.PROP_REVISION_AUTHOR]
+            return []
+        except ValueError:
+            val = self._get_user_option("override-svn-revprops")
+            if not isinstance(val, list):
+                return [val]
+            return val
+        except KeyError:
+            return None
 
-    def _get_user_option(self, option_name):
+    def _get_user_option(self, option_name, use_global=True):
         """See Config._get_user_option."""
         for source in self.option_sources:
+            if not use_global and source == self._get_global_config:
+                continue
             value = source()._get_user_option(option_name)
             if value is not None:
                 return value
         return None
 
     def get_append_revisions_only(self):
-        return self.get_user_option("append_revision_only")
+        """Check whether it is possible to remove revisions from the mainline.
+        """
+        try:
+            return self.get_bool("append_revisions_only")
+        except KeyError:
+            return None
 
     def _get_user_id(self):
         """Get the user id from the 'email' key in the current section."""
         return self._get_user_option('email')
-
-    def get_option(self, key, section=None):
-        return None
 
     def set_user_option(self, name, value, store=STORE_LOCATION,
         warn_masked=False):
@@ -365,7 +379,7 @@ class BranchConfig(Config):
 
     def get_push_merged_revisions(self):
         """Check whether merged revisions should be pushed."""
-        return self._get_repository_config().get_push_merged_revisions()
+        return self.get_bool("push_merged_revisions")
 
 
 class PropertyConfig(object):
