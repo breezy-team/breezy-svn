@@ -167,6 +167,9 @@ class cmd_svn_upgrade(Command):
     
     This will change the revision ids of revisions whose parents 
     were mapped from svn revisions.
+
+    You are recommended to run "bzr check" in the local repository 
+    after running svn-upgrade.
     """
     from bzrlib.plugins.svn.mapping import mapping_registry
     takes_args = ['from_repository?']
