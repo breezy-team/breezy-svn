@@ -74,13 +74,14 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
         :param username: Username, if it is already known, or None.
         :param may_save: Whether or not the username should be saved.
         """
-        mutter("Obtaining username and password for SVN connection")
+        mutter("Obtaining username and password for SVN connection %r (username: %r)", 
+               realm, username)
         username = self.get_user(self.scheme, 
                 host=self.host, path=self.path, realm=realm) or username
         password = self.get_password(self.scheme, host=self.host, 
             path=self.path, user=username, 
             realm=realm, prompt="%s %s password" % (realm, username))
-        return (username, password, False)
+        return (username.encode("utf-8"), password, False)
 
     def get_svn_ssl_server_trust(self, realm, failures, cert_info, may_save):
         """Return a Subversion auth provider that verifies SSL server trust.

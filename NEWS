@@ -4,6 +4,8 @@ bzr-svn 0.5.0					UNRELEASED
 
    * Fixed too assertions that were always true. (#323305)
 
+   * Fixed handling of password prompting with username specified. (#275953)
+
   FEATURES
 
    * Added basic implemention of "bzr check" on Subversion
