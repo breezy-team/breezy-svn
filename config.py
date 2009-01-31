@@ -388,7 +388,10 @@ class BranchConfig(Config):
 
     def get_push_merged_revisions(self):
         """Check whether merged revisions should be pushed."""
-        return self.get_bool("push_merged_revisions")
+        try:
+            return self.get_bool("push_merged_revisions")
+        except KeyError:
+            return None
 
 
 class PropertyConfig(object):
