@@ -165,7 +165,7 @@ def upgrade_branch(branch, foreign_repository, new_mapping,
               allow_changes=allow_changes, verbose=verbose)
     upgrade_tags(branch.tags, branch.repository, foreign_repository, 
            new_mapping=new_mapping, mapping_registry=mapping_registry, 
-           allow_changes=allow_changes, verbose=verbose)
+           allow_changes=allow_changes, verbose=verbose, branch_renames=renames)
     if len(renames) > 0:
         branch.generate_revision_history(renames[revid])
     return renames
@@ -230,13 +230,19 @@ def create_upgrade_plan(repository, foreign_repository, new_mapping,
     else:
         potential = itertools.imap(lambda (rev, parents): rev, 
                 graph.iter_ancestry([revision_id]))
-    upgrade_map = generate_upgrade_map(potential, mapping_registry, new_mapping.revision_id_foreign_to_bzr)
-   
-    # Make sure all the required current version revisions are present
-    for revid in upgrade_map.values():
-        if not repository.has_revision(revid):
-            repository.fetch(foreign_repository, revid)
 
+    def determine_upgraded_revid(foreign_revid):
+        # FIXME: Try all mappings until new_mapping rather than just new_mapping
+        new_revid = new_mapping.revision_id_foreign_to_bzr(foreign_revid)
+        # Make sure the revision is there
+        if not repository.has_revision(new_revid):
+            repository.fetch(foreign_repository, new_revid)
+            if not repository.has_revision(new_revid):
+                return None
+        return new_revid
+
+    upgrade_map = generate_upgrade_map(potential, mapping_registry, determine_upgraded_revid)
+   
     if not allow_changes:
         for oldrevid, newrevid in upgrade_map.iteritems():
             oldrev = repository.get_revision(oldrevid)
