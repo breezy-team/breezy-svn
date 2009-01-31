@@ -45,8 +45,6 @@ from bzrlib.plugins.svn.mapping import (
         find_mapping_fileprops,
         find_mapping_revprops,
         get_roundtrip_ancestor_revids,
-        is_bzr_revision_revprops, 
-        is_bzr_revision_fileprops, 
         parse_svn_revprops,
         SVN_REVPROP_BZR_SIGNATURE, 
         SVN_PROP_BZR_REVPROP_REDIRECT,
@@ -235,9 +233,6 @@ class RevisionMetadata(object):
             for r in todo:
                 r._fileprops = lm._fileprops
         return self._fileprops
-
-    def check(self):
-        """Check the bazaar metadata on this revision."""
 
     def get_revprops(self):
         """Get the revision properties set on the revision."""
