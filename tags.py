@@ -97,7 +97,8 @@ class SubversionTags(BasicTags):
             raise NoSuchTag(tag_name)
 
     def get_tag_dict(self):
-        # FIXME: Use mapping
+        # FIXME: Use mapping. iter_with_mapping() over branches history
+        # and see which matches best? What about right hand side revisions?
         ret = {}
         for (name, revmeta) in self.repository.find_tags(
                 project=self.branch.project, 

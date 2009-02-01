@@ -197,3 +197,12 @@ class CantPushGhosts(BzrError):
     def __init__(self, revid):
         BzrError.__init__(self)
         self.revid = revid
+
+
+class DifferentSubversionRepository(BzrError):
+    _fmt = """UUID %(got)s does not match expected UUID %(expected)s."""
+
+    def __init__(self, got, expected):
+        BzrError.__init__(self)
+        self.got = got
+        self.expected = expected
