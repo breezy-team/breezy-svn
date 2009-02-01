@@ -635,11 +635,13 @@ class SvnRepository(ForeignRepository):
         """See Repository.add_revision()."""
         raise NotImplementedError(self.add_revision)
 
-    def lookup_foreign_revision_id(self, foreign_revid, mapping):
+    def lookup_foreign_revision_id(self, foreign_revid, newest_allowed):
         (uuid, path, revnum) = foreign_revid
         if uuid != self.uuid:
             raise errors.DifferentSubversionRepository(uuid, self.uuid)
-        assert isinstance(mapping, BzrSvnMapping)
+        assert isinstance(newest_allowed, BzrSvnMapping)
+
+        mapping = self.get_appropriate_mappings(self, newest_allowed)[0]
 
         return self._revmeta_provider.lookup_revision(path, revnum).get_revision_id(mapping)
 
