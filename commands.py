@@ -210,7 +210,7 @@ class cmd_svn_upgrade(Command):
 
         mapping_registry = vcs.mapping_registry
 
-        new_mapping = mapping.from_repository(from_repository)
+        new_mapping = from_repository.get_mapping()
 
         if wt_to is not None:
             renames = upgrade_workingtree(wt_to, from_repository, 
