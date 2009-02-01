@@ -313,16 +313,7 @@ def upgrade_repository(repository, foreign_repository, new_mapping,
         if verbose:
             for revid in rebase_todo(repository, plan):
                 info("%s -> %s" % (revid, plan[revid][0]))
-        def fix_revid(revid):
-            try:
-                (foreign_revid, mapping) = mapping_registry.parse_revision_id(revid)
-            except InvalidRevisionId:
-                return revid
-            return new_mapping.revision_id_foreign_to_bzr(foreign_revid)
-        def replay(repository, oldrevid, newrevid, new_parents):
-            return replay_snapshot(repository, oldrevid, newrevid, new_parents,
-                                   revid_renames, fix_revid)
-        rebase(repository, plan, replay)
+        rebase(repository, plan, replay_snapshot)
         return revid_renames
     finally:
         repository.unlock()
