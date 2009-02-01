@@ -172,19 +172,12 @@ class cmd_svn_upgrade(Command):
     You are recommended to run "bzr check" in the local repository 
     after running this command.
     """
-    from bzrlib.plugins.svn.mapping import mapping_registry
     takes_args = ['from_repository?']
-    takes_options = ['verbose', RegistryOption('mapping', 
-                                 help="New mapping to upgrade to.",
-                                 registry=mapping_registry,
-                                 title="Subversion mapping",
-                                 value_switches=True)]
+    takes_options = ['verbose']
 
     @display_command
-    def run(self, from_repository=None, verbose=False, mapping=None):
-        from bzrlib.plugins.svn.mapping import mapping_registry
-        from bzrlib.plugins.svn.foreign.upgrade import (upgrade_branch, 
-                                                upgrade_workingtree)
+    def run(self, from_repository=None, verbose=False):
+        from bzrlib.plugins.svn.foreign.upgrade import (upgrade_branch, upgrade_workingtree)
         from bzrlib.branch import Branch
         from bzrlib.errors import NoWorkingTree, BzrCommandError
         from bzrlib.repository import Repository
@@ -210,6 +203,12 @@ class cmd_svn_upgrade(Command):
                 from_repository = Branch.open(stored_loc).repository
         else:
             from_repository = Repository.open(from_repository)
+
+        vcs = getattr(from_repository, "vcs", None)
+        if vcs is None:
+            raise BzrCommandError("Repository at %s is not a foreign repository.a" % from_repository.base)
+
+        mapping_registry = vcs.mapping_registry
 
         if mapping is None:
             mapping = mapping_registry.get_default()

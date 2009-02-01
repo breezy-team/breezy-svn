@@ -57,6 +57,7 @@ from bzrlib.plugins.svn.layout.guess import repository_guess_layout
 from bzrlib.plugins.svn.mapping import (
         SVN_REVPROP_BZR_SIGNATURE,
         BzrSvnMapping,
+        foreign_vcs_svn,
         mapping_registry,
         is_bzr_revision_revprops, 
         parse_svn_dateprop,
@@ -156,6 +157,7 @@ class SvnRepository(ForeignRepository):
         lazy_register_optimizers()
         from bzrlib.plugins.svn.fileids import (CachingFileIdMap, 
                                                 simple_apply_changes, FileIdMap)
+        self.vcs = foreign_vcs_svn
         _revision_store = None
 
         assert isinstance(transport, Transport)

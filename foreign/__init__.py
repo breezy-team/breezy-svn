@@ -142,6 +142,7 @@ class cmd_dpush(Command):
         finally:
             target_branch.unlock()
 
+
 def test_suite():
     from unittest import TestSuite
     from bzrlib.tests import TestUtil
