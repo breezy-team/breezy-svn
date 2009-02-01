@@ -210,9 +210,6 @@ class cmd_svn_upgrade(Command):
 
         mapping_registry = vcs.mapping_registry
 
-        if mapping is None:
-            mapping = mapping_registry.get_default()
-
         new_mapping = mapping.from_repository(from_repository)
 
         if wt_to is not None:
