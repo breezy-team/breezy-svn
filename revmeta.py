@@ -741,7 +741,7 @@ class RevisionMetadata(object):
         return iter(get_roundtrip_ancestor_revids(self.get_fileprops()))
 
     def __hash__(self):
-        return hash((self.__class__, self.uuid, self.branch_path, self.revnum))
+        return hash((self.__class__, self.get_foreign_revid()))
 
 
 class CachingRevisionMetadata(RevisionMetadata):

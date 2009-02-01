@@ -352,8 +352,9 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(0))
         tags = repos.find_tags("")
-        self.assertEquals({"brancha": repos.generate_revision_id(1, "tags/brancha", repos.get_mapping()),
-                           "branchab": repos.generate_revision_id(1, "tags/branchab", repos.get_mapping())}, tags)
+        rm_provider = repos._revmeta_provider
+        self.assertEquals({"brancha": rm_provider.get_revision("tags/brancha", 1), 
+                           "branchab": rm_provider.get_revision("tags/branchab", 1)}, tags)
 
     def test_find_tags_unmodified(self):
         repos_url = self.make_repository('a')
@@ -370,7 +371,8 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(0))
         tags = repos.find_tags("")
-        self.assertEquals({"brancha": repos.generate_revision_id(1, "trunk", repos.get_mapping())}, tags)
+        rm_provider = repos._revmeta_provider
+        self.assertEquals({"brancha": rm_provider.get_revision("trunk", 1)}, tags)
 
     def test_find_tags_modified(self):
         repos_url = self.make_repository('a')
@@ -393,7 +395,8 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(0))
         tags = repos.find_tags("")
-        self.assertEquals({"brancha": repos.generate_revision_id(3, "tags/brancha", repos.get_mapping())}, tags)
+        rm_provider = repos._revmeta_provider
+        self.assertEquals({"brancha": rm_provider.get_revision("tags/brancha", 3)}, tags)
 
     def test_find_branchpaths_moved(self):
         repos_url = self.make_client("a", "dc")

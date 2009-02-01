@@ -97,10 +97,18 @@ class SubversionTags(BasicTags):
             raise NoSuchTag(tag_name)
 
     def get_tag_dict(self):
-        return self.repository.find_tags(project=self.branch.project, 
-                              layout=self.branch.layout,
-                              mapping=self.branch.mapping,
-                              revnum=self.branch._revnum)
+        # FIXME: Use mapping
+        ret = {}
+        for (name, revmeta) in self.repository.find_tags(
+                project=self.branch.project, 
+                layout=self.branch.layout,
+                mapping=self.branch.mapping,
+                revnum=self.branch._revnum).iteritems():
+            try:
+                ret[name] = revmeta.get_revision_id(self.branch.mapping)
+            except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                pass
+        return ret
 
     def get_reverse_tag_dict(self):
         """Returns a dict with revisions as keys

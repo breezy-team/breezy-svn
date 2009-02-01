@@ -764,16 +764,11 @@ class SvnRepository(ForeignRepository):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             entries = list(self._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, to_revnum, from_revnum, project=project, pb=pb))
-            # FIXME: Use mapping
             for kind, item in reversed(entries):
                 if kind == "revision":
                     revmeta = item
                     if layout.is_tag(revmeta.branch_path):
-                        refer_revmeta = revmeta.get_tag_revmeta(mapping)
-                        try:
-                            tags[revmeta.branch_path] = refer_revmeta.get_revision_id(mapping)
-                        except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                            pass
+                        tags[revmeta.branch_path] = revmeta.get_tag_revmeta(mapping)
                 elif kind == "delete":
                     for t in list(tags):
                         if changes.path_is_child(t, item):
@@ -781,7 +776,7 @@ class SvnRepository(ForeignRepository):
         finally:
             pb.finished()
 
-        return dict([(layout.get_tag_name(path, project), revid) for (path, revid) in tags.iteritems()])
+        return dict([(layout.get_tag_name(path, project), revmeta) for (path, revmeta) in tags.iteritems()])
 
     @needs_read_lock
     def find_tags(self, project, layout=None, mapping=None, revnum=None):
@@ -804,10 +799,10 @@ class SvnRepository(ForeignRepository):
         if not layout.supports_tags():
             return {}
 
-        if not (layout, mapping) in self._cached_tags:
-            self._cached_tags[layout,mapping] = self.find_tags_between(project=project,
+        if not layout in self._cached_tags:
+            self._cached_tags[layout] = self.find_tags_between(project=project,
                     layout=layout, mapping=mapping, from_revnum=0, to_revnum=revnum)
-        return self._cached_tags[layout,mapping]
+        return self._cached_tags[layout]
 
     def find_branchpaths(self, layout,
                          from_revnum=0, to_revnum=None, 
