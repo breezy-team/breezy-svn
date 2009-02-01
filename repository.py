@@ -633,6 +633,12 @@ class SvnRepository(ForeignRepository):
         """See Repository.add_revision()."""
         raise NotImplementedError(self.add_revision)
 
+    def lookup_foreign_revision_id(self, foreign_revid, mapping):
+        (uuid, path, revnum) = foreign_revid
+        if uuid != self.uuid:
+            return None
+        return self.generate_revision_id(revnum, path, mapping)
+
     def generate_revision_id(self, revnum, path, mapping):
         """Generate an unambiguous revision id. 
         

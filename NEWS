@@ -4,7 +4,7 @@ bzr-svn 0.5.0					UNRELEASED
 
    * Fixed two assertions that were always true. (#323305)
 
-   * Fixed handling of new revisions that are ghosts. (#320113)
+   * Fixed handling of round-tripped revisions. (#320113)
 
    * Fixed handling of password prompting with username specified. (#275953)
 
