@@ -251,7 +251,9 @@ def create_upgrade_plan(repository, foreign_repository, new_mapping,
 
     def determine_upgraded_revid(foreign_revid):
         # FIXME: Try all mappings until new_mapping rather than just new_mapping
-        new_revid = foreign_repository.lookup_foreign_revision_id(foreign_revid, new_mapping)
+        new_revid = foreign_repository.upgrade_foreign_revision_id(foreign_revid, new_mapping)
+        if new_revid is None:
+            return None
         # Make sure the revision is there
         if not repository.has_revision(new_revid):
             try:

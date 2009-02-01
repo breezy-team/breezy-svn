@@ -635,6 +635,12 @@ class SvnRepository(ForeignRepository):
         """See Repository.add_revision()."""
         raise NotImplementedError(self.add_revision)
 
+    def upgrade_foreign_revision_id(self, foreign_revid, newest_allowed):
+        try:
+            return self.lookup_foreign_revision_id(foreign_revid, newest_allowed)
+        except errors.DifferentSubversionRepository:
+            return None
+
     def lookup_foreign_revision_id(self, foreign_revid, newest_allowed):
         (uuid, path, revnum) = foreign_revid
         if uuid != self.uuid:
