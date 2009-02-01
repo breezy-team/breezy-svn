@@ -16,7 +16,12 @@
 """Upgrading revisions made with older versions of the mapping."""
 
 from bzrlib import ui
-from bzrlib.errors import BzrError, InvalidRevisionId, NoSuchRevision, DependencyNotPresent
+from bzrlib.errors import (
+    DependencyNotPresent,
+    BzrError,
+    InvalidRevisionId,
+    NoSuchRevision,
+    )
 from bzrlib.trace import info
 
 import itertools
