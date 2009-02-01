@@ -43,7 +43,7 @@ def check_rebase_version(min_version):
     """
     try:
         from bzrlib.plugins.rebase import version_info as rebase_version_info
-        if rebase_version_info[:2] < min_version:
+        if rebase_version_info[:len(min_version)] < min_version:
             raise RebaseNotPresent("Version %r present, at least %r required" 
                                    % (rebase_version_info, min_version))
     except ImportError, e:
@@ -225,7 +225,7 @@ def generate_upgrade_map(revs, mapping_registry, determine_upgraded_revid):
         rename_map[revid] = newrevid
     return rename_map
 
-MIN_REBASE_VERSION = (0, 4)
+MIN_REBASE_VERSION = (0, 4, 3)
 
 def create_upgrade_plan(repository, foreign_repository, new_mapping,
                         mapping_registry, revision_id=None, allow_changes=False):
