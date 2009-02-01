@@ -37,7 +37,7 @@ from bzrlib.bzrdir import BzrDirFormat, format_registry
 from bzrlib.commands import plugin_cmds
 from bzrlib.foreign import foreign_vcs_registry
 from bzrlib.help_topics import topic_registry
-from bzrlib.trace import warning, mutter
+from bzrlib.trace import mutter
 from bzrlib.transport import register_lazy_transport, register_transport_proto
 
 # versions ending in 'exp' mean experimental mappings
@@ -64,14 +64,14 @@ def check_subversion_version():
     ra_version = ra.version()
     if (ra_version[0] >= 5 and getattr(ra, 'SVN_REVISION', None) and 
         27729 <= ra.SVN_REVISION < 31470):
-        warning('bzr-svn: Installed Subversion has buggy svn.ra.get_log() '
+        raise ImportError(
+                'bzr-svn: Installed Subversion has buggy svn.ra.get_log() '
                 'implementation, please install newer.')
 
     mutter("bzr-svn: using Subversion %d.%d.%d (%s)" % ra_version)
 
     if subvertpy_version < MINIMUM_SUBVERTPY_VERSION:
-        warning("bzr-svn: at least subvertpy %d.%d.%d is required, %d.%d.%d is installed." % (MINIMUM_SUBVERTPY_VERSION + subvertpy_version))
-        raise ImportError
+        raise ImportError("bzr-svn: at least subvertpy %d.%d.%d is required, %d.%d.%d is installed." % (MINIMUM_SUBVERTPY_VERSION + subvertpy_version))
 
 
 def get_client_string():
@@ -83,8 +83,7 @@ def init_subvertpy():
     try:
         import subvertpy 
     except ImportError:
-        warning("unable to find subvertpy. Please install from http://launchpad.net/subvertpy.")
-        raise
+        raise ImportError("bzr-svn: unable to find subvertpy. Please install from http://launchpad.net/subvertpy.")
 
     check_subversion_version()
 
