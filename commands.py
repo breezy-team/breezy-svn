@@ -163,13 +163,14 @@ class cmd_svn_import(Command):
 
 
 class cmd_svn_upgrade(Command):
-    """Upgrade revisions mapped from Subversion in a Bazaar branch.
+    """Upgrade revisions mapped from a foreign version control system 
+    in a Bazaar branch.
     
-    This will change the revision ids of revisions whose parents 
-    were mapped from svn revisions.
+    This will change the identity of revisions whose parents 
+    were mapped from revisions in the other version control system.
 
     You are recommended to run "bzr check" in the local repository 
-    after running svn-upgrade.
+    after running this command.
     """
     from bzrlib.plugins.svn.mapping import mapping_registry
     takes_args = ['from_repository?']
@@ -231,6 +232,7 @@ class cmd_svn_upgrade(Command):
 
         if wt_to is not None:
             wt_to.set_last_revision(branch_to.last_revision())
+
 
 class cmd_svn_push(Command):
     """Push revisions to Subversion, creating a new branch if necessary.
