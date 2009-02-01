@@ -641,9 +641,10 @@ class SvnRepository(ForeignRepository):
             raise errors.DifferentSubversionRepository(uuid, self.uuid)
         assert isinstance(newest_allowed, BzrSvnMapping)
 
-        mapping = self.get_appropriate_mappings(self, newest_allowed)[0]
+        revmeta = self._revmeta_provider.lookup_revision(path, revnum)
+        mapping = revmeta.get_appropriate_mappings(newest_allowed)[0]
 
-        return self._revmeta_provider.lookup_revision(path, revnum).get_revision_id(mapping)
+        return revmeta.get_revision_id(mapping)
 
     def generate_revision_id(self, revnum, path, mapping):
         """Generate an unambiguous revision id. 
