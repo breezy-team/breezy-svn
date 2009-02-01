@@ -258,9 +258,12 @@ def create_upgrade_plan(repository, foreign_repository, new_mapping,
                 repository.fetch(foreign_repository, new_revid)
             except NoSuchRevision:
                 return None
+            if not repository.has_revision(new_revid):
+                return None
         return new_revid
 
-    upgrade_map = generate_upgrade_map(potential, mapping_registry, determine_upgraded_revid)
+    upgrade_map = generate_upgrade_map(potential, mapping_registry, 
+                                       determine_upgraded_revid)
    
     if not allow_changes:
         for oldrevid, newrevid in upgrade_map.iteritems():
