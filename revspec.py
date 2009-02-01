@@ -37,7 +37,8 @@ class RevisionSpec_svn(RevisionSpec):
     def _match_on(self, branch, revs):
         lazy_check_versions()
         loc = self.spec.find(':')
-        if not getattr(branch.repository, 'uuid', None):
+        uuid = getattr(branch.repository, 'uuid', None)
+        if uuid is None:
             raise BzrError("the svn: revisionspec can only be used with Subversion branches")
         try:
             return RevisionInfo.from_revision_id(branch, branch.generate_revision_id(int(self.spec[loc+1:])), branch.revision_history())

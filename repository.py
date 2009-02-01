@@ -639,7 +639,9 @@ class SvnRepository(ForeignRepository):
         (uuid, path, revnum) = foreign_revid
         if uuid != self.uuid:
             raise errors.DifferentSubversionRepository(uuid, self.uuid)
-        return self.generate_revision_id(revnum, path, mapping)
+        assert isinstance(mapping, BzrSvnMapping)
+
+        return self._revmeta_provider.lookup_revision(path, revnum).get_revision_id(mapping)
 
     def generate_revision_id(self, revnum, path, mapping):
         """Generate an unambiguous revision id. 
@@ -652,9 +654,7 @@ class SvnRepository(ForeignRepository):
         """
         assert isinstance(path, str)
         assert isinstance(revnum, int)
-        assert isinstance(mapping, BzrSvnMapping)
-
-        return self._revmeta_provider.lookup_revision(path, revnum).get_revision_id(mapping)
+        return self.lookup_foreign_revision_id((self.uuid, path, revnum), mapping)
 
     def lookup_revision_id(self, revid, layout=None, ancestry=None, 
                            project=None):

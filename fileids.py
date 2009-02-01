@@ -249,7 +249,7 @@ class FileIdMap(object):
         if revnum == 0:
             assert branch == ""
             return {"": (mapping.generate_file_id(foreign_revid, u""), 
-                self.repos.generate_revision_id(0, "", mapping), 
+                self.repos.lookup_foreign_revision_id((uuid, "", 0), mapping), 
                 None)}
 
         todo = []
