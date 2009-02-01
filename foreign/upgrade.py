@@ -16,7 +16,7 @@
 """Upgrading revisions made with older versions of the mapping."""
 
 from bzrlib import ui
-from bzrlib.errors import BzrError, InvalidRevisionId, DependencyNotPresent
+from bzrlib.errors import BzrError, InvalidRevisionId, NoSuchRevision, DependencyNotPresent
 from bzrlib.trace import info
 
 import itertools
@@ -250,8 +250,9 @@ def create_upgrade_plan(repository, foreign_repository, new_mapping,
         new_revid = new_mapping.revision_id_foreign_to_bzr(foreign_revid)
         # Make sure the revision is there
         if not repository.has_revision(new_revid):
-            repository.fetch(foreign_repository, new_revid)
-            if not repository.has_revision(new_revid):
+            try:
+                repository.fetch(foreign_repository, new_revid)
+            except NoSuchRevision:
                 return None
         return new_revid
 

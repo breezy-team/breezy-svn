@@ -1069,6 +1069,12 @@ class InterFromSvnRepository(InterRepository):
             finally:
                 if nested_pb is not None:
                     nested_pb.finished()
+            if revision_id is not None and not self.target.has_revision(revision_id):
+                # Apparently we could find the revision but it wasn't
+                # imported using the same mapping or perhaps 
+                # revision_id was a mapped revision id and the revision
+                # itself was roundtripped.
+                raise NoSuchRevision(revision_id)
         finally:
             if self.target.is_in_write_group():
                 self.target.abort_write_group()
