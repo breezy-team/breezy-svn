@@ -26,7 +26,7 @@ from bzrlib.errors import (
         )
 
 from bzrlib.plugins.svn import (
-        logwalker,
+        util,
         )
 
 
@@ -46,7 +46,7 @@ class PathPropertyProvider(object):
         path = path.lstrip("/")
 
         if not (path, revnum) in self._props_cache:
-            self._props_cache[(path, revnum)] = logwalker.lazy_dict({}, self._real_get_properties, 
+            self._props_cache[(path, revnum)] = util.lazy_dict({}, self._real_get_properties, 
                                                                     path, revnum)
         return self._props_cache[path, revnum]
 

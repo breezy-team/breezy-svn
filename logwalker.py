@@ -24,108 +24,10 @@ import subvertpy
 from bzrlib.plugins.svn import changes
 from bzrlib.plugins.svn.cache import CacheTable
 from bzrlib.plugins.svn.transport import SvnRaTransport
+from bzrlib.plugins.svn.util import lazy_dict
 
 # Maximum number of extra revisions to fetch in caching logwalker
 MAX_OVERHEAD_FETCH = 1000
-
-class lazy_dict(object):
-
-    def __init__(self, initial, create_fn, *args):
-        self.initial = initial
-        self.create_fn = create_fn
-        self.args = args
-        self.dict = None
-        self.is_loaded = False
-
-    def _ensure_init(self):
-        if self.dict is None:
-            self.dict = self.create_fn(*self.args)
-            self.create_fn = None
-            self.is_loaded = True
-
-    def setdefault(self, key, default):
-        try:
-            return self[key]
-        except KeyError:
-            self[key] = default
-            return self[key]
-
-    def __len__(self):
-        self._ensure_init()
-        return len(self.dict)
-
-    def __getitem__(self, key):
-        if key in self.initial:
-            return self.initial.__getitem__(key)
-        self._ensure_init()
-        return self.dict.__getitem__(key)
-
-    def __delitem__(self, key):
-        self._ensure_init()
-        return self.dict.__delitem__(key)
-
-    def __setitem__(self, key, value):
-        self._ensure_init()
-        return self.dict.__setitem__(key, value)
-
-    def __contains__(self, key):
-        if key in self.initial:
-            return True
-        self._ensure_init()
-        return self.dict.__contains__(key)
-
-    def get(self, key, default=None):
-        if key in self.initial:
-            return self.initial[key]
-        self._ensure_init()
-        return self.dict.get(key, default)
-
-    def has_key(self, key):
-        if self.initial.has_key(key):
-            return True
-        self._ensure_init()
-        return self.dict.has_key(key)
-
-    def keys(self):
-        self._ensure_init()
-        return self.dict.keys()
-
-    def values(self):
-        self._ensure_init()
-        return self.dict.values()
-
-    def items(self):
-        self._ensure_init()
-        return self.dict.items()
-
-    def iteritems(self):
-        self._ensure_init()
-        return self.dict.iteritems()
-
-    def __iter__(self):
-        self._ensure_init()
-        return self.dict.__iter__()
-
-    def __str__(self):
-        self._ensure_init()
-        return str(self.dict)
-
-    def __repr__(self):
-        self._ensure_init()
-        return repr(self.dict)
-
-    def __eq__(self, other):
-        self._ensure_init()
-        return self.dict.__eq__(other)
-
-    def __ne__(self, other):
-        self._ensure_init()
-        return self.dict.__ne__(other)
-
-    def update(self, other):
-        self._ensure_init()
-        return self.dict.update(other)
-
 
 def iter_changes(paths, from_revnum, to_revnum, get_revision_paths, 
     revprop_list, limit=0, pb=None):

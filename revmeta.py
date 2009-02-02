@@ -35,10 +35,7 @@ from bzrlib.trace import (
 from bzrlib.plugins.svn import (
         changes, 
         errors as svn_errors, 
-        logwalker,
-        )
-from bzrlib.plugins.svn.logwalker import (
-        CachingLogWalker,
+        util,
         )
 from bzrlib.plugins.svn.mapping import (
         estimate_bzr_ancestors, 
@@ -172,7 +169,7 @@ class RevisionMetadata(object):
                 # Make it look like the branch started here if the mapping 
                 # (anything < v4) restricts what paths can be valid branches
                 paths = dict(self._paths.items())
-                lazypaths = logwalker.lazy_dict(paths, full_paths, 
+                lazypaths = util.lazy_dict(paths, full_paths, 
                     self.repository.find_children, paths, 
                     self.branch_path, next[0], next[1])
                 paths[self.branch_path] = ('A', None, -1)
@@ -270,7 +267,7 @@ class RevisionMetadata(object):
         """Determine the file properties changed in this revision."""
         if self._changed_fileprops is None:
             if self.changes_branch_root():
-                self._changed_fileprops = logwalker.lazy_dict({}, properties.diff, self.get_fileprops(), self.get_previous_fileprops())
+                self._changed_fileprops = util.lazy_dict({}, properties.diff, self.get_fileprops(), self.get_previous_fileprops())
             else:
                 self._changed_fileprops = {}
         return self._changed_fileprops

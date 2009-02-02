@@ -59,7 +59,6 @@ from bzrlib.plugins.svn.errors import (
     MissingPrefix, 
     RevpropChangeFailed, 
     )
-from bzrlib.plugins.svn.logwalker import lazy_dict
 from bzrlib.plugins.svn.repository import (
     SvnRepositoryFormat, 
     SvnRepository,
@@ -71,6 +70,7 @@ from bzrlib.plugins.svn.svk import (
     SVN_PROP_SVK_MERGE
     )
 from bzrlib.plugins.svn.transport import url_join_unescaped_path
+from bzrlib.plugins.svn.util import lazy_dict
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
 
 
