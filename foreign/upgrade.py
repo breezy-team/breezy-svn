@@ -276,8 +276,16 @@ def create_upgrade_plan(repository, foreign_repository, new_mapping,
     else:
         heads = [revision_id]
 
+    def determine_new_revid(old_revid):
+        # If this revision id already exists round-tripped upstream, 
+        # leave it alone.
+        if foreign_repository.has_revision(old_revid):
+            return old_revid
+        # if not, return old_revid'
+        return create_upgraded_revid(revid, new_mapping.upgrade_suffix)
+
     plan = generate_transpose_plan(graph.iter_ancestry(heads), upgrade_map, 
-      graph, lambda revid: create_upgraded_revid(revid, new_mapping.upgrade_suffix))
+      graph, determine_new_revid)
     def remove_parents((oldrevid, (newrevid, parents))):
         return (oldrevid, newrevid)
     upgrade_map.update(dict(map(remove_parents, plan.iteritems())))
