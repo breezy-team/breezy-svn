@@ -112,15 +112,13 @@ class SubversionTags(BasicTags):
         ret = {}
         # Try to find the tags that are in the ancestry of this branch
         # and use their appropriate mapping
-        todo = list(self.branch._revision_meta_history())
-        while todo and len(reverse_tag_revmetas) > 0:
-            (revmeta, mapping) = todo.pop()
-            # TODO: Add RHS ancestry that is not in to todo to todo
+        for (revmeta, mapping) in self.branch.repository._iter_revmeta_ancestry():
             if revmeta not in reverse_tag_revmetas:
                 continue
             for name in reverse_tag_revmetas[revmeta]:
                 ret[name] = revmeta.get_revision_id(mapping)
             del reverse_tag_revmetas[revmeta]
+            
         # For anything that's not in the branches' ancestry, just use 
         # the latest mapping
         for (revmeta, names) in reverse_tag_revmetas.iteritems():

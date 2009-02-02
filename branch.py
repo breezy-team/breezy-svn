@@ -360,6 +360,13 @@ class SvnBranch(ForeignBranch):
         # get_push_location not supported on Subversion
         return None
 
+    def _iter_revmeta_ancestry(self):
+        todo = list(self._revision_meta_history())
+        while todo and len(reverse_tag_revmetas) > 0:
+            (revmeta, mapping) = todo.pop()
+            yield (revmeta, mapping)
+            # TODO: Add RHS ancestry that is not in to todo to todo
+
     def _revision_meta_history(self):
         if self._revmeta_cache is None:
             pb = ui.ui_factory.nested_progress_bar()
