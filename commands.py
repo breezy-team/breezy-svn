@@ -312,52 +312,6 @@ class cmd_svn_push(Command):
         if source_branch.get_push_location() is None or remember:
             source_branch.set_push_location(target_branch.base)
 
-class cmd_svn_branching_scheme(Command):
-    """Show or change the branching scheme for a Subversion repository.
-
-    See 'bzr help svn-branching-schemes' for details.
-    """
-    takes_args = ['location?']
-    takes_options = [
-        Option('set', help="Change the branching scheme. "),
-        Option('repository-wide', 
-            help="Act on repository-wide setting rather than local.")
-        ]
-    hidden = True
-
-    def run(self, location=".", set=False, repository_wide=False):
-        from bzrlib.bzrdir import BzrDir
-        from bzrlib.errors import BzrCommandError
-        from bzrlib.msgeditor import edit_commit_message
-        from bzrlib.trace import info
-        from bzrlib.plugins.svn.repository import SvnRepository
-        from bzrlib.plugins.svn.mapping3.scheme import scheme_from_branch_list
-        from bzrlib.plugins.svn.mapping3 import (BzrSvnMappingv3, config_set_scheme, 
-            get_property_scheme, set_property_scheme)
-        def scheme_str(scheme):
-            if scheme is None:
-                return ""
-            return "".join(map(lambda x: x+"\n", scheme.to_lines()))
-        dir = BzrDir.open_containing(location)[0]
-        repos = dir.find_repository()
-        if not isinstance(repos, SvnRepository):
-            raise BzrCommandError("Not a Subversion repository: %s" % location)
-        if repository_wide:
-            scheme = get_property_scheme(repos)
-        else:
-            scheme = BzrSvnMappingv3.from_repository(repos).scheme
-        if set:
-            schemestr = edit_commit_message("", 
-                                            start_message=scheme_str(scheme))
-            scheme = scheme_from_branch_list(
-                map(lambda x:x.strip("\n"), schemestr.splitlines()))
-            if repository_wide:
-                set_property_scheme(repos, scheme)
-            else:
-                config_set_scheme(repos, scheme, None, mandatory=True)
-        elif scheme is not None:
-            info(scheme_str(scheme))
-
 
 class cmd_svn_set_revprops(Command):
     """Migrate Bazaar metadata to Subversion revision properties.
@@ -415,6 +369,7 @@ class cmd_svn_layout(Command):
         repos = Repository.open(repos_url)
         layout = repos.get_layout()
         self.outf.write("Layout: %s\n" % str(layout))
+
 
 class cmd_svn_serve(Command):
     """Provide access to a Bazaar branch using the Subversion ra_svn protocol.

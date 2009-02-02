@@ -171,7 +171,7 @@ plugin_cmds.register_lazy('cmd_svn_import', [], 'bzrlib.plugins.svn.commands')
 plugin_cmds.register_lazy('cmd_svn_upgrade', [], 'bzrlib.plugins.svn.commands')
 plugin_cmds.register_lazy('cmd_svn_push', [], 'bzrlib.plugins.svn.commands')
 plugin_cmds.register_lazy('cmd_svn_branching_scheme', [], 
-                          'bzrlib.plugins.svn.commands')
+                          'bzrlib.plugins.svn.mapping3')
 plugin_cmds.register_lazy('cmd_svn_set_revprops', [], 
                           'bzrlib.plugins.svn.commands')
 plugin_cmds.register_lazy('cmd_svn_layout', [], 

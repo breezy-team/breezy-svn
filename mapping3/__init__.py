@@ -18,7 +18,9 @@ from bzrlib import (
         osutils,
         ui,
         )
-from bzrlib.trace import mutter
+from bzrlib.commands import Command
+from bzrlib.option import Option
+from bzrlib.trace import info, mutter
 
 from subvertpy import properties
 from subvertpy.ra import DIRENT_KIND
@@ -31,6 +33,7 @@ from bzrlib.plugins.svn.mapping3.scheme import (
         guess_scheme_from_branch_path, 
         guess_scheme_from_history, 
         ListBranchingScheme, 
+        scheme_from_branch_list,
         scheme_from_layout,
         parse_list_scheme_text,
         NoBranchingScheme,
@@ -320,3 +323,51 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
     @classmethod
     def get_test_instance(cls):
         return cls(NoBranchingScheme())
+
+
+class cmd_svn_branching_scheme(Command):
+    """Show or change the branching scheme for a Subversion repository.
+
+    This command is deprecated in favour of "bzr svn-layout". It should
+    only be used if you need compatibility with bzr-svn 0.4.x.
+
+    See 'bzr help svn-branching-schemes' for details.
+    """
+    takes_args = ['location?']
+    takes_options = [
+        Option('set', help="Change the branching scheme. "),
+        Option('repository-wide', 
+            help="Act on repository-wide setting rather than local.")
+        ]
+    hidden = True
+
+    def run(self, location=".", set=False, repository_wide=False):
+        from bzrlib.bzrdir import BzrDir
+        from bzrlib.msgeditor import edit_commit_message
+        from bzrlib.plugins.svn.repository import SvnRepository
+        def scheme_str(scheme):
+            if scheme is None:
+                return ""
+            return "".join(map(lambda x: x+"\n", scheme.to_lines()))
+        dir = BzrDir.open_containing(location)[0]
+        repos = dir.find_repository()
+        if not isinstance(repos, SvnRepository):
+            raise bzr_errors.BzrCommandError("Not a Subversion repository: %s" % location)
+        if repository_wide:
+            scheme = get_property_scheme(repos)
+        else:
+            scheme = BzrSvnMappingv3.from_repository(repos).scheme
+        if set:
+            schemestr = edit_commit_message("", 
+                                            start_message=scheme_str(scheme))
+            scheme = scheme_from_branch_list(
+                map(lambda x:x.strip("\n"), schemestr.splitlines()))
+            if repository_wide:
+                set_property_scheme(repos, scheme)
+            else:
+                config_set_scheme(repos, scheme, None, mandatory=True)
+        elif scheme is not None:
+            info(scheme_str(scheme))
+
+
+
