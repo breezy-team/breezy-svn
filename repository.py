@@ -528,10 +528,24 @@ class SvnRepository(ForeignRepository):
         """
         return False
 
+    def _iter_reverse_revmeta_mapping_ancestry(self, branch_path, revnum, mapping, lhs_history=None):
+        if lhs_history is None:
+            todo = self.get_mainline(branch_path, revnum, mapping=mapping)
+        else:
+            todo = list(lhs_history)
+        while todo:
+            (revmeta, mapping) = todo.pop()
+            yield (revmeta, mapping)
+            # TODO: Add RHS ancestry that is not in to todo to todo
+
+    def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum, 
+        to_revnum, mapping, pb=None, limit=0): 
+        return iter_with_mapping(self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=0, pb=pb, limit=limit), mapping)
+
     def get_mainline(self, branch_path, revnum, mapping, pb=None):
         """Get a list with all the revisions elements on a branch mainline."""
-        return list(iter_with_mapping(self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, 
-            to_revnum=0, pb=pb), mapping))
+        return list(self._iter_reverse_revmeta_mapping_history(branch_path,
+            revnum, to_revnum=0, mapping=mapping, pb=pb))
 
     def iter_reverse_revision_history(self, revision_id, pb=None, limit=0):
         """Iterate backwards through revision ids in the lefthand history
@@ -543,9 +557,9 @@ class SvnRepository(ForeignRepository):
             return
         (uuid, branch_path, revnum), mapping = self.lookup_revision_id(revision_id)
         assert uuid == self.uuid
-        for revmeta, mapping in iter_with_mapping(self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=0, 
-                                                        pb=pb, 
-                                                        limit=limit), mapping):
+        for revmeta, mapping in self._iter_reverse_revmeta_mapping_history(
+            branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb, 
+            limit=limit):
             if revmeta.is_hidden(mapping):
                 continue
             yield revmeta.get_revision_id(mapping)
