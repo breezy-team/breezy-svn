@@ -282,7 +282,7 @@ def create_upgrade_plan(repository, foreign_repository, new_mapping,
         if foreign_repository.has_revision(old_revid):
             return old_revid
         # if not, return old_revid'
-        return create_upgraded_revid(revid, new_mapping.upgrade_suffix)
+        return create_upgraded_revid(old_revid, new_mapping.upgrade_suffix)
 
     plan = generate_transpose_plan(graph.iter_ancestry(heads), upgrade_map, 
       graph, determine_new_revid)
