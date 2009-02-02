@@ -22,7 +22,7 @@ from bzrlib.tests import TestCase, TestSkipped
 
 from bzrlib.plugins.svn.format import get_rich_root_format
 from bzrlib.plugins.svn.layout.standard import RootLayout
-from bzrlib.plugins.svn.mapping import mapping_registry
+from bzrlib.plugins.svn.mapping import foreign_vcs_svn
 from bzrlib.plugins.svn.mapping3 import BzrSvnMappingv3
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.tests import SubversionTestCase
@@ -81,7 +81,7 @@ class UpgradeTests(SubversionTestCase):
         self.assertTrue(newrepos.has_revision("svn-v1:1@%s-" % oldrepos.uuid))
 
         mapping = oldrepos.get_mapping()
-        upgrade_repository(newrepos, oldrepos, new_mapping=mapping, mapping_registry=mapping_registry, allow_changes=True)
+        upgrade_repository(newrepos, oldrepos, new_mapping=mapping, allow_changes=True)
 
         self.assertTrue(newrepos.has_revision(oldrepos.generate_revision_id(1, "", mapping)))
 
@@ -107,7 +107,7 @@ class UpgradeTests(SubversionTestCase):
         wt.commit(message='fix moredata', rev_id="customrev")
 
         mapping = oldrepos.get_mapping()
-        upgrade_repository(newrepos, oldrepos, new_mapping=mapping, mapping_registry=mapping_registry, allow_changes=True)
+        upgrade_repository(newrepos, oldrepos, new_mapping=mapping, allow_changes=True)
 
         self.assertTrue(newrepos.has_revision(oldrepos.generate_revision_id(1, "", mapping)))
         self.assertTrue(newrepos.has_revision("customrev%s-upgrade" % mapping.upgrade_suffix))
@@ -140,7 +140,7 @@ class UpgradeTests(SubversionTestCase):
         wt.commit(message='fix moredata', rev_id="customrev")
 
         mapping = oldrepos.get_mapping()
-        upgrade_repository(newrepos, oldrepos, new_mapping=mapping, mapping_registry=mapping_registry, allow_changes=True)
+        upgrade_repository(newrepos, oldrepos, new_mapping=mapping, allow_changes=True)
         tree = newrepos.revision_tree("customrev%s-upgrade" % mapping.upgrade_suffix)
         self.assertEqual("specificid", tree.inventory.path2id("a"))
         self.assertEqual(mapping.generate_file_id((oldrepos.uuid, "", 1), u"a"), 
@@ -186,7 +186,7 @@ class UpgradeTests(SubversionTestCase):
         newrepos.commit_write_group()
         newrepos.unlock()
 
-        upgrade_repository(newrepos, oldrepos, new_mapping=mapping, mapping_registry=mapping_registry, 
+        upgrade_repository(newrepos, oldrepos, new_mapping=mapping, 
                            allow_changes=True)
 
         self.assertTrue(newrepos.has_revision(oldrepos.generate_revision_id(1, "", mapping)))
@@ -219,7 +219,7 @@ class UpgradeTests(SubversionTestCase):
         wt.commit(message='fix it again', rev_id="anotherrev")
 
         mapping = oldrepos.get_mapping()
-        renames = upgrade_repository(newrepos, oldrepos, new_mapping=mapping, mapping_registry=mapping_registry, 
+        renames = upgrade_repository(newrepos, oldrepos, new_mapping=mapping, 
                                      allow_changes=True)
         self.assertEqual({
             'svn-v1:1@%s-' % oldrepos.uuid: mapping.revision_id_foreign_to_bzr((oldrepos.uuid, "", 1)),
@@ -259,7 +259,7 @@ class UpgradeTests(SubversionTestCase):
         file("f/a", 'w').write("blackfield")
         wt.commit(message='fix it again', rev_id="anotherrev")
 
-        upgrade_branch(b, oldrepos, new_mapping=oldrepos.get_mapping(), mapping_registry=mapping_registry, allow_changes=True)
+        upgrade_branch(b, oldrepos, new_mapping=oldrepos.get_mapping(), allow_changes=True)
         mapping = oldrepos.get_mapping()
         self.assertEqual([oldrepos.generate_revision_id(0, "", mapping),
                           oldrepos.generate_revision_id(1, "", mapping),
@@ -291,7 +291,7 @@ class UpgradeTests(SubversionTestCase):
 
         mapping = oldrepos.get_mapping()
         upgrade_workingtree(wt, oldrepos, new_mapping=mapping, 
-                mapping_registry=mapping_registry, allow_changes=True)
+                allow_changes=True)
         self.assertEquals(wt.last_revision(), b.last_revision())
         self.assertEqual([oldrepos.generate_revision_id(0, "", mapping),
                           oldrepos.generate_revision_id(1, "", mapping),
@@ -320,7 +320,7 @@ class UpgradeTests(SubversionTestCase):
         file("f/a", 'w').write("blackfield")
         wt.commit(message='fix it again', rev_id="anotherrev")
 
-        upgrade_branch(b, oldrepos, new_mapping=oldrepos.get_mapping(), mapping_registry=mapping_registry)
+        upgrade_branch(b, oldrepos, new_mapping=oldrepos.get_mapping())
         self.assertEqual(["blarev", "customrev", "anotherrev"],
                 b.revision_history())
 
@@ -342,12 +342,12 @@ class UpgradeTests(SubversionTestCase):
         wt.add("a")
         wt.commit(message="data", rev_id="svn-v1:1@%s-" % oldrepos.uuid)
 
-        self.assertRaises(UpgradeChangesContent, lambda: upgrade_branch(b, oldrepos, new_mapping=oldrepos.get_mapping(), mapping_registry=mapping_registry))
+        self.assertRaises(UpgradeChangesContent, lambda: upgrade_branch(b, oldrepos, new_mapping=oldrepos.get_mapping()))
 
 
 class TestGenerateUpdateMapTests(TestCase):
     def test_nothing(self):
-        self.assertEquals({}, generate_upgrade_map(["bla", "bloe"], mapping_registry, BzrSvnMappingv3(TrunkBranchingScheme()).revision_id_foreign_to_bzr))
+        self.assertEquals({}, generate_upgrade_map(["bla", "bloe"], foreign_vcs_svn, BzrSvnMappingv3(TrunkBranchingScheme()).revision_id_foreign_to_bzr))
 
     def test_v2_to_v3(self):
-        self.assertEquals({"svn-v2:12@65390229-12b7-0310-b90b-f21a5aa7ec8e-trunk": "svn-v3-trunk0:65390229-12b7-0310-b90b-f21a5aa7ec8e:trunk:12"}, generate_upgrade_map(["svn-v2:12@65390229-12b7-0310-b90b-f21a5aa7ec8e-trunk", "bloe", "blaaa"], mapping_registry, BzrSvnMappingv3(TrunkBranchingScheme()).revision_id_foreign_to_bzr))
+        self.assertEquals({"svn-v2:12@65390229-12b7-0310-b90b-f21a5aa7ec8e-trunk": "svn-v3-trunk0:65390229-12b7-0310-b90b-f21a5aa7ec8e:trunk:12"}, generate_upgrade_map(["svn-v2:12@65390229-12b7-0310-b90b-f21a5aa7ec8e-trunk", "bloe", "blaaa"], foreign_vcs_svn, BzrSvnMappingv3(TrunkBranchingScheme()).revision_id_foreign_to_bzr))
