@@ -181,7 +181,7 @@ def upgrade_branch(branch, foreign_repository, new_mapping,
     upgrade_tags(branch.tags, branch.repository, foreign_repository, 
            new_mapping=new_mapping, 
            allow_changes=allow_changes, verbose=verbose, branch_renames=renames)
-    if len(renames) > 0:
+    if revid in renames:
         branch.generate_revision_history(renames[revid])
     return renames
 
