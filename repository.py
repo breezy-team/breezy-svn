@@ -550,8 +550,12 @@ class SvnRepository(ForeignRepository):
             (revmeta, mapping) = entry
             yield entry
             for rhs_parent_revid in revmeta.get_rhs_parents(mapping):
-                (_, rhs_parent_bp, rhs_parent_revnum), rhs_parent_mapping = self.lookup_revision_id(rhs_parent_revid)
-                update_todo(todo, self._iter_reverse_revmeta_mapping_history(rhs_parent_bp, rhs_parent_revnum, to_revnum=0, mapping=mapping))
+                try:
+                    (_, rhs_parent_bp, rhs_parent_revnum), rhs_parent_mapping = self.lookup_revision_id(rhs_parent_revid)
+                except bzr_errors.NoSuchRevision:
+                    pass
+                else:
+                    update_todo(todo, self._iter_reverse_revmeta_mapping_history(rhs_parent_bp, rhs_parent_revnum, to_revnum=0, mapping=mapping))
 
     def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum, 
         to_revnum, mapping, pb=None, limit=0): 
