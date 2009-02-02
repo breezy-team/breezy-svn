@@ -526,7 +526,7 @@ class RevisionMetadata(object):
         return extra - (total_hidden or 0)
 
     def get_rhs_parents(self, mapping):
-        """Determine the right hand side parents for this revision.
+        """Determine the right hand side parent ids for this revision.
 
         """
         def consider_fileprops():

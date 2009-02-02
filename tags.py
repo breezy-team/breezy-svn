@@ -96,19 +96,40 @@ class SubversionTags(BasicTags):
         except KeyError:
             raise NoSuchTag(tag_name)
 
-    def get_tag_dict(self):
-        # FIXME: Use mapping. iter_with_mapping() over branches history
-        # and see which matches best? What about right hand side revisions?
-        ret = {}
-        for (name, revmeta) in self.repository.find_tags(
-                project=self.branch.project, 
+    def _get_tag_dict_revmeta(self):
+        return self.repository.find_tags(project=self.branch.project, 
                 layout=self.branch.layout,
                 mapping=self.branch.mapping,
-                revnum=self.branch._revnum).iteritems():
+                revnum=self.branch._revnum)
+
+    def get_tag_dict(self):
+        tag_revmetas = self._get_tag_dict_revmeta()
+        if len(tag_revmetas) == 0:
+            return {}
+        reverse_tag_revmetas = {}
+        for name, revmeta in tag_revmetas.iteritems():
+            reverse_tag_revmetas.setdefault(revmeta, []).append(name)
+        ret = {}
+        # Try to find the tags that are in the ancestry of this branch
+        # and use their appropriate mapping
+        todo = list(self.branch._revision_meta_history())
+        while todo and len(reverse_tag_revmetas) > 0:
+            (revmeta, mapping) = todo.pop()
+            # TODO: Add RHS ancestry that is not in to todo to todo
+            if revmeta not in reverse_tag_revmetas:
+                continue
+            for name in reverse_tag_revmetas[revmeta]:
+                ret[name] = revmeta.get_revision_id(mapping)
+            del reverse_tag_revmetas[revmeta]
+        # For anything that's not in the branches' ancestry, just use 
+        # the latest mapping
+        for (revmeta, names) in reverse_tag_revmetas.iteritems():
             try:
-                ret[name] = revmeta.get_revision_id(self.branch.mapping)
+                revid = revmeta.get_revision_id(self.branch.mapping)
             except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                pass
+                continue
+            for name in names:
+                ret[name] = revid
         return ret
 
     def get_reverse_tag_dict(self):
