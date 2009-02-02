@@ -174,7 +174,7 @@ class cmd_svn_upgrade(Command):
     """
     takes_args = ['from_repository?']
     takes_options = ['verbose', 
-            Option("idmap-file", help="Write map with file ids.", type=str)]
+            Option("idmap-file", help="Write map with old and new revision ids.", type=str)]
 
     @display_command
     def run(self, from_repository=None, verbose=False, idmap_file=None):
