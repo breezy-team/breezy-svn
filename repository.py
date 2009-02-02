@@ -529,14 +529,29 @@ class SvnRepository(ForeignRepository):
         return False
 
     def _iter_reverse_revmeta_mapping_ancestry(self, branch_path, revnum, mapping, lhs_history=None):
+        """Iterate over the (revmeta, mapping) entries for the ancestry
+        of a specified path.
+
+        """
+        todo = []
+        processed = set()
+        def update_todo(todo, it):
+            for entry in it:
+                if entry in processed:
+                    return
+                todo.append(entry)
+                processed.add(entry)
         if lhs_history is None:
-            todo = self.get_mainline(branch_path, revnum, mapping=mapping)
+            update_todo(todo, self._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping=mapping))
         else:
-            todo = list(lhs_history)
+            update_todo(todo, lhs_history)
         while todo:
-            (revmeta, mapping) = todo.pop()
-            yield (revmeta, mapping)
-            # TODO: Add RHS ancestry that is not in to todo to todo
+            entry = todo.pop()
+            (revmeta, mapping) = entry
+            yield entry
+            for rhs_parent_revid in revmeta.get_rhs_parents(mapping):
+                (_, rhs_parent_bp, rhs_parent_revnum), rhs_parent_mapping = self.lookup_revision_id(rhs_parent_revid)
+                update_todo(todo, self._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping=mapping))
 
     def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum, 
         to_revnum, mapping, pb=None, limit=0): 
