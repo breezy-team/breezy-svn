@@ -173,10 +173,11 @@ class cmd_svn_upgrade(Command):
     after running this command.
     """
     takes_args = ['from_repository?']
-    takes_options = ['verbose']
+    takes_options = ['verbose', 
+            Option("idmap-file", help="Write map with file ids.", type=str)]
 
     @display_command
-    def run(self, from_repository=None, verbose=False):
+    def run(self, from_repository=None, verbose=False, idmap_file=None):
         from bzrlib.plugins.svn.foreign.upgrade import (upgrade_branch, upgrade_workingtree)
         from bzrlib.branch import Branch
         from bzrlib.errors import NoWorkingTree, BzrCommandError
@@ -208,23 +209,27 @@ class cmd_svn_upgrade(Command):
         if vcs is None:
             raise BzrCommandError("Repository at %s is not a foreign repository.a" % from_repository.base)
 
-        mapping_registry = vcs.mapping_registry
-
         new_mapping = from_repository.get_mapping()
 
         if wt_to is not None:
             renames = upgrade_workingtree(wt_to, from_repository, 
                                           new_mapping=new_mapping,
-                                          mapping_registry=mapping_registry,
                                           allow_changes=True, verbose=verbose)
         else:
             renames = upgrade_branch(branch_to, from_repository, 
                                      new_mapping=new_mapping,
-                                     mapping_registry=mapping_registry,
                                      allow_changes=True, verbose=verbose)
 
         if renames == {}:
             info("Nothing to do.")
+
+        if idmap_file is not None:
+            f = open(idmap_file, 'w')
+            try:
+                for oldid, newid in renames.iteritems():
+                    f.write("%s\t%s\n" % (oldid, newid))
+            finally:
+                f.close()
 
         if wt_to is not None:
             wt_to.set_last_revision(branch_to.last_revision())
