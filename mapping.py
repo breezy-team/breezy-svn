@@ -1012,6 +1012,14 @@ def get_roundtrip_ancestor_revids(fileprops):
                 mutter(str(ie))
 
 
+def find_roundtripped_root(revprops, path_changes):
+    # Find the root path of the change
+    bp = revprops.get(SVN_REVPROP_BZR_ROOT)
+    if bp is not None:
+        return bp
+    return changes.changes_root(path_changes.keys())
+
+
 class ForeignSubversion(foreign.ForeignVcs):
 
     def __init__(self):
