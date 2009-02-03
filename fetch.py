@@ -869,7 +869,7 @@ class FetchRevisionFinder(object):
             (uuid, branch_path, revnum) = foreign_revid
             # TODO: Do binary search to find first revision to fetch if
             # fetch_ghosts=False ?
-            for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping):
+            for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping=mapping):
                 if pb:
                     pb.update("determining revisions to fetch", 
                               revnum-revmeta.revnum, revnum)

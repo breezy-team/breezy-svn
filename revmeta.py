@@ -1285,21 +1285,3 @@ class RevisionMetadataProvider(object):
         for kind, item in browser:
             if kind != "revision" or check_unusual_path(item.branch_path):
                 yield kind, item
-
-
-def iter_with_mapping(it, mapping):
-    """Iterate through a stream of RevisionMetadata objects, newest first and 
-    add the appropriate mapping.
-
-    :param it: Iterator over revision metadata objects
-    :param mapping: Mapping to start out with
-    """
-    for revmeta in it:
-        (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(mapping)
-        if not mapping.is_branch_or_tag(revmeta.branch_path):
-            return
-        yield revmeta, mapping
-        mapping = lhs_mapping
-
-
-

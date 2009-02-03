@@ -64,7 +64,6 @@ from bzrlib.plugins.svn.mapping import (
         )
 from bzrlib.plugins.svn.parents import DiskCachingParentsProvider
 from bzrlib.plugins.svn.revids import DiskCachingRevidMap, MemoryCachingRevidMap, RevidMap
-from bzrlib.plugins.svn.revmeta import iter_with_mapping
 from bzrlib.plugins.svn.tree import SvnRevisionTree
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
 from bzrlib.plugins.svn.foreign.versionedfiles import (
@@ -559,7 +558,19 @@ class SvnRepository(ForeignRepository):
 
     def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum, 
         to_revnum, mapping, pb=None, limit=0): 
-        return iter_with_mapping(self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=to_revnum, pb=pb, limit=limit), mapping)
+        expected_revid = None
+        for revmeta in self._revmeta_provider.iter_reverse_branch_changes(
+            branch_path, revnum, to_revnum=to_revnum, pb=pb, limit=limit):
+            (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(mapping)
+            #assert (expected_revid is None or 
+            #    revmeta.get_revision_id(mapping) in (None, expected_revid)), \
+            #    "Expected %r, got %r" % (expected_revid, revmeta.get_revision_id(mapping))
+
+            if not mapping.is_branch_or_tag(revmeta.branch_path):
+                return
+            yield revmeta, mapping
+            expected_revid = revmeta._get_stored_lhs_parent_revid(mapping)
+            mapping = lhs_mapping
 
     def get_mainline(self, branch_path, revnum, mapping, pb=None):
         """Get a list with all the revisions elements on a branch mainline."""
