@@ -559,18 +559,27 @@ class SvnRepository(ForeignRepository):
     def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum, 
         to_revnum, mapping, pb=None, limit=0): 
         expected_revid = None
-        for revmeta in self._revmeta_provider.iter_reverse_branch_changes(
-            branch_path, revnum, to_revnum=to_revnum, pb=pb, limit=limit):
+        iter = self._revmeta_provider.iter_reverse_branch_changes(branch_path, 
+            revnum, to_revnum=to_revnum, pb=pb, limit=limit)
+        for revmeta in iter:
             (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(mapping)
-            #assert (expected_revid is None or 
-            #    revmeta.get_revision_id(mapping) in (None, expected_revid)), \
-            #    "Expected %r, got %r" % (expected_revid, revmeta.get_revision_id(mapping))
-
+            revid = revmeta.get_revision_id(mapping)
+            if (expected_revid is not None and
+                not revid in (None, expected_revid)):
+                # Need to restart, branch root has changed
+                (_, branch_path, revnum), mapping = self.lookup_revision_id(revid)
+                iter = self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=to_revnum, pb=pb, limit=limit)
             if not mapping.is_branch_or_tag(revmeta.branch_path):
                 return
             yield revmeta, mapping
             expected_revid = revmeta._get_stored_lhs_parent_revid(mapping)
             mapping = lhs_mapping
+        if expected_revid is not None and expected_revid != NULL_REVISION:
+            # Need to restart, branch root has changed
+            (_, branch_path, revnum), mapping = self.lookup_revision_id(expected_revid)
+            for (revmeta, mapping) in self._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=to_revnum, mapping=mapping, pb=pb, limit=limit):
+                yield (revmeta, mapping)
+
 
     def get_mainline(self, branch_path, revnum, mapping, pb=None):
         """Get a list with all the revisions elements on a branch mainline."""

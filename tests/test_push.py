@@ -24,7 +24,6 @@ from bzrlib.inventory import InventoryDirectory
 from bzrlib.merge import Merger, Merge3Merger
 from bzrlib.progress import DummyProgress
 from bzrlib.repository import Repository
-from bzrlib.tests import KnownFailure
 from bzrlib.trace import mutter
 
 import os
@@ -974,10 +973,13 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertEquals(tree1.path2id("foo"), foo_ie.file_id)
         self.assertEquals(tree2.path2id("foo"), foo_ie.file_id)
 
+        self.assertEquals(bzrwt.branch.revision_history(), 
+                          newbranch.revision_history())
+
     def test_change_root_fetch(self):
-        raise KnownFailure
         repos_url = self.make_repository("a")
-        bzrwt, old_ie, new_ie, foo_ie, revid1, revid2 = self._create_bzrwt_with_changed_root()
+        (bzrwt, old_ie, new_ie, foo_ie, revid1, revid2) = \
+            self._create_bzrwt_with_changed_root()
         newdir = BzrDir.open(repos_url+"/trunk")
         newbranch = newdir.import_branch(bzrwt.branch)
 
@@ -986,6 +988,12 @@ class PushNewBranchTests(SubversionTestCase):
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
+
+        log = self.client_log(repos_url, 2, 0)
+        self.assertEquals({'/trunk': ('A', None, -1), 
+                           '/trunk/foo': ('A', None, -1)}, log[1][0])
+        self.assertEquals({'/trunk': ('R', None, -1), 
+                           '/trunk/foo': ('A', '/trunk/foo', 1)}, log[2][0])
 
         tree1 = newrepos.revision_tree(revid1)
         tree2 = newrepos.revision_tree(revid2)
