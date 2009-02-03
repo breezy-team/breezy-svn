@@ -54,6 +54,10 @@ class TrunkLayoutTests(TestCase,LayoutTests):
         self.assertEquals(("branch", "", "trunk", ""), 
                           self.layout.parse("trunk"))
 
+    def test_parse_trunk_tags(self):
+        self.assertEquals(("branch", "", "trunk", "tags"), 
+                          self.layout.parse("trunk/tags"))
+
     def test_parse_tag(self):
         self.assertEquals(("tag", "", "tags/foo", ""), 
                           self.layout.parse("tags/foo"))

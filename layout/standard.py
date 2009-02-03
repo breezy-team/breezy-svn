@@ -90,10 +90,10 @@ class TrunkLayout(RepositoryLayout):
         parts = path.split("/")
         for i, p in enumerate(parts):
             if (i > 0 and parts[i-1] in ("branches", "tags")) or p == "trunk":
-                if parts[i-1] == "tags":
+                if i > 0 and parts[i-1] == "tags":
                     t = "tag"
                     j = i-1
-                elif parts[i-1] == "branches":
+                elif i > 0 and parts[i-1] == "branches":
                     t = "branch"
                     j = i-1
                 else:
