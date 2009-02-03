@@ -14,8 +14,8 @@ bzr-svn 0.5.0					UNRELEASED
 
   FEATURES
 
-   * Added basic implemention of "bzr check" on Subversion
-     repositories.
+   * Added "bzr check" on Subversion repositories that checks 
+     bzr-svn metadata. (#320929)
 
    * Allow overriding over revision-properties on a per-branch basis. (#319819)
 

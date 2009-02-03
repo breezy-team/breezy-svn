@@ -18,7 +18,7 @@
 from bzrlib import foreign, osutils
 from bzrlib.lazy_import import lazy_import
 from bzrlib.errors import InvalidRevisionId
-from bzrlib.revision import NULL_REVISION
+from bzrlib.revision import NULL_REVISION, Revision
 from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn import errors, version_info, get_client_string
@@ -376,7 +376,7 @@ class BzrSvnMapping(foreign.VcsMapping):
         """Determine the uuid of the repository in which this 
         round-tripped revision was originally committed.
 
-        :note: REturn None if no uuid is set.
+        :note: Return None if no uuid is set.
         """
         return None
 
@@ -590,6 +590,12 @@ class BzrSvnMapping(foreign.VcsMapping):
     def revprops_complete(self, revprops):
         raise NotImplementedError(self.revprops_complete)
 
+    def check_revprops(self, revprops, checkresult):
+        pass
+
+    def check_fileprops(self, changed_fileprops, checkresult):
+        pass
+
 
 def parse_fileid_property(text):
     """Pares a fileid file or revision property.
@@ -768,6 +774,32 @@ class BzrSvnMappingFileProps(object):
         elif SVN_PROP_BZR_FILEIDS in fileprops:
             fileprops[SVN_PROP_BZR_FILEIDS] = ""
 
+    def check_fileprops(self, changed_fileprops, checkresult):
+        # bzr:revision-id:*
+        text = changed_fileprops.get(SVN_PROP_BZR_REVISION_ID+self.name, ("", ""))
+        try:
+            new_lines = find_new_lines(text)
+        except ValueError, e:
+            checkresult.invalid_fileprop_cnt += 1
+        else:
+            if len(new_lines) > 1:
+                checkresult.invalid_fileprop_cnt += 1
+
+        if new_lines == []:
+            return
+        try:
+            revid = parse_revid_property(new_lines[0])
+        except errors.InvalidPropertyValue, e:
+            self.invalid_fileprop_cnt += 1
+            return
+
+        text = changed_fileprops.get(SVN_PROP_BZR_REVISION_INFO, ("", ""))
+        try:
+            parse_revision_metadata(text[1], Revision(revid))
+        except errors.InvalidPropertyValue:
+            checkresult.invalid_fileprop_cnt += 1
+
+
 
 class BzrSvnMappingRevProps(object):
 
@@ -857,6 +889,9 @@ class BzrSvnMappingRevProps(object):
         if fileids != {}:
             revprops[SVN_REVPROP_BZR_FILEIDS] = generate_fileid_property(fileids)
 
+    def check_revprops(self, revprops, check_result):
+        pass
+
 
 class SubversionMappingRegistry(foreign.VcsMappingRegistry):
 
@@ -907,7 +942,8 @@ def find_mapping_revprops(revprops):
     return None
 
 
-def find_mapping_fileprops(changed_fileprops):
+def find_mappings_fileprops(changed_fileprops):
+    ret = []
     for k, v in changed_fileprops.iteritems():
         if k.startswith(SVN_PROP_BZR_REVISION_ID):
             try:
@@ -916,8 +952,15 @@ def find_mapping_fileprops(changed_fileprops):
             except ValueError:
                 pass
             else:
-                return mapping_registry.parse_mapping_name("svn-" + k[len(SVN_PROP_BZR_REVISION_ID):])
-    return None
+                ret.append(mapping_registry.parse_mapping_name("svn-" + k[len(SVN_PROP_BZR_REVISION_ID):]))
+    return ret
+
+
+def find_mapping_fileprops(changed_fileprops):
+    mappings = find_mappings_fileprops(changed_fileprops)
+    if len(mappings) == 0:
+        return None
+    return mappings[0]
 
 
 def is_bzr_revision_revprops(revprops):

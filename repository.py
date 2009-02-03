@@ -58,6 +58,8 @@ from bzrlib.plugins.svn.mapping import (
         SVN_REVPROP_BZR_SIGNATURE,
         BzrSvnMapping,
         foreign_vcs_svn,
+        find_mappings_fileprops,
+        find_mapping_revprops,
         mapping_registry,
         is_bzr_revision_revprops, 
         parse_svn_dateprop,
@@ -123,6 +125,13 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         self.checked_rev_cnt = 0
         self.checked_roundtripped_cnt = 0
         self.hidden_rev_cnt = 0
+        self.invalid_fileprop_cnt = 0
+        self.text_revision_in_parents_cnt = 0
+        self.text_not_changed_cnt = 0
+        self.paths_not_under_branch_root = 0
+        self.different_uuid_cnt = 0
+        self.multiple_mappings_cnt = 0
+        self.inconsistent_fileprop_revprop_cnt = 0
 
     def report_results(self, verbose):
         note('checked repository %s format %s',
@@ -133,17 +142,73 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             note('%6d revisions originating in bzr', self.checked_roundtripped_cnt)
         if self.hidden_rev_cnt > 0:
             note('%6d hidden bzr-created revisions', self.hidden_rev_cnt)
+        if self.invalid_fileprop_cnt > 0:
+            note('%6d invalid bzr-related file properties', 
+                 self.invalid_fileprop_cnt)
+        if self.text_not_changed_cnt > 0:
+            note('%6d files were not changed but had their revision/id changed',
+                 self.text_not_changed_cnt)
+        if self.paths_not_under_branch_root > 0:
+            note('%6d files were modified that were not under the branch root',
+                 self.paths_not_under_branch_root)
+        if self.different_uuid_cnt > 0:
+            note('%6d revisions originating in a different repository',
+                 self.different_uuid_cnt)
+        if self.multiple_mappings_cnt > 0:
+            note('%6d revisions with multiple mappings',
+                 self.multiple_mappings_cnt)
+        if self.inconsistent_fileprop_revprop_cnt > 0:
+            note('%6d revisions with file and revision properties that are inconsistent',
+                self.inconsistent_fileprop_revprop_cnt)
 
     def check_revmeta(self, revmeta):
         self.checked_rev_cnt += 1
+        found_fileprops = 0
+        # Check for multiple mappings
+        fileprop_mappings = find_mappings_fileprops(revmeta.get_changed_fileprops())
+        if len(fileprop_mappings) > 1:
+            self.multiple_mappings_cnt += 1
         mapping = revmeta.get_original_mapping()
         if mapping is None:
             return
+        if (len(fileprop_mappings) > 0 and 
+            find_mapping_revprops(revmeta.get_revprops()) not in 
+                (None, fileprop_mappings[0])):
+            self.inconsistent_fileprop_revprop_cnt += 1
         self.checked_roundtripped_cnt += 1
         if revmeta.is_hidden(mapping):
             self.hidden_rev_cnt += 1
-        # TODO: Check inconsistencies in file properties
 
+        mapping.check_fileprops(revmeta.get_changed_fileprops(), self)
+        mapping.check_revprops(revmeta.get_revprops(), self)
+
+        # Check for inconsistencies in text file ids/revisions
+        text_revisions = revmeta.get_text_revisions(mapping)
+        text_parents = revmeta.get_text_parents(mapping)
+        text_ids = revmeta.get_fileid_overrides(mapping)
+        path_changes = revmeta.get_paths()
+        for path in set(text_ids.keys() + text_revisions.keys() + text_parents.keys()):
+            if (path in text_revisions and
+                text_revisions[path] in text_parents.get(path, [])):
+                self.text_revision_in_parents_cnt += 1
+            if not urlutils.join(revmeta.branch_path, path) in path_changes:
+                self.text_not_changed_cnt += 1
+
+        # TODO: Check that at the text parents exist in the text revisions 
+        # in one of this revisions parents
+
+        # TODO: Check that stored revno matches actual revision number
+
+        # Check all paths are under branch root
+        branch_root = mapping.get_branch_root(revmeta.get_revprops())
+        if branch_root is not None:
+            for p in revmeta.get_paths():
+                if not changes.path_is_child(branch_root, p):
+                    self.paths_not_under_branch_root += 1
+
+        original_uuid = mapping.get_repository_uuid(revmeta.get_revprops())
+        if original_uuid is not None and original_uuid != self.repository.uuid:
+            self.different_uuid_cnt += 1
 
 
 class SvnRepository(ForeignRepository):

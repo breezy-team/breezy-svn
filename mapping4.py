@@ -147,3 +147,4 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
     def export_revprop_redirect(self, revnum, fileprops):
         if not mapping.SVN_PROP_BZR_REVPROP_REDIRECT in fileprops:
             fileprops[mapping.SVN_PROP_BZR_REVPROP_REDIRECT] = str(revnum)
+
