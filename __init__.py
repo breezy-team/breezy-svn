@@ -43,7 +43,7 @@ from bzrlib.transport import register_lazy_transport, register_transport_proto
 # versions ending in 'exp' mean experimental mappings
 # versions ending in 'dev' mean development version
 # versions ending in 'final' mean release (well tested, etc)
-version_info = (0, 5, 0, 'candidate', 2)
+version_info = (0, 5, 0, 'final', 0)
 
 if version_info[3] == 'final':
     version_string = '%d.%d.%d' % version_info[:3]
