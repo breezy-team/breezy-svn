@@ -40,6 +40,7 @@ from subvertpy import properties, SubversionException
 from subvertpy.delta import apply_txdelta_handler
 
 from bzrlib.plugins.svn.errors import (
+    convert_svn_error,
     FileIdMapIncomplete,
     InvalidFileName,
     )
@@ -788,6 +789,7 @@ class TreeDeltaBuildEditor(DeltaBuildEditor):
         return idmap_lookup(self._idmap, self.mapping, path)[0]
 
 
+@convert_svn_error
 def report_inventory_contents(reporter, revnum, start_empty):
     try:
         reporter.set_path("", revnum, start_empty)
