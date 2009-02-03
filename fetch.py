@@ -50,7 +50,6 @@ from bzrlib.plugins.svn.fileids import (
 from bzrlib.plugins.svn.foreign import escape_commit_message
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_PREFIX
 from bzrlib.plugins.svn.repository import SvnRepository, SvnRepositoryFormat
-from bzrlib.plugins.svn.revmeta import iter_with_mapping
 from bzrlib.plugins.svn.transport import url_join_unescaped_path
 
 FETCH_COMMIT_WRITE_SIZE = 500
@@ -870,8 +869,7 @@ class FetchRevisionFinder(object):
             (uuid, branch_path, revnum) = foreign_revid
             # TODO: Do binary search to find first revision to fetch if
             # fetch_ghosts=False ?
-            for revmeta, mapping in iter_with_mapping(self.source._revmeta_provider.iter_reverse_branch_changes(
-                branch_path, revnum, to_revnum=0), mapping):
+            for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping):
                 if pb:
                     pb.update("determining revisions to fetch", 
                               revnum-revmeta.revnum, revnum)

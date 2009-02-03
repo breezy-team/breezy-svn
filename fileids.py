@@ -29,9 +29,6 @@ from bzrlib.plugins.svn import (
         changes, 
         errors,
         )
-from bzrlib.plugins.svn.revmeta import (
-        iter_with_mapping,
-        )
 
 # idmap: dictionary mapping unicode paths to tuples with file id, 
 #   revision id and the foreign_revid it was introduced in, if it 
@@ -340,7 +337,7 @@ class CachingFileIdMap(object):
         # No history -> empty map
         try:
             pb = ui.ui_factory.nested_progress_bar()
-            for revmeta, mapping in iter_with_mapping(self.repos._revmeta_provider.iter_reverse_branch_changes(branch, revnum, to_revnum=0), mapping):
+            for revmeta, mapping in self.repos._iter_reverse_revmeta_mapping_history(branch, revnum, to_revnum=0, mapping=mapping):
                 pb.update("fetching changes for file ids", revnum-revmeta.revnum, revnum)
                 if revmeta.is_hidden(mapping):
                     continue

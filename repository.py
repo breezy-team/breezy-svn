@@ -559,7 +559,7 @@ class SvnRepository(ForeignRepository):
 
     def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum, 
         to_revnum, mapping, pb=None, limit=0): 
-        return iter_with_mapping(self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=0, pb=pb, limit=limit), mapping)
+        return iter_with_mapping(self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=to_revnum, pb=pb, limit=limit), mapping)
 
     def get_mainline(self, branch_path, revnum, mapping, pb=None):
         """Get a list with all the revisions elements on a branch mainline."""
