@@ -192,8 +192,6 @@ class RevisionMetadata(object):
         if revid is None:
             revid = mapping.revision_id_foreign_to_bzr(self.get_foreign_revid())
 
-        if revid == "necoro@necoro.net-20080324191839-6a8lppgnc1k06axu":
-            import pdb; pdb.set_trace()
         return revid
 
     def get_tag_revmeta(self, mapping):
