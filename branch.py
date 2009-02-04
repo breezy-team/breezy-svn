@@ -371,12 +371,8 @@ class SvnBranch(ForeignBranch):
 
     def _revision_meta_history(self):
         if self._revmeta_cache is None:
-            pb = ui.ui_factory.nested_progress_bar()
-            try:
-                self._revmeta_cache = util.lazy_readonly_list(self.repository._iter_reverse_revmeta_mapping_history(self.get_branch_path(), self._revnum or self.repository.get_latest_revnum(), to_revnum=0, mapping=self.mapping, pb=pb))
-            finally:
-                pb.finished()
-        return iter(self._revmeta_cache)
+            self._revmeta_cache = util.lazy_readonly_list(self.repository._iter_reverse_revmeta_mapping_history(self.get_branch_path(), self._revnum or self.repository.get_latest_revnum(), to_revnum=0, mapping=self.mapping))
+        return self._revmeta_cache
 
     def _gen_revision_history(self):
         """Generate the revision history from last revision
