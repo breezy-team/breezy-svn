@@ -57,9 +57,19 @@ class ReposConfigTests(SubversionTestCase):
         c.set_user_option("branches", "bla;blie")
         self.assertEquals(["bla", "blie"], c.get_branches())
 
+    def test_branches(self):
+        c = self.config 
+        c.set_branches(["bla", "blie"])
+        self.assertEquals(["bla", "blie"], c.get_branches())
+
     def test_get_tags(self):
         c = self.config 
         c.set_user_option("tags", "bla;blie")
+        self.assertEquals(["bla", "blie"], c.get_tags())
+
+    def test_tags(self):
+        c = self.config 
+        c.set_tags(["bla", "blie"])
         self.assertEquals(["bla", "blie"], c.get_tags())
 
     def test_get_scheme_none(self):

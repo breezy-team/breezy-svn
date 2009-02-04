@@ -190,6 +190,12 @@ class SvnRepositoryConfig(Config):
             return None
         return [t.encode("utf-8") for t in tags_str.split(";") if t != ""]
 
+    def set_tags(self, tags):
+        self.set_user_option("tags", "".join(["%s;" % t.decode("utf-8") for t in tags]))
+
+    def set_branches(self, branches):
+        self.set_user_option("branches", "".join(["%s;" % b.decode("utf-8") for b in branches]))
+
     def get_reuse_revisions(self):
         ret = self._get_user_option("reuse-revisions")
         if ret is None:
