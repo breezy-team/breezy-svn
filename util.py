@@ -114,4 +114,31 @@ class lazy_dict(object):
         return self.dict.update(other)
 
 
-lazy_readonly_list = list
+class lazy_readonly_list(object):
+
+    def __init__(self, iterator):
+        self._iterator = iterator
+        self._list = []
+
+    def _next(self):
+        ret = self._iterator.next()
+        self._list.append(ret)
+        return ret
+
+    def __iter__(self):
+        class Iterator(object):
+
+            def __init__(self, list, next):
+                self._list = list
+                self._next = next
+                self._idx = 0
+
+            def next(self):
+                if len(self._list) > self._idx:
+                    ret = self._list[self._idx]
+                    self._idx += 1
+                    return ret
+                self._idx += 1
+                return self._next()
+
+        return Iterator(self._list, self._next)
