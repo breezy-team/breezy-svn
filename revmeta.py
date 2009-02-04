@@ -512,16 +512,22 @@ class RevisionMetadata(object):
         extra = 0
         total_hidden = None
         lm = self
-        while lm and mapping.is_branch_or_tag(lm.branch_path):
-            (mapping, lhs_mapping) = lm.get_appropriate_mappings(mapping)
-            ret = lm.get_distance_to_null(mapping)
-            if ret is not None:
-                return ret + extra - (total_hidden or 0)
-            if total_hidden is None:
-                total_hidden = lm.get_hidden_lhs_ancestors_count(mapping)
-            extra += 1
-            lm = lm.get_direct_lhs_parent_revmeta()
-            mapping = lhs_mapping
+        pb = ui.ui_factory.nested_progress_bar()
+        try:
+            while lm and mapping.is_branch_or_tag(lm.branch_path):
+                pb.update("determining revno", self.revnum-lm.revnum, 
+                          self.revnum)
+                (mapping, lhs_mapping) = lm.get_appropriate_mappings(mapping)
+                ret = lm.get_distance_to_null(mapping)
+                if ret is not None:
+                    return ret + extra - (total_hidden or 0)
+                if total_hidden is None:
+                    total_hidden = lm.get_hidden_lhs_ancestors_count(mapping)
+                extra += 1
+                lm = lm.get_direct_lhs_parent_revmeta()
+                mapping = lhs_mapping
+        finally:
+            pb.finished()
         return extra - (total_hidden or 0)
 
     def get_rhs_parents(self, mapping):
