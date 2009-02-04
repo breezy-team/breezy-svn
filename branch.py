@@ -55,7 +55,12 @@ from subvertpy import (
         ERR_FS_NO_SUCH_REVISION,
         )
 
-from bzrlib.plugins.svn.commit import push, push_ancestors, create_branch_with_hidden_commit
+from bzrlib.plugins.svn import util
+from bzrlib.plugins.svn.commit import (
+    create_branch_with_hidden_commit,
+    push,
+    push_ancestors,
+    )
 from bzrlib.plugins.svn.config import BranchConfig
 from bzrlib.plugins.svn.errors import NotSvnBranchPath
 from bzrlib.plugins.svn.foreign import ForeignBranch, FakeControlFiles
@@ -368,10 +373,10 @@ class SvnBranch(ForeignBranch):
         if self._revmeta_cache is None:
             pb = ui.ui_factory.nested_progress_bar()
             try:
-                self._revmeta_cache = self.repository.get_mainline(self.get_branch_path(), self._revnum or self.repository.get_latest_revnum(), self.mapping, pb=pb)
+                self._revmeta_cache = util.lazy_readonly_list(self.repository._iter_reverse_revmeta_mapping_history(self.get_branch_path(), self._revnum or self.repository.get_latest_revnum(), to_revnum=0, mapping=self.mapping, pb=pb))
             finally:
                 pb.finished()
-        return self._revmeta_cache
+        return iter(self._revmeta_cache)
 
     def _gen_revision_history(self):
         """Generate the revision history from last revision

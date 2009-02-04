@@ -645,12 +645,6 @@ class SvnRepository(ForeignRepository):
             for (revmeta, mapping) in self._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=to_revnum, mapping=mapping, pb=pb, limit=limit):
                 yield (revmeta, mapping)
 
-
-    def get_mainline(self, branch_path, revnum, mapping, pb=None):
-        """Get a list with all the revisions elements on a branch mainline."""
-        return list(self._iter_reverse_revmeta_mapping_history(branch_path,
-            revnum, to_revnum=0, mapping=mapping, pb=pb))
-
     def iter_reverse_revision_history(self, revision_id, pb=None, limit=0):
         """Iterate backwards through revision ids in the lefthand history
 

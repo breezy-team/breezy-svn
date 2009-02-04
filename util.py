@@ -114,3 +114,4 @@ class lazy_dict(object):
         return self.dict.update(other)
 
 
+lazy_readonly_list = list

@@ -257,7 +257,7 @@ class FileIdMap(object):
             map = {}
 
         # No history -> empty map
-        todo = self.repos.get_mainline(branch, revnum, mapping)
+        todo = list(self.repos._iter_reverse_revmeta_mapping_history(branch, revnum, to_revnum=0, mapping=mapping))
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for i, (revmeta, mapping) in enumerate(reversed(todo)):
