@@ -131,7 +131,9 @@ class RevisionMetadata(object):
 
     def __eq__(self, other):
         return (type(self) == type(other) and 
-                self.get_foreign_revid() == other.get_foreign_revid())
+                self.revnum == other.revnum and
+                self.branch_path == other.branch_path and
+                self.uuid == other.uuid)
 
     def __ne__(self, other):
         return not self.__eq__(other)

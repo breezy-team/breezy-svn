@@ -303,6 +303,7 @@ def parse_required_features_property(text):
 
 class BzrSvnMapping(foreign.VcsMapping):
     """Class that maps between Subversion and Bazaar semantics."""
+
     experimental = False
     _warned_experimental = False
     roundtripping = False
