@@ -504,7 +504,7 @@ class SvnRepository(ForeignRepository):
             if self._guessed_appropriate_layout is None:
                 (self._guessed_layout, self._guessed_appropriate_layout) = repository_guess_layout(self, 
                     self.get_latest_revnum(), self._hinted_branch_path)
-            self._layout_source =  LAYOUT_SOURCE_GUESSED
+            self._layout_source = LAYOUT_SOURCE_GUESSED
             self._layout = self._guessed_appropriate_layout
         return self._layout, self._layout_source
 

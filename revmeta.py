@@ -361,11 +361,13 @@ class RevisionMetadata(object):
         """Find the original mapping that was used to store this revision
         or None if it is not a bzr-svn revision.
         """
+        def revprops_acceptable(revprops):
+            return revprops.get(SVN_REVPROP_BZR_ROOT) == self.branch_path
         return self._import_from_props(None,
                 find_mapping_fileprops,
                 find_mapping_revprops,
                 None, self.consider_bzr_fileprops,
-                revprops_acceptable=lambda revprops: revprops.get(SVN_REVPROP_BZR_ROOT) == self.branch_path,
+                revprops_acceptable=revprops_acceptable,
                 revprops_sufficient=lambda x: True)
 
     def _get_stored_lhs_parent_revid(self, mapping):
@@ -605,6 +607,20 @@ class RevisionMetadata(object):
                            consider_fileprops_fn, 
                            revprops_acceptable=None,
                            revprops_sufficient=None):
+        """Import some round-tripped metadata from this revision. 
+
+        This tries as hard as possible to not fetch any data that shouldn't
+        be considered.
+
+        :param mapping: Mapping to use
+        :param fileprop_fn: Function to interpret changed file properties
+        :param revprop_fn: Function to interpret revision properties
+        :param default: Default value if nothing else works
+        :param consider_fileprops_fn: Function that checks whether 
+            file properties should be considered.
+        :param revprops_acceptable: 
+        :param revprops_sufficient:
+        """
         can_use_revprops = (mapping is None or mapping.can_use_revprops)
         can_use_fileprops = (mapping is None or mapping.can_use_fileprops)
         if revprops_acceptable is None:
@@ -661,13 +677,19 @@ class RevisionMetadata(object):
         return default
 
     def get_fileid_overrides(self, mapping):
-        """Find the file id override map for this revision."""
+        """Find the file id override map for this revision.
+        
+        :param mapping: Mapping to use
+        """
         return self._import_from_props(mapping, 
             mapping.import_fileid_map_fileprops, 
             mapping.import_fileid_map_revprops, {}, self.consider_bzr_fileprops)
 
     def get_text_revisions(self, mapping):
-        """Return text revision override map for this revision."""
+        """Return text revision override map for this revision.
+        
+        :param mapping: Mapping to use
+        """
         return self._import_from_props(mapping,
             mapping.import_text_revisions_fileprops,
             mapping.import_text_revisions_revprops, {}, 
@@ -703,6 +725,9 @@ class RevisionMetadata(object):
         return self._consider_bzr_revprops
 
     def _get_revprop_redirect_revnum(self):
+        """Retrieve the file property references the first revision
+        with revision properties.
+        """
         def get_memoized(x):
             return getattr(x, "_revprop_redirect_revnum", None)
         def memoize(x, val):
@@ -718,6 +743,7 @@ class RevisionMetadata(object):
                 memoize=memoize)
 
     def consider_bzr_hidden_fileprops(self):
+        """See if this is a hidden bzr revision in file properties."""
         return (self.estimate_bzr_hidden_fileprop_ancestors() > 0) 
 
     def consider_bzr_fileprops(self):
@@ -1043,6 +1069,7 @@ class RevisionMetadataBrowser(object):
 
     def do(self):
         for (paths, revnum, revprops) in self._iter_log:
+            assert revnum <= self.from_revnum
             # Dictionary mapping branch paths to Metabranches
             changed_bps = {}
             deletes = []
