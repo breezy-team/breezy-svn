@@ -78,15 +78,13 @@ class RevidMap(object):
                 if revid is not None:
                     yield (revid, mapping.get_branch_root(revmeta.get_revprops()).strip("/"), revmeta.revnum, mapping)
 
-    def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None, pb=None):
+    def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None):
         reuse_policy = self.repos.get_config().get_reuse_revisions()
         assert reuse_policy in ("other-branches", "removed-branches", "none") 
         check_removed = (reuse_policy == "removed-branches")
         for (branch, revno, exists) in self.repos.find_fileprop_paths(layout, from_revnum, to_revnum, project, check_removed=check_removed):
             assert isinstance(branch, str)
             assert isinstance(revno, int)
-            if pb is not None:
-                pb.update("discovering fileprop revisions", from_revnum-revno, from_revnum-to_revnum)
             # Look at their bzr:revision-id-vX
             revids = set()
             try:
@@ -213,15 +211,15 @@ class DiskCachingRevidMap(object):
                     if entry_revid not in self.revid_seen:
                         self.cache.insert_revid(entry_revid, branch, revnum, revnum, mapping.name)
                         self.revid_seen.add(entry_revid)
-                for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_fileprop_revids(layout, last_checked, fileprops_to_revnum, project, pb=pb):
-                    min_revno = max(last_checked, min_revno)
-                    if entry_revid == revid:
-                        found = (branch, min_revno, max_revno, mapping)
-                    if entry_revid not in self.revid_seen:
-                        self.cache.insert_revid(entry_revid, branch, min_revno, max_revno, mapping.name)
-                        self.revid_seen.add(entry_revid)
             finally:
                 pb.finished()
+            for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_fileprop_revids(layout, last_checked, fileprops_to_revnum, project):
+                min_revno = max(last_checked, min_revno)
+                if entry_revid == revid:
+                    found = (branch, min_revno, max_revno, mapping)
+                if entry_revid not in self.revid_seen:
+                    self.cache.insert_revid(entry_revid, branch, min_revno, max_revno, mapping.name)
+                    self.revid_seen.add(entry_revid)
             # We've added all the revision ids for this layout in the
             # repository, so no need to check again unless new revisions got 
             # added
