@@ -29,10 +29,20 @@ from bzrlib import (
 from bzrlib.foreign import ForeignRepository
 from bzrlib.inventory import Inventory
 from bzrlib.lockable_files import LockableFiles, TransportLock
-from bzrlib.repository import Repository, RepositoryFormat, needs_read_lock
+from bzrlib.repository import (
+    Repository,
+    RepositoryFormat,
+    needs_read_lock,
+    )
 from bzrlib.revisiontree import RevisionTree
-from bzrlib.revision import NULL_REVISION, ensure_null
-from bzrlib.transport import Transport, get_transport
+from bzrlib.revision import (
+    NULL_REVISION,
+    ensure_null,
+    )
+from bzrlib.transport import (
+    Transport,
+    get_transport,
+    )
 from bzrlib.trace import info, note
 
 from collections import defaultdict

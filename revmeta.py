@@ -55,10 +55,15 @@ from bzrlib.plugins.svn.svk import (
         )
 
 import bisect
-from collections import defaultdict, deque
+from collections import (
+    defaultdict,
+    deque,
+    )
 from functools import partial
-from itertools import ifilter, imap
-
+from itertools import (
+    ifilter,
+    imap,
+    )
 
 _warned_slow_revprops = False
 

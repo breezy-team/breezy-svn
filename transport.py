@@ -359,10 +359,10 @@ class SvnRaTransport(Transport):
         finally:
             self.add_connection(conn)
 
-    def get_dir(self, path, revnum, kind=False):
+    def get_dir(self, path, revnum, fields=0):
         conn = self.get_connection()
         try:
-            return conn.get_dir(path, revnum, kind)
+            return conn.get_dir(path, revnum, fields)
         finally:
             self.add_connection(conn)
 
