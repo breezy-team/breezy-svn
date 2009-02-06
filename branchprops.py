@@ -46,8 +46,8 @@ class PathPropertyProvider(object):
         path = path.lstrip("/")
 
         if not (path, revnum) in self._props_cache:
-            self._props_cache[(path, revnum)] = util.lazy_dict({}, self._real_get_properties, 
-                                                                    path, revnum)
+            self._props_cache[(path, revnum)] = util.lazy_dict({}, 
+                self._real_get_properties, path, revnum)
         return self._props_cache[path, revnum]
 
     def _real_get_properties(self, path, revnum):
