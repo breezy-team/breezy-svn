@@ -597,6 +597,13 @@ class BzrSvnMapping(foreign.VcsMapping):
     def check_fileprops(self, changed_fileprops, checkresult):
         pass
 
+    def newer_than(self, other_mapping):
+        """Check whether other_mapping precedes this mapping, and that 
+        revisions mapped with other_mapping can exist in the ancestry of revisions
+        mapped with this mapping.
+        """
+        return False
+
 
 def parse_fileid_property(text):
     """Pares a fileid file or revision property.

@@ -360,8 +360,11 @@ class RevisionMetadata(object):
             except bzr_errors.InvalidRevisionId:
                 lhs = original
             else:
-                pass # TODO: Make sure lhs <= original
-        # TODO: Make sure original <= newest_allowed
+                if lhs.newer_than(original):
+                    lhs = original
+        # Make sure original <= newest_allowed
+        if original.newer_than(newest_allowed):
+            original = newest_allowed
         return (original, lhs)
 
     def get_original_mapping(self):

@@ -148,3 +148,8 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
         if not mapping.SVN_PROP_BZR_REVPROP_REDIRECT in fileprops:
             fileprops[mapping.SVN_PROP_BZR_REVPROP_REDIRECT] = str(revnum)
 
+    def newer_than(self, other_mapping):
+        if other_mapping.revid_prefix[:6] in ("svn-v1", "svn-v2", "svn-v3"):
+            return True
+        return False
+

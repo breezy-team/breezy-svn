@@ -29,6 +29,10 @@ class RoundtripMappingTests(TestCase):
         super(RoundtripMappingTests, self).setUp()
         self.mapping = mapping_registry.get(self.mapping_name).get_test_instance()
 
+    def test_newer_than_self(self):
+        # A mapping can never be newer than itself
+        self.assertEquals(False, self.mapping.newer_than(self.mapping))
+
     def test_roundtrip_revision(self):
         revid = self.mapping.revision_id_foreign_to_bzr(("myuuid", "path", 42))
         (uuid, path, revnum), mapping = self.mapping.revision_id_bzr_to_foreign(revid)
