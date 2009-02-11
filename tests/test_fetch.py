@@ -1639,7 +1639,7 @@ Node-copyfrom-path: x
     def test_fetch_symlink_with_newlines(self):
         if not has_symlinks():
             return
-        raise KnownFailure("Bazaar doesn't support newlines in symlink targets")
+        raise KnownFailure("Bazaar doesn't support newlines in symlink targets (#219832)")
         repos_url = self.make_repository('d')
 
         dc = self.get_commit_editor(repos_url)
