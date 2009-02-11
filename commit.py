@@ -39,6 +39,7 @@ from bzrlib.trace import mutter, warning
 
 from cStringIO import StringIO
 
+import subvertpy
 from subvertpy import (
     delta, 
     properties, 
@@ -72,6 +73,8 @@ from bzrlib.plugins.svn.svk import (
 from bzrlib.plugins.svn.transport import url_join_unescaped_path
 from bzrlib.plugins.svn.util import lazy_dict
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
+
+PROP_REVISION_ORIGINAL_DATE = getattr(subvertpy, "PROP_REVISION_ORIGINAL_DATE", "svn:original-date")
 
 
 def _revision_id_to_svk_feature(revid):
@@ -688,6 +691,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                 assert prop.split(":")[0] in ("bzr", "svk", "svn")
                 if not properties.is_valid_property_name(prop):
                     warning("Setting property %r with invalid characters in name", prop)
+            if self.supports_custom_revprops:
+                self._svn_revprops[PROP_REVISION_ORIGINAL_DATE] = properties.time_to_cstring(1000000*self._timestamp)
             conn = self.repository.transport.get_connection()
             assert self.supports_custom_revprops or self._svn_revprops.keys() == [properties.PROP_REVISION_LOG], \
                     "revprops: %r" % self._svn_revprops.keys()

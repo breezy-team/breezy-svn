@@ -5,6 +5,10 @@ bzr-svn 0.5.1					UNRELEASED
    * Fix parsing of "trunk/tags" style filenames in trunk repository layout 
      handling. (#324970)
 
+  FEATURES
+
+   * Set svn:original-date property when revision properties can be committed.
+
 bzr-svn 0.5.0					2009-02-03
 
   BUG FIXES
