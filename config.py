@@ -244,7 +244,7 @@ class SvnRepositoryConfig(Config):
     def get_use_cache(self):
         try:
             if self.get_bool("use-cache"):
-                return set(["log", "fileids", "revids"])
+                return set(["log", "fileids", "revids", "revinfo"])
             return set()
         except ValueError:
             val = self._get_user_option("use-cache")
@@ -252,7 +252,7 @@ class SvnRepositoryConfig(Config):
                 ret = set([val])
             else:
                 ret = set(val)
-            if len(ret - set(["log", "fileids", "revids"])) != 0:
+            if len(ret - set(["log", "fileids", "revids", "revinfo"])) != 0:
                 raise BzrError("Invalid setting 'use-cache': %r" % val)
             return ret
         except KeyError:

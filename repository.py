@@ -75,7 +75,7 @@ from bzrlib.plugins.svn.mapping import (
         parse_svn_dateprop,
         )
 from bzrlib.plugins.svn.parents import DiskCachingParentsProvider
-from bzrlib.plugins.svn.revids import DiskCachingRevidMap, MemoryCachingRevidMap, RevidMap
+from bzrlib.plugins.svn.revids import DiskCachingRevidMap, MemoryCachingRevidMap, RevidMap, RevisionInfoCache
 from bzrlib.plugins.svn.tree import SvnRevisionTree
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
 from bzrlib.plugins.svn.foreign.versionedfiles import (
@@ -267,7 +267,7 @@ class SvnRepository(ForeignRepository):
         if use_cache is None:
             # TODO: Don't enable log cache in some situations, e.g. 
             # for large repositories ?
-            use_cache = set(["fileids", "revids", "log"])
+            use_cache = set(["fileids", "revids", "revinfo", "log"])
 
         if use_cache:
             cache_dir = self.create_cache_dir()
@@ -286,12 +286,18 @@ class SvnRepository(ForeignRepository):
             cachedir_transport = get_transport(cache_dir)
             self.fileid_map = CachingFileIdMap(cachedir_transport, 
                 self.fileid_map)
+
         if "revids" in use_cache:
             self.revmap = DiskCachingRevidMap(self.revmap, self.cachedb)
             self._real_parents_provider = DiskCachingParentsProvider(
                 self._real_parents_provider, cachedir_transport)
         else:
             self.revmap = MemoryCachingRevidMap(self.revmap)
+
+        if "revinfo" in use_cache:
+            self.revinfo_cache = RevisionInfoCache(self.cachedb)
+        else:
+            self.revinfo_cache = None
 
         self._parents_provider = graph.CachingParentsProvider(
             self._real_parents_provider)

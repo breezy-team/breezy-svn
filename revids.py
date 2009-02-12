@@ -346,3 +346,23 @@ class RevisionIdMapCache(CacheTable):
             self.cachedb.execute(
                 "insert into revmap (revid,path,min_revnum,max_revnum,mapping) VALUES (?,?,?,?,?)",
                 (revid, branch, min_revnum, max_revnum, mapping))
+
+
+class RevisionInfoCache(CacheTable):
+
+    def _create_table(self):
+        self.cachedb.executescript("""
+        create table if not exists revinfo (revid text, path text, revnum integer, mapping text);
+        create unique index if not exists revid_path_mapping on revmap (revnum, path, mapping);
+        """)
+        # Revisions ids are quite expensive
+        self._commit_interval = 100
+
+    def insert_revision(self, foreign_revid, mapping, revid, revno, hidden, original_mapping, lhs_mapping):
+        raise NotImplementedError(self.insert_revision)
+
+    def get_revision(self, foreign_revid, mapping):
+        # Will raise KeyError if not present
+        # returns tuple with (revid, hidden, original_mapping, lhs_mapping, revno)
+        raise KeyError((foreign_revid, mapping))
+

@@ -110,7 +110,7 @@ class ReposConfigTests(SubversionTestCase):
         c = self.config
         self.assertEquals(None, c.get_use_cache())
         c.set_user_option("use-cache", "True")
-        self.assertEquals(set(["log", "revids", "fileids"]), c.get_use_cache())
+        self.assertEquals(set(["log", "revids", "fileids", "revinfo"]), c.get_use_cache())
         c.set_user_option("use-cache", ["log", "revids"])
         self.assertEquals(set(["log", "revids"]), c.get_use_cache())
         c.set_user_option("use-cache", "False")
