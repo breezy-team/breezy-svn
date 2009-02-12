@@ -19,6 +19,7 @@
 import bzrlib
 from bzrlib import (
         debug,
+        ui,
         urlutils,
         )
 from bzrlib.errors import (
@@ -119,12 +120,41 @@ def bzr_to_svn_url(url):
     return url
 
 
+class SubversionProgressReporter(object):
+
+    def __init__(self):
+        self._last_progress = 0
+        # This variable isn't used yet as of bzr 1.12, and finding 
+        # the right Transport object will be tricky in bzr-svn's case
+        # so just setting it to None for now.
+        self._transport = None
+
+    def update(self, progress, total):
+        mutter("progress %d, total %d", progress, total)
+        # The counter seems to reset sometimes
+        if self._last_progress > progress:
+            assert progress < 100000
+            self._last_progress = 0
+        changed = progress - self._last_progress
+        assert changed >= 0, "changed was %d (%d -> %d)" % (changed, self._last_progress, progress)
+        self._last_progress = progress
+        ui.ui_factory.report_transport_activity(self._transport, changed, None)
+
+
 def Connection(url):
+    # Subvertpy <= 0.6.3 has a bug in the reference counting of the 
+    # progress update function
+    if subvertpy.__version__ >= (0, 6, 3):
+        progress_cb = SubversionProgressReporter().update
+    else:
+        progress_cb = None
+
     try:
         mutter('opening SVN RA connection to %r' % url)
         ret = subvertpy.ra.RemoteAccess(url.encode('utf8'), 
                 auth=create_auth_baton(url),
-                client_string_func=bzrlib.plugins.svn.get_client_string)
+                client_string_func=bzrlib.plugins.svn.get_client_string,
+                progress_cb=progress_cb)
         if 'transport' in debug.debug_flags:
             ret = MutteringRemoteAccess(ret)
     except subvertpy.SubversionException, (msg, num):

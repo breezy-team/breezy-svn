@@ -12,6 +12,8 @@ bzr-svn 0.5.1					UNRELEASED
 
    * Set svn:original-date property when revision properties can be committed.
 
+   * Add transport speed progress indication. (require subvertpy >= 0.6.4)
+
 bzr-svn 0.5.0					2009-02-03
 
   BUG FIXES
