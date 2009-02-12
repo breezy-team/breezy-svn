@@ -799,26 +799,26 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._parents_cache = getattr(self.repository._real_parents_provider, 
                                       "_cache", None)
         self._revid_cache = self.repository.revmap.cache
-        self._revid = None
+        self._revid = {}
+
+    def _retrieve_revision(self, mapping):
+        # Look in the cache to see if it's already there
+        self._revid[mapping] = self._revid_cache.lookup_branch_revnum(self.revnum, self.branch_path, mapping.name)
+        if self._revid[mapping] is not None:
+            return
+        self._revid[mapping] = super(CachingRevisionMetadata, self).get_revision_id(
+            mapping)
+        self._revid_cache.insert_revid(self._revid[mapping], self.branch_path, 
+                                       self.revnum, self.revnum, mapping.name)
+        self._revid_cache.commit_conditionally()
 
     def get_revision_id(self, mapping):
         """Find the revision id of a revision."""
-        if self._revid is not None:
-            return self._revid
-        # Look in the cache to see if it already has a revision id
-        self._revid = self._revid_cache.lookup_branch_revnum(self.revnum, 
-                                                             self.branch_path, 
-                                                             mapping.name)
-        if self._revid is not None:
-            return self._revid
+        if mapping in self._revid:
+            return self._revid[mapping]
 
-        self._revid = super(CachingRevisionMetadata, self).get_revision_id(
-            mapping)
-
-        self._revid_cache.insert_revid(self._revid, self.branch_path, 
-                                       self.revnum, self.revnum, mapping.name)
-        self._revid_cache.commit_conditionally()
-        return self._revid
+        self._retrieve_revision(mapping)
+        return self._revid[mapping]
 
     def get_parent_ids(self, mapping):
         """Find the parent ids of a revision."""
