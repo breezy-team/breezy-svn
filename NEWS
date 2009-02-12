@@ -5,6 +5,9 @@ bzr-svn 0.5.1					UNRELEASED
    * Fix parsing of "trunk/tags" style filenames in trunk repository layout 
      handling. (#324970)
 
+   * "bzr push" now also works when creating new branches. "bzr svn-push" 
+     has been removed. This requires a patched version of bzr. (#127945)
+
   FEATURES
 
    * Set svn:original-date property when revision properties can be committed.
