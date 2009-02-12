@@ -849,7 +849,6 @@ class CachingRevisionMetadata(RevisionMetadata):
     def get_stored_lhs_parent_revid(self, mapping):
         if mapping in self._stored_lhs_parent_revid:
             return self._stored_lhs_parent_revid[mapping]
-
         try:
             self._retrieve(mapping)
         except KeyError:
@@ -866,7 +865,6 @@ class CachingRevisionMetadata(RevisionMetadata):
         """Find the revision id of a revision."""
         if mapping in self._revid:
             return self._revid[mapping]
-
         try:
             self._retrieve(mapping)
         except KeyError:
@@ -877,7 +875,6 @@ class CachingRevisionMetadata(RevisionMetadata):
     def get_revno(self, mapping):
         if mapping in self._revno:
             return self._revno[mapping]
-
         try:
             self._retrieve(mapping)
         except KeyError:
@@ -891,7 +888,6 @@ class CachingRevisionMetadata(RevisionMetadata):
     def is_hidden(self, mapping):
         if mapping in self._revno:
             return self._hidden[mapping]
-
         try:
             self._retrieve(mapping)
         except KeyError:
@@ -902,17 +898,13 @@ class CachingRevisionMetadata(RevisionMetadata):
     def get_parent_ids(self, mapping):
         """Find the parent ids of a revision."""
         myrevid = self.get_revision_id(mapping)
-
         if self._parents_cache is not None:
             parent_ids = self._parents_cache.lookup_parents(myrevid)
             if parent_ids is not None:
                 return parent_ids
-
         parent_ids = super(CachingRevisionMetadata, self).get_parent_ids(
             mapping)
-
         self._parents_cache.insert_parents(myrevid, parent_ids)
-
         return parent_ids
 
 
