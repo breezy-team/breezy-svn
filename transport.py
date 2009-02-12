@@ -130,7 +130,6 @@ class SubversionProgressReporter(object):
         self._transport = None
 
     def update(self, progress, total):
-        mutter("progress %d, total %d", progress, total)
         # The counter seems to reset sometimes
         if self._last_progress > progress:
             assert progress < 100000
