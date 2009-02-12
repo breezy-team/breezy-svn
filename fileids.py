@@ -228,7 +228,7 @@ class FileIdMap(object):
         return idmap
 
     def update_idmap(self, map, revmeta, mapping):
-        local_changes = get_local_changes(revmeta.get_paths(mapping), 
+        local_changes = get_local_changes(revmeta.get_paths(), 
                     revmeta.branch_path, mapping,
                     self.repos.get_layout(),
                     self.repos.generate_revision_id)

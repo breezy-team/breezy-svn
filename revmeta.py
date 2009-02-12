@@ -81,25 +81,6 @@ class MetaHistoryIncomplete(Exception):
         self.msg = msg
 
 
-def full_paths(find_children, paths, bp, from_bp, from_rev):
-    """Generate the changes creating a specified branch path.
-
-    :param find_children: Function that recursively lists all children 
-                          of a path in a revision.
-    :param paths: Paths dictionary to update
-    :param bp: Branch path to create.
-    :param from_bp: Path to look up children in
-    :param from_rev: Revision to look up children in.
-    """
-    pb = ui.ui_factory.nested_progress_bar()
-    try:
-        for c in find_children(from_bp, from_rev, pb):
-            paths[changes.rebase_path(c, from_bp, bp)] = ('A', None, -1)
-    finally:
-        pb.finished()
-    return paths
-
-
 class RevisionMetadata(object):
     """Object describing a revision with bzr semantics in a Subversion 
     repository.
@@ -164,23 +145,11 @@ class RevisionMetadata(object):
         """
         return (self.uuid, self.branch_path, self.revnum)
 
-    def get_paths(self, mapping=None):
+    def get_paths(self):
         """Fetch the changed paths dictionary for this revision.
         """
         if self._paths is None:
             self._paths = self._log.get_revision_paths(self.revnum)
-        if mapping is not None and mapping.restricts_branch_paths:
-            next = changes.find_prev_location(self._paths, self.branch_path, 
-                                              self.revnum)
-            if next is not None and not mapping.is_branch_or_tag(next[0]):
-                # Make it look like the branch started here if the mapping 
-                # (anything < v4) restricts what paths can be valid branches
-                paths = dict(self._paths.items())
-                lazypaths = util.lazy_dict(paths, full_paths, 
-                    self.repository.find_children, paths, 
-                    self.branch_path, next[0], next[1])
-                paths[self.branch_path] = ('A', None, -1)
-                return lazypaths
         return self._paths
 
     def get_revision_id(self, mapping):
