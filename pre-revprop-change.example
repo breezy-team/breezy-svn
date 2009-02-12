@@ -15,8 +15,6 @@ USER="$3"
 PROPNAME="$4"
 ACTION="$5"
 
-if [ "$ACTION" = "M" -a "$PROPNAME" = "svn:log" ]; then exit 0; fi
-
 if [ "$ACTION" = "M" -a "$PROPNAME" = "bzr:gpg-signature" ]; then exit 0; fi
 
 # Allow adding bzr-svn revision properties:
