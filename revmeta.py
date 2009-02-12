@@ -799,22 +799,35 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._parents_cache = getattr(self.repository._real_parents_provider, 
                                       "_cache", None)
         self._revid_cache = self.repository.revmap.cache
+        self._revinfo_cache = self.repository.revinfo_cache
         self._revid = {}
+        self._revno = {}
+        self._original_mapping = None
+        self._hidden = {}
+        self._stored_lhs_parent_revid = {}
 
     def _update_cache(self, mapping):
         self._revid_cache.insert_revid(self._revid[mapping], self.branch_path, 
                                        self.revnum, self.revnum, mapping.name)
         self._revid_cache.commit_conditionally()
+        self._revinfo_cache.insert_revision(self.get_foreign_revid(), mapping.name, 
+            self._revid[mapping], self._revno[mapping], self._hidden[mapping],
+            self._original_mapping, self._stored_lhs_parent_revid)
+        self._revinfo_cache.commit_conditionally()
 
     def _determine(self, mapping):
+        #self._revno[mapping] = super(CachingRevisionMetadata, self).get_revno(mapping)
+        self._revno[mapping] = None
         self._revid[mapping] = super(CachingRevisionMetadata, self).get_revision_id(
             mapping)
+        self._hidden[mapping] = super(CachingRevisionMetadata, self).is_hidden(mapping)
+        self._original_mapping = super(CachingRevisionMetadata, self).get_original_mapping()
+        self._stored_lhs_parent_revid[mapping] = super(CachingRevisionMetadata, self)._get_stored_lhs_parent_revid(mapping)
 
     def _retrieve(self, mapping):
-        revid = self._revid_cache.lookup_branch_revnum(self.revnum, self.branch_path, mapping.name)
-        if revid is None:
-            raise KeyError(revid)
-        self._revid[mapping] = revid
+        (self._revid[mapping], self._revno[mapping], self._hidden[mapping],
+         self._original_mapping, self._stored_lhs_parent_revid[mapping]) = \
+                 self._revinfo_cache.get_revision(self.get_foreign_revid(), mapping.name)
 
     def get_revision_id(self, mapping):
         """Find the revision id of a revision."""

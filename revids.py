@@ -358,11 +358,11 @@ class RevisionInfoCache(CacheTable):
         # Revisions ids are quite expensive
         self._commit_interval = 100
 
-    def insert_revision(self, foreign_revid, mapping, revid, revno, hidden, original_mapping, lhs_mapping):
-        raise NotImplementedError(self.insert_revision)
+    def insert_revision(self, foreign_revid, mapping, revid, revno, hidden, original_mapping, stored_lhs_parent_revid):
+        pass # FIXME
 
     def get_revision(self, foreign_revid, mapping):
         # Will raise KeyError if not present
-        # returns tuple with (revid, hidden, original_mapping, lhs_mapping, revno)
+        # returns tuple with (revid, revno, hidden, original_mapping, stored_lhs_parent_revid)
         raise KeyError((foreign_revid, mapping))
 
