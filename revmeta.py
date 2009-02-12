@@ -519,6 +519,10 @@ class RevisionMetadata(object):
         return mapping.get_hidden_lhs_ancestors_count(self.get_fileprops())
 
     def get_revno(self, mapping):
+        """Determine the Bazaar revision number for this revision.
+
+        :param mapping: Mapping to use
+        """
         extra = 0
         total_hidden = None
         lm = self
@@ -572,7 +576,10 @@ class RevisionMetadata(object):
             consider_fileprops)
 
     def get_parent_ids(self, mapping):
-        """Return the parent ids for this revision. """
+        """Return the parent ids for this revision.
+        
+        :param mapping: Mapping to use.
+        """
         lhs_parent = self.get_lhs_parent_revid(mapping)
 
         if lhs_parent == NULL_REVISION:
@@ -1161,7 +1168,12 @@ def filter_revisions(it):
 
 
 def restrict_prefixes(prefixes, prefix):
-    """Trim a list of prefixes down as much as possible."""
+    """Trim a list of prefixes down as much as possible.
+    
+    :param prefixes: List of prefixes to check
+    :param prefix: Prefix to restrict to
+    :return: Set with the remaining prefixes
+    """
     ret = set()
     for p in prefixes:
         if prefix == "" or p == prefix or p.startswith(prefix+"/"):
