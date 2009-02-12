@@ -22,10 +22,12 @@ Most Bazaar commands should work fine with Subversion branches. To
 create new branches in Subversion using push, it is currently necessary
 to use the svn-push command rather than the standard push command.
 
-bzr-svn also adds two new commands to Bazaar:
+bzr-svn also adds four new commands to Bazaar:
 
- - bzr svn-import
  - bzr dpush
+ - bzr svn-import
+ - bzr svn-serve
+ - bzr svn-layout
 
 For more information about bzr-svn, see the bzr-svn FAQ.
 
