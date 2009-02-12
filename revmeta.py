@@ -810,14 +810,13 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._revid_cache.insert_revid(self._revid[mapping], self.branch_path, 
                                        self.revnum, self.revnum, mapping.name)
         self._revid_cache.commit_conditionally()
-        self._revinfo_cache.insert_revision(self.get_foreign_revid(), mapping.name, 
+        self._revinfo_cache.insert_revision(self.get_foreign_revid(), mapping, 
             self._revid[mapping], self._revno[mapping], self._hidden[mapping],
-            self._original_mapping, self._stored_lhs_parent_revid)
+            self._original_mapping, self._stored_lhs_parent_revid[mapping])
         self._revinfo_cache.commit_conditionally()
 
     def _determine(self, mapping):
-        #self._revno[mapping] = super(CachingRevisionMetadata, self).get_revno(mapping)
-        self._revno[mapping] = None
+        self._revno[mapping] = super(CachingRevisionMetadata, self).get_revno(mapping)
         self._revid[mapping] = super(CachingRevisionMetadata, self).get_revision_id(
             mapping)
         self._hidden[mapping] = super(CachingRevisionMetadata, self).is_hidden(mapping)
@@ -827,7 +826,7 @@ class CachingRevisionMetadata(RevisionMetadata):
     def _retrieve(self, mapping):
         (self._revid[mapping], self._revno[mapping], self._hidden[mapping],
          self._original_mapping, self._stored_lhs_parent_revid[mapping]) = \
-                 self._revinfo_cache.get_revision(self.get_foreign_revid(), mapping.name)
+                 self._revinfo_cache.get_revision(self.get_foreign_revid(), mapping)
 
     def get_revision_id(self, mapping):
         """Find the revision id of a revision."""

@@ -352,17 +352,33 @@ class RevisionInfoCache(CacheTable):
 
     def _create_table(self):
         self.cachedb.executescript("""
-        create table if not exists revinfo (revid text, path text, revnum integer, mapping text);
-        create unique index if not exists revid_path_mapping on revmap (revnum, path, mapping);
+        create table if not exists revmetainfo (path text, revnum integer, mapping text, revid text, revno int, hidden int, original_mapping text, stored_lhs_parent_revid text);
+        create unique index if not exists revmeta_path_mapping on revmetainfo(revnum, path, mapping);
         """)
         # Revisions ids are quite expensive
         self._commit_interval = 100
 
     def insert_revision(self, foreign_revid, mapping, revid, revno, hidden, original_mapping, stored_lhs_parent_revid):
-        pass # FIXME
+        if original_mapping is not None:
+            orig_mapping_name = original_mapping.name
+        else:
+            orig_mapping_name = None
+        self.cachedb.execute("insert into revmetainfo (path, revnum, mapping, revid, revno, hidden, original_mapping, stored_lhs_parent_revid) values (?, ?, ?, ?, ?, ?, ?, ?)", (foreign_revid[1], foreign_revid[2], mapping.name, revid, revno, hidden, orig_mapping_name, stored_lhs_parent_revid))
 
     def get_revision(self, foreign_revid, mapping):
         # Will raise KeyError if not present
         # returns tuple with (revid, revno, hidden, original_mapping, stored_lhs_parent_revid)
-        raise KeyError((foreign_revid, mapping))
+        row = self.cachedb.execute("select revid, revno, hidden, original_mapping, stored_lhs_parent_revid from revmetainfo where path = ? and revnum = ? and mapping = ?", (foreign_revid[1], foreign_revid[2], mapping.name)).fetchone()
+        if row is None:
+            raise KeyError((foreign_revid, mapping))
+        else:
+            if row[3] is None:
+                original_mapping = None
+            else:
+                original_mapping = mapping_registry.parse_mapping_name("svn-" + row[3].encode("utf-8"))
+            if row[4] is None:
+                stored_lhs_parent_revid = None
+            else:
+                stored_lhs_parent_revid = row[4].encode("utf-8")
+            return (row[0].encode("utf-8"), row[1], row[2], original_mapping, stored_lhs_parent_revid)
 
