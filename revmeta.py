@@ -380,6 +380,9 @@ class RevisionMetadata(object):
                 revprops_acceptable=revprops_acceptable,
                 revprops_sufficient=lambda x: True)
 
+    def get_stored_lhs_parent_revid(self, mapping):
+        return self._get_stored_lhs_parent_revid(mapping)
+
     def _get_stored_lhs_parent_revid(self, mapping):
         return self._import_from_props(mapping, 
                 mapping.get_lhs_parent_fileprops,
@@ -389,7 +392,7 @@ class RevisionMetadata(object):
     def get_lhs_parent_revid(self, mapping):
         """Find the revid of the left hand side parent of this revision."""
         # Sometimes we can retrieve the lhs parent from the revprop data
-        lhs_parent = self._get_stored_lhs_parent_revid(mapping)
+        lhs_parent = self.get_stored_lhs_parent_revid(mapping)
         if lhs_parent is not None:
             return lhs_parent
         parentrevmeta = self.get_lhs_parent_revmeta(mapping)
@@ -548,6 +551,9 @@ class RevisionMetadata(object):
         """Determine the right hand side parent ids for this revision.
 
         """
+        return self._get_rhs_parents(mapping)
+
+    def _get_rhs_parents(self, mapping):
         def consider_fileprops():
             return (self.consider_bzr_fileprops() or 
                     self.consider_svk_fileprops())
@@ -585,7 +591,7 @@ class RevisionMetadata(object):
         if lhs_parent == NULL_REVISION:
             return (NULL_REVISION,)
         else:
-            return (lhs_parent,) + self.get_rhs_parents(mapping)
+            return (lhs_parent,) + self._get_rhs_parents(mapping)
 
     def get_signature(self):
         """Obtain the signature text for this revision, if any.
@@ -803,6 +809,7 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._revid = {}
         self._revno = {}
         self._original_mapping = None
+        self._original_mapping_set = False
         self._hidden = {}
         self._stored_lhs_parent_revid = {}
 
@@ -820,13 +827,40 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._revid[mapping] = super(CachingRevisionMetadata, self).get_revision_id(
             mapping)
         self._hidden[mapping] = super(CachingRevisionMetadata, self).is_hidden(mapping)
+        self._original_mapping_set = True
         self._original_mapping = super(CachingRevisionMetadata, self).get_original_mapping()
-        self._stored_lhs_parent_revid[mapping] = super(CachingRevisionMetadata, self)._get_stored_lhs_parent_revid(mapping)
+        self._stored_lhs_parent_revid[mapping] = super(CachingRevisionMetadata, self).get_stored_lhs_parent_revid(mapping)
 
     def _retrieve(self, mapping):
         (self._revid[mapping], self._revno[mapping], self._hidden[mapping],
          self._original_mapping, self._stored_lhs_parent_revid[mapping]) = \
                  self._revinfo_cache.get_revision(self.get_foreign_revid(), mapping)
+
+    def get_original_mapping(self):
+        if self._original_mapping_set:
+            return self._original_mapping
+        try:
+            self._original_mapping = self._revinfo_cache.get_original_mapping(self.get_foreign_revid())
+        except KeyError:
+            self._original_mapping = super(CachingRevisionMetadata, self).get_original_mapping()
+        self._original_mapping_set = True
+        return self._original_mapping
+
+    def get_stored_lhs_parent_revid(self, mapping):
+        if mapping in self._stored_lhs_parent_revid:
+            return self._stored_lhs_parent_revid[mapping]
+
+        try:
+            self._retrieve(mapping)
+        except KeyError:
+            self._determine(mapping)
+            self._update_cache(mapping)
+        return self._stored_lhs_parent_revid[mapping]
+
+    def _get_stored_lhs_parent_revid(self, mapping):
+        if mapping in self._stored_lhs_parent_revid:
+            return self._stored_lhs_parent_revid[mapping]
+        return super(CachingRevisionMetadata, self)._get_stored_lhs_parent_revid(mapping)
 
     def get_revision_id(self, mapping):
         """Find the revision id of a revision."""
@@ -839,6 +873,31 @@ class CachingRevisionMetadata(RevisionMetadata):
             self._determine(mapping)
             self._update_cache(mapping)
         return self._revid[mapping]
+
+    def get_revno(self, mapping):
+        if mapping in self._revno:
+            return self._revno[mapping]
+
+        try:
+            self._retrieve(mapping)
+        except KeyError:
+            self._determine(mapping)
+            self._update_cache(mapping)
+        return self._revno[mapping]
+
+    def get_rhs_parents(self, mapping):
+        return self.get_parent_ids(mapping)[1:]
+
+    def is_hidden(self, mapping):
+        if mapping in self._revno:
+            return self._hidden[mapping]
+
+        try:
+            self._retrieve(mapping)
+        except KeyError:
+            self._determine(mapping)
+            self._update_cache(mapping)
+        return self._hidden[mapping]
 
     def get_parent_ids(self, mapping):
         """Find the parent ids of a revision."""

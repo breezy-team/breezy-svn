@@ -382,3 +382,11 @@ class RevisionInfoCache(CacheTable):
                 stored_lhs_parent_revid = row[4].encode("utf-8")
             return (row[0].encode("utf-8"), row[1], row[2], original_mapping, stored_lhs_parent_revid)
 
+    def get_original_mapping(self, foreign_revid):
+        row = self.cachedb.execute("select original_mapping from revmetainfo where path = ? and revnum = ?", (foreign_revid[1], foreign_revid[2])).fetchone()
+        if row is None:
+            raise KeyError(foreign_revid)
+        if row[0] is None:
+            return None
+        else:
+            return mapping_registry.parse_mapping_name("svn-" + row[0].encode("utf-8"))
