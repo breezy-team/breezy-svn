@@ -1127,30 +1127,10 @@ class RevisionMetadataBrowser(object):
         self._actions.append(ret)
         return ret
 
-    def _process_new_rev(self, bp, children, revnum, paths, revprops):
-        """Process the changes for a new revision and update the 
-        branches it is on.
-        
-        :param bp: Branch path
-        :param mb: Metabranch object
-        :param revnum: Revision number
-        :param paths: Paths dictionary with changes
-        :param revprops: Revision properties for the svn revision
-        :return: RevisionMetadata object
-        """
-        revmeta = self._provider.get_revision(bp, revnum, paths, revprops, 
-                                              metaiterator=self)
-        assert revmeta is not None
-        for c in children:
-            c._set_direct_lhs_parent_revmeta(revmeta)
-        return revmeta
-
     def do(self):
         for (paths, revnum, revprops) in self._iter_log:
             assert revnum <= self.from_revnum
             # Dictionary mapping branch paths to Metabranches
-            changed_bps = set()
-            deletes = []
             if self._pb:
                 self._pb.update("discovering revisions", revnum-self.to_revnum, 
                           self.from_revnum-self.to_revnum)
@@ -1163,10 +1143,12 @@ class RevisionMetadataBrowser(object):
                 del self._pending_ancestors[x]
             self._unusual.update(self._unusual_history[revnum])
 
+            changed_bps = set()
+            deletes = []
+
             # Find out what branches have changed
             for p in sorted(paths):
                 action = paths[p][0]
-
                 try:
                     (_, bp, ip) = self.layout.split_project_path(p, self._project)
                 except svn_errors.NotSvnBranchPath:
@@ -1189,7 +1171,10 @@ class RevisionMetadataBrowser(object):
 
             # Report the new revisions
             for bp in changed_bps:
-                revmeta = self._process_new_rev(bp, self._pending_ancestors[revnum][bp], revnum, paths, revprops)
+                revmeta = self._provider.get_revision(bp, revnum, paths, revprops, metaiterator=self)
+                assert revmeta is not None
+                for c in self._pending_ancestors[revnum][bp]:
+                    c._set_direct_lhs_parent_revmeta(revmeta)
                 # If this branch was started here, terminate it
                 self._pending_ancestors[revnum][bp] = set([revmeta])
                 if (bp in paths and paths[bp][0] in ('A', 'R') and 
