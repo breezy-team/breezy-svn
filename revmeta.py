@@ -1170,7 +1170,7 @@ class RevisionMetadataBrowser(object):
             changed_bps = {}
             deletes = []
             if self._pb:
-                self._pb.update("discovering revisions", self.to_revnum-revnum, 
+                self._pb.update("discovering revisions", revnum-self.to_revnum, 
                           self.from_revnum-self.to_revnum)
 
             # Import all metabranches_history where key > revnum
