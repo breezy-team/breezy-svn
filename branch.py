@@ -76,6 +76,7 @@ class SubversionBranchCheckResult(BranchCheckResult):
 
 class SvnBranch(ForeignBranch):
     """Maps to a Branch in a Subversion repository """
+
     def __init__(self, repository, branch_path, revnum=None, _skip_check=False,
                  mapping=None):
         """Instantiate a new SvnBranch.
@@ -581,3 +582,4 @@ class SvnBranchFormat(BranchFormat):
 
     def supports_tags(self):
         return True
+

@@ -170,6 +170,7 @@ class cmd_svn_push(Command):
     
     This command is experimental and will be removed in the future when all 
     functionality is included in "bzr push".
+
     """
     takes_args = ['location?']
     takes_options = ['revision', 'remember', Option('directory',
@@ -182,6 +183,7 @@ class cmd_svn_push(Command):
             Option("svn-override-revprops", type=str, 
                 help="Comma-separated list of svn properties to override (date/author)")
             ]
+    hidden = True
 
     def run(self, location=None, revision=None, remember=False, 
             directory=None, merged=None, svn_override_revprops=None):

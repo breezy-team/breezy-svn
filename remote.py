@@ -17,7 +17,7 @@
 
 import bzrlib
 from bzrlib.bzrdir import BzrDirFormat, BzrDir
-from bzrlib.errors import (NotLocalUrl, NoWorkingTree, AlreadyBranchError)
+from bzrlib.errors import (NotBranchError, NotLocalUrl, NoWorkingTree, AlreadyBranchError)
 from bzrlib.trace import warning
 
 from bzrlib.plugins.svn.errors import NoSvnRepositoryPresent
@@ -33,6 +33,7 @@ class SvnRemoteAccess(BzrDir):
     This is used for all non-checkout connections 
     to Subversion repositories.
     """
+
     def __init__(self, _transport, _format=None):
         """See BzrDir.__init__()."""
         _transport = get_svn_ra_transport(_transport)
@@ -186,4 +187,27 @@ class SvnRemoteAccess(BzrDir):
         """See BzrDir.create_repository."""
         return self.open_repository()
 
+try:
+    from bzrlib.branch import InterBranchBzrDir
+except ImportError:
+    pass
+else:
+    class InterBranchSvnDir(InterBranchBzrDir):
 
+        @classmethod
+        def is_compatible(cls, source, target):
+            return isinstance(target, SvnRemoteAccess)
+
+        def push(self, revision_id=None, overwrite=False, remember=False):
+            try:
+                target_branch = self.target.open_branch()
+                target_branch.lock_write()
+                try:
+                    target_branch.pull(self.source, stop_revision=revision_id) 
+                finally:
+                    target_branch.unlock()
+            except NotBranchError:
+                target_branch = self.target.import_branch(self.source, revision_id)
+
+
+    InterBranchBzrDir.register_optimiser(InterBranchSvnDir)
