@@ -801,23 +801,31 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._revid_cache = self.repository.revmap.cache
         self._revid = {}
 
-    def _retrieve_revision(self, mapping):
-        # Look in the cache to see if it's already there
-        self._revid[mapping] = self._revid_cache.lookup_branch_revnum(self.revnum, self.branch_path, mapping.name)
-        if self._revid[mapping] is not None:
-            return
-        self._revid[mapping] = super(CachingRevisionMetadata, self).get_revision_id(
-            mapping)
+    def _update_cache(self, mapping):
         self._revid_cache.insert_revid(self._revid[mapping], self.branch_path, 
                                        self.revnum, self.revnum, mapping.name)
         self._revid_cache.commit_conditionally()
+
+    def _determine(self, mapping):
+        self._revid[mapping] = super(CachingRevisionMetadata, self).get_revision_id(
+            mapping)
+
+    def _retrieve(self, mapping):
+        revid = self._revid_cache.lookup_branch_revnum(self.revnum, self.branch_path, mapping.name)
+        if revid is None:
+            raise KeyError(revid)
+        self._revid[mapping] = revid
 
     def get_revision_id(self, mapping):
         """Find the revision id of a revision."""
         if mapping in self._revid:
             return self._revid[mapping]
 
-        self._retrieve_revision(mapping)
+        try:
+            self._retrieve(mapping)
+        except KeyError:
+            self._determine(mapping)
+            self._update_cache(mapping)
         return self._revid[mapping]
 
     def get_parent_ids(self, mapping):
