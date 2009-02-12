@@ -148,7 +148,7 @@ class RevisionMetadata(object):
                    (other.uuid, other.revnum, other.branch_path))
 
     def __repr__(self):
-        return "<RevisionMetadata for revision %d, path %s in repository %r>" % (self.revnum, self.branch_path, self.uuid)
+        return "<%s for revision %d, path %s in repository %r>" % (self.__class__.__name__, self.revnum, self.branch_path, self.uuid)
 
     def changes_branch_root(self):
         """Check whether the branch root was modified in this revision.
