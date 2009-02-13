@@ -8,11 +8,17 @@ bzr-svn 0.5.1					UNRELEASED
    * "bzr push" now also works when creating new branches. "bzr svn-push" 
      has been removed. This requires a patched version of bzr. (#127945)
 
+   * Fixed memory usage and performance bug while iterating over a repository.
+     (#318993)
+
   FEATURES
 
    * Set svn:original-date property when revision properties can be committed.
 
    * Add transport speed progress indication. (require subvertpy >= 0.6.4)
+
+   * New cache that stores the most important metadata information used 
+     when browsing history. 
 
 bzr-svn 0.5.0					2009-02-03
 

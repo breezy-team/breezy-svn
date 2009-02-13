@@ -776,7 +776,7 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._revid_cache = self.repository.revmap.cache
         self._revinfo_cache = self.repository.revinfo_cache
         self._revid = {}
-        self._revno = {}
+        self._distance_to_null = {}
         self._original_mapping = None
         self._original_mapping_set = False
         self._hidden = {}
@@ -787,12 +787,12 @@ class CachingRevisionMetadata(RevisionMetadata):
                                        self.revnum, self.revnum, mapping.name)
         self._revid_cache.commit_conditionally()
         self._revinfo_cache.insert_revision(self.get_foreign_revid(), mapping, 
-            self._revid[mapping], self._revno[mapping], self._hidden[mapping],
+            self._revid[mapping], self._distance_to_null[mapping], self._hidden[mapping],
             self._original_mapping, self._stored_lhs_parent_revid[mapping])
         self._revinfo_cache.commit_conditionally()
 
     def _determine(self, mapping):
-        self._revno[mapping] = super(CachingRevisionMetadata, self).get_revno(mapping)
+        self._distance_to_null[mapping] = super(CachingRevisionMetadata, self).get_distance_to_null(mapping)
         self._revid[mapping] = super(CachingRevisionMetadata, self).get_revision_id(
             mapping)
         self._hidden[mapping] = super(CachingRevisionMetadata, self).is_hidden(mapping)
@@ -801,7 +801,7 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._stored_lhs_parent_revid[mapping] = super(CachingRevisionMetadata, self).get_stored_lhs_parent_revid(mapping)
 
     def _retrieve(self, mapping):
-        (self._revid[mapping], self._revno[mapping], self._hidden[mapping],
+        (self._revid[mapping], self._distance_to_null[mapping], self._hidden[mapping],
          self._original_mapping, self._stored_lhs_parent_revid[mapping]) = \
                  self._revinfo_cache.get_revision(self.get_foreign_revid(), mapping)
 
@@ -841,21 +841,21 @@ class CachingRevisionMetadata(RevisionMetadata):
             self._update_cache(mapping)
         return self._revid[mapping]
 
-    def get_revno(self, mapping):
-        if mapping in self._revno:
-            return self._revno[mapping]
+    def get_distance_to_null(self, mapping):
+        if mapping in self._distance_to_null:
+            return self._distance_to_null[mapping]
         try:
             self._retrieve(mapping)
         except KeyError:
             self._determine(mapping)
             self._update_cache(mapping)
-        return self._revno[mapping]
+        return self._distance_to_null[mapping]
 
     def get_rhs_parents(self, mapping):
         return self.get_parent_ids(mapping)[1:]
 
     def is_hidden(self, mapping):
-        if mapping in self._revno:
+        if mapping in self._hidden:
             return self._hidden[mapping]
         try:
             self._retrieve(mapping)
