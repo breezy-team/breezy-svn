@@ -57,6 +57,24 @@ class WorkingSubversionBranch(SubversionTestCase):
         b = Branch.open(repos_url + "/trunk")
         self.assertEquals(["foo"], b.tags.get_tag_dict().keys())
 
+    def test_tags_other_project(self):
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        other = dc.add_dir("otherproj")
+        other.add_dir("otherproj/trunk")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        my = dc.add_dir("myproj")
+        trunk = my.add_dir("myproj/trunk")
+        tags = my.add_dir("myproj/tags")
+        tags.add_dir("myproj/tags/foo", "otherproj/trunk")
+        dc.close()
+
+        b = Branch.open(repos_url + "/myproj/trunk")
+        self.assertEquals(["foo"], b.tags.get_tag_dict().keys())
+
     def test_tag_set(self):
         repos_url = self.make_repository('a')
 
