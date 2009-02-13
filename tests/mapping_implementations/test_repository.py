@@ -182,12 +182,10 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                   {'pygments': ('A', 'pykleur', 1)},
                     2),
                     ('pykleur', {'pykleur': ('A', None, -1), 'pykleur/bla': ('A', None, -1)}, 1)],
-                    [(l.branch_path, l.get_paths(repos.get_mapping()), l.revnum) for l in changes])
+                    [(l.branch_path, l.get_paths(), l.revnum) for l in changes])
         else:
-            self.assertEquals([('pygments',
-              {'pygments/bla': ('A', None, -1), 'pygments': ('A', None, -1)},
-                2)],
-                [(l.branch_path, l.get_paths(repos.get_mapping()), l.revnum) for l in changes])
+            self.assertEquals([('pygments', {'pygments': ('A', 'pykleur', 1)}, 2), ],
+                [(l.branch_path, l.get_paths(), l.revnum) for l in changes])
 
     def test_history_all(self):
         repos_url = self.make_repository("a")
