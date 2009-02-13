@@ -11,6 +11,9 @@ bzr-svn 0.5.1					UNRELEASED
    * Fixed memory usage and performance bug while iterating over a repository.
      (#318993)
 
+   * When following prefixes, cope with branches copied from outside of the 
+     prefix. (#325428)
+
   FEATURES
 
    * Set svn:original-date property when revision properties can be committed.

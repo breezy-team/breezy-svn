@@ -1063,8 +1063,13 @@ class RevisionMetadataBrowser(object):
             except StopIteration:
                 if self.to_revnum > 0:
                     raise MetaHistoryIncomplete("Reached revision 0")
-                if not any([x for x in self.prefixes if revmeta.branch_path.startswith(x+"/") or x == revmeta.branch_path or x == ""]):
-                    raise MetaHistoryIncomplete("Invalid prefix %r for prefixes %r" % (revmeta.branch_path, self.prefixes))
+                # Maybe this branch was copied from outside of the prefixes ?
+                revchanges = list(changes.apply_reverse_changes([revmeta.branch_path], revmeta.get_paths()))
+                assert len(revchanges) in (0, 1)
+                if len(revchanges) == 1 and revchanges[0][1] is not None:
+                    from_path = revchanges[0][1]
+                    if not any([x for x in self.prefixes if from_path.startswith(x+"/") or x == from_path or x == ""]):
+                        raise MetaHistoryIncomplete("Invalid prefix %r for prefixes %r" % (from_path, self.prefixes))
                 raise AssertionError("Unable to find direct lhs parent for %r" % revmeta)
         return revmeta._direct_lhs_parent_revmeta
 
