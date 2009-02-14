@@ -458,10 +458,10 @@ class DictBasedLogWalker(object):
         if revnum == 0:
             return changes.REV0_CHANGES
 
-        return self.paths[revnum]
+        return self.paths.get(revnum, {})
 
     def revprop_list(self, revnum):
         if revnum == 0:
             return { }
-        return self.revprops[revnum]
+        return self.revprops.get(revnum, {})
 
