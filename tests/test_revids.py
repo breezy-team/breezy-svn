@@ -17,7 +17,8 @@
 from bzrlib.errors import NoSuchRevision
 from bzrlib.tests import TestCase
 
-from bzrlib.plugins.svn.revids import RevisionIdMapCache
+from bzrlib.plugins.svn.mapping4 import BzrSvnMappingv4
+from bzrlib.plugins.svn.revids import RevisionIdMapCache, RevisionInfoCache
 
 class TestRevidMapCache(TestCase):
 
@@ -56,3 +57,24 @@ class TestRevidMapCache(TestCase):
         revidmap.insert_revid("bla", "mypath", 42, 200, "brainslug")
         self.assertEquals(None, 
                 revidmap.lookup_branch_revnum(42, "mypath", "brainslug"))
+
+
+
+class TestRevisionInfoCache(TestCase):
+
+    def test_create(self):
+        revinfo = RevisionInfoCache()
+
+    def test_get_unknown_revision(self):
+        revinfo = RevisionInfoCache()
+        self.assertRaises(KeyError, 
+            revinfo.get_revision, ("bfdshfksdjh", "mypath", 1), 
+            BzrSvnMappingv4())
+
+    def test_get_revision(self):
+        revinfo = RevisionInfoCache()
+        revinfo.insert_revision(("fsdkjhfsdkjhfsd", "mypath", 1), 
+            BzrSvnMappingv4(), "somerevid", 42, False, None, "oldlhs")
+        self.assertEquals(("somerevid", 42, False, None, "oldlhs"),
+            revinfo.get_revision(("bfdshfksdjh", "mypath", 1), 
+            BzrSvnMappingv4()))
