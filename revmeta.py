@@ -1102,12 +1102,13 @@ class RevisionMetadataBrowser(object):
                 self._pb.update("discovering revisions", revnum-self.to_revnum, 
                           self.from_revnum-self.to_revnum)
 
-            # Import all metabranches_history where key > revnum
-            for x in [r for r in self._pending_ancestors if r > revnum]:
-                for bp in self._pending_ancestors[x].keys():
-                    self._pending_ancestors[revnum][bp].update(self._pending_ancestors[x][bp])
-                    del self._pending_ancestors[x][bp]
-                del self._pending_ancestors[x]
+            if self._last_revnum is not None:
+                # Import all metabranches_history where key > revnum
+                for x in xrange(self._last_revnum, revnum, -1):
+                    for bp in self._pending_ancestors[x].keys():
+                        self._pending_ancestors[revnum][bp].update(self._pending_ancestors[x][bp])
+                        del self._pending_ancestors[x][bp]
+                    del self._pending_ancestors[x]
             self._unusual.update(self._unusual_history[revnum])
 
             changed_bps = set()
