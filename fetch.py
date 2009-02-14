@@ -75,9 +75,9 @@ def check_inventory_delta(delta):
     file_ids = set()
     for (old_path, new_path, file_id, ie) in delta:
         if old_path is not None and old_path in old_paths:
-            raise AssertionError("new path %s exists more than once" % old_path)
+            raise AssertionError("old path %s exists more than once" % old_path)
         if new_path is not None and new_path in new_paths:
-            raise AssertionError("old path %s exists more than once" % new_path)
+            raise AssertionError("new path %s exists more than once" % new_path)
         if file_id in file_ids:
             raise AssertionError("file id %s exists more than once" % file_id)
         old_paths.add(old_path)
