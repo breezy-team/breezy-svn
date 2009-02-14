@@ -647,7 +647,7 @@ class TestWorkingTree(SubversionTestCase):
         tree.add(["file"], ["fooid"])
         tree.commit("msg")
         tree.rename_one("file", "file2")
-        delta = tree.branch.repository.get_revision_delta(tree.branch.repository.get_revision(tree.last_revision()))
+        delta = tree.branch.repository.get_revision_delta(tree.last_revision())
         self.assertEquals([("file", "fooid", "file")], delta.added)
         self.assertEqual(None, tree.inventory.path2id("file"))
         self.assertEqual("fooid", tree.inventory.path2id("file2"))
