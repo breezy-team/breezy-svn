@@ -14,7 +14,10 @@ bzr-svn 0.5.1					UNRELEASED
    * When following prefixes, cope with branches copied from outside of the 
      prefix. (#325428)
 
-    * Handle non-mainline history a bit better in dpush. (#329284)
+   * Handle non-mainline history a bit better in dpush. (#329284)
+
+   * Assume that ERR_XML_MALFORMED only occurs for non-Subversion 
+     URLs. (#327287)
 
   FEATURES
 
