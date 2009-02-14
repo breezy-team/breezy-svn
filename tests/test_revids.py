@@ -78,3 +78,20 @@ class TestRevisionInfoCache(TestCase):
         self.assertEquals(("somerevid", 42, False, None, "oldlhs"),
             revinfo.get_revision(("bfdshfksdjh", "mypath", 1), 
             BzrSvnMappingv4()))
+
+    def test_get_original_mapping_none(self):
+        revinfo = RevisionInfoCache()
+        revinfo.insert_revision(("fsdkjhfsdkjhfsd", "mypath", 1), 
+            BzrSvnMappingv4(), "somerevid", 42, False, None, "oldlhs")
+        self.assertEquals(None, revinfo.get_original_mapping(("fkjhfsdkjh", "mypath", 1)))
+
+    def test_get_original_mapping_unknown(self):
+        revinfo = RevisionInfoCache()
+        self.assertRaises(KeyError, revinfo.get_original_mapping, ("fkjhfsdkjh", "mypath", 1))
+
+    def test_get_original_mapping_v4(self):
+        revinfo = RevisionInfoCache()
+        revinfo.insert_revision(("fsdkjhfsdkjhfsd", "mypath", 1), 
+            BzrSvnMappingv4(), "somerevid", 42, False, BzrSvnMappingv4(), "oldlhs")
+        self.assertEquals(BzrSvnMappingv4(), revinfo.get_original_mapping(("fkjhfsdkjh", "mypath", 1)))
+
