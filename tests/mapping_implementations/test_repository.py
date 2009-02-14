@@ -594,14 +594,14 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         r = Repository.open(repos_url)
         r.set_layout(RootLayout())
-        d1 = r.get_revision_delta(r.get_revision(r.generate_revision_id(1, "", r.get_mapping())))
+        d1 = r.get_revision_delta(r.generate_revision_id(1, "", r.get_mapping()))
         self.assertEquals(None, d1.unchanged)
         self.assertEquals(1, len(d1.added))
         self.assertEquals("foo", d1.added[0][0])
         self.assertEquals(0, len(d1.modified))
         self.assertEquals(0, len(d1.removed))
 
-        d2 = r.get_revision_delta(r.get_revision(r.generate_revision_id(2, "", r.get_mapping())))
+        d2 = r.get_revision_delta(r.generate_revision_id(2, "", r.get_mapping()))
         self.assertEquals(None, d2.unchanged)
         self.assertEquals(0, len(d2.added))
         self.assertEquals("foo", d2.modified[0][0])

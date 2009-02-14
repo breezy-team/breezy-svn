@@ -446,10 +446,13 @@ class SvnRepository(ForeignRepository):
         """See Repository.get_deltas_for_revisions()."""
         """See Repository.get_deltas_for_revisions()."""
         for revision in revisions:
-            yield self.get_revision_delta(revision)
+            yield self.get_delta_for_revision(revision)
 
-    def get_revision_delta(self, revision):
-        """See Repository.get_revision_delta()."""
+    def get_revision_delta(self, revid):
+        return self.get_delta_for_revision(self.get_revision(revid))
+
+    def get_delta_for_revision(self, revision):
+        """See Repository.get_delta_for_revision()."""
         parentrevmeta = revision.svn_meta.get_lhs_parent_revmeta(revision.mapping)
         from bzrlib.plugins.svn.fetch import TreeDeltaBuildEditor
         if parentrevmeta is None:
