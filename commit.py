@@ -998,6 +998,11 @@ def dpush(target, source, stop_revision=None):
                 return { source.last_revision(): source.last_revision() }
             raise DivergedBranches(source, target)
         todo = target.mainline_missing_revisions(source, stop_revision)
+        if todo is None:
+            # Not possible to add cleanly onto mainline, perhaps need a replace operation
+            todo = self.otherline_missing_revisions(other, stop_revision)
+        if todo is None:
+            raise DivergedBranches(self, other)
         revid_map = {}
         pb = ui.ui_factory.nested_progress_bar()
         try:

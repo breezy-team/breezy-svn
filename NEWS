@@ -14,6 +14,8 @@ bzr-svn 0.5.1					UNRELEASED
    * When following prefixes, cope with branches copied from outside of the 
      prefix. (#325428)
 
+    * Handle non-mainline history a bit better in dpush. (#329284)
+
   FEATURES
 
    * Set svn:original-date property when revision properties can be committed.
