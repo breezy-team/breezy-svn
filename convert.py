@@ -133,7 +133,6 @@ def contains_parent_path(s, p):
     return False
 
 
-
 def convert_repository(source_repos, output_url, layout=None,
                        create_shared_repo=True, working_trees=False, all=False,
                        format=None, filter_branch=None, keep=False, 
