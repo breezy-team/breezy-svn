@@ -82,6 +82,7 @@ class RevidMap(object):
         reuse_policy = self.repos.get_config().get_reuse_revisions()
         assert reuse_policy in ("other-branches", "removed-branches", "none") 
         check_removed = (reuse_policy == "removed-branches")
+        # TODO: Some sort of progress indication
         for (branch, revno, exists) in self.repos.find_fileprop_paths(layout, from_revnum, to_revnum, project, check_removed=check_removed):
             assert isinstance(branch, str)
             assert isinstance(revno, int)

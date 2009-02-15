@@ -56,12 +56,15 @@ from bzrlib.plugins.svn.transport import url_join_unescaped_path
 FETCH_COMMIT_WRITE_SIZE = 500
 
 
-def inventory_ancestors(inv, fileid):
+def inventory_ancestors(inv, fileid, exceptions):
     ret = list()
     for ie in inv[fileid].children.values():
-        ret.append(inv.id2path(ie.file_id))
+        p = inv.id2path(ie.file_id)
+        if p in exceptions:
+            continue
+        ret.append(p)
         if ie.kind == "directory":
-            ret.extend(inventory_ancestors(inv, ie.file_id))
+            ret.extend(inventory_ancestors(inv, ie.file_id, exceptions))
     return ret
 
 
@@ -348,11 +351,12 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self.new_ie.revision = self.editor.old_inventory[self.new_id].revision
 
     def _delete_entry(self, path, revnum):
-        if path in self.editor._deleted:
-            return
-        self.editor._deleted.add(path)
+        self.editor._explicitly_deleted.add(path)
         def rec_del(ie):
             p = self.editor.old_inventory.id2path(ie.file_id)
+            if p in self.editor._deleted:
+                return
+            self.editor._deleted.add(p)
             self.editor._inv_delta.append((p, None, ie.file_id, None))
             if ie.kind != 'directory':
                 return
@@ -377,12 +381,12 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         if self._renew_fileids:
             # Make sure files get re-added that weren't mentioned explicitly
             # A bit expensive (O(d)), but this should be very rare
-            delta_new_paths = set([e[1] for e in self.editor._inv_delta])
-            for path in self._renew_fileids:
+            delta_new_paths = set([e[1] for e in self.editor._inv_delta if e[1] is not None])
+            exceptions = delta_new_paths.union(self.editor._explicitly_deleted)
+            for path in inventory_ancestors(self.editor.old_inventory, self._renew_fileids, exceptions):
                 if isinstance(path, str):
-                    path = unicode(path)
-                if path not in delta_new_paths and not path in self.editor._deleted:
-                    self.editor._renew_fileid(path)
+                    path = path.decode("utf-8")
+                self.editor._renew_fileid(path)
 
         if self.path == u"":
             self.editor._finish_commit()
@@ -421,7 +425,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self._delete_entry(path, base_revnum)
             # If a directory is replaced by a copy of itself, we need
             # to make sure all children get readded with a new file id
-            renew_fileids = inventory_ancestors(self.editor.old_inventory, base_file_id)
+            renew_fileids = base_file_id
         return DirectoryRevisionBuildEditor(self.editor, old_path, path, 
             base_file_id, file_id, self.new_id, file_parents, renew_fileids=renew_fileids)
 
@@ -558,6 +562,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self.old_inventory = prev_inventory
         self._inv_delta = []
         self._deleted = set()
+        self._explicitly_deleted = set()
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
 
     def _finish_commit(self):
