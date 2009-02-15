@@ -32,6 +32,7 @@ from bzrlib.inventory import (
 from bzrlib.revision import NULL_REVISION
 from bzrlib.repository import InterRepository
 from bzrlib.trace import mutter
+from bzrlib.versionedfile import FulltextContentFactory
 
 from collections import deque, defaultdict
 from cStringIO import StringIO
@@ -88,14 +89,14 @@ def check_inventory_delta(delta):
         file_ids.add(file_id)
 
 
-def md5_strings(strings):
-    """Return the MD5sum of the concatenation of strings.
+def md5_string(string):
+    """Return the MD5sum of a string.
 
-    :param strings: Strings to find the MD5sum of.
-    :return: MD5sum
+    :param string: String to find the MD5sum of.
+    :return: MD5sums hex digest
     """
     s = osutils.md5()
-    map(s.update, strings)
+    s.update(string)
     return s.hexdigest()
 
 
@@ -494,12 +495,12 @@ class FileRevisionBuildEditor(FileBuildEditor):
     def _close(self, checksum=None):
         if self.file_stream is not None:
             self.file_stream.seek(0)
-            lines = osutils.split_lines(self.file_stream.read())
+            fulltext = self.file_stream.read()
         else:
             # Data didn't change or file is new
-            lines = osutils.split_lines(self.file_data)
+            fulltext = self.file_data
 
-        actual_checksum = md5_strings(lines)
+        actual_checksum = md5_string(fulltext)
         assert checksum is None or checksum == actual_checksum
 
         text_revision = (self.editor._get_text_revid(self.path) or 
@@ -507,13 +508,17 @@ class FileRevisionBuildEditor(FileBuildEditor):
         text_parents = self.editor._get_text_parents(self.path)
         if text_parents is None:
             text_parents = self.file_parents
-        self.editor.texts.add_lines((self.file_id, text_revision), 
-                [(self.file_id, revid) for revid in text_parents], lines)
+        text_sha1 = osutils.sha_string(fulltext)
+        self.editor.texts.insert_record_stream([
+            FulltextContentFactory((self.file_id, text_revision), 
+                [(self.file_id, revid) for revid in text_parents], 
+                text_sha1,
+                fulltext)])
 
         if self.is_special is not None:
             self.is_symlink = (self.is_special and 
-                len(lines) > 0 and lines[0].startswith("link "))
-        elif (len(lines) > 0 and lines[0].startswith("link ")):
+                fulltext.startswith("link "))
+        elif (fulltext.startswith("link ")):
             # This file just might be a file that is svn:special but didn't 
             # contain a symlink but does now
             if not self.is_symlink:
@@ -529,7 +534,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
         if self.is_symlink:
             ie = InventoryLink(self.file_id, urlutils.basename(self.path), self.parent_file_id)
-            ie.symlink_target = "".join(lines)[len("link "):]
+            ie.symlink_target = fulltext[len("link "):]
             if "\n" in ie.symlink_target:
                 raise AssertionError("bzr doesn't support newlines in symlink targets yet")
             ie.text_sha1 = None
@@ -538,8 +543,8 @@ class FileRevisionBuildEditor(FileBuildEditor):
         else:
             ie = InventoryFile(self.file_id, urlutils.basename(self.path), self.parent_file_id)
             ie.symlink_target = None
-            ie.text_sha1 = osutils.sha_strings(lines)
-            ie.text_size = sum(map(len, lines))
+            ie.text_sha1 = text_sha1
+            ie.text_size = len(fulltext)
             assert ie.text_size is not None
             ie.executable = self.is_executable
         ie.revision = text_revision
@@ -583,7 +588,6 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 check_inventory_delta(self._inv_delta)
             self.inventory.apply_delta(self._inv_delta)
             self.inventory.revision_id = rev.revision_id
-
             rev.inventory_sha1 = self.target.add_inventory(rev.revision_id, 
                     self.inventory, rev.parent_ids)
         self.target.add_revision(self.revid, rev)
@@ -630,9 +634,12 @@ class RevisionBuildEditor(DeltaBuildEditor):
         new_ie.revision = self._get_text_revid(path) or self.revid
         record = self.texts.get_record_stream([(old_ie.file_id, old_ie.revision)], 
                                                 'unordered', True).next()
-        self.texts.add_lines(
-                (new_ie.file_id, new_ie.revision),
-                [], osutils.split_lines(record.get_bytes_as('fulltext')))
+        self.texts.insert_record_stream(
+                [FulltextContentFactory(
+                    (new_ie.file_id, new_ie.revision),
+                    [], 
+                    record.sha1,
+                    record.get_bytes_as('fulltext'))])
         self._inv_delta.append((None, path, new_ie.file_id, new_ie))
 
     def _get_id_map(self):
