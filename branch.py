@@ -583,3 +583,51 @@ class SvnBranchFormat(BranchFormat):
     def supports_tags(self):
         return True
 
+
+try:
+    from bzrlib.branch import InterBranch
+except ImportError:
+    pass
+else:
+    class InterSvnOtherBranch(InterBranch):
+        """InterBranch implementation that is optimized for copying from Subversion.
+        """
+
+        def update_revisions(self, stop_revision=None, overwrite=False,
+            graph=None):
+            """See InterBranch.update_revisions()."""
+            self.source.lock_read()
+            try:
+                other_last_revision = self.source.last_revision()
+                if stop_revision is None:
+                    stop_revision = other_last_revision
+                    if is_null(stop_revision):
+                        # if there are no commits, we're done.
+                        return
+
+                # what's the current last revision, before we fetch [and 
+                # change it possibly]
+                last_rev = ensure_null(self.target.last_revision())
+                # we fetch here so that we don't process data twice in the 
+                # common case of having something to pull, and so that the 
+                # check for already merged can operate on the just fetched 
+                # graph, which will be cached in memory.
+                self.target.fetch(self.source, stop_revision)
+                # Check to see if one is an ancestor of the other
+                if not overwrite:
+                    if graph is None:
+                        graph = self.target.repository.get_graph()
+                    if self.target._check_if_descendant_or_diverged(
+                            stop_revision, last_rev, graph, self.source):
+                        # stop_revision is a descendant of last_rev, but we 
+                        # aren't overwriting, so we're done.
+                        return
+                self.target.generate_revision_history(stop_revision)
+            finally:
+                self.source.unlock()
+
+        @classmethod
+        def is_compatible(self, source, target):
+            return isinstance(source, SvnBranch)
+
+    InterBranch.register_optimiser(InterSvnOtherBranch)
