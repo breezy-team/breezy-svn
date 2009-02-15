@@ -16,13 +16,20 @@
 """Subversion Tags Dictionary."""
 
 from bzrlib import urlutils
-from bzrlib.errors import NoSuchRevision, NoSuchTag
+from bzrlib.errors import InvalidRevisionId, NoSuchRevision, NoSuchTag
 from bzrlib.tag import BasicTags
 from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn import commit, errors as svn_errors, mapping
 import subvertpy
 from subvertpy import properties
+
+def reverse_dict(orig):
+    ret = {}
+    for k, v in orig.iteritems():
+        ret.setdefault(v, []).append(k)
+    return ret
+
 
 class SubversionTags(BasicTags):
     """Subversion tags object."""
@@ -102,47 +109,86 @@ class SubversionTags(BasicTags):
                 mapping=self.branch.mapping,
                 revnum=self.branch._revnum)
 
-    def get_tag_dict(self):
-        tag_revmetas = self._get_tag_dict_revmeta()
-        if len(tag_revmetas) == 0:
-            return {}
-        reverse_tag_revmetas = {}
-        for name, revmeta in tag_revmetas.iteritems():
-            reverse_tag_revmetas.setdefault(revmeta, []).append(name)
+    def _resolve_reverse_tags_fallback(self, reverse_tag_revmetas):
+        """Determine the revids for tags that were not found in the branch 
+        ancestry.
+        """
         ret = {}
-        # Try to find the tags that are in the ancestry of this branch
-        # and use their appropriate mapping
-        for (revmeta, mapping) in self.branch._iter_revision_meta_ancestry():
-            if revmeta not in reverse_tag_revmetas:
-                continue
-            if not reverse_tag_revmetas:
-                break
-            for name in reverse_tag_revmetas[revmeta]:
-                ret[name] = revmeta.get_revision_id(mapping)
-            del reverse_tag_revmetas[revmeta]
-            
         # For anything that's not in the branches' ancestry, just use 
         # the latest mapping
         for (revmeta, names) in reverse_tag_revmetas.iteritems():
+            mapping = revmeta.get_original_mapping() or self.branch.mapping
             try:
-                revid = revmeta.get_revision_id(self.branch.mapping)
+                revid = revmeta.get_revision_id(mapping)
             except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                 continue
             for name in names:
                 ret[name] = revid
         return ret
 
+    def _resolve_tags_svn_ancestry(self, tag_revmetas):
+        """Resolve a name -> revmeta dictionary to a name -> revid dict.
+
+        The tricky bit here is figuring out what mapping to use. Preferably, 
+        we should be using whatever mapping makes the tag useful to the user, 
+        which generally means using the revid that is in the ancestry of the 
+        branch.
+
+        As fallback, we will use the mapping used by the branch. That will 
+        however cause question marks to show up rather than revno's in 
+        "bzr tags".
+        """
+        if len(tag_revmetas) == 0:
+            return {}
+        reverse_tag_revmetas = reverse_dict(tag_revmetas)
+        ret = {}
+        # Try to find the tags that are in the ancestry of this branch
+        # and use their appropriate mapping
+        for (revmeta, mapping) in self.branch._iter_revision_meta_ancestry():
+            if revmeta not in reverse_tag_revmetas:
+                continue
+            if len(reverse_tag_revmetas) == 0:
+                # No more tag revmetas to resolve, just return immediately
+                return ret
+            for name in reverse_tag_revmetas[revmeta]:
+                ret[name] = revmeta.get_revision_id(mapping)
+            del reverse_tag_revmetas[revmeta]
+        ret.update(self._resolve_reverse_tags_fallback(reverse_tag_revmetas))
+        return ret
+
+    def _resolve_tags_ancestry(self, tag_revmetas, graph, last_revid):
+        """Resolve a name -> revmeta dictionary using the ancestry of a branch.
+        """
+        ret = {}
+        reverse_tag_revmetas = reverse_dict(tag_revmetas)
+        foreign_revid_map = {}
+        for revmeta in reverse_tag_revmetas:
+            foreign_revid_map[revmeta.get_foreign_revid()] = revmeta
+        for revid, _ in graph.iter_ancestry([last_revid]):
+            if len(reverse_tag_revmetas) == 0:
+                # No more tag revmetas to resolve, just return immediately
+                return ret
+            try:
+                foreign_revid, m = mapping.mapping_registry.parse_revision_id(revid)
+            except InvalidRevisionId:
+                continue
+            if not foreign_revid in foreign_revid_map:
+                continue
+            revmeta = foreign_revid_map[foreign_revid]
+            for name in reverse_tag_revmetas[revmeta]:
+                ret[name] = revid
+            del reverse_tag_revmetas[revmeta]
+        ret.update(self._resolve_reverse_tags_fallback(reverse_tag_revmetas))
+        return ret
+
+    def get_tag_dict(self):
+        tag_revmetas = self._get_tag_dict_revmeta()
+        return self._resolve_tags_svn_ancestry(tag_revmetas)
+
     def get_reverse_tag_dict(self):
         """Returns a dict with revisions as keys
            and a list of tags for that revision as value"""
-        d = self.get_tag_dict()
-        rev = {}
-        for key in d:
-            try:
-                rev[d[key]].append(key)
-            except KeyError:
-                rev[d[key]] = [key]
-        return rev
+        return reverse_dict(self.get_tag_dict())
 
     def delete_tag(self, tag_name):
         path = self.branch.layout.get_tag_path(tag_name, self.branch.project)
@@ -173,4 +219,44 @@ class SubversionTags(BasicTags):
         for k in cur_dict:
             if k not in dest_dict:
                 self.delete_tag(k)
+
+    def merge_to(self, to_tags, overwrite=False):
+        """Copy tags between repositories if necessary and possible.
+        
+        This method has common command-line behaviour about handling 
+        error cases.
+
+        All new definitions are copied across, except that tags that already
+        exist keep their existing definitions.
+
+        :param to_tags: Branch to receive these tags
+        :param overwrite: Overwrite conflicting tags in the target branch
+
+        :returns: A list of tags that conflicted, each of which is 
+            (tagname, source_target, dest_target), or None if no copying was
+            done.
+        """
+        if self.branch == to_tags.branch:
+            return
+        if not self.supports_tags():
+            # obviously nothing to copy
+            return
+        tag_revmetas = self._get_tag_dict_revmeta()
+        if len(tag_revmetas) == 0:
+            # no tags in the source, and we don't want to clobber anything
+            # that's in the destination
+            return
+        graph = to_tags.branch.repository.get_graph()
+        source_dict = self._resolve_tags_ancestry(tag_revmetas, 
+            graph, to_tags.branch.last_revision())
+        to_tags.branch.lock_write()
+        try:
+            dest_dict = to_tags.get_tag_dict()
+            result, conflicts = self._reconcile_tags(source_dict, dest_dict,
+                                                     overwrite)
+            if result != dest_dict:
+                to_tags._set_tag_dict(result)
+        finally:
+            to_tags.branch.unlock()
+        return conflicts
 

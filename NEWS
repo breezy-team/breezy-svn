@@ -36,6 +36,10 @@ bzr-svn 0.5.1					UNRELEASED
    * More efficient pull from Subversion branches, avoiding unnecessary 
      calculation of revision numbers. (Requires InterBranch patch to bzr)
 
+   * More efficient pull from Subversion branches, by using the local 
+     branch ancestry to find out tag revision ids rather than the remote 
+	 Subversion branch.
+
 bzr-svn 0.5.0					2009-02-03
 
   BUG FIXES
