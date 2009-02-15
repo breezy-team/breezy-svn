@@ -24,7 +24,6 @@ from bzrlib import (
 from bzrlib.branch import Branch
 from bzrlib.errors import (
     BzrError, 
-    InvalidRevisionId, 
     DivergedBranches, 
     NoSuchRevision,
     )
@@ -121,7 +120,7 @@ def update_svk_features(oldvalue, merges, lookup_revid=None):
     for merge in merges:
         try:
             svk_features.add(_revision_id_to_svk_feature(merge, lookup_revid))
-        except InvalidRevisionId:
+        except NoSuchRevision:
             pass
 
     if old_svk_features != svk_features:

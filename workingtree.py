@@ -29,9 +29,9 @@ from bzrlib.bzrdir import (
         Converter,
         )
 from bzrlib.errors import (
-        InvalidRevisionId,
         NotBranchError,
         NoSuchFile,
+        NoSuchRevision,
         NoRepositoryPresent,
         NoWorkingTree,
         UnsupportedFormatError,
@@ -474,8 +474,9 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
             # Set svk:merge
             for merge in merges:
                 try:
-                    svk_merges.add(_revision_id_to_svk_feature(merge))
-                except InvalidRevisionId:
+                    svk_merges.add(_revision_id_to_svk_feature(merge,
+                        self.branch.repository.lookup_revision_id))
+                except NoSuchRevision:
                     pass
 
             adm.prop_set(svk.SVN_PROP_SVK_MERGE, 

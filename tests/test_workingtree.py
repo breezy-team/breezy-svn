@@ -533,13 +533,17 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_set_pending_merges_svk(self):
         self.make_client('a', 'dc')
-        self.build_tree({"dc/bl": None})
-        self.client_add("dc/bl")
+        self.build_tree({"dc/branches/foo": None})
+        self.client_add("dc/branches")
+        self.client_commit("dc", "add")
+
+        self.build_tree({"dc/trunk/bl": None})
+        self.client_add("dc/trunk")
         
         tree = WorkingTree.open("dc")
         tree.set_pending_merges([
-            tree.branch.mapping.revision_id_foreign_to_bzr(("a-uuid-foo", "branch/path", 1)), "c"])
-        self.assertEqual("a-uuid-foo:/branch/path:1\n", 
+            tree.branch.repository.generate_revision_id(1, "branches/foo", tree.branch.mapping), "c"])
+        self.assertEqual("%s:/branches/foo:1\n" % tree.branch.repository.uuid,  
                          self.client_get_prop("dc", "svk:merge"))
 
     def test_commit_callback(self):

@@ -30,10 +30,12 @@ from copy import copy
 import os
 
 from subvertpy import ra
+from subvertpy.properties import time_to_cstring
+
 from bzrlib.plugins.svn import format
 from bzrlib.plugins.svn.commit import set_svn_revprops, _revision_id_to_svk_feature
 from bzrlib.plugins.svn.errors import RevpropChangeFailed
-from subvertpy.properties import time_to_cstring
+from bzrlib.plugins.svn.mapping import mapping_registry
 from bzrlib.plugins.svn.transport import SvnRaTransport
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
@@ -647,6 +649,7 @@ class RevpropTests(SubversionTestCase):
 class SvkTestCase(TestCase):
     def test_revid_svk_map(self):
         self.assertEqual("auuid:/:6", 
-              _revision_id_to_svk_feature("svn-v3-undefined:auuid::6"))
+              _revision_id_to_svk_feature("svn-v3-undefined:auuid::6",
+                  mapping_registry.parse_revision_id))
 
 
