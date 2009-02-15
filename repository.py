@@ -290,7 +290,7 @@ class SvnRepository(ForeignRepository):
         if "revids" in use_cache:
             self.revmap = DiskCachingRevidMap(self.revmap, self.cachedb)
             self._real_parents_provider = DiskCachingParentsProvider(
-                self._real_parents_provider, cachedir_transport)
+                self._real_parents_provider, self.cachedb)
         else:
             self.revmap = MemoryCachingRevidMap(self.revmap)
 

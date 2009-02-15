@@ -14,16 +14,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from bzrlib import graph as _mod_graph
-from bzrlib.tests import TestCaseWithMemoryTransport
+from bzrlib.tests import TestCase
 from bzrlib.tests.test_graph import InstrumentedParentsProvider
 
 from bzrlib.plugins.svn.parents import ParentsCache, DiskCachingParentsProvider
 
-class ParentsCacheTests(TestCaseWithMemoryTransport):
+class ParentsCacheTests(TestCase):
 
     def setUp(self):
-        super(ParentsCacheTests, self).setUp()
-        self.cache = ParentsCache(self.get_transport())
+        self.cache = ParentsCache()
     
     def test_noparents(self):
         self.cache.insert_parents("myrevid", ())
@@ -46,13 +45,12 @@ class ParentsCacheTests(TestCaseWithMemoryTransport):
         self.assertEquals(("second",), self.cache.lookup_parents("myrevid"))
         
 
-class TestCachingParentsProvider(TestCaseWithMemoryTransport):
+class TestCachingParentsProvider(TestCase):
 
     def setUp(self):
-        super(TestCachingParentsProvider, self).setUp()
         dict_pp = _mod_graph.DictParentsProvider({'a':('b',)})
         self.inst_pp = InstrumentedParentsProvider(dict_pp)
-        self.caching_pp = DiskCachingParentsProvider(self.inst_pp, self.get_transport())
+        self.caching_pp = DiskCachingParentsProvider(self.inst_pp)
 
     def test_get_parent_map(self):
         """Requesting the same revision should be returned from cache"""

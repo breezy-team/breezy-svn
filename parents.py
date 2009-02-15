@@ -19,11 +19,13 @@ from bzrlib.trace import mutter
 from bzrlib.revision import NULL_REVISION
 from bzrlib.versionedfile import ConstantMapper
 
+from bzrlib.plugins.svn.cache import CacheTable
+
 class DiskCachingParentsProvider(object):
     """Parents provider that caches parents in a SQLite database."""
 
-    def __init__(self, actual, cachetransport):
-        self._cache = ParentsCache(cachetransport)
+    def __init__(self, actual, cachedb=None):
+        self._cache = ParentsCache(cachedb)
         self.actual = actual
 
     def get_parent_map(self, keys):
@@ -45,25 +47,29 @@ class DiskCachingParentsProvider(object):
         return ret
 
 
-PARENTMAP_VERSION = 1
+class ParentsCache(CacheTable):
 
-
-class ParentsCache(object):
-
-    def __init__(self, cache_transport):
-        mapper = ConstantMapper("parentmap-v%d" % PARENTMAP_VERSION)
-        self.parentmap_knit = make_file_factory(True, mapper)(cache_transport)
+    def _create_table(self):
+        self.cachedb.executescript("""
+        create table if not exists parent (rev text, parent text, idx int);
+        create unique index if not exists rev_parent_idx on parent (rev, idx);
+        create unique index if not exists rev_parent on parent (rev, parent);
+        """)
+        self._commit_interval = 1000
 
     def insert_parents(self, revid, parents):
         if "cache" in debug.debug_flags:
             mutter('insert parents: %r -> %r', revid, parents)
-        self.parentmap_knit.add_lines((revid,), [(r, ) for r in parents], [])
+        if len(parents) == 0:
+            self.cachedb.execute("replace into parent (rev, parent, idx) values (?, NULL, -1)", (revid,))
+        else:
+            for i, p in enumerate(parents):
+                self.cachedb.execute("replace into parent (rev, parent, idx) values (?, ?, ?)", (revid, p, i))
 
     def lookup_parents(self, revid):
         if "cache" in debug.debug_flags:
             mutter('lookup parents: %r', revid)
-        try:
-            return tuple([r for (r,) in self.parentmap_knit.get_parent_map([(revid,)])[(revid,)]])
-        except KeyError:
+        rows = self.cachedb.execute("select parent from parent where rev = ? order by idx", (revid, )).fetchall()
+        if len(rows) == 0:
             return None
-
+        return tuple([row[0] for row in rows if row[0] is not None])
