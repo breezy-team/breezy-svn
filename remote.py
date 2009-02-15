@@ -203,10 +203,11 @@ else:
                 target_branch = self.target.open_branch()
                 target_branch.lock_write()
                 try:
-                    target_branch.pull(self.source, stop_revision=revision_id) 
+                    return target_branch.pull(self.source, stop_revision=revision_id, overwrite=overwrite) 
                 finally:
                     target_branch.unlock()
             except NotBranchError:
+                # FIXME: Return a PullResult
                 target_branch = self.target.import_branch(self.source, revision_id)
 
 
