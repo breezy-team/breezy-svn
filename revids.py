@@ -253,7 +253,7 @@ class RevisionIdMapCache(CacheTable):
         create unique index if not exists layout on revids_seen (layout);
         """)
         # Revisions ids are quite expensive
-        self._commit_interval = 100
+        self._commit_interval = 500
 
     def set_last_revnum_checked(self, layout, revnum):
         """Remember the latest revision number that has been checked
@@ -357,7 +357,7 @@ class RevisionInfoCache(CacheTable):
         create unique index if not exists revmeta_path_mapping on revmetainfo(revnum, path, mapping);
         """)
         # Revisions ids are quite expensive
-        self._commit_interval = 100
+        self._commit_interval = 500
 
     def insert_revision(self, foreign_revid, mapping, revid, revno, hidden, 
             original_mapping, stored_lhs_parent_revid):
