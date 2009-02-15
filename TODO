@@ -1,11 +1,9 @@
-- fix update_after_commit test
 - automatically disable cache in some situations, allow partial cache?
 
 more tests:
 - Run all tests against repository with revprop changing allowed and without
 - performance tests (count roundtrips?)
 - upgrades from v3
-- bzr:hidden
 - bzr svn-set-revprops
 
 performance:
