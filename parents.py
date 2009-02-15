@@ -55,7 +55,7 @@ class ParentsCache(CacheTable):
         create unique index if not exists rev_parent_idx on parent (rev, idx);
         create unique index if not exists rev_parent on parent (rev, parent);
         """)
-        self._commit_interval = 1000
+        self._commit_interval = 200
 
     def insert_parents(self, revid, parents):
         if "cache" in debug.debug_flags:
@@ -72,4 +72,4 @@ class ParentsCache(CacheTable):
         rows = self.cachedb.execute("select parent from parent where rev = ? order by idx", (revid, )).fetchall()
         if len(rows) == 0:
             return None
-        return tuple([row[0] for row in rows if row[0] is not None])
+        return tuple([row[0].encode("utf-8") for row in rows if row[0] is not None])
