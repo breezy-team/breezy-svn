@@ -19,6 +19,9 @@ bzr-svn 0.5.1					UNRELEASED
    * Assume that ERR_XML_MALFORMED only occurs for non-Subversion 
      URLs. (#327287)
 
+   * Only upgrade tags for which the revision they point to has been 
+     upgraded in svn-upgrade.
+
   FEATURES
 
    * Set svn:original-date property when revision properties can be committed.
