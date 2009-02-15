@@ -544,7 +544,6 @@ class MutteringRemoteAccess(object):
         return self.actual.check_path(path, revnum)
 
     def has_capability(self, cap):
-        mutter('svn has-capability %s' % (cap,))
         return self.actual.has_capability(cap)
 
     def get_uuid(self):
