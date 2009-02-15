@@ -828,7 +828,12 @@ class CachingRevisionMetadata(RevisionMetadata):
     def _get_stored_lhs_parent_revid(self, mapping):
         if mapping in self._stored_lhs_parent_revid:
             return self._stored_lhs_parent_revid[mapping]
-        return super(CachingRevisionMetadata, self)._get_stored_lhs_parent_revid(mapping)
+        try:
+            self._retrieve(mapping)
+        except KeyError:
+            return super(CachingRevisionMetadata, self)._get_stored_lhs_parent_revid(mapping)
+        else:
+            return self._stored_lhs_parent_revid[mapping]
 
     def get_revision_id(self, mapping):
         """Find the revision id of a revision."""
@@ -874,6 +879,7 @@ class CachingRevisionMetadata(RevisionMetadata):
         parent_ids = super(CachingRevisionMetadata, self).get_parent_ids(
             mapping)
         self._parents_cache.insert_parents(myrevid, parent_ids)
+        self._parents_cache.commit_conditionally()
         return parent_ids
 
 
