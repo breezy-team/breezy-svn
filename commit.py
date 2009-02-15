@@ -77,14 +77,14 @@ from bzrlib.plugins.svn.versionedfiles import SvnTexts
 PROP_REVISION_ORIGINAL_DATE = getattr(properties, "PROP_REVISION_ORIGINAL_DATE", "svn:original-date")
 
 
-def _revision_id_to_svk_feature(revid):
+def _revision_id_to_svk_feature(revid, lookup_revid):
     """Create a SVK feature identifier from a revision id.
 
     :param revid: Revision id to convert.
     :return: Matching SVK feature identifier.
     """
     assert isinstance(revid, str)
-    foreign_revid, _ = mapping.mapping_registry.parse_revision_id(revid)
+    foreign_revid, _ = lookup_revid(revid)
     # TODO: What about renamed revisions? Should use 
     # repository.lookup_revision_id here.
     return generate_svk_feature(foreign_revid)
@@ -108,15 +108,19 @@ def _check_dirs_exist(transport, bp_parts, base_rev):
     return []
 
 
-def update_svk_features(oldvalue, merges):
+def update_svk_features(oldvalue, merges, lookup_revid=None):
     """Update a set of SVK features to include the specified set of merges."""
+    
+    if lookup_revid is None:
+        lookup_revid = mapping.mapping_registry.parse_revision_id
+
     old_svk_features = parse_svk_features(oldvalue)
     svk_features = set(old_svk_features)
 
     # SVK compatibility
     for merge in merges:
         try:
-            svk_features.add(_revision_id_to_svk_feature(merge))
+            svk_features.add(_revision_id_to_svk_feature(merge, lookup_revid))
         except InvalidRevisionId:
             pass
 
@@ -147,6 +151,7 @@ def update_mergeinfo(repository, graph, oldvalue, baserevid, merges):
     if newvalue != oldvalue:
         return newvalue
     return None
+
 
 def find_suitable_base(parents, ie):
     """Find a suitable base inventory and path to copy from.
@@ -500,7 +505,8 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         if len(merges) > 0:
             old_svk_merges = self._base_branch_props.get(SVN_PROP_SVK_MERGE, "")
-            new_svk_merges = update_svk_features(old_svk_merges, merges)
+            new_svk_merges = update_svk_features(old_svk_merges, merges, 
+                                            self.repository.lookup_revision_id)
             if new_svk_merges is not None:
                 self._svnprops[SVN_PROP_SVK_MERGE] = new_svk_merges
 
