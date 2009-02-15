@@ -22,6 +22,8 @@ bzr-svn 0.5.1					UNRELEASED
    * Only upgrade tags for which the revision they point to has been 
      upgraded in svn-upgrade.
 
+   * Fix handling of "unusual" branch paths in sparse logs. (#325727)
+
   FEATURES
 
    * Set svn:original-date property when revision properties can be committed.
