@@ -703,6 +703,8 @@ class RevisionMetadata(object):
         if self._log._transport.has_capability("commit-revprops") == False:
             # Server doesn't support setting revision properties
             self._consider_bzr_revprops = False
+        elif self._log._transport.has_capability("log-revprops") == True:
+            self._consider_bzr_revprops = True
         elif self._log._transport.has_capability("log-revprops") is None:
             # Client doesn't know log-revprops capability
             self._consider_bzr_revprops = True
