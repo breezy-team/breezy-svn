@@ -267,7 +267,11 @@ class SvnRepository(ForeignRepository):
         if use_cache is None:
             # TODO: Don't enable log cache in some situations, e.g. 
             # for large repositories ?
-            use_cache = set(["fileids", "revids", "revinfo", "log"])
+            if self.base.startswith("file://"):
+                # Default to no log caching for local connections
+                use_cache = set(["fileids", "revinfo", "revids"])
+            else:
+                use_cache = set(["fileids", "revids", "revinfo", "log"])
 
         if use_cache:
             cache_dir = self.create_cache_dir()

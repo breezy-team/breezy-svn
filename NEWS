@@ -40,8 +40,11 @@ bzr-svn 0.5.1					UNRELEASED
      branch ancestry to find out tag revision ids rather than the remote 
 	 Subversion branch.
 
-   * Use VersionedFiles.insert_record_stream() rather than VersionedFiles.add_lines(), 
-     should be slightly faster.
+   * Use VersionedFiles.insert_record_stream() rather than 
+     VersionedFiles.add_lines(), should be slightly faster.
+ 
+   * By default, don't use a cache for log information when connected 
+     to a local Subversion repository.
 
 bzr-svn 0.5.0					2009-02-03
 
