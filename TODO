@@ -1,5 +1,3 @@
-- automatically disable cache in some situations, allow partial cache?
-
 more tests:
 - Run all tests against repository with revprop changing allowed and without
 - performance tests (count roundtrips?)
@@ -10,6 +8,12 @@ performance:
 - generate deltas rather than fulltexts when creating file id maps for the cache
 - fix copyfrom in replay and replay_range
 - implement SvnWorkingTree.apply_inventory_delta()
+- needs_fetching() in RevisionFinder needs to work on sets of revisions
+  rather than indivual revisions
+- faster function for finding all *existing* tags for a project
+- faster function for finding all *existing* branches
+- automatically disable cache in some situations, allow partial cache?
+ - perhaps for local repositories?
 
 for other things to do, see:
 
