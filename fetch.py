@@ -822,6 +822,9 @@ class FetchRevisionFinder(object):
         self.checked = set()
 
     def needs_fetching(self, revmeta, mapping):
+        """Check if a revmeta, mapping combination should be fetched.
+
+        """
         try:
             if revmeta.is_hidden(mapping):
                 return False
@@ -832,6 +835,11 @@ class FetchRevisionFinder(object):
             return False
 
     def find_iter(self, iter, master_mapping, heads=None, pb=None):
+        """Find revisions to fetch based on an iterator over available revmetas.
+        
+        :param iter: Iterator over RevisionMetadata objects
+        :param master_mapping: Mapping to use
+        """
         needed = deque()
         if heads is None:
             needed_mappings = defaultdict(lambda: set([master_mapping]))
