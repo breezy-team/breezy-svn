@@ -246,11 +246,11 @@ class SubversionTags(BasicTags):
             # no tags in the source, and we don't want to clobber anything
             # that's in the destination
             return
-        graph = to_tags.branch.repository.get_graph()
-        source_dict = self._resolve_tags_ancestry(tag_revmetas, 
-            graph, to_tags.branch.last_revision())
         to_tags.branch.lock_write()
         try:
+            graph = to_tags.branch.repository.get_graph()
+            source_dict = self._resolve_tags_ancestry(tag_revmetas, 
+                graph, to_tags.branch.last_revision())
             dest_dict = to_tags.get_tag_dict()
             result, conflicts = self._reconcile_tags(source_dict, dest_dict,
                                                      overwrite)
