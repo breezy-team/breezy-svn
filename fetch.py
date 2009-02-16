@@ -580,8 +580,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
             except IndexError:
                 basis_id = NULL_REVISION
             rev.inventory_sha1, self.inventory = self.target.add_inventory_by_delta(basis_id,
-                                  self._inv_delta, rev.revision_id,
-                                  [r for r in rev.parent_ids if self.target.has_revision(r)])
+                      self._inv_delta, rev.revision_id,
+                      [r for r in rev.parent_ids if r in self.target.has_revisions(rev.parent_ids)])
         else:
             self.inventory = self.old_inventory
             if "check" in debug.debug_flags:
