@@ -209,6 +209,8 @@ def convert_repository(source_repos, output_url, layout=None,
         project = None
         if to_revnum is None:
             to_revnum = source_repos.get_latest_revnum()
+        if to_revnum < from_revnum:
+            return
         mapping = source_repos.get_mapping()
         existing_branches = {}
         deleted = set()
