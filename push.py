@@ -361,7 +361,6 @@ class InterToSvnRepository(InterRepository):
                 # Nothing to do
                 return
             mutter("pushing %r into svn", todo)
-            target_branch = None
             layout = self.target.get_layout()
             for revision_id in reversed(todo):
                 if pb is not None:
@@ -382,22 +381,20 @@ class InterToSvnRepository(InterRepository):
                              append_revisions_only=False)
                 else:
                     (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
-                    if target_branch is None:
-                        target_branch = Branch.open(url_join_unescaped_path(self.target.base, bp))
-                    if target_branch.get_branch_path() != bp:
-                        target_branch.set_branch_path(bp)
-
-                    target_config = target_branch.get_config()
-                    if (layout.push_merged_revisions(target_branch.project) and 
+                    (tp, target_project, _, ip) = bp
+                    if tp != 'branch' or ip != "":
+                        bp = determine_branch_path(rev, layout, None)
+                    target_config = BranchConfig(urlutils.join(self.target.base, bp) , self.target.uuid)
+                    if (layout.push_merged_revisions(target_project) and 
                         len(rev.parent_ids) > 1 and
                         target_config.get_push_merged_revisions()):
-                        self.push_ancestors(layout, target_branch.project, 
+                        self.push_ancestors(layout, target_project, 
                             rev.parent_ids, create_prefix=True)
 
-                    push_revision_tree(self._graph, target_branch.repository, 
-                        target_branch.get_branch_path(), target_config, 
+                    push_revision_tree(self._graph, self.target, 
+                        bp, target_config, 
                         self.source, parent_revid, revision_id, rev, 
-                        append_revisions_only=target_branch._get_append_revisions_only())
+                        append_revisions_only=target_config.get_append_revisions_only())
         finally:
             self.source.unlock()
  
