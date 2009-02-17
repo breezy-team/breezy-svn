@@ -461,14 +461,16 @@ class TestPush(SubversionTestCase):
         wt = self.bzrdir.open_workingtree()
         revid = wt.commit(message="Commit from Bzr")
         b = Branch.open("%s/trunk" % self.repos_url)
-        push(b.repository.get_graph(), b, wt.branch.repository, 
+        push(b.repository.get_graph(), b.repository, b.get_branch_path(),
+                b.get_config(), b.last_revision(), wt.branch.repository, 
              wt.branch.repository.get_revision(wt.branch.revision_history()[-2]))
         mutter('log %r' % self.client_log("%s/trunk" % self.repos_url, 0, 4)[4][0])
         if not b.mapping.can_use_revprops and b.mapping.can_use_fileprops:
             self.assertEquals('M',
                 self.client_log("%s/trunk" % self.repos_url, 0, 4)[4][0]['/trunk'][0])
         b = Branch.open("%s/trunk" % self.repos_url)
-        push(b.repository.get_graph(), b, wt.branch.repository, 
+        push(b.repository.get_graph(), b.repository, b.get_branch_path(),
+                b.get_config(), b.last_revision(), wt.branch.repository, 
                 wt.branch.repository.get_revision(wt.branch.last_revision()))
         mutter('log %r' % self.client_log("%s/trunk" % self.repos_url, 0, 5)[5][0])
         self.assertEquals("/branches/mybranch", 

@@ -38,6 +38,7 @@ from bzrlib.errors import (
         UnstackableBranchFormat,
         )
 from bzrlib.revision import (
+        NULL_REVISION,
         is_null,
         ensure_null,
         )
@@ -293,9 +294,14 @@ class SvnBranch(ForeignBranch):
         if (rev_history == [] or 
             not self.repository.has_revision(rev_history[-1], project=self.project)):
             raise NotImplementedError("set_revision_history can't add ghosts")
-        push(self.repository.get_graph(), 
-             self, self.repository, 
-             self.repository.get_revision(rev_history[-1]))
+        rev = self.repository.get_revision(rev_history[-1])
+        if rev.parent_ids:
+            base_revid = rev.parent_ids[0]
+        else:
+            base_revid = NULL_REVISION
+        push(self.repository.get_graph(), self.repository, 
+             self.get_branch_path(), self.get_config(), base_revid, 
+             self.repository, rev)
         self._clear_cached_state()
 
     def set_last_revision_info(self, revno, revid):
@@ -479,16 +485,12 @@ class SvnBranch(ForeignBranch):
             create_branch_with_hidden_commit(self.repository, 
                 self.get_branch_path(), stop_revision, set_metadata=True,
                 deletefirst=True)
-            self._clear_cached_state()
         else:
-            self._push_missing_revisions(graph, other.repository, other_graph, todo, 
-                                         _push_merged, _override_svn_revprops)
-
-    def _push_missing_revisions(self, my_graph, other_repository, other_graph, todo, 
-                                push_merged=False, _override_svn_revprops=None):
-        interrepo = InterToSvnRepository(self.repository, other_repository,
-                                         my_graph, other_graph)
-        interrepo.push_branch(self.layout, self.project, push_merged=push_merged, _override_svn_revprops=_override_svn_revprops)
+            interrepo = InterToSvnRepository(other.repository, self.repository, 
+                graph, other_graph)
+            interrepo.push_branch(todo, self.layout, self.project, 
+                self.get_branch_path(), self.get_config(),
+                push_merged=_push_merged)
         self._clear_cached_state()
 
     def is_locked(self):

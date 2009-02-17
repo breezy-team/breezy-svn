@@ -147,8 +147,10 @@ def dpush(target, source, stop_revision=None):
             for rev in source.repository.get_revisions(todo):
                 pb.update("pushing revisions", todo.index(rev.revision_id), 
                           len(todo))
-                revid_map[rev.revision_id] = push(graph, target, 
-                    source.repository, rev, push_metadata=False)
+                revid_map[rev.revision_id] = push(graph, target.repository,
+                        target.get_branch_path(), target.get_config(), 
+                        target.last_revision(),
+                        source.repository, rev, push_metadata=False)
                 source.repository.fetch(target.repository, 
                                         revision_id=revid_map[rev.revision_id])
                 target._clear_cached_state()
@@ -239,8 +241,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo, bas
     return revid
 
 
-def push(graph, target, source_repo, rev, push_metadata=True, 
-         override_svn_revprops=None):
+def push(graph, target_repo, target_path, target_config, base_revid, source_repo, rev, push_metadata=True):
     """Push a revision into Subversion.
 
     This will do a new commit in the target branch.
@@ -248,28 +249,18 @@ def push(graph, target, source_repo, rev, push_metadata=True,
     :param target: Branch to push to
     :param source_repo: Branch to pull the revision from
     :param rev: Revision id for the revision to push
-    :param override_svn_revprops: List of Subversion revision properties to override
     :return: revision id of revision that was pushed
     """
     assert isinstance(source_repo, Repository)
     mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
 
-    # revision on top of which to commit
-    if push_metadata:
-        if rev.parent_ids == []:
-            base_revid = NULL_REVISION
-        else:
-            base_revid = rev.parent_ids[0]
-    else:
-        base_revid = target.last_revision()
-
     source_repo.lock_read()
     try:
-        revid = push_revision_tree(graph, target.repository, target.get_branch_path(), target.get_config(), 
+        revid = push_revision_tree(graph, target_repo, target_path, target_config, 
                                    source_repo, base_revid, rev.revision_id, 
                                    rev, push_metadata=push_metadata,
-                                   append_revisions_only=target._get_append_revisions_only(),
-                                   override_svn_revprops=override_svn_revprops)
+                                   append_revisions_only=target_config.get_append_revisions_only(),
+                                   override_svn_revprops=target_config.get_override_svn_revprops())
     finally:
         source_repo.unlock()
     assert revid == rev.revision_id or not push_metadata
@@ -291,7 +282,7 @@ class InterToSvnRepository(InterRepository):
         """See InterRepository._get_repo_format_to_test()."""
         return None
 
-    def push_branch(self, layout, project, push_merged=False, _override_svn_revprops=None):
+    def push_branch(self, todo, layout, project, target_branch, target_config, push_merged=False):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for rev in self.source.get_revisions(todo):
@@ -300,8 +291,12 @@ class InterToSvnRepository(InterRepository):
                 if push_merged:
                     self.push_ancestors(layout, project, 
                         rev.parent_ids, create_prefix=True)
-                push(self._target_graph, self, self.source, rev, 
-                     override_svn_revprops=_override_svn_revprops)
+                if rev.parent_ids:
+                    base_revid = rev.parent_ids[0]
+                else:
+                    base_revid = NULL_REVISION
+                push(self._target_graph, self.target, target_branch, 
+                     target_config, base_revid, self.source, rev)
         finally:
             pb.finished()
 
