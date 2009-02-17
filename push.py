@@ -336,6 +336,32 @@ class InterToSvnRepository(InterRepository):
                     create_branch_prefix(self.target, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
                     push_new(self._graph, self.target, rhs_branch_path, self.source, x, append_revisions_only=False)
 
+    def push_nonmainline_revision(self, rev, layout):
+        mutter('pushing %r', rev.revision_id)
+        if rev.parent_ids == []:
+            parent_revid = NULL_REVISION
+        else:
+            parent_revid = rev.parent_ids[0]
+
+        if parent_revid == NULL_REVISION:
+            branch_path = determine_branch_path(rev, layout, None)
+            push_new(self._graph, self.target, branch_path, self.source, rev.revision_id, 
+                     append_revisions_only=False)
+        else:
+            (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
+            (tp, target_project, _, ip) = bp
+            if tp != 'branch' or ip != "":
+                bp = determine_branch_path(rev, layout, None)
+            target_config = BranchConfig(urlutils.join(self.target.base, bp) , self.target.uuid)
+            if (layout.push_merged_revisions(target_project) and 
+                target_config.get_push_merged_revisions()):
+                self.push_ancestors(layout, target_project, 
+                    rev.parent_ids, create_prefix=True)
+            push_revision_tree(self._graph, self.target, 
+                bp, target_config, 
+                self.source, parent_revid, rev.revision_id, rev, 
+                append_revisions_only=target_config.get_append_revisions_only())
+
     def copy_content(self, revision_id=None, pb=None):
         """See InterRepository.copy_content."""
         self.source.lock_read()
@@ -359,31 +385,7 @@ class InterToSvnRepository(InterRepository):
                     pb.update("pushing revisions", todo.index(rev.revision_id), 
                         len(todo))
 
-                mutter('pushing %r', rev.revision_id)
-
-                if rev.parent_ids == []:
-                    parent_revid = NULL_REVISION
-                else:
-                    parent_revid = rev.parent_ids[0]
-
-                if parent_revid == NULL_REVISION:
-                    branch_path = determine_branch_path(rev, layout, None)
-                    push_new(self._graph, self.target, branch_path, self.source, rev.revision_id, 
-                             append_revisions_only=False)
-                else:
-                    (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
-                    (tp, target_project, _, ip) = bp
-                    if tp != 'branch' or ip != "":
-                        bp = determine_branch_path(rev, layout, None)
-                    target_config = BranchConfig(urlutils.join(self.target.base, bp) , self.target.uuid)
-                    if (layout.push_merged_revisions(target_project) and 
-                        target_config.get_push_merged_revisions()):
-                        self.push_ancestors(layout, target_project, 
-                            rev.parent_ids, create_prefix=True)
-                    push_revision_tree(self._graph, self.target, 
-                        bp, target_config, 
-                        self.source, parent_revid, rev.revision_id, rev, 
-                        append_revisions_only=target_config.get_append_revisions_only())
+                self.push_nonmainline_revision(rev, layout)
         finally:
             self.source.unlock()
  
