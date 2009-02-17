@@ -59,7 +59,7 @@ from bzrlib.plugins.svn import util
 from bzrlib.plugins.svn.push import (
     create_branch_with_hidden_commit,
     push,
-    push_ancestors,
+    InterToSvnRepository,
     )
 from bzrlib.plugins.svn.config import BranchConfig
 from bzrlib.plugins.svn.errors import NotSvnBranchPath
@@ -485,6 +485,8 @@ class SvnBranch(ForeignBranch):
 
     def _push_missing_revisions(self, my_graph, other_repository, other_graph, todo, 
                                 push_merged=False, _override_svn_revprops=None):
+        interrepo = InterToSvnRepository(self.repository, other_repository,
+                                         my_graph, other_graph)
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for revid in todo:
@@ -492,9 +494,8 @@ class SvnBranch(ForeignBranch):
                           len(todo))
                 if push_merged:
                     parent_revids = other_graph.get_parent_map([revid])[revid]
-                    push_ancestors(self.repository, other_repository, 
-                                   self.layout, self.project, parent_revids, 
-                                   other_graph, create_prefix=True)
+                    interrepo.push_ancestors(self.layout, self.project, 
+                                             parent_revids, create_prefix=True)
                 push(my_graph, self, other_repository, revid, 
                      override_svn_revprops=_override_svn_revprops)
                 self._clear_cached_state()

@@ -293,13 +293,49 @@ class InterToSvnRepository(InterRepository):
 
     _matching_repo_format = SvnRepositoryFormat()
 
+    def __init__(self, source, target, source_graph=None, target_graph=None):
+        InterRepository.__init__(self, source, target)
+        self._source_graph = source_graph
+        self._target_graph = target_graph
+
     @staticmethod
     def _get_repo_format_to_test():
         """See InterRepository._get_repo_format_to_test()."""
         return None
 
+    def push_ancestors(self, layout, project, parent_revids, 
+                       create_prefix=False):
+        """Push the ancestors of a revision.
+
+        :param layout: Subversion layout
+        :param project: Project name
+        :param parent_revids: The revision ids of the basic ancestors to push
+        :param create_prefix: Whether to optionally create the prefix of the branches.
+        """
+        for parent_revid in self.target.has_revisions(parent_revids[1:]):
+            # Push merged revisions
+            unique_ancestors = self._source_graph.find_unique_ancestors(parent_revid, [parent_revids[0]])
+            for x in self._source_graph.iter_topo_order(unique_ancestors):
+                if self.target.has_revision(x):
+                    continue
+                rev = self.source.get_revision(x)
+                rhs_branch_path = determine_branch_path(rev, layout, project)
+                try:
+                    push_new(self._source_graph, self.target, rhs_branch_path, 
+                             self.source, x, append_revisions_only=False)
+                except MissingPrefix, e:
+                    if not create_prefix:
+                        raise
+                    revprops = {properties.PROP_REVISION_LOG: "Add branches directory."}
+                    if self.target.transport.has_capability("commit-revprops"):
+                        revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
+                    create_branch_prefix(self.target, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
+                    push_new(self._source_graph, self.target, rhs_branch_path, self.source, x, append_revisions_only=False)
+
     def copy_content(self, revision_id=None, pb=None):
         """See InterRepository.copy_content."""
+        if self._target_graph is None:
+            self._target_graph = self.target.get_graph()
         self.source.lock_read()
         try:
             assert revision_id is not None, "fetching all revisions not supported"
@@ -319,7 +355,6 @@ class InterToSvnRepository(InterRepository):
             mutter("pushing %r into svn", todo)
             target_branch = None
             layout = self.target.get_layout()
-            graph = self.target.get_graph()
             for revision_id in reversed(todo):
                 if pb is not None:
                     pb.update("pushing revisions", todo.index(revision_id), 
@@ -348,8 +383,8 @@ class InterToSvnRepository(InterRepository):
                     if (layout.push_merged_revisions(target_branch.project) and 
                         len(rev.parent_ids) > 1 and
                         target_config.get_push_merged_revisions()):
-                        push_ancestors(self.target, self.source, layout, "", 
-                            rev.parent_ids, graph, create_prefix=True)
+                        self.push_ancestors(layout, "", rev.parent_ids, 
+                            create_prefix=True)
 
                     push_revision_tree(graph, target_branch.repository, 
                         target_branch.get_branch_path(), target_config, 
@@ -376,41 +411,6 @@ def determine_branch_path(rev, layout, project=None):
         return layout.get_branch_path(nick)
     else:
         return layout.get_branch_path(nick, project)
-
-
-def push_ancestors(target_repo, source_repo, layout, project, parent_revids, 
-                   graph, create_prefix=False):
-    """Push the ancestors of a revision.
-
-    :param target_repo: Target repository.
-    :param source_repo: Source repository
-    :param layout: Subversion layout
-    :param project: Project name
-    :param parent_revids: The revision ids of the basic ancestors to push
-    :param graph: Graph object for source_repo
-    :param create_prefix: Whether to optionally create the prefix of the branches.
-    """
-    for parent_revid in parent_revids[1:]:
-        if target_repo.has_revision(parent_revid):
-            continue
-        # Push merged revisions
-        unique_ancestors = graph.find_unique_ancestors(parent_revid, [parent_revids[0]])
-        for x in graph.iter_topo_order(unique_ancestors):
-            if target_repo.has_revision(x):
-                continue
-            rev = source_repo.get_revision(x)
-            rhs_branch_path = determine_branch_path(rev, layout, project)
-            try:
-                push_new(graph, target_repo, rhs_branch_path, source_repo, x, 
-                         append_revisions_only=False)
-            except MissingPrefix, e:
-                if not create_prefix:
-                    raise
-                revprops = {properties.PROP_REVISION_LOG: "Add branches directory."}
-                if target_repo.transport.has_capability("commit-revprops"):
-                    revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
-                create_branch_prefix(target_repo, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
-                push_new(graph, target_repo, rhs_branch_path, source_repo, x, append_revisions_only=False)
 
 
 def create_branch_prefix(repository, revprops, bp_parts, existing_bp_parts):
