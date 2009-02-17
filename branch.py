@@ -488,19 +488,8 @@ class SvnBranch(ForeignBranch):
                                 push_merged=False, _override_svn_revprops=None):
         interrepo = InterToSvnRepository(self.repository, other_repository,
                                          my_graph, other_graph)
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
-            for rev in other_repository.get_revisions(todo):
-                pb.update("pushing revisions", todo.index(rev.revision_id), 
-                          len(todo))
-                if push_merged:
-                    interrepo.push_ancestors(self.layout, self.project, 
-                                             rev.parent_ids, create_prefix=True)
-                push(my_graph, self, other_repository, rev, 
-                     override_svn_revprops=_override_svn_revprops)
-                self._clear_cached_state()
-        finally:
-            pb.finished()
+        interrepo.push_branch(self.layout, self.project, push_merged=push_merged, _override_svn_revprops=_override_svn_revprops)
+        self._clear_cached_state()
 
     def is_locked(self):
         return self._lock_count != 0

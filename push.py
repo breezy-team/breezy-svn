@@ -272,18 +272,7 @@ def push(graph, target, source_repo, rev, push_metadata=True,
                                    override_svn_revprops=override_svn_revprops)
     finally:
         source_repo.unlock()
-
     assert revid == rev.revision_id or not push_metadata
-
-    if 'check' in debug.debug_flags and push_metadata:
-        crev = target.repository.get_revision(rev.revision_id)
-        ctree = target.repository.revision_tree(rev.revision_id)
-        assert crev.committer == rev.committer
-        assert crev.timezone == rev.timezone
-        assert crev.timestamp == rev.timestamp
-        assert crev.message == rev.message
-        assert crev.properties == rev.properties
-
     return revid
 
 
@@ -301,6 +290,20 @@ class InterToSvnRepository(InterRepository):
     def _get_repo_format_to_test():
         """See InterRepository._get_repo_format_to_test()."""
         return None
+
+    def push_branch(self, layout, project, push_merged=False, _override_svn_revprops=None):
+        pb = ui.ui_factory.nested_progress_bar()
+        try:
+            for rev in self.source.get_revisions(todo):
+                pb.update("pushing revisions", todo.index(rev.revision_id), 
+                          len(todo))
+                if push_merged:
+                    self.push_ancestors(layout, project, 
+                        rev.parent_ids, create_prefix=True)
+                push(self._target_graph, self, self.source, rev, 
+                     override_svn_revprops=_override_svn_revprops)
+        finally:
+            pb.finished()
 
     def push_ancestors(self, layout, project, parent_revids, 
                        create_prefix=False):
