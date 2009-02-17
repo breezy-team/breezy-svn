@@ -140,6 +140,8 @@ def dpush(target, source, stop_revision=None):
         if todo is None:
             raise DivergedBranches(self, other)
         revid_map = {}
+        target_branch_path = target.get_branch_path()
+        target_config = target.get_config()
         pb = ui.ui_factory.nested_progress_bar()
         try:
             # FIXME: Call create_branch_with_hidden_commit if the revision is 
@@ -154,13 +156,13 @@ def dpush(target, source, stop_revision=None):
                 else:
                     base_revid = rev.parent_ids[0]
                 revid_map[rev.revision_id] = push(graph, target.repository,
-                        target.get_branch_path(), target.get_config(), 
-                        base_revid, source.repository, rev, push_metadata=False)
-                source.repository.fetch(target.repository, 
-                                        revision_id=revid_map[rev.revision_id])
-                target._clear_cached_state()
+                        target_branch_path, target_config, base_revid, 
+                        source.repository, rev, push_metadata=False)
         finally:
             pb.finished()
+        source.repository.fetch(target.repository, 
+                                revision_id=revid_map[rev.revision_id])
+        target._clear_cached_state()
         assert stop_revision in revid_map
         assert len(revid_map.keys()) > 0
         return revid_map
@@ -289,6 +291,9 @@ class InterToSvnRepository(InterRepository):
 
     def push_branch(self, todo, layout, project, target_branch, target_config,
         push_merged=False):
+        """Push a series of revisions into a Subversion repository.
+
+        """
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for rev in self.source.get_revisions(todo):
@@ -373,7 +378,7 @@ class InterToSvnRepository(InterRepository):
 
                 if parent_revid == NULL_REVISION:
                     branch_path = determine_branch_path(rev, layout, None)
-                    push_new(graph, self.target, branch_path, self.source, revision_id, 
+                    push_new(self._source_graph, self.target, branch_path, self.source, revision_id, 
                              append_revisions_only=False)
                 else:
                     (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
@@ -386,10 +391,10 @@ class InterToSvnRepository(InterRepository):
                     if (layout.push_merged_revisions(target_branch.project) and 
                         len(rev.parent_ids) > 1 and
                         target_config.get_push_merged_revisions()):
-                        self.push_ancestors(layout, "", rev.parent_ids, 
-                            create_prefix=True)
+                        self.push_ancestors(layout, target_branch.project, 
+                            rev.parent_ids, create_prefix=True)
 
-                    push_revision_tree(graph, target_branch.repository, 
+                    push_revision_tree(self._source_graph, target_branch.repository, 
                         target_branch.get_branch_path(), target_config, 
                         self.source, parent_revid, revision_id, rev, 
                         append_revisions_only=target_branch._get_append_revisions_only())
