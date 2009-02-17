@@ -30,6 +30,8 @@ bzr-svn 0.5.1					UNRELEASED
 
    * Add transport speed progress indication. (require subvertpy >= 0.6.4)
 
+  PERFORMANCE
+
    * New cache that stores the most important metadata information used 
      when browsing history. 
 
@@ -45,6 +47,11 @@ bzr-svn 0.5.1					UNRELEASED
  
    * By default, don't use a cache for log information when connected 
      to a local Subversion repository.
+
+   * Only fetch rebased revisions once during ``bzr dpush'', rather than 
+     after every pushed revision.
+   
+   * Use only a single graph object during push, rather than two.
 
 bzr-svn 0.5.0					2009-02-03
 
