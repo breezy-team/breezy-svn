@@ -163,10 +163,10 @@ def lazy_register_optimizers():
     if _optimizers_registered:
         return
     from bzrlib.repository import InterRepository
-    from bzrlib.plugins.svn import commit, fetch
+    from bzrlib.plugins.svn import push, fetch
     _optimizers_registered = True
     InterRepository.register_optimiser(fetch.InterFromSvnRepository)
-    InterRepository.register_optimiser(commit.InterToSvnRepository)
+    InterRepository.register_optimiser(push.InterToSvnRepository)
 
 
 plugin_cmds.register_lazy('cmd_svn_import', [], 'bzrlib.plugins.svn.commands')

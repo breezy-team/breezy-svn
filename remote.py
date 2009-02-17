@@ -132,7 +132,7 @@ class SvnRemoteAccess(BzrDir):
         :param stop_revision: Tip of new branch
         :return: Branch object
         """
-        from bzrlib.plugins.svn.commit import push_new
+        from bzrlib.plugins.svn.push import push_new
         source.lock_read()
         try:
             if stop_revision is None:

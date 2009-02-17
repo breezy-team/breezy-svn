@@ -56,7 +56,7 @@ from subvertpy import (
         )
 
 from bzrlib.plugins.svn import util
-from bzrlib.plugins.svn.commit import (
+from bzrlib.plugins.svn.push import (
     create_branch_with_hidden_commit,
     push,
     push_ancestors,
@@ -391,7 +391,7 @@ class SvnBranch(ForeignBranch):
 
     @needs_write_lock
     def dpull(self, source, stop_revision=None):
-        from bzrlib.plugins.svn.commit import dpush
+        from bzrlib.plugins.svn.push import dpush
         return dpush(self, source, stop_revision)
 
     def pull(self, source, overwrite=False, stop_revision=None, 

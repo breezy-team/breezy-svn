@@ -819,7 +819,6 @@ class FetchRevisionFinder(object):
         self.source = source
         self.target = target
         self.target_is_empty = target_is_empty
-        self.checked = set()
 
     def needs_fetching(self, revmeta, mapping):
         """Check if a revmeta, mapping combination should be fetched.
@@ -858,11 +857,10 @@ class FetchRevisionFinder(object):
                 if (m != master_mapping and 
                     not m.is_branch_or_tag(revmeta.branch_path)):
                     continue
+                if lhsm != master_mapping or heads is not None:
+                    needed_mappings[revmeta.get_direct_lhs_parent_revmeta()].add(lhsm)
                 if self.needs_fetching(revmeta, m):
-                    if lhsm != master_mapping or heads is not None:
-                        needed_mappings[revmeta.get_direct_lhs_parent_revmeta()].add(lhsm)
                     needed.appendleft((revmeta, m))
-                    self.checked.add((revmeta.get_foreign_revid(), m))
 
         return needed
 
@@ -884,8 +882,9 @@ class FetchRevisionFinder(object):
         :return: List with revmeta, mapping tuples to fetch
         """
         extra = list()
+        checked = set()
         def check_revid(foreign_revid, mapping, project=None):
-            if (foreign_revid, mapping) in self.checked:
+            if (foreign_revid, mapping) in checked:
                 return []
             revmetas = deque()
             (uuid, branch_path, revnum) = foreign_revid
@@ -895,21 +894,23 @@ class FetchRevisionFinder(object):
                 if pb:
                     pb.update("determining revisions to fetch", 
                               revnum-revmeta.revnum, revnum)
-                if (revmeta.get_foreign_revid(), mapping) in self.checked:
+                if (revmeta.get_foreign_revid(), mapping) in checked:
                     # This revision (and its ancestry) has already been checked
                     break
                 if self.needs_fetching(revmeta, mapping):
                     revmetas.appendleft((revmeta, mapping))
-                    for p in revmeta.get_rhs_parents(mapping):
-                        try:
-                            foreign_revid, rhs_mapping = self.source.lookup_revision_id(p, project=project)
-                        except NoSuchRevision:
-                            pass # Ghost
-                        else:
-                            extra.append((foreign_revid, project, rhs_mapping))
                 elif not find_ghosts:
                     break
-                self.checked.add((revmeta.get_foreign_revid(), mapping))
+                checked.add((revmeta.get_foreign_revid(), mapping))
+            # Determine if there are any RHS parents to fetch
+            for revmeta, mapping in revmetas:
+                for p in revmeta.get_rhs_parents(mapping):
+                    try:
+                        foreign_revid, rhs_mapping = self.source.lookup_revision_id(p, project=project)
+                    except NoSuchRevision:
+                        pass # Ghost
+                    else:
+                        extra.append((foreign_revid, project, rhs_mapping))
             return revmetas
 
         needed = check_revid(foreign_revid, mapping, project)

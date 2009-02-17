@@ -24,15 +24,17 @@ from bzrlib.inventory import InventoryDirectory
 from bzrlib.merge import Merger, Merge3Merger
 from bzrlib.progress import DummyProgress
 from bzrlib.repository import Repository
+from bzrlib.revision import Revision
 from bzrlib.trace import mutter
+from bzrlib.tests import TestCase
 
 import os
 
 from bzrlib.plugins.svn import format, transport
 from bzrlib.plugins.svn.errors import MissingPrefix
-from bzrlib.plugins.svn.commit import push, dpush
 from bzrlib.plugins.svn.layout.standard import RootLayout, TrunkLayout
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_REVISION_ID
+from bzrlib.plugins.svn.push import push, dpush, determine_branch_path
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 from subvertpy import ra
@@ -1176,3 +1178,23 @@ class TestPushTwice(SubversionTestCase):
         self.assertEquals(expected_history, svndir1.open_branch().revision_history())
         svndir2.open_branch().pull(wt.branch)
         self.assertEquals(expected_history, svndir2.open_branch().revision_history())
+
+
+class DetermineBranchPathTests(TestCase):
+
+    def test_no_nick_no_proj(self):
+        rev = Revision("fooid")
+        self.assertEquals("branches/merged",
+            determine_branch_path(rev, TrunkLayout(0)))
+
+    def test_nick_no_proj(self):
+        rev = Revision("fooid")
+        rev.properties['branch-nick'] = 'bla'
+        self.assertEquals("branches/bla",
+            determine_branch_path(rev, TrunkLayout(0)))
+
+    def test_nick_proj(self):
+        rev = Revision("fooid")
+        rev.properties['branch-nick'] = 'bla'
+        self.assertEquals("someproj/branches/bla",
+            determine_branch_path(rev, TrunkLayout(1), "someproj"))
