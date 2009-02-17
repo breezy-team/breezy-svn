@@ -344,23 +344,21 @@ class InterToSvnRepository(InterRepository):
             parent_revid = rev.parent_ids[0]
 
         if parent_revid == NULL_REVISION:
-            branch_path = determine_branch_path(rev, layout, None)
-            push_new(self._graph, self.target, branch_path, self.source, rev.revision_id, 
-                     append_revisions_only=False)
+            bp = determine_branch_path(rev, layout, None)
         else:
             (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
-            (tp, target_project, _, ip) = bp
+            (tp, target_project, _, ip) = layout.parse(bp)
             if tp != 'branch' or ip != "":
                 bp = determine_branch_path(rev, layout, None)
-            target_config = BranchConfig(urlutils.join(self.target.base, bp) , self.target.uuid)
-            if (layout.push_merged_revisions(target_project) and 
-                target_config.get_push_merged_revisions()):
-                self.push_ancestors(layout, target_project, 
-                    rev.parent_ids, create_prefix=True)
-            push_revision_tree(self._graph, self.target, 
-                bp, target_config, 
-                self.source, parent_revid, rev.revision_id, rev, 
-                append_revisions_only=target_config.get_append_revisions_only())
+        target_config = BranchConfig(urlutils.join(self.target.base, bp) , self.target.uuid)
+        if (layout.push_merged_revisions(target_project) and 
+            target_config.get_push_merged_revisions()):
+            self.push_ancestors(layout, target_project, 
+                rev.parent_ids, create_prefix=True)
+        push_revision_tree(self._graph, self.target, 
+            bp, target_config, 
+            self.source, parent_revid, rev.revision_id, rev, 
+            append_revisions_only=target_config.get_append_revisions_only())
 
     def copy_content(self, revision_id=None, pb=None):
         """See InterRepository.copy_content."""
@@ -378,17 +376,16 @@ class InterToSvnRepository(InterRepository):
             if todo == []:
                 # Nothing to do
                 return
+            todo.reverse()
             mutter("pushing %r into svn", todo)
             layout = self.target.get_layout()
-            for rev in self.source.get_revisions(reversed(todo)):
+            for rev in self.source.get_revisions(todo):
                 if pb is not None:
                     pb.update("pushing revisions", todo.index(rev.revision_id), 
                         len(todo))
-
                 self.push_nonmainline_revision(rev, layout)
         finally:
             self.source.unlock()
- 
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False):
         """Fetch revisions. """
@@ -401,7 +398,13 @@ class InterToSvnRepository(InterRepository):
 
 
 def determine_branch_path(rev, layout, project=None):
-    """Create a sane branch path to use for a revision."""
+    """Create a sane branch path to use for a revision.
+    
+    :param rev: Revision object
+    :param layout: Subversion layout
+    :param project: Optional project name, as used by the layout
+    :return: Branch path string
+    """
     nick = (rev.properties.get('branch-nick') or "merged").encode("utf-8").replace("/","_")
     if project is None:
         return layout.get_branch_path(nick)
