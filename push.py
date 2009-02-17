@@ -147,10 +147,15 @@ def dpush(target, source, stop_revision=None):
             for rev in source.repository.get_revisions(todo):
                 pb.update("pushing revisions", todo.index(rev.revision_id), 
                           len(todo))
+                if len(rev.parent_ids) == 0:
+                    base_revid = NULL_REVISION
+                elif rev.parent_ids[0] in revid_map:
+                    base_revid = revid_map[rev.parent_ids[0]]
+                else:
+                    base_revid = rev.parent_ids[0]
                 revid_map[rev.revision_id] = push(graph, target.repository,
                         target.get_branch_path(), target.get_config(), 
-                        target.last_revision(),
-                        source.repository, rev, push_metadata=False)
+                        base_revid, source.repository, rev, push_metadata=False)
                 source.repository.fetch(target.repository, 
                                         revision_id=revid_map[rev.revision_id])
                 target._clear_cached_state()
@@ -282,7 +287,8 @@ class InterToSvnRepository(InterRepository):
         """See InterRepository._get_repo_format_to_test()."""
         return None
 
-    def push_branch(self, todo, layout, project, target_branch, target_config, push_merged=False):
+    def push_branch(self, todo, layout, project, target_branch, target_config,
+        push_merged=False):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for rev in self.source.get_revisions(todo):
@@ -503,6 +509,3 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
         ci.close()
     finally:
         repository.transport.add_connection(conn)
-
-
-
