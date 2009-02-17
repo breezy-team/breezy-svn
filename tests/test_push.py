@@ -468,7 +468,8 @@ class TestPush(SubversionTestCase):
             self.assertEquals('M',
                 self.client_log("%s/trunk" % self.repos_url, 0, 4)[4][0]['/trunk'][0])
         b = Branch.open("%s/trunk" % self.repos_url)
-        push(b.repository.get_graph(), b, wt.branch.repository, wt.branch.last_revision())
+        push(b.repository.get_graph(), b, wt.branch.repository, 
+                wt.branch.repository.get_revision(wt.branch.last_revision()))
         mutter('log %r' % self.client_log("%s/trunk" % self.repos_url, 0, 5)[5][0])
         self.assertEquals("/branches/mybranch", 
             self.client_log("%s/trunk" % self.repos_url, 0, 5)[5][0]['/trunk'][1])
