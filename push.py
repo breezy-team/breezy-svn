@@ -144,13 +144,13 @@ def dpush(target, source, stop_revision=None):
         try:
             # FIXME: Call create_branch_with_hidden_commit if the revision is 
             # already present in the target repository ?
-            for revid in todo:
-                pb.update("pushing revisions", todo.index(revid), 
+            for rev in source.repository.get_revisions(todo):
+                pb.update("pushing revisions", todo.index(rev.revision_id), 
                           len(todo))
-                revid_map[revid] = push(graph, target, source.repository, 
-                                        revid, push_metadata=False)
+                revid_map[rev.revision_id] = push(graph, target, 
+                    source.repository, rev, push_metadata=False)
                 source.repository.fetch(target.repository, 
-                                        revision_id=revid_map[revid])
+                                        revision_id=revid_map[rev.revision_id])
                 target._clear_cached_state()
         finally:
             pb.finished()
@@ -239,7 +239,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo, bas
     return revid
 
 
-def push(graph, target, source_repo, revision_id, push_metadata=True, 
+def push(graph, target, source_repo, rev, push_metadata=True, 
          override_svn_revprops=None):
     """Push a revision into Subversion.
 
@@ -247,13 +247,12 @@ def push(graph, target, source_repo, revision_id, push_metadata=True,
 
     :param target: Branch to push to
     :param source_repo: Branch to pull the revision from
-    :param revision_id: Revision id of the revision to push
+    :param rev: Revision id for the revision to push
     :param override_svn_revprops: List of Subversion revision properties to override
     :return: revision id of revision that was pushed
     """
     assert isinstance(source_repo, Repository)
-    rev = source_repo.get_revision(revision_id)
-    mutter('pushing %r (%r)', revision_id, rev.parent_ids)
+    mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
 
     # revision on top of which to commit
     if push_metadata:
@@ -267,18 +266,18 @@ def push(graph, target, source_repo, revision_id, push_metadata=True,
     source_repo.lock_read()
     try:
         revid = push_revision_tree(graph, target.repository, target.get_branch_path(), target.get_config(), 
-                                   source_repo, base_revid, revision_id, 
+                                   source_repo, base_revid, rev.revision_id, 
                                    rev, push_metadata=push_metadata,
                                    append_revisions_only=target._get_append_revisions_only(),
                                    override_svn_revprops=override_svn_revprops)
     finally:
         source_repo.unlock()
 
-    assert revid == revision_id or not push_metadata
+    assert revid == rev.revision_id or not push_metadata
 
     if 'check' in debug.debug_flags and push_metadata:
-        crev = target.repository.get_revision(revision_id)
-        ctree = target.repository.revision_tree(revision_id)
+        crev = target.repository.get_revision(rev.revision_id)
+        ctree = target.repository.revision_tree(rev.revision_id)
         assert crev.committer == rev.committer
         assert crev.timezone == rev.timezone
         assert crev.timestamp == rev.timestamp

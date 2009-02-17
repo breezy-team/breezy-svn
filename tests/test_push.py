@@ -462,7 +462,7 @@ class TestPush(SubversionTestCase):
         revid = wt.commit(message="Commit from Bzr")
         b = Branch.open("%s/trunk" % self.repos_url)
         push(b.repository.get_graph(), b, wt.branch.repository, 
-             wt.branch.revision_history()[-2])
+             wt.branch.repository.get_revision(wt.branch.revision_history()[-2]))
         mutter('log %r' % self.client_log("%s/trunk" % self.repos_url, 0, 4)[4][0])
         if not b.mapping.can_use_revprops and b.mapping.can_use_fileprops:
             self.assertEquals('M',

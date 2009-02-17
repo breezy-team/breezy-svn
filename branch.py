@@ -294,7 +294,8 @@ class SvnBranch(ForeignBranch):
             not self.repository.has_revision(rev_history[-1], project=self.project)):
             raise NotImplementedError("set_revision_history can't add ghosts")
         push(self.repository.get_graph(), 
-             self, self.repository, rev_history[-1])
+             self, self.repository, 
+             self.repository.get_revision(rev_history[-1]))
         self._clear_cached_state()
 
     def set_last_revision_info(self, revno, revid):
@@ -489,14 +490,13 @@ class SvnBranch(ForeignBranch):
                                          my_graph, other_graph)
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for revid in todo:
-                pb.update("pushing revisions", todo.index(revid), 
+            for rev in other_repository.get_revisions(todo):
+                pb.update("pushing revisions", todo.index(rev.revision_id), 
                           len(todo))
                 if push_merged:
-                    parent_revids = other_graph.get_parent_map([revid])[revid]
                     interrepo.push_ancestors(self.layout, self.project, 
-                                             parent_revids, create_prefix=True)
-                push(my_graph, self, other_repository, revid, 
+                                             rev.parent_ids, create_prefix=True)
+                push(my_graph, self, other_repository, rev, 
                      override_svn_revprops=_override_svn_revprops)
                 self._clear_cached_state()
         finally:
