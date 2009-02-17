@@ -31,6 +31,7 @@ from bzrlib.plugins.svn import (
 
 
 class PathPropertyProvider(object):
+
     def __init__(self, log):
         self.log = log
         self._props_cache = {}

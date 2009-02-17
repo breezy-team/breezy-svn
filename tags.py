@@ -103,11 +103,18 @@ class SubversionTags(BasicTags):
         except KeyError:
             raise NoSuchTag(tag_name)
 
-    def _get_tag_dict_revmeta(self):
-        return self.repository.find_tags(project=self.branch.project, 
-                layout=self.branch.layout,
-                mapping=self.branch.mapping,
-                revnum=self.branch._revnum)
+    def _get_tag_dict_revmeta(self, since_revnum=None):
+        if since_revnum is None or since_revnum == 0:
+            return self.repository.find_tags(project=self.branch.project, 
+                    layout=self.branch.layout,
+                    mapping=self.branch.mapping,
+                    revnum=self.branch._revnum)
+        else:
+            return self.repository.find_tags_between(project=self.branch.project,
+                    layout=self.branch.layout,
+                    mapping=self.branch.mapping,
+                    from_revnum=self.branch._revnum,
+                    to_revnum=since_revnum)
 
     def _resolve_reverse_tags_fallback(self, reverse_tag_revmetas):
         """Determine the revids for tags that were not found in the branch 
@@ -220,7 +227,7 @@ class SubversionTags(BasicTags):
             if k not in dest_dict:
                 self.delete_tag(k)
 
-    def merge_to(self, to_tags, overwrite=False):
+    def merge_to(self, to_tags, overwrite=False, _since_revnum=None):
         """Copy tags between repositories if necessary and possible.
         
         This method has common command-line behaviour about handling 
@@ -241,7 +248,7 @@ class SubversionTags(BasicTags):
         if not self.supports_tags():
             # obviously nothing to copy
             return
-        tag_revmetas = self._get_tag_dict_revmeta()
+        tag_revmetas = self._get_tag_dict_revmeta(_since_revnum)
         if len(tag_revmetas) == 0:
             # no tags in the source, and we don't want to clobber anything
             # that's in the destination

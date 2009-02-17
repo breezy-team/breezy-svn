@@ -356,7 +356,6 @@ class RevisionInfoCache(CacheTable):
         create table if not exists revmetainfo (path text, revnum integer, mapping text, revid text, revno int, hidden int, original_mapping text, stored_lhs_parent_revid text);
         create unique index if not exists revmeta_path_mapping on revmetainfo(revnum, path, mapping);
         """)
-        # Revisions ids are quite expensive
         self._commit_interval = 500
 
     def insert_revision(self, foreign_revid, mapping, revid, revno, hidden, 
