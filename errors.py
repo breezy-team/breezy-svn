@@ -191,14 +191,6 @@ class InvalidFileId(BzrError):
         self.fileid = fileid
 
 
-class CantPushGhosts(BzrError):
-    _fmt = """Can not push ghosts to Subversion: %(revid)s."""
-
-    def __init__(self, revid):
-        BzrError.__init__(self)
-        self.revid = revid
-
-
 class DifferentSubversionRepository(BzrError):
     _fmt = """UUID %(got)s does not match expected UUID %(expected)s."""
 

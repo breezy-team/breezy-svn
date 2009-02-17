@@ -20,9 +20,6 @@ from bzrlib import (
     ui,
     urlutils,
     )
-from bzrlib.branch import (
-    Branch,
-    )
 from bzrlib.errors import (
     BzrError,
     DivergedBranches,
@@ -48,7 +45,6 @@ from bzrlib.plugins.svn.config import (
     BranchConfig,
     )
 from bzrlib.plugins.svn.errors import (
-    CantPushGhosts,
     ChangesRootLHSHistory, 
     convert_svn_error,
     )
@@ -349,26 +345,21 @@ class InterToSvnRepository(InterRepository):
             assert revision_id is not None, "fetching all revisions not supported"
             # Go back over the LHS parent until we reach a revid we know
             todo = []
-            while not self.target.has_revision(revision_id):
-                if revision_id == NULL_REVISION:
+            for revision_id in self.source.iter_reverse_revision_history(revision_id):
+                if self.target.has_revision(revision_id):
                     break
                 todo.append(revision_id)
-                try:
-                    revision_id = self.source.get_parent_map([revision_id])[revision_id][0]
-                except KeyError:
-                    raise CantPushGhosts(revision_id)
             if todo == []:
                 # Nothing to do
                 return
             mutter("pushing %r into svn", todo)
             layout = self.target.get_layout()
-            for revision_id in reversed(todo):
+            for rev in self.source.get_revisions(reversed(todo)):
                 if pb is not None:
-                    pb.update("pushing revisions", todo.index(revision_id), 
+                    pb.update("pushing revisions", todo.index(rev.revision_id), 
                         len(todo))
-                rev = self.source.get_revision(revision_id)
 
-                mutter('pushing %r', revision_id)
+                mutter('pushing %r', rev.revision_id)
 
                 if rev.parent_ids == []:
                     parent_revid = NULL_REVISION
@@ -377,7 +368,7 @@ class InterToSvnRepository(InterRepository):
 
                 if parent_revid == NULL_REVISION:
                     branch_path = determine_branch_path(rev, layout, None)
-                    push_new(self._graph, self.target, branch_path, self.source, revision_id, 
+                    push_new(self._graph, self.target, branch_path, self.source, rev.revision_id, 
                              append_revisions_only=False)
                 else:
                     (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
@@ -386,14 +377,12 @@ class InterToSvnRepository(InterRepository):
                         bp = determine_branch_path(rev, layout, None)
                     target_config = BranchConfig(urlutils.join(self.target.base, bp) , self.target.uuid)
                     if (layout.push_merged_revisions(target_project) and 
-                        len(rev.parent_ids) > 1 and
                         target_config.get_push_merged_revisions()):
                         self.push_ancestors(layout, target_project, 
                             rev.parent_ids, create_prefix=True)
-
                     push_revision_tree(self._graph, self.target, 
                         bp, target_config, 
-                        self.source, parent_revid, revision_id, rev, 
+                        self.source, parent_revid, rev.revision_id, rev, 
                         append_revisions_only=target_config.get_append_revisions_only())
         finally:
             self.source.unlock()
