@@ -320,9 +320,11 @@ class cmd_svn_serve(Command):
     ]
 
     def run(self, inet=None, port=None, directory=None):
+        from bzrlib.plugins.svn import lazy_check_versions
         lazy_check_versions()
         from subvertpy.ra_svn import SVNServer, TCPSVNServer, SVN_PORT
         from bzrlib.plugins.svn.server import BzrServerBackend
+        from bzrlib.trace import warning
 
         warning("server support in bzr-svn is experimental.")
 
