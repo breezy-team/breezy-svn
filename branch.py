@@ -473,15 +473,17 @@ class SvnBranch(ForeignBranch):
             _push_merged = (self.layout.push_merged_revisions(self.project) and 
                             self.get_config().get_push_merged_revisions())
         if self.mapping.supports_hidden and self.repository.has_revision(stop_revision):
+            # Revision is already present in the repository, so just 
+            # copy from there.
             create_branch_with_hidden_commit(self.repository, 
                 self.get_branch_path(), stop_revision, set_metadata=True,
                 deletefirst=True)
             self._clear_cached_state()
         else:
-            self._push_missing_revisions(graph, other, other_graph, todo, 
+            self._push_missing_revisions(graph, other.repository, other_graph, todo, 
                                          _push_merged, _override_svn_revprops)
 
-    def _push_missing_revisions(self, my_graph, other, other_graph, todo, 
+    def _push_missing_revisions(self, my_graph, other_repository, other_graph, todo, 
                                 push_merged=False, _override_svn_revprops=None):
         pb = ui.ui_factory.nested_progress_bar()
         try:
@@ -490,10 +492,10 @@ class SvnBranch(ForeignBranch):
                           len(todo))
                 if push_merged:
                     parent_revids = other_graph.get_parent_map([revid])[revid]
-                    push_ancestors(self.repository, other.repository, self.layout, 
-                                   self.project, parent_revids, other_graph,
-                                   create_prefix=True)
-                push(my_graph, self, other.repository, revid, 
+                    push_ancestors(self.repository, other_repository, 
+                                   self.layout, self.project, parent_revids, 
+                                   other_graph, create_prefix=True)
+                push(my_graph, self, other_repository, revid, 
                      override_svn_revprops=_override_svn_revprops)
                 self._clear_cached_state()
         finally:
