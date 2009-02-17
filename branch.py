@@ -461,11 +461,10 @@ class SvnBranch(ForeignBranch):
         if (self.last_revision() == stop_revision or
             self.last_revision() == other.last_revision()):
             return
-        if graph is None:
-            graph = self.repository.get_graph()
-        other_graph = other.repository.get_graph()
-        if not other_graph.is_ancestor(self.last_revision(), 
-                                                        stop_revision):
+        # Request graph from other repository, since it's most likely 
+        # than Subversion
+        graph = other.repository.get_graph(self.repository)
+        if not graph.is_ancestor(self.last_revision(), stop_revision):
             if graph.is_ancestor(stop_revision, self.last_revision()):
                 return
             if not overwrite:
@@ -486,8 +485,8 @@ class SvnBranch(ForeignBranch):
                 self.get_branch_path(), stop_revision, set_metadata=True,
                 deletefirst=True)
         else:
-            interrepo = InterToSvnRepository(other.repository, self.repository, 
-                graph, other_graph)
+            interrepo = InterToSvnRepository(other.repository, 
+                self.repository, graph)
             interrepo.push_branch(todo, self.layout, self.project, 
                 self.get_branch_path(), self.get_config(),
                 push_merged=_push_merged)

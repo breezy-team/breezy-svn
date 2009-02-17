@@ -127,9 +127,10 @@ def dpush(target, source, stop_revision=None):
             stop_revision = ensure_null(source.last_revision())
         if target.last_revision() in (stop_revision, source.last_revision()):
             return { source.last_revision(): source.last_revision() }
-        graph = target.repository.get_graph()
-        if not source.repository.get_graph().is_ancestor(target.last_revision(), 
-                                                        stop_revision):
+        # Request graph from source repository, since it is most likely
+        # faster than the target (Subversion) repository
+        graph = source.repository.get_graph(target.repository)
+        if not graph.is_ancestor(target.last_revision(), stop_revision):
             if graph.is_ancestor(stop_revision, target.last_revision()):
                 return { source.last_revision(): source.last_revision() }
             raise DivergedBranches(source, target)
@@ -279,10 +280,9 @@ class InterToSvnRepository(InterRepository):
 
     _matching_repo_format = SvnRepositoryFormat()
 
-    def __init__(self, source, target, source_graph=None, target_graph=None):
+    def __init__(self, source, target, graph=None):
         InterRepository.__init__(self, source, target)
-        self._source_graph = source_graph
-        self._target_graph = target_graph
+        self._graph = graph
 
     @staticmethod
     def _get_repo_format_to_test():
@@ -306,7 +306,7 @@ class InterToSvnRepository(InterRepository):
                     base_revid = rev.parent_ids[0]
                 else:
                     base_revid = NULL_REVISION
-                push(self._target_graph, self.target, target_branch, 
+                push(self._graph, self.target, target_branch, 
                      target_config, base_revid, self.source, rev)
         finally:
             pb.finished()
@@ -322,14 +322,14 @@ class InterToSvnRepository(InterRepository):
         """
         for parent_revid in self.target.has_revisions(parent_revids[1:]):
             # Push merged revisions
-            unique_ancestors = self._source_graph.find_unique_ancestors(parent_revid, [parent_revids[0]])
-            for x in self._source_graph.iter_topo_order(unique_ancestors):
+            unique_ancestors = self._graph.find_unique_ancestors(parent_revid, [parent_revids[0]])
+            for x in self._graph.iter_topo_order(unique_ancestors):
                 if self.target.has_revision(x):
                     continue
                 rev = self.source.get_revision(x)
                 rhs_branch_path = determine_branch_path(rev, layout, project)
                 try:
-                    push_new(self._source_graph, self.target, rhs_branch_path, 
+                    push_new(self._graph, self.target, rhs_branch_path, 
                              self.source, x, append_revisions_only=False)
                 except MissingPrefix, e:
                     if not create_prefix:
@@ -338,14 +338,14 @@ class InterToSvnRepository(InterRepository):
                     if self.target.transport.has_capability("commit-revprops"):
                         revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
                     create_branch_prefix(self.target, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
-                    push_new(self._source_graph, self.target, rhs_branch_path, self.source, x, append_revisions_only=False)
+                    push_new(self._graph, self.target, rhs_branch_path, self.source, x, append_revisions_only=False)
 
     def copy_content(self, revision_id=None, pb=None):
         """See InterRepository.copy_content."""
-        if self._target_graph is None:
-            self._target_graph = self.target.get_graph()
         self.source.lock_read()
         try:
+            if self._graph is None:
+                self._graph = self.source.get_graph(self.target)
             assert revision_id is not None, "fetching all revisions not supported"
             # Go back over the LHS parent until we reach a revid we know
             todo = []
@@ -378,7 +378,7 @@ class InterToSvnRepository(InterRepository):
 
                 if parent_revid == NULL_REVISION:
                     branch_path = determine_branch_path(rev, layout, None)
-                    push_new(self._source_graph, self.target, branch_path, self.source, revision_id, 
+                    push_new(self._graph, self.target, branch_path, self.source, revision_id, 
                              append_revisions_only=False)
                 else:
                     (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
@@ -394,7 +394,7 @@ class InterToSvnRepository(InterRepository):
                         self.push_ancestors(layout, target_branch.project, 
                             rev.parent_ids, create_prefix=True)
 
-                    push_revision_tree(self._source_graph, target_branch.repository, 
+                    push_revision_tree(self._graph, target_branch.repository, 
                         target_branch.get_branch_path(), target_config, 
                         self.source, parent_revid, revision_id, rev, 
                         append_revisions_only=target_branch._get_append_revisions_only())
