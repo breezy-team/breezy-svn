@@ -15,17 +15,25 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Subversion BzrDir formats."""
 
+import subvertpy
+
 import bzrlib
-from bzrlib.bzrdir import BzrDirFormat, BzrDir
-from bzrlib.errors import (NotBranchError, NotLocalUrl, NoWorkingTree, AlreadyBranchError)
+from bzrlib.bzrdir import (
+    BzrDirFormat,
+    BzrDir,
+    )
+from bzrlib.errors import (
+    AlreadyBranchError,
+    NotBranchError,
+    NotLocalUrl,
+    NoWorkingTree,
+    )
 from bzrlib.trace import warning
 
 from bzrlib.plugins.svn.errors import NoSvnRepositoryPresent
 from bzrlib.plugins.svn.format import SvnRemoteFormat
 from bzrlib.plugins.svn.repository import SvnRepository
 from bzrlib.plugins.svn.transport import bzr_to_svn_url, get_svn_ra_transport
-
-import subvertpy
 
 class SvnRemoteAccess(BzrDir):
     """BzrDir implementation for Subversion connections.
