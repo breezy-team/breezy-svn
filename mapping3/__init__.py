@@ -18,28 +18,24 @@ from bzrlib import (
         osutils,
         ui,
         )
-from bzrlib.commands import Command
-from bzrlib.option import Option
-from bzrlib.trace import info, mutter
+from bzrlib.trace import mutter
 
 from subvertpy import properties
-from subvertpy.ra import DIRENT_KIND
 
 from bzrlib.plugins.svn import errors, mapping
 from bzrlib.plugins.svn.layout.guess import GUESS_SAMPLE_SIZE
 from bzrlib.plugins.svn.layout import RepositoryLayout, get_root_paths
 from bzrlib.plugins.svn.mapping3.scheme import (
         BranchingScheme,
-        guess_scheme_from_branch_path, 
-        guess_scheme_from_history, 
-        ListBranchingScheme, 
-        scheme_from_branch_list,
-        scheme_from_layout,
-        parse_list_scheme_text,
+        InvalidSvnBranchPath,
+        ListBranchingScheme,
         NoBranchingScheme,
         TrunkBranchingScheme,
-        ListBranchingScheme,
-        InvalidSvnBranchPath,
+        guess_scheme_from_branch_path, 
+        guess_scheme_from_history, 
+        parse_list_scheme_text,
+        repository_guess_scheme,
+        scheme_from_layout,
         )
 
 SVN_PROP_BZR_BRANCHING_SCHEME = 'bzr:branching-scheme'
@@ -97,7 +93,6 @@ class SchemeDerivedLayout(RepositoryLayout):
         return "%s(%s)" % (self.__class__.__name__, repr(self.scheme))
 
 
-
 def get_stored_scheme(repository):
     """Retrieve the stored branching scheme, either in the repository 
     or in the configuration file.
@@ -138,18 +133,6 @@ def set_property_scheme(repository, scheme):
         editor.close()
     finally:
         repository.transport.add_connection(conn)
-
-
-def repository_guess_scheme(repository, last_revnum, branch_path=None):
-    pb = ui.ui_factory.nested_progress_bar()
-    try:
-        (guessed_scheme, scheme) = guess_scheme_from_history(
-            repository._log.iter_changes(None, last_revnum, max(0, last_revnum-GUESS_SAMPLE_SIZE)), last_revnum, branch_path)
-    finally:
-        pb.finished()
-    mutter("Guessed branching scheme: %r, guess scheme to use: %r" % 
-            (guessed_scheme, scheme))
-    return (guessed_scheme, scheme)
 
 
 def config_set_scheme(repository, scheme, guessed_scheme, mandatory=False):
@@ -325,49 +308,34 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
         return cls(NoBranchingScheme())
 
 
-class cmd_svn_branching_scheme(Command):
-    """Show or change the branching scheme for a Subversion repository.
+help_schemes = """Subversion Branching Schemes
 
-    This command is deprecated in favour of "bzr svn-layout". It should
-    only be used if you need compatibility with bzr-svn 0.4.x.
+Subversion is basically a versioned file system. It does not have 
+any notion of branches and what is a branch in Subversion is therefor
+up to the user. 
 
-    See 'bzr help svn-branching-schemes' for details.
-    """
-    takes_args = ['location?']
-    takes_options = [
-        Option('set', help="Change the branching scheme. "),
-        Option('repository-wide', 
-            help="Act on repository-wide setting rather than local.")
-        ]
-    hidden = True
+In order for Bazaar to access a Subversion repository it has to know 
+what paths to consider branches. It does this by using so-called branching 
+schemes. When you connect to a repository for the first time, Bazaar
+will try to determine the branching scheme to use using some simple 
+heuristics. It is always possible to change the branching scheme it should 
+use later.
 
-    def run(self, location=".", set=False, repository_wide=False):
-        from bzrlib.bzrdir import BzrDir
-        from bzrlib.msgeditor import edit_commit_message
-        from bzrlib.plugins.svn.repository import SvnRepository
-        def scheme_str(scheme):
-            if scheme is None:
-                return ""
-            return "".join(map(lambda x: x+"\n", scheme.to_lines()))
-        dir = BzrDir.open_containing(location)[0]
-        repos = dir.find_repository()
-        if not isinstance(repos, SvnRepository):
-            raise bzr_errors.BzrCommandError("Not a Subversion repository: %s" % location)
-        if repository_wide:
-            scheme = get_property_scheme(repos)
-        else:
-            scheme = BzrSvnMappingv3.from_repository(repos).scheme
-        if set:
-            schemestr = edit_commit_message("", 
-                                            start_message=scheme_str(scheme))
-            scheme = scheme_from_branch_list(
-                map(lambda x:x.strip("\n"), schemestr.splitlines()))
-            if repository_wide:
-                set_property_scheme(repos, scheme)
-            else:
-                config_set_scheme(repos, scheme, None, mandatory=True)
-        elif scheme is not None:
-            info(scheme_str(scheme))
+There are some conventions in use in Subversion for repository layouts. 
+The most common one is probably the trunk/branches/tags 
+layout, where the repository contains a "trunk" directory with the main 
+development branch, other branches in a "branches" directory and tags as 
+subdirectories of a "tags" directory. This branching scheme is named 
+"trunk" in Bazaar.
+
+Another option is simply having just one branch at the root of the repository. 
+This scheme is called "none" by Bazaar.
+
+The branching scheme bzr-svn should use for a repository can be set in the 
+configuration file ~/.bazaar/subversion.conf.
+
+Branching schemes are only used for version 3 of the Bzr<->Svn mappings.
+"""
 
 
 

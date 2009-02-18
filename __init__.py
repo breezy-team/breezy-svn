@@ -122,7 +122,7 @@ register_lazy_transport('svn://', 'bzrlib.plugins.svn.transport',
 register_lazy_transport('svn+', 'bzrlib.plugins.svn.transport', 
                         'SvnRaTransport')
 topic_registry.register_lazy('svn-branching-schemes', 
-                             'bzrlib.plugins.svn.mapping3.scheme',
+                             'bzrlib.plugins.svn.mapping3',
                              'help_schemes', 'Subversion branching schemes')
 topic_registry.register_lazy('svn-layout', 
                              'bzrlib.plugins.svn.layout',
@@ -174,7 +174,7 @@ plugin_cmds.register_lazy('cmd_foreign_mapping_upgrade', ['svn-upgrade'],
                           'bzrlib.plugins.svn.foreign')
 plugin_cmds.register_lazy('cmd_svn_push', [], 'bzrlib.plugins.svn.commands')
 plugin_cmds.register_lazy('cmd_svn_branching_scheme', [], 
-                          'bzrlib.plugins.svn.mapping3')
+                          'bzrlib.plugins.svn.mapping3.commands')
 plugin_cmds.register_lazy('cmd_svn_set_revprops', [], 
                           'bzrlib.plugins.svn.commands')
 plugin_cmds.register_lazy('cmd_svn_layout', [], 
