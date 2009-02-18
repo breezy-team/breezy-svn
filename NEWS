@@ -1,4 +1,8 @@
-bzr-svn 0.5.2					UNRELEASED
+bzr-svn 0.5.2					2009-02-18
+
+  BUG FIXES
+
+   * Fix installation of cache module.
 
 bzr-svn 0.5.1					2009-02-17
 
