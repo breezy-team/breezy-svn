@@ -34,7 +34,6 @@ class PathPropertyProvider(object):
 
     def __init__(self, log):
         self.log = log
-        self._props_cache = {}
 
     def get_properties(self, path, revnum):
         """Obtain all the directory properties set on a path/revnum pair.
@@ -45,11 +44,7 @@ class PathPropertyProvider(object):
         """
         assert isinstance(path, str)
         path = path.lstrip("/")
-
-        if not (path, revnum) in self._props_cache:
-            self._props_cache[(path, revnum)] = util.lazy_dict({}, 
-                self._real_get_properties, path, revnum)
-        return self._props_cache[path, revnum]
+        return util.lazy_dict({}, self._real_get_properties, path, revnum)
 
     def _real_get_properties(self, path, revnum):
         try:
@@ -58,5 +53,4 @@ class PathPropertyProvider(object):
             if num == ERR_FS_NO_SUCH_REVISION:
                 raise NoSuchRevision(self, revnum)
             raise
-
         return props
