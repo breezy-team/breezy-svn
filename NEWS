@@ -1,5 +1,9 @@
 bzr-svn 0.5.3                   UNRELEASED
 
+  BUG FIXES
+
+   * Lazily load commands during help. (#330928)
+
 bzr-svn 0.5.2					2009-02-18
 
   BUG FIXES

@@ -39,7 +39,7 @@ class cmd_svn_branching_scheme(Command):
         from bzrlib.trace import info
 
         from bzrlib.plugins.svn.repository import SvnRepository
-        from bzrlib.plugins.svn.mapping3 import (
+        from bzrlib.plugins.svn.mapping3.base import (
             BzrSvnMappingv3,
             config_set_scheme, 
             get_property_scheme,

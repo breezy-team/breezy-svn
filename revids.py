@@ -33,7 +33,6 @@ from bzrlib.plugins.svn.mapping import (
         mapping_registry,
         parse_revid_property,
         )
-from bzrlib.plugins.svn.mapping3.scheme import UnknownBranchingScheme
 
 import subvertpy
 from subvertpy import ERR_FS_NOT_DIRECTORY
@@ -99,10 +98,7 @@ class RevidMap(object):
             # If there are any new entries that are not yet in the cache, 
             # add them
             for ((entry_revno, entry_revid), mapping_name) in revids:
-                try:
-                    yield (entry_revid, branch, 0, revno, mapping_registry.parse_mapping_name("svn-" + mapping_name))
-                except UnknownBranchingScheme:
-                    pass
+                yield (entry_revid, branch, 0, revno, mapping_registry.parse_mapping_name("svn-" + mapping_name))
 
     def bisect_revid_revnum(self, revid, branch_path, min_revnum, max_revnum):
         """Find out what the actual revnum was that corresponds to a revid.

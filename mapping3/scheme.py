@@ -24,12 +24,15 @@ import bz2
 from subvertpy import properties
 import urllib
 
-from bzrlib.plugins.svn.layout.guess import find_commit_paths
+from bzrlib.plugins.svn.layout.guess import (
+    GUESS_SAMPLE_SIZE,
+    find_commit_paths,
+    )
 from bzrlib.plugins.svn.layout.standard import (
-        CustomLayout,
-        RootLayout,
-        TrunkLayout,
-        )
+    CustomLayout,
+    RootLayout,
+    TrunkLayout,
+    )
 from bzrlib.plugins.svn.errors import LayoutUnusable
 
 
@@ -561,6 +564,4 @@ def repository_guess_scheme(repository, last_revnum, branch_path=None):
     mutter("Guessed branching scheme: %r, guess scheme to use: %r" % 
             (guessed_scheme, scheme))
     return (guessed_scheme, scheme)
-
-
 
