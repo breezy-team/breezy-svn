@@ -41,10 +41,17 @@ import urllib
 
 import bzrlib.plugins.svn
 from bzrlib.plugins.svn.auth import create_auth_baton
-from bzrlib.plugins.svn.errors import convert_svn_error, NoSvnRepositoryPresent, convert_error
+from bzrlib.plugins.svn.errors import (
+    convert_svn_error,
+    NoSvnRepositoryPresent,
+    convert_error,
+    )
 
 svn_config = get_config()
 
+
+# This variable is here to allow tests to temporarily disable features
+# to see how bzr-svn copes with that
 disabled_capabilities = set()
 
 
