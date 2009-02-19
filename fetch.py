@@ -15,6 +15,19 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Fetching revisions from Subversion repositories in batches."""
 
+from collections import (
+    deque,
+    defaultdict,
+    )
+from cStringIO import (
+    StringIO,
+    )
+from subvertpy import (
+    SubversionException,
+    properties,
+    )
+from subvertpy.delta import apply_txdelta_handler
+
 from bzrlib import (
     debug,
     delta,
@@ -22,28 +35,32 @@ from bzrlib import (
     ui,
     urlutils,
     )
-from bzrlib.errors import NoSuchRevision
+from bzrlib.errors import (
+    NoSuchRevision,
+    )
 from bzrlib.inventory import (
     Inventory, 
     InventoryDirectory, 
     InventoryFile,
     InventoryLink,
     )
-from bzrlib.revision import NULL_REVISION
-from bzrlib.repository import InterRepository
-from bzrlib.trace import mutter
-from bzrlib.versionedfile import FulltextContentFactory
-
-from collections import deque, defaultdict
-from cStringIO import StringIO
-
-from subvertpy import properties, SubversionException
-from subvertpy.delta import apply_txdelta_handler
+from bzrlib.revision import (
+    NULL_REVISION,
+    )
+from bzrlib.repository import (
+    InterRepository,
+    )
+from bzrlib.trace import (
+    mutter,
+    )
+from bzrlib.versionedfile import (
+    FulltextContentFactory,
+    )
 
 from bzrlib.plugins.svn.errors import (
-    convert_svn_error,
     FileIdMapIncomplete,
     InvalidFileName,
+    convert_svn_error,
     )
 from bzrlib.plugins.svn.fileids import (
     get_local_changes,
@@ -51,8 +68,13 @@ from bzrlib.plugins.svn.fileids import (
     )
 from bzrlib.plugins.svn.foreign import escape_commit_message
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_PREFIX
-from bzrlib.plugins.svn.repository import SvnRepository, SvnRepositoryFormat
-from bzrlib.plugins.svn.transport import url_join_unescaped_path
+from bzrlib.plugins.svn.repository import (
+    SvnRepository,
+    SvnRepositoryFormat,
+    )
+from bzrlib.plugins.svn.transport import (
+    url_join_unescaped_path,
+    )
 
 FETCH_COMMIT_WRITE_SIZE = 500
 
@@ -112,12 +134,18 @@ def check_filename(path):
 
 
 def editor_strip_prefix(editor, path):
+    """Wrap editor and strip base path from paths.
+
+    :param editor: Editor to wrap
+    :param path: Base path to strip
+    """
     if path == "":
         return editor
     return PathStrippingEditor(editor, path)
 
 
 class PathStrippingDirectoryEditor(object):
+    """Directory editor that strips a base from the paths."""
 
     def __init__(self, editor, path, actual=None):
         self.editor = editor
@@ -171,12 +199,13 @@ class PathStrippingDirectoryEditor(object):
 
 
 class PathStrippingEditor(object):
+    """Editor that strips a base from the paths."""
 
     def __init__(self, actual, path):
         self.actual = actual
         self.prefix = path.strip("/")
 
-    def __getattr__(self, name):
+    def __getattr__(self, name)
         return getattr(super(PathStrippingEditor, self), name, getattr(self.actual, name))
 
     def strip_prefix(self, path):
@@ -803,6 +832,12 @@ class TreeDeltaBuildEditor(DeltaBuildEditor):
 
 @convert_svn_error
 def report_inventory_contents(reporter, revnum, start_empty):
+    """Report the contents of a Bazaar inventory to a Subversion reporter.
+
+    :param reporter: Subversion reporter
+    :param revnum: Revision number the report is for
+    :param start_empty: Whether or not to start with an empty tree.
+    """
     try:
         reporter.set_path("", revnum, start_empty)
     except:

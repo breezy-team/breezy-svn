@@ -15,6 +15,14 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Handles branch-specific operations."""
 
+import os
+from subvertpy import (
+        ERR_FS_NO_SUCH_REVISION,
+        NODE_DIR,
+        SubversionException,
+        wc,
+        )
+
 from bzrlib import (
         tag,
         ui,
@@ -49,20 +57,17 @@ from bzrlib.workingtree import (
         WorkingTree,
         )
 
-from subvertpy import (
-        ERR_FS_NO_SUCH_REVISION,
-        NODE_DIR,
-        SubversionException,
-        wc,
-        )
-
-from bzrlib.plugins.svn import util
+from bzrlib.plugins.svn import (
+    util,
+    )
 from bzrlib.plugins.svn.push import (
+    InterToSvnRepository,
     create_branch_with_hidden_commit,
     push,
-    InterToSvnRepository,
     )
-from bzrlib.plugins.svn.config import BranchConfig
+from bzrlib.plugins.svn.config import (
+    BranchConfig,
+    )
 from bzrlib.plugins.svn.errors import (
     NotSvnBranchPath,
     )
@@ -70,12 +75,18 @@ from bzrlib.plugins.svn.foreign import (
     ForeignBranch,
     FakeControlFiles,
     )
-from bzrlib.plugins.svn.format import get_rich_root_format
-from bzrlib.plugins.svn.repository import SvnRepository
-from bzrlib.plugins.svn.tags import SubversionTags
-from bzrlib.plugins.svn.transport import bzr_to_svn_url
-
-import os
+from bzrlib.plugins.svn.format import (
+    get_rich_root_format,
+    )
+from bzrlib.plugins.svn.repository import (
+    SvnRepository,
+    )
+from bzrlib.plugins.svn.tags import (
+    SubversionTags,
+    )
+from bzrlib.plugins.svn.transport import (
+    bzr_to_svn_url,
+    )
 
 class SubversionBranchCheckResult(BranchCheckResult):
     """Result of checking a Subversion branch."""

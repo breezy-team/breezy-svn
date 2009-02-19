@@ -35,12 +35,26 @@ For more information about bzr-svn, see the bzr-svn FAQ.
 import bzrlib
 from bzrlib import config
 import bzrlib.api
-from bzrlib.bzrdir import BzrDirFormat, format_registry
-from bzrlib.commands import plugin_cmds
-from bzrlib.foreign import foreign_vcs_registry
-from bzrlib.help_topics import topic_registry
-from bzrlib.trace import mutter
-from bzrlib.transport import register_lazy_transport, register_transport_proto
+from bzrlib.bzrdir import (
+    BzrDirFormat,
+    format_registry,
+    )
+from bzrlib.commands import (
+    plugin_cmds,
+    )
+from bzrlib.foreign import (
+    foreign_vcs_registry,
+    )
+from bzrlib.help_topics import (
+    topic_registry,
+    )
+from bzrlib.trace import (
+    mutter,
+    )
+from bzrlib.transport import (
+    register_lazy_transport,
+    register_transport_proto,
+    )
 
 # versions ending in 'exp' mean experimental mappings
 # versions ending in 'dev' mean development version

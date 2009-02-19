@@ -16,10 +16,13 @@
 
 """Subversion-specific Bazaar command line subcommands."""
 
-from bzrlib.commands import Command, display_command
-from bzrlib.option import Option, RegistryOption
-
-import os, sys
+from bzrlib.commands import (
+    Command,
+    )
+from bzrlib.option import (
+    Option,
+    RegistryOption,
+    )
 
 def get_layout(layoutname):
     """Parse layout name and return a layout.
@@ -64,7 +67,6 @@ class cmd_svn_import(Command):
                          help="Only import revisions up to specified Subversion revnum"),
                     ]
 
-    @display_command
     def run(self, from_location, to_location=None, trees=False, 
             standalone=False, layout=None, all=False, prefix=None, keep=False,
             incremental=False, until=None):
@@ -76,6 +78,7 @@ class cmd_svn_import(Command):
         from bzrlib.plugins.svn.repository import SvnRepository
         from bzrlib.plugins.svn.workingtree import SvnCheckout
         from bzrlib.trace import info
+        import os
         from subvertpy import NODE_NONE
 
         if to_location is None:
@@ -325,6 +328,8 @@ class cmd_svn_serve(Command):
         from subvertpy.ra_svn import SVNServer, TCPSVNServer, SVN_PORT
         from bzrlib.plugins.svn.server import BzrServerBackend
         from bzrlib.trace import warning
+        import os
+        import sys
 
         warning("server support in bzr-svn is experimental.")
 

@@ -17,8 +17,8 @@
 """Branch property access and caching."""
 
 from subvertpy import (
-        SubversionException,
         ERR_FS_NO_SUCH_REVISION,
+        SubversionException,
         )
 
 from bzrlib.errors import (
