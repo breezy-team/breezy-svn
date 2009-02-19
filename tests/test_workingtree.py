@@ -17,13 +17,17 @@
 
 """Working tree tests."""
 
+from bzrlib import osutils
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import NoSuchFile, OutOfDateTree, NotBranchError
 from bzrlib.inventory import Inventory
 from bzrlib.osutils import has_symlinks, supports_executable
 from bzrlib.repository import Repository
-from bzrlib.tests import TestCase
+from bzrlib.tests import (
+    TestCase,
+    TestSkipped,
+    )
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
@@ -62,7 +66,10 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_special_char(self):
         self.make_client('a', 'dc')
-        self.build_tree({u"dc/I²C": "data"})
+        try:
+            self.build_tree({u"dc/I²C": "data"})
+        except UnicodeError:
+            raise TestSkipped("This platform does not support unicode paths")
         self.client_add("dc/I²C")
         tree = WorkingTree.open("dc")
         inv = tree.read_working_inventory()
@@ -724,7 +731,10 @@ class TestWorkingTree(SubversionTestCase):
         if not has_symlinks():
             return
         repos_url = self.make_client('a', 'dc')
-        self.build_tree({u"dc/\U00020001": ""})
+        try:
+            self.build_tree({u"dc/\U00020001".encode(osutils._fs_enc): ""})
+        except UnicodeError:
+            raise TestSkipped("This platform does not support unicode code paths")
         os.symlink(u"\U00020001", "dc/a")
         self.build_tree({"dc/b": ""})
         os.symlink("b", u"dc/\U00020002")

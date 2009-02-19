@@ -6,6 +6,9 @@ bzr-svn 0.5.3                   UNRELEASED
 
    * Fix one-line helps for dpush / foreign-mapping-upgrade. (#331051)
 
+   * Skip unicode tests if the local file system doesn't support unicode 
+     paths.
+
 bzr-svn 0.5.2					2009-02-18
 
   BUG FIXES

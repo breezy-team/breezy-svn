@@ -28,7 +28,10 @@ from bzrlib.errors import (
     BzrError,
     )
 from bzrlib.repository import Repository
-from bzrlib.tests import TestCase
+from bzrlib.tests import (
+    TestCase,
+    TestSkipped,
+    )
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
@@ -96,7 +99,10 @@ class TestNativeCommit(SubversionTestCase):
 
     def test_commit_unicode_filename(self):
         self.make_client('d', 'dc')
-        self.build_tree({u'dc/I²C': "data"})
+        try:
+            self.build_tree({u'dc/I²C': "data"})
+        except UnicodeError:
+            raise TestSkipped("This platform does not support unicode symlinks")
         self.client_add(u"dc/I²C".encode("utf-8"))
         wt = WorkingTree.open("dc")
         wt.commit(message="data")
@@ -314,7 +320,10 @@ class TestPush(SubversionTestCase):
                           self.newdir.open_branch())
 
     def test_unicode_filename(self):
-        self.build_tree({u'dc/I²C': 'other data'})
+        try:
+            self.build_tree({u'dc/I²C': 'other data'})
+        except UnicodeError:
+            raise TestSkipped("This platform does not support unicode paths")
         wt = self.newdir.open_workingtree()
         wt.add(u'I²C')
         wt.commit(message="Commit from Bzr")
@@ -322,7 +331,10 @@ class TestPush(SubversionTestCase):
                                 self.newdir.open_branch())))
 
     def test_rename_from_unicode_filename(self):
-        self.build_tree({u'dc/I²C': 'other data'})
+        try:
+            self.build_tree({u'dc/I²C': 'other data'})
+        except UnicodeError:
+            raise TestSkipped("This platform does not support symlink paths")
         wt = self.newdir.open_workingtree()
         wt.add(u'I²C')
         wt.commit(message="Commit from Bzr")
