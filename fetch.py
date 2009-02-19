@@ -819,6 +819,13 @@ class FetchRevisionFinder(object):
         self.source = source
         self.target = target
         self.target_is_empty = target_is_empty
+        self.needed = deque()
+        self.checked = set()
+
+    def get_missing(self):
+        """Return the revisions that should be fetched, children before parents.
+        """
+        return self.needed
 
     def needs_fetching(self, revmeta, mapping):
         """Check if a revmeta, mapping combination should be fetched.
@@ -839,7 +846,6 @@ class FetchRevisionFinder(object):
         :param iter: Iterator over RevisionMetadata objects
         :param master_mapping: Mapping to use
         """
-        needed = deque()
         if heads is None:
             needed_mappings = defaultdict(lambda: set([master_mapping]))
         else:
@@ -860,9 +866,7 @@ class FetchRevisionFinder(object):
                 if lhsm != master_mapping or heads is not None:
                     needed_mappings[revmeta.get_direct_lhs_parent_revmeta()].add(lhsm)
                 if self.needs_fetching(revmeta, m):
-                    needed.appendleft((revmeta, m))
-
-        return needed
+                    self.needed.appendleft((revmeta, m))
 
     def find_all(self, mapping, pb=None):
         """Find all revisions from the source repository that are not 
@@ -873,6 +877,36 @@ class FetchRevisionFinder(object):
         from_revnum = self.source.get_latest_revnum()
         return self.find_iter(self.source._revmeta_provider.iter_all_revisions(self.source.get_layout(), check_unusual_path=mapping.is_branch_or_tag, from_revnum=from_revnum, pb=pb), mapping)
 
+    def find_mainline(self, foreign_revid, mapping, project=None):
+        if (foreign_revid, mapping) in self.checked:
+            return []
+        revmetas = deque()
+        (uuid, branch_path, revnum) = foreign_revid
+        # TODO: Do binary search to find first revision to fetch if
+        # fetch_ghosts=False ?
+        for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping=mapping):
+            if pb:
+                pb.update("determining revisions to fetch", 
+                          revnum-revmeta.revnum, revnum)
+            if (revmeta.get_foreign_revid(), mapping) in self.checked:
+                # This revision (and its ancestry) has already been checked
+                break
+            if self.needs_fetching(revmeta, mapping):
+                revmetas.appendleft((revmeta, mapping))
+            elif not find_ghosts:
+                break
+            self.checked.add((revmeta.get_foreign_revid(), mapping))
+        # Determine if there are any RHS parents to fetch
+        for revmeta, mapping in revmetas:
+            for p in revmeta.get_rhs_parents(mapping):
+                try:
+                    foreign_revid, rhs_mapping = self.source.lookup_revision_id(p, project=project)
+                except NoSuchRevision:
+                    pass # Ghost
+                else:
+                    extra.append((foreign_revid, project, rhs_mapping))
+        return revmetas
+
     def find_until(self, foreign_revid, mapping, find_ghosts=False, pb=None,
                     project=None):
         """Find all missing revisions until revision_id
@@ -881,45 +915,10 @@ class FetchRevisionFinder(object):
         :param find_ghosts: Find ghosts
         :return: List with revmeta, mapping tuples to fetch
         """
-        extra = list()
-        checked = set()
-        def check_revid(foreign_revid, mapping, project=None):
-            if (foreign_revid, mapping) in checked:
-                return []
-            revmetas = deque()
-            (uuid, branch_path, revnum) = foreign_revid
-            # TODO: Do binary search to find first revision to fetch if
-            # fetch_ghosts=False ?
-            for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping=mapping):
-                if pb:
-                    pb.update("determining revisions to fetch", 
-                              revnum-revmeta.revnum, revnum)
-                if (revmeta.get_foreign_revid(), mapping) in checked:
-                    # This revision (and its ancestry) has already been checked
-                    break
-                if self.needs_fetching(revmeta, mapping):
-                    revmetas.appendleft((revmeta, mapping))
-                elif not find_ghosts:
-                    break
-                checked.add((revmeta.get_foreign_revid(), mapping))
-            # Determine if there are any RHS parents to fetch
-            for revmeta, mapping in revmetas:
-                for p in revmeta.get_rhs_parents(mapping):
-                    try:
-                        foreign_revid, rhs_mapping = self.source.lookup_revision_id(p, project=project)
-                    except NoSuchRevision:
-                        pass # Ghost
-                    else:
-                        extra.append((foreign_revid, project, rhs_mapping))
-            return revmetas
-
-        needed = check_revid(foreign_revid, mapping, project)
-
+        extra = [(foreign_revid, mapping, project)]
         while len(extra) > 0:
             foreign_revid, project, mapping = extra.pop()
-            needed.extend(check_revid(foreign_revid, mapping, project))
-
-        return needed
+            self.needed.extend(self.find_mainline(foreign_revid, mapping, project))
 
 
 class InterFromSvnRepository(InterRepository):
@@ -1065,11 +1064,13 @@ class InterFromSvnRepository(InterRepository):
                                                      target_is_empty)
                 if needed is None:
                     if revision_id is None:
-                        needed = revisionfinder.find_all(self.source.get_mapping(), pb=nested_pb)
+                        revisionfinder.find_all(self.source.get_mapping(), pb=nested_pb)
+                        needed = revisionfinder.get_missing()
                     else:
                         foreign_revid, mapping = self.source.lookup_revision_id(revision_id)
-                        needed = revisionfinder.find_until(foreign_revid,
+                        revisionfinder.find_until(foreign_revid,
                             mapping, find_ghosts, pb=nested_pb)
+                        needed = revisionfinder.get_missing()
             finally:
                 nested_pb.finished()
 

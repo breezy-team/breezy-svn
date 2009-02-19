@@ -256,8 +256,9 @@ def convert_repository(source_repos, output_url, layout=None,
                 pb = ui.ui_factory.nested_progress_bar()
                 try:
                     pb.update("checking revisions to fetch", 0, num_revs)
-                    revmetas = revfinder.find_iter(filter_revisions(it_rev), 
+                    revfinder.find_iter(filter_revisions(it_rev), 
                         mapping, heads=heads, pb=pb)
+                    revmetas = revfinder.get_missing()
                 finally:
                     pb.finished()
                 inter.fetch(needed=revmetas)
