@@ -28,7 +28,7 @@ from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn.layout.standard import TrunkLayout
-from bzrlib.plugins.svn.mapping3 import config_set_scheme
+from bzrlib.plugins.svn.mapping3.base import config_set_scheme
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.transport import svn_config
 from bzrlib.plugins.svn.tests import SubversionTestCase

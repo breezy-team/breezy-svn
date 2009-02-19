@@ -935,7 +935,7 @@ mapping_registry.register_lazy('v1', 'bzrlib.plugins.svn.mapping2',
 mapping_registry.register_lazy('v2', 'bzrlib.plugins.svn.mapping2',
                                'BzrSvnMappingv2', 
                                'Second format (bzr-svn 0.3.x)')
-mapping_registry.register_lazy('v3', 'bzrlib.plugins.svn.mapping3', 
+mapping_registry.register_lazy('v3', 'bzrlib.plugins.svn.mapping3.base', 
                                'BzrSvnMappingv3', 
                                'Third format (bzr-svn 0.4.x)')
 mapping_registry.register_lazy('v4', 'bzrlib.plugins.svn.mapping4', 

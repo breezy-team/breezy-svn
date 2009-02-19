@@ -133,7 +133,7 @@ class cmd_svn_import(Command):
                         urlutils.unescape_for_display(prefix, self.outf.encoding))
                 else:
                     raise BzrCommandError("The specified path is inside a branch. "
-                        "Specify a different URL or a different repository layout.")
+                        "Specify a different URL or a different repository layout (see also 'bzr help svn-layout').")
 
             if not isinstance(from_repos, SvnRepository):
                 raise BzrCommandError(

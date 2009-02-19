@@ -26,7 +26,7 @@ from bzrlib.plugins.svn import format
 from subvertpy import ra
 from bzrlib.plugins.svn.layout.standard import TrunkLayout, RootLayout
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_REVISION_ID, mapping_registry
-from bzrlib.plugins.svn.mapping3 import BzrSvnMappingv3, SVN_PROP_BZR_BRANCHING_SCHEME, set_property_scheme
+from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3, SVN_PROP_BZR_BRANCHING_SCHEME, set_property_scheme
 from bzrlib.plugins.svn.mapping3.scheme import NoBranchingScheme, ListBranchingScheme, InvalidSvnBranchPath
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.tests.test_mapping import sha1

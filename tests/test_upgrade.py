@@ -23,7 +23,7 @@ from bzrlib.tests import TestCase, TestSkipped
 from bzrlib.plugins.svn.format import get_rich_root_format
 from bzrlib.plugins.svn.layout.standard import RootLayout
 from bzrlib.plugins.svn.mapping import foreign_vcs_svn
-from bzrlib.plugins.svn.mapping3 import BzrSvnMappingv3
+from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.foreign.upgrade import (upgrade_repository, upgrade_branch,

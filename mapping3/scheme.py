@@ -24,12 +24,15 @@ import bz2
 from subvertpy import properties
 import urllib
 
-from bzrlib.plugins.svn.layout.guess import find_commit_paths
+from bzrlib.plugins.svn.layout.guess import (
+    GUESS_SAMPLE_SIZE,
+    find_commit_paths,
+    )
 from bzrlib.plugins.svn.layout.standard import (
-        CustomLayout,
-        RootLayout,
-        TrunkLayout,
-        )
+    CustomLayout,
+    RootLayout,
+    TrunkLayout,
+    )
 from bzrlib.plugins.svn.errors import LayoutUnusable
 
 
@@ -551,31 +554,14 @@ def scheme_from_layout(layout):
     raise LayoutUnusable(layout, self)
 
 
-help_schemes = """Subversion Branching Schemes
+def repository_guess_scheme(repository, last_revnum, branch_path=None):
+    pb = ui.ui_factory.nested_progress_bar()
+    try:
+        (guessed_scheme, scheme) = guess_scheme_from_history(
+            repository._log.iter_changes(None, last_revnum, max(0, last_revnum-GUESS_SAMPLE_SIZE)), last_revnum, branch_path)
+    finally:
+        pb.finished()
+    mutter("Guessed branching scheme: %r, guess scheme to use: %r" % 
+            (guessed_scheme, scheme))
+    return (guessed_scheme, scheme)
 
-Subversion is basically a versioned file system. It does not have 
-any notion of branches and what is a branch in Subversion is therefor
-up to the user. 
-
-In order for Bazaar to access a Subversion repository it has to know 
-what paths to consider branches. It does this by using so-called branching 
-schemes. When you connect to a repository for the first time, Bazaar
-will try to determine the branching scheme to use using some simple 
-heuristics. It is always possible to change the branching scheme it should 
-use later.
-
-There are some conventions in use in Subversion for repository layouts. 
-The most common one is probably the trunk/branches/tags 
-layout, where the repository contains a "trunk" directory with the main 
-development branch, other branches in a "branches" directory and tags as 
-subdirectories of a "tags" directory. This branching scheme is named 
-"trunk" in Bazaar.
-
-Another option is simply having just one branch at the root of the repository. 
-This scheme is called "none" by Bazaar.
-
-The branching scheme bzr-svn should use for a repository can be set in the 
-configuration file ~/.bazaar/subversion.conf.
-
-Branching schemes are only used for version 3 of the Bzr<->Svn mappings.
-"""
