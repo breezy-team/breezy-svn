@@ -50,10 +50,10 @@ from bzrlib.workingtree import (
         )
 
 from subvertpy import (
-        wc,
-        SubversionException,
-        NODE_DIR,
         ERR_FS_NO_SUCH_REVISION,
+        NODE_DIR,
+        SubversionException,
+        wc,
         )
 
 from bzrlib.plugins.svn import util
@@ -63,8 +63,13 @@ from bzrlib.plugins.svn.push import (
     InterToSvnRepository,
     )
 from bzrlib.plugins.svn.config import BranchConfig
-from bzrlib.plugins.svn.errors import NotSvnBranchPath
-from bzrlib.plugins.svn.foreign import ForeignBranch, FakeControlFiles
+from bzrlib.plugins.svn.errors import (
+    NotSvnBranchPath,
+    )
+from bzrlib.plugins.svn.foreign import (
+    ForeignBranch,
+    FakeControlFiles,
+    )
 from bzrlib.plugins.svn.format import get_rich_root_format
 from bzrlib.plugins.svn.repository import SvnRepository
 from bzrlib.plugins.svn.tags import SubversionTags
