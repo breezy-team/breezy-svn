@@ -646,6 +646,7 @@ class SvnRepository(ForeignRepository):
 
     def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum, 
         to_revnum, mapping, pb=None, limit=0): 
+        assert mapping is not None
         expected_revid = None
         iter = self._revmeta_provider.iter_reverse_branch_changes(branch_path, 
             revnum, to_revnum=to_revnum, pb=pb, limit=limit)

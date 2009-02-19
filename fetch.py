@@ -821,6 +821,7 @@ class FetchRevisionFinder(object):
         self.target_is_empty = target_is_empty
         self.needed = deque()
         self.checked = set()
+        self.extra = list()
 
     def get_missing(self):
         """Return the revisions that should be fetched, children before parents.
@@ -877,7 +878,7 @@ class FetchRevisionFinder(object):
         from_revnum = self.source.get_latest_revnum()
         return self.find_iter(self.source._revmeta_provider.iter_all_revisions(self.source.get_layout(), check_unusual_path=mapping.is_branch_or_tag, from_revnum=from_revnum, pb=pb), mapping)
 
-    def find_mainline(self, foreign_revid, mapping, project=None):
+    def find_mainline(self, foreign_revid, mapping, project=None, find_ghosts=False, pb=None):
         if (foreign_revid, mapping) in self.checked:
             return []
         revmetas = deque()
@@ -904,7 +905,7 @@ class FetchRevisionFinder(object):
                 except NoSuchRevision:
                     pass # Ghost
                 else:
-                    extra.append((foreign_revid, project, rhs_mapping))
+                    self.extra.append((foreign_revid, project, rhs_mapping))
         return revmetas
 
     def find_until(self, foreign_revid, mapping, find_ghosts=False, pb=None,
@@ -915,10 +916,10 @@ class FetchRevisionFinder(object):
         :param find_ghosts: Find ghosts
         :return: List with revmeta, mapping tuples to fetch
         """
-        extra = [(foreign_revid, mapping, project)]
-        while len(extra) > 0:
-            foreign_revid, project, mapping = extra.pop()
-            self.needed.extend(self.find_mainline(foreign_revid, mapping, project))
+        self.extra.append((foreign_revid, project, mapping))
+        while len(self.extra) > 0:
+            foreign_revid, project, mapping = self.extra.pop()
+            self.needed.extend(self.find_mainline(foreign_revid, mapping, project, find_ghosts=find_ghosts, pb=pb))
 
 
 class InterFromSvnRepository(InterRepository):
@@ -1068,6 +1069,7 @@ class InterFromSvnRepository(InterRepository):
                         needed = revisionfinder.get_missing()
                     else:
                         foreign_revid, mapping = self.source.lookup_revision_id(revision_id)
+                        assert mapping is not None
                         revisionfinder.find_until(foreign_revid,
                             mapping, find_ghosts, pb=nested_pb)
                         needed = revisionfinder.get_missing()

@@ -803,6 +803,7 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._stored_lhs_parent_revid[mapping] = super(CachingRevisionMetadata, self).get_stored_lhs_parent_revid(mapping)
 
     def _retrieve(self, mapping):
+        assert mapping is not None
         (self._revid[mapping], self._distance_to_null[mapping], self._hidden[mapping],
          self._original_mapping, self._stored_lhs_parent_revid[mapping]) = \
                  self._revinfo_cache.get_revision(self.get_foreign_revid(), mapping)
