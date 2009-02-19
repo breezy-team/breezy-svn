@@ -205,7 +205,7 @@ class PathStrippingEditor(object):
         self.actual = actual
         self.prefix = path.strip("/")
 
-    def __getattr__(self, name)
+    def __getattr__(self, name):
         return getattr(super(PathStrippingEditor, self), name, getattr(self.actual, name))
 
     def strip_prefix(self, path):
