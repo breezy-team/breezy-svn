@@ -637,6 +637,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             ret.append((inv, urlutils.join(self.repository.transport.svn_url, base_path), base_revnum))
         return ret
 
+    @convert_svn_error
     def commit(self, message):
         """Finish the commit.
 

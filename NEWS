@@ -9,6 +9,8 @@ bzr-svn 0.5.3                   UNRELEASED
    * Skip unicode tests if the local file system doesn't support unicode 
      paths.
 
+   * Don't print traceback when connection errors occur during push. (#331078)
+
 bzr-svn 0.5.2					2009-02-18
 
   BUG FIXES
