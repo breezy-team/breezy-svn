@@ -18,9 +18,15 @@
 
 """Commit and push tests."""
 
-from bzrlib.branch import Branch, PullResult
+from bzrlib.branch import (
+    Branch,
+    PullResult,
+    )
 from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import DivergedBranches, BzrError
+from bzrlib.errors import (
+    DivergedBranches,
+    BzrError,
+    )
 from bzrlib.repository import Repository
 from bzrlib.tests import TestCase
 from bzrlib.trace import mutter
@@ -33,13 +39,17 @@ from subvertpy import ra
 from subvertpy.properties import time_to_cstring
 
 from bzrlib.plugins.svn import format
-from bzrlib.plugins.svn.commit import set_svn_revprops, _revision_id_to_svk_feature
+from bzrlib.plugins.svn.commit import (
+    set_svn_revprops,
+    _revision_id_to_svk_feature,
+    )
 from bzrlib.plugins.svn.errors import RevpropChangeFailed
 from bzrlib.plugins.svn.mapping import mapping_registry
 from bzrlib.plugins.svn.transport import SvnRaTransport
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 class TestNativeCommit(SubversionTestCase):
+
     def test_simple_commit(self):
         self.make_client('d', 'dc')
         self.build_tree({'dc/foo/bla': "data"})
@@ -254,6 +264,7 @@ class TestNativeCommit(SubversionTestCase):
         
 
 class TestPush(SubversionTestCase):
+
     def setUp(self):
         super(TestPush, self).setUp()
         self.repos_url = self.make_client('d', 'sc')
@@ -518,6 +529,7 @@ class JoinedCommitTests(SubversionTestCase):
 
 
 class TestPushNested(SubversionTestCase):
+
     def setUp(self):
         super(TestPushNested, self).setUp()
         self.repos_url = self.make_client('d', 'sc')
@@ -543,6 +555,7 @@ class TestPushNested(SubversionTestCase):
 
 
 class HeavyWeightCheckoutTests(SubversionTestCase):
+
     def test_bind(self):
         repos_url = self.make_repository("d")
         master_branch = Branch.open(repos_url)
@@ -618,6 +631,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
 
 
 class RevpropTests(SubversionTestCase):
+
     def test_change_revprops(self):
         repos_url = self.make_repository("d", allow_revprop_changes=True)
 
@@ -647,6 +661,7 @@ class RevpropTests(SubversionTestCase):
 
 
 class SvkTestCase(TestCase):
+
     def test_revid_svk_map(self):
         self.assertEqual("auuid:/:6", 
               _revision_id_to_svk_feature("svn-v3-undefined:auuid::6",
