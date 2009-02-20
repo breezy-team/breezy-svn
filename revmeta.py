@@ -1059,7 +1059,11 @@ class RevisionMetadataBrowser(object):
         return not self.__eq__(other)
 
     def __hash__(self):
-        return hash((type(self), self.from_revnum, self.to_revnum, tuple(self.prefixes), hash(self.layout)))
+        if self.prefixes is None:
+            prefixes = None
+        else:
+            prefixes = tuple(self.prefixes)
+        return hash((type(self), self.from_revnum, self.to_revnum, prefixes, hash(self.layout)))
 
     def get_lhs_parent(self, revmeta):
         """Find the *direct* left hand side parent of a revision metadata object.
