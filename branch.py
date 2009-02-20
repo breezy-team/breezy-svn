@@ -51,6 +51,7 @@ from bzrlib.revision import (
         ensure_null,
         )
 from bzrlib.trace import (
+        is_quiet,
         mutter,
         )
 from bzrlib.workingtree import (
@@ -90,6 +91,20 @@ from bzrlib.plugins.svn.transport import (
 
 class SubversionBranchCheckResult(BranchCheckResult):
     """Result of checking a Subversion branch."""
+
+
+class SubversionPullResult(PullResult):
+    """Subversion pull result. """
+
+    def report(self, to_file):
+        if not is_quiet():
+            if self.old_revid == self.new_revid:
+                to_file.write('No revisions to pull.\n')
+            else:
+                to_file.write('Now on revision %d (svn revno: %d).\n' % 
+                        (self.new_revno, self.new_svn_revno))
+        self._show_tag_conficts(to_file)
+
 
 class SvnBranch(ForeignBranch):
     """Maps to a Branch in a Subversion repository """
