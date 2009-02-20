@@ -22,8 +22,10 @@ from collections import (
 from cStringIO import (
     StringIO,
     )
+import subvertpy
 from subvertpy import (
     ERR_FS_NOT_DIRECTORY,
+    NODE_FILE,
     SubversionException,
     properties,
     )
@@ -78,6 +80,8 @@ from bzrlib.plugins.svn.transport import (
     )
 
 FETCH_COMMIT_WRITE_SIZE = 500
+
+ERR_FS_PATH_SYNTAX = getattr(subvertpy, "ERR_FS_PATH_SYNTAX", 160005)
 
 
 def inventory_ancestors(inv, fileid, exceptions):
@@ -1015,7 +1019,13 @@ class InterFromSvnRepository(InterRepository):
             else:
                 reporter = conn.do_update(revmeta.revnum, "", True, editor)
 
-            report_inventory_contents(reporter, parent_revnum, start_empty)
+            try:
+                report_inventory_contents(reporter, parent_revnum, start_empty)
+            except SubversionException, (_, ERR_FS_PATH_SYNTAX):
+                # This seems to occur sometimes when we try to accidently import a file over HTTP
+                if conn.check_path("", revmeta.revnum) == NODE_FILE:
+                    raise SubversionException("path is a file", ERR_FS_NOT_DIRECTORY)
+                raise
         finally:
             if not conn.busy:
                 self.source.transport.add_connection(conn)
@@ -1036,6 +1046,7 @@ class InterFromSvnRepository(InterRepository):
                        newest first.
         :param pb: Optional progress bar.
         """
+        accidental_file_revs = set()
         self._prev_inv = None
 
         for num, (revmeta, mapping) in enumerate(revs):
@@ -1048,6 +1059,8 @@ class InterFromSvnRepository(InterRepository):
                 pb.update('copying revision', num, len(revs))
 
             parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
+            if parent_revmeta in accidental_file_revs:
+                continue
 
             if not self.target.is_in_write_group():
                 self.target.start_write_group()
@@ -1058,8 +1071,13 @@ class InterFromSvnRepository(InterRepository):
                         self._fetch_revision_replay(editor, revmeta, 
                                                     parent_revmeta)
                     else:
-                        self._fetch_revision_switch(editor, revmeta, 
-                                                    parent_revmeta)
+                        try:
+                            self._fetch_revision_switch(editor, revmeta, 
+                                                        parent_revmeta)
+                        except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                            accidental_file_revs.add(revmeta)
+                            editor.abort()
+                            continue
                 except:
                     editor.abort()
                     raise
