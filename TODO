@@ -14,9 +14,6 @@ performance:
 - automatically disable cache in some situations, allow partial cache?
  - perhaps for large repositories?
 
-completeness:
-- implement SvnWorkingTree.apply_inventory_delta()
-
 for other things to do, see:
 
 * https://bugs.launchpad.net/bzr-svn
