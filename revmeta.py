@@ -1065,6 +1065,11 @@ class RevisionMetadataBrowser(object):
             prefixes = tuple(self.prefixes)
         return hash((type(self), self.from_revnum, self.to_revnum, prefixes, hash(self.layout)))
 
+    def under_prefixes(self, path):
+        if self.prefixes is None:
+            return True
+        return any([x for x in self.prefixes if path.startswith(x+"/") or x == path or x == ""])
+
     def get_lhs_parent(self, revmeta):
         """Find the *direct* left hand side parent of a revision metadata object.
         
@@ -1082,9 +1087,8 @@ class RevisionMetadataBrowser(object):
                 for new_name, old_name, old_rev in changes.apply_reverse_changes([revmeta.branch_path], revmeta.get_paths()):
                     if new_name == revmeta.branch_path:
                         from_path = old_name
-                if from_path is not None:
-                    if not any([x for x in self.prefixes if from_path.startswith(x+"/") or x == from_path or x == ""]):
-                        raise MetaHistoryIncomplete("Invalid prefix %r for prefixes %r" % (from_path, self.prefixes))
+                if (from_path is not None and not self.under_prefixes(from_path) ) or not self.under_prefixes(revmeta.branch_path):
+                    raise MetaHistoryIncomplete("Invalid prefix %r for prefixes %r" % (from_path, self.prefixes))
                 raise AssertionError("Unable to find direct lhs parent for %r" % revmeta)
         return revmeta._direct_lhs_parent_revmeta
 

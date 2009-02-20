@@ -15,6 +15,9 @@ bzr-svn 0.5.3                   UNRELEASED
 
    * Break subversion locks in ``bzr break-lock''.
 
+   * Handle corner case following branch paths outside of prefixes in 
+     revision metadata browser.
+
 bzr-svn 0.5.2					2009-02-18
 
   BUG FIXES
