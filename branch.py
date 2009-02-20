@@ -599,7 +599,14 @@ except ImportError:
     pass
 else:
     class InterSvnOtherBranch(InterBranch):
-        """InterBranch implementation that is optimized for copying from Subversion.
+        """InterBranch implementation that is optimized for copying from 
+        Subversion.
+
+        The two main differences with the generic implementation are:
+         * No revision numbers are calculated for the Subversion branch
+           (since this requires browsing the entire history)
+         * Only recent tags are fetched, since that saves a lot of 
+           history browsing operations
         """
 
         def update_revisions(self, stop_revision=None, overwrite=False,
