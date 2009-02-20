@@ -238,7 +238,7 @@ class CachingLogWalker(CacheTable):
             where paths is a dictionary with all changes that happened 
             in revnum.
         """
-        assert from_revnum >= 0 and to_revnum >= 0
+        assert from_revnum >= 0 and to_revnum >= 0, "%r -> %r" % (from_revnum, to_revnum)
         self.mutter("iter changes %r->%r (%r)", from_revnum, to_revnum, paths)
         self._fetch_revisions(max(from_revnum, to_revnum), pb=pb)
 
