@@ -185,6 +185,18 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.copy_content_into(newrepos)
         self.assertEquals("SIGNATURE", newrepos.get_signature_text(oldrepos.generate_revision_id(1, "trunk", oldrepos.get_mapping())))
 
+    def test_fetch_file_branch(self):
+        repos_url = self.make_repository('d')
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.add_file("trunk")
+        dc.close()
+
+        oldrepos = Repository.open(repos_url)
+        oldrepos.set_layout(TrunkLayout(0))
+        dir = BzrDir.create("f", format.get_rich_root_format())
+        newrepos = dir.create_repository()
+        oldrepos.copy_content_into(newrepos)
+
     def test_fetch_special_char_edit(self):
         repos_url = self.make_repository('d')
         
