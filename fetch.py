@@ -23,6 +23,7 @@ from cStringIO import (
     StringIO,
     )
 from subvertpy import (
+    ERR_FS_NOT_DIRECTORY,
     SubversionException,
     properties,
     )
