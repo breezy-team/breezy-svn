@@ -28,13 +28,14 @@ from bzrlib.errors import (
         BzrError,
         NotBranchError,
         NoSuchFile,
+        NoSuchRevision,
         NoRepositoryPresent,
         ) 
 from bzrlib.repository import InterRepository
 from bzrlib.revision import ensure_null
 from bzrlib.transport import get_transport
 
-from subvertpy import SubversionException, repos, ERR_STREAM_MALFORMED_DATA
+from subvertpy import SubversionException, repos, ERR_STREAM_MALFORMED_DATA, NODE_FILE
 
 from bzrlib.plugins.svn.branch import SvnBranch
 from bzrlib.plugins.svn.fetch import FetchRevisionFinder
@@ -300,7 +301,13 @@ def convert_repository(source_repos, output_url, layout=None,
                             ensure_null(target_branch.last_revision()),
                             ensure_null(source_branch.last_revision())):
                         target_branch.set_revision_history([])
-                    target_branch.pull(source_branch)
+                    try:
+                        target_branch.pull(source_branch)
+                    except NoSuchRevision:
+                        if source_branch.check_path() == NODE_FILE:
+                            to_transport.delete_tree(source_branch.get_branch_path())
+                            continue
+                        raise
                 if working_trees and not target_dir.has_workingtree():
                     target_dir.create_workingtree()
         finally:

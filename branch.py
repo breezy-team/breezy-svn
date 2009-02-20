@@ -135,9 +135,7 @@ class SvnBranch(ForeignBranch):
         assert isinstance(self._branch_path, str)
         if not _skip_check:
             try:
-                revnum = self._revnum or self.repository.get_latest_revnum()
-                if self.repository.transport.check_path(self._branch_path, 
-                    revnum) != NODE_DIR:
+                if self.check_path() != NODE_DIR:
                     raise NotBranchError(self.base)
             except SubversionException, (_, num):
                 if num == ERR_FS_NO_SUCH_REVISION:
@@ -149,6 +147,9 @@ class SvnBranch(ForeignBranch):
             raise NotBranchError(branch_path)
         if type not in ('branch', 'tag') or ip != '':
             raise NotBranchError(branch_path)
+
+    def check_path(self):
+        return self.repository.transport.check_path(self._branch_path, self._revnum or self.repository.get_latest_revnum())
 
     def supports_tags(self):
         """See Branch.supports_tags()."""
