@@ -21,6 +21,16 @@ bzr-svn 0.5.3                   UNRELEASED
    * Handle strange corner case in HTTP, where get_dir() works on files and we 
      accidently start to call update() on files.
 
+  PERFORMANCE
+
+   * Significant speed improvements when no (old) tags have to be fetched. Requires 
+     InterBranch.pull() patch.
+
+
+  FEATURES
+
+   * Now prints parent Subversion revision number after successful pull. (#332196)
+
 bzr-svn 0.5.2					2009-02-18
 
   BUG FIXES

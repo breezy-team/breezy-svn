@@ -29,6 +29,7 @@ from bzrlib import (
         urlutils,
         )
 from bzrlib.branch import (
+        Branch,
         BranchFormat,
         BranchCheckResult,
         PullResult,
@@ -102,7 +103,7 @@ class SubversionPullResult(PullResult):
                 to_file.write('No revisions to pull.\n')
             else:
                 to_file.write('Now on revision %d (svn revno: %d).\n' % 
-                        (self.new_revno, self.new_svn_revno))
+                        (self.new_revno, self.new_revmeta.revnum))
         self._show_tag_conficts(to_file)
 
 
@@ -657,6 +658,50 @@ else:
                 self.target.generate_revision_history(stop_revision)
             finally:
                 self.source.unlock()
+
+        def pull(self, overwrite=False, stop_revision=None, 
+                 _hook_master=None, run_hooks=True, possible_transports=None,
+                 _override_hook_target=None):
+            """See InterBranch.pull()."""
+            result = SubversionPullResult()
+            if _override_hook_target is None:
+                result.target_branch = self
+            else:
+                result.target_branch = _override_hook_target
+            result.source_branch = self.source
+            result.master_branch = None
+            result.target_branch = self.target
+            self.source.lock_read()
+            try:
+                (result.old_revno, result.old_revid) = self.target.last_revision_info()
+                try:
+                    result.old_revmeta, _ = self.source.repository._get_revmeta(result.old_revid)
+                    tags_since_revnum = result.old_revmeta.revnum
+                except NoSuchRevision:
+                    result.old_revmeta = None
+                    tags_since_revnum = None
+                if stop_revision is not None:
+                    result.new_revmeta, _ = self.source.repository._get_revmeta(stop_revnum)
+                    tags_until_revnum = result.new_revmeta.revnum
+                else:
+                    tags_until_revnum = self.source.repository.get_latest_revnum()
+                self.update_revisions(stop_revision, overwrite)
+                result.tag_conflicts = self.source.tags.merge_to(self.target.tags, overwrite, _from_revnum=tags_since_revnum, _to_revnum=tags_until_revnum)
+                (result.new_revno, result.new_revid) = self.target.last_revision_info()
+                if stop_revision is None:
+                    result.new_revmeta, _ = self.source.repository._get_revmeta(result.new_revid)
+                if _hook_master:
+                    result.master_branch = _hook_master
+                    result.local_branch = result.target_branch
+                else:
+                    result.master_branch = result.target_branch
+                    result.local_branch = None
+                if run_hooks:
+                    for hook in Branch.hooks['post_pull']:
+                        hook(result)
+            finally:
+                self.source.unlock()
+            return result
 
         @classmethod
         def is_compatible(self, source, target):
