@@ -115,6 +115,10 @@ class cmd_svn_import(Command):
             prefix = from_dir.root_transport.base[len(from_repos.base):].strip("/")
             prefix = prefix.encode("utf-8")
 
+        if not isinstance(from_repos, SvnRepository):
+            raise BzrCommandError(
+                    "Not a Subversion repository: %s" % from_location)
+
         if until is None:
             to_revnum = from_repos.get_latest_revnum()
         else:
@@ -122,25 +126,24 @@ class cmd_svn_import(Command):
 
         from_repos.lock_read()
         try:
-            guessed_overall_layout = from_repos.get_guessed_layout()
 
             if prefix is not None:
+                if layout is None:
+                    overall_layout = from_repos.get_guessed_layout()
+                else:
+                    overall_layout = layout
                 prefix = prefix.strip("/") + "/"
-                if guessed_overall_layout.is_branch(prefix):
+                if overall_layout.is_branch(prefix):
                     raise BzrCommandError("%s appears to contain a branch. " 
                             "For individual branches, use 'bzr branch'." % 
                             from_location)
                 # FIXME: Hint about is_tag()
-                elif guessed_overall_layout.is_branch_parent(prefix):
+                elif overall_layout.is_branch_parent(prefix):
                     self.outf.write("Importing branches with prefix /%s\n" % 
                         urlutils.unescape_for_display(prefix, self.outf.encoding))
                 else:
                     raise BzrCommandError("The specified path is inside a branch. "
                         "Specify a different URL or a different repository layout (see also 'bzr help svn-layout').")
-
-            if not isinstance(from_repos, SvnRepository):
-                raise BzrCommandError(
-                        "Not a Subversion repository: %s" % from_location)
 
             if (prefix is not None and 
                 from_repos.transport.check_path(prefix, to_revnum) == NODE_NONE):
