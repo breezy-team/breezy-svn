@@ -11,6 +11,10 @@ bzr-svn 0.5.3                   UNRELEASED
 
    * Don't print traceback when connection errors occur during push. (#331078)
 
+   * Fix exception importing with itrunk* layout.
+
+   * Break subversion locks in ``bzr break-lock''.
+
 bzr-svn 0.5.2					2009-02-18
 
   BUG FIXES

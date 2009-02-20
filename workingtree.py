@@ -54,6 +54,7 @@ import os
 import urllib
 
 import subvertpy
+import subvertpy.wc
 from subvertpy import properties
 from subvertpy.wc import *
 
@@ -63,6 +64,9 @@ from bzrlib.plugins.svn import (
         )
 from bzrlib.plugins.svn.branch import SvnBranch
 from bzrlib.plugins.svn.commit import _revision_id_to_svk_feature
+from bzrlib.plugins.svn.errors import (
+    convert_svn_error,
+    )
 from bzrlib.plugins.svn.fileids import idmap_lookup
 from bzrlib.plugins.svn.format import get_rich_root_format
 from bzrlib.plugins.svn.mapping import escape_svn_path
@@ -229,6 +233,7 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
             self._change_fileid_mapping(None, file)
         self.read_working_inventory()
 
+    @convert_svn_error
     def _get_wc(self, relpath="", write_lock=False, depth=0, base=None):
         """Open a working copy handle."""
         return WorkingCopy(base, 
@@ -690,6 +695,19 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
 
     def _reset_data(self):
         pass
+
+    def break_lock(self):
+        """Break a lock if one is present from another instance.
+
+        Uses the ui factory to ask for confirmation if the lock may be from
+        an active process.
+
+        This will probe the repository for its lock as well.
+        """
+        if getattr(subvertpy.wc, "cleanup", None) is not None:
+            subvertpy.wc.cleanup(self.basedir)
+        self._control_files.break_lock()
+        self.branch.break_lock()
 
     def unlock(self):
         # non-implementation specific cleanup
