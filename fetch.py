@@ -293,7 +293,11 @@ class DirectoryBuildEditor(object):
                 self.editor.revmeta._fileprops.dict = dict(self.editor.revmeta.get_previous_fileprops())
                 self.editor.revmeta._fileprops.is_loaded = True
                 self.editor.revmeta._fileprops.create_fn = None
-            self.editor.revmeta._fileprops.dict[name] = value
+            if value is None:
+                if name in self.editor.revmeta._fileprops.dict:
+                    del self.editor.revmeta._fileprops.dict[name]
+            else:
+                self.editor.revmeta._fileprops.dict[name] = value
 
         if name in (properties.PROP_ENTRY_COMMITTED_DATE,
                     properties.PROP_ENTRY_COMMITTED_REV,
@@ -1153,7 +1157,7 @@ class InterFromSvnRepository(InterRepository):
                 # imported using the same mapping or perhaps 
                 # revision_id was a mapped revision id and the revision
                 # itself was roundtripped.
-                raise NoSuchRevision(revision_id)
+                raise NoSuchRevision(self.source, revision_id)
         finally:
             if self.target.is_in_write_group():
                 self.target.abort_write_group()
