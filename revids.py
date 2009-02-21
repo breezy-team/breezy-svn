@@ -73,7 +73,7 @@ class RevidMap(object):
             if is_bzr_revision_revprops(revmeta.get_revprops()):
                 mapping = revmeta.get_original_mapping()
                 if mapping is None:
-                    raise AssertionError("bzr revision does not have mapping set! revprops: %r, fileprops: %r" % (revmeta.get_changed_fileprops(), revmeta.get_revprops()))
+                    raise AssertionError("bzr revision does not have mapping set! revprops: %r, fileprops: %r" % (revmeta.get_revprops(), revmeta.get_changed_fileprops()))
                 revid = revmeta.get_revision_id(mapping)
                 if revid is not None:
                     yield (revid, mapping.get_branch_root(revmeta.get_revprops()).strip("/"), revmeta.revnum, mapping)
