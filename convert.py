@@ -15,7 +15,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Conversion of full repositories."""
 
-from itertools import tee
 import os
 
 from bzrlib import (
@@ -35,7 +34,12 @@ from bzrlib.repository import InterRepository
 from bzrlib.revision import ensure_null
 from bzrlib.transport import get_transport
 
-from subvertpy import SubversionException, repos, ERR_STREAM_MALFORMED_DATA, NODE_FILE
+from subvertpy import (
+    ERR_STREAM_MALFORMED_DATA,
+    NODE_FILE,
+    SubversionException,
+    repos,
+    )
 
 from bzrlib.plugins.svn.branch import SvnBranch
 from bzrlib.plugins.svn.fetch import FetchRevisionFinder
@@ -221,8 +225,9 @@ def convert_repository(source_repos, output_url, layout=None,
         if create_shared_repo:
             revfinder = FetchRevisionFinder(source_repos, target_repos, 
                                             target_repos_is_empty)
-            (it, it_rev) = tee(it)
-        num_revs = 0
+            revmetas = []
+        else:
+            revmetas = None
         pb = ui.ui_factory.nested_progress_bar()
         if all:
             heads = None
@@ -241,7 +246,8 @@ def convert_repository(source_repos, output_url, layout=None,
                             _skip_check=True, mapping=mapping)
                         if heads is not None:
                             heads.add(item)
-                    num_revs += 1
+                    if revmetas is not None:
+                        revmetas.append(item)
                 elif kind == "delete":
                     deleted.add(item)
         finally:
@@ -249,21 +255,19 @@ def convert_repository(source_repos, output_url, layout=None,
 
         if create_shared_repo:
             inter = InterRepository.get(source_repos, target_repos)
-
             if (target_repos.is_shared() and 
-                  getattr(inter, '_supports_revmetas', None) and 
-                  inter._supports_revmetas):
+                getattr(inter, '_supports_revmetas', None) and 
+                inter._supports_revmetas):
                 # TODO: Skip revisions in removed branches unless all=True
                 pb = ui.ui_factory.nested_progress_bar()
                 try:
-                    pb.update("checking revisions to fetch", 0, num_revs)
-                    revfinder.find_iter_revisions(filter_revisions(it_rev), 
-                        mapping, heads=heads, pb=pb)
-                    revmetas = revfinder.get_missing()
+                    pb.update("checking revisions to fetch", 0, len(revmetas))
+                    revfinder.find_iter_revisions(revmetas, mapping, 
+                        heads=heads, pb=pb)
                 finally:
                     pb.finished()
-                inter.fetch(needed=revmetas)
-            elif all:
+                inter.fetch(needed=revfinder.get_missing())
+            else:
                 inter.fetch()
 
         if not keep:
