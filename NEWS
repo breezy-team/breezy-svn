@@ -26,6 +26,8 @@ bzr-svn 0.5.3                   UNRELEASED
    * Significant speed improvements when no (old) tags have to be fetched. Requires 
      InterBranch.pull() patch.
 
+   * The guessed layout is now only stored in the configuration and no longer 
+     re-determined every time a repository is accessed.
 
   FEATURES
 

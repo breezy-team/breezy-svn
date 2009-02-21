@@ -175,8 +175,14 @@ class SvnRepositoryConfig(Config):
     def get_layout(self):
         return self._get_user_option("layout", use_global=False)
 
+    def get_guessed_layout(self):
+        return self._get_user_option("guessed-layout", use_global=False)
+
     def set_layout(self, layout):
         return self.set_user_option("layout", str(layout))
+
+    def set_guessed_layout(self, layout):
+        return self.set_user_option("guessed-layout", str(layout))
 
     def get_branches(self):
         branches_str = self._get_user_option("branches", use_global=False)
