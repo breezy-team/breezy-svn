@@ -1158,7 +1158,6 @@ class RevisionMetadataBrowser(object):
             for d in deletes:
                 yield ("delete", p)
 
-
             # Dictionary with the last revision known for each branch
             # Report the new revisions
             for bp in changed_bps:
