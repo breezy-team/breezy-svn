@@ -161,7 +161,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             note('%6d invalid bzr-related file properties', 
                  self.invalid_fileprop_cnt)
         if self.text_not_changed_cnt > 0:
-            note('%6d files were not changed but had their revision/id changed',
+            note('%6d files were not changed but had their revision/fileid changed',
                  self.text_not_changed_cnt)
         if self.paths_not_under_branch_root > 0:
             note('%6d files were modified that were not under the branch root',
@@ -183,7 +183,12 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         self.checked_rev_cnt += 1
         found_fileprops = 0
         # Check for multiple mappings
-        fileprop_mappings = find_mappings_fileprops(revmeta.get_changed_fileprops())
+        try:
+            fileprop_mappings = find_mappings_fileprops(revmeta.get_changed_fileprops())
+        except subvertpy.SubversionException, (_, num):
+            if num == ERR_FS_NOT_DIRECTORY:
+                return
+            raise
         if len(fileprop_mappings) > 1:
             self.multiple_mappings_cnt += 1
         mapping = revmeta.get_original_mapping()
@@ -199,9 +204,6 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
 
         mapping.check_fileprops(revmeta.get_changed_fileprops(), self)
         mapping.check_revprops(revmeta.get_revprops(), self)
-
-        if revmeta.get_stored_lhs_parent_revid(mapping) not in (None, expected_lhs_parent_revid):
-            self.inconsistent_stored_lhs_parent += 1
 
         # Check for inconsistencies in text file ids/revisions
         text_revisions = revmeta.get_text_revisions(mapping)
@@ -234,8 +236,16 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
         if lhs_parent_revmeta is not None:
             lhs_parent_mapping = lhs_parent_revmeta.get_original_mapping()
-            if lhs_parent_mapping is not None and lhs_parent_mapping.newer_than(mapping):
+            if lhs_parent_mapping is None:
+                lhs_parent_mapping = mapping
+            elif lhs_parent_mapping.newer_than(mapping):
                 self.newer_mapping_parents += 1
+                lhs_parent_mapping = mapping
+            expected_lhs_parent_revid = lhs_parent_revmeta.get_revision_id(lhs_parent_mapping)
+            if revmeta.get_stored_lhs_parent_revid(mapping) not in (None, expected_lhs_parent_revid):
+                self.inconsistent_stored_lhs_parent += 1
+
+
 
 
 class SvnRepository(ForeignRepository):
