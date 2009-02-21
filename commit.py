@@ -424,10 +424,10 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         # Gather information about revision on top of which the commit is 
         # happening
-        if parents == []:
-            self.base_revid = NULL_REVISION
-        else:
+        if parents:
             self.base_revid = parents[0]
+        else:
+            self.base_revid = NULL_REVISION
 
         if graph is None:
             graph = self.repository.get_graph()

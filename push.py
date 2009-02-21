@@ -338,13 +338,14 @@ class InterToSvnRepository(InterRepository):
 
     def push_nonmainline_revision(self, rev, layout):
         mutter('pushing %r', rev.revision_id)
-        if rev.parent_ids == []:
-            parent_revid = NULL_REVISION
-        else:
+        if rev.parent_ids:
             parent_revid = rev.parent_ids[0]
+        else:
+            parent_revid = NULL_REVISION
 
         if parent_revid == NULL_REVISION:
             bp = determine_branch_path(rev, layout, None)
+            target_project = None
         else:
             (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
             (tp, target_project, _, ip) = layout.parse(bp)
