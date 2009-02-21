@@ -28,7 +28,10 @@ from bzrlib import (
         )
 from bzrlib.foreign import ForeignRepository
 from bzrlib.inventory import Inventory
-from bzrlib.lockable_files import LockableFiles, TransportLock
+from bzrlib.lockable_files import (
+    LockableFiles,
+    TransportLock,
+    )
 from bzrlib.repository import (
     Repository,
     RepositoryFormat,
@@ -49,7 +52,6 @@ from collections import defaultdict
 from itertools import chain
 import os
 import subvertpy
-from subvertpy import ERR_FS_NOT_DIRECTORY
 
 from bzrlib.plugins.svn import (
         cache,
@@ -70,12 +72,17 @@ from bzrlib.plugins.svn.mapping import (
         foreign_vcs_svn,
         find_mappings_fileprops,
         find_mapping_revprops,
-        mapping_registry,
         is_bzr_revision_revprops, 
+        mapping_registry,
         parse_svn_dateprop,
         )
 from bzrlib.plugins.svn.parents import DiskCachingParentsProvider
-from bzrlib.plugins.svn.revids import DiskCachingRevidMap, MemoryCachingRevidMap, RevidMap, RevisionInfoCache
+from bzrlib.plugins.svn.revids import (
+        DiskCachingRevidMap,
+        MemoryCachingRevidMap,
+        RevidMap,
+        RevisionInfoCache,
+        )
 from bzrlib.plugins.svn.tree import SvnRevisionTree
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
 from bzrlib.plugins.svn.foreign.versionedfiles import (
@@ -186,7 +193,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         try:
             fileprop_mappings = find_mappings_fileprops(revmeta.get_changed_fileprops())
         except subvertpy.SubversionException, (_, num):
-            if num == ERR_FS_NOT_DIRECTORY:
+            if num == subvertpy.ERR_FS_NOT_DIRECTORY:
                 return
             raise
         if len(fileprop_mappings) > 1:
@@ -1054,8 +1061,10 @@ class SvnRepository(ForeignRepository):
                                             created_branches[n] = i
                                         elif layout.is_branch_or_tag_parent(n, project):
                                             parents.append(n)
-                                except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                                    pass
+                                except subvertpy.SubversionException, (_, num):
+                                    if num == subvertpy.ERR_FS_NOT_DIRECTORY:
+                                        pass
+                                    raise
         finally:
             pb.finished()
 
