@@ -135,6 +135,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         self.checked_rev_cnt = 0
         self.checked_roundtripped_cnt = 0
         self.hidden_rev_cnt = 0
+        self.inconsistent_stored_lhs_parent = 0
         self.invalid_fileprop_cnt = 0
         self.text_revision_in_parents_cnt = 0
         self.text_not_changed_cnt = 0
@@ -152,6 +153,9 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             note('%6d revisions originating in bzr', self.checked_roundtripped_cnt)
         if self.hidden_rev_cnt > 0:
             note('%6d hidden bzr-created revisions', self.hidden_rev_cnt)
+        if self.inconsistent_stored_lhs_parent > 0:
+            note('%6d inconsistent stored left-hand side parent revision ids', 
+                self.inconsistent_stored_lhs_parent)
         if self.invalid_fileprop_cnt > 0:
             note('%6d invalid bzr-related file properties', 
                  self.invalid_fileprop_cnt)
@@ -191,6 +195,9 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
 
         mapping.check_fileprops(revmeta.get_changed_fileprops(), self)
         mapping.check_revprops(revmeta.get_revprops(), self)
+
+        if revmeta.get_stored_lhs_parent_revid(mapping) not in (None, expected_lhs_parent_revid):
+            self.inconsistent_stored_lhs_parent += 1
 
         # Check for inconsistencies in text file ids/revisions
         text_revisions = revmeta.get_text_revisions(mapping)

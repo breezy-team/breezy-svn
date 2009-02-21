@@ -349,6 +349,15 @@ class RevisionMetadata(object):
                 revprops_acceptable=revprops_acceptable,
                 revprops_sufficient=lambda x: True)
 
+    def get_implicit_lhs_parent_revid(self, mapping):
+        parentrevmeta = self.get_lhs_parent_revmeta(mapping)
+        if parentrevmeta is None:
+            return NULL_REVISION
+        lhs_mapping = parentrevmeta.get_original_mapping()
+        if lhs_mapping is None:
+            lhs_mapping = mapping
+        return parentrevmeta.get_revision_id(lhs_mapping)
+
     def get_stored_lhs_parent_revid(self, mapping):
         return self._get_stored_lhs_parent_revid(mapping)
 
@@ -364,13 +373,7 @@ class RevisionMetadata(object):
         lhs_parent = self.get_stored_lhs_parent_revid(mapping)
         if lhs_parent is not None:
             return lhs_parent
-        parentrevmeta = self.get_lhs_parent_revmeta(mapping)
-        if parentrevmeta is None:
-            return NULL_REVISION
-        lhs_mapping = parentrevmeta.get_original_mapping()
-        if lhs_mapping is None:
-            lhs_mapping = mapping
-        return parentrevmeta.get_revision_id(lhs_mapping)
+        return self.get_implicit_lhs_parent_revid(mapping)
 
     def _fold_children_fileprops(self, get_memoized, calc_from_child, 
                                  calc_final, memoize):

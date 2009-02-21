@@ -63,6 +63,7 @@ from bzrlib.versionedfile import (
 from bzrlib.plugins.svn.errors import (
     FileIdMapIncomplete,
     InvalidFileName,
+    InconsistentLHSParent,
     convert_svn_error,
     )
 from bzrlib.plugins.svn.fileids import (
@@ -511,6 +512,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
 
 class FileRevisionBuildEditor(FileBuildEditor):
+
     def __init__(self, editor, old_path, path, file_id, parent_file_id, 
         file_parents=[], data="", is_symlink=False):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
@@ -998,11 +1000,24 @@ class InterFromSvnRepository(InterRepository):
     def _get_editor(self, revmeta, mapping):
         revid = revmeta.get_revision_id(mapping)
         assert revid is not None
-        return RevisionBuildEditor(self.source, self.target, revid, 
-            self._get_inventory(revmeta.get_lhs_parent_revid(mapping)), 
-            revmeta, mapping)
+        try:
+            return RevisionBuildEditor(self.source, self.target, revid, 
+                self._get_inventory(revmeta.get_lhs_parent_revid(mapping)), 
+                revmeta, mapping)
+        except NoSuchRevision:
+            lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
+            expected_lhs_parent_revid = revmeta.get_implicit_lhs_parent_revid(mapping)
+            if revmeta.get_stored_lhs_parent_revid(mapping) not in (None, expected_lhs_parent_revid):
+                raise InconsistentLHSParent(revmeta, revmeta.get_stored_lhs_parent_revid(mapping), expected_lhs_parent_revid)
+            raise
 
     def _fetch_revision_switch(self, editor, revmeta, parent_revmeta):
+        """Fetch a revision using svn.ra.do_switch() or svn.ra.do_update().
+        
+        :param editor: Editor to report changes to
+        :param revmeta: RevisionMetadata object for the revision to fetch
+        :param parent_revmeta: RevisionMetadata object for the parent revision.
+        """
         if parent_revmeta is None:
             parent_branch = revmeta.branch_path
             parent_revnum = revmeta.revnum
@@ -1026,7 +1041,8 @@ class InterFromSvnRepository(InterRepository):
             try:
                 report_inventory_contents(reporter, parent_revnum, start_empty)
             except SubversionException, (_, ERR_FS_PATH_SYNTAX):
-                # This seems to occur sometimes when we try to accidently import a file over HTTP
+                # This seems to occur sometimes when we try to accidently 
+                # import a file over HTTP
                 if conn.check_path("", revmeta.revnum) == NODE_FILE:
                     raise SubversionException("path is a file", ERR_FS_NOT_DIRECTORY)
                 raise
