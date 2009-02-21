@@ -354,7 +354,7 @@ class RevisionMetadata(object):
         if parentrevmeta is None:
             return NULL_REVISION
         lhs_mapping = parentrevmeta.get_original_mapping()
-        if lhs_mapping is None:
+        if lhs_mapping is None or lhs_mapping.newer_than(mapping):
             lhs_mapping = mapping
         return parentrevmeta.get_revision_id(lhs_mapping)
 
