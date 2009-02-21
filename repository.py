@@ -143,6 +143,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         self.different_uuid_cnt = 0
         self.multiple_mappings_cnt = 0
         self.inconsistent_fileprop_revprop_cnt = 0
+        self.newer_mapping_parents = 0
 
     def report_results(self, verbose):
         note('checked repository %s format %s',
@@ -174,6 +175,9 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         if self.inconsistent_fileprop_revprop_cnt > 0:
             note('%6d revisions with file and revision properties that are inconsistent',
                 self.inconsistent_fileprop_revprop_cnt)
+        if self.newer_mapping_parents > 0:
+            note('%6d revisions with newer mappings than their children',
+                 self.newer_mapping_parents)
 
     def check_revmeta(self, revmeta):
         self.checked_rev_cnt += 1
@@ -226,6 +230,12 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         original_uuid = mapping.get_repository_uuid(revmeta.get_revprops())
         if original_uuid is not None and original_uuid != self.repository.uuid:
             self.different_uuid_cnt += 1
+
+        lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
+        if lhs_parent_revmeta is not None:
+            lhs_parent_mapping = lhs_parent_revmeta.get_original_mapping()
+            if lhs_parent_mapping is not None and lhs_parent_mapping.newer_than(mapping):
+                self.newer_mapping_parents += 1
 
 
 class SvnRepository(ForeignRepository):
