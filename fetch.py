@@ -887,7 +887,7 @@ class FetchRevisionFinder(object):
         except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
             return False
 
-    def find_iter(self, iter, master_mapping, heads=None, pb=None):
+    def find_iter_revisions(self, iter, master_mapping, heads=None, pb=None):
         """Find revisions to fetch based on an iterator over available revmetas.
         
         :param iter: Iterator over RevisionMetadata objects
@@ -922,7 +922,7 @@ class FetchRevisionFinder(object):
         :return: List with revmeta, mapping tuples to fetch
         """
         from_revnum = self.source.get_latest_revnum()
-        return self.find_iter(self.source._revmeta_provider.iter_all_revisions(self.source.get_layout(), check_unusual_path=mapping.is_branch_or_tag, from_revnum=from_revnum, pb=pb), mapping)
+        return self.find_iter_revisions(self.source._revmeta_provider.iter_all_revisions(self.source.get_layout(), check_unusual_path=mapping.is_branch_or_tag, from_revnum=from_revnum, pb=pb), mapping)
 
     def find_mainline(self, foreign_revid, mapping, project=None, find_ghosts=False, pb=None):
         if (foreign_revid, mapping) in self.checked:
