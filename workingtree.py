@@ -707,7 +707,6 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
         if getattr(subvertpy.wc, "cleanup", None) is not None:
             subvertpy.wc.cleanup(self.basedir)
         self._control_files.break_lock()
-        self.branch.break_lock()
 
     def unlock(self):
         # non-implementation specific cleanup
