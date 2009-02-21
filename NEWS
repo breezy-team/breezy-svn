@@ -21,6 +21,9 @@ bzr-svn 0.5.3                   UNRELEASED
    * Handle strange corner case in HTTP, where get_dir() works on files and we 
      accidently start to call update() on files.
 
+   * Don't check branch root when looking for round-tripped revisions that used 
+     revision properties. (#294784)
+
   PERFORMANCE
 
    * Significant speed improvements when no (old) tags have to be fetched. Requires 

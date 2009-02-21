@@ -28,6 +28,7 @@ from bzrlib.plugins.svn.errors import (
 from bzrlib.plugins.svn.mapping import (
         BzrSvnMapping,
         SVN_PROP_BZR_REVISION_ID,
+        find_mapping_revprops,
         find_new_lines,
         is_bzr_revision_revprops,
         mapping_registry,
@@ -49,7 +50,7 @@ class RevidMap(object):
         """
         last_revnum = self.repos.get_latest_revnum()
         fileprops_to_revnum = last_revnum
-        for entry_revid, branch, revnum, mapping in self.discover_revprop_revids(layout, last_revnum, 0):
+        for entry_revid, branch, revnum, mapping in self.discover_revprop_revids(last_revnum, 0):
             if revid == entry_revid:
                 return (self.repos.uuid, branch, revnum), mapping
             fileprops_to_revnum = min(fileprops_to_revnum, revnum)
@@ -60,23 +61,25 @@ class RevidMap(object):
                 return (foreign_revid, mapping_name)
         raise NoSuchRevision(self, revid)
 
-    def discover_revprop_revids(self, layout, from_revnum, to_revnum, pb=None):
+    def discover_revprop_revids(self, from_revnum, to_revnum, pb=None):
         """Discover bzr-svn revision properties between from_revnum and to_revnum.
 
         :return: First revision number on which a revision property was found, or None
         """
         if self.repos.transport.has_capability("log-revprops") != True:
             return
-        for revmeta in self.repos._revmeta_provider.iter_all_revisions(layout, None, from_revnum, to_revnum):
+        for (paths, revnum, revprops) in self.repos._log.iter_changes(None, from_revnum, to_revnum):
             if pb is not None:
-                pb.update("discovering revprop revisions", from_revnum-revmeta.revnum, from_revnum-to_revnum)
-            if is_bzr_revision_revprops(revmeta.get_revprops()):
-                mapping = revmeta.get_original_mapping()
-                if mapping is None:
-                    raise AssertionError("bzr revision does not have mapping set! revprops: %r, fileprops: %r" % (revmeta.get_revprops(), revmeta.get_changed_fileprops()))
-                revid = revmeta.get_revision_id(mapping)
+                pb.update("discovering revprop revisions", from_revnum-revnum, from_revnum-to_revnum)
+            if is_bzr_revision_revprops(revprops):
+                mapping = find_mapping_revprops(revprops)
+                assert mapping is not None
+                branch_path = mapping.get_branch_root(revprops)
+                if branch_path is None:
+                    continue
+                revno, revid = mapping.get_revision_id_revprops(revprops)
                 if revid is not None:
-                    yield (revid, mapping.get_branch_root(revmeta.get_revprops()).strip("/"), revmeta.revnum, mapping)
+                    yield (revid, branch_path.strip("/"), revnum, mapping)
 
     def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None):
         reuse_policy = self.repos.get_config().get_reuse_revisions()
@@ -202,7 +205,7 @@ class DiskCachingRevidMap(object):
             fileprops_to_revnum = last_revnum
             pb = ui.ui_factory.nested_progress_bar()
             try:
-                for entry_revid, branch, revnum, mapping in self.actual.discover_revprop_revids(layout, last_revnum, last_checked, pb=pb):
+                for entry_revid, branch, revnum, mapping in self.actual.discover_revprop_revids(last_revnum, last_checked, pb=pb):
                     fileprops_to_revnum = min(fileprops_to_revnum, revnum)
                     if entry_revid == revid:
                         found = (branch, revnum, revnum, mapping)
