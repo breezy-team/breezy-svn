@@ -29,7 +29,9 @@ from subvertpy import (
     SubversionException,
     properties,
     )
-from subvertpy.delta import apply_txdelta_handler
+from subvertpy.delta import (
+    apply_txdelta_handler,
+    )
 
 from bzrlib import (
     debug,
@@ -70,8 +72,12 @@ from bzrlib.plugins.svn.fileids import (
     get_local_changes,
     idmap_lookup,
     )
-from bzrlib.plugins.svn.foreign import escape_commit_message
-from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_PREFIX
+from bzrlib.plugins.svn.foreign import (
+    escape_commit_message,
+    )
+from bzrlib.plugins.svn.mapping import (
+    SVN_PROP_BZR_PREFIX,
+    )
 from bzrlib.plugins.svn.repository import (
     SvnRepository,
     SvnRepositoryFormat,
