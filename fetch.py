@@ -1140,13 +1140,12 @@ class InterFromSvnRepository(InterRepository):
                 if needed is None:
                     if revision_id is None:
                         revisionfinder.find_all(self.source.get_mapping(), pb=nested_pb)
-                        needed = revisionfinder.get_missing()
                     else:
                         foreign_revid, mapping = self.source.lookup_revision_id(revision_id)
                         assert mapping is not None
                         revisionfinder.find_until(foreign_revid,
                             mapping, find_ghosts, pb=nested_pb)
-                        needed = revisionfinder.get_missing()
+                    needed = revisionfinder.get_missing()
             finally:
                 nested_pb.finished()
 
