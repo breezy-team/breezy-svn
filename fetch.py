@@ -86,7 +86,10 @@ from bzrlib.plugins.svn.transport import (
     url_join_unescaped_path,
     )
 
+# Number of revisions to fetch before writing pack to disk
 FETCH_COMMIT_WRITE_SIZE = 500
+# Size of group in which revids are checked when looking for missing revisions
+CHECK_PRESENT_INTERVAL = 1000
 
 ERR_FS_PATH_SYNTAX = getattr(subvertpy, "ERR_FS_PATH_SYNTAX", 160005)
 
@@ -940,6 +943,7 @@ class FetchRevisionFinder(object):
         (uuid, branch_path, revnum) = foreign_revid
         # TODO: Do binary search to find first revision to fetch if
         # fetch_ghosts=False ?
+        needs_checking = []
         for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping=mapping):
             if pb:
                 pb.update("determining revisions to fetch", 
@@ -947,11 +951,18 @@ class FetchRevisionFinder(object):
             if (revmeta.get_foreign_revid(), mapping) in self.checked:
                 # This revision (and its ancestry) has already been checked
                 break
-            if self.needs_fetching(revmeta, mapping):
-                revmetas.appendleft((revmeta, mapping))
-            elif not find_ghosts:
-                break
+            needs_checking.append((revmeta, mapping))
+            if not find_ghosts and not self.target_is_empty and len(needs_checking) == CHECK_PRESENT_INTERVAL:
+                missing_revmetas = self.check_revmetas(needs_checking)
+                for r in missing_revmetas:
+                    revmetas.appendleft(r)
+                done = (len(missing_revmetas) != len(needs_checking))
+                needs_checking = []
+                if done:
+                    break
             self.checked.add((revmeta.get_foreign_revid(), mapping))
+        for r in self.check_revmetas(needs_checking):
+            revmetas.appendleft(r)
         # Determine if there are any RHS parents to fetch
         for revmeta, mapping in revmetas:
             for p in revmeta.get_rhs_parents(mapping):
