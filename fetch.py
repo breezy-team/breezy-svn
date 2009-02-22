@@ -880,18 +880,20 @@ class FetchRevisionFinder(object):
         """
         return self.needed
 
-    def needs_fetching(self, revmeta, mapping):
-        """Check if a revmeta, mapping combination should be fetched.
-
-        """
-        try:
-            if revmeta.is_hidden(mapping):
-                return False
-            if self.target_is_empty:
-                return True
-            return not self.target.has_revision(revmeta.get_revision_id(mapping))
-        except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-            return False
+    def check_revmetas(self, revmetas):
+        if self.target_is_empty:
+            return revmetas
+        ret = set()
+        map = {}
+        for revmeta, mapping in revmetas:
+            try:
+                if revmeta.is_hidden(mapping):
+                    continue
+                map[revmeta, mapping] = revmeta.get_revision_id(mapping)
+            except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                continue
+        present_revids = self.target.has_revisions(map.values())
+        return [k for k in revmetas if map[k] not in present_revids]
 
     def find_iter_revisions(self, iter, master_mapping, heads=None, pb=None):
         """Find revisions to fetch based on an iterator over available revmetas.
@@ -905,6 +907,7 @@ class FetchRevisionFinder(object):
             needed_mappings = defaultdict(set)
             for head in heads:
                 needed_mappings[head].add(master_mapping)
+        needs_checking = []
         for i, revmeta in enumerate(iter):
             if pb is not None:
                 pb.update("checking revisions to fetch", i)
@@ -918,8 +921,8 @@ class FetchRevisionFinder(object):
                     continue
                 if lhsm != master_mapping or heads is not None:
                     needed_mappings[revmeta.get_direct_lhs_parent_revmeta()].add(lhsm)
-                if self.needs_fetching(revmeta, m):
-                    self.needed.appendleft((revmeta, m))
+                needs_checking.append((revmeta, m))
+        self.needed.extendleft(self.check_revmetas(needs_checking))
 
     def find_all(self, mapping, pb=None):
         """Find all revisions from the source repository that are not 
