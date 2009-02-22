@@ -279,10 +279,7 @@ class DirectoryBuildEditor(object):
         if self.path == "":
             # If it has changed, it has definitely been reported by now
             if not self.editor.revmeta.knows_fileprops():
-                if self.editor.revmeta._fileprops.dict is None:
-                    self.editor.revmeta._fileprops.dict = dict(self.editor.revmeta.get_previous_fileprops())
-                self.editor.revmeta._fileprops.is_loaded = True
-                self.editor.revmeta._fileprops.create_fn = None
+                self.editor.revmeta._fileprops = self.editor.revmeta.get_previous_fileprops()
         self._close()
 
     def add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
@@ -300,14 +297,12 @@ class DirectoryBuildEditor(object):
         if self.path == "":
             # Replay lazy_dict, since it may be more expensive
             if not self.editor.revmeta.knows_fileprops():
-                self.editor.revmeta._fileprops.dict = dict(self.editor.revmeta.get_previous_fileprops())
-                self.editor.revmeta._fileprops.is_loaded = True
-                self.editor.revmeta._fileprops.create_fn = None
+                self.editor.revmeta._fileprops = dict(self.editor.revmeta.get_previous_fileprops())
             if value is None:
-                if name in self.editor.revmeta._fileprops.dict:
-                    del self.editor.revmeta._fileprops.dict[name]
+                if name in self.editor.revmeta._fileprops:
+                    del self.editor.revmeta._fileprops[name]
             else:
-                self.editor.revmeta._fileprops.dict[name] = value
+                self.editor.revmeta._fileprops[name] = value
 
         if name in (properties.PROP_ENTRY_COMMITTED_DATE,
                     properties.PROP_ENTRY_COMMITTED_REV,

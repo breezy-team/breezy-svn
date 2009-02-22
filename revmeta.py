@@ -223,11 +223,15 @@ class RevisionMetadata(object):
 
     def knows_fileprops(self):
         """Check whether the file properties can be cheaply retrieved."""
+        if self._fileprops is None:
+            return False
         fileprops = self.get_fileprops()
         return isinstance(fileprops, dict) or fileprops.is_loaded
 
     def knows_revprops(self):
         """Check whether all revision properties can be cheaply retrieved."""
+        if self._revprops is None:
+            return False
         revprops = self.get_revprops()
         return isinstance(revprops, dict) or revprops.is_loaded
 
