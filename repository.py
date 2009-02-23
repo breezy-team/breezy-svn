@@ -309,9 +309,11 @@ class SvnRepository(ForeignRepository):
 
         if use_cache:
             cache_dir = self.create_cache_dir()
+            assert isinstance(cache_dir, str)
 
         if "log" in use_cache or "revids" in use_cache:
             cache_file = os.path.join(cache_dir, 'cache-v%d' % CACHE_DB_VERSION)
+            assert isinstance(cache_file, str)
             if not cachedbs().has_key(cache_file):
                 cachedbs()[cache_file] = cache.connect_cachefile(cache_file.decode(osutils._fs_enc).encode("utf-8"))
             self.cachedb = cachedbs()[cache_file]
