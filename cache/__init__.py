@@ -43,18 +43,14 @@ def create_cache_dir():
         name = 'svn-cache'
         extra = ""
     if sys.platform == "nt":
-        try:
-            from bzrlib.win32utils import get_local_appdata_location
-        except ImportError:
-            base_cache_dir = config_dir()
-        else:
-            s = get_local_appdata_location()
-            assert s is not None
-            # This can return a unicode string or a plain string in 
-            # user encoding
-            if type(s) == str:
-                s = s.decode(osutils.get_user_encoding())
-            base_cache_dir = s.encode(osutils._fs_enc)
+        from bzrlib.win32utils import get_local_appdata_location
+        s = get_local_appdata_location()
+        assert s is not None
+        # This can return a unicode string or a plain string in 
+        # user encoding
+        if type(s) == str:
+            s = s.decode(bzrlib.user_encoding)
+        base_cache_dir = s.encode(osutils._fs_enc)
     else:
         base_cache_dir = config_dir()
     cache_dir = os.path.join(base_cache_dir, name)
