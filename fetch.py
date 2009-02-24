@@ -1144,7 +1144,7 @@ class InterFromSvnRepository(InterRepository):
         # Dictionary with paths as keys, revnums as values
 
         if pb:
-            pb.update("determining revisions to fetch", 0, 2)
+            pb.update("fetch phase", 0, 2)
 
         use_replay_range = self.source.transport.has_capability("partial-replay") and False
         use_replay = self.source.transport.has_capability("partial-replay") and False
@@ -1175,6 +1175,9 @@ class InterFromSvnRepository(InterRepository):
             if len(needed) == 0:
                 # Nothing to fetch
                 return
+
+            if pb:
+                pb.update("fetch phase", 1, 2)
 
             if pb is None:
                 pb = ui.ui_factory.nested_progress_bar()
