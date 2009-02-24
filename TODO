@@ -7,10 +7,10 @@ more tests:
 performance:
 - generate deltas rather than fulltexts when creating file id maps for the cache
 - fix copyfrom in replay and replay_range
-- faster function for finding all *existing* tags for a project
 - faster function for finding all *existing* branches
 - automatically disable cache in some situations, allow partial cache?
  - perhaps for large repositories?
+- special LRU cache for revisionmetadata
 
 for other things to do, see:
 

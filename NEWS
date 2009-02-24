@@ -26,6 +26,8 @@ bzr-svn 0.5.3                   UNRELEASED
 
    * Support non-ascii characters in home directories. (#333121)
 
+   * Fix recognizing tags when using wildcard layouts. (#333960)
+
   PERFORMANCE
 
    * Significant speed improvements when no (old) tags have to be fetched. Requires 
