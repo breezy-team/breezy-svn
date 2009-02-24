@@ -130,6 +130,7 @@ class SubversionTags(BasicTags):
             except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                 continue
             for name in names:
+                assert isinstance(name, basestring)
                 ret[name] = revid
         return ret
 
@@ -158,6 +159,7 @@ class SubversionTags(BasicTags):
                 # No more tag revmetas to resolve, just return immediately
                 return ret
             for name in reverse_tag_revmetas[revmeta]:
+                assert isinstance(name, basestring)
                 ret[name] = revmeta.get_revision_id(mapping)
             del reverse_tag_revmetas[revmeta]
         ret.update(self._resolve_reverse_tags_fallback(reverse_tag_revmetas))
@@ -183,6 +185,7 @@ class SubversionTags(BasicTags):
                 continue
             revmeta = foreign_revid_map[foreign_revid]
             for name in reverse_tag_revmetas[revmeta]:
+                assert isinstance(name, basestring)
                 ret[name] = revid
             del reverse_tag_revmetas[revmeta]
         ret.update(self._resolve_reverse_tags_fallback(reverse_tag_revmetas))

@@ -980,7 +980,14 @@ class SvnRepository(ForeignRepository):
         finally:
             pb.finished()
 
-        return dict([(layout.get_tag_name(path, project), revmeta) for (path, revmeta) in tags.iteritems()])
+        ret = {}
+        for path, revmeta in tags.iteritems():
+            name = layout.get_tag_name(path, project)
+            # Layout wasn't able to determine tag name from path
+            if name is None:
+                continue
+            ret[name] = revmeta
+        return ret
 
     @needs_read_lock
     def find_tags(self, project, layout=None, mapping=None, revnum=None):
