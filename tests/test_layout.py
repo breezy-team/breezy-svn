@@ -112,3 +112,10 @@ class WildcardLayoutTests(TestCase):
         self.assertFalse(x.is_branch("foo/bar"))
         self.assertFalse(x.is_branch(""))
 
+    def test_get_tag_name(self):
+        x = WildcardLayout(["trunk"], ["tags/*"])
+        self.assertEquals("bla", x.get_tag_name("tags/bla"))
+        x = WildcardLayout(["trunk"], ["tags/bla"])
+        self.assertEquals("bla", x.get_tag_name("tags/bla"))
+        x = WildcardLayout(["trunk"], ["tags/bla"])
+        self.assertEquals(None, x.get_tag_name("bla"))

@@ -326,7 +326,12 @@ class WildcardLayout(RepositoryLayout):
 
         :param path: Path inside the repository.
         """
-        # FIXME
+        for tp in self.tags:
+            if wildcard_matches(path, tp):
+                for a, wc in zip(path.split("/"), tp.split("/")):
+                    if "*" in wc:
+                        return a
+                return path.split("/")[-1]
         return None
 
     def push_merged_revisions(self, project=""):
