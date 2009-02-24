@@ -65,6 +65,10 @@ from itertools import (
     imap,
     )
 
+# Maximum number of revisions to browse for a cached copy of the branch 
+# file properties
+MAX_FILEPROP_SHARED = 5000
+
 _warned_slow_revprops = False
 
 def warn_slow_revprops():
@@ -197,7 +201,8 @@ class RevisionMetadata(object):
             # Python doesn't handle those very well..
             lm = self
             todo = set()
-            while not lm.changes_branch_root() and lm._fileprops is None:
+            while (not lm.changes_branch_root() and lm._fileprops is None and 
+                   len(todo) < MAX_FILEPROP_SHARED):
                 todo.add(lm)
                 lm = lm.get_direct_lhs_parent_revmeta()
             if lm._fileprops is None:
@@ -286,7 +291,7 @@ class RevisionMetadata(object):
             except MetaHistoryIncomplete:
                 pass
         iterator = self.repository._revmeta_provider.iter_reverse_branch_changes(self.branch_path, 
-            self.revnum, to_revnum=0, limit=500)
+            self.revnum, to_revnum=0, limit=0)
         firstrevmeta = iterator.next()
         assert self == firstrevmeta, "Expected %r got %r" % (self, firstrevmeta)
         try:
