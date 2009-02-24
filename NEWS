@@ -37,6 +37,8 @@ bzr-svn 0.5.3                   UNRELEASED
    * Looking for missing revisions is now done in groups, significantly improving the 
      time spent in the "determining revisions to fetch" step.
 
+   * A simple LRU cache is now used for texts during fetch.
+
   FEATURES
 
    * Now prints parent Subversion revision number after successful pull. (#332196)

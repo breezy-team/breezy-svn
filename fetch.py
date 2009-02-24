@@ -36,6 +36,7 @@ from subvertpy.delta import (
 from bzrlib import (
     debug,
     delta,
+    lru_cache,
     osutils,
     ui,
     urlutils,
@@ -90,6 +91,8 @@ from bzrlib.plugins.svn.transport import (
 FETCH_COMMIT_WRITE_SIZE = 500
 # Size of group in which revids are checked when looking for missing revisions
 CHECK_PRESENT_INTERVAL = 1000
+# Size of the text cache to keep
+TEXT_CACHE_SIZE = 1024 * 1024 * 50
 
 ERR_FS_PATH_SYNTAX = getattr(subvertpy, "ERR_FS_PATH_SYNTAX", 160005)
 
@@ -501,8 +504,10 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         file_id = self.editor._get_existing_id(self.old_id, self.new_id, path)
         base_ie = self.editor.old_inventory[base_file_id]
         is_symlink = (base_ie.kind == 'symlink')
-        record = self._get_record_stream(base_file_id, base_revid)
-        file_data = record.get_bytes_as('fulltext')
+        file_data = self.editor._text_cache.get((base_file_id, base_revid))
+        if file_data is None: # Not present in cache
+            record = self._get_record_stream(base_file_id, base_revid)
+            file_data = record.get_bytes_as('fulltext')
         if file_id == base_file_id:
             file_parents = [base_revid]
             old_path = path
@@ -558,6 +563,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
                 [(self.file_id, revid) for revid in text_parents], 
                 text_sha1,
                 fulltext)])
+        self.editor._text_cache[self.file_id, text_revision] = fulltext
 
         if self.is_special is not None:
             self.is_symlink = (self.is_special and 
@@ -608,6 +614,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self.revid = revid
         self._text_revids = None
         self._text_parents = None
+        self._text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE )
         self.old_inventory = prev_inventory
         self._inv_delta = []
         self._deleted = set()
@@ -676,6 +683,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         new_ie.file_id = self._get_new_id(path)
         new_ie.parent_id = self._get_new_id(urlutils.split(path)[0])
         new_ie.revision = self._get_text_revid(path) or self.revid
+        # FIXME: Use self._text_cache
         record = self.texts.get_record_stream([(old_ie.file_id, old_ie.revision)], 
                                                 'unordered', True).next()
         self.texts.insert_record_stream(
