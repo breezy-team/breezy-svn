@@ -606,7 +606,7 @@ class SvnRepository(ForeignRepository):
         cache_dir = cache.create_cache_dir()
         dir = os.path.join(cache_dir, self.uuid)
         if not os.path.exists(dir):
-            info("Initialising Subversion metadata cache in %s" % dir)
+            info("Initialising Subversion metadata cache in %s" % dir.decode(osutils._fs_enc))
             os.mkdir(dir)
         return dir
 
