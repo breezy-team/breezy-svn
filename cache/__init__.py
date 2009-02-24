@@ -42,7 +42,7 @@ def create_cache_dir():
     else:
         name = 'svn-cache'
         extra = ""
-    if sys.platform == "nt":
+    if sys.platform in ("nt", "win32"):
         from bzrlib.win32utils import get_local_appdata_location
         s = get_local_appdata_location()
         assert s is not None

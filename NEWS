@@ -24,7 +24,9 @@ bzr-svn 0.5.3                   UNRELEASED
    * Don't check branch root when looking for round-tripped revisions that used 
      revision properties. (#294784)
 
-  PERFORMANCErevmetas.extendleft(self.check_revmetas(needs_checki
+   * Support non-ascii characters in home directories. (#333121)
+
+  PERFORMANCE
 
    * Significant speed improvements when no (old) tags have to be fetched. Requires 
      InterBranch.pull() patch.

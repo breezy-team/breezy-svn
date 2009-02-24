@@ -323,7 +323,7 @@ class SvnRepository(ForeignRepository):
                 cache_db=self.cachedb)
 
         if "fileids" in use_cache:
-            cachedir_transport = get_transport(cache_dir)
+            cachedir_transport = get_transport(cache_dir.decode(osutils._fs_enc))
             self.fileid_map = CachingFileIdMap(cachedir_transport, 
                 self.fileid_map)
 
