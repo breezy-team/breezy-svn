@@ -568,8 +568,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
         parent_keys = [(self.file_id, revid) for revid in text_parents]
         parent_texts = {}
         if parent_keys:
-            parent_text = self.editor._parent_text_cache.get(parent_keys[0],
-                                                             None)
+            parent_text = self.editor._content_cache.get(parent_keys[0], None)
             if parent_text is not None:
                 parent_texts[parent_keys[0]] = parent_text
         file_key = (self.file_id, text_revision)
@@ -585,7 +584,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
             # TODO: parent_content is meant to be an opaque structure. However
             #       if we know the target is a knit or pack repo, we could
             #       share the _text_cache, rather than creating a new one here.
-            self.editor._parent_text_cache[file_key] = parent_content
+            self.editor._content_cache[file_key] = parent_content
 
         content_starts_with_link = False
         if lines and lines[0].startswith('link '):
@@ -633,7 +632,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
     Bazaar revision.
     """
     def __init__(self, source, target, revid, prev_inventory, revmeta, mapping,
-                 text_cache, parent_text_cache):
+                 text_cache, content_cache):
         self.target = target
         self.source = source
         self.texts = target.texts
@@ -641,7 +640,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self._text_revids = None
         self._text_parents = None
         self._text_cache = text_cache
-        self._parent_text_cache = parent_text_cache
+        self._content_cache = content_cache
         self.old_inventory = prev_inventory
         self._inv_delta = []
         self._deleted = set()
@@ -1035,9 +1034,10 @@ class InterFromSvnRepository(InterRepository):
             return sum(map(len, lines))
         self._text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE,
                                                   compute_size=lines_to_size)
-        # TODO: it would be nice to get rid of this extra cache
-        self._parent_text_cache = lru_cache.LRUCache(TEXT_CACHE_SIZE /
-                                                     (1*1024*1024))
+        # TODO: it would be nice to get rid of this extra cache, we don't (yet)
+        #       because the cached content objects are supposed to be opaque
+        self._content_cache = lru_cache.LRUCache(TEXT_CACHE_SIZE /
+                                                 (1*1024*1024))
 
     def copy_content(self, revision_id=None, pb=None):
         """See InterRepository.copy_content."""
@@ -1063,7 +1063,7 @@ class InterFromSvnRepository(InterRepository):
         try:
             return RevisionBuildEditor(self.source, self.target, revid, 
                 self._get_inventory(revmeta.get_lhs_parent_revid(mapping)), 
-                revmeta, mapping, self._text_cache, self._parent_text_cache)
+                revmeta, mapping, self._text_cache, self._content_cache)
         except NoSuchRevision:
             lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
             expected_lhs_parent_revid = revmeta.get_implicit_lhs_parent_revid(mapping)
