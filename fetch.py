@@ -97,6 +97,10 @@ TEXT_CACHE_SIZE = 1024 * 1024 * 50
 ERR_FS_PATH_SYNTAX = getattr(subvertpy, "ERR_FS_PATH_SYNTAX", 160005)
 
 
+def apply_txdelta_handler_chunks(chunks, stream):
+    return apply_txdelta_handler(''.join(chunks), stream)
+
+
 def inventory_ancestors(inv, fileid, exceptions):
     ret = list()
     for ie in inv[fileid].children.values():
@@ -514,7 +518,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         file_data = self.editor._text_cache.get((base_file_id, base_revid))
         if file_data is None: # Not present in cache
             record = self._get_record_stream(base_file_id, base_revid)
-            file_data = osutils.chunks_to_lines(record.get_bytes_as('chunked'))
+            file_data = record.get_bytes_as('chunked')
         if file_id == base_file_id:
             file_parents = [base_revid]
             old_path = path
@@ -534,7 +538,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
         self.old_path = old_path
         self.file_id = file_id
-        # This should be the *lines* of the file
+        # This should be the *chunks* of the file
         self.file_data = data
         self.is_symlink = is_symlink
         self.file_parents = file_parents
@@ -547,7 +551,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
             "base checksum mismatch: %r != %r" % (base_checksum, 
                                                   actual_checksum)
         self.file_stream = StringIO()
-        return apply_txdelta_handler(''.join(self.file_data), self.file_stream)
+        return apply_txdelta_handler_chunks(self.file_data, self.file_stream)
 
     def _close(self, checksum=None):
         if self.file_stream is not None:
@@ -555,7 +559,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
             lines = self.file_stream.readlines()
         else:
             # Data didn't change or file is new
-            lines = self.file_data
+            lines = osutils.chunks_to_lines(self.file_data)
 
         actual_checksum = md5_strings(lines)
         assert checksum is None or checksum == actual_checksum
