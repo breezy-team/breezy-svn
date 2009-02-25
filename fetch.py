@@ -97,6 +97,14 @@ TEXT_CACHE_SIZE = 1024 * 1024 * 50
 ERR_FS_PATH_SYNTAX = getattr(subvertpy, "ERR_FS_PATH_SYNTAX", 160005)
 
 
+def _lines_to_size(lines):
+    return sum(map(len, lines))
+_text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE,
+                                     compute_size=_lines_to_size)
+# TODO: it would be nice to get rid of this extra cache
+_parent_text_cache = lru_cache.LRUCache(100000)
+
+
 def inventory_ancestors(inv, fileid, exceptions):
     ret = list()
     for ie in inv[fileid].children.values():
@@ -511,7 +519,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         file_id = self.editor._get_existing_id(self.old_id, self.new_id, path)
         base_ie = self.editor.old_inventory[base_file_id]
         is_symlink = (base_ie.kind == 'symlink')
-        file_data = self.editor._text_cache.get((base_file_id, base_revid))
+        file_data = _text_cache.get((base_file_id, base_revid))
         if file_data is None: # Not present in cache
             record = self._get_record_stream(base_file_id, base_revid)
             file_data = osutils.chunks_to_lines(record.get_bytes_as('chunked'))
@@ -568,10 +576,10 @@ class FileRevisionBuildEditor(FileBuildEditor):
         parent_keys = [(self.file_id, revid) for revid in text_parents]
         parent_texts = {}
         if parent_keys:
-            parent_text = self.editor._parent_text_cache.get(parent_keys[0],
-                                                             None)
+            parent_key = parent_keys[0]
+            parent_text = _parent_text_cache.get(parent_key, None)
             if parent_text is not None:
-                parent_texts[parent_keys[0]] = parent_text
+                parent_texts[parent_key] = parent_text
         file_key = (self.file_id, text_revision)
         # add_lines_with_ghosts?
         text_sha1, text_size, parent_content = self.editor.texts.add_lines(
@@ -580,12 +588,12 @@ class FileRevisionBuildEditor(FileBuildEditor):
             # random_id=True, # This avoids an index lookup, can we do it?
             # check_content=False, # Can we assume we are always line-safe?
             )
-        self.editor._text_cache[file_key] = lines
+        _text_cache[file_key] = lines
         if parent_content is not None:
             # TODO: parent_content is meant to be an opaque structure. However
             #       if we know the target is a knit or pack repo, we could
             #       share the _text_cache, rather than creating a new one here.
-            self.editor._parent_text_cache[file_key] = parent_content
+            _parent_text_cache[file_key] = parent_content
 
         content_starts_with_link = False
         if lines and lines[0].startswith('link '):
@@ -639,13 +647,6 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self.revid = revid
         self._text_revids = None
         self._text_parents = None
-        def lines_to_size(lines):
-            return sum(map(len, lines))
-        self._text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE,
-                                                  compute_size=lines_to_size)
-        # TODO: it would be nice to get rid of this extra cache
-        self._parent_text_cache = lru_cache.LRUCache(TEXT_CACHE_SIZE /
-                                                     (1*1024*1024))
         self.old_inventory = prev_inventory
         self._inv_delta = []
         self._deleted = set()
