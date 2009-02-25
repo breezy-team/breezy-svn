@@ -541,7 +541,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         for i in range(0, len(elements)-1):
             # Does directory already exist?
             ret.append(ret[-1].open_directory(
-                "/".join(existing_elements[0:i+1]), base_rev))
+                "/".join(existing_elements[0:i+1]), -1))
 
         if (len(existing_elements) != len(elements) and
             len(existing_elements)+1 != len(elements)):
