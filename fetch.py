@@ -1283,7 +1283,7 @@ class InterFromSvnRepository(InterRepository):
                             revmeta = r
                             break
                     revmeta._revprops = revprops
-                    return editor_strip_prefix(self._get_editor(revmeta, mapping), revmeta.branch_path, self._text_cache)
+                    return editor_strip_prefix(self._get_editor(revmeta, mapping), revmeta.branch_path, self._text_cache, self._content_cache)
 
                 def revfinish(revision, revprops, editor):
                     self._prev_inv = editor.inventory
