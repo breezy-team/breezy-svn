@@ -607,14 +607,15 @@ class RevisionBuildEditor(DeltaBuildEditor):
     """Implementation of the Subversion commit editor interface that builds a 
     Bazaar revision.
     """
-    def __init__(self, source, target, revid, prev_inventory, revmeta, mapping):
+    def __init__(self, source, target, revid, prev_inventory, revmeta, mapping,
+                 text_cache):
         self.target = target
         self.source = source
         self.texts = target.texts
         self.revid = revid
         self._text_revids = None
         self._text_parents = None
-        self._text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE )
+        self._text_cache = text_cache
         self.old_inventory = prev_inventory
         self._inv_delta = []
         self._deleted = set()
@@ -1002,6 +1003,10 @@ class InterFromSvnRepository(InterRepository):
     def _get_repo_format_to_test():
         return None
 
+    def __init__(self, source, target):
+        super(InterFromSvnRepository, self).__init__(source, target)
+        self._text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE)
+
     def copy_content(self, revision_id=None, pb=None):
         """See InterRepository.copy_content."""
         self.fetch(revision_id, pb, find_ghosts=False)
@@ -1026,7 +1031,7 @@ class InterFromSvnRepository(InterRepository):
         try:
             return RevisionBuildEditor(self.source, self.target, revid, 
                 self._get_inventory(revmeta.get_lhs_parent_revid(mapping)), 
-                revmeta, mapping)
+                revmeta, mapping, self._text_cache)
         except NoSuchRevision:
             lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
             expected_lhs_parent_revid = revmeta.get_implicit_lhs_parent_revid(mapping)
@@ -1242,7 +1247,7 @@ class InterFromSvnRepository(InterRepository):
                             revmeta = r
                             break
                     revmeta._revprops = revprops
-                    return editor_strip_prefix(self._get_editor(revmeta, mapping), revmeta.branch_path)
+                    return editor_strip_prefix(self._get_editor(revmeta, mapping), revmeta.branch_path, self._text_cache)
 
                 def revfinish(revision, revprops, editor):
                     self._prev_inv = editor.inventory
