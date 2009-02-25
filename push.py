@@ -57,6 +57,7 @@ from bzrlib.plugins.svn.transport import (
     )
 
 from subvertpy import (
+    ERR_FS_TXN_OUT_OF_DATE,
     SubversionException,
     properties,
     )
