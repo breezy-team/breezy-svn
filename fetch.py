@@ -97,6 +97,10 @@ TEXT_CACHE_SIZE = 1024 * 1024 * 50
 ERR_FS_PATH_SYNTAX = getattr(subvertpy, "ERR_FS_PATH_SYNTAX", 160005)
 
 
+def apply_txdelta_handler_chunks(chunks, stream):
+    return apply_txdelta_handler(''.join(chunks), stream)
+
+
 def inventory_ancestors(inv, fileid, exceptions):
     ret = list()
     for ie in inv[fileid].children.values():
@@ -127,6 +131,13 @@ def check_inventory_delta(delta):
         old_paths.add(old_path)
         new_paths.add(new_path)
         file_ids.add(file_id)
+
+
+def md5_strings(lines):
+    """Return the MD5sum of a list of lines."""
+    s = osutils.md5()
+    map(s.update, lines)
+    return s.hexdigest()
 
 
 def md5_string(string):
@@ -507,7 +518,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         file_data = self.editor._text_cache.get((base_file_id, base_revid))
         if file_data is None: # Not present in cache
             record = self._get_record_stream(base_file_id, base_revid)
-            file_data = record.get_bytes_as('fulltext')
+            file_data = record.get_bytes_as('chunked')
         if file_id == base_file_id:
             file_parents = [base_revid]
             old_path = path
@@ -527,6 +538,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
         self.old_path = old_path
         self.file_id = file_id
+        # This should be the *chunks* of the file
         self.file_data = data
         self.is_symlink = is_symlink
         self.file_parents = file_parents
@@ -534,42 +546,57 @@ class FileRevisionBuildEditor(FileBuildEditor):
         self.parent_file_id = parent_file_id
 
     def _apply_textdelta(self, base_checksum=None):
-        actual_checksum = osutils.md5(self.file_data).hexdigest()
+        actual_checksum = md5_strings(self.file_data)
         assert base_checksum is None or base_checksum == actual_checksum, \
             "base checksum mismatch: %r != %r" % (base_checksum, 
                                                   actual_checksum)
         self.file_stream = StringIO()
-        return apply_txdelta_handler(self.file_data, self.file_stream)
+        return apply_txdelta_handler_chunks(self.file_data, self.file_stream)
 
     def _close(self, checksum=None):
         if self.file_stream is not None:
             self.file_stream.seek(0)
-            fulltext = self.file_stream.read()
+            lines = self.file_stream.readlines()
         else:
             # Data didn't change or file is new
-            fulltext = self.file_data
+            lines = osutils.chunks_to_lines(self.file_data)
 
-        actual_checksum = md5_string(fulltext)
+        actual_checksum = md5_strings(lines)
         assert checksum is None or checksum == actual_checksum
 
-        text_revision = (self.editor._get_text_revid(self.path) or 
+        text_revision = (self.editor._get_text_revid(self.path) or
                          self.editor.revid)
         text_parents = self.editor._get_text_parents(self.path)
         if text_parents is None:
             text_parents = self.file_parents
-        text_sha1 = osutils.sha_string(fulltext)
-        self.editor.texts.insert_record_stream([
-            FulltextContentFactory((self.file_id, text_revision), 
-                [(self.file_id, revid) for revid in text_parents], 
-                text_sha1,
-                fulltext)])
-        self.editor._text_cache[self.file_id, text_revision] = fulltext
+        parent_keys = [(self.file_id, revid) for revid in text_parents]
+        parent_texts = {}
+        if parent_keys:
+            parent_text = self.editor._content_cache.get(parent_keys[0], None)
+            if parent_text is not None:
+                parent_texts[parent_keys[0]] = parent_text
+        file_key = (self.file_id, text_revision)
+        # add_lines_with_ghosts?
+        text_sha1, text_size, parent_content = self.editor.texts.add_lines(
+            file_key, parent_keys, lines,
+            parent_texts=parent_texts,
+            # random_id=True, # This avoids an index lookup, can we do it?
+            # check_content=False, # Can we assume we are always line-safe?
+            )
+        self.editor._text_cache[file_key] = lines
+        if parent_content is not None:
+            # TODO: parent_content is meant to be an opaque structure. However
+            #       if we know the target is a knit or pack repo, we could
+            #       share the _text_cache, rather than creating a new one here.
+            self.editor._content_cache[file_key] = parent_content
 
+        content_starts_with_link = False
+        if lines and lines[0].startswith('link '):
+            content_starts_with_link = True
         if self.is_special is not None:
-            self.is_symlink = (self.is_special and 
-                fulltext.startswith("link "))
-        elif (fulltext.startswith("link ")):
-            # This file just might be a file that is svn:special but didn't 
+            self.is_symlink = (self.is_special and content_starts_with_link)
+        elif content_starts_with_link:
+            # This file just might be a file that is svn:special but didn't
             # contain a symlink but does now
             if not self.is_symlink:
                 pass # FIXME: Query whether this file has svn:special set.
@@ -584,6 +611,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
         if self.is_symlink:
             ie = InventoryLink(self.file_id, urlutils.basename(self.path), self.parent_file_id)
+            fulltext = ''.join(lines)
             ie.symlink_target = fulltext[len("link "):]
             if "\n" in ie.symlink_target:
                 raise AssertionError("bzr doesn't support newlines in symlink targets yet")
@@ -594,7 +622,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
             ie = InventoryFile(self.file_id, urlutils.basename(self.path), self.parent_file_id)
             ie.symlink_target = None
             ie.text_sha1 = text_sha1
-            ie.text_size = len(fulltext)
+            ie.text_size = text_size
             assert ie.text_size is not None
             ie.executable = self.is_executable
         ie.revision = text_revision
@@ -608,7 +636,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
     Bazaar revision.
     """
     def __init__(self, source, target, revid, prev_inventory, revmeta, mapping,
-                 text_cache):
+                 text_cache, content_cache):
         self.target = target
         self.source = source
         self.texts = target.texts
@@ -616,6 +644,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self._text_revids = None
         self._text_parents = None
         self._text_cache = text_cache
+        self._content_cache = content_cache
         self.old_inventory = prev_inventory
         self._inv_delta = []
         self._deleted = set()
@@ -1005,7 +1034,14 @@ class InterFromSvnRepository(InterRepository):
 
     def __init__(self, source, target):
         super(InterFromSvnRepository, self).__init__(source, target)
-        self._text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE)
+        def lines_to_size(lines):
+            return sum(map(len, lines))
+        self._text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE,
+                                                  compute_size=lines_to_size)
+        # TODO: it would be nice to get rid of this extra cache, we don't (yet)
+        #       because the cached content objects are supposed to be opaque
+        self._content_cache = lru_cache.LRUCache(TEXT_CACHE_SIZE /
+                                                 (1*1024*1024))
 
     def copy_content(self, revision_id=None, pb=None):
         """See InterRepository.copy_content."""
@@ -1031,7 +1067,7 @@ class InterFromSvnRepository(InterRepository):
         try:
             return RevisionBuildEditor(self.source, self.target, revid, 
                 self._get_inventory(revmeta.get_lhs_parent_revid(mapping)), 
-                revmeta, mapping, self._text_cache)
+                revmeta, mapping, self._text_cache, self._content_cache)
         except NoSuchRevision:
             lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
             expected_lhs_parent_revid = revmeta.get_implicit_lhs_parent_revid(mapping)
