@@ -32,6 +32,7 @@ from bzrlib.branch import (
         Branch,
         BranchFormat,
         BranchCheckResult,
+        InterBranch,
         PullResult,
         )
 from bzrlib.bzrdir import (
@@ -485,46 +486,6 @@ class SvnBranch(ForeignBranch):
             revno = self.revision_id_to_revno(revision_id)
         destination.set_last_revision_info(revno, revision_id)
 
-    def update_revisions(self, other, stop_revision=None, overwrite=False, 
-                         graph=None, _push_merged=False, 
-                         _override_svn_revprops=None):
-        """See Branch.update_revisions()."""
-        if stop_revision is None:
-            stop_revision = ensure_null(other.last_revision())
-        if (self.last_revision() == stop_revision or
-            self.last_revision() == other.last_revision()):
-            return
-        # Request graph from other repository, since it's most likely 
-        # than Subversion
-        graph = other.repository.get_graph(self.repository)
-        if not graph.is_ancestor(self.last_revision(), stop_revision):
-            if graph.is_ancestor(stop_revision, self.last_revision()):
-                return
-            if not overwrite:
-                raise DivergedBranches(self, other)
-        todo = self.mainline_missing_revisions(other, stop_revision)
-        if todo is None:
-            # Not possible to add cleanly onto mainline, perhaps need a replace operation
-            todo = self.otherline_missing_revisions(other, stop_revision, overwrite)
-        if todo is None:
-            raise DivergedBranches(self, other)
-        if _push_merged is None:
-            _push_merged = (self.layout.push_merged_revisions(self.project) and 
-                            self.get_config().get_push_merged_revisions())
-        if self.mapping.supports_hidden and self.repository.has_revision(stop_revision):
-            # Revision is already present in the repository, so just 
-            # copy from there.
-            create_branch_with_hidden_commit(self.repository, 
-                self.get_branch_path(), stop_revision, set_metadata=True,
-                deletefirst=True)
-        else:
-            interrepo = InterToSvnRepository(other.repository, 
-                self.repository, graph)
-            interrepo.push_branch(todo, self.layout, self.project, 
-                self.get_branch_path(), self.get_config(),
-                push_merged=_push_merged)
-        self._clear_cached_state()
-
     def is_locked(self):
         return self._lock_count != 0
 
@@ -610,101 +571,146 @@ class SvnBranchFormat(BranchFormat):
         return True
 
 
-try:
-    from bzrlib.branch import InterBranch
-except ImportError:
-    pass
-else:
-    class InterSvnOtherBranch(InterBranch):
-        """InterBranch implementation that is optimized for copying from 
-        Subversion.
+class InterSvnOtherBranch(InterBranch):
+    """InterBranch implementation that is optimized for copying from 
+    Subversion.
 
-        The two main differences with the generic implementation are:
-         * No revision numbers are calculated for the Subversion branch
-           (since this requires browsing the entire history)
-         * Only recent tags are fetched, since that saves a lot of 
-           history browsing operations
-        """
+    The two main differences with the generic implementation are:
+     * No revision numbers are calculated for the Subversion branch
+       (since this requires browsing the entire history)
+     * Only recent tags are fetched, since that saves a lot of 
+       history browsing operations
+    """
 
-        def update_revisions(self, stop_revision=None, overwrite=False,
-            graph=None):
-            """See InterBranch.update_revisions()."""
-            self.source.lock_read()
+    def update_revisions(self, stop_revision=None, overwrite=False, graph=None):
+        """See InterBranch.update_revisions()."""
+        self.source.lock_read()
+        try:
+            other_last_revision = self.source.last_revision()
+            if stop_revision is None:
+                stop_revision = other_last_revision
+                if is_null(stop_revision):
+                    # if there are no commits, we're done.
+                    return
+
+            # what's the current last revision, before we fetch [and 
+            # change it possibly]
+            last_rev = ensure_null(self.target.last_revision())
+            # we fetch here so that we don't process data twice in the 
+            # common case of having something to pull, and so that the 
+            # check for already merged can operate on the just fetched 
+            # graph, which will be cached in memory.
+            self.target.fetch(self.source, stop_revision)
+            # Check to see if one is an ancestor of the other
+            if not overwrite:
+                if graph is None:
+                    graph = self.target.repository.get_graph()
+                if self.target._check_if_descendant_or_diverged(
+                        stop_revision, last_rev, graph, self.source):
+                    # stop_revision is a descendant of last_rev, but we 
+                    # aren't overwriting, so we're done.
+                    return
+            self.target.generate_revision_history(stop_revision)
+        finally:
+            self.source.unlock()
+
+    def pull(self, overwrite=False, stop_revision=None, 
+             _hook_master=None, run_hooks=True, possible_transports=None,
+             _override_hook_target=None):
+        """See InterBranch.pull()."""
+        result = SubversionPullResult()
+        if _override_hook_target is None:
+            result.target_branch = self
+        else:
+            result.target_branch = _override_hook_target
+        result.source_branch = self.source
+        result.master_branch = None
+        result.target_branch = self.target
+        self.source.lock_read()
+        try:
+            (result.old_revno, result.old_revid) = self.target.last_revision_info()
             try:
-                other_last_revision = self.source.last_revision()
-                if stop_revision is None:
-                    stop_revision = other_last_revision
-                    if is_null(stop_revision):
-                        # if there are no commits, we're done.
-                        return
-
-                # what's the current last revision, before we fetch [and 
-                # change it possibly]
-                last_rev = ensure_null(self.target.last_revision())
-                # we fetch here so that we don't process data twice in the 
-                # common case of having something to pull, and so that the 
-                # check for already merged can operate on the just fetched 
-                # graph, which will be cached in memory.
-                self.target.fetch(self.source, stop_revision)
-                # Check to see if one is an ancestor of the other
-                if not overwrite:
-                    if graph is None:
-                        graph = self.target.repository.get_graph()
-                    if self.target._check_if_descendant_or_diverged(
-                            stop_revision, last_rev, graph, self.source):
-                        # stop_revision is a descendant of last_rev, but we 
-                        # aren't overwriting, so we're done.
-                        return
-                self.target.generate_revision_history(stop_revision)
-            finally:
-                self.source.unlock()
-
-        def pull(self, overwrite=False, stop_revision=None, 
-                 _hook_master=None, run_hooks=True, possible_transports=None,
-                 _override_hook_target=None):
-            """See InterBranch.pull()."""
-            result = SubversionPullResult()
-            if _override_hook_target is None:
-                result.target_branch = self
+                result.old_revmeta, _ = self.source.repository._get_revmeta(result.old_revid)
+                tags_since_revnum = result.old_revmeta.revnum
+            except NoSuchRevision:
+                result.old_revmeta = None
+                tags_since_revnum = None
+            if stop_revision is not None:
+                result.new_revmeta, _ = self.source.repository._get_revmeta(stop_revnum)
+                tags_until_revnum = result.new_revmeta.revnum
             else:
-                result.target_branch = _override_hook_target
-            result.source_branch = self.source
-            result.master_branch = None
-            result.target_branch = self.target
-            self.source.lock_read()
-            try:
-                (result.old_revno, result.old_revid) = self.target.last_revision_info()
-                try:
-                    result.old_revmeta, _ = self.source.repository._get_revmeta(result.old_revid)
-                    tags_since_revnum = result.old_revmeta.revnum
-                except NoSuchRevision:
-                    result.old_revmeta = None
-                    tags_since_revnum = None
-                if stop_revision is not None:
-                    result.new_revmeta, _ = self.source.repository._get_revmeta(stop_revnum)
-                    tags_until_revnum = result.new_revmeta.revnum
-                else:
-                    tags_until_revnum = self.source.repository.get_latest_revnum()
-                self.update_revisions(stop_revision, overwrite)
-                result.tag_conflicts = self.source.tags.merge_to(self.target.tags, overwrite, _from_revnum=tags_since_revnum, _to_revnum=tags_until_revnum)
-                (result.new_revno, result.new_revid) = self.target.last_revision_info()
-                if stop_revision is None:
-                    result.new_revmeta, _ = self.source.repository._get_revmeta(result.new_revid)
-                if _hook_master:
-                    result.master_branch = _hook_master
-                    result.local_branch = result.target_branch
-                else:
-                    result.master_branch = result.target_branch
-                    result.local_branch = None
-                if run_hooks:
-                    for hook in Branch.hooks['post_pull']:
-                        hook(result)
-            finally:
-                self.source.unlock()
-            return result
+                tags_until_revnum = self.source.repository.get_latest_revnum()
+            self.update_revisions(stop_revision, overwrite)
+            result.tag_conflicts = self.source.tags.merge_to(self.target.tags, overwrite, _from_revnum=tags_since_revnum, _to_revnum=tags_until_revnum)
+            (result.new_revno, result.new_revid) = self.target.last_revision_info()
+            if stop_revision is None:
+                result.new_revmeta, _ = self.source.repository._get_revmeta(result.new_revid)
+            if _hook_master:
+                result.master_branch = _hook_master
+                result.local_branch = result.target_branch
+            else:
+                result.master_branch = result.target_branch
+                result.local_branch = None
+            if run_hooks:
+                for hook in Branch.hooks['post_pull']:
+                    hook(result)
+        finally:
+            self.source.unlock()
+        return result
 
-        @classmethod
-        def is_compatible(self, source, target):
-            return isinstance(source, SvnBranch)
+    @classmethod
+    def is_compatible(self, source, target):
+        return isinstance(source, SvnBranch)
 
-    InterBranch.register_optimiser(InterSvnOtherBranch)
+InterBranch.register_optimiser(InterSvnOtherBranch)
+
+
+class InterOtherSvnBranch(InterBranch):
+    """InterBranch implementation that is optimized for copying to
+    Subversion.
+
+    """
+    def update_revisions(self, stop_revision=None, overwrite=False, graph=None,
+        _push_merged=False, _override_svn_revprops=None):
+        """See Branch.update_revisions()."""
+        if stop_revision is None:
+            stop_revision = ensure_null(self.source.last_revision())
+        if (self.target.last_revision() == stop_revision or
+            self.target.last_revision() == self.source.last_revision()):
+            return
+        # Request graph from other repository, since it's most likely 
+        # than Subversion
+        graph = self.source.repository.get_graph(self.target.repository)
+        if not graph.is_ancestor(self.target.last_revision(), stop_revision):
+            if graph.is_ancestor(stop_revision, self.target.last_revision()):
+                return
+            if not overwrite:
+                raise DivergedBranches(self.target, self.source)
+        todo = self.target.mainline_missing_revisions(self.source, 
+            stop_revision)
+        if todo is None:
+            # Not possible to add cleanly onto mainline, perhaps need a replace operation
+            todo = self.target.otherline_missing_revisions(self.source,
+                stop_revision, overwrite)
+        if todo is None:
+            raise DivergedBranches(self.target, self.source)
+        if _push_merged is None:
+            _push_merged = (self.target.layout.push_merged_revisions(self.target.project) and 
+                            self.target.get_config().get_push_merged_revisions())
+        if self.target.mapping.supports_hidden and self.target.repository.has_revision(stop_revision):
+            # Revision is already present in the repository, so just 
+            # copy from there.
+            create_branch_with_hidden_commit(self.target.repository, 
+                self.target.get_branch_path(), stop_revision, set_metadata=True,
+                deletefirst=True)
+        else:
+            interrepo = InterToSvnRepository(self.source.repository, 
+                self.target.repository, graph)
+            interrepo.push_branch(todo, self.target.layout, self.target.project, 
+                self.target.get_branch_path(), self.target.get_config(),
+                push_merged=_push_merged)
+        self.target._clear_cached_state()
+
+    @classmethod
+    def is_compatible(self, source, target):
+        return isinstance(target, SvnBranch)
