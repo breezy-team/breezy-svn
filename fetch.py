@@ -88,7 +88,7 @@ from bzrlib.plugins.svn.transport import (
     )
 
 # Number of revisions to fetch before writing pack to disk
-FETCH_COMMIT_WRITE_SIZE = 500
+FETCH_COMMIT_WRITE_SIZE = 999
 # Size of group in which revids are checked when looking for missing revisions
 CHECK_PRESENT_INTERVAL = 1000
 # Size of the text cache to keep
@@ -899,7 +899,7 @@ class FetchRevisionFinder(object):
             except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                 continue
         present_revids = self.target.has_revisions(map.values())
-        return [k for k in revmetas if map[k] not in present_revids]
+        return [k for k in revmetas if k in map and map[k] not in present_revids]
 
     def find_iter_revisions(self, iter, master_mapping, heads=None, pb=None):
         """Find revisions to fetch based on an iterator over available revmetas.
