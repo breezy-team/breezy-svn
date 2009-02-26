@@ -455,6 +455,24 @@ class SvnBranch(ForeignBranch):
         finally:
             source.unlock()
 
+    @needs_write_lock
+    def update_revisions(self, other, stop_revision=None, overwrite=False,
+                         graph=None, _override_svn_revprops=None, 
+                         _push_merged=None):
+        """Pull in new perfect-fit revisions.
+
+        :param other: Another Branch to pull from
+        :param stop_revision: Updated until the given revision
+        :param overwrite: Always set the branch pointer, rather than checking
+            to see if it is a proper descendant.
+        :param graph: A Graph object that can be used to query history
+            information. This can be None.
+        :return: None
+        """
+        return InterBranch.get(other, self).update_revisions(stop_revision,
+            overwrite, graph, _override_svn_revprops=_override_svn_revprops, 
+            _push_merged=_push_merged)
+
     def generate_revision_history(self, revision_id, last_rev=None, 
         other_branch=None):
         """Create a new revision history that will finish with revision_id.
@@ -714,3 +732,6 @@ class InterOtherSvnBranch(InterBranch):
     @classmethod
     def is_compatible(self, source, target):
         return isinstance(target, SvnBranch)
+
+
+InterBranch.register_optimiser(InterOtherSvnBranch)
