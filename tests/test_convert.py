@@ -108,6 +108,22 @@ class TestConversion(SubversionTestCase):
     def get_commit_editor(self):
         return super(TestConversion, self).get_commit_editor(self.repos_url)
 
+    def test_parent_branch_outside_prefix(self):
+        dc = self.get_commit_editor()
+
+        foo = dc.add_dir("foo")
+        foo.add_dir("foo/trunk")
+        dc.close()
+
+        dc = self.get_commit_editor()
+        bar = dc.add_dir("bar")
+        bar.add_dir("bar/trunk", "foo/trunk")
+        dc.close()
+
+        convert_repository(Repository.open(self.repos_url), "e",
+                           TrunkLayout(1),
+                           all=True, create_shared_repo=True, prefix="bar")
+
     def test_sets_parent_urls(self):
         convert_repository(Repository.open(self.repos_url), "e", 
                            TrunkLayout(0), 

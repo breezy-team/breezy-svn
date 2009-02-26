@@ -63,6 +63,9 @@ from bzrlib.versionedfile import (
     FulltextContentFactory,
     )
 
+from bzrlib.plugins.svn import (
+    changes,
+    )
 from bzrlib.plugins.svn.errors import (
     FileIdMapIncomplete,
     InvalidFileName,
@@ -955,10 +958,14 @@ class FetchRevisionFinder(object):
                 if (m != master_mapping and 
                     not m.is_branch_or_tag(revmeta.branch_path)):
                     continue
+                if (prefix is not None and not changes.path_is_child(prefix, revmeta.get_direct_lhs_parent_revmeta().branch_path)):
+                    # Parent branch path is outside of prefix; we need to 
+                    # check manually
+                    self.needed.extend(self.find_mainline(revmeta.get_direct_lhs_parent_revmeta().get_foreign_revid(), lhsm))
                 if lhsm != master_mapping or heads is not None:
                     needed_mappings[revmeta.get_direct_lhs_parent_revmeta()].add(lhsm)
                 needs_checking.append((revmeta, m))
-        self.needed.extendleft(self.check_revmetas(needs_checking))
+        self.needed.extend(reversed(self.check_revmetas(needs_checking)))
 
     def find_all(self, mapping, pb=None):
         """Find all revisions from the source repository that are not 
