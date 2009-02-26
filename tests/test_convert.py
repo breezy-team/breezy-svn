@@ -16,20 +16,46 @@
 
 """Full repository conversion tests."""
 
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir, format_registry
-from bzrlib.errors import NotBranchError, NoSuchFile, IncompatibleRepositories
-from bzrlib.urlutils import local_path_to_url
-from bzrlib.repository import Repository
-from bzrlib.tests import TestCaseInTempDir
+from bzrlib.branch import (
+    Branch,
+    )
+from bzrlib.bzrdir import (
+    BzrDir,
+    format_registry,
+    )
+from bzrlib.errors import (
+    IncompatibleRepositories,
+    NotBranchError,
+    NoSuchFile,
+    )
+from bzrlib.urlutils import (
+    local_path_to_url,
+    )
+from bzrlib.repository import (
+    Repository,
+    )
+from bzrlib.tests import (
+    TestCaseInTempDir,
+    )
 
 import os, sys
 
 from subvertpy import repos
-from bzrlib.plugins.svn.layout.standard import RootLayout, TrunkLayout
-from bzrlib.plugins.svn.convert import convert_repository, NotDumpFile, load_dumpfile
-from bzrlib.plugins.svn.format import get_rich_root_format
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from bzrlib.plugins.svn.layout.standard import (
+    RootLayout,
+    TrunkLayout,
+    )
+from bzrlib.plugins.svn.convert import (
+    NotDumpFile,
+    convert_repository,
+    load_dumpfile,
+    )
+from bzrlib.plugins.svn.format import (
+    get_rich_root_format,
+    )
+from bzrlib.plugins.svn.tests import (
+    SubversionTestCase,
+    )
 
 class TestLoadDumpfile(TestCaseInTempDir):
     def test_loaddumpfile(self):
@@ -61,6 +87,7 @@ PROPS-END
 
 
 class TestConversion(SubversionTestCase):
+
     def setUp(self):
         super(TestConversion, self).setUp()
         self.repos_url = self.make_repository('d')
