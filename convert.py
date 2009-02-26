@@ -263,7 +263,7 @@ def convert_repository(source_repos, output_url, layout=None,
                 try:
                     pb.update("checking revisions to fetch", 0, len(revmetas))
                     revfinder.find_iter_revisions(revmetas, mapping, 
-                        heads=heads, pb=pb)
+                        heads=heads, prefix=prefix, pb=pb)
                 finally:
                     pb.finished()
                 inter.fetch(needed=revfinder.get_missing())

@@ -931,7 +931,7 @@ class FetchRevisionFinder(object):
         present_revids = self.target.has_revisions(map.values())
         return [k for k in revmetas if k in map and map[k] not in present_revids]
 
-    def find_iter_revisions(self, iter, master_mapping, heads=None, pb=None):
+    def find_iter_revisions(self, iter, master_mapping, prefix=None, heads=None, pb=None):
         """Find revisions to fetch based on an iterator over available revmetas.
         
         :param iter: Iterator over RevisionMetadata objects
