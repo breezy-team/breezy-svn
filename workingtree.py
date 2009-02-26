@@ -143,6 +143,7 @@ class SvnWorkingTree(WorkingTree, SubversionTree):
         control_transport = bzrdir.transport.clone(urlutils.join(
                                                    get_adm_dir(), 'bzr'))
         self._control_files = LockableFiles(control_transport, 'lock', LockDir)
+        self.views = self._make_views()
 
     def get_ignore_list(self):
         """Obtain the list of ignore patterns for this working tree.
