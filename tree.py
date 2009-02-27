@@ -88,7 +88,7 @@ class SvnRevisionTree(RevisionTree, SubversionTree):
         try:
             reporter = conn.do_switch(
                 self._revmeta.revnum, "", True, 
-                urlutils.join(root_repos, self._revmeta.branch_path), editor)
+                urlutils.join(root_repos, self._revmeta.branch_path).rstrip("/"), editor)
             try:
                 reporter.set_path("", 0, True, None)
                 reporter.finish()

@@ -33,6 +33,9 @@ bzr-svn 0.5.3                   UNRELEASED
 
    * Support pushing kind changes from directory to file. (#335445)
 
+   * Fixed canonicalization issue when retrieving remote revision trees
+     over HTTP.
+
   PERFORMANCE
 
    * Significant speed improvements when no (old) tags have to be fetched. Requires 
