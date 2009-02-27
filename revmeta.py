@@ -661,7 +661,7 @@ class RevisionMetadata(object):
 
         # Check revprops if the last descendant has bzr:check-revprops set;
         #   if it has and the revnum there is < self.revnum
-        if can_use_revprops and self.consider_bzr_revprops():
+        if can_use_revprops and not self.knows_revprops() and self.consider_bzr_revprops():
             if self.revnum > 0:
                 # revision 0 is not included by svn_ra_get_log()
                 warn_slow_revprops()
@@ -673,7 +673,7 @@ class RevisionMetadata(object):
 
         # Check whether we should consider file properties at all 
         # for this revision, if we should -> check fileprops
-        if can_use_fileprops and consider_fileprops_fn():
+        if can_use_fileprops and not self.knows_changed_fileprops() and consider_fileprops_fn():
             ret = fileprop_fn(self.get_changed_fileprops())
             if ret != default:
                 return ret
