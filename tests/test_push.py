@@ -16,30 +16,52 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+import os
+from subvertpy import ra
+
 from bzrlib import osutils
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import AlreadyBranchError, BzrError, DivergedBranches
+from bzrlib.errors import (
+    AlreadyBranchError,
+    BzrError,
+    DivergedBranches,
+    )
 from bzrlib.inventory import InventoryDirectory
-from bzrlib.merge import Merger, Merge3Merger
+from bzrlib.merge import (
+    Merger,
+    Merge3Merger,
+    )
 from bzrlib.progress import DummyProgress
 from bzrlib.repository import Repository
 from bzrlib.revision import Revision
 from bzrlib.trace import mutter
 from bzrlib.tests import TestCase
 
-import os
-
-from bzrlib.plugins.svn import format, transport
+from bzrlib.plugins.svn import (
+    format,
+    transport,
+    )
 from bzrlib.plugins.svn.errors import MissingPrefix
-from bzrlib.plugins.svn.layout.standard import RootLayout, TrunkLayout
-from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_REVISION_ID
-from bzrlib.plugins.svn.push import push, dpush, determine_branch_path
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from bzrlib.plugins.svn.layout.standard import (
+    RootLayout,
+    TrunkLayout,
+    )
+from bzrlib.plugins.svn.mapping import (
+    SVN_PROP_BZR_REVISION_ID,
+    )
+from bzrlib.plugins.svn.push import (
+    determine_branch_path,
+    dpush, 
+    push,
+    )
+from bzrlib.plugins.svn.tests import (
+    SubversionTestCase,
+    )
 
-from subvertpy import ra
 
 class TestDPush(SubversionTestCase):
+
     def setUp(self):
         super(TestDPush, self).setUp()
         transport.disabled_capabilities.update(["commit-revprops", "log-revprops"])
@@ -142,6 +164,7 @@ class TestDPush(SubversionTestCase):
 
 
 class TestPush(SubversionTestCase):
+
     def setUp(self):
         super(TestPush, self).setUp()
         self.repos_url = self.make_repository('d')
