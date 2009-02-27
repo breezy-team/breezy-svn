@@ -226,6 +226,7 @@ class FakeRevision(object):
         self.branch_path = path
         self.revnum = revnum
         self._parent_revmeta_set = False
+        self._direct_lhs_parent_incomplete = None 
         self.parent_revmeta = None
         self.children = set()
 
@@ -375,3 +376,17 @@ class MetadataBrowserTests(TestCase):
         self.assertRaises(StopIteration, browser.next)
         self.assertTrue(rev1[1]._parent_revmeta_set)
         self.assertFalse(rev4[1]._parent_revmeta_set)
+
+    def test_follow_prefixes(self):
+        rev1 = { "foo": ('A', None, -1), "foo/trunk": ('A', None, -1) }
+        rev2 = { "bar": ('A', 'foo', 1) }
+        rev3 = { "bar/trunk": ('M', None, -1) }
+        browser = self.get_browser(["bar"], 4, 0, TrunkLayout(1), 
+                { 1: rev1, 2: rev2, 3: rev3 })
+        rev1 = browser.next()
+        self.assertEquals(('revision', FakeRevision('bar/trunk', 3)), rev1)
+        rev2 = browser.next()
+        self.assertEquals(('revision', FakeRevision('foo/trunk', 1)), rev2)
+        self.assertRaises(StopIteration, browser.next)
+        self.assertTrue(rev1[1]._parent_revmeta_set)
+        self.assertTrue(rev2[1]._parent_revmeta_set)
