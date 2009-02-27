@@ -208,3 +208,11 @@ class InconsistentLHSParent(BzrError):
         self.revision = revision
         self.recorded_lhs = recorded_lhs
         self.actual_lhs = actual_lhs
+
+
+class UnknownMapping(BzrError):
+    _fmt = """Attempt to use unknown mapping. """
+
+    def __init__(self, mapping):
+        BzrError.__init__(self)
+        self.mapping = mapping

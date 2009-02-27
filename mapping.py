@@ -910,7 +910,10 @@ class SubversionMappingRegistry(foreign.VcsMappingRegistry):
         if "-" in name:
             name, rest = name.split("-", 1)
             assert isinstance(rest, str)
-            return self.get(name)(rest)
+            try:
+                return self.get(name)(rest)
+            except errors.UnknownMapping:
+                raise KeyError(name)
         return self.get(name)()
 
     def parse_revision_id(self, revid):
