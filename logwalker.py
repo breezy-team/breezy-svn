@@ -15,9 +15,11 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Cache of the Subversion history log."""
 
-from bzrlib import urlutils
+from bzrlib import (
+    ui,
+    urlutils,
+    )
 from bzrlib.errors import NoSuchRevision
-import bzrlib.ui as ui
 
 import subvertpy
 
@@ -52,7 +54,8 @@ def iter_changes(paths, from_revnum, to_revnum, get_revision_paths,
                 pb.update("determining changes", revnum-from_revnum, to_revnum-from_revnum)
             else:
                 pb.update("determining changes", from_revnum-revnum, from_revnum-to_revnum)
-        assert revnum > 0 or path == "", "Inconsistent path,revnum: %r,%r" % (revnum, path)
+        if not (revnum > 0 or path == ""):
+            raise AssertionError("Inconsistent path,revnum: %r,%r" % (revnum, path))
         revpaths = get_revision_paths(revnum)
 
         if ascending:
