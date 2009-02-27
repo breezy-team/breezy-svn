@@ -27,6 +27,7 @@ from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.transport import SvnRaTransport
 
 class TestLogWalker(SubversionTestCase):
+
     def setUp(self):
         super(TestLogWalker, self).setUp()
         debug.debug_flags.add("transport")
@@ -452,6 +453,28 @@ class TestLogWalker(SubversionTestCase):
 
         props = walker.revprop_list(1)
         self.assertEquals("blaaa", props["foo"])
+
+    def test_iter_changes_prefix(self):
+        repos_url = self.make_repository('d')
+
+        cb = self.get_commit_editor(repos_url)
+        foo = cb.add_dir("foo")
+        foo.add_dir("foo/trunk")
+        cb.close()
+
+        cb = self.get_commit_editor(repos_url)
+        cb.add_dir("bar", "foo")
+        cb.close()
+
+        cb = self.get_commit_editor(repos_url)
+        bar = cb.open_dir("bar")
+        bar.open_dir("bar/trunk").change_prop("some2:property", "some data\n")
+        cb.close()
+
+        walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
+        self.assertEquals([({'bar/trunk': (u'M', None, -1)}, 3), 
+                           ({'bar': (u'A', 'foo', 1)}, 2), 
+                           ({"foo": ('A', None, -1), 'foo/trunk': (u'A', None, -1)}, 1)], [l[:2] for l in walker.iter_changes(["bar"], 3)])
 
     def test_iter_changes_property_change(self):
         repos_url = self.make_repository('d')
