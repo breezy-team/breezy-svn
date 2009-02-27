@@ -815,6 +815,21 @@ class PushNewBranchTests(SubversionTestCase):
         newdir = BzrDir.open(repos_url+"/trunk")
         newdir.import_branch(bzrwt.branch)
 
+    def test_kind_change_directory_to_file(self):
+        repos_url = self.make_repository("a")
+        bzrwt = BzrDir.create_standalone_workingtree("c", 
+            format=format.get_rich_root_format())
+        self.build_tree({'c/foo.txt/bar': "foo"})
+        bzrwt.add("foo.txt")
+        revid1 = bzrwt.commit(u"somecommit")
+        os.remove("c/foo.txt/bar")
+        os.rmdir("c/foo.txt")
+        self.build_tree({"c/foo.txt": "contents"})
+        bzrwt.add("foo.txt")
+        revid2 = bzrwt.commit(u"somecommit")
+        newdir = BzrDir.open(repos_url+"/trunk")
+        newdir.import_branch(bzrwt.branch)
+
     def test_multiple_part_exists(self):
         repos_url = self.make_repository("a")
 

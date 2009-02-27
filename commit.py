@@ -155,7 +155,7 @@ def find_suitable_base(parents, ie):
     candidates = []
     # Filter out which parents have this file id
     for (inv, url, revnum) in parents:
-        if ie.file_id in inv:
+        if ie.file_id in inv and ie.kind == inv[ie.file_id].kind:
             candidates.append((inv, url, revnum))
     if candidates == []:
         return None
@@ -234,7 +234,9 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv,
                 # ... parent changed
                 child_ie.parent_id != new_inv[child_ie.file_id].parent_id or
                 # ... name changed
-                new_inv[child_ie.file_id].name != child_name):
+                new_inv[child_ie.file_id].name != child_name or
+                # ... kind changed
+                child_ie.kind != new_inv[child_ie.file_id].kind):
                 mutter('removing %r(%r)', child_name, child_ie.file_id)
                 dir_editor.delete_entry(
                     branch_relative_path(path, child_name.encode("utf-8")), 
@@ -250,8 +252,9 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv,
 
         new_child_path = new_inv.id2path(child_ie.file_id).encode("utf-8")
         full_new_child_path = branch_relative_path(new_child_path)
-        # add them if they didn't exist in base_inv 
-        if not child_ie.file_id in base_inv:
+        # add them if they didn't exist in base_inv or changed kind
+        if (not child_ie.file_id in base_inv or 
+            base_inv[child_ie.file_id].kind != child_ie.kind):
             mutter('adding %s %r', child_ie.kind, new_child_path)
 
             # Do a copy operation if at all possible, to make 
@@ -327,8 +330,9 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv,
             continue
 
         new_child_path = new_inv.id2path(child_ie.file_id)
-        # add them if they didn't exist in base_inv 
-        if not child_ie.file_id in base_inv:
+        # add them if they didn't exist in base_inv or changed kind
+        if (not child_ie.file_id in base_inv or 
+            base_inv[child_ie.file_id].kind != child_ie.kind):
             mutter('adding dir %r', child_ie.name)
             
             # Do a copy operation if at all possible, to make 
