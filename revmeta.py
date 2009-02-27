@@ -38,14 +38,15 @@ from bzrlib.plugins.svn import (
         util,
         )
 from bzrlib.plugins.svn.mapping import (
+        SVN_PROP_BZR_REVPROP_REDIRECT,
+        SVN_REVPROP_BZR_ROOT,
+        SVN_REVPROP_BZR_SIGNATURE, 
         estimate_bzr_ancestors, 
         find_mapping_fileprops,
         find_mapping_revprops,
         get_roundtrip_ancestor_revids,
         parse_svn_revprops,
-        SVN_REVPROP_BZR_SIGNATURE, 
-        SVN_PROP_BZR_REVPROP_REDIRECT,
-        SVN_REVPROP_BZR_ROOT,
+        revprops_complete,
         )
 from bzrlib.plugins.svn.svk import (
         estimate_svk_ancestors,
@@ -355,8 +356,7 @@ class RevisionMetadata(object):
                 find_mapping_fileprops,
                 find_mapping_revprops,
                 None, self.consider_bzr_fileprops,
-                revprops_acceptable=revprops_acceptable,
-                revprops_sufficient=lambda x: True)
+                revprops_acceptable=revprops_acceptable)
 
     def get_implicit_lhs_parent_revid(self, mapping):
         parentrevmeta = self.get_lhs_parent_revmeta(mapping)
@@ -633,7 +633,7 @@ class RevisionMetadata(object):
                         mapping.get_repository_uuid(revprops) in (None, self.uuid))
         if revprops_sufficient is None:
             def revprops_sufficient(revprops):
-                return mapping.revprops_complete(revprops)
+                return revprops_complete(revprops)
 
         # Check revprops if self.knows_revprops() and can_use_revprops
         if can_use_revprops and self.knows_revprops():

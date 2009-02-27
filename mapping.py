@@ -588,9 +588,6 @@ class BzrSvnMapping(foreign.VcsMapping):
     def export_revprop_redirect(self, revnum, fileprops):
         raise NotImplementedError(self.export_revprop_redirect)
 
-    def revprops_complete(self, revprops):
-        raise NotImplementedError(self.revprops_complete)
-
     def check_revprops(self, revprops, checkresult):
         pass
 
@@ -888,11 +885,6 @@ class BzrSvnMappingRevProps(object):
         svn_revprops[SVN_REVPROP_BZR_REVNO] = str(revno)
         svn_revprops[SVN_REVPROP_BZR_USER_AGENT] = get_client_string()
 
-    def revprops_complete(self, revprops):
-        return (SVN_REVPROP_BZR_MAPPING_VERSION in revprops or 
-                SVN_REVPROP_BZR_HIDDEN in revprops or
-                SVN_REVPROP_BZR_HIDDEN in revprops)
-
     def export_fileid_map_revprops(self, fileids, revprops):
         if fileids != {}:
             revprops[SVN_REVPROP_BZR_FILEIDS] = generate_fileid_property(fileids)
@@ -1029,6 +1021,11 @@ def find_roundtripped_root(revprops, path_changes):
     if bp is not None:
         return bp
     return changes.changes_root(path_changes.keys())
+
+
+def revprops_complete(revprops):
+    return (SVN_REVPROP_BZR_MAPPING_VERSION in revprops or 
+            SVN_REVPROP_BZR_HIDDEN in revprops)
 
 
 class ForeignSubversion(foreign.ForeignVcs):
