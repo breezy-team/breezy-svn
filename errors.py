@@ -216,3 +216,10 @@ class UnknownMapping(BzrError):
     def __init__(self, mapping):
         BzrError.__init__(self)
         self.mapping = mapping
+
+
+class AbsentPath(BzrError):
+    _fmt = """Unable to access %(path)s: no permission?. """
+    
+    def __init__(self, path):
+        BzrError.__init__(self, path=path)

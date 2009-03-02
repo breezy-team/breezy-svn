@@ -67,6 +67,7 @@ from bzrlib.plugins.svn import (
     changes,
     )
 from bzrlib.plugins.svn.errors import (
+    AbsentPath,
     FileIdMapIncomplete,
     InvalidFileName,
     InconsistentLHSParent,
@@ -309,6 +310,12 @@ class DirectoryBuildEditor(object):
         assert isinstance(path, str)
         path = path.decode("utf-8")
         return self._open_directory(path, base_revnum)
+
+    def absent_directory(self, path):
+        raise AbsentPath(path)
+
+    def absent_file(self, path):
+        raise AbsentPath(path)
 
     def change_prop(self, name, value):
         if self.path == "":
