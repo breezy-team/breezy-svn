@@ -33,7 +33,7 @@ For more information about bzr-svn, see the bzr-svn FAQ.
 
 """
 import bzrlib
-from bzrlib import config
+from bzrlib import config, errors
 import bzrlib.api
 from bzrlib.bzrdir import (
     BzrDirFormat,
@@ -80,14 +80,14 @@ def check_subversion_version():
     ra_version = ra.version()
     if (ra_version[0] >= 5 and getattr(ra, 'SVN_REVISION', None) and 
         27729 <= ra.SVN_REVISION < 31470):
-        raise ImportError(
+        raise errors.DependencyNotPresent("subvertpy",
                 'bzr-svn: Installed Subversion has buggy svn.ra.get_log() '
                 'implementation, please install newer.')
 
     mutter("bzr-svn: using Subversion %d.%d.%d (%s)" % ra_version)
 
     if subvertpy_version < MINIMUM_SUBVERTPY_VERSION:
-        raise ImportError("bzr-svn: at least subvertpy %d.%d.%d is required, %d.%d.%d is installed." % (MINIMUM_SUBVERTPY_VERSION + subvertpy_version))
+        raise DependencyNotPresent("subvertpy", "bzr-svn: at least subvertpy %d.%d.%d is required, %d.%d.%d is installed." % (MINIMUM_SUBVERTPY_VERSION + subvertpy_version))
 
 
 def get_client_string():
@@ -99,7 +99,7 @@ def init_subvertpy():
     try:
         import subvertpy 
     except ImportError:
-        raise ImportError("bzr-svn: unable to find subvertpy. Please install from http://launchpad.net/subvertpy.")
+        raise errors.DependencyNotPresent("subvertpy", "bzr-svn: unable to find subvertpy. Please install from http://launchpad.net/subvertpy.")
 
     check_subversion_version()
 
@@ -149,16 +149,9 @@ format_registry.register_lazy("subversion", "bzrlib.plugins.svn.format", "SvnRem
 format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.format", "SvnWorkingTreeDirFormat", 
                          "Subversion working copy. ", 
                          native=False, hidden=True)
-try:
-    from bzrlib.revisionspec import revspec_registry
-    revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec", 
-        "RevisionSpec_svn")
-except ImportError:
-    # Bzr < 1.12
-    from bzrlib.revisionspec import SPEC_TYPES
-    lazy_check_versions()
-    from bzrlib.plugins.svn.revspec import RevisionSpec_svn
-    SPEC_TYPES.append(RevisionSpec_svn)
+from bzrlib.revisionspec import revspec_registry
+revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec", 
+    "RevisionSpec_svn")
 
 config.credential_store_registry.register_lazy(
     "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
