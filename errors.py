@@ -15,6 +15,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Subversion-specific errors and conversion of Subversion-specific errors."""
 
+import subvertpy
+import urllib
+
 import bzrlib.errors
 from bzrlib.errors import (
         BzrError,
@@ -29,10 +32,6 @@ from bzrlib.errors import (
         )
 
 from bzrlib.lazy_import import lazy_import
-import urllib
-lazy_import(globals(), """
-import subvertpy
-""")
 
 
 class InvalidBzrSvnRevision(NoSuchRevision):
@@ -140,6 +139,7 @@ class InvalidPropertyValue(BzrError):
         BzrError.__init__(self)
         self.property = property
         self.msg = msg
+
 
 class InvalidFileName(BzrError):
     _fmt = "Unable to convert Subversion path %(path)s because it contains characters invalid in Bazaar."

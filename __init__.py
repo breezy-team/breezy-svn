@@ -33,7 +33,7 @@ For more information about bzr-svn, see the bzr-svn FAQ.
 
 """
 import bzrlib
-from bzrlib import config, errors
+from bzrlib import config
 import bzrlib.api
 from bzrlib.bzrdir import (
     BzrDirFormat,
@@ -41,6 +41,9 @@ from bzrlib.bzrdir import (
     )
 from bzrlib.commands import (
     plugin_cmds,
+    )
+from bzrlib.errors import (
+    DependencyNotPresent,
     )
 from bzrlib.foreign import (
     foreign_vcs_registry,
@@ -80,7 +83,7 @@ def check_subversion_version():
     ra_version = ra.version()
     if (ra_version[0] >= 5 and getattr(ra, 'SVN_REVISION', None) and 
         27729 <= ra.SVN_REVISION < 31470):
-        raise errors.DependencyNotPresent("subvertpy",
+        raise DependencyNotPresent("subvertpy",
                 'bzr-svn: Installed Subversion has buggy svn.ra.get_log() '
                 'implementation, please install newer.')
 
@@ -99,7 +102,7 @@ def init_subvertpy():
     try:
         import subvertpy 
     except ImportError:
-        raise errors.DependencyNotPresent("subvertpy", "bzr-svn: unable to find subvertpy. Please install from http://launchpad.net/subvertpy.")
+        raise DependencyNotPresent("subvertpy", "bzr-svn: unable to find subvertpy. Please install from http://launchpad.net/subvertpy.")
 
     check_subversion_version()
 

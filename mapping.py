@@ -15,13 +15,23 @@
 
 """Maps between Subversion and Bazaar semantics."""
 
-from bzrlib import foreign, osutils
+from bzrlib import (
+    foreign,
+    osutils,
+    )
 from bzrlib.lazy_import import lazy_import
 from bzrlib.errors import InvalidRevisionId
-from bzrlib.revision import NULL_REVISION, Revision
+from bzrlib.revision import (
+    NULL_REVISION,
+    Revision,
+    )
 from bzrlib.trace import mutter
 
-from bzrlib.plugins.svn import errors, version_info, get_client_string
+from bzrlib.plugins.svn import (
+    errors,
+    get_client_string,
+    version_info,
+    )
 
 lazy_import(globals(), """
 import calendar
