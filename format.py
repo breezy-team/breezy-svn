@@ -79,9 +79,20 @@ class SvnRemoteFormat(SvnControlFormat):
         from bzrlib.transport.local import LocalTransport
         format = klass()
 
-        if (isinstance(transport, LocalTransport) and 
-            transport.has(".") and not transport.has("format")):
-            raise bzr_errors.NotBranchError(path=transport.base)
+        if isinstance(transport, LocalTransport):
+            # Cheaper way to figure out if there is a svn repo
+            maybe = False
+            subtransport = transport
+            while subtransport:
+                if subtransport.has("format"):
+                    maybe = True
+                    break
+                prevsubtransport = subtransport
+                subtransport = prevsubtransport.clone("..")
+                if subtransport.base == prevsubtransport.base:
+                    break
+            if not maybe:
+                raise bzr_errors.NotBranchError(path=transport.base)
 
         klass._check_versions()
         from bzrlib.plugins.svn.transport import get_svn_ra_transport

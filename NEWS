@@ -54,6 +54,9 @@ bzr-svn 0.5.3                   UNRELEASED
 
    * A simple LRU cache is now used for texts during fetch.
 
+   * Avoid loading subvertpy in a couple more situations when probing for 
+     Subversion repositories. (#336449)
+
   FEATURES
 
    * Now prints parent Subversion revision number after successful pull. (#332196)
