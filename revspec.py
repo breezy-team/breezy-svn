@@ -38,8 +38,6 @@ class RevisionSpec_svn(RevisionSpec):
     Subversion revision numbers are per-repository whereas Bazaar revision 
     numbers are per-branch. This revision specifier allows specifying 
     a Subversion revision number.
-
-    This only works directly against Subversion branches.
     """
     
     prefix = 'svn:'
