@@ -17,6 +17,7 @@
 
 from bzrlib.errors import (
     BzrError,
+    InvalidRevisionId,
     InvalidRevisionSpec,
     NoSuchRevision,
     )
@@ -26,6 +27,8 @@ from bzrlib.revisionspec import (
     )
 
 from bzrlib.plugins.svn import lazy_check_versions
+from bzrlib.plugins.svn.errors import AmbiguousRevisionSpec
+from bzrlib.plugins.svn.mapping import mapping_registry
 
 class RevisionSpec_svn(RevisionSpec):
     """Selects a revision using a Subversion revision number."""
@@ -41,18 +44,46 @@ class RevisionSpec_svn(RevisionSpec):
     
     prefix = 'svn:'
 
-    def _match_on(self, branch, revs):
-        lazy_check_versions()
+    def _get_revnum(self):
         loc = self.spec.find(':')
-        uuid = getattr(branch.repository, 'uuid', None)
-        if uuid is None:
-            raise BzrError("the svn: revisionspec can only be used with Subversion branches")
+        return int(self.spec[loc+1:])
+
+    def _match_on_foreign(self, branch):
+        ret = set()
+        revnum = self._get_revnum()
+        graph = branch.repository.get_graph()
+        for revid, _ in graph.iter_ancestry([branch.last_revision()]):
+            try:
+                (found_uuid, found_branch_path, found_revnum), found_mapping = \
+                        mapping_registry.parse_revision_id(revid)
+                if found_revnum == revnum:
+                    ret.add(revid)
+            except InvalidRevisionId:
+                continue
+        if len(ret) == 1:
+            revid = ret.pop()
+            history = list(branch.repository.iter_reverse_revision_history(revid))
+            history.reverse()
+            return RevisionInfo.from_revision_id(branch, revid, history)
+        elif len(ret) == 0:
+            raise InvalidRevisionSpec(self.user_spec, branch)
+        else:
+            raise AmbiguousRevisionSpec(self.user_spec, branch)
+
+    def _match_on_native(self, branch):
         try:
-            return RevisionInfo.from_revision_id(branch, branch.generate_revision_id(int(self.spec[loc+1:])), branch.revision_history())
+            return RevisionInfo.from_revision_id(branch, branch.generate_revision_id(self._get_revnum()), branch.revision_history())
         except ValueError:
             raise InvalidRevisionSpec(self.user_spec, branch)
         except NoSuchRevision:
             raise InvalidRevisionSpec(self.user_spec, branch)
+
+    def _match_on(self, branch, revs):
+        lazy_check_versions()
+        uuid = getattr(branch.repository, 'uuid', None)
+        if uuid is not None:
+            return self._match_on_native(branch)
+        return self._match_on_foreign(branch)
 
     def needs_branch(self):
         return True

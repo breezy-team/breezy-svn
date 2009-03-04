@@ -23,6 +23,7 @@ from bzrlib.errors import (
     BzrError,
     ConnectionError,
     ConnectionReset,
+    InvalidRevisionSpec,
     LockError,
     PermissionDenied,
     NoRepositoryPresent,
@@ -223,3 +224,10 @@ class AbsentPath(BzrError):
     
     def __init__(self, path):
         BzrError.__init__(self, path=path)
+
+
+class AmbiguousRevisionSpec(InvalidRevisionSpec):
+    _fmt = """Revision specifier %(revspec)s is ambiguous for %(branch)s. """
+
+    def __init__(self, revspec, branch):
+        BzrError.__init__(self, revspec=revspec, branch=branch)
