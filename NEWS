@@ -65,6 +65,8 @@ bzr-svn 0.5.3                   UNRELEASED
 
    * Now prints parent Subversion revision number after successful pull. (#332196)
 
+   * Annotate run against Subversion repositories now works. (#335735)
+
 bzr-svn 0.5.2					2009-02-18
 
   BUG FIXES

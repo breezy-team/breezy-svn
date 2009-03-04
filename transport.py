@@ -412,6 +412,13 @@ class SvnRaTransport(Transport):
         finally:
             self.add_connection(conn)
 
+    def get_file_revs(self, path, start_revnum, end_revnum, handler):
+        conn = self.get_connection()
+        try:
+            return conn.get_file_revs(path, start_revnum, end_revnum, handler)
+        finally:
+            self.add_connection(conn)
+
     def list_dir(self, relpath):
         assert len(relpath) == 0 or relpath[0] != "/"
         if relpath == ".":
@@ -584,6 +591,11 @@ class MutteringRemoteAccess(object):
     def get_file(self, path, stream, revnum):
         mutter('svn get-file -r%d %s' % (revnum, path))
         return self.actual.get_file(path, stream, revnum)
+
+    def get_file_revs(self, path, start_revnum, end_revnum, handler):
+        mutter('svn get-file-revs -r%d:%d %s' % (start_revnum, end_revnum, path))
+        return self.actual.get_file_revs(path, start_revnum, end_revnum, 
+            handler)
 
     def revprop_list(self, revnum):
         mutter('svn revprop-list -r%d' % (revnum,))

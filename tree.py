@@ -358,9 +358,8 @@ class SvnBasisTree(RevisionTree, SubversionTree):
             wc.close()
         return orig_props
 
-    def annotate_iter(self, file_id,
-                      default_revision=CURRENT_REVISION):
-        raise NotImplementedError(self.annotate_iter)
+    def annotate_iter(self, file_id, default_revision=CURRENT_REVISION):
+        return self.workingtree.branch.repository._annotate(urlutils.join(self.workingtree.branch.get_branch_path(), self.inventory.id2path(file_id)).strip("/"), self.workingtree.base_revnum,  file_id, self.get_revision_id(), self.workingtree.branch.mapping)
 
     def iter_files_bytes(self, file_ids):
         for file_id, identifier in file_ids:

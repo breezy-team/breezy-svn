@@ -65,7 +65,7 @@ class SvnTexts(VersionedFiles):
         map = self.repository.get_fileid_map(revmeta, mapping)
         path = idmap_reverse_lookup(map, mapping, fileid)
         return (urlutils.join(revmeta.branch_path, path).strip("/"),
-                revmeta.revnum)
+                revmeta.revnum, mapping)
 
     @convert_svn_error
     def get_record_stream(self, keys, ordering, include_delta_closure):
@@ -79,7 +79,7 @@ class SvnTexts(VersionedFiles):
             if len(k) != 2:
                 yield AbsentContentFactory(k)
             else:
-                path, revnum = self._lookup_key(k)
+                path, revnum, mapping = self._lookup_key(k)
                 try:
                     stream = StringIO()
                     self.repository.transport.get_file(path, stream, revnum)
@@ -144,11 +144,8 @@ class SvnTexts(VersionedFiles):
         return ret
 
     def annotate(self, key):
-        path, revnum = self._lookup_key(key)
-        def handler(path, rev, revprops):
-            pass #FIXME
-        self.repository.transport.get_file_revs(path, revnum, handler)
-        raise NotImplementedError(self.annotate)
+        path, revnum, mapping = self._lookup_key(key)
+        return self.repository._annotate(path, revnum, key[0], key[1], mapping)
 
     # TODO: annotate, get_sha1s, iter_lines_added_or_present_in_keys, keys
 
