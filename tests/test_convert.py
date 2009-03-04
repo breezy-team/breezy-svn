@@ -16,6 +16,9 @@
 
 """Full repository conversion tests."""
 
+import os, sys
+from subvertpy import repos
+
 from bzrlib.branch import (
     Branch,
     )
@@ -38,9 +41,6 @@ from bzrlib.tests import (
     TestCaseInTempDir,
     )
 
-import os, sys
-
-from subvertpy import repos
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,

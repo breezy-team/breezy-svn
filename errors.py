@@ -20,16 +20,16 @@ import urllib
 
 import bzrlib.errors
 from bzrlib.errors import (
-        BzrError,
-        ConnectionError,
-        ConnectionReset,
-        LockError,
-        PermissionDenied,
-        NoRepositoryPresent,
-        NoSuchRevision,
-        TransportError,
-        UnexpectedEndOfContainerError,
-        )
+    BzrError,
+    ConnectionError,
+    ConnectionReset,
+    LockError,
+    PermissionDenied,
+    NoRepositoryPresent,
+    NoSuchRevision,
+    TransportError,
+    UnexpectedEndOfContainerError,
+    )
 
 from bzrlib.lazy_import import lazy_import
 

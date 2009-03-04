@@ -16,30 +16,29 @@
 """Conversion of full repositories."""
 
 import os
-
-from bzrlib import (
-        bzrdir,
-        osutils,
-        ui,
-        urlutils,
-        )
-from bzrlib.errors import (
-        BzrError,
-        NotBranchError,
-        NoSuchFile,
-        NoSuchRevision,
-        NoRepositoryPresent,
-        ) 
-from bzrlib.repository import InterRepository
-from bzrlib.revision import ensure_null
-from bzrlib.transport import get_transport
-
 from subvertpy import (
     ERR_STREAM_MALFORMED_DATA,
     NODE_FILE,
     SubversionException,
     repos,
     )
+
+from bzrlib import (
+    bzrdir,
+    osutils,
+    ui,
+    urlutils,
+    )
+from bzrlib.errors import (
+    BzrError,
+    NotBranchError,
+    NoSuchFile,
+    NoSuchRevision,
+    NoRepositoryPresent,
+    ) 
+from bzrlib.repository import InterRepository
+from bzrlib.revision import ensure_null
+from bzrlib.transport import get_transport
 
 from bzrlib.plugins.svn.branch import SvnBranch
 from bzrlib.plugins.svn.fetch import FetchRevisionFinder

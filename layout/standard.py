@@ -13,16 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from functools import partial
+from subvertpy import NODE_DIR
+
 from bzrlib import urlutils
 from bzrlib.plugins.svn import errors as svn_errors
 from bzrlib.plugins.svn.layout import (
-        RepositoryLayout,
-        get_root_paths,
-        wildcard_matches,
-        )
-
-from functools import partial
-from subvertpy import NODE_DIR
+    RepositoryLayout,
+    get_root_paths,
+    wildcard_matches,
+    )
 
 class TrunkLayout(RepositoryLayout):
 

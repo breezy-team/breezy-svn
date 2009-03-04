@@ -18,7 +18,10 @@ from bzrlib.errors import NoSuchRevision
 from bzrlib.tests import TestCase
 
 from bzrlib.plugins.svn.mapping4 import BzrSvnMappingv4
-from bzrlib.plugins.svn.revids import RevisionIdMapCache, RevisionInfoCache
+from bzrlib.plugins.svn.revids import (
+    RevisionIdMapCache,
+    RevisionInfoCache,
+    )
 
 class TestRevidMapCache(TestCase):
 

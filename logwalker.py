@@ -15,13 +15,13 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Cache of the Subversion history log."""
 
+import subvertpy
+
 from bzrlib import (
     ui,
     urlutils,
     )
 from bzrlib.errors import NoSuchRevision
-
-import subvertpy
 
 from bzrlib.plugins.svn import changes
 from bzrlib.plugins.svn.cache import CacheTable

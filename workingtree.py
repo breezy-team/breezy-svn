@@ -15,65 +15,79 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Checkouts and working trees (working copies)."""
 
+from collections import defaultdict
+import os
+import subvertpy
+import subvertpy.wc
+from subvertpy import properties
+from subvertpy.wc import *
+import urllib
+
 import bzrlib, bzrlib.add
 from bzrlib import (
-        osutils,
-        urlutils,
-        )
+    osutils,
+    urlutils,
+    )
 from bzrlib.branch import (
-        BranchReferenceFormat,
-        )
+    BranchReferenceFormat,
+    )
 from bzrlib.bzrdir import (
-        BzrDirFormat,
-        BzrDir,
-        Converter,
-        )
+    BzrDirFormat,
+    BzrDir,
+    Converter,
+    )
 from bzrlib.errors import (
-        NotBranchError,
-        NoSuchFile,
-        NoSuchRevision,
-        NoRepositoryPresent,
-        NoWorkingTree,
-        UnsupportedFormatError,
-        UninitializableFormat,
-        )
+    NotBranchError,
+    NoSuchFile,
+    NoSuchRevision,
+    NoRepositoryPresent,
+    NoWorkingTree,
+    UnsupportedFormatError,
+    UninitializableFormat,
+    )
 from bzrlib.inventory import (
-        Inventory,
-        InventoryFile,
-        InventoryLink,
-        )
+    Inventory,
+    InventoryFile,
+    InventoryLink,
+    )
 from bzrlib.lockable_files import LockableFiles
 from bzrlib.lockdir import LockDir
 from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import mutter
 from bzrlib.transport import get_transport
-from bzrlib.workingtree import WorkingTree, WorkingTreeFormat
-
-from collections import defaultdict
-import os
-import urllib
-
-import subvertpy
-import subvertpy.wc
-from subvertpy import properties
-from subvertpy.wc import *
+from bzrlib.workingtree import (
+    WorkingTree,
+    WorkingTreeFormat,
+    )
 
 from bzrlib.plugins.svn import (
-        errors as bzrsvn_errors,
-        svk,
-        )
-from bzrlib.plugins.svn.branch import SvnBranch
-from bzrlib.plugins.svn.commit import _revision_id_to_svk_feature
+    errors as bzrsvn_errors,
+    svk,
+    )
+from bzrlib.plugins.svn.branch import (
+    SvnBranch,
+    )
+from bzrlib.plugins.svn.commit import (
+    _revision_id_to_svk_feature,
+    )
 from bzrlib.plugins.svn.errors import (
     convert_svn_error,
     )
-from bzrlib.plugins.svn.fileids import idmap_lookup
+from bzrlib.plugins.svn.fileids import (
+    idmap_lookup,
+    )
 from bzrlib.plugins.svn.format import get_rich_root_format
 from bzrlib.plugins.svn.mapping import escape_svn_path
 from bzrlib.plugins.svn.remote import SvnRemoteAccess
 from bzrlib.plugins.svn.repository import SvnRepository
-from bzrlib.plugins.svn.transport import SvnRaTransport, svn_config
-from bzrlib.plugins.svn.tree import SvnBasisTree, SubversionTree
+from bzrlib.plugins.svn.transport import (
+    SvnRaTransport,
+    svn_config,
+    )
+from bzrlib.plugins.svn.tree import (
+    SvnBasisTree,
+    SubversionTree,
+    )
 
 def update_wc(adm, basedir, conn, revnum):
     # FIXME: honor SVN_CONFIG_SECTION_HELPERS:SVN_CONFIG_OPTION_DIFF3_CMD

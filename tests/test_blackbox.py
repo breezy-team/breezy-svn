@@ -15,6 +15,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Blackbox tests."""
 
+import os
+import sys
+
 import bzrlib.gpg
 from bzrlib.repository import Repository
 from bzrlib.tests.blackbox import ExternalBase
@@ -23,8 +26,6 @@ from bzrlib.tests import KnownFailure
 from bzrlib.plugins.svn.convert import load_dumpfile
 from bzrlib.plugins.svn.layout.standard import RootLayout
 from bzrlib.plugins.svn.tests import SubversionTestCase
-
-import os, sys
 
 class TestBranch(SubversionTestCase, ExternalBase):
 

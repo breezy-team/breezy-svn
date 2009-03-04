@@ -13,33 +13,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from subvertpy.ra import RemoteAccess
+from subvertpy.tests import TestCommitEditor
+
 from bzrlib.repository import Repository
 from bzrlib.tests import TestCase
 
 from bzrlib.plugins.svn.logwalker import (
-        DictBasedLogWalker,
-        )
+    DictBasedLogWalker,
+    )
 from bzrlib.plugins.svn.mapping import (
-        SVN_REVPROP_BZR_BASE_REVISION,
-        SVN_REVPROP_BZR_REPOS_UUID,
-        SVN_REVPROP_BZR_ROOT,
-        SVN_REVPROP_BZR_MAPPING_VERSION,
-        mapping_registry,
-        )
+    SVN_REVPROP_BZR_BASE_REVISION,
+    SVN_REVPROP_BZR_REPOS_UUID,
+    SVN_REVPROP_BZR_ROOT,
+    SVN_REVPROP_BZR_MAPPING_VERSION,
+    mapping_registry,
+    )
 from bzrlib.plugins.svn.layout.standard import (
-        RootLayout,
-        TrunkLayout,
-        )
+    RootLayout,
+    TrunkLayout,
+    )
 from bzrlib.plugins.svn.revmeta import (
-        filter_revisions,
-        restrict_prefixes,
-        RevisionMetadataBrowser,
-        RevisionMetadata,
-        )
+    filter_revisions,
+    restrict_prefixes,
+    RevisionMetadataBrowser,
+    RevisionMetadata,
+    )
 from bzrlib.plugins.svn.tests import SubversionTestCase
-
-from subvertpy.ra import RemoteAccess
-from subvertpy.tests import TestCommitEditor
 
 
 class TestWithRepository(SubversionTestCase):

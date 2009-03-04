@@ -17,48 +17,48 @@
 
 import os
 from subvertpy import (
-        ERR_FS_NO_SUCH_REVISION,
-        NODE_DIR,
-        SubversionException,
-        wc,
-        )
+    ERR_FS_NO_SUCH_REVISION,
+    NODE_DIR,
+    SubversionException,
+    wc,
+    )
 
 from bzrlib import (
-        tag,
-        ui,
-        urlutils,
-        )
+    tag,
+    ui,
+    urlutils,
+    )
 from bzrlib.branch import (
-        Branch,
-        BranchFormat,
-        BranchCheckResult,
-        InterBranch,
-        PullResult,
-        )
+    Branch,
+    BranchFormat,
+    BranchCheckResult,
+    InterBranch,
+    PullResult,
+    )
 from bzrlib.bzrdir import (
-        BzrDir,
-        )
+    BzrDir,
+    )
 from bzrlib.decorators import (
-        needs_write_lock,
-        )
+    needs_write_lock,
+    )
 from bzrlib.errors import (
-        DivergedBranches,
-        NoSuchRevision,
-        NotBranchError,
-        UnstackableBranchFormat,
-        )
+    DivergedBranches,
+    NoSuchRevision,
+    NotBranchError,
+    UnstackableBranchFormat,
+    )
 from bzrlib.revision import (
-        NULL_REVISION,
-        is_null,
-        ensure_null,
-        )
+    NULL_REVISION,
+    is_null,
+    ensure_null,
+    )
 from bzrlib.trace import (
-        is_quiet,
-        mutter,
-        )
+    is_quiet,
+    mutter,
+    )
 from bzrlib.workingtree import (
-        WorkingTree,
-        )
+    WorkingTree,
+    )
 
 from bzrlib.plugins.svn import (
     util,

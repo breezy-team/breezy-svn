@@ -16,27 +16,29 @@
 
 """Revision id generation and caching."""
 
+import subvertpy
+
 from bzrlib import ui
-from bzrlib.errors import InvalidRevisionId, NoSuchRevision
+from bzrlib.errors import (
+    InvalidRevisionId,
+    NoSuchRevision,
+    )
 from bzrlib.lru_cache import LRUCache
 
 from bzrlib.plugins.svn.cache import CacheTable
 from bzrlib.plugins.svn.errors import (
-        InvalidBzrSvnRevision,
-        InvalidPropertyValue,
-        )
+    InvalidBzrSvnRevision,
+    InvalidPropertyValue,
+    )
 from bzrlib.plugins.svn.mapping import (
-        BzrSvnMapping,
-        SVN_PROP_BZR_REVISION_ID,
-        find_mapping_revprops,
-        find_new_lines,
-        is_bzr_revision_revprops,
-        mapping_registry,
-        parse_revid_property,
-        )
-
-import subvertpy
-from subvertpy import ERR_FS_NOT_DIRECTORY
+    BzrSvnMapping,
+    SVN_PROP_BZR_REVISION_ID,
+    find_mapping_revprops,
+    find_new_lines,
+    is_bzr_revision_revprops,
+    mapping_registry,
+    parse_revid_property,
+    )
 
 class RevidMap(object):
     
@@ -96,8 +98,10 @@ class RevidMap(object):
                 if revmeta.consider_bzr_fileprops():
                     for revid, bzr_revno, mapping_name in revmeta.get_roundtrip_ancestor_revids():
                         revids.add(((bzr_revno, revid), mapping_name))
-            except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                continue
+            except subvertpy.SubversionException, (_, num):
+                if num == subvertpy.ERR_FS_NOT_DIRECTORY:
+                    continue
+                raise
 
             # If there are any new entries that are not yet in the cache, 
             # add them

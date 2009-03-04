@@ -17,7 +17,10 @@ from bzrlib import graph as _mod_graph
 from bzrlib.tests import TestCase
 from bzrlib.tests.test_graph import InstrumentedParentsProvider
 
-from bzrlib.plugins.svn.parents import ParentsCache, DiskCachingParentsProvider
+from bzrlib.plugins.svn.parents import (
+    DiskCachingParentsProvider,
+    ParentsCache,
+    )
 
 class ParentsCacheTests(TestCase):
 

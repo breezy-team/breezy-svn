@@ -18,7 +18,10 @@
 
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import NoRepositoryPresent, UninitializableFormat
+from bzrlib.errors import (
+    NoRepositoryPresent,
+    UninitializableFormat,
+    )
 from bzrlib.tests import TestCase
 
 from bzrlib.plugins.svn.workingtree import SvnWorkingTreeFormat

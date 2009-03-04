@@ -15,20 +15,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib.osutils import sha
-
 from bzrlib.errors import InvalidRevisionId
-from bzrlib.tests import TestCase
+from bzrlib.osutils import sha
 from bzrlib.revision import Revision
+from bzrlib.tests import TestCase
 
 from bzrlib.plugins.svn import mapping
 from bzrlib.plugins.svn.errors import InvalidPropertyValue
-from bzrlib.plugins.svn.mapping import (generate_revision_metadata, parse_revision_metadata, 
-                     parse_revid_property, parse_merge_property, parse_text_parents_property,
-                     generate_text_parents_property, estimate_bzr_ancestors,
-                     escape_svn_path, unescape_svn_path, is_bzr_revision_fileprops,
-                     get_roundtrip_ancestor_revids, is_bzr_revision_revprops)
-from bzrlib.plugins.svn.mapping2 import BzrSvnMappingv1, BzrSvnMappingv2
+from bzrlib.plugins.svn.mapping import (
+    estimate_bzr_ancestors,
+    escape_svn_path,
+    generate_text_parents_property,
+    generate_revision_metadata, 
+    get_roundtrip_ancestor_revids,
+    is_bzr_revision_fileprops,
+    is_bzr_revision_revprops,
+    parse_merge_property,
+    parse_revision_metadata, 
+    parse_revid_property,
+    parse_text_parents_property,
+    unescape_svn_path,
+    )
+from bzrlib.plugins.svn.mapping2 import (
+    BzrSvnMappingv1,
+    BzrSvnMappingv2,
+    )
 from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3
 from bzrlib.plugins.svn.mapping4 import BzrSvnMappingv4
 

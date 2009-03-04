@@ -17,23 +17,32 @@
 
 """Subversion fetch tests."""
 
+import os, sys
 import shutil
+
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
 from bzrlib.osutils import has_symlinks
 from bzrlib.repository import Repository
 from bzrlib.revision import NULL_REVISION
-from bzrlib.tests import TestSkipped, KnownFailure
+from bzrlib.tests import (
+    KnownFailure,
+    TestSkipped,
+    )
 from bzrlib.trace import mutter
 
-from bzrlib.plugins.svn import format, remote
+from bzrlib.plugins.svn import (
+    format,
+    remote,
+    )
 from bzrlib.plugins.svn.convert import load_dumpfile
 from bzrlib.plugins.svn.errors import InvalidFileName
-from bzrlib.plugins.svn.layout.standard import TrunkLayout, RootLayout
+from bzrlib.plugins.svn.layout.standard import (
+    RootLayout,
+    TrunkLayout,
+    )
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.transport import SvnRaTransport
-
-import os, sys
 
 class TestFetchWorks(SubversionTestCase):
     def test_fetch_trunk1(self):

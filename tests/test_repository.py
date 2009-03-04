@@ -19,7 +19,10 @@
 """Subversion repository tests."""
 
 from bzrlib import urlutils
-from bzrlib.bzrdir import BzrDir, format_registry
+from bzrlib.bzrdir import (
+    BzrDir,
+    format_registry,
+    )
 from bzrlib.config import GlobalConfig
 from bzrlib.errors import UninitializableFormat
 from bzrlib.repository import Repository

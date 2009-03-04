@@ -16,11 +16,11 @@
 
 """Log walker tests."""
 
+import os
+
+from bzrlib import debug
 from bzrlib.errors import NoSuchRevision
 from bzrlib.tests import TestCase
-
-import os
-from bzrlib import debug
 
 from bzrlib.plugins.svn import logwalker
 from bzrlib.plugins.svn.tests import SubversionTestCase

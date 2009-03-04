@@ -16,18 +16,24 @@
 """Basis and revision tree tests."""
 
 import os
+import subvertpy
 
-from bzrlib.inventory import Inventory, TreeReference
+from bzrlib.inventory import (
+    Inventory,
+    TreeReference,
+    )
 from bzrlib.osutils import has_symlinks
 from bzrlib.repository import Repository
 from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import TestSkipped
 from bzrlib.workingtree import WorkingTree
 
-import subvertpy
 from bzrlib.plugins.svn.layout.standard import RootLayout
 from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.tree import SvnBasisTree, inventory_add_external
+from bzrlib.plugins.svn.tree import (
+    SvnBasisTree,
+    inventory_add_external,
+    )
 
 
 class TestBasisTree(SubversionTestCase):

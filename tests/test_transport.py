@@ -16,15 +16,25 @@
 
 """Subversion transport tests."""
 
-from bzrlib.errors import NoSuchFile, FileExists, InvalidURL
-from bzrlib import urlutils
-
 import subvertpy
 from subvertpy import ra
-from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.transport import SvnRaTransport, bzr_to_svn_url, _url_unescape_uri, url_join_unescaped_path, _url_escape_uri
-
 from unittest import TestCase
+
+from bzrlib import urlutils
+from bzrlib.errors import (
+    FileExists,
+    InvalidURL,
+    NoSuchFile,
+    )
+
+from bzrlib.plugins.svn.tests import SubversionTestCase
+from bzrlib.plugins.svn.transport import (
+    SvnRaTransport,
+    bzr_to_svn_url,
+    url_join_unescaped_path,
+    _url_escape_uri,
+    _url_unescape_uri,
+    )
 
 class SvnRaTest(SubversionTestCase):
     def test_open_nonexisting(self):

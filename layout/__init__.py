@@ -15,12 +15,17 @@
 
 """Repository layouts."""
 
-from bzrlib import registry, urlutils, ui
+import subvertpy
+from subvertpy.ra import DIRENT_KIND
+
+from bzrlib import (
+    registry,
+    urlutils,
+    ui,
+    )
 from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn.errors import NotSvnBranchPath
-import subvertpy
-from subvertpy.ra import DIRENT_KIND
 
 class RepositoryLayout(object):
     """Describes a repository layout."""

@@ -16,28 +16,31 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Simple transport for accessing Subversion smart servers."""
 
-import bzrlib
-from bzrlib import (
-        debug,
-        ui,
-        urlutils,
-        )
-from bzrlib.errors import (
-        NoSuchFile,
-        TransportNotPossible, 
-        FileExists,
-        NotLocalUrl,
-        InvalidURL,
-        RedirectRequested,
-        )
-from bzrlib.trace import mutter, warning
-from bzrlib.transport import Transport
-
 import subvertpy
 from subvertpy import ERR_FS_NOT_DIRECTORY
 from subvertpy.client import get_config
 import urlparse
 import urllib
+
+import bzrlib
+from bzrlib import (
+    debug,
+    ui,
+    urlutils,
+    )
+from bzrlib.errors import (
+    NoSuchFile,
+    TransportNotPossible, 
+    FileExists,
+    NotLocalUrl,
+    InvalidURL,
+    RedirectRequested,
+    )
+from bzrlib.trace import (
+    mutter,
+    warning,
+    )
+from bzrlib.transport import Transport
 
 import bzrlib.plugins.svn
 from bzrlib.plugins.svn.auth import create_auth_baton

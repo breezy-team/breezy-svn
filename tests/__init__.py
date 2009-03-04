@@ -18,14 +18,17 @@
 
 import os
 import sys
-import bzrlib
 
+import bzrlib
 from bzrlib.bzrdir import BzrDir
 from bzrlib.tests import TestCaseInTempDir
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
-from bzrlib import osutils, urlutils
+from bzrlib import (
+    osutils,
+    urlutils,
+    )
 from bzrlib.plugins.svn import cache
 
 import subvertpy.tests

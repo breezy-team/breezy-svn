@@ -16,13 +16,21 @@
 
 """Remote access tests."""
 
+import subvertpy
+
 from bzrlib import osutils
 from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir, format_registry
-from bzrlib.errors import (NoRepositoryPresent, NotLocalUrl,
-                           NoWorkingTree, AlreadyBranchError)
+from bzrlib.bzrdir import (
+    BzrDir,
+    format_registry,
+    )
+from bzrlib.errors import (
+    AlreadyBranchError,
+    NoRepositoryPresent,
+    NotLocalUrl,
+    NoWorkingTree,
+    )
 
-import subvertpy
 from bzrlib.plugins.svn.format import SvnRemoteFormat
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.transport import SvnRaTransport

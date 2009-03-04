@@ -13,7 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib.plugins.svn.layout.standard import InverseTrunkLayout, TrunkLayout
+from bzrlib.plugins.svn.layout.standard import (
+    InverseTrunkLayout,
+    TrunkLayout,
+    )
 
 class KDELayout(InverseTrunkLayout):
     """Layout for the KDE repository."""

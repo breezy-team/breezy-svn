@@ -15,17 +15,20 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Subversion server implementation."""
 
+import os
+import subvertpy
+from subvertpy import properties
+from subvertpy.server import (
+    ServerBackend,
+    ServerRepositoryBackend,
+    )
+import time
+
 from bzrlib import urlutils
 from bzrlib.branch import Branch
 from bzrlib.inventory import Inventory
 
 from bzrlib.plugins.svn.commit import dir_editor_send_changes
-
-import os
-import subvertpy
-from subvertpy import properties
-from subvertpy.server import ServerBackend, ServerRepositoryBackend
-import time
 
 def determine_changed_paths(repository, branch_path, rev, revno):
     def fixpath(p):

@@ -15,6 +15,10 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Subversion repository access."""
 
+from collections import defaultdict
+from itertools import chain
+import os
+import subvertpy
 import threading
 
 from bzrlib import (
@@ -48,48 +52,43 @@ from bzrlib.transport import (
     )
 from bzrlib.trace import info, note
 
-from collections import defaultdict
-from itertools import chain
-import os
-import subvertpy
-
 from bzrlib.plugins.svn import (
-        cache,
-        changes,
-        errors,
-        foreign,
-        layout,
-        logwalker,
-        revmeta,
-        )
+    cache,
+    changes,
+    errors,
+    foreign,
+    layout,
+    logwalker,
+    revmeta,
+    )
 from bzrlib.plugins.svn.branchprops import PathPropertyProvider
 from bzrlib.plugins.svn.config import SvnRepositoryConfig
 from bzrlib.plugins.svn.layout.standard import WildcardLayout
 from bzrlib.plugins.svn.layout.guess import repository_guess_layout
 from bzrlib.plugins.svn.mapping import (
-        SVN_REVPROP_BZR_SIGNATURE,
-        BzrSvnMapping,
-        foreign_vcs_svn,
-        find_mappings_fileprops,
-        find_mapping_revprops,
-        is_bzr_revision_revprops, 
-        mapping_registry,
-        parse_svn_dateprop,
-        )
+    SVN_REVPROP_BZR_SIGNATURE,
+    BzrSvnMapping,
+    foreign_vcs_svn,
+    find_mappings_fileprops,
+    find_mapping_revprops,
+    is_bzr_revision_revprops, 
+    mapping_registry,
+    parse_svn_dateprop,
+    )
 from bzrlib.plugins.svn.parents import DiskCachingParentsProvider
 from bzrlib.plugins.svn.revids import (
-        DiskCachingRevidMap,
-        MemoryCachingRevidMap,
-        RevidMap,
-        RevisionInfoCache,
-        )
+    DiskCachingRevidMap,
+    MemoryCachingRevidMap,
+    RevidMap,
+    RevisionInfoCache,
+    )
 from bzrlib.plugins.svn.tree import SvnRevisionTree
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
 from bzrlib.plugins.svn.foreign.versionedfiles import (
-        VirtualRevisionTexts, 
-        VirtualInventoryTexts,
-        VirtualSignatureTexts,
-        )
+    VirtualRevisionTexts, 
+    VirtualInventoryTexts,
+    VirtualSignatureTexts,
+    )
 
 LAYOUT_SOURCE_GUESSED = 'guess'
 LAYOUT_SOURCE_CONFIG = 'config'

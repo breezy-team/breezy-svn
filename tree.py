@@ -15,19 +15,30 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Access to stored Subversion basis trees."""
 
-from bzrlib import osutils, urlutils
-from bzrlib.branch import Branch
-from bzrlib.inventory import Inventory, InventoryDirectory, TreeReference
-from bzrlib.osutils import md5
-from bzrlib.revision import CURRENT_REVISION
-from bzrlib.trace import mutter
-from bzrlib.revisiontree import RevisionTree
-
 from cStringIO import StringIO
 import os
+from subvertpy import (
+    delta,
+    properties,
+    wc,
+    NODE_DIR,
+    )
 import urllib
 
-from subvertpy import delta, wc, NODE_DIR, properties
+from bzrlib import (
+    osutils,
+    urlutils,
+    )
+from bzrlib.branch import Branch
+from bzrlib.inventory import (
+    Inventory,
+    InventoryDirectory,
+    TreeReference,
+    )
+from bzrlib.osutils import md5
+from bzrlib.revision import CURRENT_REVISION
+from bzrlib.revisiontree import RevisionTree
+from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn.fileids import idmap_lookup
 

@@ -15,23 +15,22 @@
 
 """Authentication token retrieval."""
 
-from bzrlib.config import (
-        AuthenticationConfig,
-        CredentialStore,
-        )
-from bzrlib.trace import (
-        mutter,
-        )
-from bzrlib.ui import (
-        ui_factory,
-        )
-
 from subvertpy import (
-        ra,
-        )
-
+    ra,
+    )
 import urlparse
 import urllib
+
+from bzrlib.config import (
+    AuthenticationConfig,
+    CredentialStore,
+    )
+from bzrlib.trace import (
+    mutter,
+    )
+from bzrlib.ui import (
+    ui_factory,
+    )
 
 AUTH_PARAM_DEFAULT_USERNAME = 'svn:auth:username'
 AUTH_PARAM_DEFAULT_PASSWORD = 'svn:auth:password'

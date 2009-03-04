@@ -15,14 +15,17 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Branching scheme implementations."""
 
-from bzrlib import ui, urlutils
-from bzrlib.errors import BzrError
-from bzrlib.trace import mutter
-
 import base64
 import bz2
 from subvertpy import properties
 import urllib
+
+from bzrlib import (
+    ui,
+    urlutils,
+    )
+from bzrlib.errors import BzrError
+from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn.layout.guess import (
     GUESS_SAMPLE_SIZE,

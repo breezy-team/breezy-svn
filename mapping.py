@@ -15,6 +15,11 @@
 
 """Maps between Subversion and Bazaar semantics."""
 
+import calendar
+from subvertpy import properties
+import time
+import urllib
+
 from bzrlib import (
     foreign,
     osutils,
@@ -32,13 +37,6 @@ from bzrlib.plugins.svn import (
     get_client_string,
     version_info,
     )
-
-lazy_import(globals(), """
-import calendar
-from subvertpy import properties
-""")
-import time
-import urllib
 
 SVN_PROP_BZR_PREFIX = 'bzr:'
 SVN_PROP_BZR_ANCESTRY = 'bzr:ancestry:'

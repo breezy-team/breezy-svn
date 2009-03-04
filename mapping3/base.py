@@ -16,28 +16,34 @@
 
 """Mapping version 3."""
 
-from bzrlib import (
-        errors as bzr_errors,
-        osutils,
-        ui,
-        )
-
 from subvertpy import properties
 
-from bzrlib.plugins.svn import errors, mapping
-from bzrlib.plugins.svn.layout import RepositoryLayout, get_root_paths
+from bzrlib import (
+    errors as bzr_errors,
+    osutils,
+    ui,
+    )
+
+from bzrlib.plugins.svn import (
+    errors,
+    mapping,
+    )
+from bzrlib.plugins.svn.layout import (
+    RepositoryLayout,
+    get_root_paths,
+    )
 from bzrlib.plugins.svn.mapping3.scheme import (
-        BranchingScheme,
-        InvalidSvnBranchPath,
-        ListBranchingScheme,
-        NoBranchingScheme,
-        TrunkBranchingScheme,
-        guess_scheme_from_branch_path, 
-        guess_scheme_from_history, 
-        parse_list_scheme_text,
-        repository_guess_scheme,
-        scheme_from_layout,
-        )
+    BranchingScheme,
+    InvalidSvnBranchPath,
+    ListBranchingScheme,
+    NoBranchingScheme,
+    TrunkBranchingScheme,
+    guess_scheme_from_branch_path, 
+    guess_scheme_from_history, 
+    parse_list_scheme_text,
+    repository_guess_scheme,
+    scheme_from_layout,
+    )
 
 SVN_PROP_BZR_BRANCHING_SCHEME = 'bzr:branching-scheme'
 

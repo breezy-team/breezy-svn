@@ -19,8 +19,14 @@ Tests for revision specificiers.
 
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import BzrError, InvalidRevisionSpec
-from bzrlib.revisionspec import RevisionSpec, RevisionInfo
+from bzrlib.errors import (
+    BzrError,
+    InvalidRevisionSpec,
+    )
+from bzrlib.revisionspec import (
+    RevisionInfo,
+    RevisionSpec,
+    )
 from bzrlib.tests import TestCase
 
 from bzrlib.plugins.svn.tests import SubversionTestCase

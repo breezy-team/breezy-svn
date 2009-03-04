@@ -15,6 +15,12 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Stores per-repository settings."""
 
+import os
+from subvertpy import (
+    SubversionException,
+    properties,
+    )
+
 from bzrlib import (
         osutils,
         urlutils,
@@ -36,9 +42,6 @@ from bzrlib.errors import (
         BzrError,
         )
 
-import os
-
-from subvertpy import SubversionException, properties
 
 
 def as_bool(str):

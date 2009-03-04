@@ -15,6 +15,12 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Pushing to Subversion repositories."""
 
+from subvertpy import (
+    ERR_FS_TXN_OUT_OF_DATE,
+    SubversionException,
+    properties,
+    )
+
 from bzrlib import (
     debug,
     ui,
@@ -54,12 +60,6 @@ from bzrlib.plugins.svn.repository import (
     )
 from bzrlib.plugins.svn.transport import (
     url_join_unescaped_path,
-    )
-
-from subvertpy import (
-    ERR_FS_TXN_OUT_OF_DATE,
-    SubversionException,
-    properties,
     )
 
 

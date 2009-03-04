@@ -14,8 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from bzrlib.tests import TestCase
+
 from bzrlib.plugins.svn.errors import NotSvnBranchPath
-from bzrlib.plugins.svn.layout.standard import RootLayout, TrunkLayout, WildcardLayout
+from bzrlib.plugins.svn.layout.standard import (
+    RootLayout,
+    TrunkLayout,
+    WildcardLayout,
+    )
 
 
 class LayoutTests:

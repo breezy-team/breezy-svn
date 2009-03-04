@@ -15,16 +15,28 @@
 
 """Fake versionedfiles implementation for Subversion."""
 
-from bzrlib import osutils, urlutils
-from bzrlib.revision import NULL_REVISION
-from bzrlib.trace import warning
-from bzrlib.versionedfile import FulltextContentFactory, VersionedFiles, AbsentContentFactory
-
 from cStringIO import StringIO
 import subvertpy
 
-from bzrlib.plugins.svn.errors import convert_svn_error
-from bzrlib.plugins.svn.fileids import idmap_reverse_lookup, idmap_lookup
+from bzrlib import (
+    osutils,
+    urlutils,
+    )
+from bzrlib.revision import NULL_REVISION
+from bzrlib.trace import warning
+from bzrlib.versionedfile import (
+    AbsentContentFactory,
+    FulltextContentFactory,
+    VersionedFiles,
+    )
+
+from bzrlib.plugins.svn.errors import (
+    convert_svn_error,
+    )
+from bzrlib.plugins.svn.fileids import (
+    idmap_lookup,
+    idmap_reverse_lookup,
+    )
 
 _warned_experimental = False
 

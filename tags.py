@@ -15,14 +15,25 @@
 
 """Subversion Tags Dictionary."""
 
-from bzrlib import urlutils
-from bzrlib.errors import InvalidRevisionId, NoSuchRevision, NoSuchTag
+import subvertpy
+from subvertpy import properties
+
+from bzrlib import (
+    urlutils,
+    )
+from bzrlib.errors import (
+    InvalidRevisionId,
+    NoSuchRevision,
+    NoSuchTag,
+    )
 from bzrlib.tag import BasicTags
 from bzrlib.trace import mutter
 
-from bzrlib.plugins.svn import commit, errors as svn_errors, mapping
-import subvertpy
-from subvertpy import properties
+from bzrlib.plugins.svn import (
+    commit,
+    errors as svn_errors,
+    mapping,
+    )
 
 def reverse_dict(orig):
     ret = {}

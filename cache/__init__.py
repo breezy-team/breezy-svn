@@ -15,6 +15,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Subversion cache directory access."""
 
+import os
+import sys
+
 import bzrlib
 from bzrlib import (
     debug, 
@@ -24,11 +27,12 @@ from bzrlib.config import (
     config_dir,
     ensure_config_dir_exists,
     )
-from bzrlib.trace import mutter, warning
+from bzrlib.trace import (
+    mutter,
+    warning,
+    )
 
 from bzrlib.plugins.svn import version_info
-
-import os, sys
 
 def create_cache_dir():
     """Create the top-level bzr-svn cache directory.

@@ -16,19 +16,28 @@
 
 """Branch tests."""
 
+import os
+import subvertpy
+from unittest import TestCase
+
 from bzrlib import urlutils
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import NoSuchFile, NoSuchRevision, NotBranchError, NoSuchTag, TagsNotSupported
+from bzrlib.errors import (
+    NoSuchFile,
+    NoSuchRevision,
+    NoSuchTag,
+    NotBranchError,
+    TagsNotSupported,
+    )
 from bzrlib.repository import Repository
 from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import mutter
 
-import os
-from unittest import TestCase
-
-import subvertpy
-from bzrlib.plugins.svn.branch import FakeControlFiles, SvnBranchFormat
+from bzrlib.plugins.svn.branch import (
+    FakeControlFiles,
+    SvnBranchFormat,
+    )
 from bzrlib.plugins.svn.convert import load_dumpfile
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_REVISION_ID
 from bzrlib.plugins.svn.tests import SubversionTestCase

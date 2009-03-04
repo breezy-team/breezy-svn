@@ -15,20 +15,23 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Generation of file-ids."""
 
-from bzrlib import ui, urlutils
+from collections import defaultdict
+import urllib
+
+from bzrlib import (
+    ui,
+    urlutils,
+    )
 from bzrlib.errors import RevisionNotPresent
 from bzrlib.knit import make_file_factory
 from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import mutter
 from bzrlib.versionedfile import ConstantMapper
 
-from collections import defaultdict
-import urllib
-
 from bzrlib.plugins.svn import (
-        changes, 
-        errors,
-        )
+    changes, 
+    errors,
+    )
 
 # idmap: dictionary mapping unicode paths to tuples with file id, 
 #   revision id and the foreign_revid it was introduced in, if it 

@@ -18,6 +18,11 @@
 
 """Commit and push tests."""
 
+from copy import copy
+import os
+from subvertpy import ra
+from subvertpy.properties import time_to_cstring
+
 from bzrlib.branch import (
     Branch,
     PullResult,
@@ -34,12 +39,6 @@ from bzrlib.tests import (
     )
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
-
-from copy import copy
-import os
-
-from subvertpy import ra
-from subvertpy.properties import time_to_cstring
 
 from bzrlib.plugins.svn import format
 from bzrlib.plugins.svn.commit import (

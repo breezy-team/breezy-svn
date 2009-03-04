@@ -18,7 +18,10 @@
 
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.branchprops import PathPropertyProvider
-from bzrlib.plugins.svn.logwalker import LogWalker, CachingLogWalker
+from bzrlib.plugins.svn.logwalker import (
+    LogWalker,
+    CachingLogWalker,
+    )
 from bzrlib.plugins.svn.transport import SvnRaTransport
 
 class TestBranchProps(SubversionTestCase):

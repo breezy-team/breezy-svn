@@ -15,8 +15,15 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Custom revision specifier for Subversion."""
 
-from bzrlib.errors import BzrError, InvalidRevisionSpec, NoSuchRevision
-from bzrlib.revisionspec import RevisionSpec, RevisionInfo
+from bzrlib.errors import (
+    BzrError,
+    InvalidRevisionSpec,
+    NoSuchRevision,
+    )
+from bzrlib.revisionspec import (
+    RevisionSpec,
+    RevisionInfo,
+    )
 
 from bzrlib.plugins.svn import lazy_check_versions
 

@@ -15,46 +15,6 @@
 
 """Subversion Meta-Revisions. This is where all the magic happens. """
 
-from subvertpy import (
-        properties,
-        )
-
-from bzrlib import (
-        errors as bzr_errors,
-        ui,
-        )
-from bzrlib.foreign import (
-        ForeignRevision,
-        )
-from bzrlib.revision import (
-        NULL_REVISION, 
-        )
-from bzrlib.trace import (
-        warning,
-        )
-from bzrlib.plugins.svn import (
-        changes, 
-        errors as svn_errors, 
-        util,
-        )
-from bzrlib.plugins.svn.mapping import (
-        SVN_PROP_BZR_REVPROP_REDIRECT,
-        SVN_REVPROP_BZR_ROOT,
-        SVN_REVPROP_BZR_SIGNATURE, 
-        estimate_bzr_ancestors, 
-        find_mapping_fileprops,
-        find_mapping_revprops,
-        get_roundtrip_ancestor_revids,
-        parse_svn_revprops,
-        revprops_complete,
-        )
-from bzrlib.plugins.svn.svk import (
-        estimate_svk_ancestors,
-        parse_svk_feature, 
-        svk_features_merged_since, 
-        SVN_PROP_SVK_MERGE, 
-        )
-
 import bisect
 from collections import (
     defaultdict,
@@ -64,6 +24,45 @@ from functools import partial
 from itertools import (
     ifilter,
     imap,
+    )
+from subvertpy import (
+    properties,
+    )
+
+from bzrlib import (
+    errors as bzr_errors,
+    ui,
+    )
+from bzrlib.foreign import (
+    ForeignRevision,
+    )
+from bzrlib.revision import (
+    NULL_REVISION, 
+    )
+from bzrlib.trace import (
+    warning,
+    )
+from bzrlib.plugins.svn import (
+    changes, 
+    errors as svn_errors, 
+    util,
+    )
+from bzrlib.plugins.svn.mapping import (
+    SVN_PROP_BZR_REVPROP_REDIRECT,
+    SVN_REVPROP_BZR_ROOT,
+    SVN_REVPROP_BZR_SIGNATURE, 
+    estimate_bzr_ancestors, 
+    find_mapping_fileprops,
+    find_mapping_revprops,
+    get_roundtrip_ancestor_revids,
+    parse_svn_revprops,
+    revprops_complete,
+    )
+from bzrlib.plugins.svn.svk import (
+    estimate_svk_ancestors,
+    parse_svk_feature, 
+    svk_features_merged_since, 
+    SVN_PROP_SVK_MERGE, 
     )
 
 # Maximum number of revisions to browse for a cached copy of the branch 

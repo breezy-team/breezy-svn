@@ -17,8 +17,8 @@ from bzrlib import ui
 from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn.layout.standard import (
-        RootLayout,
         CustomLayout,
+        RootLayout,
         TrunkLayout,
         )
 

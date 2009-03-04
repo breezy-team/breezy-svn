@@ -15,6 +15,16 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Committing to Subversion repositories."""
 
+from cStringIO import StringIO
+import subvertpy
+from subvertpy import (
+    delta, 
+    properties, 
+    ERR_FS_TXN_OUT_OF_DATE,
+    NODE_DIR, 
+    SubversionException, 
+    )
+
 from bzrlib import (
     debug, 
     urlutils, 
@@ -33,18 +43,13 @@ from bzrlib.repository import (
     InterRepository, 
     Repository,
     )
-from bzrlib.revision import NULL_REVISION, ensure_null
-from bzrlib.trace import mutter, warning
-
-from cStringIO import StringIO
-
-import subvertpy
-from subvertpy import (
-    delta, 
-    properties, 
-    ERR_FS_TXN_OUT_OF_DATE,
-    NODE_DIR, 
-    SubversionException, 
+from bzrlib.revision import (
+    NULL_REVISION,
+    ensure_null,
+    )
+from bzrlib.trace import (
+    mutter,
+    warning,
     )
 
 from bzrlib.plugins.svn import mapping
