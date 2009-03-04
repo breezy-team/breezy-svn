@@ -131,10 +131,7 @@ def dpush(target, source, stop_revision=None):
             if graph.is_ancestor(stop_revision, target.last_revision()):
                 return { source.last_revision(): source.last_revision() }
             raise DivergedBranches(source, target)
-        todo = target.mainline_missing_revisions(source, stop_revision)
-        if todo is None:
-            # Not possible to add cleanly onto mainline, perhaps need a replace operation
-            todo = self.otherline_missing_revisions(other, stop_revision)
+        todo = target._missing_revisions(source.repository, stop_revision)
         if todo is None:
             raise DivergedBranches(self, other)
         revid_map = {}
@@ -345,14 +342,12 @@ class InterToSvnRepository(InterRepository):
             parent_revid = NULL_REVISION
 
         if parent_revid == NULL_REVISION:
-            bp = determine_branch_path(rev, layout, None)
             target_project = None
         else:
-            (uuid, bp, _), _ = self.target.lookup_revision_id(parent_revid)
-            (tp, target_project, _, ip) = layout.parse(bp)
-            if tp != 'branch' or ip != "":
-                bp = determine_branch_path(rev, layout, None)
-        target_config = BranchConfig(urlutils.join(self.target.base, bp) , self.target.uuid)
+            (_, bp, _), _ = self.target.lookup_revision_id(parent_revid)
+            (_, target_project, _, _) = layout.parse(bp)
+        bp = determine_branch_path(rev, layout, target_project)
+        target_config = BranchConfig(urlutils.join(self.target.base, bp), self.target.uuid)
         if (layout.push_merged_revisions(target_project) and 
             target_config.get_push_merged_revisions()):
             self.push_ancestors(layout, target_project, 

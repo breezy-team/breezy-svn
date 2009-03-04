@@ -341,7 +341,14 @@ class SvnBranch(ForeignBranch):
     def set_last_revision_info(self, revno, revid):
         """See Branch.set_last_revision_info()."""
 
-    def mainline_missing_revisions(self, other, stop_revision):
+    def _missing_revisions(self, other_repo, stop_revision, overwrite=False):
+        todo = self._mainline_missing_revisions(other_repo, stop_revision)
+        if todo is not None:
+            return todo
+        # Not possible to add cleanly onto mainline, perhaps need a replace operation
+        return self._otherline_missing_revisions(other_repo, stop_revision, overwrite)
+
+    def _mainline_missing_revisions(self, other_repo, stop_revision):
         """Find the revisions missing on the mainline.
         
         :param other: Other branch to retrieve revisions from.
@@ -349,14 +356,14 @@ class SvnBranch(ForeignBranch):
         """
         missing = []
         lastrevid = self.last_revision()
-        for revid in other.repository.iter_reverse_revision_history(stop_revision):
+        for revid in other_repo.iter_reverse_revision_history(stop_revision):
             if lastrevid == revid:
                 missing.reverse()
                 return missing
             missing.append(revid)
         return None
 
-    def otherline_missing_revisions(self, other, stop_revision, overwrite=False):
+    def _otherline_missing_revisions(self, other_repo, stop_revision, overwrite=False):
         """Find the revisions missing on the mainline.
         
         :param other: Other branch to retrieve revisions from.
@@ -364,7 +371,7 @@ class SvnBranch(ForeignBranch):
         :param overwrite: Whether or not the existing data should be overwritten
         """
         missing = []
-        for revid in other.repository.iter_reverse_revision_history(stop_revision):
+        for revid in other_repo.iter_reverse_revision_history(stop_revision):
             if self.repository.has_revision(revid, project=self.project):
                 missing.reverse()
                 return missing
@@ -434,6 +441,13 @@ class SvnBranch(ForeignBranch):
     def dpull(self, source, stop_revision=None):
         from bzrlib.plugins.svn.push import dpush
         return dpush(self, source, stop_revision)
+
+    def import_last_revision_info(self, source_repo, revno, revid):
+        interrepo = InterToSvnRepository(source_repo, self.repository)
+        todo = self._missing_revisions(source_repo, revid, overwrite=False)
+        if todo is None:
+            raise DivergedBranches(self, None)
+        interrepo.push_branch(todo, self.layout, self.project, self.get_branch_path(), self.get_config())
 
     def pull(self, source, overwrite=False, stop_revision=None, 
              _hook_master=None, run_hooks=True, _push_merged=None,
@@ -704,12 +718,7 @@ class InterOtherSvnBranch(InterBranch):
                 return
             if not overwrite:
                 raise DivergedBranches(self.target, self.source)
-        todo = self.target.mainline_missing_revisions(self.source, 
-            stop_revision)
-        if todo is None:
-            # Not possible to add cleanly onto mainline, perhaps need a replace operation
-            todo = self.target.otherline_missing_revisions(self.source,
-                stop_revision, overwrite)
+        todo = self.target._missing_revisions(self.source.repository, stop_revision, overwrite)
         if todo is None:
             raise DivergedBranches(self.target, self.source)
         if _push_merged is None:

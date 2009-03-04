@@ -186,7 +186,7 @@ class RootLayout(RepositoryLayout):
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
-        raise AssertionError("can't created branches in this layout")
+        return ""
 
     def parse(self, path):
         """Parse a path.

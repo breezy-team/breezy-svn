@@ -41,6 +41,8 @@ bzr-svn 0.5.3                   UNRELEASED
    * Print proper error when a part of the repository is inaccessible during 
      fetch. (#323084)
 
+   * Fix concurrent access problems during push/commit. (#248289)
+
   PERFORMANCE
 
    * Significant speed improvements when no (old) tags have to be fetched. Requires 
