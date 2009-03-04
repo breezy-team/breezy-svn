@@ -59,6 +59,14 @@ class SvnTexts(VersionedFiles):
     def add_mpdiffs(self, records):
         raise NotImplementedError(self.add_mpdiffs)
 
+    def _lookup_key(self, key):
+        (fileid, revid) = key
+        revmeta, mapping = self.repository._get_revmeta(revid)
+        map = self.repository.get_fileid_map(revmeta, mapping)
+        path = idmap_reverse_lookup(map, mapping, fileid)
+        return (urlutils.join(revmeta.branch_path, path).strip("/"),
+                revmeta.revnum)
+
     @convert_svn_error
     def get_record_stream(self, keys, ordering, include_delta_closure):
         warn_stacking_experimental()
@@ -71,13 +79,10 @@ class SvnTexts(VersionedFiles):
             if len(k) != 2:
                 yield AbsentContentFactory(k)
             else:
-                (fileid, revid) = k
-                revmeta, mapping = self.repository._get_revmeta(revid)
-                map = self.repository.get_fileid_map(revmeta, mapping)
-                path = idmap_reverse_lookup(map, mapping, fileid)
+                path, revnum = self._lookup_key(k)
                 try:
                     stream = StringIO()
-                    self.repository.transport.get_file(urlutils.join(revmeta.branch_path, path).strip("/"), stream, revmeta.revnum)
+                    self.repository.transport.get_file(path, stream, revnum)
                     stream.seek(0)
                     lines = stream.readlines()
                 except subvertpy.SubversionException, (_, num):
@@ -85,7 +90,7 @@ class SvnTexts(VersionedFiles):
                         lines = []
                     else:
                         raise
-                yield FulltextContentFactory((fileid, revid), None, 
+                yield FulltextContentFactory(k, None, 
                             sha1=osutils.sha_strings(lines),
                             text=''.join(lines))
 
@@ -133,11 +138,17 @@ class SvnTexts(VersionedFiles):
             if k == NULL_REVISION:
                 ret[k] = ()
             elif len(k) == 2: # We only know how to handle this
-                (fileid, revid) = k
-                ret[k] = self._get_parent(fileid, revid)
+                ret[k] = self._get_parent(*k)
             else:
                 ret[k] = None
         return ret
+
+    def annotate(self, key):
+        path, revnum = self._lookup_key(key)
+        def handler(path, rev, revprops):
+            pass #FIXME
+        self.repository.transport.get_file_revs(path, revnum, handler)
+        raise NotImplementedError(self.annotate)
 
     # TODO: annotate, get_sha1s, iter_lines_added_or_present_in_keys, keys
 
