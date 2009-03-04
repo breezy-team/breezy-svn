@@ -51,24 +51,28 @@ class RevisionSpec_svn(RevisionSpec):
     def _match_on_foreign(self, branch):
         ret = set()
         revnum = self._get_revnum()
-        graph = branch.repository.get_graph()
-        for revid, _ in graph.iter_ancestry([branch.last_revision()]):
-            try:
-                (found_uuid, found_branch_path, found_revnum), found_mapping = \
-                        mapping_registry.parse_revision_id(revid)
-                if found_revnum == revnum:
-                    ret.add(revid)
-            except InvalidRevisionId:
-                continue
-        if len(ret) == 1:
-            revid = ret.pop()
-            history = list(branch.repository.iter_reverse_revision_history(revid))
-            history.reverse()
-            return RevisionInfo.from_revision_id(branch, revid, history)
-        elif len(ret) == 0:
-            raise InvalidRevisionSpec(self.user_spec, branch)
-        else:
-            raise AmbiguousRevisionSpec(self.user_spec, branch)
+        branch.lock_read()
+        try:
+            graph = branch.repository.get_graph()
+            for revid, _ in graph.iter_ancestry([branch.last_revision()]):
+                try:
+                    (found_uuid, found_branch_path, found_revnum), found_mapping = \
+                            mapping_registry.parse_revision_id(revid)
+                    if found_revnum == revnum:
+                        ret.add(revid)
+                except InvalidRevisionId:
+                    continue
+            if len(ret) == 1:
+                revid = ret.pop()
+                history = list(branch.repository.iter_reverse_revision_history(revid))
+                history.reverse()
+                return RevisionInfo.from_revision_id(branch, revid, history)
+            elif len(ret) == 0:
+                raise InvalidRevisionSpec(self.user_spec, branch)
+            else:
+                raise AmbiguousRevisionSpec(self.user_spec, branch)
+        finally:
+            branch.unlock()
 
     def _match_on_native(self, branch):
         try:
