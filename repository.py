@@ -211,21 +211,6 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         mapping.check_fileprops(revmeta.get_changed_fileprops(), self)
         mapping.check_revprops(revmeta.get_revprops(), self)
 
-        # Check for inconsistencies in text file ids/revisions
-        text_revisions = revmeta.get_text_revisions(mapping)
-        text_parents = revmeta.get_text_parents(mapping)
-        text_ids = revmeta.get_fileid_overrides(mapping)
-        path_changes = revmeta.get_paths()
-        for path in set(text_ids.keys() + text_revisions.keys() + text_parents.keys()):
-            if (path in text_revisions and
-                text_revisions[path] in text_parents.get(path, [])):
-                self.text_revision_in_parents_cnt += 1
-            if not urlutils.join(revmeta.branch_path, path) in path_changes:
-                self.text_not_changed_cnt += 1
-
-        # TODO: Check that at the text parents exist in the text revisions 
-        # in one of this revisions parents
-
         # TODO: Check that stored revno matches actual revision number
 
         # Check all paths are under branch root
@@ -250,8 +235,23 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             expected_lhs_parent_revid = lhs_parent_revmeta.get_revision_id(lhs_parent_mapping)
             if revmeta.get_stored_lhs_parent_revid(mapping) not in (None, expected_lhs_parent_revid):
                 self.inconsistent_stored_lhs_parent += 1
+        self.check_texts(revmeta, mapping)
 
-
+    def check_texts(self, revmeta, mapping):
+        # Check for inconsistencies in text file ids/revisions
+        text_revisions = revmeta.get_text_revisions(mapping)
+        text_parents = revmeta.get_text_parents(mapping)
+        text_ids = revmeta.get_fileid_overrides(mapping)
+        path_changes = revmeta.get_paths()
+        for path in set(text_ids.keys() + text_revisions.keys() + text_parents.keys()):
+            if (path in text_revisions and
+                text_revisions[path] in text_parents.get(path, [])):
+                self.text_revision_in_parents_cnt += 1
+            full_path = urlutils.join(revmeta.branch_path, path)
+            if not full_path in path_changes:
+                self.text_not_changed_cnt += 1
+                continue
+            # TODO Check consistency against parent data 
 
 
 class SvnRepository(ForeignRepository):
