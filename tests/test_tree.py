@@ -140,6 +140,8 @@ class TestBasisTree(SubversionTestCase):
                          tree.inventory[tree.inventory.path2id("file")].symlink_target)
 
     def test_annotate_iter(self):
+        if subvertpy.__version__ < (0, 6, 5):
+            raise TestSkipped("Unable to run without subvertpy >= 0.6.4")
         repos_url = self.make_client("d", "dc")
 
         dc = self.get_commit_editor(repos_url)
@@ -151,8 +153,13 @@ class TestBasisTree(SubversionTestCase):
         dc.close()
 
         self.client_update('dc')
-        tree = SvnBasisTree(WorkingTree.open("dc"))
-        self.assertRaises(NotImplementedError, tree.annotate_iter, tree.path2id("file"))
+        wt = WorkingTree.open("dc")
+        tree = SvnBasisTree(wt)
+        repo = wt.branch.repository
+        self.assertEquals([
+            (repo.generate_revision_id(1, "", repo.get_mapping()), "x\n"),
+            (repo.generate_revision_id(2, "", repo.get_mapping()), "y\n")],
+            tree.annotate_iter(tree.path2id("file")))
 
     def test_executable_link(self):
         if not has_symlinks():
