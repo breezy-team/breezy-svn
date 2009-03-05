@@ -337,12 +337,11 @@ class RevisionMetadata(object):
                 _, lhs = original.revision_id_bzr_to_foreign(lhs_revid)
             except bzr_errors.InvalidRevisionId:
                 lhs = original
-            else:
-                if lhs.newer_than(original):
-                    lhs = original
         # Make sure original <= newest_allowed
         if original.newer_than(newest_allowed):
             original = newest_allowed
+        if lhs.newer_than(original):
+            lhs = original
         return (original, lhs)
 
     def get_original_mapping(self):

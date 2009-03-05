@@ -708,7 +708,7 @@ class SvnRepository(ForeignRepository):
             revnum, to_revnum=to_revnum, pb=pb, limit=limit)
         for revmeta in iter:
             (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(mapping)
-            assert not lhs_mapping.newer_than(mapping)
+            assert not lhs_mapping.newer_than(mapping), "LHS mapping %r newer than %r" % (lhs_mapping, mapping)
             revid = revmeta.get_revision_id(mapping)
             if (expected_revid is not None and
                 not revid in (None, expected_revid)):
