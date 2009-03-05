@@ -25,7 +25,6 @@ from bzrlib.errors import (
     )
 from bzrlib.lru_cache import LRUCache
 
-from bzrlib.plugins.svn import mapping3
 from bzrlib.plugins.svn.cache import CacheTable
 from bzrlib.plugins.svn.errors import (
     InvalidBzrSvnRevision,
@@ -109,7 +108,7 @@ class RevidMap(object):
             for ((entry_revno, entry_revid), mapping_name) in revids:
                 try:
                     mapping = mapping_registry.parse_mapping_name("svn-" + mapping_name)
-                except mapping3.scheme.UnknownBranchingScheme:
+                except KeyError:
                     pass
                 else:
                     yield (entry_revid, branch, 0, revno, mapping)

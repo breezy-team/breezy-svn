@@ -212,10 +212,10 @@ class InconsistentLHSParent(BzrError):
 
 
 class UnknownMapping(BzrError):
-    _fmt = """Attempt to use unknown mapping. """
+    _fmt = """Attempt to use unknown mapping. %(extra)s """
 
-    def __init__(self, mapping):
-        BzrError.__init__(self)
+    def __init__(self, mapping, extra=None):
+        BzrError.__init__(self, extra=(extra or ""))
         self.mapping = mapping
 
 

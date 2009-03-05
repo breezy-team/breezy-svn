@@ -35,7 +35,6 @@ from bzrlib.trace import mutter
 from bzrlib.plugins.svn import (
     errors,
     get_client_string,
-    mapping3,
     version_info,
     )
 
@@ -951,7 +950,10 @@ mapping_registry.set_default('v4')
 
 def find_mapping_revprops(revprops):
     if SVN_REVPROP_BZR_MAPPING_VERSION in revprops:
-        return mapping_registry.parse_mapping_name("svn-" + revprops[SVN_REVPROP_BZR_MAPPING_VERSION])
+        try:
+            return mapping_registry.parse_mapping_name("svn-" + revprops[SVN_REVPROP_BZR_MAPPING_VERSION])
+        except KeyError:
+            return None
     return None
 
 
@@ -967,7 +969,7 @@ def find_mappings_fileprops(changed_fileprops):
             else:
                 try:
                     mapping = mapping_registry.parse_mapping_name("svn-" + k[len(SVN_PROP_BZR_REVISION_ID):])
-                except mapping3.scheme.UnknownBranchingScheme:
+                except KeyError:
                     pass
                 else:
                     ret.append(mapping)

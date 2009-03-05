@@ -38,6 +38,7 @@ from bzrlib.plugins.svn.mapping3.scheme import (
     ListBranchingScheme,
     NoBranchingScheme,
     TrunkBranchingScheme,
+    UnknownBranchingScheme,
     guess_scheme_from_branch_path, 
     guess_scheme_from_history, 
     parse_list_scheme_text,
@@ -171,7 +172,10 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
     def __init__(self, scheme, guessed_scheme=None):
         mapping.BzrSvnMapping.__init__(self)
         if isinstance(scheme, str):
-            self.scheme = BranchingScheme.find_scheme(scheme)
+            try:
+                self.scheme = BranchingScheme.find_scheme(scheme)
+            except UnknownBranchingScheme, e:
+                raise errors.UnknownMapping(self, str(e))
         else:
             self.scheme = scheme
         self.guessed_scheme = guessed_scheme
