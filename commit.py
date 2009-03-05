@@ -61,7 +61,7 @@ from bzrlib.plugins.svn.errors import (
     RevpropChangeFailed, 
     )
 from bzrlib.plugins.svn.mapping import (
-    SVN_PROP_BZR_REVPROP_POINTLESS,
+    SVN_REVPROP_BZR_POINTLESS,
     )
 from bzrlib.plugins.svn.svk import (
     generate_svk_feature, 
@@ -750,7 +750,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                         self._changed_fileprops[prop] = (oldvalue, newvalue)
                 if (not self.modified_files and not self.visit_dirs and 
                     self._changed_fileprops == {} and self.push_metadata):
-                    prop = SVN_PROP_BZR_REVPROP_POINTLESS
+                    prop = SVN_REVPROP_BZR_POINTLESS
                     self._svnprops[prop] = "%d" % (int(self._svnprops.get(prop, "0"))+1)
                     self._changed_fileprops[prop] = (None, self._svnprops[prop])
 
