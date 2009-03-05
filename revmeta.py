@@ -18,11 +18,8 @@
 import bisect
 from collections import (
     defaultdict,
-    deque,
     )
-from functools import partial
 from itertools import (
-    ifilter,
     imap,
     )
 from subvertpy import (
