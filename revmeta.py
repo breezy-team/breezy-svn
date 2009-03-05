@@ -48,6 +48,7 @@ from bzrlib.plugins.svn import (
     util,
     )
 from bzrlib.plugins.svn.mapping import (
+    SVN_PROP_BZR_HIDDEN,
     SVN_PROP_BZR_REVPROP_REDIRECT,
     SVN_REVPROP_BZR_ROOT,
     SVN_REVPROP_BZR_SIGNATURE, 
@@ -456,7 +457,7 @@ class RevisionMetadata(object):
         return self._estimate_fileprop_ancestors("svk:merge", estimate_svk_ancestors)
 
     def estimate_bzr_hidden_fileprop_ancestors(self):
-        return self._estimate_fileprop_ancestors("bzr:hidden", estimate_bzr_ancestors)
+        return self._estimate_fileprop_ancestors(SVN_PROP_BZR_HIDDEN, estimate_bzr_ancestors)
 
     def is_changes_root(self):
         """Check whether this revisions root is the root of the changes 
