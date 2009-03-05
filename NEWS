@@ -45,6 +45,9 @@ bzr-svn 0.5.3                   UNRELEASED
 
    * Allow svn: revision specifier in non-svn branches. (#337295)
 
+   * Cope with v3 and v4 mappings being interwined in a mainline 
+     with roundtripped revisions. (#332364)
+
   PERFORMANCE
 
    * Significant speed improvements when no (old) tags have to be fetched. Requires 
