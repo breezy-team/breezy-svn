@@ -150,6 +150,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         self.multiple_mappings_cnt = 0
         self.inconsistent_fileprop_revprop_cnt = 0
         self.newer_mapping_parents = 0
+        self.ghost_revisions = set()
 
     def report_results(self, verbose):
         note('checked repository %s format %s',
@@ -184,6 +185,8 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         if self.newer_mapping_parents > 0:
             note('%6d revisions with newer mappings than their children',
                  self.newer_mapping_parents)
+        if len(self.ghost_revisions) > 0:
+            note('%6d ghost revisions', len(self.ghost_revisions))
 
     def check_revmeta(self, revmeta):
         self.checked_rev_cnt += 1
@@ -210,6 +213,10 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
 
         mapping.check_fileprops(revmeta.get_changed_fileprops(), self)
         mapping.check_revprops(revmeta.get_revprops(), self)
+
+        for parent_revid in revmeta.get_rhs_parents(mapping):
+            if not self.repository.has_revision(parent_revid):
+                self.ghost_revisions.add(parent_revid)
 
         # TODO: Check that stored revno matches actual revision number
 
