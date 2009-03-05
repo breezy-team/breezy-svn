@@ -1034,7 +1034,8 @@ class FetchRevisionFinder(object):
         self.extra.append((foreign_revid, project, mapping))
         while len(self.extra) > 0:
             foreign_revid, project, mapping = self.extra.pop()
-            self.needed.extend(self.find_mainline(foreign_revid, mapping, project, find_ghosts=find_ghosts, pb=pb))
+            self.needed.extend(self.find_mainline(foreign_revid, mapping, 
+                project, find_ghosts=find_ghosts, pb=pb))
 
 
 class InterFromSvnRepository(InterRepository):
