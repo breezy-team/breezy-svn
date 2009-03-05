@@ -660,8 +660,7 @@ class RevisionMetadata(object):
         # Check revprops if the last descendant has bzr:check-revprops set;
         #   if it has and the revnum there is < self.revnum
         if can_use_revprops and not self.knows_revprops() and self.consider_bzr_revprops():
-            if self.revnum > 0:
-                # revision 0 is not included by svn_ra_get_log()
+            if self._log._transport.has_capability("log-revprops") in (None, False):
                 warn_slow_revprops()
             revprops = self.get_revprops()
             if revprops_acceptable(revprops):
