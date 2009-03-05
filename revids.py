@@ -25,6 +25,7 @@ from bzrlib.errors import (
     )
 from bzrlib.lru_cache import LRUCache
 
+from bzrlib.plugins.svn import mapping3
 from bzrlib.plugins.svn.cache import CacheTable
 from bzrlib.plugins.svn.errors import (
     InvalidBzrSvnRevision,
@@ -106,7 +107,12 @@ class RevidMap(object):
             # If there are any new entries that are not yet in the cache, 
             # add them
             for ((entry_revno, entry_revid), mapping_name) in revids:
-                yield (entry_revid, branch, 0, revno, mapping_registry.parse_mapping_name("svn-" + mapping_name))
+                try:
+                    mapping = mapping_registry.parse_mapping_name("svn-" + mapping_name)
+                except mapping3.scheme.UnknownBranchingScheme:
+                    pass
+                else:
+                    yield (entry_revid, branch, 0, revno, mapping)
 
     def bisect_revid_revnum(self, revid, branch_path, min_revnum, max_revnum):
         """Find out what the actual revnum was that corresponds to a revid.
