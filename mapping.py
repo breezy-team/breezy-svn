@@ -69,6 +69,7 @@ SVN_REVPROP_BZR_BASE_REVISION = 'bzr:base-revision'
 SVN_REVPROP_BZR_SKIP = 'bzr:skip'
 SVN_REVPROP_BZR_HIDDEN = 'bzr:hidden'
 SVN_REVPROP_BZR_REPOS_UUID = 'bzr:repository-uuid'
+SVN_REVPROP_BZR_POINTLESS = 'bzr:pointless'
 
 
 def find_new_lines((oldvalue, newvalue)):
