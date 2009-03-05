@@ -1851,13 +1851,20 @@ Node-copyfrom-path: x
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.open_dir("trunk")
-        trunk.change_prop("bzr:revision-id:v4", "2 revid2\n")
+        trunk.change_prop("bzr:revision-id:v3-trunk0", "1 revid1\n"
+                                                       "2 revid2\n")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        trunk.change_prop("bzr:revision-id:v4", "3 revid3\n")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.open_dir("trunk")
         trunk.change_prop("bzr:revision-id:v3-trunk0", "1 revid1\n"
-                                                       "3 revid3\n")
+                                                       "2 revid2\n"
+                                                       "4 revid4\n")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -1873,12 +1880,12 @@ Node-copyfrom-path: x
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos, "revid3")
+        oldrepos.copy_content_into(newrepos, "revid4")
         from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3
         from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
-        revid2 = oldrepos.generate_revision_id(2, "trunk", 
+        revid3 = oldrepos.generate_revision_id(3, "trunk", 
                 BzrSvnMappingv3(TrunkBranchingScheme(0)))
-        self.assertEquals(set(["revid1", revid2, "revid3"]), 
+        self.assertEquals(set(["revid1", "revid2", revid3, "revid4"]), 
                 set(newrepos.all_revision_ids()))
 
     def test_fetch_intertwined_mappings_new(self):
@@ -1888,13 +1895,13 @@ Node-copyfrom-path: x
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
         from bzrlib.plugins.svn.mapping4 import BzrSvnMappingv4
-        revid4 = oldrepos.generate_revision_id(4, "trunk", BzrSvnMappingv4())
-        oldrepos.copy_content_into(newrepos, revid4)
+        revid5 = oldrepos.generate_revision_id(5, "trunk", BzrSvnMappingv4())
+        oldrepos.copy_content_into(newrepos, revid5)
         from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3
         from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
-        revid2 = oldrepos.generate_revision_id(2, "trunk", 
+        revid3 = oldrepos.generate_revision_id(3, "trunk", 
                 BzrSvnMappingv3(TrunkBranchingScheme(0)))
-        self.assertEquals(set(["revid1", revid2, "revid3", revid4]), 
+        self.assertEquals(set(["revid1", "revid2", revid3, "revid4", revid5]), 
                 set(newrepos.all_revision_ids()))
 
     def test_fetch_property_change_only(self):
