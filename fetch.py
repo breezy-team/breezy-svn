@@ -437,10 +437,10 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             (self._metadata_changed and self.path != u"") or 
             self.new_ie != self.editor.old_inventory[self.new_id] or
             self.old_path != self.path or 
-            self.editor._get_text_revid(self.path) is not None):
+            self.editor._get_text_revision(self.path) is not None):
             assert self.editor.revid is not None
 
-            self.new_ie.revision = self.editor._get_text_revid(self.path) or self.editor.revid
+            self.new_ie.revision = self.editor._get_text_revision(self.path) or self.editor.revid
             text_parents = self.editor._get_text_parents(self.path) or self.parent_revids
             self.editor.texts.add_lines(
                 (self.new_id, self.new_ie.revision),
@@ -570,11 +570,9 @@ class FileRevisionBuildEditor(FileBuildEditor):
         else:
             # Data didn't change or file is new
             lines = osutils.chunks_to_lines(self.file_data)
-
         actual_checksum = md5_strings(lines)
         assert checksum is None or checksum == actual_checksum
-
-        text_revision = (self.editor._get_text_revid(self.path) or
+        text_revision = (self.editor._get_text_revision(self.path) or
                          self.editor.revid)
         text_parents = self.editor._get_text_parents(self.path)
         if text_parents is None:
@@ -586,12 +584,16 @@ class FileRevisionBuildEditor(FileBuildEditor):
             if parent_text is not None:
                 parent_texts[parent_keys[0]] = parent_text
         file_key = (self.file_id, text_revision)
-        # add_lines_with_ghosts?
+        if self.editor.old_inventory.has_id(self.file_id) and self.editor.old_inventory[self.file_id].revision != parent_keys[0][1]:
+            raise AssertionError("Invalid file id text parent revision change for %s: changed from %s to %s" % (self.file_id, self.editor.old_inventory[self.file_id].revision, parent_keys[0][1]))
+        if ("check" in debug.debug_flags and len(parent_keys) != 0 and 
+            not self.editor.texts.has_key(parent_keys[0])):
+            raise AssertionError("base text %r for %r missing in %r" % (parent_keys[0], file_key, self.editor.revid))
         text_sha1, text_size, parent_content = self.editor.texts.add_lines(
             file_key, parent_keys, lines,
             parent_texts=parent_texts,
-            # random_id=True, # This avoids an index lookup, can we do it?
-            # check_content=False, # Can we assume we are always line-safe?
+            random_id=False, 
+            check_content=False, # Can we assume we are always line-safe?
             )
         self.editor._text_cache[file_key] = lines
         if parent_content is not None:
@@ -722,7 +724,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         new_ie = old_ie.copy()
         new_ie.file_id = self._get_new_id(path)
         new_ie.parent_id = self._get_new_id(urlutils.split(path)[0])
-        new_ie.revision = self._get_text_revid(path) or self.revid
+        new_ie.revision = self._get_text_revision(path) or self.revid
         # FIXME: Use self._text_cache
         record = self.texts.get_record_stream([(old_ie.file_id, old_ie.revision)], 
                                                 'unordered', True).next()
@@ -792,7 +794,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             return ret
         return self.mapping.generate_file_id(self.revmeta.get_foreign_revid(), new_path)
 
-    def _get_text_revid(self, path):
+    def _get_text_revision(self, path):
         assert isinstance(path, unicode)
         if self._text_revids is None:
             self._text_revids = self.revmeta.get_text_revisions(self.mapping)
