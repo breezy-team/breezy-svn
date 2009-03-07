@@ -22,14 +22,14 @@ import subvertpy
 import threading
 
 from bzrlib import (
-        branch,
-        errors as bzr_errors,
-        graph,
-        osutils,
-        ui,
-        urlutils,
-        xml6,
-        )
+    branch,
+    errors as bzr_errors,
+    graph,
+    osutils,
+    ui,
+    urlutils,
+    xml6,
+    )
 from bzrlib.foreign import ForeignRepository
 from bzrlib.inventory import Inventory
 from bzrlib.lockable_files import (
@@ -50,7 +50,10 @@ from bzrlib.transport import (
     Transport,
     get_transport,
     )
-from bzrlib.trace import info, note
+from bzrlib.trace import (
+    info,
+    note,
+    )
 
 from bzrlib.plugins.svn import (
     cache,

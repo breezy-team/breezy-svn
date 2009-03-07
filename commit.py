@@ -349,6 +349,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv,
             if new_base is not None:
                 child_base = new_base
                 child_base_path = new_base[0].id2path(child_ie.file_id).encode("utf-8")
+                assert isinstance(new_base[1], str)
                 copyfrom_url = url_join_unescaped_path(new_base[1], child_base_path)
                 copyfrom_revnum = new_base[2]
             else:
