@@ -46,13 +46,14 @@ from bzrlib.revision import (
     NULL_REVISION,
     ensure_null,
     )
+from bzrlib.trace import (
+    info,
+    mutter,
+    note,
+    )
 from bzrlib.transport import (
     Transport,
     get_transport,
-    )
-from bzrlib.trace import (
-    info,
-    note,
     )
 
 from bzrlib.plugins.svn import (
@@ -274,6 +275,10 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
                 self.text_revision_in_parents_cnt += 1
             full_path = urlutils.join(revmeta.branch_path, path)
             if not full_path in path_changes:
+                mutter('in %s text %r/%r (%r) id changed but not changed', 
+                       revmeta.get_revision_id(mapping),
+                       text_ids.get(path), text_revisions.get(path),
+                       text_parents.get(path))
                 self.text_not_changed_cnt += 1
                 continue
             # TODO Check consistency against parent data 
