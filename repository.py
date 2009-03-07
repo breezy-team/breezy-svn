@@ -161,6 +161,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         self.inconsistent_fileprop_revprop_cnt = 0
         self.newer_mapping_parents = 0
         self.ghost_revisions = set()
+        self.invalid_text_parents_len = 0
 
     def report_results(self, verbose):
         note('checked repository %s format %s',
@@ -197,6 +198,9 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
                  self.newer_mapping_parents)
         if len(self.ghost_revisions) > 0:
             note('%6d ghost revisions', len(self.ghost_revisions))
+        if self.invalid_text_parents_len > 0:
+            note('%6d text parents with invalid number',
+                self.invalid_text_parents_len)
 
     def check_revmeta(self, revmeta):
         self.checked_rev_cnt += 1
@@ -269,6 +273,9 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
                 self.text_not_changed_cnt += 1
                 continue
             # TODO Check consistency against parent data 
+        for path, tps in text_parents.iteritems():
+            if len(tps) > len(revmeta.get_parent_ids(mapping)):
+                self.invalid_text_parents_len += 1
 
 
 class SvnRepository(ForeignRepository):
