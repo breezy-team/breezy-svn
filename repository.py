@@ -162,6 +162,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         self.newer_mapping_parents = 0
         self.ghost_revisions = set()
         self.invalid_text_parents_len = 0
+        self.invalid_text_revisions = 0
 
     def report_results(self, verbose):
         note('checked repository %s format %s',
@@ -201,6 +202,8 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         if self.invalid_text_parents_len > 0:
             note('%6d text parents with invalid number',
                 self.invalid_text_parents_len)
+        if self.invalid_text_revisions > 0:
+            note('%6d invalid text revisions', self.invalid_text_revisions)
 
     def check_revmeta(self, revmeta):
         self.checked_rev_cnt += 1
@@ -263,6 +266,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         text_revisions = revmeta.get_text_revisions(mapping)
         text_parents = revmeta.get_text_parents(mapping)
         text_ids = revmeta.get_fileid_overrides(mapping)
+        fileid_map = self.repository.get_fileid_map(revmeta, mapping)
         path_changes = revmeta.get_paths()
         for path in set(text_ids.keys() + text_revisions.keys() + text_parents.keys()):
             if (path in text_revisions and
@@ -276,6 +280,31 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         for path, tps in text_parents.iteritems():
             if len(tps) > len(revmeta.get_parent_ids(mapping)):
                 self.invalid_text_parents_len += 1
+        ghost_parents = False
+        parent_revmetas = []
+        parent_mappings = []
+        parent_fileid_maps = []
+        for revid in revmeta.get_parent_ids(mapping):
+            try:
+                parent_revmeta, parent_mapping = self.repository._get_revmeta(revid)
+            except bzr_errors.NoSuchRevision:
+                ghost_parents = True
+            else:
+                parent_revmetas.append(parent_revmeta)
+                parent_mappings.append(parent_mapping)
+                parent_fileid_map = self.repository.get_fileid_map(parent_revmeta, parent_mapping)
+                parent_fileid_maps.append(parent_fileid_map)
+        for path, text_revision in text_revisions.iteritems():
+            # Every text revision either has to match the actual revision's 
+            # revision id (if it was last changed there) or the text revisions 
+            # in one of the parents.
+            fileid = idmap_lookup(fileid_map, mapping, path)[0]
+            parent_text_revisions = []
+            for parent_fileid_map, parent_mapping in zip(parent_fileid_maps, parent_mappings):
+                parent_text_revisions.append(idmap_reverse_lookup(parent_fileid_map, parent_mapping, fileid))
+            if (text_revision != revmeta.get_revision_id(mapping) and 
+                    not ghost_parents and not text_revision in parent_text_revisions):
+                self.invalid_text_revisions += 1
 
 
 class SvnRepository(ForeignRepository):
