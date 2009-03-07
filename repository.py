@@ -66,6 +66,13 @@ from bzrlib.plugins.svn import (
     )
 from bzrlib.plugins.svn.branchprops import PathPropertyProvider
 from bzrlib.plugins.svn.config import SvnRepositoryConfig
+from bzrlib.plugins.svn.fileids import (
+    CachingFileIdMap,
+    FileIdMap,
+    idmap_lookup,
+    idmap_reverse_lookup,
+    simple_apply_changes,
+    )
 from bzrlib.plugins.svn.layout.standard import WildcardLayout
 from bzrlib.plugins.svn.layout.guess import repository_guess_layout
 from bzrlib.plugins.svn.mapping import (
@@ -272,8 +279,6 @@ class SvnRepository(ForeignRepository):
     def __init__(self, bzrdir, transport, branch_path=None):
         from bzrlib.plugins.svn import lazy_register_optimizers
         lazy_register_optimizers()
-        from bzrlib.plugins.svn.fileids import (CachingFileIdMap, 
-                                                simple_apply_changes, FileIdMap)
         self.vcs = foreign_vcs_svn
         _revision_store = None
 
@@ -1141,7 +1146,8 @@ class SvnRepository(ForeignRepository):
         try:
             while len(unchecked_dirs) > 0:
                 if pb is not None:
-                    pb.update("listing branch contents", num_checked, num_checked+len(unchecked_dirs))
+                    pb.update("listing branch contents", num_checked, 
+                        num_checked+len(unchecked_dirs))
                 nextp = unchecked_dirs.pop()
                 num_checked += 1
                 try:
