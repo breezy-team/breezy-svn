@@ -17,7 +17,7 @@ upgrade the repository, run:
 
 ::
 
- $ bzr upgrade --rich-root-pack
+ $ bzr upgrade --1.9-rich-root
 
 Cloning a large Subversion branch is very slow
 ----------------------------------------------
@@ -45,14 +45,6 @@ numbers, use the "svn:" revision specifier. For example:
 
 bzr log will also show the Subversion revision number.
 
-After upgrading bzr-svn, Bazaar reports branches have diverged while pulling, when they haven't
------------------------------------------------------------------------------------------------
-As of version 0.4, bzr-svn creates revisions with different revision ids than 
-previous versions. In other words, existing bzr-svn branches created with 
-0.3.x can not be used directly with 0.4.0 but will have to be upgraded to 
-work with 0.4.0 using the "bzr svn-upgrade" command. The bzr-rebase package 
-has to be installed for this command to work correctly.
-
 Is it possible to keep the author name when pushing changes into Subversion?
 ----------------------------------------------------------------------------
 Yes, but this requires the repository to allow revision property changes. 
@@ -68,8 +60,8 @@ For example::
 
   override-svn-revprops = svn:log, svn:author
 
-I converted my Subversion repository using svn-import, but now all branches are empty!
---------------------------------------------------------------------------------------
+Converted a Subversion repository using svn-import leaves all branches empty
+----------------------------------------------------------------------------
 
 bzr-svn does not create working trees by default. If you need 
 the working trees, run "bzr checkout" in the branch or 
