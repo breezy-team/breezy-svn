@@ -28,8 +28,8 @@ def get_rich_root_format():
     if format.repository_format.rich_root_data:
         return format
     # Default format does not support rich root data, 
-    # fall back to 1.6-rich-root
-    format = format_registry.make_bzrdir('rich-root-pack')
+    # fall back to 1.9-rich-root
+    format = format_registry.make_bzrdir('1.9-rich-root')
     assert format.repository_format.rich_root_data
     return format
 
@@ -39,8 +39,8 @@ def get_nested_tree_format():
     if format.repository_format.supports_tree_reference:
         return format
     # Default format does not support rich root data, 
-    # fall back to pack-0.92-subtree
-    format = format_registry.make_bzrdir('pack-0.92-subtree')
+    # fall back to development-subtree
+    format = format_registry.make_bzrdir('development-subtree')
     assert format.repository_format.supports_tree_reference
     return format
 
