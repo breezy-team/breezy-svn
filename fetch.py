@@ -584,11 +584,6 @@ class FileRevisionBuildEditor(FileBuildEditor):
             if parent_text is not None:
                 parent_texts[parent_keys[0]] = parent_text
         file_key = (self.file_id, text_revision)
-        if self.editor.old_inventory.has_id(self.file_id) and self.editor.old_inventory[self.file_id].revision != parent_keys[0][1]:
-            raise AssertionError("Invalid file id text parent revision change for %s: changed from %s to %s" % (self.file_id, self.editor.old_inventory[self.file_id].revision, parent_keys[0][1]))
-        if ("check" in debug.debug_flags and len(parent_keys) != 0 and 
-            not self.editor.texts.has_key(parent_keys[0])):
-            raise AssertionError("base text %r for %r missing in %r" % (parent_keys[0], file_key, self.editor.revid))
         text_sha1, text_size, parent_content = self.editor.texts.add_lines(
             file_key, parent_keys, lines,
             parent_texts=parent_texts,
@@ -731,7 +726,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self.texts.insert_record_stream(
                 [FulltextContentFactory(
                     (new_ie.file_id, new_ie.revision),
-                    [], 
+                    [], # New file id, so no parents
                     record.sha1,
                     record.get_bytes_as('fulltext'))])
         self._inv_delta.append((None, path, new_ie.file_id, new_ie))
