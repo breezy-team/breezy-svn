@@ -43,6 +43,7 @@ from bzrlib import (
     )
 from bzrlib.errors import (
     NoSuchRevision,
+    VersionedFileInvalidChecksum,
     )
 from bzrlib.inventory import (
     Inventory, 
@@ -557,9 +558,8 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
     def _apply_textdelta(self, base_checksum=None):
         actual_checksum = md5_strings(self.file_data)
-        assert base_checksum is None or base_checksum == actual_checksum, \
-            "base checksum mismatch: %r != %r" % (base_checksum, 
-                                                  actual_checksum)
+        if base_checksum is not None and base_checksum != actual_checksum:
+            raise VersionedFileInvalidChecksum("base checksum mismatch: %r != %r" % (base_checksum, actual_checksum)
         self.file_stream = StringIO()
         return apply_txdelta_handler_chunks(self.file_data, self.file_stream)
 
