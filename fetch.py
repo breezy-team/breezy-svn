@@ -559,7 +559,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
     def _apply_textdelta(self, base_checksum=None):
         actual_checksum = md5_strings(self.file_data)
         if base_checksum is not None and base_checksum != actual_checksum:
-            raise VersionedFileInvalidChecksum("base checksum mismatch: %r != %r" % (base_checksum, actual_checksum)
+            raise VersionedFileInvalidChecksum("base checksum mismatch: %r != %r" % (base_checksum, actual_checksum))
         self.file_stream = StringIO()
         return apply_txdelta_handler_chunks(self.file_data, self.file_stream)
 
@@ -1192,7 +1192,7 @@ class InterFromSvnRepository(InterRepository):
             self.target.commit_write_group()
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False, 
-              needed=None, mapping=None):
+              needed=None, mapping=None, fetch_spec=None):
         """Fetch revisions. """
         if revision_id == NULL_REVISION:
             return
@@ -1216,13 +1216,17 @@ class InterFromSvnRepository(InterRepository):
                 revisionfinder = FetchRevisionFinder(self.source, self.target,
                                                      target_is_empty)
                 if needed is None:
-                    if revision_id is None:
-                        revisionfinder.find_all(self.source.get_mapping(), pb=nested_pb)
-                    else:
+                    if revision_id is not None:
                         foreign_revid, mapping = self.source.lookup_revision_id(revision_id)
-                        assert mapping is not None
                         revisionfinder.find_until(foreign_revid,
                             mapping, find_ghosts, pb=nested_pb)
+                    elif fetch_spec is not None:
+                        for head in fetch_spec.heads:
+                            foreign_revid, mapping = self.source.lookup_revision_id(head)
+                            revisionfinder.find_until(foreign_revid,
+                                mapping, find_ghosts, pb=nested_pb)
+                    else:
+                        revisionfinder.find_all(self.source.get_mapping(), pb=nested_pb)
                     needed = revisionfinder.get_missing()
             finally:
                 nested_pb.finished()
