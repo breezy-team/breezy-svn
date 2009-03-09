@@ -64,10 +64,10 @@ from bzrlib.plugins.svn.transport import (
     url_join_unescaped_path,
     )
 
-def find_push_base_revision(stop_revision):
+def find_push_base_revision(source, target, stop_revision):
     start_revid = stop_revision
     for revid in source.iter_reverse_revision_history(stop_revision):
-        if target_repository.has_revision(revid):
+        if target.has_revision(revid):
             break
         start_revid = revid
     return start_revid
@@ -89,7 +89,8 @@ def push_new(graph, target_repository, target_branch_path, source,
         pushed
     """
     assert isinstance(source, Repository)
-    start_revid = find_push_base_revision(stop_revision)
+    start_revid = find_push_base_revision(source, target_repository, 
+            stop_revision)
     rev = source.get_revision(start_revid)
     if rev.parent_ids == []:
         start_revid_parent = NULL_REVISION
