@@ -140,23 +140,16 @@ class SvnRemoteAccess(BzrDir):
         :param stop_revision: Tip of new branch
         :return: Branch object
         """
-        from bzrlib.plugins.svn.push import push_new
+        from bzrlib.plugins.svn.push import InterToSvnRepository
         source.lock_read()
         try:
             if stop_revision is None:
                 stop_revision = source.last_revision()
             target_branch_path = self.branch_path.strip("/")
             repos = self.find_repository()
-            repos.lock_write()
-            try:
-                if repos.transport.check_path(target_branch_path,
-                    repos.get_latest_revnum()) != subvertpy.NODE_NONE:
-                    raise AlreadyBranchError(target_branch_path)
-                push_new(source.repository.get_graph(), repos, target_branch_path, source.repository, stop_revision, 
-                         append_revisions_only=True, 
-                         override_svn_revprops=_override_svn_revprops)
-            finally:
-                repos.unlock()
+            inter = InterToSvnRepository(source.repository, repos)
+            inter.push_new_branch(target_branch_path, 
+                    stop_revision, override_svn_revprops=_override_svn_revprops)
             branch = self.open_branch()
             branch.lock_write()
             try:

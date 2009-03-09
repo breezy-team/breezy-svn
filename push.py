@@ -17,6 +17,7 @@
 
 from collections import defaultdict
 
+import subvertpy
 from subvertpy import (
     ERR_FS_TXN_OUT_OF_DATE,
     SubversionException,
@@ -29,6 +30,7 @@ from bzrlib import (
     urlutils,
     )
 from bzrlib.errors import (
+    AlreadyBranchError,
     BzrError,
     DivergedBranches,
     NoSuchRevision,
@@ -337,9 +339,12 @@ class InterToSvnRepository(InterRepository):
         self._foreign_info[revid][target_path] = foreign_info
         return revid, foreign_info
 
-    def push_new(self, target_branch_path, source, 
+    def push_new(self, target_branch_path, 
              stop_revision, push_metadata=True, append_revisions_only=False, 
              override_svn_revprops=None):
+        #TODO:
+        base_foreign_revid = None
+        base_mapping = None
         revid, foreign_info = push_new(self.get_graph(), self.target, 
                 target_branch_path, 
                 self.source, stop_revision=stop_revision, 
@@ -378,6 +383,15 @@ class InterToSvnRepository(InterRepository):
                         revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
                     create_branch_prefix(self.target, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
                     self.push_new(rhs_branch_path, x, append_revisions_only=False)
+
+    def push_new_branch(self, target_branch_path, stop_revision=None, 
+                        override_svn_revprops=None):
+        if self.target.transport.check_path(target_branch_path,
+            self.target.get_latest_revnum()) != subvertpy.NODE_NONE:
+            raise AlreadyBranchError(target_branch_path)
+        self.push_new(target_branch_path, stop_revision, 
+                 append_revisions_only=True, 
+                 override_svn_revprops=override_svn_revprops)
 
     def push_nonmainline_revision(self, rev, layout):
         mutter('pushing %r', rev.revision_id)
