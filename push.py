@@ -64,6 +64,14 @@ from bzrlib.plugins.svn.transport import (
     url_join_unescaped_path,
     )
 
+def find_push_base_revision(stop_revision):
+    start_revid = stop_revision
+    for revid in source.iter_reverse_revision_history(stop_revision):
+        if target_repository.has_revision(revid):
+            break
+        start_revid = revid
+    return start_revid
+
 
 def push_new(graph, target_repository, target_branch_path, source, 
              stop_revision, push_metadata=True, append_revisions_only=False, 
@@ -81,11 +89,7 @@ def push_new(graph, target_repository, target_branch_path, source,
         pushed
     """
     assert isinstance(source, Repository)
-    start_revid = stop_revision
-    for revid in source.iter_reverse_revision_history(stop_revision):
-        if target_repository.has_revision(revid):
-            break
-        start_revid = revid
+    start_revid = find_push_base_revision(stop_revision)
     rev = source.get_revision(start_revid)
     if rev.parent_ids == []:
         start_revid_parent = NULL_REVISION
@@ -253,7 +257,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
     return revid, (builder.result_foreign_revid, builder.mapping)
 
 
-def push(graph, target_repo, target_path, target_config, base_revid, source_repo, rev, push_metadata=True):
+def push(graph, target_repo, target_path, target_config, base_revid, source_repo, rev, push_metadata=True, base_foreign_revid=None, base_mapping=None):
     """Push a revision into Subversion.
 
     This will do a new commit in the target branch.
@@ -291,6 +295,14 @@ class InterToSvnRepository(InterRepository):
         # Dictionary: revid -> branch_path -> (foreign_revid, mapping)
         self._foreign_info = defaultdict(dict)
 
+    def _get_base_revision(self, revid, path):
+        if not revid in self._foreign_info:
+            return None, None
+        if path in self._foreign_info[revid]:
+            return self._foreign_info[revid][path]
+        else:
+            return self._foreign_info[revid].values()[0]
+
     @staticmethod
     def _get_repo_format_to_test():
         """See InterRepository._get_repo_format_to_test()."""
@@ -319,14 +331,14 @@ class InterToSvnRepository(InterRepository):
 
     def push(self, target_path, target_config, base_revid, rev, 
         push_metadata=True):
+        base_foreign_revid, base_mapping = self._get_base_revision(base_revid, target_path)
         revid, foreign_info = push(self.get_graph(), self.target, target_path, target_config, base_revid, self.source, rev, push_metadata=push_metadata)
         self._foreign_info[revid][target_path] = foreign_info
         return revid, foreign_info
 
     def push_new(self, target_branch_path, source, 
              stop_revision, push_metadata=True, append_revisions_only=False, 
-             override_svn_revprops=None, base_foreign_revid=None,
-             base_mapping=None):
+             override_svn_revprops=None):
         revid, foreign_info = push_new(self.get_graph(), self.target, 
                 target_branch_path, 
                 self.source, stop_revision=stop_revision, 
