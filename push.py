@@ -300,7 +300,7 @@ class InterToSvnRepository(InterRepository):
                     base_revid = rev.parent_ids[0]
                 else:
                     base_revid = NULL_REVISION
-                push(self._graph, self.target, target_branch, 
+                push(self.get_graph(), self.target, target_branch, 
                      target_config, base_revid, self.source, rev)
         finally:
             pb.finished()
@@ -316,14 +316,14 @@ class InterToSvnRepository(InterRepository):
         """
         for parent_revid in self.target.has_revisions(parent_revids[1:]):
             # Push merged revisions
-            unique_ancestors = self._graph.find_unique_ancestors(parent_revid, [parent_revids[0]])
-            for x in self._graph.iter_topo_order(unique_ancestors):
+            unique_ancestors = self.get_graph().find_unique_ancestors(parent_revid, [parent_revids[0]])
+            for x in self.get_graph().iter_topo_order(unique_ancestors):
                 if self.target.has_revision(x):
                     continue
                 rev = self.source.get_revision(x)
                 rhs_branch_path = determine_branch_path(rev, layout, project)
                 try:
-                    push_new(self._graph, self.target, rhs_branch_path, 
+                    push_new(self.get_graph(), self.target, rhs_branch_path, 
                              self.source, x, append_revisions_only=False)
                 except MissingPrefix, e:
                     if not create_prefix:
@@ -332,7 +332,7 @@ class InterToSvnRepository(InterRepository):
                     if self.target.transport.has_capability("commit-revprops"):
                         revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
                     create_branch_prefix(self.target, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
-                    push_new(self._graph, self.target, rhs_branch_path, self.source, x, append_revisions_only=False)
+                    push_new(self.get_graph(), self.target, rhs_branch_path, self.source, x, append_revisions_only=False)
 
     def push_nonmainline_revision(self, rev, layout):
         mutter('pushing %r', rev.revision_id)
@@ -352,17 +352,20 @@ class InterToSvnRepository(InterRepository):
             target_config.get_push_merged_revisions()):
             self.push_ancestors(layout, target_project, 
                 rev.parent_ids, create_prefix=True)
-        push_revision_tree(self._graph, self.target, 
+        push_revision_tree(self.get_graph(), self.target, 
             bp, target_config, 
             self.source, parent_revid, rev.revision_id, rev, 
             append_revisions_only=target_config.get_append_revisions_only())
+
+    def get_graph(self):
+        if self._graph is None:
+            self._graph = self.source.get_graph(self.target)
+        return self._graph
 
     def copy_content(self, revision_id=None, pb=None):
         """See InterRepository.copy_content."""
         self.source.lock_read()
         try:
-            if self._graph is None:
-                self._graph = self.source.get_graph(self.target)
             assert revision_id is not None, "fetching all revisions not supported"
             # Go back over the LHS parent until we reach a revid we know
             todo = []
