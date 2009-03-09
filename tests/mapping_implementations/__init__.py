@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib.tests import multiply_tests_from_modules
+from bzrlib.tests import multiply_tests
 from bzrlib.plugins.svn.mapping import mapping_registry
 
 def load_tests(basic_tests, module, loader):
@@ -24,7 +24,5 @@ def load_tests(basic_tests, module, loader):
     format_scenarios = []
     for name in mapping_registry.keys():
         format_scenarios.append((name, {'mapping_name': name}))
-    result.addTests(multiply_tests_from_modules(module_name_list,
-                                                format_scenarios,
-                                                loader))
+    multiply_tests(loader.loadTestsFromModuleNames(module_name_list), format_scenarios, result)
     return result
