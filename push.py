@@ -63,9 +63,10 @@ from bzrlib.plugins.svn.transport import (
     )
 
 
-def push_new(graph, target_repository, target_branch_path, source, stop_revision,
-             push_metadata=True, append_revisions_only=False, 
-             override_svn_revprops=None):
+def push_new(graph, target_repository, target_branch_path, source, 
+             stop_revision, push_metadata=True, append_revisions_only=False, 
+             override_svn_revprops=None, base_foreign_revid=None,
+             base_mapping=None):
     """Push a revision into Subversion, creating a new branch.
 
     This will do a new commit in the target branch.
@@ -102,12 +103,14 @@ def push_new(graph, target_repository, target_branch_path, source, stop_revision
             target_branch_path, revid, set_metadata=True, deletefirst=None)
     else:
         return push_revision_tree(graph, target_repository, target_branch_path, 
-                              BranchConfig(urlutils.join(target_repository.base, target_branch_path),
-                                  target_repository.uuid), 
-                              source, start_revid_parent, start_revid, 
-                              rev, push_metadata=push_metadata,
-                              append_revisions_only=append_revisions_only,
-                              override_svn_revprops=override_svn_revprops)
+            BranchConfig(
+                urlutils.join(target_repository.base, target_branch_path), 
+                target_repository.uuid), 
+            source, start_revid_parent, start_revid, 
+            rev, push_metadata=push_metadata,
+            append_revisions_only=append_revisions_only,
+            override_svn_revprops=override_svn_revprops, 
+            base_foreign_revid=base_foreign_revid, base_mapping=base_mapping)
 
 
 def dpush(target, source, stop_revision=None):
@@ -151,7 +154,7 @@ def dpush(target, source, stop_revision=None):
                     base_revid = revid_map[rev.parent_ids[0]]
                 else:
                     base_revid = rev.parent_ids[0]
-                revid_map[rev.revision_id] = push(graph, target.repository,
+                revid_map[rev.revision_id], _ = push(graph, target.repository,
                         target_branch_path, target_config, base_revid, 
                         source.repository, rev, push_metadata=False)
         finally:
@@ -263,15 +266,16 @@ def push(graph, target_repo, target_path, target_config, base_revid, source_repo
 
     source_repo.lock_read()
     try:
-        revid = push_revision_tree(graph, target_repo, target_path, target_config, 
-                                   source_repo, base_revid, rev.revision_id, 
-                                   rev, push_metadata=push_metadata,
-                                   append_revisions_only=target_config.get_append_revisions_only(),
-                                   override_svn_revprops=target_config.get_override_svn_revprops())
+        revid, foreign_revid = push_revision_tree(graph, target_repo, target_path, 
+            target_config, source_repo, base_revid, rev.revision_id, rev, 
+            push_metadata=push_metadata, 
+            append_revisions_only=target_config.get_append_revisions_only(), 
+            override_svn_revprops=target_config.get_override_svn_revprops(),
+            base_foreign_revid=base_foreign_revid, base_mapping=base_mapping)
     finally:
         source_repo.unlock()
     assert revid == rev.revision_id or not push_metadata
-    return revid
+    return revid, foreign_revid
 
 
 class InterToSvnRepository(InterRepository):
@@ -305,10 +309,27 @@ class InterToSvnRepository(InterRepository):
                     base_revid = rev.parent_ids[0]
                 else:
                     base_revid = NULL_REVISION
-                push(self.get_graph(), self.target, target_branch, 
-                     target_config, base_revid, self.source, rev)
+                self.push(target_branch, target_config, base_revid, rev)
         finally:
             pb.finished()
+
+    def push(self, target_path, target_config, base_revid, rev, 
+        push_metadata=True):
+        revid, foreign_revid = push(self.get_graph(), self.target, target_path, target_config, base_revid, self.source, rev, push_metadata=push_metadata)
+        return revid, foreign_revid
+
+    def push_new(self, target_branch_path, source, 
+             stop_revision, push_metadata=True, append_revisions_only=False, 
+             override_svn_revprops=None, base_foreign_revid=None,
+             base_mapping=None):
+        revid, foreign_revid = push_new(self.get_graph(), self.target, 
+                target_branch_path, 
+                self.source, stop_revision=stop_revision, 
+                push_metadata=push_metadata, 
+                append_revisions_only=append_revisions_only,
+                base_foreign_revid=base_foreign_revid, 
+                base_mapping=base_mapping)
+        return revid, foreign_revid
 
     def push_ancestors(self, layout, project, parent_revids, 
                        create_prefix=False):
@@ -328,8 +349,8 @@ class InterToSvnRepository(InterRepository):
                 rev = self.source.get_revision(x)
                 rhs_branch_path = determine_branch_path(rev, layout, project)
                 try:
-                    push_new(self.get_graph(), self.target, rhs_branch_path, 
-                             self.source, x, append_revisions_only=False)
+                    self.push_new(rhs_branch_path, 
+                             x, append_revisions_only=False)
                 except MissingPrefix, e:
                     if not create_prefix:
                         raise
@@ -337,7 +358,7 @@ class InterToSvnRepository(InterRepository):
                     if self.target.transport.has_capability("commit-revprops"):
                         revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
                     create_branch_prefix(self.target, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
-                    push_new(self.get_graph(), self.target, rhs_branch_path, self.source, x, append_revisions_only=False)
+                    self.push_new(rhs_branch_path, x, append_revisions_only=False)
 
     def push_nonmainline_revision(self, rev, layout):
         mutter('pushing %r', rev.revision_id)
@@ -357,7 +378,7 @@ class InterToSvnRepository(InterRepository):
             target_config.get_push_merged_revisions()):
             self.push_ancestors(layout, target_project, 
                 rev.parent_ids, create_prefix=True)
-        push_revision_tree(self.get_graph(), self.target, 
+        return push_revision_tree(self.get_graph(), self.target, 
             bp, target_config, 
             self.source, parent_revid, rev.revision_id, rev, 
             append_revisions_only=target_config.get_append_revisions_only())
