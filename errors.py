@@ -231,3 +231,10 @@ class AmbiguousRevisionSpec(InvalidRevisionSpec):
 
     def __init__(self, revspec, branch):
         BzrError.__init__(self, revspec=revspec, branch=branch)
+
+
+class NoCustomBranchPaths(BzrError):
+    _fmt = """Layout %(layout)r does not support custom branch paths."""
+
+    def __init__(self, layout=None):
+        BzrError.__init__(self, layout=layout)

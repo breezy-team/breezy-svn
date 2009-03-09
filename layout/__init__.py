@@ -25,7 +25,7 @@ from bzrlib import (
     )
 from bzrlib.trace import mutter
 
-from bzrlib.plugins.svn.errors import NotSvnBranchPath
+from bzrlib.plugins.svn.errors import NotSvnBranchPath, NoCustomBranchPaths
 
 class RepositoryLayout(object):
     """Describes a repository layout."""
@@ -71,7 +71,7 @@ class RepositoryLayout(object):
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
-        raise NotImplementedError
+        raise NoCustomBranchPaths(self)
 
     def parse(self, path):
         """Parse a path.

@@ -264,7 +264,7 @@ class CustomLayout(RepositoryLayout):
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
-        raise NotImplementedError
+        raise svn_errors.NoCustomBranchPaths(self)
 
     def parse(self, path):
         """Parse a path.
@@ -350,7 +350,7 @@ class WildcardLayout(RepositoryLayout):
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
-        raise NotImplementedError
+        raise svn_errors.NoCustomBranchPaths(self)
 
     def is_branch(self, path, project=None):
         for bp in self.branches:

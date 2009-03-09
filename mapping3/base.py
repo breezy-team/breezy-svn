@@ -80,7 +80,10 @@ class SchemeDerivedLayout(RepositoryLayout):
         return self.scheme.get_tag_path(name, project)
 
     def get_branch_path(self, name, project=""):
-        return self.scheme.get_branch_path(name, project)
+        try:
+            return self.scheme.get_branch_path(name, project)
+        except NotImplementedError:
+            raise NoCustomBranchPaths(self)
 
     def is_branch_parent(self, path, project=None):
         # Na, na, na...
