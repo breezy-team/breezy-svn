@@ -74,6 +74,8 @@ def push_new(graph, target_repository, target_branch_path, source, stop_revision
     :param target_repository: Repository to push to
     :param target_branch_path: Path to create new branch at
     :param source: Source repository
+    :return: Revision id of the pushed revision, foreign revision id that was 
+        pushed
     """
     assert isinstance(source, Repository)
     start_revid = stop_revision
@@ -96,9 +98,8 @@ def push_new(graph, target_repository, target_branch_path, source, stop_revision
             revid = start_revid
         else:
             revid = start_revid_parent
-        create_branch_with_hidden_commit(target_repository, target_branch_path,
-                                         revid, set_metadata=True, 
-                                         deletefirst=None)
+        return create_branch_with_hidden_commit(target_repository, 
+            target_branch_path, revid, set_metadata=True, deletefirst=None)
     else:
         return push_revision_tree(graph, target_repository, target_branch_path, 
                               BranchConfig(urlutils.join(target_repository.base, target_branch_path),
@@ -179,10 +180,12 @@ def replay_delta(builder, old_trees, new_tree):
     builder.finish_inventory()
 
 
-def push_revision_tree(graph, target_repo, branch_path, config, source_repo, base_revid, 
-                       revision_id, rev, push_metadata=True,
+def push_revision_tree(graph, target_repo, branch_path, config, source_repo, 
+                       base_revid, revision_id, rev, push_metadata=True,
                        append_revisions_only=True,
-                       override_svn_revprops=None):
+                       override_svn_revprops=None,
+                       base_foreign_revid=None,
+                       base_mapping=None):
     """Push a revision tree into a target repository.
 
     :param graph: Repository graph.
@@ -223,7 +226,9 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo, bas
                                graph=graph, opt_signature=opt_signature,
                                texts=source_repo.texts,
                                append_revisions_only=append_revisions_only,
-                               override_svn_revprops=override_svn_revprops)
+                               override_svn_revprops=override_svn_revprops,
+                               base_foreign_revid=base_foreign_revid,
+                               base_mapping=base_mapping)
     parent_trees = [base_tree]
     for p in rev.parent_ids[1:]:
         try:
@@ -240,7 +245,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo, bas
     except ChangesRootLHSHistory:
         raise BzrError("Unable to push revision %r because it would change the ordering of existing revisions on the Subversion repository root. Use rebase and try again or push to a non-root path" % revision_id)
 
-    return revid
+    return revid, builder.result_foreign_revid
 
 
 def push(graph, target_repo, target_path, target_config, base_revid, source_repo, rev, push_metadata=True):
@@ -459,6 +464,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
     :param branch_path: Branch path
     :param revid: Revision id to keep as tip.
     :param deletefirst: Whether to delete an existing branch at this location first.
+    :return: Revision id that was pushed and the related foreign revision id.
     """
     revprops = {properties.PROP_REVISION_LOG: "Create new branch."}
     revmeta, mapping = repository._get_revmeta(revid)
@@ -485,10 +491,15 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
 
     if deletefirst is None:
         deletefirst = (bp_parts == existing_bp_parts)
+    
+    foreign_revid = [repository.uuid, branch_path]
+
+    def done(revno, *args):
+        foreign_revid.append(revno)
 
     conn = repository.transport.get_connection(parent)
     try:
-        ci = convert_svn_error(conn.get_commit_editor)(revprops)
+        ci = convert_svn_error(conn.get_commit_editor)(revprops, done)
         try:
             root = ci.open_root()
             if deletefirst:
@@ -503,5 +514,6 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
             ci.abort()
             raise
         ci.close()
+        return revid, tuple(foreign_revid)
     finally:
         repository.transport.add_connection(conn)

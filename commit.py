@@ -782,6 +782,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             lock.unlock()
 
         (result_revision, result_date, result_author) = self.revision_metadata
+        self.result_foreign_revid = (self.repository.uuid, self.branch_path, result_revision)
         
         self._svn_revprops[properties.PROP_REVISION_AUTHOR] = result_author
         self._svn_revprops[properties.PROP_REVISION_DATE] = result_date
