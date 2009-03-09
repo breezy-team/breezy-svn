@@ -458,7 +458,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self.base_mapping = repository.get_mapping()
         else:
             if base_foreign_revid is None or base_mapping is None:
-                base_foreign_revid, selfase_mapping = \
+                base_foreign_revid, base_mapping = \
                     repository.lookup_revision_id(self.base_revid)
             (uuid, self.base_path, self.base_revnum) = base_foreign_revid
             self.base_mapping = base_mapping

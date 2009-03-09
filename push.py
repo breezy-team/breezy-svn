@@ -15,6 +15,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Pushing to Subversion repositories."""
 
+from collections import defaultdict
+
 from subvertpy import (
     ERR_FS_TXN_OUT_OF_DATE,
     SubversionException,
@@ -248,7 +250,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
     except ChangesRootLHSHistory:
         raise BzrError("Unable to push revision %r because it would change the ordering of existing revisions on the Subversion repository root. Use rebase and try again or push to a non-root path" % revision_id)
 
-    return revid, builder.result_foreign_revid
+    return revid, (builder.result_foreign_revid, builder.mapping)
 
 
 def push(graph, target_repo, target_path, target_config, base_revid, source_repo, rev, push_metadata=True):
@@ -286,6 +288,8 @@ class InterToSvnRepository(InterRepository):
     def __init__(self, source, target, graph=None):
         InterRepository.__init__(self, source, target)
         self._graph = graph
+        # Dictionary: revid -> branch_path -> (foreign_revid, mapping)
+        self._foreign_info = defaultdict(dict)
 
     @staticmethod
     def _get_repo_format_to_test():
@@ -315,21 +319,23 @@ class InterToSvnRepository(InterRepository):
 
     def push(self, target_path, target_config, base_revid, rev, 
         push_metadata=True):
-        revid, foreign_revid = push(self.get_graph(), self.target, target_path, target_config, base_revid, self.source, rev, push_metadata=push_metadata)
-        return revid, foreign_revid
+        revid, foreign_info = push(self.get_graph(), self.target, target_path, target_config, base_revid, self.source, rev, push_metadata=push_metadata)
+        self._foreign_info[revid][target_path] = foreign_info
+        return revid, foreign_info
 
     def push_new(self, target_branch_path, source, 
              stop_revision, push_metadata=True, append_revisions_only=False, 
              override_svn_revprops=None, base_foreign_revid=None,
              base_mapping=None):
-        revid, foreign_revid = push_new(self.get_graph(), self.target, 
+        revid, foreign_info = push_new(self.get_graph(), self.target, 
                 target_branch_path, 
                 self.source, stop_revision=stop_revision, 
                 push_metadata=push_metadata, 
                 append_revisions_only=append_revisions_only,
                 base_foreign_revid=base_foreign_revid, 
                 base_mapping=base_mapping)
-        return revid, foreign_revid
+        self._foreign_info[stop_revision][target_branch_path] = foreign_info
+        return revid, foreign_info
 
     def push_ancestors(self, layout, project, parent_revids, 
                        create_prefix=False):
@@ -535,6 +541,6 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
             ci.abort()
             raise
         ci.close()
-        return revid, tuple(foreign_revid)
+        return revid, (tuple(foreign_revid), mapping)
     finally:
         repository.transport.add_connection(conn)
