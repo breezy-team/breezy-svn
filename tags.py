@@ -259,7 +259,7 @@ class SubversionTags(BasicTags):
         """
         if self.branch == to_tags.branch:
             return
-        if not self.supports_tags():
+        if not self.branch.supports_tags():
             # obviously nothing to copy
             return
         tag_revmetas = self._get_tag_dict_revmeta(_from_revnum, _to_revnum)

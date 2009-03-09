@@ -66,6 +66,7 @@ from bzrlib.plugins.svn import (
 from bzrlib.plugins.svn.push import (
     InterToSvnRepository,
     create_branch_with_hidden_commit,
+    dpush,
     push,
     )
 from bzrlib.plugins.svn.config import (
@@ -158,12 +159,6 @@ class SvnBranch(ForeignBranch):
         return (self._format.supports_tags() and 
                 self.mapping.supports_tags() and
                 self.layout.supports_tags())
-
-    def _make_tags(self):
-        if self.supports_tags():
-            return SubversionTags(self)
-        else:
-            return tag.DisabledTags(self)
 
     def set_branch_path(self, branch_path):
         """Change the branch path for this branch.
@@ -439,7 +434,6 @@ class SvnBranch(ForeignBranch):
 
     @needs_write_lock
     def dpull(self, source, stop_revision=None):
-        from bzrlib.plugins.svn.push import dpush
         return dpush(self, source, stop_revision)
 
     def import_last_revision_info(self, source_repo, revno, revid):
@@ -601,6 +595,12 @@ class SvnBranchFormat(BranchFormat):
 
     def supports_tags(self):
         return True
+
+    def make_tags(self, branch):
+        if branch.supports_tags():
+            return SubversionTags(branch)
+        else:
+            return tag.DisabledTags(branch)
 
 
 class InterSvnOtherBranch(InterBranch):
