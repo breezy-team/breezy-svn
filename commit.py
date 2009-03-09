@@ -403,7 +403,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                  timezone, committer, revprops, revision_id, old_inv=None,
                  push_metadata=True, graph=None, opt_signature=None,
                  texts=None, append_revisions_only=True, 
-                 override_svn_revprops=None):
+                 override_svn_revprops=None, base_foreign_revid=None,
+                 base_mapping=None):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -451,10 +452,16 @@ class SvnCommitBuilder(RootCommitBuilder):
             self.base_revnum = -1
             self.base_path = None
             self.base_url = None
-            self.base_mapping = repository.get_mapping()
+            if base_mapping is not None:
+                self.base_mapping = base_mapping
+            else:
+                self.base_mapping = repository.get_mapping()
         else:
-            (uuid, self.base_path, self.base_revnum), self.base_mapping = \
-                repository.lookup_revision_id(self.base_revid)
+            if base_foreign_revid is None or base_mapping is None:
+                base_foreign_revid, selfase_mapping = \
+                    repository.lookup_revision_id(self.base_revid)
+            (uuid, self.base_path, self.base_revnum) = base_foreign_revid
+            self.base_mapping = base_mapping
             self._base_revmeta = self.repository._revmeta_provider.lookup_revision(self.base_path, self.base_revnum)
             self._base_branch_props = self._base_revmeta.get_fileprops()
             self.base_url = urlutils.join(self.repository.transport.svn_url, self.base_path)
