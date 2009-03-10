@@ -8,7 +8,7 @@ import os, sys
 setup(name='bzr-svn',
       description='Support for Subversion branches in Bazaar',
       keywords='plugin bzr svn',
-      version='0.5.3',
+      version='0.5.4',
       url='http://bazaar-vcs.org/BzrForeignBranches/Subversion',
       download_url='http://bazaar-vcs.org/BzrSvn',
       license='GPL',
