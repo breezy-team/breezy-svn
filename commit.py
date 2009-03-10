@@ -210,14 +210,16 @@ def file_editor_send_changes(file_id, contents, file_editor):
 
 
 
-def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv, path, file_id, dir_editor,
-                            branch_path, modified_files, visit_dirs):
+def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, 
+    new_inv, path, file_id, dir_editor, branch_path, modified_files, 
+    visit_dirs):
     """Pass the changes to a directory to the commit editor.
 
     :param path: Path (from repository root) to the directory.
     :param file_id: File id of the directory
     :param dir_editor: Subversion DirEditor object.
     """
+    changed = False
     def mutter(text, *args):
         if 'commit' in debug.debug_flags:
             trace.mutter(text, *args)
@@ -249,6 +251,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv,
                 dir_editor.delete_entry(
                     branch_relative_path(path, child_name.encode("utf-8")), 
                     base_revnum)
+                changed = True
 
     # Loop over file children of file_id in new_inv
     for child_name in new_inv[file_id].children:
@@ -279,7 +282,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv,
 
             child_editor = dir_editor.add_file(full_new_child_path,
                         copyfrom_url, copyfrom_revnum)
-
+            changed = True
         # copy if they existed at different location
         elif (base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
                 base_inv[child_ie.file_id].parent_id != child_ie.parent_id):
@@ -289,14 +292,13 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv,
             child_editor = dir_editor.add_file(full_new_child_path, 
                 url_join_unescaped_path(base_url, base_inv.id2path(child_ie.file_id).encode("utf-8")),
                 base_revnum)
-
+            changed = True
         # open if they existed at the same location
         elif child_ie.file_id in modified_files:
             mutter('open %s %r', child_ie.kind, new_child_path)
 
             child_editor = dir_editor.open_file(
                     full_new_child_path, base_revnum)
-
         else:
             # Old copy of the file was retained. No need to send changes
             child_editor = None
@@ -315,6 +317,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv,
                 else:
                     value = None
                 child_editor.change_prop(properties.PROP_EXECUTABLE, value)
+                changed = True
 
             if old_special != (child_ie.kind == 'symlink'):
                 if child_ie.kind == 'symlink':
@@ -322,9 +325,11 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv,
                 else:
                     value = None
                 child_editor.change_prop(properties.PROP_SPECIAL, value)
+                changed = True
 
         # handle the file
         if child_ie.file_id in modified_files:
+            changed = True
             file_editor_send_changes(child_ie.file_id, 
                 modified_files[child_ie.file_id](child_ie), child_editor)
 
@@ -360,7 +365,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv,
 
             child_editor = dir_editor.add_directory(
                 branch_relative_path(new_child_path), copyfrom_url, copyfrom_revnum)
-
+            changed = True
         # copy if they existed at different location
         elif base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or base_inv[child_ie.file_id].parent_id != child_ie.parent_id:
             old_child_path = base_inv.id2path(child_ie.file_id).encode("utf-8")
@@ -371,7 +376,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv,
             child_editor = dir_editor.add_directory(
                 branch_relative_path(new_child_path),
                 copyfrom_url, copyfrom_revnum)
-
+            changed = True
             child_base = (base_inv, base_url, base_revnum)
         # open if they existed at the same location and 
         # the directory was touched
@@ -387,13 +392,15 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, new_inv,
             continue
 
         # Handle this directory
-        dir_editor_send_changes(child_base, parents,
+        changed = dir_editor_send_changes(child_base, parents,
                             new_inv, new_child_path, 
                             child_ie.file_id, child_editor, 
                             branch_path, modified_files, 
-                            visit_dirs)
+                            visit_dirs) or changed
 
         child_editor.close()
+
+    return changed
 
 
 class SvnCommitBuilder(RootCommitBuilder):
@@ -742,7 +749,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                     existing_bp_parts, self.base_url, self.base_revnum, root_from,
                     replace_existing)
 
-                dir_editor_send_changes((self.old_inv, self.base_url, self.base_revnum), 
+                changed = dir_editor_send_changes(
+                        (self.old_inv, self.base_url, self.base_revnum), 
                         self._get_parents_tuples(),
                         self.new_inventory, 
                         "", self.new_inventory.root.file_id, branch_editors[-1],
@@ -756,7 +764,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                         if oldvalue == newvalue:
                             continue
                         self._changed_fileprops[prop] = (oldvalue, newvalue)
-                if (not self.modified_files and not self.visit_dirs and 
+                if (not self.modified_files and not changed and 
                     self._changed_fileprops == {} and self.push_metadata):
                     prop = SVN_REVPROP_BZR_POINTLESS
                     self._svnprops[prop] = "%d" % (int(self._svnprops.get(prop, "0"))+1)

@@ -30,7 +30,10 @@ from bzrlib.errors import (
     )
 from bzrlib.trace import warning
 
-from bzrlib.plugins.svn.errors import NoSvnRepositoryPresent
+from bzrlib.plugins.svn.errors import (
+    NoSvnRepositoryPresent,
+    NotSvnBranchPath,
+    )
 from bzrlib.plugins.svn.format import SvnRemoteFormat
 from bzrlib.plugins.svn.repository import SvnRepository
 from bzrlib.plugins.svn.transport import (
@@ -148,18 +151,19 @@ class SvnRemoteAccess(BzrDir):
             target_branch_path = self.branch_path.strip("/")
             repos = self.find_repository()
             inter = InterToSvnRepository(source.repository, repos)
-            inter.push_new_branch(target_branch_path, 
-                    stop_revision, override_svn_revprops=_override_svn_revprops)
-            branch = self.open_branch()
-            branch.lock_write()
+            layout = repos.get_layout()
             try:
-                branch.pull(source, stop_revision=stop_revision, 
-                            _push_merged=_push_merged, _override_svn_revprops=_override_svn_revprops)
-            finally:
-                branch.unlock()
+                (type, project, _, ip) = layout.parse(target_branch_path)
+            except NotSvnBranchPath:
+                raise NotBranchError(branch_path)
+            if type not in ('branch', 'tag') or ip != '':
+                raise NotBranchError(branch_path)
+            inter.push_new_branch(layout, project, target_branch_path, 
+                    stop_revision, override_svn_revprops=_override_svn_revprops,
+                    push_merged=_push_merged)
+            return self.open_branch()
         finally:
             source.unlock()
-        return branch
 
     def create_branch(self):
         """See BzrDir.create_branch()."""
