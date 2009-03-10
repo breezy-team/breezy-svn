@@ -1158,6 +1158,7 @@ class InterFromSvnRepository(InterRepository):
 
             parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
             if parent_revmeta in accidental_file_revs:
+                accidental_file_revs.add(revmeta)
                 continue
 
             if not self.target.is_in_write_group():
