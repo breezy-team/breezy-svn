@@ -77,6 +77,7 @@ from bzrlib.plugins.svn.errors import (
 from bzrlib.plugins.svn.fileids import (
     get_local_changes,
     idmap_lookup,
+    idmap_reverse_lookup,
     )
 from bzrlib.plugins.svn.foreign import (
     escape_commit_message,
@@ -426,7 +427,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             if p in self.editor._deleted:
                 return
             self.editor._deleted.add(p)
-            self.editor._inv_delta.append((p, None, ie.file_id, None))
+            if ie.file_id not in self.editor._get_id_map().values():
+                self.editor._inv_delta.append((p, None, ie.file_id, None))
             if ie.kind != 'directory':
                 return
             for c in ie.children.values():
