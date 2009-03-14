@@ -48,23 +48,30 @@ class SubversionTags(BasicTags):
     def __init__(self, branch):
         self.branch = branch
         self.repository = branch.repository
-        self._parent_exists = False
+        self._parent_exists = set()
 
     def _ensure_tag_parent_exists(self, parent):
-        if self._parent_exists:
-            return
+        """Make sure that the container of these tags exists.
+
+        :param parent: Parent path
+        :return: True if the container already existed, False if it had to 
+            be created.
+        """
+        if parent in self._parent_exists:
+            return True
         assert isinstance(parent, str)
         bp_parts = parent.split("/")
         existing_bp_parts = commit._check_dirs_exist(
                 self.repository.transport, 
                 bp_parts, self.repository.get_latest_revnum())
         if existing_bp_parts == bp_parts:
-            self._parent_exists = True
-            return
+            self._parent_exists.add(parent)
+            return True
         commit.create_branch_prefix(self.repository, 
                 self._revprops("Add tags base directory."),
                 bp_parts, existing_bp_parts)
-        self._parent_exists = True
+        self._parent_exists.add(parent)
+        return False
 
     def set_tag(self, tag_name, tag_target):
         """Set a new tag in a Subversion repository."""
@@ -76,11 +83,9 @@ class SubversionTags(BasicTags):
         except NoSuchRevision:
             mutter("not setting tag %s; unknown revision %s", tag_name, tag_target)
             return
-        if from_bp == path:
-            return
         self._ensure_tag_parent_exists(parent)
-        conn = self.repository.transport.get_connection(parent)
         # FIXME: Make sure that path doesn't point at (from_uuid, from_bp, from_revnum) yet. (342824)
+        conn = self.repository.transport.get_connection(parent)
         deletefirst = (conn.check_path(urlutils.basename(path), self.repository.get_latest_revnum()) != subvertpy.NODE_NONE)
         try:
             ci = svn_errors.convert_svn_error(conn.get_commit_editor)(
