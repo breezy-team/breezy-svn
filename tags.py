@@ -67,6 +67,7 @@ class SubversionTags(BasicTags):
         self._parent_exists = True
 
     def set_tag(self, tag_name, tag_target):
+        """Set a new tag in a Subversion repository."""
         path = self.branch.layout.get_tag_path(tag_name, self.branch.project)
         assert isinstance(path, str)
         parent = urlutils.dirname(path)
@@ -79,6 +80,7 @@ class SubversionTags(BasicTags):
             return
         self._ensure_tag_parent_exists(parent)
         conn = self.repository.transport.get_connection(parent)
+        # FIXME: Make sure that path doesn't point at (from_uuid, from_bp, from_revnum) yet. (342824)
         deletefirst = (conn.check_path(urlutils.basename(path), self.repository.get_latest_revnum()) != subvertpy.NODE_NONE)
         try:
             ci = svn_errors.convert_svn_error(conn.get_commit_editor)(
