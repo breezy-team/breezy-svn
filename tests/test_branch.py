@@ -104,6 +104,30 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals(subvertpy.NODE_DIR, 
                 b.repository.transport.check_path("tags/mytag", 3))
 
+    def test_tag_set_dupe(self):
+        repos_url = self.make_repository('a')
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("trunk")
+        dc.add_dir("tags")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        trunk.add_file("trunk/bla").modify()
+        dc.close()
+
+        b = Branch.open(repos_url + "/trunk")
+        b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
+
+        self.assertEquals(subvertpy.NODE_DIR, 
+                b.repository.transport.check_path("tags/mytag", 3))
+        self.assertEquals(3, b.repository.get_latest_revnum())
+
+        b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
+
+        self.assertEquals(3, b.repository.get_latest_revnum())
+
     def test_tags_delete(self):
         repos_url = self.make_repository("a")
        
@@ -118,6 +142,28 @@ class WorkingSubversionBranch(SubversionTestCase):
         b.tags.delete_tag(u"foo")
         b = Branch.open(repos_url + "/trunk")
         self.assertEquals([], b.tags.get_tag_dict().keys())
+
+    def test_tag_set_no_parent_Dir(self):
+        repos_url = self.make_repository('a')
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("trunk")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        trunk.add_file("trunk/bla").modify()
+        dc.close()
+
+        b = Branch.open(repos_url + "/trunk")
+        b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
+
+        self.assertEquals(subvertpy.NODE_DIR, 
+                b.repository.transport.check_path("tags", 3))
+
+        self.assertEquals(subvertpy.NODE_DIR, 
+                b.repository.transport.check_path("tags/mytag", 4))
+        self.assertEquals(4, b.repository.get_latest_revnum())
 
     def test_tag_set_not_supported(self):
         repos_url = self.make_repository('a')
@@ -342,7 +388,6 @@ class WorkingSubversionBranch(SubversionTestCase):
         repos_url = self.make_repository('a')
         branch = Branch.open(repos_url)
         self.assertIs(None, branch.get_push_location())
-
 
     def test_revision_id_to_revno_none(self):
         """The None revid should map to revno 0."""

@@ -33,6 +33,7 @@ from bzrlib.plugins.svn import (
     commit,
     errors as svn_errors,
     mapping,
+    push,
     )
 
 def reverse_dict(orig):
@@ -67,7 +68,7 @@ class SubversionTags(BasicTags):
         if existing_bp_parts == bp_parts:
             self._parent_exists.add(parent)
             return True
-        commit.create_branch_prefix(self.repository, 
+        push.create_branch_prefix(self.repository, 
                 self._revprops("Add tags base directory."),
                 bp_parts, existing_bp_parts)
         self._parent_exists.add(parent)
