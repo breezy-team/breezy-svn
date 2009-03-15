@@ -128,6 +128,34 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         self.assertEquals(3, b.repository.get_latest_revnum())
 
+    def test_tag_set_existing(self):
+        repos_url = self.make_repository('a')
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("trunk")
+        dc.add_dir("tags")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        trunk.add_file("trunk/bla").modify()
+        dc.close()
+
+        b = Branch.open(repos_url + "/trunk")
+        b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
+
+        self.assertEquals(subvertpy.NODE_DIR, 
+                b.repository.transport.check_path("tags/mytag", 3))
+        self.assertEquals(3, b.repository.get_latest_revnum())
+
+        newtagrevid = b.repository.generate_revision_id(2, "trunk", b.repository.get_mapping())
+        b.tags.set_tag(u"mytag", newtagrevid)
+
+        self.assertEquals(subvertpy.NODE_DIR, 
+                b.repository.transport.check_path("tags/mytag", 3))
+        self.assertEquals(4, b.repository.get_latest_revnum())
+        self.assertEquals({u"mytag": newtagrevid}, b.tags.get_tag_dict())
+
     def test_tags_delete(self):
         repos_url = self.make_repository("a")
        

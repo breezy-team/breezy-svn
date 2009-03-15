@@ -16,7 +16,10 @@
 """Subversion Tags Dictionary."""
 
 import subvertpy
-from subvertpy import properties
+from subvertpy import (
+    NODE_NONE,
+    properties,
+    )
 
 from bzrlib import (
     urlutils,
@@ -85,9 +88,16 @@ class SubversionTags(BasicTags):
             mutter("not setting tag %s; unknown revision %s", tag_name, tag_target)
             return
         self._ensure_tag_parent_exists(parent)
-        # FIXME: Make sure that path doesn't point at (from_uuid, from_bp, from_revnum) yet. (342824)
+        try:
+            current_from_foreign_revid = self._lookup_tag_revmeta(path).get_foreign_revid()
+            deletefirst = True
+        except KeyError:
+            current_from_foreign_revid = None
+            deletefirst = False
+        if current_from_foreign_revid == (from_uuid, from_bp, from_revnum):
+            # Already present
+            return
         conn = self.repository.transport.get_connection(parent)
-        deletefirst = (conn.check_path(urlutils.basename(path), self.repository.get_latest_revnum()) != subvertpy.NODE_NONE)
         try:
             ci = svn_errors.convert_svn_error(conn.get_commit_editor)(
                     self._revprops("Add tag %s" % tag_name.encode("utf-8"),
@@ -116,7 +126,17 @@ class SubversionTags(BasicTags):
             revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
         return revprops
 
+    def _lookup_tag_revmeta(self, path):
+        revnum = self.repository.get_latest_revnum()
+        if self.repository.transport.check_path(path, revnum) == NODE_NONE:
+            raise KeyError
+        tip, mapping = self.repository._iter_reverse_revmeta_mapping_history(
+            path, revnum, to_revnum=0, mapping=self.branch.mapping).next()
+        return tip.get_tag_revmeta(mapping)
+
     def lookup_tag(self, tag_name):
+        # Note that this can't use _lookup_tag_revmeta, as there can
+        # be multiple tag container directories
         try:
             return self.get_tag_dict()[tag_name]
         except KeyError:
