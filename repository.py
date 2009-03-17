@@ -1036,8 +1036,9 @@ class SvnRepository(ForeignRepository):
                     if layout.is_tag(revmeta.branch_path):
                         tags[revmeta.branch_path] = revmeta.get_tag_revmeta(mapping)
                 elif kind == "delete":
+                    (path, revnum) = item
                     for t in list(tags):
-                        if changes.path_is_child(t, item):
+                        if changes.path_is_child(t, path):
                             del tags[t]
         finally:
             pb.finished()

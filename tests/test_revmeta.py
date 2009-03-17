@@ -302,7 +302,7 @@ class MetadataBrowserTests(TestCase):
                   3: { "trunk": ('A', "old-trunk", 1)}})
         rev1 = browser.next()
         self.assertEquals(('revision', FakeRevision('trunk',3)), rev1)
-        self.assertEquals(('delete', "old-trunk"), browser.next())
+        self.assertEquals(('delete', ("old-trunk", 2)), browser.next())
         rev2 = browser.next()
         self.assertEquals(('revision', FakeRevision('old-trunk',1)), rev2)
         self.assertTrue(rev1[1]._parent_revmeta_set)
@@ -328,7 +328,7 @@ class MetadataBrowserTests(TestCase):
                        "trunk/mysubdir": ('A', None, -1),
                        "trunk/mysubdir/myfile": ('A', None, -1)},
                   2: { "trunk": ('R', "trunk/mysubdir", 1) }})
-        self.assertEquals(('delete', 'trunk'), browser.next())
+        self.assertEquals(('delete', ('trunk', 2)), browser.next())
         rev1 = browser.next()
         self.assertEquals(('revision', FakeRevision('trunk',2)), rev1)
         rev2 = browser.next()
@@ -368,9 +368,9 @@ class MetadataBrowserTests(TestCase):
         self.assertEquals(('revision', 
             FakeRevision('packages/enthought-chaco2/trunk',5)), rev1)
         rev2 = browser.next()
-        self.assertEquals(('delete', 'packages/enthought-chaco2/trunk'), rev2)
+        self.assertEquals(('delete', ('packages/enthought-chaco2/trunk', 4)), rev2)
         rev3 = browser.next()
-        self.assertEquals(('delete', 'packages/enthought-chaco2/trunk'), rev3)
+        self.assertEquals(('delete', ('packages/enthought-chaco2/trunk', 4)), rev3)
         rev4 = browser.next()
         self.assertEquals(('revision', FakeRevision('packages/chaco2/trunk',3)), rev4)
         self.assertRaises(StopIteration, browser.next)

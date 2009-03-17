@@ -248,7 +248,8 @@ def convert_repository(source_repos, output_url, layout=None,
                     if revmetas is not None:
                         revmetas.append(item)
                 elif kind == "delete":
-                    deleted.add(item)
+                    (path, revnum) = item
+                    deleted.add(path)
         finally:
             pb.finished()
 

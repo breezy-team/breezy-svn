@@ -1160,7 +1160,7 @@ class RevisionMetadataBrowser(object):
 
             # Mention deletes
             for d in deletes:
-                yield ("delete", p)
+                yield ("delete", (p, revnum))
 
             # Dictionary with the last revision known for each branch
             # Report the new revisions
