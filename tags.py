@@ -97,6 +97,7 @@ class SubversionTags(BasicTags):
         if current_from_foreign_revid == (from_uuid, from_bp, from_revnum):
             # Already present
             return
+        mutter("setting tag %s from %r (deletefirst: %r)", path, (from_uuid, from_bp, from_revnum), deletefirst)
         conn = self.repository.transport.get_connection(parent)
         try:
             ci = svn_errors.convert_svn_error(conn.get_commit_editor)(

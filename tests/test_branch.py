@@ -118,15 +118,18 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.close()
 
         b = Branch.open(repos_url + "/trunk")
+        target = b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping())
         b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR, 
                 b.repository.transport.check_path("tags/mytag", 3))
         self.assertEquals(3, b.repository.get_latest_revnum())
 
-        b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
+        b.tags.set_tag(u"mytag", target)
 
         self.assertEquals(3, b.repository.get_latest_revnum())
+        b = Branch.open(repos_url + "/trunk")
+        self.assertEquals({u"mytag": target}, b.tags.get_tag_dict())
 
     def test_tag_set_existing(self):
         repos_url = self.make_repository('a')
@@ -148,12 +151,25 @@ class WorkingSubversionBranch(SubversionTestCase):
                 b.repository.transport.check_path("tags/mytag", 3))
         self.assertEquals(3, b.repository.get_latest_revnum())
 
+        oldtagrevid = b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping())
+        b = Branch.open(repos_url + "/trunk")
+        self.assertEquals({u"mytag": oldtagrevid}, b.tags.get_tag_dict())
+
         newtagrevid = b.repository.generate_revision_id(2, "trunk", b.repository.get_mapping())
         b.tags.set_tag(u"mytag", newtagrevid)
 
         self.assertEquals(subvertpy.NODE_DIR, 
-                b.repository.transport.check_path("tags/mytag", 3))
+                b.repository.transport.check_path("tags/mytag", 4))
         self.assertEquals(4, b.repository.get_latest_revnum())
+        b = Branch.open(repos_url + "/trunk")
+        log = self.client_log(repos_url, 4, 0)
+        self.assertEquals(log[0][0], None)
+        self.assertEquals(log[1][0], {'/tags': ('A', None, -1), 
+                                      '/trunk': ('A', None, -1)})
+        self.assertEquals(log[2][0], {'/trunk/bla': ('A', None, -1)})
+        self.assertEquals(log[3][0], {'/tags/mytag': ('A', '/trunk', 1)})
+        self.assertEquals(log[4][0], {'/tags/mytag': ('R', '/trunk', 2)})
+
         self.assertEquals({u"mytag": newtagrevid}, b.tags.get_tag_dict())
 
     def test_tags_delete(self):

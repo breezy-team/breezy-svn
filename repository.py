@@ -1034,17 +1034,17 @@ class SvnRepository(ForeignRepository):
                 if kind == "revision":
                     revmeta = item
                     if layout.is_tag(revmeta.branch_path):
-                        tags[revmeta.branch_path] = revmeta.get_tag_revmeta(mapping)
+                        tags[revmeta.branch_path] = (revmeta.revnum, revmeta.get_tag_revmeta(mapping))
                 elif kind == "delete":
                     (path, revnum) = item
-                    for t in list(tags):
-                        if changes.path_is_child(t, path):
+                    for t, (lastrevnum, tagrevmeta) in tags.items():
+                        if changes.path_is_child(t, path) and revnum > lastrevnum:
                             del tags[t]
         finally:
             pb.finished()
 
         ret = {}
-        for path, revmeta in tags.iteritems():
+        for path, (lastrevnum, revmeta) in tags.iteritems():
             name = layout.get_tag_name(path, project)
             # Layout wasn't able to determine tag name from path
             if name is None:
