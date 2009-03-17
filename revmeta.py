@@ -15,10 +15,17 @@
 
 """Subversion Meta-Revisions. This is where all the magic happens. """
 
+try:
+    from collections import defaultdict
+except ImportError:
+    from bzrlib.plugins.svn.pycompat import defaultdict
+
+try:
+    any
+except NameError:
+    from bzrlib.plugins.svn.pycompat import any
+
 import bisect
-from collections import (
-    defaultdict,
-    )
 from itertools import (
     imap,
     )

@@ -13,7 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from functools import partial
+try:
+    from functools import partial
+except ImportError:
+    from bzrlib.plugins.svn.pycompat import partial
+
+try:
+    all
+except NameError:
+    from bzrlib.plugins.svn.pycompat import all
+
 from subvertpy import NODE_DIR
 
 from bzrlib import urlutils

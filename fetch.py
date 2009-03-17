@@ -15,10 +15,12 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Fetching revisions from Subversion repositories in batches."""
 
-from collections import (
-    deque,
-    defaultdict,
-    )
+from collections import deque
+try:
+    from collections import defaultdict
+except ImportError:
+    from bzrlib.plugins.svn.pycompat import defaultdict
+
 from cStringIO import (
     StringIO,
     )

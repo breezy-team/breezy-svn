@@ -4,6 +4,8 @@ bzr-svn 0.5.4					UNRELEASED
 
    * Ignore spurious commits setting tags to the same revision. (#342824)
 
+   * Fix compatibility with Python2.4.
+
 bzr-svn 0.5.3                   2009-03-10
 
   BUG FIXES
