@@ -117,7 +117,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_dpush_empty(self):
         repos_url = self.make_repository('dp')
-        self.run_bzr("init --rich-root-pack dc")
+        self.run_bzr("init --default-rich-root dc")
         os.chdir("dc")
         self.run_bzr("dpush %s" % repos_url)
 
@@ -459,7 +459,7 @@ if len(sys.argv) == 2:
         self.client_update(".")
         os.chdir(cwd)
 
-        self.run_bzr('init-repo --1.9-rich-root --no-trees shared')
+        self.run_bzr('init-repo --default-rich-root --no-trees shared')
         os.chdir('shared')
         self.run_bzr('branch %s/trunk trunk' % svn_url)
         os.chdir(cwd)

@@ -17,7 +17,7 @@ upgrade the repository, run:
 
 ::
 
- $ bzr upgrade --1.9-rich-root
+ $ bzr upgrade --default-rich-root
 
 Cloning a large Subversion branch is very slow
 ----------------------------------------------

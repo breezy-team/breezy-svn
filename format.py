@@ -24,14 +24,10 @@ from bzrlib.lockable_files import TransportLock
 from bzrlib.trace import mutter
 
 def get_rich_root_format():
-    format = BzrDirFormat.get_default_format()
-    if format.repository_format.rich_root_data:
-        return format
-    # Default format does not support rich root data, 
-    # fall back to 1.9-rich-root
-    format = format_registry.make_bzrdir('1.9-rich-root')
-    assert format.repository_format.rich_root_data
-    return format
+    try:
+        return format_registry.make_bzrdir('default-rich-root')
+    except KeyError:
+        return format_registry.make_bzrdir('1.9-rich-root')
 
 
 def get_nested_tree_format():
