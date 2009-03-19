@@ -13,10 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib import osutils
-from bzrlib.versionedfile import VirtualVersionedFiles
+from bzrlib import (
+    osutils,
+    )
+from bzrlib.versionedfile import (
+    VirtualVersionedFiles,
+    )
 
-from bzrlib.errors import NoSuchRevision
+from bzrlib.errors import (
+    NoSuchRevision,
+    )
 
 
 class VirtualRevisionTexts(VirtualVersionedFiles):
@@ -31,7 +37,10 @@ class VirtualRevisionTexts(VirtualVersionedFiles):
         except NoSuchRevision:
             return None
 
-    # TODO: annotate, keys
+    # TODO: annotate
+
+    def keys(self):
+        return self.repository.all_revision_ids()
 
 
 class VirtualInventoryTexts(VirtualVersionedFiles):
@@ -46,7 +55,10 @@ class VirtualInventoryTexts(VirtualVersionedFiles):
         except NoSuchRevision:
             return None
 
-    # TODO: annotate, keys
+    def keys(self):
+        return self.repository.all_revision_ids()
+
+    # TODO: annotate
 
 
 class VirtualSignatureTexts(VirtualVersionedFiles):
@@ -61,5 +73,8 @@ class VirtualSignatureTexts(VirtualVersionedFiles):
         except NoSuchRevision:
             return None
 
-    # TODO: annotate, keys
+    def keys(self):
+        return self.repository.all_revision_ids()
+
+    # TODO: annotate
 

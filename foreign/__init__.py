@@ -16,8 +16,12 @@
 
 """Foreign branch utilities."""
 
-from bzrlib import errors
-from bzrlib.branch import Branch
+from bzrlib import (
+    errors,
+    )
+from bzrlib.branch import (
+    Branch,
+    )
 from bzrlib.commands import (
     Command,
     Option,

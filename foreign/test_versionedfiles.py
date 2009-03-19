@@ -13,14 +13,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib import osutils
-from bzrlib.tests import TestCase
+from bzrlib import (
+    osutils,
+    )
+from bzrlib.tests import (
+    TestCase,
+    )
 
-from versionedfiles import (VirtualRevisionTexts, VirtualInventoryTexts, 
-                            VirtualSignatureTexts)
+from versionedfiles import (
+    VirtualInventoryTexts,
+    VirtualRevisionTexts,
+    VirtualSignatureTexts,
+    )
 
 
 class BasicTextsTests:
+
     def test_add_lines(self):
         self.assertRaises(NotImplementedError, 
                 self.texts.add_lines, "foo", [], [])
@@ -38,6 +46,7 @@ class BasicTextsTests:
 
 
 class VirtualRevisionTextsTests(TestCase, BasicTextsTests):
+
     def _make_parents_provider(self):
         return self
 
@@ -49,6 +58,7 @@ class VirtualRevisionTextsTests(TestCase, BasicTextsTests):
 
 
 class VirtualInventoryTextsTests(TestCase, BasicTextsTests):
+
     def _make_parents_provider(self):
         return self
 
@@ -66,6 +76,7 @@ class VirtualInventoryTextsTests(TestCase, BasicTextsTests):
 
 
 class VirtualSignatureTextsTests(TestCase, BasicTextsTests):
+
     def _make_parents_provider(self):
         return self
 
