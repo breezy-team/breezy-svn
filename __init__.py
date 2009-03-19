@@ -101,8 +101,8 @@ def get_client_string():
 def init_subvertpy():
     try:
         import subvertpy 
-    except ImportError:
-        raise DependencyNotPresent("subvertpy", "bzr-svn: unable to find subvertpy. Please install from http://launchpad.net/subvertpy.")
+    except ImportError, e:
+        raise DependencyNotPresent("subvertpy", "bzr-svn: %s" % e.message)
 
     check_subversion_version()
 

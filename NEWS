@@ -6,6 +6,8 @@ bzr-svn 0.5.4					UNRELEASED
 
    * Fix compatibility with Python2.4.
 
+   * Improve error message if subvertpy can't be found. (#345067)
+
 bzr-svn 0.5.3                   2009-03-10
 
   BUG FIXES
