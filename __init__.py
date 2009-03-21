@@ -24,7 +24,6 @@ to use the svn-push command rather than the standard push command.
 
 bzr-svn also adds four new commands to Bazaar:
 
- - bzr dpush
  - bzr svn-import
  - bzr svn-serve
  - bzr svn-layout
@@ -191,8 +190,6 @@ plugin_cmds.register_lazy('cmd_svn_layout', [],
                           'bzrlib.plugins.svn.commands')
 plugin_cmds.register_lazy('cmd_svn_serve', [], 
                           'bzrlib.plugins.svn.commands')
-
-plugin_cmds.register_lazy('cmd_dpush', [], 'bzrlib.plugins.svn.foreign')
 
 def test_suite():
     """Returns the testsuite for bzr-svn."""
