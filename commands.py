@@ -46,6 +46,9 @@ class cmd_svn_import(Command):
     To save disk space, only branches will be created by default 
     (no working trees). To create a tree for a branch, run "bzr co" in 
     it.
+
+    This command is resumable; any previously imported revisions will be 
+    skipped.
     """
     takes_args = ['from_location', 'to_location?']
     takes_options = [Option('trees', help='Create working trees.'),
