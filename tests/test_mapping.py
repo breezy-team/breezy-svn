@@ -170,6 +170,17 @@ def sha1(text):
     return sha(text).hexdigest()
 
 
+class GenerateRevisionIdTests(TestCase):
+
+    def test_v4_space(self):
+        self.assertEqual("svn-v4:uuid:trunk%20l:1",
+            BzrSvnMappingv4().revision_id_foreign_to_bzr(("uuid", "trunk l", 1)))
+
+    def test_v4(self):
+        self.assertEqual("svn-v4:uuid:trunk:1",
+            BzrSvnMappingv4().revision_id_foreign_to_bzr(("uuid", "trunk", 1)))
+
+
 class ParseRevisionIdTests(TestCase):
 
     def test_v4(self):
