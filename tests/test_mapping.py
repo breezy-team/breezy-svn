@@ -21,7 +21,12 @@ from bzrlib.revision import Revision
 from bzrlib.tests import TestCase
 
 from bzrlib.plugins.svn import mapping
-from bzrlib.plugins.svn.errors import InvalidPropertyValue
+from bzrlib.plugins.svn.errors import (
+    InvalidPropertyValue,
+    )
+from bzrlib.plugins.svn.layout.standard import (
+    TrunkLayout,
+    )
 from bzrlib.plugins.svn.mapping import (
     estimate_bzr_ancestors,
     escape_svn_path,
@@ -30,6 +35,7 @@ from bzrlib.plugins.svn.mapping import (
     get_roundtrip_ancestor_revids,
     is_bzr_revision_fileprops,
     is_bzr_revision_revprops,
+    mapping_registry,
     parse_merge_property,
     parse_revision_metadata, 
     parse_revid_property,
@@ -41,6 +47,7 @@ from bzrlib.plugins.svn.mapping2 import (
     BzrSvnMappingv2,
     )
 from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3
+from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.mapping4 import BzrSvnMappingv4
 
 
@@ -163,11 +170,11 @@ def sha1(text):
     return sha(text).hexdigest()
 
 
-class ParseRevisionIdTests(object):
+class ParseRevisionIdTests(TestCase):
 
     def test_v4(self):
         self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv4()), 
-                mapping_registry.parse_revision_id("svn-v3:uuid:trunk:1"))
+                mapping_registry.parse_revision_id("svn-v4:uuid:trunk:1"))
 
     def test_v3(self):
         self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv3(TrunkBranchingScheme())), 
@@ -178,15 +185,15 @@ class ParseRevisionIdTests(object):
                 mapping_registry.parse_revision_id("svn-v3-undefined:uuid:trunk:1"))
 
     def test_v2(self):
-        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv2()), 
+        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv2(TrunkLayout())), 
                          mapping_registry.parse_revision_id("svn-v2:1@uuid-trunk"))
 
     def test_v1(self):
-        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv1()), 
+        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv1(TrunkLayout())), 
                          mapping_registry.parse_revision_id("svn-v1:1@uuid-trunk"))
 
     def test_except(self):
-        self.assertRaises(InvalidRevisionId, 
+        self.assertRaises(KeyError, 
                          mapping_registry.parse_revision_id, "svn-v0:1@uuid-trunk")
 
     def test_except_nonsvn(self):
