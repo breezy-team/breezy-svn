@@ -390,3 +390,18 @@ class MetadataBrowserTests(TestCase):
         self.assertRaises(StopIteration, browser.next)
         self.assertTrue(rev1[1]._parent_revmeta_set)
         self.assertTrue(rev2[1]._parent_revmeta_set)
+
+    def test_pointless_root_commit(self):
+        rev1 = { "foo": ('A', None, -1) }
+        rev2 = {}
+        rev3 = { "bar": ('A', None, -1) }
+        browser = self.get_browser([""], 3, 0, RootLayout(),
+                { 1: rev1, 2: rev2, 3: rev3 })
+        rev1 = browser.next()
+        self.assertEquals(("revision", FakeRevision("", 3)), rev1)
+        rev2 = browser.next()
+        self.assertEquals(("revision", FakeRevision("", 2)), rev2)
+        rev3 = browser.next()
+        self.assertEquals(("revision", FakeRevision("", 1)), rev3)
+        rev4 = browser.next()
+        self.assertEquals(("revision", FakeRevision("", 0)), rev4)

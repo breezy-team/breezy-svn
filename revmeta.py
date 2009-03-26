@@ -1146,6 +1146,9 @@ class RevisionMetadataBrowser(object):
             changed_bps = set()
             deletes = []
 
+            if paths == {}:
+                paths = {"": ("M", None, -1)}
+
             # Find out what branches have changed
             for p in sorted(paths):
                 action = paths[p][0]
