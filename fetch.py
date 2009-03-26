@@ -121,26 +121,6 @@ def inventory_ancestors(inv, fileid, exceptions):
     return ret
 
 
-def check_inventory_delta(delta):
-    """Check the internal consistency of an inventory delta.
-
-    :param delta: An inventory delta
-    """
-    old_paths = set()
-    new_paths = set()
-    file_ids = set()
-    for (old_path, new_path, file_id, ie) in delta:
-        if old_path is not None and old_path in old_paths:
-            raise AssertionError("old path %s exists more than once" % old_path)
-        if new_path is not None and new_path in new_paths:
-            raise AssertionError("new path %s exists more than once" % new_path)
-        if file_id in file_ids:
-            raise AssertionError("file id %s exists more than once" % file_id)
-        old_paths.add(old_path)
-        new_paths.add(new_path)
-        file_ids.add(file_id)
-
-
 def md5_strings(lines):
     """Return the MD5sum of a list of lines."""
     s = osutils.md5()
@@ -676,8 +656,6 @@ class RevisionBuildEditor(DeltaBuildEditor):
                       [r for r in rev.parent_ids if r in self.target.has_revisions(rev.parent_ids)])
         else:
             self.inventory = self.old_inventory
-            if "check" in debug.debug_flags:
-                check_inventory_delta(self._inv_delta)
             self.inventory.apply_delta(self._inv_delta)
             self.inventory.revision_id = rev.revision_id
             rev.inventory_sha1 = self.target.add_inventory(rev.revision_id, 
