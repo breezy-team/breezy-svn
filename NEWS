@@ -8,6 +8,8 @@ bzr-svn 0.5.4					UNRELEASED
 
    * Improve error message if subvertpy can't be found. (#345067)
 
+   * Cope with spaces in branch paths. (#348439)
+
 bzr-svn 0.5.3                   2009-03-10
 
   BUG FIXES
