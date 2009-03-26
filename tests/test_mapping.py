@@ -180,6 +180,10 @@ class GenerateRevisionIdTests(TestCase):
         self.assertEqual("svn-v4:uuid:trunk:1",
             BzrSvnMappingv4().revision_id_foreign_to_bzr(("uuid", "trunk", 1)))
 
+    def test_v4_slash(self):
+        self.assertEqual("svn-v4:uuid:project/trunk:1",
+            BzrSvnMappingv4().revision_id_foreign_to_bzr(("uuid", "project/trunk", 1)))
+
 
 class ParseRevisionIdTests(TestCase):
 

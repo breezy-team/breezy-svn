@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import urllib
+
 from bzrlib import errors
 
 from bzrlib.plugins.svn import mapping
@@ -79,7 +81,7 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
         return (uuid, branch_path, int(srevnum)), cls()
 
     def revision_id_foreign_to_bzr(self, (uuid, path, revnum)):
-        return "svn-v4:%s:%s:%d" % (uuid, mapping.escape_svn_path(path), revnum)
+        return "svn-v4:%s:%s:%d" % (uuid, urllib.quote(path), revnum)
 
     def generate_file_id(self, (uuid, branch, revnum), inv_path):
         return "%d@%s:%s" % (revnum, uuid, mapping.escape_svn_path("%s/%s" % (branch, inv_path.encode("utf-8"))))
