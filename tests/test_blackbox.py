@@ -18,6 +18,7 @@
 import os
 import sys
 
+from bzrlib.bzrdir import format_registry
 import bzrlib.gpg
 from bzrlib.repository import Repository
 from bzrlib.tests.blackbox import ExternalBase
@@ -26,6 +27,11 @@ from bzrlib.tests import KnownFailure
 from bzrlib.plugins.svn.convert import load_dumpfile
 from bzrlib.plugins.svn.layout.standard import RootLayout
 from bzrlib.plugins.svn.tests import SubversionTestCase
+
+if "default-rich-root" in format_registry:
+    default_rich_root_format_name = "default-rich-root"
+else:
+    default_rich_root_format_name = "1.9-rich-root"
 
 class TestBranch(SubversionTestCase, ExternalBase):
 
@@ -117,7 +123,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_dpush_empty(self):
         repos_url = self.make_repository('dp')
-        self.run_bzr("init --default-rich-root dc")
+        self.run_bzr("init --%s dc" % default_rich_root_format_name)
         os.chdir("dc")
         self.run_bzr("dpush %s" % repos_url)
 
@@ -459,7 +465,7 @@ if len(sys.argv) == 2:
         self.client_update(".")
         os.chdir(cwd)
 
-        self.run_bzr('init-repo --default-rich-root --no-trees shared')
+        self.run_bzr('init-repo --%s --no-trees shared' % default_rich_root_format_name)
         os.chdir('shared')
         self.run_bzr('branch %s/trunk trunk' % svn_url)
         os.chdir(cwd)
