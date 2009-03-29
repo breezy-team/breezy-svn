@@ -191,6 +191,15 @@ plugin_cmds.register_lazy('cmd_svn_layout', [],
 plugin_cmds.register_lazy('cmd_svn_serve', [], 
                           'bzrlib.plugins.svn.commands')
 
+try:
+    from bzrlib.filters import lazy_register_filter_stack_map
+except ImportError: # not supported yet
+    pass
+else:
+    lazy_register_filter_stack_map("svn-keywords", 
+            "bzrlib.plugins.svn.keywords",
+            "svn_keywords")
+
 def test_suite():
     """Returns the testsuite for bzr-svn."""
     from unittest import TestSuite
