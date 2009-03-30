@@ -194,8 +194,6 @@ class SubversionKeywordContentFilter(ContentFilter):
             encoder=encoder)]
 
 
-
-
 def create_svn_keywords_filter(value):
     if not value:
         return
