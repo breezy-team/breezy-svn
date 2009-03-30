@@ -28,25 +28,55 @@ from bzrlib import (
     )
 from bzrlib.errors import (
     BzrError,
+    InvalidRevisionId,
     )
 from bzrlib.filters import (
     ContentFilter,
     )
+from bzrlib.foreign import (
+    ForeignRevision,
+    )
+
+from bzrlib.plugins.svn.mapping import (
+    BzrSvnMapping,
+    mapping_registry,
+    )
 
 def keyword_date(c):
     """last changed date"""
-    # FIXME: See if c.revision() can be traced back to a subversion revision
-    # if not, return svn representation of c.revision().timestamp
+    revmeta = getattr(c.revision(), "svn_meta", None)
+    if revmeta is not None:
+        return revmeta.get_revprops().get(properties.PROP_REVISION_DATE, "")
     return properties.time_to_cstring(1000000*c.revision().timestamp)
 
 def keyword_rev(c):
     """last revno that changed this file"""
-    # FIXME: See if c.revision() can be traced back to a subversion revision
+    #  See if c.revision() can be traced back to a subversion revision
+
+    rev = c.revision()
+    # Revision comes directly from a foreign repository
+    if (isinstance(rev, ForeignRevision) and 
+        isinstance(rev.mapping, BzrSvnMapping)):
+        return str(rev.foreign_revid[2])
+
+    # Revision was once imported from a foreign repository
+    try:
+        foreign_revid, mapping = \
+            mapping_registry.parse_revision_id(rev.revision_id)
+    except InvalidRevisionId:
+        pass
+    else:
+        return str(foreign_revid[2])
+
+    # If we can't find the actual svn revision, just return the bzr revid
     return c.revision_id()
+
 
 def keyword_author(c):
     """author of the last commit."""
-    # FIXME: See if c.revision() can be traced back to a subversion revision
+    revmeta = getattr(c.revision(), "svn_meta", None)
+    if revmeta is not None:
+        return revmeta.get_revprops().get(properties.PROP_REVISION_AUTHOR, "")
     return c.revision().committer
 
 def keyword_id(c):
@@ -57,7 +87,10 @@ def keyword_id(c):
 def keyword_url(c):
     # URL in the svn repository
     # See if c.revision() can be traced back to a subversion revision
-    # if so return <repos-url>/revmeta-branch-path/c.relpath()
+    revmeta = getattr(c.revision(), "svn_meta", None)
+    if revmeta is not None:
+        return urlutils.join(revmeta.repository.base, revmeta.branch_path,
+                             c.relpath())
     return c.relpath()
 
 keywords = {
