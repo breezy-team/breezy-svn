@@ -37,7 +37,9 @@ from bzrlib.inventory import (
     )
 from bzrlib.osutils import md5
 from bzrlib.revision import CURRENT_REVISION
-from bzrlib.revisiontree import RevisionTree
+from bzrlib.revisiontree import (
+    RevisionTree,
+    )
 from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn.fileids import idmap_lookup
@@ -90,6 +92,7 @@ class SvnRevisionTree(RevisionTree, SubversionTree):
         self._revmeta, self.mapping = repository._get_revmeta(revision_id)
         self._inventory = Inventory()
         self._inventory.revision_id = revision_id
+        self._rules_searcher = None
         self.id_map = repository.get_fileid_map(self._revmeta, self.mapping)
         editor = TreeBuildEditor(self)
         self.file_data = {}
