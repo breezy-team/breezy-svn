@@ -13,6 +13,11 @@ bzr-svn 0.5.4					UNRELEASED
    * Properly deal with pointless commits when branching the 
      repository root. (#348786)
 
+  FEATURES
+
+   * A new content filter "svn-keywords" is now supported and behaves like 
+     the svn:keywords Subversion file property.
+
 bzr-svn 0.5.3                   2009-03-10
 
   BUG FIXES
