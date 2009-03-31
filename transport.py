@@ -40,7 +40,9 @@ from bzrlib.trace import (
     mutter,
     warning,
     )
-from bzrlib.transport import Transport
+from bzrlib.transport import (
+    Transport,
+    )
 
 import bzrlib.plugins.svn
 from bzrlib.plugins.svn.auth import create_auth_baton
@@ -231,8 +233,7 @@ class SvnRaTransport(Transport):
     This implements just as much of Transport as is necessary 
     to fool Bazaar. """
     @convert_svn_error
-    def __init__(self, url, from_transport=None, 
-        _uuid=None, _repos_root=None):
+    def __init__(self, url, from_transport=None):
         bzr_url = url
         self.svn_url = bzr_to_svn_url(url)
         Transport.__init__(self, bzr_url)
@@ -245,8 +246,8 @@ class SvnRaTransport(Transport):
         else:
             self.connections = from_transport.connections
 
-        self._repos_root = _repos_root
-        self._uuid = _uuid
+        self._repos_root = None
+        self._uuid = None
         self.capabilities = {}
 
         from bzrlib.plugins.svn import lazy_check_versions
