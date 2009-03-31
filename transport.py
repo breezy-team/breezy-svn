@@ -45,7 +45,11 @@ from bzrlib.transport import (
     )
 
 import bzrlib.plugins.svn
-from bzrlib.plugins.svn.auth import create_auth_baton
+from bzrlib.plugins.svn.auth import (
+    AUTH_PARAM_DEFAULT_USERNAME,
+    AUTH_PARAM_DEFAULT_PASSWORD,
+    create_auth_baton,
+    )
 from bzrlib.plugins.svn.errors import (
     convert_svn_error,
     NoSvnRepositoryPresent,
@@ -77,7 +81,12 @@ def get_svn_ra_transport(bzr_transport):
 
     # Save _svn_ra transport here so we don't have to connect again next time
     # we try to use bzr svn on this transport
-    ra_transport = SvnRaTransport(bzr_transport.base)
+    shared_connection = getattr(bzr_transport, "_shared_connection", None)
+    if shared_connection is not None:
+        creds = shared_connection.credentials[0]
+    else:
+        creds = None
+    ra_transport = SvnRaTransport(bzr_transport.base, credentials=creds)
     bzr_transport._svn_ra = ra_transport
     return ra_transport
 
@@ -152,18 +161,17 @@ class SubversionProgressReporter(object):
         ui.ui_factory.report_transport_activity(self._transport, changed, None)
 
 
-def Connection(url):
+def Connection(url, auth=None):
     # Subvertpy <= 0.6.3 has a bug in the reference counting of the 
     # progress update function
     if subvertpy.__version__ >= (0, 6, 3):
         progress_cb = SubversionProgressReporter().update
     else:
         progress_cb = None
-
     try:
         mutter('opening SVN RA connection to %r' % url)
         ret = subvertpy.ra.RemoteAccess(url.encode('utf8'), 
-                auth=create_auth_baton(url),
+                auth=auth,
                 client_string_func=bzrlib.plugins.svn.get_client_string,
                 progress_cb=progress_cb)
         if 'transport' in debug.debug_flags:
@@ -189,17 +197,25 @@ def Connection(url):
                                     target=_url_escape_uri(urlutils.join(url, new_url)), 
                                     is_permanent=True)
         raise convert_error(subvertpy.SubversionException(msg, num))
-
     from bzrlib.plugins.svn import lazy_check_versions
     lazy_check_versions()
-
     return ret
 
 
 class ConnectionPool(object):
     """Collection of connections to a Subversion repository."""
-    def __init__(self):
+
+    def __init__(self, url):
         self.connections = set()
+        self.auth_baton = create_auth_baton(url)
+
+    def set_credentials(self, credentials):
+        user = credentials.get('user')
+        if user is not None:
+            self.auth_baton.set_parameter(AUTH_PARAM_DEFAULT_USERNAME, user)
+        password = credentials.get('password')
+        if password is not None:
+            self.auth_baton.set_parameter(AUTH_PARAM_DEFAULT_PASSWORD, password)
 
     def get(self, url):
         # Check if there is an existing connection we can use
@@ -210,14 +226,14 @@ class ConnectionPool(object):
                 return c
         # Nothing available? Just pick an existing one and reparent:
         if len(self.connections) == 0:
-            return Connection(url)
+            return Connection(url, self.auth_baton)
         c = self.connections.pop()
         try:
             c.reparent(_url_escape_uri(url))
             return c
         except NotImplementedError:
             self.connections.add(c)
-            return Connection(url)
+            return Connection(url, self.auth_baton)
         except:
             self.connections.add(c)
             raise
@@ -233,23 +249,23 @@ class SvnRaTransport(Transport):
     This implements just as much of Transport as is necessary 
     to fool Bazaar. """
     @convert_svn_error
-    def __init__(self, url, from_transport=None):
+    def __init__(self, url, from_transport=None, credentials=None):
         bzr_url = url
         self.svn_url = bzr_to_svn_url(url)
         Transport.__init__(self, bzr_url)
-
         if from_transport is None:
-            self.connections = ConnectionPool()
-
+            self.connections = ConnectionPool(bzr_url)
+            if credentials is not None:
+                self.connections.set_credentials(credentials)
             # Make sure that the URL is valid by connecting to it.
             self.connections.add(self.connections.get(self.svn_url))
         else:
             self.connections = from_transport.connections
-
+            if credentials is not None:
+                self.connections.set_credentials(credentials)
         self._repos_root = None
         self._uuid = None
         self.capabilities = {}
-
         from bzrlib.plugins.svn import lazy_check_versions
         lazy_check_versions()
 
