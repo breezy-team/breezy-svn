@@ -130,7 +130,7 @@ Is it possible to access/modify custom Subversion file properties?
 ------------------------------------------------------------------
 
 No, this is not possible. If you are in a native Subversion Working Copy, you 
-can off course use the "svn propset" and "svn propget" commands. 
+can of course use the "svn propset" and "svn propget" commands. 
 
 ..
 	vim: ft=rest
