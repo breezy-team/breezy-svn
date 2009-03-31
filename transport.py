@@ -231,18 +231,19 @@ class SvnRaTransport(Transport):
     This implements just as much of Transport as is necessary 
     to fool Bazaar. """
     @convert_svn_error
-    def __init__(self, url="", pool=None, _uuid=None, _repos_root=None):
+    def __init__(self, url, from_transport=None, 
+        _uuid=None, _repos_root=None):
         bzr_url = url
         self.svn_url = bzr_to_svn_url(url)
         Transport.__init__(self, bzr_url)
 
-        if pool is None:
+        if from_transport is None:
             self.connections = ConnectionPool()
 
             # Make sure that the URL is valid by connecting to it.
             self.connections.add(self.connections.get(self.svn_url))
         else:
-            self.connections = pool
+            self.connections = from_transport.connections
 
         self._repos_root = _repos_root
         self._uuid = _uuid
@@ -514,18 +515,8 @@ class SvnRaTransport(Transport):
     def lock_write(self, path_revs, comment=None, steal_lock=False):
         return self.PhonyLock() # FIXME
 
-    def _is_http_transport(self):
-        return False
-        return (self.svn_url.startswith("http://") or 
-                self.svn_url.startswith("https://"))
-
     def clone_root(self):
-        if self._is_http_transport():
-            return SvnRaTransport(self.get_repos_root(), 
-                                  bzr_to_svn_url(self.base),
-                                  pool=self.connections)
-        return SvnRaTransport(self.get_repos_root(),
-                              pool=self.connections)
+        return SvnRaTransport(self.get_repos_root(), self)
 
     def clone(self, offset=None):
         """See Transport.clone()."""
@@ -534,7 +525,7 @@ class SvnRaTransport(Transport):
         else:
             newurl = urlutils.join(self.base, offset)
 
-        return SvnRaTransport(newurl, pool=self.connections)
+        return SvnRaTransport(newurl, self)
 
     def local_abspath(self, relpath):
         """See Transport.local_abspath()."""
