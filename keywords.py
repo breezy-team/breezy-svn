@@ -49,6 +49,7 @@ def keyword_date(c):
         return revmeta.get_revprops().get(properties.PROP_REVISION_DATE, "")
     return properties.time_to_cstring(1000000*c.revision().timestamp)
 
+
 def keyword_rev(c):
     """last revno that changed this file"""
     #  See if c.revision() can be traced back to a subversion revision
@@ -79,10 +80,12 @@ def keyword_author(c):
         return revmeta.get_revprops().get(properties.PROP_REVISION_AUTHOR, "")
     return c.revision().committer
 
+
 def keyword_id(c):
     """basename <space> revno <space> date <space> author"""
     return "%s %s %s %s" % (urlutils.basename(c.relpath()), keyword_rev(c), 
             keyword_date(c), keyword_author(c)) 
+
 
 def keyword_url(c):
     # URL in the svn repository
@@ -92,6 +95,7 @@ def keyword_url(c):
         return urlutils.join(revmeta.repository.base, revmeta.branch_path,
                              c.relpath())
     return c.relpath()
+
 
 keywords = {
     "LastChangedDate": keyword_date,
@@ -176,7 +180,6 @@ def compress_keywords(s, allowed_keywords):
     return result + rest
 
 
-
 class SubversionKeywordContentFilter(ContentFilter):
 
     def __init__(self, allowed_keywords):
@@ -204,5 +207,6 @@ def create_svn_keywords_filter(value):
     if keywords == []:
         return []
     return [SubversionKeywordContentFilter(keywords)]
+
 
 svn_keywords = ({}, create_svn_keywords_filter)

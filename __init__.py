@@ -50,6 +50,9 @@ from bzrlib.foreign import (
 from bzrlib.help_topics import (
     topic_registry,
     )
+from bzrlib.revisionspec import (
+    revspec_registry,
+    )
 from bzrlib.trace import (
     mutter,
     )
@@ -151,7 +154,6 @@ format_registry.register_lazy("subversion", "bzrlib.plugins.svn.format", "SvnRem
 format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.format", "SvnWorkingTreeDirFormat", 
                          "Subversion working copy. ", 
                          native=False, hidden=True)
-from bzrlib.revisionspec import revspec_registry
 revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec", 
     "RevisionSpec_svn")
 
@@ -197,8 +199,7 @@ except ImportError: # not supported yet
     pass
 else:
     lazy_register_filter_stack_map("svn-keywords", 
-            "bzrlib.plugins.svn.keywords",
-            "svn_keywords")
+            "bzrlib.plugins.svn.keywords", "svn_keywords")
 
 def test_suite():
     """Returns the testsuite for bzr-svn."""
