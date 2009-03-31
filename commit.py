@@ -515,7 +515,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             self.mapping.export_revision_fileprops(
                 timestamp, timezone, committer, revprops, 
                 revision_id, revno, parents, self._svnprops)
-        if self.set_custom_revprops:
+        if self.set_custom_revprops and self.push_metadata:
             self.mapping.export_revision_revprops(
                 self.repository.uuid,
                 self.branch_path, timestamp, timezone, committer, revprops, 
@@ -693,12 +693,13 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self.mapping.export_text_revisions_fileprops(text_revisions, self._svnprops)
                 self.mapping.export_text_parents_fileprops(text_parents, self._svnprops)
                 self.mapping.export_fileid_map_fileprops(fileids, self._svnprops)
-            if self._config.get_log_strip_trailing_newline():
+        if self._config.get_log_strip_trailing_newline():
+            if self.push_metadata:
                 if self.set_custom_revprops:
                     self.mapping.export_message_revprops(message, self._svn_revprops)
                 if self.set_custom_fileprops:
                     self.mapping.export_message_fileprops(message, self._svnprops)
-                message = message.rstrip("\n")
+            message = message.rstrip("\n")
         self._svn_revprops[properties.PROP_REVISION_LOG] = message.encode("utf-8")
 
         try:

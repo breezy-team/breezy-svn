@@ -13,6 +13,8 @@ bzr-svn 0.5.4					UNRELEASED
    * Properly deal with pointless commits when branching the 
      repository root. (#348786)
 
+   * dpush no longer sets custom bzr revision properties. (#351292)
+
   FEATURES
 
    * A new content filter "svn-keywords" is now supported and behaves like 
