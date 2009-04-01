@@ -1,7 +1,6 @@
 more tests:
 - Run all tests against repository with revprop changing allowed and without
 - performance tests (count roundtrips?)
-- upgrades from v3
 - bzr svn-set-revprops
 
 performance:
