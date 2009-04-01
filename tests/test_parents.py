@@ -13,9 +13,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib import graph as _mod_graph
-from bzrlib.tests import TestCase
-from bzrlib.tests.test_graph import InstrumentedParentsProvider
+from bzrlib import (
+    graph as _mod_graph,
+    )
+from bzrlib.tests import (
+    TestCase,
+    )
+from bzrlib.tests.test_graph import (
+    InstrumentedParentsProvider,
+    )
 
 from bzrlib.plugins.svn.parents import (
     DiskCachingParentsProvider,
@@ -25,6 +31,7 @@ from bzrlib.plugins.svn.parents import (
 class ParentsCacheTests(TestCase):
 
     def setUp(self):
+        TestCase.setUp(self)
         self.cache = ParentsCache()
     
     def test_noparents(self):
@@ -51,6 +58,7 @@ class ParentsCacheTests(TestCase):
 class TestCachingParentsProvider(TestCase):
 
     def setUp(self):
+        TestCase.setUp(self)
         dict_pp = _mod_graph.DictParentsProvider({'a':('b',)})
         self.inst_pp = InstrumentedParentsProvider(dict_pp)
         self.caching_pp = DiskCachingParentsProvider(self.inst_pp)

@@ -19,17 +19,25 @@
 from bzrlib.errors import BzrError
 
 from bzrlib.tests import TestCase
-from bzrlib.plugins.svn.mapping3.scheme import (ListBranchingScheme, NoBranchingScheme, 
-                    BranchingScheme, TrunkBranchingScheme, 
-                    SingleBranchingSchemev0, 
-                    SingleBranchingScheme, 
-                    UnknownBranchingScheme, 
-                    parse_list_scheme_text, find_commit_paths, 
-                    guess_scheme_from_branch_path, guess_scheme_from_history,
-                    guess_scheme_from_path, scheme_from_branch_list,
-                    InvalidSvnBranchPath)
+from bzrlib.plugins.svn.mapping3.scheme import (
+    BranchingScheme,
+    InvalidSvnBranchPath,
+    ListBranchingScheme,
+    NoBranchingScheme,
+    TrunkBranchingScheme,
+    SingleBranchingSchemev0,
+    SingleBranchingScheme,
+    UnknownBranchingScheme,
+    find_commit_paths,
+    guess_scheme_from_branch_path,
+    guess_scheme_from_history,
+    guess_scheme_from_path,
+    parse_list_scheme_text,
+    scheme_from_branch_list,
+    )
 
 class BranchingSchemeTest(TestCase):
+
     def test_is_branch(self):
         self.assertRaises(NotImplementedError, BranchingScheme().is_branch, "")
 
@@ -90,6 +98,7 @@ class BranchingSchemeTest(TestCase):
 
 
 class NoScheme(TestCase):
+
     def test_str(self):
         self.assertEqual("none", NoBranchingScheme().__str__())
 
@@ -143,7 +152,9 @@ class NoScheme(TestCase):
 
 
 class ListScheme(TestCase):
+
     def setUp(self):
+        TestCase.setUp(self)
         self.scheme = ListBranchingScheme(["foo", "bar/bloe"])
 
     def test_create_from_string(self):
@@ -278,6 +289,7 @@ class ListScheme(TestCase):
 
 
 class TrunkScheme(TestCase):
+
     def test_is_branch_empty(self):
         self.assertFalse(TrunkBranchingScheme().is_branch(""))
 
@@ -473,9 +485,8 @@ class TrunkScheme(TestCase):
                           TrunkBranchingScheme(2).get_branch_path("foo", "my/project"))
 
 
-
-
 class SingleBranchingSchemeTests(TestCase):
+
     def test_is_branch(self):
         self.assertTrue(SingleBranchingScheme("bla").is_branch("bla"))
 
@@ -527,6 +538,7 @@ class SingleBranchingSchemeTests(TestCase):
 
 
 class FindCommitPathsTester(TestCase):
+
     def test_simple_trunk_only(self):
         self.assertEquals(["trunk"], 
             list(find_commit_paths([{"trunk": ('M', None, None)}])))
@@ -553,6 +565,7 @@ class FindCommitPathsTester(TestCase):
 
 
 class TestGuessBranchingSchemeFromBranchpath(TestCase):
+
     def test_guess_empty(self):
         self.assertIsInstance(guess_scheme_from_branch_path(""), 
                               NoBranchingScheme)
@@ -583,6 +596,7 @@ class TestGuessBranchingSchemeFromBranchpath(TestCase):
 
 
 class TestGuessBranchingSchemeFromPath(TestCase):
+
     def test_guess_empty(self):
         self.assertIsInstance(guess_scheme_from_path(""), 
                               NoBranchingScheme)
@@ -618,6 +632,7 @@ class TestGuessBranchingSchemeFromPath(TestCase):
 
 
 class TestGuessBranchingSchemeFromHistory(TestCase):
+
     def test_simple(self):
         (guess_scheme, actual_scheme) = guess_scheme_from_history([
             ({"trunk": ('M', None, None)}, 0, None)], 1)
@@ -675,6 +690,7 @@ class TestGuessBranchingSchemeFromHistory(TestCase):
 
 
 class SchemeFromBranchListTests(TestCase):
+
     def test_nobranchingscheme(self):
         self.assertIsInstance(scheme_from_branch_list(["."]), NoBranchingScheme)
 

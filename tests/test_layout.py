@@ -13,9 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib.tests import TestCase
+from bzrlib.tests import (
+    TestCase,
+    )
 
-from bzrlib.plugins.svn.errors import NotSvnBranchPath
+from bzrlib.plugins.svn.errors import (
+    NotSvnBranchPath,
+    )
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
@@ -41,12 +45,14 @@ class LayoutTests:
 class RootLayoutTests(TestCase,LayoutTests):
 
     def setUp(self):
+        TestCase.setUp(self)
         self.layout = RootLayout()
 
 
 class TrunkLayoutTests(TestCase,LayoutTests):
 
     def setUp(self):
+        TestCase.setUp(self)
         self.layout = TrunkLayout()
 
     def test_is_branch_parent(self):
@@ -82,6 +88,7 @@ class TrunkLayoutTests(TestCase,LayoutTests):
 class Trunk2LayoutTests(TestCase):
 
     def setUp(self):
+        TestCase.setUp(self)
         self.layout = TrunkLayout(2)
 
     def test_is_branch_parent_trunk(self):

@@ -13,6 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from copy import copy
+import subvertpy
+from subvertpy import ra
+
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import NoSuchRevision
@@ -21,20 +25,36 @@ from bzrlib.tests import TestCase
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
-import subvertpy
 from bzrlib.plugins.svn import format
-from subvertpy import ra
-from bzrlib.plugins.svn.layout.standard import TrunkLayout, RootLayout
-from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_REVISION_ID, mapping_registry
-from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3, SVN_PROP_BZR_BRANCHING_SCHEME, set_property_scheme
-from bzrlib.plugins.svn.mapping3.scheme import NoBranchingScheme, ListBranchingScheme, InvalidSvnBranchPath
-from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.tests.test_mapping import sha1
-
-from copy import copy
+from bzrlib.plugins.svn.layout.standard import (
+    RootLayout,
+    TrunkLayout,
+    )
+from bzrlib.plugins.svn.mapping import (
+    SVN_PROP_BZR_REVISION_ID,
+    mapping_registry,
+    )
+from bzrlib.plugins.svn.mapping3.base import (
+    BzrSvnMappingv3,
+    SVN_PROP_BZR_BRANCHING_SCHEME,
+    set_property_scheme,
+    )
+from bzrlib.plugins.svn.mapping3.scheme import (
+    InvalidSvnBranchPath,
+    ListBranchingScheme,
+    NoBranchingScheme,
+    )
+from bzrlib.plugins.svn.tests import (
+    SubversionTestCase,
+    )
+from bzrlib.plugins.svn.tests.test_mapping import (
+    sha1,
+    )
 
 class Mappingv3FilePropTests(TestCase):
+
     def setUp(self):
+        TestCase.setUp(self)
         self.mapping = BzrSvnMappingv3(NoBranchingScheme())
 
     def test_generate_revid(self):
@@ -587,7 +607,9 @@ class RepositoryTests(SubversionTestCase):
             repos.generate_revision_id(2, "", mapping)],
             branch.revision_history())
 
+
 class ErrorTests(TestCase):
+
     def test_invalidsvnbranchpath_nonascii(self):
         InvalidSvnBranchPath('\xc3\xb6', None)
 
