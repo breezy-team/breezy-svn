@@ -65,6 +65,10 @@ from bzrlib.trace import (
 from bzrlib.versionedfile import (
     FulltextContentFactory,
     )
+try:
+    from bzrlib.xml_serializer import escape_commit_message
+except ImportError:
+    from bzrlib.plugins.svn.foreign import escape_commit_message
 
 from bzrlib.plugins.svn import (
     changes,
@@ -80,9 +84,6 @@ from bzrlib.plugins.svn.fileids import (
     get_local_changes,
     idmap_lookup,
     idmap_reverse_lookup,
-    )
-from bzrlib.plugins.svn.foreign import (
-    escape_commit_message,
     )
 from bzrlib.plugins.svn.mapping import (
     SVN_PROP_BZR_PREFIX,
