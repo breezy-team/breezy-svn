@@ -481,7 +481,9 @@ if len(sys.argv) == 2:
         f.close()
         self.run_bzr('ci -m "Add good riddance."')
 
-        self.run_bzr('push %s/branches/my-branch' % svn_url)
+        output, err = self.run_bzr('push %s/branches/my-branch' % svn_url)
+        self.assertEquals(output, '')
+        self.assertEquals(err, 'Created new branch.\n')
         os.chdir(cwd)
 
         self.run_bzr('co %s/trunk bzr-trunk' % svn_url)
