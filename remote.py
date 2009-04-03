@@ -197,28 +197,14 @@ class SvnRemoteAccess(BzrDir):
         """See BzrDir.create_repository."""
         return self.open_repository()
 
-try:
-    from bzrlib.branch import InterBranchBzrDir
-except ImportError:
-    pass
-else:
-    class InterBranchSvnDir(InterBranchBzrDir):
-
-        @classmethod
-        def is_compatible(cls, source, target):
-            return isinstance(target, SvnRemoteAccess)
-
-        def push(self, revision_id=None, overwrite=False, remember=False):
+    def push_branch(self, source, revision_id=None, overwrite=False, remember=False):
+        try:
+            target_branch = self.open_branch()
+            target_branch.lock_write()
             try:
-                target_branch = self.target.open_branch()
-                target_branch.lock_write()
-                try:
-                    return target_branch.pull(self.source, stop_revision=revision_id, overwrite=overwrite) 
-                finally:
-                    target_branch.unlock()
-            except NotBranchError:
-                # FIXME: Return a PullResult
-                target_branch = self.target.import_branch(self.source, revision_id)
-
-
-    InterBranchBzrDir.register_optimiser(InterBranchSvnDir)
+                return target_branch.pull(source, stop_revision=revision_id, overwrite=overwrite) 
+            finally:
+                target_branch.unlock()
+        except NotBranchError:
+            # FIXME: Return a PullResult
+            target_branch = self.import_branch(source, revision_id)
