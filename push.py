@@ -443,9 +443,14 @@ class InterToSvnRepository(InterRepository):
         finally:
             self.source.unlock()
 
-    def fetch(self, revision_id=None, pb=None, find_ghosts=False):
+    def fetch(self, revision_id=None, pb=None, find_ghosts=False, 
+        fetch_spec=None):
         """Fetch revisions. """
-        self.copy_content(revision_id=revision_id, pb=pb)
+        if fetch_spec is not None:
+            for revid in fetch_spec.heads:
+                self.copy_content(revision_id=revid, pb=pb)
+        else:
+            self.copy_content(revision_id=revision_id, pb=pb)
 
     @staticmethod
     def is_compatible(source, target):

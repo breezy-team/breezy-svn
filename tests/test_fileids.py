@@ -195,7 +195,9 @@ class TestComplexFileids(SubversionTestCase):
 
 
 class TestFileMapping(TestCase):
+
     def setUp(self):
+        TestCase.setUp(self)
         self.generate_file_id = lambda (uuid, bp, revnum), ip: "%d@%s:%s:%s" % (revnum, uuid, bp, ip)
 
     def apply_mappings(self, mappings, renames={}):
