@@ -211,7 +211,10 @@ class SubversionCredentialStore(CredentialStore):
     def decode_password(self, credentials):
         svn_realm = "<%(scheme)s://%(host)s:%(port)s> %(realm)s" % credentials
         creds = self.auth.credentials("svn.simple", svn_realm)
-        (username, password, may_save) = creds.next()
+        try:
+            (username, password, may_save) = creds.next()
+        except StopIteration:
+            return None
         if credentials.get("user") not in (username, None):
             # Subversion changed the username
             return None
