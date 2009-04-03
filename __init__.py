@@ -181,7 +181,6 @@ def lazy_register_optimizers():
 plugin_cmds.register_lazy('cmd_svn_import', [], 'bzrlib.plugins.svn.commands')
 plugin_cmds.register_lazy('cmd_foreign_mapping_upgrade', ['svn-upgrade'], 
                           'bzrlib.plugins.svn.foreign')
-plugin_cmds.register_lazy('cmd_svn_push', [], 'bzrlib.plugins.svn.commands')
 plugin_cmds.register_lazy('cmd_svn_branching_scheme', [], 
                           'bzrlib.plugins.svn.mapping3.commands')
 plugin_cmds.register_lazy('cmd_svn_set_revprops', [], 
