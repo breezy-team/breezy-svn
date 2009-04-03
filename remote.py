@@ -28,6 +28,9 @@ from bzrlib.errors import (
     NotLocalUrl,
     NoWorkingTree,
     )
+from bzrlib.revision import (
+    NULL_REVISION,
+    )
 from bzrlib.trace import warning
 
 from bzrlib.plugins.svn.errors import (
@@ -198,13 +201,23 @@ class SvnRemoteAccess(BzrDir):
         return self.open_repository()
 
     def push_branch(self, source, revision_id=None, overwrite=False, remember=False):
+        from bzrlib.push import PushResult
+        ret = PushResult()
+        ret.source_branch = source
+        ret.workingtree_updated = None
+        ret.stacked_on = None
+        ret.master_branch = None
         try:
             target_branch = self.open_branch()
+            ret.target_branch = target_branch
             target_branch.lock_write()
             try:
-                return target_branch.pull(source, stop_revision=revision_id, overwrite=overwrite) 
+                ret.push_branch_result = target_branch.pull(
+                    source, stop_revision=revision_id, overwrite=overwrite) 
             finally:
                 target_branch.unlock()
         except NotBranchError:
-            # FIXME: Return a PullResult
-            target_branch = self.import_branch(source, revision_id)
+            ret.old_revno = 0
+            ret.old_revid = NULL_REVISION
+            ret.target_branch = self.import_branch(source, revision_id)
+        return ret
