@@ -83,6 +83,7 @@ def test_suite():
             'test_errors',
             'test_fetch',
             'test_fileids', 
+            'test_keywords',
             'test_layout',
             'test_logwalker',
             'test_mapping',

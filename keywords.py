@@ -17,6 +17,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+
+"""Support for keyword expansion similar to that done by svn:keywords."""
+
+
 import re
 
 from subvertpy import (
@@ -42,61 +46,58 @@ from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     )
 
-def keyword_date(c):
+
+def keyword_date(revid, rev, relpath, revmeta):
     """last changed date"""
-    revmeta = getattr(c.revision(), "svn_meta", None)
     if revmeta is not None:
         return revmeta.get_revprops().get(properties.PROP_REVISION_DATE, "")
-    return properties.time_to_cstring(1000000*c.revision().timestamp)
+    return properties.time_to_cstring(1000000*rev.timestamp)
 
 
-def keyword_rev(c):
+def keyword_rev(revid, rev, relpath, revmeta):
     """last revno that changed this file"""
     #  See if c.revision() can be traced back to a subversion revision
 
-    rev = c.revision()
     # Revision comes directly from a foreign repository
-    if (isinstance(rev, ForeignRevision) and 
-        isinstance(rev.mapping, BzrSvnMapping)):
-        return str(rev.foreign_revid[2])
+    if revmeta is not None:
+        return str(revmeta.revnum)
 
     # Revision was once imported from a foreign repository
     try:
-        foreign_revid, mapping = \
-            mapping_registry.parse_revision_id(rev.revision_id)
+        foreign_revid, mapping = mapping_registry.parse_revision_id(revid)
     except InvalidRevisionId:
         pass
     else:
         return str(foreign_revid[2])
 
     # If we can't find the actual svn revision, just return the bzr revid
-    return c.revision_id()
+    return revid
 
 
-def keyword_author(c):
+def keyword_author(revid, rev, relpath, revmeta):
     """author of the last commit."""
-    revmeta = getattr(c.revision(), "svn_meta", None)
     if revmeta is not None:
         return revmeta.get_revprops().get(properties.PROP_REVISION_AUTHOR, "")
-    return c.revision().committer
+    return rev.committer
 
 
-def keyword_id(c):
+def keyword_id(*args):
     """basename <space> revno <space> date <space> author"""
-    return "%s %s %s %s" % (urlutils.basename(c.relpath()), keyword_rev(c), 
-            keyword_date(c), keyword_author(c)) 
+    return "%s %s %s %s" % (urlutils.basename(keyword_url(*args)), 
+            keyword_rev(*args), keyword_date(*args), 
+            keyword_author(*args)) 
 
 
-def keyword_url(c):
+def keyword_url(revid, rev, relpath, revmeta):
     # URL in the svn repository
     # See if c.revision() can be traced back to a subversion revision
-    revmeta = getattr(c.revision(), "svn_meta", None)
     if revmeta is not None:
         return urlutils.join(revmeta.repository.base, revmeta.branch_path,
-                             c.relpath())
-    return c.relpath()
+                             relpath)
+    return relpath
 
 
+# callback(revision_id, revision, relpath, revmeta) -> str
 keywords = {
     "LastChangedDate": keyword_date,
     "Date": keyword_date,
@@ -142,9 +143,10 @@ def expand_keywords(s, allowed_keywords, context=None, encoder=None):
             result += match.group(0)
             rest = rest[match.end():]
             continue
-        expansion = keywords[keyword]
         try:
-            expansion = expansion(context)
+            expansion = keywords[keyword](context.revision_id(),
+                context.revision(), context.relpath(), 
+                getattr(context.revision(), "svn_meta", None))
         except AttributeError, err:
             if 'error' in debug.debug_flags:
                 trace.note("error evaluating %s for keyword %s: %s",
@@ -166,7 +168,6 @@ def compress_keywords(s, allowed_keywords):
     :param s: the string
     :return: the string with keywords compressed
     """
-    # TODO: Only compress allowed_keywords
     result = ''
     rest = s
     while True:
@@ -175,7 +176,10 @@ def compress_keywords(s, allowed_keywords):
             break
         result += rest[:match.start()]
         keyword = match.group(1)
-        result += "$%s$" % keyword
+        if keyword in allowed_keywords:
+            result += "$%s$" % keyword
+        else:
+            result += match.group(0)
         rest = rest[match.end():]
     return result + rest
 

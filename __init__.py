@@ -60,6 +60,9 @@ from bzrlib.transport import (
     register_lazy_transport,
     register_transport_proto,
     )
+from bzrlib.version_info_formats.format_rio import (
+    RioVersionInfoBuilder,
+    )
 
 # versions ending in 'exp' mean experimental mappings
 # versions ending in 'dev' mean development version
@@ -199,6 +202,20 @@ except ImportError: # not supported yet
 else:
     lazy_register_filter_stack_map("svn-keywords", 
             "bzrlib.plugins.svn.keywords", "svn_keywords")
+
+def update_stanza(rev, stanza):
+    revmeta = getattr(rev, "svn_meta", None)
+    if revmeta is None:
+        return
+    stanza.add("svn-revno", str(revmeta.revnum))
+    stanza.add("svn-uuid", revmeta.uuid)
+
+
+try:
+    RioVersionInfoBuilder.hooks.install_named_hook('revision',
+        update_stanza, None)
+except AttributeError:
+    pass
 
 def test_suite():
     """Returns the testsuite for bzr-svn."""
