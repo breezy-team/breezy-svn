@@ -226,7 +226,10 @@ class PathStrippingEditor(object):
         self.prefix = path.strip("/")
 
     def __getattr__(self, name):
-        return getattr(super(PathStrippingEditor, self), name, getattr(self.actual, name))
+        try:
+            return getattr(super(PathStrippingEditor, self), name)
+        except AttributeError:
+            return getattr(self.actual, name)
 
     def strip_prefix(self, path):
         path = path.strip("/")
@@ -455,17 +458,18 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # other location hasn't been removed yet. 
             if copyfrom_path is None:
                 # This should ideally never happen!
-                copyfrom_path = self.editor.old_inventory.id2path(file_id)
-                mutter('no copyfrom path set, assuming %r', copyfrom_path)
-            assert copyfrom_path == self.editor.old_inventory.id2path(file_id)
-            old_path = copyfrom_path
+                old_path = self.editor.old_inventory.id2path(file_id)
+                mutter('no copyfrom path set, assuming %r', old_path)
+            else:
+                assert copyfrom_path == self.editor.old_inventory.id2path(file_id)
+                old_path = copyfrom_path
             old_file_id = file_id
         else:
             old_path = None
             old_file_id = None
 
-        return DirectoryRevisionBuildEditor(self.editor, old_path, path, 
-            old_file_id, file_id, self.new_id, [])
+        return DirectoryRevisionBuildEditor(self.editor, old_path, path, old_file_id, file_id, 
+            self.new_id, [])
 
     def _open_directory(self, path, base_revnum):
         base_file_id = self.editor._get_old_id(self.old_id, path)
@@ -492,11 +496,12 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # other location hasn't been removed yet. 
             if copyfrom_path is None:
                 # This should ideally never happen
-                copyfrom_path = self.editor.old_inventory.id2path(file_id)
-                mutter('no copyfrom path set, assuming %r', copyfrom_path)
-            assert copyfrom_path == self.editor.old_inventory.id2path(file_id)
-            # No need to rename if it's already in the right spot
-            old_path = copyfrom_path
+                old_path = self.editor.old_inventory.id2path(file_id)
+                mutter('no copyfrom path set, assuming %r', old_path)
+            else:
+                assert copyfrom_path == self.editor.old_inventory.id2path(file_id)
+                # No need to rename if it's already in the right spot
+                old_path = copyfrom_path
         else:
             old_path = None
         # TODO: Retrieve base text here when used by replay/replay_range()
@@ -525,14 +530,14 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_path = None
             file_parents = []
             self._delete_entry(path, base_revnum)
-        return FileRevisionBuildEditor(self.editor, old_path, path, file_id, 
-            self.new_id, file_parents, file_data, is_symlink=is_symlink)
+        return FileRevisionBuildEditor(self.editor, old_path, path, file_id, self.new_id, 
+            file_parents, file_data, is_symlink=is_symlink)
 
 
 class FileRevisionBuildEditor(FileBuildEditor):
 
-    def __init__(self, editor, old_path, path, file_id, parent_file_id, 
-        file_parents=[], data="", is_symlink=False):
+    def __init__(self, editor, old_path, path, file_id, parent_file_id, file_parents=[], 
+        data="", is_symlink=False):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
         self.old_path = old_path
         self.file_id = file_id
@@ -643,6 +648,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self._inv_delta = []
         self._deleted = set()
         self._explicitly_deleted = set()
+        self.inventory = None
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
 
     def _finish_commit(self):
@@ -1280,9 +1286,11 @@ class InterFromSvnRepository(InterRepository):
                             revmeta = r
                             break
                     revmeta._revprops = revprops
-                    return editor_strip_prefix(self._get_editor(revmeta, mapping), revmeta.branch_path, self._text_cache, self._content_cache)
+                    return editor_strip_prefix(self._get_editor(revmeta, mapping), 
+                        revmeta.branch_path)
 
                 def revfinish(revision, revprops, editor):
+                    assert editor.inventory is not None
                     self._prev_inv = editor.inventory
 
                 conn = self.source.transport.get_connection(revmetas[-1].branch_path)
