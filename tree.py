@@ -26,6 +26,7 @@ from subvertpy import (
 import urllib
 
 from bzrlib import (
+    rules,
     osutils,
     urlutils,
     )
@@ -42,12 +43,58 @@ from bzrlib.revisiontree import (
     )
 from bzrlib.trace import mutter
 
-from bzrlib.plugins.svn.fileids import idmap_lookup
+from bzrlib.plugins.svn.fileids import (
+    idmap_lookup,
+    )
 
 class SubversionTree(object):
 
     def get_file_properties(self, file_id, path=None):
         raise NotImplementedError(self.get_file_properties)
+
+    def supports_content_filtering(self):
+        return True
+
+    def _get_rules_searcher(self, default_searcher):
+        """Get the RulesSearcher for this tree given the default one."""
+        return rules._StackedRulesSearcher(
+            [SvnRulesSearcher(self), default_searcher])
+
+
+# This maps SVN names for eol-styles to bzr names:
+eol_style = {
+    "native": "native",
+    "CRLF": "crlf",
+    "LF": "lf",
+    "CR": "cr"
+    }
+
+class SvnRulesSearcher(object):
+
+    def __init__(self, tree):
+        self.tree = tree
+
+    def _map_property(self, name, value):
+        if name == "svn:eol-style":
+            if value in eol_style:
+                return ("eol", eol_style[value])
+            mutter("Unknown svn:eol-style setting '%r'", value)
+            return None
+        elif name == "svn:keywords":
+            return ("svn-keywords", value)
+        else:
+            # Unknown or boring setting
+            return None
+
+    def get_items(self, path):
+        file_id = self.tree.path2id(path)
+        for k, v in self.tree.get_file_properties(file_id, path).iteritems():
+            prop = self._map_property(k, v)
+            if prop is not None:
+                yield prop
+
+    def get_selected_items(self, path, names):
+        return tuple([(k, v) for (k, v) in self.get_items(path) if k in names])
 
 
 def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
@@ -84,8 +131,9 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     inv.add(ie)
 
 
-class SvnRevisionTree(RevisionTree, SubversionTree):
+class SvnRevisionTree(SubversionTree,RevisionTree):
     """A tree that existed in a historical Subversion revision."""
+
     def __init__(self, repository, revision_id):
         self._repository = repository
         self._revision_id = revision_id
@@ -254,7 +302,7 @@ class FileTreeEditor(object):
         return delta.apply_txdelta_handler("", self.file_stream)
 
 
-class SvnBasisTree(RevisionTree, SubversionTree):
+class SvnBasisTree(SubversionTree,RevisionTree):
     """Optimized version of SvnRevisionTree."""
 
     def __init__(self, workingtree):
