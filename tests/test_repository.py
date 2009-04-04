@@ -225,7 +225,9 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
 
 
 class SvnRepositoryFormatTests(TestCase):
+
     def setUp(self):
+        TestCase.setUp(self)
         self.format = SvnRepositoryFormat()
 
     def test_initialize(self):
