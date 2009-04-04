@@ -434,6 +434,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         """
         super(SvnCommitBuilder, self).__init__(repository, parents, 
             config, timestamp, timezone, committer, revprops, revision_id)
+        # revision ids are either specified or predictable
+        self.random_revid = False
         self.branch_path = branch_path
         self.push_metadata = push_metadata
         self._append_revisions_only = append_revisions_only
