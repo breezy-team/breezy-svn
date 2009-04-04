@@ -504,13 +504,13 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                 old_path = copyfrom_path
         else:
             old_path = None
-        # TODO: Retrieve base text here when used by replay/replay_range()
-        return FileRevisionBuildEditor(self.editor, old_path, path, 
-                                       file_id, self.new_id)
-
-    def _get_record_stream(self, file_id, revision_id):
-        return self.editor.texts.get_record_stream([(file_id, revision_id)], 
-                                                   'unordered', True).next()
+        if copyfrom_path is not None:
+            # Delta's will be against this text
+            data = self.editor.get_old_text(copyfrom_path, copyfrom_revnum, file_id)
+        else:
+            data = []
+        return FileRevisionBuildEditor(self.editor, old_path, path, file_id, self.new_id,
+            data=data)
 
     def _open_file(self, path, base_revnum):
         base_file_id = self.editor._get_old_id(self.old_id, path)
@@ -520,7 +520,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         is_symlink = (base_ie.kind == 'symlink')
         file_data = self.editor._text_cache.get((base_file_id, base_revid))
         if file_data is None: # Not present in cache
-            record = self._get_record_stream(base_file_id, base_revid)
+            record = self.editor._get_record(base_file_id, base_revid)
             file_data = record.get_bytes_as('chunked')
         if file_id == base_file_id:
             file_parents = [base_revid]
@@ -537,7 +537,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 class FileRevisionBuildEditor(FileBuildEditor):
 
     def __init__(self, editor, old_path, path, file_id, parent_file_id, file_parents=[], 
-        data="", is_symlink=False):
+        data=[], is_symlink=False):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
         self.old_path = old_path
         self.file_id = file_id
@@ -650,6 +650,32 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self._explicitly_deleted = set()
         self.inventory = None
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
+
+    def get_old_text(self, path, revnum, new_file_id=None):
+        """Retrieve the contents of the old revision of path in revnum.
+
+        :param new_file_id: File id of the file in a newer revision, not necessarily 
+            the same as the file id in the old revision. 
+        """
+        # Find the ancestor of self.revmeta with revnum revnum
+        last_revmeta = None
+        for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(
+            self.revmeta.branch_path, self.revmeta.revnum, revnum, self.mapping):
+            last_revmeta = revmeta
+        assert last_revmeta is not None and last_revmeta.revnum == revnum
+        revid = last_revmeta.get_revision_id(mapping)
+        # Check if (new_file_id, revid) exists in texts, and return if it does
+        record = self._get_record(new_file_id, revid)
+        if record.storage_kind != 'absent':
+            return record.get_bytes_as('chunked')
+        # TODO: Use InterRepository._get_inventory() for better performance, 
+        # as it does (some) caching ?
+        inv = self.target.get_inventory(revid)
+        file_id = inv.path2id(path)
+        return self._get_record(file_id, inv[file_id].revision).get_bytes_as('chunked')
+
+    def _get_record(self, file_id, revision_id):
+        return self.texts.get_record_stream([(file_id, revision_id)], 'unordered', True).next()
 
     def _finish_commit(self):
         rev = self.revmeta.get_revision(self.mapping)
@@ -1116,7 +1142,8 @@ class InterFromSvnRepository(InterRepository):
         assert revmeta.revnum >= 0
         conn = self.source.transport.get_connection(revmeta.branch_path)
         try:
-            conn.replay(revmeta.revnum, 0, editor_strip_prefix(editor, revmeta.branch_path), True)
+            conn.replay(revmeta.revnum, 0, editor_strip_prefix(editor, revmeta.branch_path), 
+                True)
         finally:
             if not conn.busy:
                 self.source.transport.add_connection(conn)
