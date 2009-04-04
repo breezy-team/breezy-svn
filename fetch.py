@@ -674,7 +674,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _finish_commit(self):
         rev = self.revmeta.get_revision(self.mapping)
         # Escaping the commit message is really the task of the serialiser
-        rev.message, num_replaced = escape_invalid_chars(rev.message)
+        if rev.message is not None:
+            rev.message, num_replaced = escape_invalid_chars(rev.message)
         try:
             basis_id = rev.parent_ids[0]
         except IndexError:
