@@ -13,12 +13,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+"""Version 4 mappings."""
+
+
 import urllib
 
-from bzrlib import errors
+from bzrlib import (
+    errors,
+    )
 
-from bzrlib.plugins.svn import mapping
-from bzrlib.plugins.svn.errors import InvalidFileId
+from bzrlib.plugins.svn import (
+    mapping,
+    )
+from bzrlib.plugins.svn.errors import (
+    InvalidFileId,
+    )
 
 supported_features = set()
 

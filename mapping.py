@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 """Maps between Subversion and Bazaar semantics."""
+
 
 import calendar
 from subvertpy import properties
@@ -24,8 +26,12 @@ from bzrlib import (
     foreign,
     osutils,
     )
-from bzrlib.lazy_import import lazy_import
-from bzrlib.errors import InvalidRevisionId
+from bzrlib.lazy_import import (
+    lazy_import,
+    )
+from bzrlib.errors import (
+    InvalidRevisionId,
+    )
 from bzrlib.revision import (
     NULL_REVISION,
     Revision,
@@ -37,6 +43,7 @@ from bzrlib.plugins.svn import (
     get_client_string,
     version_info,
     )
+
 
 SVN_PROP_BZR_PREFIX = 'bzr:'
 SVN_PROP_BZR_ANCESTRY = 'bzr:ancestry:'

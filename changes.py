@@ -13,9 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 """Utility functions for dealing with changes dictionaries as return by Subversions' log functions."""
 
+
 REV0_CHANGES = {"": ('A', None, -1)}
+
 
 def path_is_child(branch_path, path):
     """Check whether path is or is under branch_path."""
@@ -152,6 +155,7 @@ def apply_reverse_changes(branches, changes):
 def rebase_path(path, orig_parent, new_parent):
     """Rebase a path on a different parent."""
     return (new_parent+"/"+path[len(orig_parent):].strip("/")).strip("/")
+
 
 def changes_outside_branch_path(branch_path, paths):
     """Check whether there are any paths that are not under branch_path."""

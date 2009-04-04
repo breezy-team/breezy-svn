@@ -44,6 +44,9 @@ from bzrlib.commands import (
 from bzrlib.errors import (
     DependencyNotPresent,
     )
+from bzrlib.filters import (
+    lazy_register_filter_stack_map,
+    )
 from bzrlib.foreign import (
     foreign_vcs_registry,
     )
@@ -75,7 +78,7 @@ else:
     version_string = '%d.%d.%d%s%d' % version_info
 __version__ = version_string
 
-COMPATIBLE_BZR_VERSIONS = [(1, 13, 0)]
+COMPATIBLE_BZR_VERSIONS = [(1, 14, 0)]
 MINIMUM_SUBVERTPY_VERSION = (0, 6, 1)
 
 
@@ -195,13 +198,8 @@ plugin_cmds.register_lazy('cmd_svn_layout', [],
 plugin_cmds.register_lazy('cmd_svn_serve', [], 
                           'bzrlib.plugins.svn.commands')
 
-try:
-    from bzrlib.filters import lazy_register_filter_stack_map
-except ImportError: # not supported yet
-    pass
-else:
-    lazy_register_filter_stack_map("svn-keywords", 
-            "bzrlib.plugins.svn.keywords", "svn_keywords")
+lazy_register_filter_stack_map("svn-keywords", 
+        "bzrlib.plugins.svn.keywords", "svn_keywords")
 
 def update_stanza(rev, stanza):
     revmeta = getattr(rev, "svn_meta", None)

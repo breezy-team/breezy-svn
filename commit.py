@@ -13,9 +13,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
 """Committing to Subversion repositories."""
 
-from cStringIO import StringIO
+
+from cStringIO import (
+    StringIO,
+    )
 from subvertpy import (
     delta, 
     properties, 
@@ -43,7 +48,9 @@ from bzrlib.revision import (
     NULL_REVISION,
     )
 
-from bzrlib.plugins.svn import mapping
+from bzrlib.plugins.svn import (
+    mapping,
+    )
 from bzrlib.plugins.svn.errors import (
     convert_svn_error, 
     AppendRevisionsOnlyViolation,
@@ -66,6 +73,7 @@ from bzrlib.plugins.svn.util import (
 from bzrlib.plugins.svn.versionedfiles import (
     SvnTexts,
     )
+
 
 PROP_REVISION_ORIGINAL_DATE = getattr(properties, "PROP_REVISION_ORIGINAL_DATE", "svn:original-date")
 

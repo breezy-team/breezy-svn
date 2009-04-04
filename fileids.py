@@ -13,7 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
 """Generation of file-ids."""
+
 
 try:
     from collections import defaultdict
@@ -26,11 +29,21 @@ from bzrlib import (
     ui,
     urlutils,
     )
-from bzrlib.errors import RevisionNotPresent
-from bzrlib.knit import make_file_factory
-from bzrlib.revision import NULL_REVISION
-from bzrlib.trace import mutter
-from bzrlib.versionedfile import ConstantMapper
+from bzrlib.errors import (
+    RevisionNotPresent,
+    )
+from bzrlib.knit import (
+    make_file_factory,
+    )
+from bzrlib.revision import (
+    NULL_REVISION,
+    )
+from bzrlib.trace import (
+    mutter,
+    )
+from bzrlib.versionedfile import (
+    ConstantMapper,
+    )
 
 from bzrlib.plugins.svn import (
     changes, 

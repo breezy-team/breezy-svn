@@ -13,7 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
 """Stores per-repository settings."""
+
 
 import os
 from subvertpy import (
@@ -22,25 +25,25 @@ from subvertpy import (
     )
 
 from bzrlib import (
-        osutils,
-        urlutils,
-        trace,
-        )
+    osutils,
+    urlutils,
+    trace,
+    )
 from bzrlib.config import (
-        ConfigObj,
-        IniBasedConfig,
-        config_dir,
-        ensure_config_dir_exists,
-        GlobalConfig,
-        LocationConfig,
-        Config,
-        STORE_BRANCH,
-        STORE_GLOBAL,
-        STORE_LOCATION,
-        )
+    ConfigObj,
+    IniBasedConfig,
+    config_dir,
+    ensure_config_dir_exists,
+    GlobalConfig,
+    LocationConfig,
+    Config,
+    STORE_BRANCH,
+    STORE_GLOBAL,
+    STORE_LOCATION,
+    )
 from bzrlib.errors import (
-        BzrError,
-        )
+    BzrError,
+    )
 
 
 

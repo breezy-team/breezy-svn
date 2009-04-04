@@ -80,10 +80,18 @@ from bzrlib.plugins.svn.errors import (
 from bzrlib.plugins.svn.fileids import (
     idmap_lookup,
     )
-from bzrlib.plugins.svn.format import get_rich_root_format
-from bzrlib.plugins.svn.mapping import escape_svn_path
-from bzrlib.plugins.svn.remote import SvnRemoteAccess
-from bzrlib.plugins.svn.repository import SvnRepository
+from bzrlib.plugins.svn.format import (
+    get_rich_root_format,
+    )
+from bzrlib.plugins.svn.mapping import (
+    escape_svn_path,
+    )
+from bzrlib.plugins.svn.remote import (
+    SvnRemoteAccess,
+    )
+from bzrlib.plugins.svn.repository import (
+    SvnRepository,
+    )
 from bzrlib.plugins.svn.transport import (
     SvnRaTransport,
     svn_config,

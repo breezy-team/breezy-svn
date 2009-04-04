@@ -13,7 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
 """Fetching revisions from Subversion repositories in batches."""
+
 
 from collections import deque
 try:
@@ -65,10 +68,9 @@ from bzrlib.trace import (
 from bzrlib.versionedfile import (
     FulltextContentFactory,
     )
-try:
-    from bzrlib.xml_serializer import escape_commit_message
-except ImportError:
-    from bzrlib.plugins.svn.foreign import escape_commit_message
+from bzrlib.xml_serializer import (
+    escape_invalid_chars,
+    )
 
 from bzrlib.plugins.svn import (
     changes,
@@ -646,7 +648,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _finish_commit(self):
         rev = self.revmeta.get_revision(self.mapping)
         # Escaping the commit message is really the task of the serialiser
-        rev.message = escape_commit_message(rev.message)
+        rev.message, num_replaced = escape_invalid_chars(rev.message)
         try:
             basis_id = rev.parent_ids[0]
         except IndexError:

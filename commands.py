@@ -14,7 +14,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+
 """Subversion-specific Bazaar command line subcommands."""
+
 
 from bzrlib.commands import (
     Command,
@@ -23,6 +25,7 @@ from bzrlib.option import (
     Option,
     RegistryOption,
     )
+
 
 def get_layout(layoutname):
     """Parse layout name and return a layout.
@@ -39,6 +42,7 @@ def get_layout(layoutname):
     except KeyError:
         raise BzrCommandError('No such repository layout %r' % layoutname)
     return ret
+
 
 class cmd_svn_import(Command):
     """Convert a Subversion repository to a Bazaar repository.

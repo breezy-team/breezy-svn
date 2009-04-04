@@ -13,21 +13,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
 """Subversion BzrDir formats."""
 
-from bzrlib import errors as bzr_errors
+
+from bzrlib import (
+    errors as bzr_errors,
+    trace,
+    )
 from bzrlib.bzrdir import (
     BzrDirFormat,
     format_registry,
     )
-from bzrlib.lockable_files import TransportLock
-from bzrlib.trace import mutter
+from bzrlib.lockable_files import (
+    TransportLock,
+    )
+
 
 def get_rich_root_format():
-    try:
-        return format_registry.make_bzrdir('default-rich-root')
-    except KeyError:
-        return format_registry.make_bzrdir('1.9-rich-root')
+    return format_registry.make_bzrdir('default-rich-root')
 
 
 def get_nested_tree_format():
@@ -103,8 +108,8 @@ class SvnRemoteFormat(SvnControlFormat):
             if num in (subvertpy.ERR_RA_ILLEGAL_URL, \
                        subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED, \
                        subvertpy.ERR_BAD_URL):
-                mutter("Unable to open %r with Subversion: %s", 
-                        transport, msg)
+                trace.mutter("Unable to open %r with Subversion: %s", 
+                    transport, msg)
                 raise bzr_errors.NotBranchError(path=transport.base)
         except bzr_errors.InvalidURL:
             raise bzr_errors.NotBranchError(path=transport.base)

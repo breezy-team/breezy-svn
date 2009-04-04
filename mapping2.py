@@ -13,8 +13,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib.errors import InvalidRevisionId
-from bzrlib.inventory import ROOT_ID
+
+
+from bzrlib.errors import (
+    InvalidRevisionId,
+    )
+from bzrlib.inventory import (
+    ROOT_ID,
+    )
 
 from bzrlib.plugins.svn.errors import (
     LayoutUnusable,

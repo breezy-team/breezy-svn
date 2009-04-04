@@ -13,15 +13,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 """Annotate support."""
 
-from cStringIO import StringIO
-from subvertpy.delta import apply_txdelta_window
 
-from bzrlib.annotate import reannotate
+from cStringIO import (
+    StringIO,
+    )
+from subvertpy.delta import (
+    apply_txdelta_window,
+    )
 
-from bzrlib.plugins.svn import changes
-from bzrlib.plugins.svn.fileids import idmap_lookup
+from bzrlib.annotate import (
+    reannotate,
+    )
+
+from bzrlib.plugins.svn import (
+    changes,
+    )
+from bzrlib.plugins.svn.fileids import (
+    idmap_lookup,
+    )
 
 
 class Annotater(object):

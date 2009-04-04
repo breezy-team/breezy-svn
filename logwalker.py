@@ -13,7 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
 """Cache of the Subversion history log."""
+
 
 import subvertpy
 
@@ -21,12 +24,23 @@ from bzrlib import (
     ui,
     urlutils,
     )
-from bzrlib.errors import NoSuchRevision
+from bzrlib.errors import (
+    NoSuchRevision,
+    )
 
-from bzrlib.plugins.svn import changes
-from bzrlib.plugins.svn.cache import CacheTable
-from bzrlib.plugins.svn.transport import SvnRaTransport
-from bzrlib.plugins.svn.util import lazy_dict
+from bzrlib.plugins.svn import (
+    changes,
+    )
+from bzrlib.plugins.svn.cache import (
+    CacheTable,
+    )
+from bzrlib.plugins.svn.transport import (
+    SvnRaTransport,
+    )
+from bzrlib.plugins.svn.util import (
+    lazy_dict,
+    )
+
 
 # Maximum number of extra revisions to fetch in caching logwalker
 MAX_OVERHEAD_FETCH = 1000

@@ -13,7 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
 """Conversion of full repositories."""
+
 
 import os
 from subvertpy import (
@@ -36,16 +39,32 @@ from bzrlib.errors import (
     NoSuchRevision,
     NoRepositoryPresent,
     ) 
-from bzrlib.repository import InterRepository
-from bzrlib.revision import ensure_null
-from bzrlib.transport import get_transport
+from bzrlib.repository import (
+    InterRepository,
+    )
+from bzrlib.revision import (
+    ensure_null,
+    )
+from bzrlib.transport import (
+    get_transport,
+    )
 
-from bzrlib.plugins.svn.branch import SvnBranch
-from bzrlib.plugins.svn.fetch import FetchRevisionFinder
-from bzrlib.plugins.svn.format import get_rich_root_format
-from bzrlib.plugins.svn.revmeta import filter_revisions
+from bzrlib.plugins.svn.branch import (
+    SvnBranch,
+    )
+from bzrlib.plugins.svn.fetch import (
+    FetchRevisionFinder,
+    )
+from bzrlib.plugins.svn.format import (
+    get_rich_root_format,
+    )
+from bzrlib.plugins.svn.revmeta import (
+    filter_revisions,
+    )
+
 
 LATEST_IMPORT_REVISION_FILENAME = "svn-import-revision"
+
 
 def get_latest_svn_import_revision(repo, uuid):
     """Retrieve the latest revision checked by svn-import.
