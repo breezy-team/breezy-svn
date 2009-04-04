@@ -145,6 +145,10 @@ class BranchConfigTests(SubversionTestCase):
         self.assertEquals(["svn:author", "svn:date"], self.config.get_override_svn_revprops())
         self.config.set_user_option("override-svn-revprops", ["svn:author"])
         self.assertEquals(["svn:author"], self.config.get_override_svn_revprops())
+        self.config.set_user_option("override-svn-revprops", ["svn:author=author"])
+        self.assertEquals(["svn:author=author"], self.config.get_override_svn_revprops())
+        self.config.set_user_option("override-svn-revprops", ["svn:author=committer"])
+        self.assertEquals(["svn:author=committer"], self.config.get_override_svn_revprops())
 
     def test_get_append_revisions_only(self):
         self.assertEquals(None, self.config.get_append_revisions_only())

@@ -804,8 +804,11 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         if self._override_svn_revprops is not None:
             new_revprops = {}
-            if properties.PROP_REVISION_AUTHOR in self._override_svn_revprops:
+            if (("%s=committer" % properties.PROP_REVISION_AUTHOR) in self._override_svn_revprops or 
+                properties.PROP_REVISION_AUTHOR in self._override_svn_revprops):
                 new_revprops[properties.PROP_REVISION_AUTHOR] = self._committer.encode("utf-8")
+            if "%s=author" % properties.PROP_REVISION_AUTHOR in self._override_svn_revprops:
+                new_revprops[properties.PROP_REVISION_AUTHOR] = ",".join(self.get_apparent_authors()).encode("utf-8")
             if properties.PROP_REVISION_DATE in self._override_svn_revprops:
                 new_revprops[properties.PROP_REVISION_DATE] = properties.time_to_cstring(1000000*self._timestamp)
             set_svn_revprops(self.repository, result_revision, new_revprops)
