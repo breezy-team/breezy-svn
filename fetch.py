@@ -48,7 +48,6 @@ from bzrlib import (
     )
 from bzrlib.errors import (
     NoSuchRevision,
-    RevisionNotPresent,
     VersionedFileInvalidChecksum,
     )
 from bzrlib.inventory import (
@@ -458,9 +457,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # This directory was moved here from somewhere else, but the 
             # other location hasn't been removed yet. 
             if copyfrom_path is None:
-                # This should ideally never happen!
                 old_path = self.editor.old_inventory.id2path(file_id)
-                mutter('no copyfrom path set, assuming %r', old_path)
             else:
                 assert copyfrom_path == self.editor.old_inventory.id2path(file_id)
                 old_path = copyfrom_path
@@ -496,9 +493,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # This file was moved here from somewhere else, but the 
             # other location hasn't been removed yet. 
             if copyfrom_path is None:
-                # This should ideally never happen
                 old_path = self.editor.old_inventory.id2path(file_id)
-                mutter('no copyfrom path set, assuming %r', old_path)
             else:
                 assert copyfrom_path == self.editor.old_inventory.id2path(file_id)
                 # No need to rename if it's already in the right spot
@@ -507,7 +502,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_path = None
         if copyfrom_path is not None:
             # Delta's will be against this text
-            data = self.editor.get_old_text(copyfrom_path, copyfrom_revnum, file_id)
+            copyfrom_ie = self.editor.get_old_ie(copyfrom_path, copyfrom_revnum)
+            data = self.editor._get_chunked(ie.file_id, ie.revision)
         else:
             data = []
         return FileRevisionBuildEditor(self.editor, old_path, path, file_id, self.new_id,
@@ -519,10 +515,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         file_id = self.editor._get_existing_id(self.old_id, self.new_id, path)
         base_ie = self.editor.old_inventory[base_file_id]
         is_symlink = (base_ie.kind == 'symlink')
-        file_data = self.editor._text_cache.get((base_file_id, base_revid))
-        if file_data is None: # Not present in cache
-            record = self.editor._get_record(base_file_id, base_revid)
-            file_data = record.get_bytes_as('chunked')
+        file_data = self.editor._get_chunked(base_file_id, base_revid)
         if file_id == base_file_id:
             file_parents = [base_revid]
             old_path = path
@@ -652,12 +645,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self.inventory = None
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
 
-    def get_old_text(self, path, revnum, new_file_id=None):
-        """Retrieve the contents of the old revision of path in revnum.
-
-        :param new_file_id: File id of the file in a newer revision, not necessarily 
-            the same as the file id in the old revision. 
-        """
+    def get_old_ie(self, path, revnum):
         # Find the ancestor of self.revmeta with revnum revnum
         last_revmeta = None
         for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(
@@ -665,16 +653,11 @@ class RevisionBuildEditor(DeltaBuildEditor):
             last_revmeta = revmeta
         assert last_revmeta is not None and last_revmeta.revnum == revnum
         revid = last_revmeta.get_revision_id(mapping)
-        # Check if (new_file_id, revid) exists in texts, and return if it does
-        try:
-            return self._get_chunked(new_file_id, revid)
-        except RevisionNotPresent:
-            pass
         # TODO: Use InterRepository._get_inventory() for better performance, 
         # as it does (some) caching ?
         inv = self.target.get_inventory(revid)
         file_id = inv.path2id(path)
-        return self._get_chunked(file_id, inv[file_id].revision)
+        return inv[file_id]
 
     def _get_record(self, file_id, revision_id):
         return self.texts.get_record_stream([(file_id, revision_id)], 'unordered', True).next()
@@ -682,7 +665,6 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _get_chunked(self, file_id, revision_id):
         file_data = self._text_cache.get((file_id, revision_id))
         if file_data is not None: 
-            # In case
             return file_data
         record = self._get_record(file_id, revision_id)
         if record.storage_kind == 'absent':
