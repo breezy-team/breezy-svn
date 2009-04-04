@@ -834,6 +834,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
 class SvnWorkingTreeFormat(WorkingTreeFormat):
     """Subversion working copy format."""
+
     def __init__(self, version):
         self.version = version
 
@@ -858,6 +859,7 @@ class SvnWorkingTreeFormat(WorkingTreeFormat):
 class SvnCheckout(BzrDir):
     """BzrDir implementation for Subversion checkouts (directories 
     containing a .svn subdirectory."""
+
     def __init__(self, transport, format):
         super(SvnCheckout, self).__init__(transport, format)
         self.local_path = transport.local_abspath(".")
