@@ -48,6 +48,7 @@ from bzrlib import (
     )
 from bzrlib.errors import (
     NoSuchRevision,
+    RevisionNotPresent,
     VersionedFileInvalidChecksum,
     )
 from bzrlib.inventory import (
@@ -665,17 +666,28 @@ class RevisionBuildEditor(DeltaBuildEditor):
         assert last_revmeta is not None and last_revmeta.revnum == revnum
         revid = last_revmeta.get_revision_id(mapping)
         # Check if (new_file_id, revid) exists in texts, and return if it does
-        record = self._get_record(new_file_id, revid)
-        if record.storage_kind != 'absent':
-            return record.get_bytes_as('chunked')
+        try:
+            return self._get_chunked(new_file_id, revid)
+        except RevisionNotPresent:
+            pass
         # TODO: Use InterRepository._get_inventory() for better performance, 
         # as it does (some) caching ?
         inv = self.target.get_inventory(revid)
         file_id = inv.path2id(path)
-        return self._get_record(file_id, inv[file_id].revision).get_bytes_as('chunked')
+        return self._get_chunked(file_id, inv[file_id].revision)
 
     def _get_record(self, file_id, revision_id):
         return self.texts.get_record_stream([(file_id, revision_id)], 'unordered', True).next()
+
+    def _get_chunked(self, file_id, revision_id):
+        file_data = self._text_cache.get((file_id, revision_id))
+        if file_data is not None: 
+            # In case
+            return file_data
+        record = self._get_record(file_id, revision_id)
+        if record.storage_kind == 'absent':
+            raise RevisionNotPresent(revision_id, file_id)
+        return record.get_bytes_as('chunked')
 
     def _finish_commit(self):
         rev = self.revmeta.get_revision(self.mapping)
