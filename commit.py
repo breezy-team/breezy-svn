@@ -16,11 +16,9 @@
 """Committing to Subversion repositories."""
 
 from cStringIO import StringIO
-import subvertpy
 from subvertpy import (
     delta, 
     properties, 
-    ERR_FS_TXN_OUT_OF_DATE,
     NODE_DIR, 
     SubversionException, 
     )
@@ -31,25 +29,18 @@ from bzrlib import (
     trace, 
     ui,
     )
-from bzrlib.branch import Branch
 from bzrlib.errors import (
     BzrError, 
-    DivergedBranches, 
     NoSuchRevision,
     )
-from bzrlib.inventory import Inventory
+from bzrlib.inventory import (
+    Inventory,
+    )
 from bzrlib.repository import (
     RootCommitBuilder, 
-    InterRepository, 
-    Repository,
     )
 from bzrlib.revision import (
     NULL_REVISION,
-    ensure_null,
-    )
-from bzrlib.trace import (
-    mutter,
-    warning,
     )
 
 from bzrlib.plugins.svn import mapping
@@ -60,18 +51,21 @@ from bzrlib.plugins.svn.errors import (
     MissingPrefix, 
     RevpropChangeFailed, 
     )
-from bzrlib.plugins.svn.mapping import (
-    SVN_REVPROP_BZR_POINTLESS,
-    )
 from bzrlib.plugins.svn.svk import (
     generate_svk_feature, 
     parse_svk_features, 
     serialize_svk_features, 
     SVN_PROP_SVK_MERGE
     )
-from bzrlib.plugins.svn.transport import url_join_unescaped_path
-from bzrlib.plugins.svn.util import lazy_dict
-from bzrlib.plugins.svn.versionedfiles import SvnTexts
+from bzrlib.plugins.svn.transport import (
+    url_join_unescaped_path,
+    )
+from bzrlib.plugins.svn.util import (
+    lazy_dict,
+    )
+from bzrlib.plugins.svn.versionedfiles import (
+    SvnTexts,
+    )
 
 PROP_REVISION_ORIGINAL_DATE = getattr(properties, "PROP_REVISION_ORIGINAL_DATE", "svn:original-date")
 
@@ -247,7 +241,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
                 new_inv[child_ie.file_id].name != child_name or
                 # ... kind changed
                 child_ie.kind != new_inv[child_ie.file_id].kind):
-                mutter('removing %r(%r)', child_name, child_ie.file_id)
+                trace.mutter('removing %r(%r)', child_name, child_ie.file_id)
                 dir_editor.delete_entry(
                     branch_relative_path(path, child_name.encode("utf-8")), 
                     base_revnum)
@@ -266,7 +260,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
         # add them if they didn't exist in base_inv or changed kind
         if (not child_ie.file_id in base_inv or 
             base_inv[child_ie.file_id].kind != child_ie.kind):
-            mutter('adding %s %r', child_ie.kind, new_child_path)
+            trace.mutter('adding %s %r', child_ie.kind, new_child_path)
 
             # Do a copy operation if at all possible, to make 
             # the log a bit easier to read for Subversion people
@@ -286,7 +280,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
         # copy if they existed at different location
         elif (base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
                 base_inv[child_ie.file_id].parent_id != child_ie.parent_id):
-            mutter('copy %s %r -> %r', child_ie.kind, 
+            trace.mutter('copy %s %r -> %r', child_ie.kind, 
                               base_inv.id2path(child_ie.file_id), 
                               new_child_path)
             child_editor = dir_editor.add_file(full_new_child_path, 
@@ -295,7 +289,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
             changed = True
         # open if they existed at the same location
         elif child_ie.file_id in modified_files:
-            mutter('open %s %r', child_ie.kind, new_child_path)
+            trace.mutter('open %s %r', child_ie.kind, new_child_path)
 
             child_editor = dir_editor.open_file(
                     full_new_child_path, base_revnum)
@@ -346,7 +340,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
         # add them if they didn't exist in base_inv or changed kind
         if (not child_ie.file_id in base_inv or 
             base_inv[child_ie.file_id].kind != child_ie.kind):
-            mutter('adding dir %r', child_ie.name)
+            trace.mutter('adding dir %r', child_ie.name)
             
             # Do a copy operation if at all possible, to make 
             # the log a bit easier to read for Subversion people
@@ -369,7 +363,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
         # copy if they existed at different location
         elif base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or base_inv[child_ie.file_id].parent_id != child_ie.parent_id:
             old_child_path = base_inv.id2path(child_ie.file_id).encode("utf-8")
-            mutter('copy dir %r -> %r', old_child_path, new_child_path)
+            trace.mutter('copy dir %r -> %r', old_child_path, new_child_path)
             copyfrom_url = url_join_unescaped_path(base_url, old_child_path)
             copyfrom_revnum = base_revnum
 
@@ -381,7 +375,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
         # open if they existed at the same location and 
         # the directory was touched
         elif child_ie.file_id in visit_dirs:
-            mutter('open dir %r', new_child_path)
+            trace.mutter('open dir %r', new_child_path)
 
             child_editor = dir_editor.open_directory(
                     branch_relative_path(new_child_path), 
@@ -538,7 +532,7 @@ class SvnCommitBuilder(RootCommitBuilder):
     @staticmethod
     def mutter(text, *args):
         if 'commit' in debug.debug_flags:
-            mutter(text, *args)
+            trace.mutter(text, *args)
 
     def _generate_revision_if_needed(self):
         """See CommitBuilder._generate_revision_if_needed()."""
@@ -716,7 +710,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             for prop in self._svn_revprops:
                 assert prop.split(":")[0] in ("bzr", "svk", "svn")
                 if not properties.is_valid_property_name(prop):
-                    warning("Setting property %r with invalid characters in name", prop)
+                    trace.warning("Setting property %r with invalid characters in name", prop)
             if self.supports_custom_revprops:
                 self._svn_revprops[PROP_REVISION_ORIGINAL_DATE] = properties.time_to_cstring(1000000*self._timestamp)
             conn = self.repository.transport.get_connection()
@@ -767,13 +761,13 @@ class SvnCommitBuilder(RootCommitBuilder):
                         self._changed_fileprops[prop] = (oldvalue, newvalue)
                 if (not self.modified_files and not changed and 
                     self._changed_fileprops == {} and self.push_metadata):
-                    prop = SVN_REVPROP_BZR_POINTLESS
+                    prop = mapping.SVN_REVPROP_BZR_POINTLESS
                     self._svnprops[prop] = "%d" % (int(self._svnprops.get(prop, "0"))+1)
                     self._changed_fileprops[prop] = (None, self._svnprops[prop])
 
                 for prop, (oldvalue, newvalue) in self._changed_fileprops.iteritems():
                         if not properties.is_valid_property_name(prop):
-                            warning("Setting property %r with invalid characters in name", prop)
+                            trace.warning("Setting property %r with invalid characters in name", prop)
                         assert isinstance(newvalue, str)
                         branch_editors[-1].change_prop(prop, newvalue)
                         self.mutter("Setting root file property %r -> %r", prop, newvalue)
