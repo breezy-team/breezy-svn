@@ -25,7 +25,7 @@ bzr-svn 0.5.4					UNRELEASED
    * Keywords and end of line properties in svn working copies are now honored. 
      (#81463)
 
-   * Support override_svn_revprops = svn:author=author to allow svn:author to be 
+   * Support override-svn-revprops = svn:author=author to allow svn:author to be 
      set to the author of a pushed revision rather than the committer. (#342979)
 
 
