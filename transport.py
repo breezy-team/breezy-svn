@@ -143,12 +143,12 @@ def bzr_to_svn_url(url):
 
 class SubversionProgressReporter(object):
 
-    def __init__(self):
+    def __init__(self, url):
+        self._scheme = urlparse.urlsplit(url)[0]
         self._last_progress = 0
         # This variable isn't used yet as of bzr 1.12, and finding 
         # the right Transport object will be tricky in bzr-svn's case
         # so just setting it to None for now.
-        self._transport = None
 
     def update(self, progress, total):
         # The counter seems to reset sometimes
@@ -158,14 +158,14 @@ class SubversionProgressReporter(object):
         changed = progress - self._last_progress
         assert changed >= 0, "changed was %d (%d -> %d)" % (changed, self._last_progress, progress)
         self._last_progress = progress
-        ui.ui_factory.report_transport_activity(self._transport, changed, None)
+        ui.ui_factory.report_transport_activity(self, changed, None)
 
 
 def Connection(url, auth=None):
     # Subvertpy <= 0.6.3 has a bug in the reference counting of the 
     # progress update function
     if subvertpy.__version__ >= (0, 6, 3):
-        progress_cb = SubversionProgressReporter().update
+        progress_cb = SubversionProgressReporter(url).update
     else:
         progress_cb = None
     try:
@@ -248,6 +248,7 @@ class SvnRaTransport(Transport):
     
     This implements just as much of Transport as is necessary 
     to fool Bazaar. """
+
     @convert_svn_error
     def __init__(self, url, from_transport=None, credentials=None):
         bzr_url = url
