@@ -215,7 +215,7 @@ class SvnRemoteAccess(BzrDir):
             ret.target_branch = target_branch
             target_branch.lock_write()
             try:
-                ret.push_branch_result = target_branch.pull(
+                ret.branch_push_result = target_branch.pull(
                     source, stop_revision=revision_id, overwrite=overwrite) 
             finally:
                 target_branch.unlock()
