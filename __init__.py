@@ -199,7 +199,7 @@ plugin_cmds.register_lazy('cmd_svn_serve', [],
                           'bzrlib.plugins.svn.commands')
 
 lazy_register_filter_stack_map("svn-keywords", 
-        "bzrlib.plugins.svn.keywords", "svn_keywords")
+        "bzrlib.plugins.svn.keywords", "create_svn_keywords_filter")
 
 def update_stanza(rev, stanza):
     revmeta = getattr(rev, "svn_meta", None)

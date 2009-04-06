@@ -211,6 +211,3 @@ def create_svn_keywords_filter(value):
     if keywords == []:
         return []
     return [SubversionKeywordContentFilter(keywords)]
-
-
-svn_keywords = ({}, create_svn_keywords_filter)
