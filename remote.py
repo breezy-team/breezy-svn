@@ -212,6 +212,8 @@ class SvnRemoteAccess(BzrDir):
         ret.master_branch = None
         try:
             target_branch = self.open_branch()
+            if source.get_push_location() is None or remember:
+                source.set_push_location(target_branch.base)
             ret.target_branch = target_branch
             target_branch.lock_write()
             try:
@@ -223,4 +225,6 @@ class SvnRemoteAccess(BzrDir):
             ret.old_revno = 0
             ret.old_revid = NULL_REVISION
             ret.target_branch = self.import_branch(source, revision_id)
+            if source.get_push_location() is None or remember:
+                source.set_push_location(ret.target_branch.base)
         return ret
