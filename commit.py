@@ -500,7 +500,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             raise BzrError("Please upgrade your Subversion client libraries to 1.5 or higher to be able to commit with Subversion mapping %s" % self.mapping.name)
 
         self._svn_revprops = {}
-        self._svnprops = lazy_dict({}, lambda: dict(self._base_branch_props.iteritems()))
+        self._svnprops = lazy_dict({}, dict, self._base_branch_props.iteritems())
         (self.set_custom_revprops, self.set_custom_fileprops) = self.repository._properties_to_set(self.mapping)
         if self.supports_custom_revprops:
             # If possible, submit signature directly
@@ -757,10 +757,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                 changed = dir_editor_send_changes(
                         (self.old_inv, self.base_url, self.base_revnum), 
                         self._get_parents_tuples(),
-                        self.new_inventory, 
-                        "", self.new_inventory.root.file_id, branch_editors[-1],
-                        self.branch_path,
-                        self.modified_files, self.visit_dirs)
+                        self.new_inventory, "", self.new_inventory.root.file_id, branch_editors[-1],
+                        self.branch_path, self.modified_files, self.visit_dirs)
 
                 # Set all the revprops
                 if self.push_metadata and self._svnprops.is_loaded:
@@ -829,6 +827,44 @@ class SvnCommitBuilder(RootCommitBuilder):
         assert not self.push_metadata or self._new_revision_id is None or self._new_revision_id == revid
         return revid
 
+    def record_iter_change(self, file_id, tree, parent_id, kind):
+        def get_symlink_contents(ie):
+            return "link %s" % ie.symlink_target
+        def get_file_contents(ie):
+            return tree.get_file_text(ie.file_id)
+        if kind == 'file':
+            self.modified_files[file_id] = get_file_contents
+        elif kind == 'symlink':
+            self.modified_files[file_id] = get_symlink_contents
+        elif kind == 'directory':
+            self.visit_dirs.add(file_id)
+        fid = parent_id
+        while fid is not None and fid not in self.visit_dirs:
+            self.visit_dirs.add(fid)
+            fid = self.new_inventory[fid].parent_id
+
+    def record_iter_changes(self, tree, basis_revision_id, iter_changes):
+        """Record a new tree via iter_changes.
+
+        :param tree: The tree to obtain text contents from for changed objects.
+        :param basis_revision_id: The revision id of the tree the iter_changes
+            has been generated against. Currently assumed to be the same
+            as self.parents[0] - if it is not, errors may occur.
+        :param iter_changes: An iter_changes iterator with the changes to apply
+            to basis_revision_id. The iterator must not include any items with
+            a current kind of None - missing items must be either filtered out
+            or errored-on beefore record_iter_changes sees the item.
+        :return: A generator of (file_id, relpath, fs_hash) tuples for use with
+            tree._observed_sha1.
+        """
+        if self.base_revid != basis_revision_id:
+            raise AssertionError("Invalid basis revision %s != %s" % 
+                (self.base_revid, basis_revision_id))
+
+        for (file_id, (path_in_source, path_in_target), changed_content, 
+             versioned, parent_id, name, kind, executable) in iter_changes:
+            self.record_iter_change(file_id, tree, parent_id, kind)
+
     def record_entry_contents(self, ie, parent_invs, path, tree,
                               content_summary):
         """Record the content of ie from tree into the commit if needed.
@@ -877,21 +913,6 @@ class SvnCommitBuilder(RootCommitBuilder):
         if (ie.file_id in self.old_inv and ie == self.old_inv[ie.file_id] and 
             (ie.kind != 'directory' or ie.children == self.old_inv[ie.file_id].children)):
             return self._get_delta(ie, self.old_inv, self.new_inventory.id2path(ie.file_id)), version_recorded, None
-        def get_symlink_contents(ie):
-            return "link %s" % ie.symlink_target
-        def get_file_contents(ie):
-            return tree.get_file_text(ie.file_id)
-        if ie.kind == 'file':
-            self.modified_files[ie.file_id] = get_file_contents
-        elif ie.kind == 'symlink':
-            self.modified_files[ie.file_id] = get_symlink_contents
-        elif ie.kind == 'directory':
-            self.visit_dirs.add(ie.file_id)
-        fid = ie.parent_id
-        while fid is not None and fid not in self.visit_dirs:
-            self.visit_dirs.add(fid)
-            fid = self.new_inventory[fid].parent_id
+        self.record_iter_change(ie.file_id, tree, ie.parent_id, ie.kind)
         return self._get_delta(ie, self.old_inv, self.new_inventory.id2path(ie.file_id)), version_recorded, None
-
-
 
