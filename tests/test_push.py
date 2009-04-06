@@ -78,6 +78,7 @@ class TestDPush(SubversionTestCase):
 
 
     def tearDown(self):
+        TestCase.tearDown(self)
         transport.disabled_capabilities = set()
 
     def commit_editor(self):
