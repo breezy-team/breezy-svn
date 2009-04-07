@@ -40,6 +40,7 @@ from bzrlib.errors import (
     )
 from bzrlib.inventory import (
     Inventory,
+    entry_factory,
     )
 from bzrlib.repository import (
     RootCommitBuilder, 
@@ -829,19 +830,13 @@ class SvnCommitBuilder(RootCommitBuilder):
         assert not self.push_metadata or self._new_revision_id is None or self._new_revision_id == revid
         return revid
 
-    def record_iter_change(self, file_id, tree, parent_id, kind, new_path):
-        if kind == 'file':
-            self.modified_files[file_id] = tree.get_file(file_id)
-        elif kind == 'symlink':
-            self.modified_files[file_id] = StringIO("link %s" % tree.get_symlink_target(file_id))
-        elif kind == 'directory':
-            self.visit_dirs.add(new_path)
-        while new_path != "":
-            if "/" in new_path:
-                new_path, _ = new_path.rsplit("/", 1)
+    def _visit_parent_dirs(self, path):
+        while path != "":
+            if "/" in path:
+                path, _ = path.rsplit("/", 1)
             else:
-                new_path = ""
-            self.visit_dirs.add(new_path)
+                path = ""
+            self.visit_dirs.add(path)
 
     def record_iter_changes(self, tree, basis_revision_id, iter_changes):
         """Record a new tree via iter_changes.
@@ -860,9 +855,25 @@ class SvnCommitBuilder(RootCommitBuilder):
         if self.base_revid != basis_revision_id:
             raise AssertionError("Invalid basis revision %s != %s" % 
                 (self.base_revid, basis_revision_id))
-        for (file_id, (path_in_source, path_in_target), changed_content, 
-             versioned, parent_id, name, kind, executable) in iter_changes:
-            self.record_iter_change(file_id, tree, parent_id, kind, path_in_target)
+
+        def dummy_get_file_with_stat(file_id):
+            return tree.get_file(file_id), None
+        get_file_with_stat = getattr(tree, "get_file_with_stat", dummy_get_file_with_stat)
+        for (file_id, (old_path, new_path), changed_content, 
+             (old_ver, new_ver), (old_parent_id, new_parent_id), 
+             (old_name, new_name), (old_kind, new_kind), (old_executable, new_executable)) in iter_changes:
+            new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
+            if new_kind == 'file':
+                file_obj, stat_val = get_file_with_stat(file_id)
+                self.modified_files[file_id] = file_obj
+                new_ie.text_size, new_ie.text_sha1 = file_size_sha1(file_obj)
+                file_obj.seek(0)
+                yield file_id, new_path, (new_ie.text_sha1, stat_val)
+            elif kind == 'symlink':
+                self.modified_files[file_id] = StringIO("link %s" % tree.get_symlink_target(file_id))
+            elif kind == 'directory':
+                self.visit_dirs.add(new_path)
+            self._visit_parent_dirs(new_path)
         self.new_inventory = None
 
     def record_entry_contents(self, ie, parent_invs, path, tree,
@@ -914,6 +925,12 @@ class SvnCommitBuilder(RootCommitBuilder):
             (ie.kind != 'directory' or ie.children == self.old_inv[ie.file_id].children)):
             return self._get_delta(ie, self.old_inv, self.new_inventory.id2path(ie.file_id)), version_recorded, None
         new_path = self.new_inventory.id2path(ie.file_id)
-        self.record_iter_change(ie.file_id, tree, ie.parent_id, ie.kind, new_path)
+        if ie.kind == 'file':
+            self.modified_files[ie.file_id] = tree.get_file(ie.file_id)
+        elif ie.kind == 'symlink':
+            self.modified_files[ie.file_id] = StringIO("link %s" % ie.symlink_target)
+        elif ie.kind == 'directory':
+            self.visit_dirs.add(new_path)
+        self._visit_parent_dirs(new_path)
         return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
 
