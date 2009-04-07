@@ -196,20 +196,29 @@ def set_svn_revprops(repository, revnum, revprops):
             raise RevpropChangeFailed(name)
 
 
-def file_editor_send_changes(file_id, contents, file_editor):
+def file_editor_send_changes(file_id, reader, file_editor):
     """Pass the changes to a file to the Subversion commit editor.
 
     :param file_id: Id of the file to modify.
-    :param contents: Contents of the file.
+    :param reader: A object that can read the file contents
     :param file_editor: Subversion FileEditor object.
     """
     assert file_editor is not None
     txdelta = file_editor.apply_textdelta()
-    digest = delta.send_stream(StringIO(contents), txdelta)
     if 'check' in debug.debug_flags:
-        from bzrlib.plugins.svn.fetch import md5_strings
-        assert digest == md5_strings(contents)
+        contents = reader.read()
+        digest = delta.send_stream(StringIO(contents), txdelta)
+        from bzrlib.plugins.svn.fetch import md5_string
+        assert digest == md5_string(contents)
+    else:
+        delta.send_stream(reader, txdelta)
 
+
+def path_join(basepath, name):
+    if basepath:
+        return urlutils.join(basepath, name)
+    else:
+        return name
 
 
 def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, 
@@ -237,8 +246,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
     # remove if they no longer exist with the same name
     # or parents
     if file_id in base_inv and base_inv[file_id].kind == 'directory':
-        for child_name in base_inv[file_id].children:
-            child_ie = base_inv.get_child(file_id, child_name)
+        for child_name, child_ie in base_inv[file_id].children.iteritems():
             # remove if...
             if (
                 # ... path no longer exists
@@ -256,14 +264,13 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
                 changed = True
 
     # Loop over file children of file_id in new_inv
-    for child_name in new_inv[file_id].children:
-        child_ie = new_inv.get_child(file_id, child_name)
+    for child_name, child_ie in new_inv[file_id].children.iteritems():
         assert child_ie is not None
 
         if not (child_ie.kind in ('file', 'symlink')):
             continue
 
-        new_child_path = new_inv.id2path(child_ie.file_id).encode("utf-8")
+        new_child_path = path_join(path, child_name.encode("utf-8"))
         full_new_child_path = branch_relative_path(new_child_path)
         # add them if they didn't exist in base_inv or changed kind
         if (not child_ie.file_id in base_inv or 
@@ -333,18 +340,17 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
         if child_ie.file_id in modified_files:
             changed = True
             file_editor_send_changes(child_ie.file_id, 
-                modified_files[child_ie.file_id](child_ie), child_editor)
+                modified_files[child_ie.file_id], child_editor)
 
         if child_editor is not None:
             child_editor.close()
 
     # Loop over subdirectories of file_id in new_inv
-    for child_name in new_inv[file_id].children:
-        child_ie = new_inv.get_child(file_id, child_name)
+    for child_name, child_ie in new_inv[file_id].children.iteritems():
         if child_ie.kind != 'directory':
             continue
 
-        new_child_path = new_inv.id2path(child_ie.file_id)
+        new_child_path = path_join(path, child_name.encode("utf-8"))
         # add them if they didn't exist in base_inv or changed kind
         if (not child_ie.file_id in base_inv or 
             base_inv[child_ie.file_id].kind != child_ie.kind):
@@ -395,10 +401,8 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
 
         # Handle this directory
         changed = dir_editor_send_changes(child_base, parents,
-                            new_inv, new_child_path, 
-                            child_ie.file_id, child_editor, 
-                            branch_path, modified_files, 
-                            visit_dirs) or changed
+            new_inv, new_child_path, child_ie.file_id, child_editor, 
+            branch_path, modified_files, visit_dirs) or changed
 
         child_editor.close()
 
@@ -606,20 +610,18 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         return ret
 
-    def _determine_texts_identity(self):
+    def _determine_texts_identity(self, new_root_id):
         # Store file ids
         def _dir_process_file_id(old_inv, new_inv, path, file_id):
             ret = []
-            for child_name in new_inv[file_id].children:
-                child_ie = new_inv.get_child(file_id, child_name)
-                new_child_path = new_inv.id2path(child_ie.file_id)
-                assert child_ie is not None
-
+            for child_name, child_ie in new_inv[file_id].children.iteritems():
+                new_child_path = path_join(path, child_name)
                 if (not child_ie.file_id in old_inv or 
                     old_inv.id2path(child_ie.file_id) != new_child_path or
                     old_inv[child_ie.file_id].revision != child_ie.revision or
                     old_inv[child_ie.file_id].parent_id != child_ie.parent_id):
-                    ret.append((child_ie.file_id, new_child_path, child_ie.revision, self._text_parents[child_ie.file_id]))
+                    ret.append((child_ie.file_id, new_child_path, child_ie.revision, 
+                        self._text_parents[child_ie.file_id]))
 
                 if (child_ie.kind == 'directory' and 
                     new_child_path in self.visit_dirs):
@@ -632,10 +634,10 @@ class SvnCommitBuilder(RootCommitBuilder):
         changes = []
 
         if (self.old_inv.root is None or 
-            self.new_inventory.root.file_id != self.old_inv.root.file_id):
-            changes.append((self.new_inventory.root.file_id, "", self.new_inventory.root.revision, self._text_parents[self.new_inventory.root.file_id]))
+            new_root_id != self.old_inv.root.file_id):
+            changes.append((new_root_id, "", self.new_inventory[new_root_id].revision, self._text_parents[new_root_id]))
 
-        changes += _dir_process_file_id(self.old_inv, self.new_inventory, "", self.new_inventory.root.file_id)
+        changes += _dir_process_file_id(self.old_inv, self.new_inventory, "", new_root_id)
 
         for id, path, revid, parents in changes:
             fileids[path] = id
@@ -688,7 +690,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._changed_fileprops = {}
 
         if self.push_metadata:
-            (fileids, text_revisions, text_parents) = self._determine_texts_identity()
+            (fileids, text_revisions, text_parents) = self._determine_texts_identity(self.new_inventory.root.file_id)
             if self.set_custom_revprops:
                 self.mapping.export_text_revisions_revprops(text_revisions, self._svn_revprops)
                 self.mapping.export_text_parents_revprops(text_parents, self._svn_revprops)
@@ -828,14 +830,10 @@ class SvnCommitBuilder(RootCommitBuilder):
         return revid
 
     def record_iter_change(self, file_id, tree, parent_id, kind, new_path):
-        def get_symlink_contents(ie):
-            return "link %s" % ie.symlink_target
-        def get_file_contents(ie):
-            return tree.get_file_text(ie.file_id)
         if kind == 'file':
-            self.modified_files[file_id] = get_file_contents
+            self.modified_files[file_id] = tree.get_file(file_id)
         elif kind == 'symlink':
-            self.modified_files[file_id] = get_symlink_contents
+            self.modified_files[file_id] = StringIO("link %s" % tree.get_symlink_target(file_id))
         elif kind == 'directory':
             self.visit_dirs.add(new_path)
         while new_path != "":
