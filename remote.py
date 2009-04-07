@@ -52,6 +52,7 @@ from bzrlib.plugins.svn.transport import (
     get_svn_ra_transport,
     )
 
+
 class SvnRemoteAccess(BzrDir):
     """BzrDir implementation for Subversion connections.
     
@@ -87,7 +88,8 @@ class SvnRemoteAccess(BzrDir):
             guessed_layout = self.find_repository().get_guessed_layout()
             if guessed_layout is not None and not guessed_layout.is_branch(""):
                 warning('Cloning Subversion repository as branch. '
-                        'To import the individual branches in the repository, use "bzr svn-import".')
+                        'To import the individual branches in the repository, '
+                        'use "bzr svn-import".')
         return super(SvnRemoteAccess, self).sprout(*args, **kwargs)
 
     def open_repository(self, _unsupported=False):
@@ -203,7 +205,8 @@ class SvnRemoteAccess(BzrDir):
         """See BzrDir.create_repository."""
         return self.open_repository()
 
-    def push_branch(self, source, revision_id=None, overwrite=False, remember=False):
+    def push_branch(self, source, revision_id=None, overwrite=False,
+        remember=False):
         from bzrlib.push import PushResult
         ret = PushResult()
         ret.source_branch = source
