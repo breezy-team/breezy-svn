@@ -17,7 +17,9 @@
 
 """Committing to Subversion repositories."""
 
-
+from collections import (
+    defaultdict,
+    )
 from cStringIO import (
     StringIO,
     )
@@ -30,6 +32,7 @@ from subvertpy import (
 
 from bzrlib import (
     debug, 
+    osutils,
     urlutils, 
     trace, 
     ui,
@@ -555,6 +558,8 @@ class SvnCommitBuilder(RootCommitBuilder):
 
     def finish_inventory(self):
         """See CommitBuilder.finish_inventory()."""
+        if self.new_inventory is not None: # record_entry_contents style
+            self.new_root_id = self.new_inventory.root.file_id
 
     def open_branch_editors(self, root, elements, existing_elements, 
                            base_url, base_rev, root_from, replace_existing):
@@ -614,20 +619,20 @@ class SvnCommitBuilder(RootCommitBuilder):
 
     def _determine_texts_identity(self, new_root_id):
         # Store file ids
-        def _dir_process_file_id(old_inv, new_inv, path, file_id):
+        def _dir_process_file_id(path, file_id):
             ret = []
-            for child_name, child_ie in new_inv[file_id].children.iteritems():
+            for child_name, child_ie in self._iter_new_children(file_id):
                 new_child_path = path_join(path, child_name)
-                if (not child_ie.file_id in old_inv or 
-                    old_inv.id2path(child_ie.file_id) != new_child_path or
-                    old_inv[child_ie.file_id].revision != child_ie.revision or
-                    old_inv[child_ie.file_id].parent_id != child_ie.parent_id):
+                if (not child_ie.file_id in self.old_inv or 
+                    self.old_inv.id2path(child_ie.file_id) != new_child_path or
+                    self.old_inv[child_ie.file_id].revision != child_ie.revision or
+                    self.old_inv[child_ie.file_id].parent_id != child_ie.parent_id):
                     ret.append((child_ie.file_id, new_child_path, child_ie.revision, 
                         self._text_parents[child_ie.file_id]))
 
                 if (child_ie.kind == 'directory' and 
                     new_child_path in self.visit_dirs):
-                    ret += _dir_process_file_id(old_inv, new_inv, new_child_path, child_ie.file_id)
+                    ret += _dir_process_file_id(new_child_path, child_ie.file_id)
             return ret
 
         fileids = {}
@@ -637,10 +642,11 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         if (self.old_inv.root is None or 
             new_root_id != self.old_inv.root.file_id):
-            changes.append((new_root_id, "", self.new_inventory[new_root_id].revision, self._text_parents[new_root_id]))
+            changes.append((new_root_id, "", self._get_new_ie(new_root_id).revision, self._text_parents[new_root_id]))
 
-        changes += _dir_process_file_id(self.old_inv, self.new_inventory, "", new_root_id)
+        changes += _dir_process_file_id("", new_root_id)
 
+        # Find the "unusual" text revisions / parents
         for id, path, revid, parents in changes:
             fileids[path] = id
             if revid is not None and revid != self.base_revid and revid != self._new_revision_id:
@@ -651,6 +657,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         return (fileids, text_revisions, text_parents)
 
     def _get_parents_tuples(self):
+        """Retrieve (inventory, URL, base revnum) tuples for the parents of this commit.
+        """
         ret = []
         for p in self.parents:
             if p == self.old_inv.revision_id:
@@ -673,12 +681,31 @@ class SvnCommitBuilder(RootCommitBuilder):
         return ret
 
     def _iter_new_children(self, file_id):
-        return self.new_inventory[file_id].children.iteritems()
+        if self.new_inventory is not None:
+            return self.new_inventory[file_id].children.iteritems()
+        else:
+            ret = []
+            for child in self._updated_children[file_id]:
+                ret.append((self._updated[child].name, self._updated[child]))
+            if file_id in self.old_inv:
+                for name, child_ie in self.old_inv[file_id].children.iteritems():
+                    if not child_ie.file_id in self._deleted_fileids and not child_ie.file_id in self._updated:
+                        ret.append((name, child_ie))
+            return ret
 
     def _get_new_ie(self, file_id):
-        if file_id in self.new_inventory:
-            return self.new_inventory[file_id]
-        return None
+        if self.new_inventory is not None:
+            if file_id in self.new_inventory:
+                return self.new_inventory[file_id]
+            return None
+        else:
+            if file_id in self._deleted_fileids:
+                return None
+            if file_id in self._updated:
+                return self._updated[file_id]
+            if file_id in self.old_inv:
+                return self.old_inv[file_id]
+            return None
 
     @convert_svn_error
     def commit(self, message):
@@ -700,7 +727,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._changed_fileprops = {}
 
         if self.push_metadata:
-            (fileids, text_revisions, text_parents) = self._determine_texts_identity(self.new_inventory.root.file_id)
+            (fileids, text_revisions, text_parents) = self._determine_texts_identity(self.new_root_id)
             if self.set_custom_revprops:
                 self.mapping.export_text_revisions_revprops(text_revisions, self._svn_revprops)
                 self.mapping.export_text_parents_revprops(text_parents, self._svn_revprops)
@@ -751,14 +778,14 @@ class SvnCommitBuilder(RootCommitBuilder):
                         replace_existing = True
                     elif self.base_revnum < self.repository._log.find_latest_change(self.branch_path, repository_latest_revnum):
                         replace_existing = True
-                    elif self.old_inv.root.file_id != self.new_inventory.root.file_id:
+                    elif self.old_inv.root.file_id != self.new_root_id:
                         replace_existing = True
 
                 if replace_existing and self._append_revisions_only:
                     raise AppendRevisionsOnlyViolation(urlutils.join(self.repository.base, self.branch_path))
 
-                if self.new_inventory.root.file_id in self.old_inv:
-                    root_from = self.old_inv.id2path(self.new_inventory.root.file_id)
+                if self.new_root_id in self.old_inv:
+                    root_from = self.old_inv.id2path(self.new_root_id)
                 else:
                     root_from = None
 
@@ -770,7 +797,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                         (self.old_inv, self.base_url, self.base_revnum), 
                         self._get_parents_tuples(),
                         (self._iter_new_children, self._get_new_ie), "", 
-                        self.new_inventory.root.file_id, branch_editors[-1],
+                        self.new_root_id, branch_editors[-1],
                         self.branch_path, self.modified_files, self.visit_dirs)
 
                 # Set all the revprops
@@ -848,6 +875,12 @@ class SvnCommitBuilder(RootCommitBuilder):
                 path = ""
             self.visit_dirs.add(path)
 
+    def _get_text_revision(self, file_id, text_sha1, parent_invs):
+        for pinv in parent_invs:
+            if file_id in pinv and pinv[file_id].text_sha1 == text_sha1:
+                return pinv[file_id].revision
+        return None
+
     def record_iter_changes(self, tree, basis_revision_id, iter_changes):
         """Record a new tree via iter_changes.
 
@@ -862,29 +895,76 @@ class SvnCommitBuilder(RootCommitBuilder):
         :return: A generator of (file_id, relpath, fs_hash) tuples for use with
             tree._observed_sha1.
         """
+        parent_invs = [self.old_inv]
+        for p in self.parents[1:]:
+            try:
+                parent_invs.append(self.repository.get_inventory(p))
+            except NoSuchRevision:
+                pass
+        self._deleted_fileids = set()
+        self._updated_children = defaultdict(set)
+        self._updated = {}
+        if self.old_inv.root is None:
+            self.new_root_id = None
+        else:
+            self.new_root_id = self.old_inv.root.file_id
         if self.base_revid != basis_revision_id:
             raise AssertionError("Invalid basis revision %s != %s" % 
                 (self.base_revid, basis_revision_id))
-
         def dummy_get_file_with_stat(file_id):
             return tree.get_file(file_id), None
         get_file_with_stat = getattr(tree, "get_file_with_stat", dummy_get_file_with_stat)
         for (file_id, (old_path, new_path), changed_content, 
              (old_ver, new_ver), (old_parent_id, new_parent_id), 
-             (old_name, new_name), (old_kind, new_kind), (old_executable, new_executable)) in iter_changes:
+             (old_name, new_name), (old_kind, new_kind), 
+             (old_executable, new_executable)) in iter_changes:
+            if not new_ver: # deleted
+                self._deleted_fileids.add(file_id)
+                continue
             new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
+            new_ie.executable = new_executable
             if new_kind == 'file':
                 file_obj, stat_val = get_file_with_stat(file_id)
                 self.modified_files[file_id] = file_obj
-                new_ie.text_size, new_ie.text_sha1 = file_size_sha1(file_obj)
+                new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
+                new_ie.revision = self._get_text_revision(file_id, new_ie.text_sha1, parent_invs)
                 file_obj.seek(0)
                 yield file_id, new_path, (new_ie.text_sha1, stat_val)
-            elif kind == 'symlink':
-                self.modified_files[file_id] = StringIO("link %s" % tree.get_symlink_target(file_id))
-            elif kind == 'directory':
+            elif new_kind == 'symlink':
+                new_ie.symlink_target = tree.get_symlink_target(file_id)
+                self.modified_files[file_id] = StringIO("link %s" % new_ie.symlink_target)
+            elif new_kind == 'directory':
                 self.visit_dirs.add(new_path)
             self._visit_parent_dirs(new_path)
+            if new_path == "":
+                self.new_root_id = file_id
+            self._updated[file_id] = new_ie
+            self._updated_children[new_parent_id].add(file_id)
+            self._text_parents[file_id] = self._get_text_parents(new_ie, parent_invs)
         self.new_inventory = None
+
+    def _get_text_parents(self, ie, parent_invs):
+        # TODO: This code is a bit hairy, it needs to be rewritten
+        if self._texts is None:
+            return [parent_inv[ie.file_id].revision for parent_inv in parent_invs if ie.file_id in parent_inv]
+        elif isinstance(self._texts, SvnTexts):
+            overridden_parents = self._texts._get_parent(ie.file_id, ie.revision)
+            if overridden_parents is None:
+                if ie.file_id in self.old_inv:
+                    return [self.old_inv[ie.file_id].revision]
+                else:
+                    return []
+            else:
+                return overridden_parents
+        else:
+            key = (ie.file_id, ie.revision)
+            parent_map = self._texts.get_parent_map([key])
+            if ie.parent_id is None and (not key in parent_map or parent_map[key] is None):
+                # non-rich-root repositories don't have a text for the root
+                return self.parents
+            else:
+                assert parent_map[key] is not None, "No parents found for %r" % (key,)
+                return [r[1] for r in parent_map[key]]
 
     def record_entry_contents(self, ie, parent_invs, path, tree,
                               content_summary):
@@ -905,36 +985,16 @@ class SvnCommitBuilder(RootCommitBuilder):
         """
         assert self._parent_invs is None or self._parent_invs == parent_invs
         self._parent_invs = parent_invs
-        # TODO: This code is a bit hairy, it needs to be rewritten
-        if self._texts is None:
-            self._text_parents[ie.file_id] = [parent_inv[ie.file_id].revision for parent_inv in parent_invs if ie.file_id in parent_inv]
-        elif isinstance(self._texts, SvnTexts):
-            overridden_parents = self._texts._get_parent(ie.file_id, ie.revision)
-            if overridden_parents is None:
-                if ie.file_id in self.old_inv:
-                    self._text_parents[ie.file_id] = [self.old_inv[ie.file_id].revision]
-                else:
-                    self._text_parents[ie.file_id] = []
-            else:
-                self._text_parents[ie.file_id] = overridden_parents
-        else:
-            key = (ie.file_id, ie.revision)
-            parent_map = self._texts.get_parent_map([key])
-            if ie.parent_id is None and (not key in parent_map or parent_map[key] is None):
-                # non-rich-root repositories don't have a text for the root
-                self._text_parents[ie.file_id] = self.parents
-            else:
-                assert parent_map[key] is not None, "No parents found for %r" % (key,)
-                self._text_parents[ie.file_id] = [r[1] for r in parent_map[key]]
+        self._text_parents[ie.file_id] = self._get_text_parents(ie, parent_invs)
         self.new_inventory.add(ie)
         assert (ie.file_id not in self.old_inv or 
                 self.old_inv[ie.file_id].revision is not None)
         version_recorded = (ie.revision is None)
         # If nothing changed since the lhs parent, return:
+        new_path = self.new_inventory.id2path(ie.file_id)
         if (ie.file_id in self.old_inv and ie == self.old_inv[ie.file_id] and 
             (ie.kind != 'directory' or ie.children == self.old_inv[ie.file_id].children)):
-            return self._get_delta(ie, self.old_inv, self.new_inventory.id2path(ie.file_id)), version_recorded, None
-        new_path = self.new_inventory.id2path(ie.file_id)
+            return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
         if ie.kind == 'file':
             self.modified_files[ie.file_id] = tree.get_file(ie.file_id)
         elif ie.kind == 'symlink':
