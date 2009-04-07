@@ -676,7 +676,8 @@ class InterSvnOtherBranch(InterBranch):
             else:
                 tags_until_revnum = self.source.repository.get_latest_revnum()
             self.update_revisions(stop_revision, overwrite)
-            result.tag_conflicts = self.source.tags.merge_to(self.target.tags, overwrite, _from_revnum=tags_since_revnum, _to_revnum=tags_until_revnum)
+            if self.source.supports_tags():
+                result.tag_conflicts = self.source.tags.merge_to(self.target.tags, overwrite, _from_revnum=tags_since_revnum, _to_revnum=tags_until_revnum)
             (result.new_revno, result.new_revid) = self.target.last_revision_info()
             if stop_revision is None:
                 result.new_revmeta, _ = self.source.repository._get_revmeta(result.new_revid)
