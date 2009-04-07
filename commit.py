@@ -223,8 +223,8 @@ def path_join(basepath, name):
 
 
 def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, 
-    new_inv, path, file_id, dir_editor, branch_path, modified_files, 
-    visit_dirs):
+    (iter_children, get_ie), path, file_id, dir_editor, branch_path, 
+    modified_files, visit_dirs):
     """Pass the changes to a directory to the commit editor.
 
     :param path: Path (from repository root) to the directory.
@@ -248,16 +248,17 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
     # or parents
     if file_id in base_inv and base_inv[file_id].kind == 'directory':
         for child_name, child_ie in base_inv[file_id].children.iteritems():
+            new_child_ie = get_ie(child_ie.file_id)
             # remove if...
             if (
                 # ... path no longer exists
-                not child_ie.file_id in new_inv or 
+                new_child_ie is None or 
                 # ... parent changed
-                child_ie.parent_id != new_inv[child_ie.file_id].parent_id or
+                child_ie.parent_id != new_child_ie.parent_id or
                 # ... name changed
-                new_inv[child_ie.file_id].name != child_name or
+                child_ie.name != new_child_ie.name or
                 # ... kind changed
-                child_ie.kind != new_inv[child_ie.file_id].kind):
+                child_ie.kind != new_child_ie.kind):
                 trace.mutter('removing %r(%r)', child_name, child_ie.file_id)
                 dir_editor.delete_entry(
                     branch_relative_path(path, child_name.encode("utf-8")), 
@@ -265,7 +266,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
                 changed = True
 
     # Loop over file children of file_id in new_inv
-    for child_name, child_ie in new_inv[file_id].children.iteritems():
+    for child_name, child_ie in iter_children(file_id):
         assert child_ie is not None
 
         if not (child_ie.kind in ('file', 'symlink')):
@@ -347,7 +348,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
             child_editor.close()
 
     # Loop over subdirectories of file_id in new_inv
-    for child_name, child_ie in new_inv[file_id].children.iteritems():
+    for child_name, child_ie in iter_children(file_id):
         if child_ie.kind != 'directory':
             continue
 
@@ -402,7 +403,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
 
         # Handle this directory
         changed = dir_editor_send_changes(child_base, parents,
-            new_inv, new_child_path, child_ie.file_id, child_editor, 
+            (iter_children, get_ie), new_child_path, child_ie.file_id, child_editor, 
             branch_path, modified_files, visit_dirs) or changed
 
         child_editor.close()
@@ -671,6 +672,14 @@ class SvnCommitBuilder(RootCommitBuilder):
             ret.append((inv, urlutils.join(self.repository.transport.svn_url, base_path), base_revnum))
         return ret
 
+    def _iter_new_children(self, file_id):
+        return self.new_inventory[file_id].children.iteritems()
+
+    def _get_new_ie(self, file_id):
+        if file_id in self.new_inventory:
+            return self.new_inventory[file_id]
+        return None
+
     @convert_svn_error
     def commit(self, message):
         """Finish the commit.
@@ -760,7 +769,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                 changed = dir_editor_send_changes(
                         (self.old_inv, self.base_url, self.base_revnum), 
                         self._get_parents_tuples(),
-                        self.new_inventory, "", self.new_inventory.root.file_id, branch_editors[-1],
+                        (self._iter_new_children, self._get_new_ie), "", 
+                        self.new_inventory.root.file_id, branch_editors[-1],
                         self.branch_path, self.modified_files, self.visit_dirs)
 
                 # Set all the revprops
