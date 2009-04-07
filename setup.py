@@ -5,12 +5,15 @@
 from distutils.core import setup
 import os, sys
 
+version = (0, 5, 4)
+version_string = ".".join([str(x) for x in version])
+
 setup(name='bzr-svn',
       description='Support for Subversion branches in Bazaar',
       keywords='plugin bzr svn',
-      version='0.5.4',
+      version=version_string,
       url='http://bazaar-vcs.org/BzrForeignBranches/Subversion',
-      download_url='http://bazaar-vcs.org/BzrSvn',
+      download_url='http://samba.org/~jelmer/bzr/bzr-svn-%s.tar.gz' % version_string,
       license='GPL',
       author='Jelmer Vernooij',
       author_email='jelmer@samba.org',
