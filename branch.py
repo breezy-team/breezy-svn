@@ -670,8 +670,11 @@ class InterSvnOtherBranch(InterBranch):
             except NoSuchRevision:
                 result.old_revmeta = None
                 tags_since_revnum = None
-            if stop_revision is not None:
-                result.new_revmeta, _ = self.source.repository._get_revmeta(stop_revnum)
+            if stop_revision == NULL_REVISION:
+                result.new_revmeta = None
+                targs_until_revnum = 0
+            elif stop_revision is not None:
+                result.new_revmeta, _ = self.source.repository._get_revmeta(stop_revision)
                 tags_until_revnum = result.new_revmeta.revnum
             else:
                 tags_until_revnum = self.source.repository.get_latest_revnum()
