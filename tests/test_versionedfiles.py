@@ -20,6 +20,8 @@ from bzrlib.plugins.svn.versionedfiles import SvnTexts
 
 
 class SvnTextsTests(TestCase, BasicTextsTests):
+
     def setUp(self):
+        TestCase.setUp(self)
         self.texts = SvnTexts(self)
 
