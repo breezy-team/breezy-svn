@@ -868,11 +868,14 @@ class SvnCommitBuilder(RootCommitBuilder):
         return revid
 
     def _visit_parent_dirs(self, path):
+        """Add the parents of path to the list of paths to visit."""
         while path != "":
             if "/" in path:
                 path, _ = path.rsplit("/", 1)
             else:
                 path = ""
+            if path in self.visit_dirs:
+                return
             self.visit_dirs.add(path)
 
     def _get_text_revision(self, file_id, text_sha1, parent_invs):
@@ -936,6 +939,10 @@ class SvnCommitBuilder(RootCommitBuilder):
             elif new_kind == 'directory':
                 self.visit_dirs.add(new_path)
             self._visit_parent_dirs(new_path)
+            # Old path parent needs to be visited in case file_id was removed
+            # from it but there were no other changes there.
+            if old_path not in (None, new_path):
+                self._visit_parent_dirs(old_path)
             if new_path == "":
                 self.new_root_id = file_id
             self._updated[file_id] = new_ie
