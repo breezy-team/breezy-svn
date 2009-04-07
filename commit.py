@@ -382,7 +382,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
             child_base = (base_inv, base_url, base_revnum)
         # open if they existed at the same location and 
         # the directory was touched
-        elif child_ie.file_id in visit_dirs:
+        elif new_child_path in visit_dirs:
             trace.mutter('open dir %r', new_child_path)
 
             child_editor = dir_editor.open_directory(
@@ -622,7 +622,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                     ret.append((child_ie.file_id, new_child_path, child_ie.revision, self._text_parents[child_ie.file_id]))
 
                 if (child_ie.kind == 'directory' and 
-                    child_ie.file_id in self.visit_dirs):
+                    new_child_path in self.visit_dirs):
                     ret += _dir_process_file_id(old_inv, new_inv, new_child_path, child_ie.file_id)
             return ret
 
@@ -827,7 +827,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         assert not self.push_metadata or self._new_revision_id is None or self._new_revision_id == revid
         return revid
 
-    def record_iter_change(self, file_id, tree, parent_id, kind):
+    def record_iter_change(self, file_id, tree, parent_id, kind, new_path):
         def get_symlink_contents(ie):
             return "link %s" % ie.symlink_target
         def get_file_contents(ie):
@@ -837,11 +837,13 @@ class SvnCommitBuilder(RootCommitBuilder):
         elif kind == 'symlink':
             self.modified_files[file_id] = get_symlink_contents
         elif kind == 'directory':
-            self.visit_dirs.add(file_id)
-        fid = parent_id
-        while fid is not None and fid not in self.visit_dirs:
-            self.visit_dirs.add(fid)
-            fid = self.new_inventory[fid].parent_id
+            self.visit_dirs.add(new_path)
+        while new_path != "":
+            if "/" in new_path:
+                new_path, _ = new_path.rsplit("/", 1)
+            else:
+                new_path = ""
+            self.visit_dirs.add(new_path)
 
     def record_iter_changes(self, tree, basis_revision_id, iter_changes):
         """Record a new tree via iter_changes.
@@ -860,10 +862,10 @@ class SvnCommitBuilder(RootCommitBuilder):
         if self.base_revid != basis_revision_id:
             raise AssertionError("Invalid basis revision %s != %s" % 
                 (self.base_revid, basis_revision_id))
-
         for (file_id, (path_in_source, path_in_target), changed_content, 
              versioned, parent_id, name, kind, executable) in iter_changes:
-            self.record_iter_change(file_id, tree, parent_id, kind)
+            self.record_iter_change(file_id, tree, parent_id, kind, path_in_target)
+        self.new_inventory = None
 
     def record_entry_contents(self, ie, parent_invs, path, tree,
                               content_summary):
@@ -913,6 +915,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         if (ie.file_id in self.old_inv and ie == self.old_inv[ie.file_id] and 
             (ie.kind != 'directory' or ie.children == self.old_inv[ie.file_id].children)):
             return self._get_delta(ie, self.old_inv, self.new_inventory.id2path(ie.file_id)), version_recorded, None
-        self.record_iter_change(ie.file_id, tree, ie.parent_id, ie.kind)
-        return self._get_delta(ie, self.old_inv, self.new_inventory.id2path(ie.file_id)), version_recorded, None
+        new_path = self.new_inventory.id2path(ie.file_id)
+        self.record_iter_change(ie.file_id, tree, ie.parent_id, ie.kind, new_path)
+        return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
 
