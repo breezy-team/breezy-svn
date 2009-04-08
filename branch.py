@@ -116,6 +116,21 @@ class SubversionPullResult(PullResult):
 class SubversionBranchPushResult(BranchPushResult):
     """Subversion branch push result."""
 
+    def _lookup_revno(self, revid):
+        # Try in source branch first, it'll be faster
+        try:
+            return self.source_branch.revision_id_to_revno(revid)
+        except NoSuchRevision:
+            return self.target_branch.revision_id_to_revno(revid)
+
+    @property
+    def old_revno(self):
+        return self._lookup_revno(revid)
+
+    @property
+    def new_revno(self):
+        return self._lookup_revno(revid)
+
 
 class SvnBranch(ForeignBranch):
     """Maps to a Branch in a Subversion repository """
@@ -724,15 +739,13 @@ class InterOtherSvnBranch(InterBranch):
         result.source_branch = self.source
         self.source.lock_read()
         try:
-            (result.old_revno, result.old_revid) = \
-                    self.target.last_revision_info()
+            result.old_revid = self.target.last_revision()
             self.update_revisions(stop_revision, overwrite, 
                                   _push_merged=_push_merged,
                                   _override_svn_revprops=_override_svn_revprops)
             result.tag_conflicts = self.source.tags.merge_to(self.target.tags, 
                 overwrite)
-            (result.new_revno, result.new_revid) = \
-                    self.target.last_revision_info()
+            result.new_revid = self.target.last_revision_info()
             return result
         finally:
             self.source.unlock()
