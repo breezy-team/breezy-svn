@@ -272,6 +272,8 @@ class InterToSvnRepository(InterRepository):
         """Push a series of revisions into a Subversion repository.
 
         """
+        assert todo != []
+        count = 0
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for rev in self.source.get_revisions(todo):
@@ -280,7 +282,9 @@ class InterToSvnRepository(InterRepository):
                 if push_merged:
                     self.push_ancestors(layout, project, 
                         rev.parent_ids, create_prefix=True)
-                self.push(target_branch, target_config, rev)
+                last = self.push(target_branch, target_config, rev)[0]
+                count += 1
+            return count, last
         finally:
             pb.finished()
 
@@ -386,9 +390,10 @@ class InterToSvnRepository(InterRepository):
                 break
             todo.append(revid)
         todo.reverse()
-        self.push_branch(todo, layout, project, target_branch_path, 
-            self._get_branch_config(target_branch_path), 
-            push_merged=push_merged)
+        if todo != []:
+            self.push_branch(todo, layout, project, target_branch_path, 
+                self._get_branch_config(target_branch_path), 
+                push_merged=push_merged)
 
     def push_nonmainline_revision(self, rev, layout):
         mutter('pushing %r', rev.revision_id)
