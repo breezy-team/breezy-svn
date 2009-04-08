@@ -134,7 +134,7 @@ class SvnRemoteAccess(BzrDir):
 
     def cloning_metadir(self, stacked=False):
         """Produce a metadir suitable for cloning with."""
-        return get_rich_root_format()
+        return get_rich_root_format(stacked)
 
     def open_workingtree(self, _unsupported=False,
             recommend_upgrade=True):

@@ -31,8 +31,11 @@ from bzrlib.lockable_files import (
     )
 
 
-def get_rich_root_format():
-    return format_registry.make_bzrdir('default-rich-root')
+def get_rich_root_format(stacked=False):
+    if not stacked:
+        return format_registry.make_bzrdir('default-rich-root')
+    else:
+        return format_registry.make_bzrdir('1.9-rich-root')
 
 
 def get_nested_tree_format():
