@@ -235,6 +235,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
     :param path: Path (from repository root) to the directory.
     :param file_id: File id of the directory
     :param dir_editor: Subversion DirEditor object.
+    :return: Boolean indicating whether any changes were made
     """
     changed = False
     def mutter(text, *args):
@@ -886,6 +887,12 @@ class SvnCommitBuilder(RootCommitBuilder):
                 return pinv[file_id].revision
         return None
 
+    def record_delete(self, path, file_id):
+        if not self._recording_deletes:
+            raise AssertionError("recording deletes not activated.")
+        self._any_changes = True
+        self._deleted_fileids.add(file_id)
+
     def record_iter_changes(self, tree, basis_revision_id, iter_changes):
         """Record a new tree via iter_changes.
 
@@ -923,9 +930,6 @@ class SvnCommitBuilder(RootCommitBuilder):
              (old_ver, new_ver), (old_parent_id, new_parent_id), 
              (old_name, new_name), (old_kind, new_kind), 
              (old_executable, new_executable)) in iter_changes:
-            if not new_ver: # deleted
-                self._deleted_fileids.add(file_id)
-                continue
             new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
             new_ie.executable = new_executable
             if new_kind == 'file':
@@ -947,6 +951,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self._visit_parent_dirs(old_path)
             if new_path == "":
                 self.new_root_id = file_id
+            self._any_changes = True
             self._updated[file_id] = new_ie
             self._updated_children[new_parent_id].add(file_id)
             self._text_parents[file_id] = self._get_text_parents(new_ie, parent_invs)
@@ -1011,5 +1016,6 @@ class SvnCommitBuilder(RootCommitBuilder):
         elif ie.kind == 'directory':
             self.visit_dirs.add(new_path)
         self._visit_parent_dirs(new_path)
+        self._any_changes = True
         return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
 

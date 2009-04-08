@@ -100,8 +100,9 @@ from bzrlib.plugins.svn.transport import (
 
 # Number of revisions to fetch before writing pack to disk
 FETCH_COMMIT_WRITE_SIZE = 999
-# Size of group in which revids are checked when looking for missing revisions
-CHECK_PRESENT_INTERVAL = 1000
+# Max size of group in which revids are checked when looking for missing 
+# revisions
+MAX_CHECK_PRESENT_INTERVAL = 1000
 # Size of the text cache to keep
 TEXT_CACHE_SIZE = 1024 * 1024 * 50
 
@@ -922,6 +923,7 @@ class FetchRevisionFinder(object):
         self.needed = deque()
         self.checked = set()
         self.extra = list()
+        self._check_present_interval = 1
 
     def get_missing(self):
         """Return the revisions that should be fetched, children before parents.
@@ -1003,7 +1005,7 @@ class FetchRevisionFinder(object):
                 # This revision (and its ancestry) has already been checked
                 break
             needs_checking.append((revmeta, mapping))
-            if not find_ghosts and not self.target_is_empty and len(needs_checking) == CHECK_PRESENT_INTERVAL:
+            if not find_ghosts and not self.target_is_empty and len(needs_checking) == self._check_present_interval:
                 missing_revmetas = self.check_revmetas(needs_checking)
                 for r in missing_revmetas:
                     revmetas.appendleft(r)
@@ -1011,6 +1013,7 @@ class FetchRevisionFinder(object):
                 needs_checking = []
                 if done:
                     break
+                self._check_present_interval = min(self._check_present_interval*2, MAX_CHECK_PRESENT_INTERVAL)
             self.checked.add((revmeta.get_foreign_revid(), mapping))
         for r in self.check_revmetas(needs_checking):
             revmetas.appendleft(r)

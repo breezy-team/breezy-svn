@@ -77,7 +77,7 @@ class TrunkLayout(RepositoryLayout):
         
         :param project: Name of the project.
         """
-        return False
+        return True
 
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.

@@ -782,13 +782,29 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         newrevtree = self.branch.repository.revision_tree(new_revid)
         svn_revprops = self.branch.repository._log.revprop_list(rev)
 
-        def process_committed(adm, relpath, revid, svn_revprops):
+        simple_revprops_cache = {
+                new_revid: (rev, svn_revprops[properties.PROP_REVISION_DATE],
+                    svn_revprops.get(properties.PROP_REVISION_AUTHOR, ""))}
+
+        def lookup_revid(revid):
+            try:
+                return simple_revprops_cache[revid]
+            except KeyError:
+                revmeta, mapping = self.branch.repository._get_revmeta(revid)
+                revprops = revmeta.get_revprops()
+                ret = (revmeta.revnum, 
+                       revprops[properties.PROP_REVISION_DATE],
+                       revprops.get(properties.PROP_REVISION_AUTHOR, ""))
+                simple_revprops_cache[revid] = ret
+                return ret
+
+        def process_committed(adm, relpath, fileprops, revid):
             mutter("process %r -> %r", relpath, revid)
             abspath = self.abspath(relpath).encode("utf-8").rstrip("/")
-            adm.process_committed(abspath,
-                False, self.branch.lookup_revision_id(revid),
-                svn_revprops[properties.PROP_REVISION_DATE], 
-                svn_revprops.get(properties.PROP_REVISION_AUTHOR, ""))
+            revnum = int(fileprops['svn:entry:committed-rev'])
+            date = fileprops['svn:entry:committed-date']
+            author = fileprops.get('svn:entry:last-author', '')
+            adm.process_committed(abspath, False, revnum, date, author)
             mutter("doneprocess %r -> %r", relpath, revid)
 
         def update_settings(adm, path, id):
@@ -798,15 +814,13 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             entries = adm.entries_read(False)
             for name, entry in entries.iteritems():
                 if name == "":
-                    process_committed(adm, path, 
-                                  newrevtree.inventory[id].revision,
-                                  svn_revprops)
+                    fileprops = newrevtree.get_file_properties(id, path)
+                    process_committed(adm, path, fileprops, 
+                                  newrevtree.inventory[id].revision)
                     continue
 
                 child_path = os.path.join(path, name.decode("utf-8"))
-
                 child_id = newrevtree.inventory.path2id(child_path)
-
                 child_abspath = self.abspath(child_path).encode("utf-8").rstrip("/")
 
                 if not child_id in newrevtree.inventory:
@@ -826,9 +840,10 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                     target_f.write(source_f.read())
                     target_f.close()
                     source_f.close()
-                    process_committed(adm, child_path, 
-                                  newrevtree.inventory[child_id].revision,
-                                  svn_revprops)
+                    fileprops = newrevtree.get_file_properties(child_id, 
+                            child_path)
+                    process_committed(adm, child_path, fileprops,
+                                  newrevtree.inventory[child_id].revision)
 
         # Set proper version for all files in the wc
         adm = self._get_wc(write_lock=True)

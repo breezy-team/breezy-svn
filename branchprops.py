@@ -14,7 +14,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+
 """Branch property access and caching."""
+
 
 from subvertpy import (
         ERR_FS_NO_SUCH_REVISION,

@@ -21,6 +21,9 @@
 import subvertpy
 
 import bzrlib
+from bzrlib import (
+    trace,
+    )
 from bzrlib.bzrdir import (
     BzrDirFormat,
     BzrDir,
@@ -34,7 +37,9 @@ from bzrlib.errors import (
 from bzrlib.revision import (
     NULL_REVISION,
     )
-from bzrlib.trace import warning
+from bzrlib.push import (
+    PushResult,
+    )
 
 from bzrlib.plugins.svn.errors import (
     NoSvnRepositoryPresent,
@@ -51,6 +56,17 @@ from bzrlib.plugins.svn.transport import (
     bzr_to_svn_url,
     get_svn_ra_transport,
     )
+
+
+class SubversionPushResult(PushResult):
+
+    def report(self, to_file):
+        """Write a human-readable description of the result."""
+        if self.branch_push_result is None:
+            trace.note('Created new branch at %s.', self.target_branch_path)
+        else:
+            self.branch_push_result.report(to_file)
+
 
 class SvnRemoteAccess(BzrDir):
     """BzrDir implementation for Subversion connections.
@@ -86,8 +102,9 @@ class SvnRemoteAccess(BzrDir):
         if self.branch_path == "":
             guessed_layout = self.find_repository().get_guessed_layout()
             if guessed_layout is not None and not guessed_layout.is_branch(""):
-                warning('Cloning Subversion repository as branch. '
-                        'To import the individual branches in the repository, use "bzr svn-import".')
+                trace.warning('Cloning Subversion repository as branch. '
+                        'To import the individual branches in the repository, '
+                        'use "bzr svn-import".')
         return super(SvnRemoteAccess, self).sprout(*args, **kwargs)
 
     def open_repository(self, _unsupported=False):
@@ -203,9 +220,9 @@ class SvnRemoteAccess(BzrDir):
         """See BzrDir.create_repository."""
         return self.open_repository()
 
-    def push_branch(self, source, revision_id=None, overwrite=False, remember=False):
-        from bzrlib.push import PushResult
-        ret = PushResult()
+    def push_branch(self, source, revision_id=None, overwrite=False,
+        remember=False):
+        ret = SubversionPushResult()
         ret.source_branch = source
         ret.workingtree_updated = None
         ret.stacked_on = None
@@ -217,13 +234,15 @@ class SvnRemoteAccess(BzrDir):
             ret.target_branch = target_branch
             target_branch.lock_write()
             try:
-                ret.branch_push_result = target_branch.pull(
-                    source, stop_revision=revision_id, overwrite=overwrite) 
+                ret.branch_push_result = source.push(
+                    target_branch, stop_revision=revision_id, 
+                    overwrite=overwrite) 
             finally:
                 target_branch.unlock()
         except NotBranchError:
             ret.old_revno = 0
             ret.old_revid = NULL_REVISION
+            ret.target_branch_path = "/%s" % self.branch_path.lstrip("/")
             ret.target_branch = self.import_branch(source, revision_id)
             if source.get_push_location() is None or remember:
                 source.set_push_location(ret.target_branch.base)
