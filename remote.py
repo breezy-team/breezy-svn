@@ -222,6 +222,7 @@ class SvnRemoteAccess(BzrDir):
 
     def push_branch(self, source, revision_id=None, overwrite=False,
         remember=False):
+        from bzrlib.plugins.svn.branch import InterOtherSvnBranch
         ret = SubversionPushResult()
         ret.source_branch = source
         ret.workingtree_updated = None
@@ -234,8 +235,9 @@ class SvnRemoteAccess(BzrDir):
             ret.target_branch = target_branch
             target_branch.lock_write()
             try:
-                ret.branch_push_result = source.push(
-                    target_branch, stop_revision=revision_id, 
+                ret.branch_push_result = \
+                    InterOtherSvnBranch(source, 
+                    target_branch).push(stop_revision=revision_id, 
                     overwrite=overwrite) 
             finally:
                 target_branch.unlock()
