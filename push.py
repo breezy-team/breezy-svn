@@ -282,9 +282,9 @@ class InterToSvnRepository(InterRepository):
                 if push_merged:
                     self.push_ancestors(layout, project, 
                         rev.parent_ids, create_prefix=True)
-                last = self.push(target_branch, target_config, rev)[0]
+                last = self.push(target_branch, target_config, rev)
                 count += 1
-            return count, last
+            return (count, last)
         finally:
             pb.finished()
 
@@ -296,7 +296,7 @@ class InterToSvnRepository(InterRepository):
         base_foreign_revid, base_mapping = self._get_base_revision(base_revid, target_path)
         revid, foreign_info = push(self.get_graph(), self.target, target_path, target_config, base_revid, self.source, rev, push_metadata=push_metadata, base_foreign_revid=base_foreign_revid, base_mapping=base_mapping)
         self._foreign_info[revid][target_path] = foreign_info
-        return revid, foreign_info
+        return (revid, foreign_info)
 
     def _get_branch_config(self, branch_path):
         return BranchConfig(urlutils.join(self.target.base, branch_path), 

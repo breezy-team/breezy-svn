@@ -117,6 +117,7 @@ class SubversionTargetBranchPushResult(BranchPushResult):
     """Subversion target branch push result."""
 
     def _lookup_revno(self, revid):
+        assert isinstance(revid, str), "was %r" % revid
         # Try in source branch first, it'll be faster
         try:
             return self.source_branch.revision_id_to_revno(revid)
@@ -753,11 +754,12 @@ class InterOtherSvnBranch(InterBranch):
             interrepo = InterToSvnRepository(self.source.repository, 
                 self.target.repository, graph)
             assert todo != []
-            new_last_revid, new_foreign_info = interrepo.push_branch(todo, 
-                self.target.layout, self.target.project, 
+            (count, (new_last_revid, new_foreign_info)) = interrepo.push_branch(
+                todo, self.target.layout, self.target.project, 
                 self.target.get_branch_path(), self.target.get_config(), 
                 push_merged=push_merged)
         self.target._clear_cached_state()
+        assert isinstance(new_last_revid, str)
         return old_last_revid, new_last_revid, new_foreign_info
 
     def push(self, overwrite=False, stop_revision=None, 
