@@ -56,6 +56,9 @@ from bzrlib.plugins.svn.convert import (
 from bzrlib.plugins.svn.errors import (
     InvalidFileName,
     )
+from bzrlib.plugins.svn.fetch import (
+   InterFromSvnRepository,
+   )
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
@@ -68,7 +71,21 @@ from bzrlib.plugins.svn.transport import (
     )
 
 
-class TestFetchWorks(SubversionTestCase):
+class FetchTestCase(SubversionTestCase):
+
+    def get_inter(self, source, target):
+        return InterFromSvnRepository(source, target)
+
+    def copy_content(self, source, target, revision_id=None):
+        inter = self.get_inter(source, target)
+        return inter.copy_content(revision_id=revision_id)
+
+    def fetch(self, source, target, revision_id=None):
+        inter = self.get_inter(source, target)
+        return inter.fetch(revision_id=revision_id)
+
+
+class TestFetchWorks(FetchTestCase):
 
     def test_fetch_trunk1(self):
         repos_url = self.make_repository('d')
@@ -83,7 +100,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(TrunkLayout(1))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
     def test_replace_from_branch(self):
         repos_url = self.make_repository('d')
@@ -141,7 +158,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
     def test_fetch_backslash(self):
         if sys.platform == 'win32':
@@ -157,7 +174,8 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        self.assertRaises(InvalidFileName, oldrepos.copy_content_into, newrepos)
+        self.assertRaises(InvalidFileName, self.copy_content, oldrepos, 
+                newrepos)
 
     def test_fetch_null(self):
         repos_url = self.make_repository('d')
@@ -165,7 +183,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(TrunkLayout(1))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos, NULL_REVISION)
+        self.copy_content(oldrepos, newrepos, NULL_REVISION)
 
     def test_fetch_copy_remove_old(self):
         repos_url = self.make_client('d', 'dc')
@@ -188,7 +206,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
     def test_fetch_special_char(self):
         repos_url = self.make_repository('d')
@@ -202,7 +220,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
     def test_fetch_signature(self):
         repos_url = self.make_repository('d')
@@ -215,7 +233,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         self.assertEquals("SIGNATURE", newrepos.get_signature_text(oldrepos.generate_revision_id(1, "trunk", oldrepos.get_mapping())))
 
     def test_fetch_file_branch(self):
@@ -228,7 +246,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
     def test_fetch_special_char_edit(self):
         repos_url = self.make_repository('d')
@@ -247,7 +265,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
     def test_fetch_special_char_child(self):
         repos_url = self.make_repository('d')
@@ -261,7 +279,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
     def test_fetch_special_char_modify(self):
         repos_url = self.make_repository('d')
@@ -280,7 +298,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
     def test_fetch_delete(self):
         repos_url = self.make_repository('d')
@@ -292,7 +310,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.open_dir("foo")
@@ -300,7 +318,7 @@ class TestFetchWorks(SubversionTestCase):
         dc.close()
 
         newrepos = Repository.open("f")
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(oldrepos.has_revision(oldrepos.generate_revision_id(2, "", mapping)))
 
@@ -320,7 +338,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         tree = newrepos.revision_tree(oldrepos.generate_revision_id(1, "", mapping))
         self.assertEquals(3, len(tree.inventory))
@@ -347,7 +365,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -389,7 +407,7 @@ class TestFetchWorks(SubversionTestCase):
         repo = to_bzrdir.create_repository()
         last_rev = oldrepos.generate_revision_id(3, "branch2", 
             oldrepos.get_mapping())
-        repo.fetch(oldrepos, last_rev)
+        self.fetch(oldrepos, repo, last_rev)
         self.assertEquals(repo.get_inventory(last_rev).root.file_id,
             oldrepos.get_mapping().generate_file_id(
                 (oldrepos.uuid, "branch1", 1), u""))
@@ -411,7 +429,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -447,7 +465,7 @@ class TestFetchWorks(SubversionTestCase):
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
     def test_fetch_replace_nordic(self):
         filename = os.path.join(self.test_dir, "dumpfile")
@@ -533,7 +551,7 @@ Node-action: delete
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -675,7 +693,7 @@ Node-copyfrom-path: u
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -822,7 +840,7 @@ Node-copyfrom-path: bla
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -1003,7 +1021,7 @@ Node-copyfrom-path: bla
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -1145,7 +1163,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -1309,7 +1327,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -1361,7 +1379,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         lastrevid = oldrepos.generate_revision_id(4, "branches/1.0", oldrepos.get_mapping())
         tree = newrepos.revision_tree(lastrevid)
         self.assertTrue(tree.path2id("dir1/file.txt") is not None)
@@ -1384,7 +1402,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
         branch = Branch.open("%s/branches/mybranch" % repos_url)
         mapping = oldrepos.get_mapping()
@@ -1413,7 +1431,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
         branch = Branch.open("%s/trunk" % repos_url)
         self.assertEqual([oldrepos.generate_revision_id(2, "trunk", oldrepos.get_mapping())],
@@ -1436,7 +1454,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
         branch = Branch.open("%s/trunk" % repos_url)
         if oldrepos.get_mapping().is_branch("old-trunk"):
@@ -1467,7 +1485,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
     def test_fetch_all(self):
         repos_url = self.make_repository('d')
@@ -1497,7 +1515,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
         mapping = oldrepos.get_mapping()
 
@@ -1596,8 +1614,8 @@ Node-copyfrom-path: x
         dir2 = BzrDir.create("g", format.get_rich_root_format())
         newrepos1 = dir1.create_repository()
         newrepos2 = dir2.create_repository()
-        oldrepos.copy_content_into(newrepos1)
-        oldrepos.copy_content_into(newrepos2)
+        self.copy_content(oldrepos, newrepos1)
+        self.copy_content(oldrepos, newrepos2)
         mapping = oldrepos.get_mapping()
         inv1 = newrepos1.get_inventory(
                 oldrepos.generate_revision_id(1, "", mapping))
@@ -1621,7 +1639,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -1647,7 +1665,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         inv1 = newrepos.get_inventory(
                 oldrepos.generate_revision_id(1, "", mapping))
@@ -1672,7 +1690,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -1697,7 +1715,7 @@ Node-copyfrom-path: x
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -1719,7 +1737,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -1745,7 +1763,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(2, "", mapping)))
@@ -1771,7 +1789,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(2, "", mapping)))
@@ -1795,7 +1813,7 @@ Node-copyfrom-path: x
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
         oldrepos.set_layout(RootLayout())
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -1822,7 +1840,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -1858,7 +1876,7 @@ Node-copyfrom-path: x
 
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
         mapping = oldrepos.get_mapping()
 
@@ -1904,7 +1922,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos, "revid4")
+        self.copy_content(oldrepos, newrepos, "revid4")
         from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3
         from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
         revid3 = oldrepos.generate_revision_id(3, "trunk", 
@@ -1920,7 +1938,7 @@ Node-copyfrom-path: x
         newrepos = dir.create_repository()
         from bzrlib.plugins.svn.mapping4 import BzrSvnMappingv4
         revid5 = oldrepos.generate_revision_id(5, "trunk", BzrSvnMappingv4())
-        oldrepos.copy_content_into(newrepos, revid5)
+        self.copy_content(oldrepos, newrepos, revid5)
         from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3
         from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
         revid3 = oldrepos.generate_revision_id(3, "trunk", 
@@ -1951,7 +1969,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertEquals(set([
             oldrepos.generate_revision_id(0, "", mapping),
@@ -1987,7 +2005,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertEquals(set([
             oldrepos.generate_revision_id(1, "trunk", mapping),
@@ -2029,7 +2047,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
     def test_fetch_replace_self_open_older(self):
         repos_url = self.make_repository('d')
@@ -2064,7 +2082,7 @@ Node-copyfrom-path: x
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f", format.get_rich_root_format())
         newrepos = dir.create_repository()
-        oldrepos.copy_content_into(newrepos)
+        self.copy_content(oldrepos, newrepos)
 
     def test_fetch_crosscopy(self):
         repos_url = self.make_repository('d')
@@ -2105,7 +2123,7 @@ Node-copyfrom-path: x
         copyrev = oldrepos.generate_revision_id(2, "branches/abranch", mapping)
         prevrev = oldrepos.generate_revision_id(3, "branches/abranch", mapping)
         lastrev = oldrepos.generate_revision_id(4, "branches/abranch", mapping)
-        oldrepos.copy_content_into(newrepos, lastrev)
+        self.copy_content(oldrepos, newrepos, lastrev)
 
         inventory = newrepos.get_inventory(lastrev)
         self.assertEqual(prevrev, 
