@@ -36,8 +36,12 @@ from bzrlib.inventory import (
     InventoryDirectory,
     TreeReference,
     )
-from bzrlib.osutils import md5
-from bzrlib.revision import CURRENT_REVISION
+from bzrlib.osutils import (
+    md5,
+    )
+from bzrlib.revision import (
+    CURRENT_REVISION,
+    )
 from bzrlib.revisiontree import (
     RevisionTree,
     )
@@ -192,6 +196,7 @@ class TreeBuildEditor(object):
 
 
 class DirectoryTreeEditor(object):
+
     def __init__(self, tree, file_id):
         self.tree = tree
         self.file_id = file_id
