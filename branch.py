@@ -35,6 +35,7 @@ from bzrlib.branch import (
     Branch,
     BranchFormat,
     BranchCheckResult,
+    BranchPushResult,
     InterBranch,
     PullResult,
     )
@@ -446,44 +447,6 @@ class SvnBranch(ForeignBranch):
             raise DivergedBranches(self, None)
         interrepo.push_branch(todo, self.layout, self.project, self.get_branch_path(), self.get_config())
 
-    def pull(self, source, overwrite=False, stop_revision=None, 
-             _hook_master=None, run_hooks=True, _push_merged=None,
-             _override_svn_revprops=None):
-        """See Branch.pull()."""
-        result = PullResult()
-        result.source_branch = source
-        result.master_branch = None
-        result.target_branch = self
-        source.lock_read()
-        try:
-            (result.old_revno, result.old_revid) = self.last_revision_info()
-            self.update_revisions(source, stop_revision, overwrite, 
-                                  _push_merged=_push_merged,
-                                  _override_svn_revprops=_override_svn_revprops)
-            result.tag_conflicts = source.tags.merge_to(self.tags, overwrite)
-            (result.new_revno, result.new_revid) = self.last_revision_info()
-            return result
-        finally:
-            source.unlock()
-
-    @needs_write_lock
-    def update_revisions(self, other, stop_revision=None, overwrite=False,
-                         graph=None, _override_svn_revprops=None, 
-                         _push_merged=None):
-        """Pull in new perfect-fit revisions.
-
-        :param other: Another Branch to pull from
-        :param stop_revision: Updated until the given revision
-        :param overwrite: Always set the branch pointer, rather than checking
-            to see if it is a proper descendant.
-        :param graph: A Graph object that can be used to query history
-            information. This can be None.
-        :return: None
-        """
-        return InterBranch.get(other, self).update_revisions(stop_revision,
-            overwrite, graph, _override_svn_revprops=_override_svn_revprops, 
-            _push_merged=_push_merged)
-
     def generate_revision_history(self, revision_id, last_rev=None, 
         other_branch=None):
         """Create a new revision history that will finish with revision_id.
@@ -648,6 +611,9 @@ class InterSvnOtherBranch(InterBranch):
             self.target.generate_revision_history(stop_revision)
         finally:
             self.source.unlock()
+
+    def push(self, overwrite=False, stop_revision=None):
+        raise NotImplementedError(self.push)
 
     def pull(self, overwrite=False, stop_revision=None, 
              _hook_master=None, run_hooks=True, possible_transports=None,
