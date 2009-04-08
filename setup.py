@@ -5,7 +5,7 @@
 from distutils.core import setup
 import os, sys
 
-version = (0, 5, 4)
+version = (0, 6, 0)
 version_string = ".".join([str(x) for x in version])
 
 setup(name='bzr-svn',
