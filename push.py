@@ -50,6 +50,9 @@ from bzrlib.trace import (
     mutter,
     )
 
+from bzrlib.plugins.svn import (
+    mapping,
+    )
 from bzrlib.plugins.svn.commit import (
     SvnCommitBuilder,
     _check_dirs_exist,
@@ -59,6 +62,7 @@ from bzrlib.plugins.svn.config import (
     )
 from bzrlib.plugins.svn.errors import (
     ChangesRootLHSHistory, 
+    MissingPrefix,
     convert_svn_error,
     )
 from bzrlib.plugins.svn.repository import (
@@ -254,6 +258,12 @@ class InterToSvnRepository(InterRepository):
         # Dictionary: revid -> branch_path -> (foreign_revid, mapping)
         self._foreign_info = defaultdict(dict)
 
+    def _target_has_revision(self, revid):
+        """Slightly optimized version of self.target.has_revision()."""
+        if revid in self._foreign_info:
+            return True
+        return self.target.has_revision(revid)
+
     def _get_base_revision(self, revid, path):
         if not revid in self._foreign_info:
             return None, None
@@ -268,7 +278,7 @@ class InterToSvnRepository(InterRepository):
         return None
 
     def push_branch(self, todo, layout, project, target_branch, target_config,
-        push_merged=False):
+        push_merged):
         """Push a series of revisions into a Subversion repository.
 
         """
@@ -279,7 +289,7 @@ class InterToSvnRepository(InterRepository):
             for rev in self.source.get_revisions(todo):
                 pb.update("pushing revisions", todo.index(rev.revision_id), 
                           len(todo))
-                if push_merged:
+                if push_merged and len(rev.parent_ids) > 1:
                     self.push_ancestors(layout, project, 
                         rev.parent_ids, create_prefix=True)
                 last = self.push(target_branch, target_config, rev)
@@ -328,7 +338,7 @@ class InterToSvnRepository(InterRepository):
         if (start_revid != NULL_REVISION and 
             start_revid_parent != NULL_REVISION and 
             stop_revision == start_revid and mapping.supports_hidden):
-            if (self.target.has_revision(start_revid) or 
+            if (self._target_has_revision(start_revid) or 
                 start_revid == NULL_REVISION):
                 revid = start_revid
             else:
@@ -356,31 +366,39 @@ class InterToSvnRepository(InterRepository):
         :param parent_revids: The revision ids of the basic ancestors to push
         :param create_prefix: Whether to optionally create the prefix of the branches.
         """
-        for parent_revid in self.target.has_revisions(parent_revids[1:]):
+        present_rhs_parents = self.target.has_revisions(parent_revids[1:])
+        unique_ancestors = set()
+        for parent_revid in parent_revids[1:]:
+            if parent_revid in present_rhs_parents:
+                continue
             # Push merged revisions
-            unique_ancestors = self.get_graph().find_unique_ancestors(parent_revid, [parent_revids[0]])
-            for x in self.get_graph().iter_topo_order(unique_ancestors):
-                if self.target.has_revision(x):
-                    continue
-                rev = self.source.get_revision(x)
-                rhs_branch_path = determine_branch_path(rev, layout, project)
-                try:
-                    self.push_new(rhs_branch_path, 
-                             x, append_revisions_only=False)
-                except MissingPrefix, e:
-                    if not create_prefix:
-                        raise
-                    revprops = {properties.PROP_REVISION_LOG: "Add branches directory."}
-                    if self.target.transport.has_capability("commit-revprops"):
-                        revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
-                    create_branch_prefix(self.target, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
-                    self.push_new(rhs_branch_path, x, append_revisions_only=False)
+            unique_ancestors.update(self.get_graph().find_unique_ancestors(parent_revid, [parent_revids[0]]))
+        for x in self.get_graph().iter_topo_order(unique_ancestors):
+            if self._target_has_revision(x):
+                continue
+            rev = self.source.get_revision(x)
+            rhs_branch_path = determine_branch_path(rev, layout, project)
+            try:
+                self.push_new(rhs_branch_path, 
+                         x, append_revisions_only=False)
+            except MissingPrefix, e:
+                if not create_prefix:
+                    raise
+                revprops = {properties.PROP_REVISION_LOG: "Add branches directory."}
+                if self.target.transport.has_capability("commit-revprops"):
+                    revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
+                create_branch_prefix(self.target, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
+                self.push_new(rhs_branch_path, x, append_revisions_only=False)
 
     def push_new_branch(self, layout, project, target_branch_path, 
-        stop_revision, override_svn_revprops=None, push_merged=False):
+        stop_revision, push_merged=None, override_svn_revprops=None):
         if self.target.transport.check_path(target_branch_path,
             self.target.get_latest_revnum()) != subvertpy.NODE_NONE:
             raise AlreadyBranchError(target_branch_path)
+        target_config = self._get_branch_config(target_branch_path)
+        if push_merged is None:
+            push_merged = (layout.push_merged_revisions(project) and
+                           target_config.get_push_merged_revisions())
         begin_revid, _ = self.push_new(target_branch_path, stop_revision, 
                  append_revisions_only=True, 
                  override_svn_revprops=override_svn_revprops)
@@ -392,8 +410,7 @@ class InterToSvnRepository(InterRepository):
         todo.reverse()
         if todo != []:
             self.push_branch(todo, layout, project, target_branch_path, 
-                self._get_branch_config(target_branch_path), 
-                push_merged=push_merged)
+                target_config, push_merged)
 
     def push_nonmainline_revision(self, rev, layout):
         mutter('pushing %r', rev.revision_id)
@@ -408,9 +425,10 @@ class InterToSvnRepository(InterRepository):
             (_, bp, _), _ = self.target.lookup_revision_id(parent_revid)
             (_, target_project, _, _) = layout.parse(bp)
         bp = determine_branch_path(rev, layout, target_project)
-        target_config = BranchConfig(urlutils.join(self.target.base, bp), self.target.uuid)
+        target_config = self._get_branch_config(bp)
         if (layout.push_merged_revisions(target_project) and 
-            target_config.get_push_merged_revisions()):
+            target_config.get_push_merged_revisions() and
+            len(rev.parent_ids) > 1):
             self.push_ancestors(layout, target_project, 
                 rev.parent_ids, create_prefix=True)
         return push_revision_tree(self.get_graph(), self.target, 
@@ -431,7 +449,7 @@ class InterToSvnRepository(InterRepository):
             # Go back over the LHS parent until we reach a revid we know
             todo = []
             for revision_id in self.source.iter_reverse_revision_history(revision_id):
-                if self.target.has_revision(revision_id):
+                if self._target_has_revision(revision_id):
                     break
                 todo.append(revision_id)
             if todo == []:

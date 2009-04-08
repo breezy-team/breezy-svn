@@ -479,6 +479,10 @@ class SvnBranch(ForeignBranch):
     def dpull(self, source, stop_revision=None):
         return dpush(self, source, stop_revision)
 
+    def get_push_merged_revisions(self):
+        return (self.layout.push_merged_revisions(self.project) and 
+                self.get_config().get_push_merged_revisions())
+
     def import_last_revision_info(self, source_repo, revno, revid):
         interrepo = InterToSvnRepository(source_repo, self.repository)
         todo = self._missing_revisions(source_repo, revid, overwrite=False)
@@ -486,7 +490,8 @@ class SvnBranch(ForeignBranch):
             raise DivergedBranches(self, None)
         assert todo != []
         interrepo.push_branch(todo, self.layout, self.project, 
-            self.get_branch_path(), self.get_config())
+            self.get_branch_path(), self.get_config(),
+            self.get_push_merged_revisions())
 
     def generate_revision_history(self, revision_id, last_rev=None, 
         other_branch=None):
@@ -742,8 +747,7 @@ class InterOtherSvnBranch(InterBranch):
         if todo is None:
             raise DivergedBranches(self.target, self.source)
         if push_merged is None:
-            push_merged = (self.target.layout.push_merged_revisions(self.target.project) and 
-                            self.target.get_config().get_push_merged_revisions())
+            push_merged = self.target.get_push_merged_revisions() 
         if self.target.mapping.supports_hidden and self.target.repository.has_revision(stop_revision):
             # Revision is already present in the repository, so just 
             # copy from there.
@@ -757,7 +761,7 @@ class InterOtherSvnBranch(InterBranch):
             (count, (new_last_revid, new_foreign_info)) = interrepo.push_branch(
                 todo, self.target.layout, self.target.project, 
                 self.target.get_branch_path(), self.target.get_config(), 
-                push_merged=push_merged)
+                push_merged)
         self.target._clear_cached_state()
         assert isinstance(new_last_revid, str)
         return old_last_revid, new_last_revid, new_foreign_info

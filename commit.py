@@ -235,6 +235,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
     :param path: Path (from repository root) to the directory.
     :param file_id: File id of the directory
     :param dir_editor: Subversion DirEditor object.
+    :return: Boolean indicating whether any changes were made
     """
     changed = False
     def mutter(text, *args):
