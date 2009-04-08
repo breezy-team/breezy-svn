@@ -733,13 +733,13 @@ class InterOtherSvnBranch(InterBranch):
         if stop_revision is None:
             stop_revision = ensure_null(self.source.last_revision())
         if old_last_revid == stop_revision:
-            return old_last_revid, old_last_revid, 0
+            return old_last_revid, old_last_revid, None
         # Request graph from other repository, since it's most likely 
         # than Subversion
         graph = self.source.repository.get_graph(self.target.repository)
         if not graph.is_ancestor(old_last_revid, stop_revision):
             if graph.is_ancestor(stop_revision, old_last_revid):
-                return
+                return old_last_revid, old_last_revid, None
             if not overwrite:
                 raise DivergedBranches(self.target, self.source)
         todo = self.target._missing_revisions(self.source.repository,
@@ -764,7 +764,8 @@ class InterOtherSvnBranch(InterBranch):
                 push_merged)
         self.target._clear_cached_state()
         assert isinstance(new_last_revid, str)
-        return old_last_revid, new_last_revid, new_foreign_info
+        assert isinstance(old_last_revid, str)
+        return (old_last_revid, new_last_revid, new_foreign_info)
 
     def push(self, overwrite=False, stop_revision=None, 
             _push_merged=None, _override_svn_revprops=None):
