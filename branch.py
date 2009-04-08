@@ -110,7 +110,11 @@ class SubversionPullResult(PullResult):
             else:
                 to_file.write('Now on revision %d (svn revno: %d).\n' % 
                         (self.new_revno, self.new_revmeta.revnum))
-        self._show_tag_conflicts(to_file)
+        self._show_tag_conficts(to_file)
+
+
+class SubversionBranchPushResult(BranchPushResult):
+    """Subversion branch push result."""
 
 
 class SvnBranch(ForeignBranch):
@@ -714,7 +718,7 @@ class InterOtherSvnBranch(InterBranch):
     def push(self, overwrite=False, stop_revision=None, 
             _push_merged=None, _override_svn_revprops=None):
         """See InterBranch.push()."""
-        result = BranchPushResult()
+        result = SubversionBranchPushResult()
         result.target_branch = self.target
         result.master_branch = None
         result.source_branch = self.source
