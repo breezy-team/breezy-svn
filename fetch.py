@@ -1013,7 +1013,7 @@ class FetchRevisionFinder(object):
                 needs_checking = []
                 if done:
                     break
-                self._check_present_interval = max(self._check_present_interval*2, MAX_CHECK_PRESENT_INTERVAL)
+                self._check_present_interval = min(self._check_present_interval*2, MAX_CHECK_PRESENT_INTERVAL)
             self.checked.add((revmeta.get_foreign_revid(), mapping))
         for r in self.check_revmetas(needs_checking):
             revmetas.appendleft(r)
