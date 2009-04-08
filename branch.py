@@ -100,8 +100,8 @@ class SubversionBranchCheckResult(BranchCheckResult):
     """Result of checking a Subversion branch."""
 
 
-class SubversionPullResult(PullResult):
-    """Subversion pull result. """
+class SubversionSourcePullResult(PullResult):
+    """Subversion source pull result. """
 
     def report(self, to_file):
         if not is_quiet():
@@ -113,8 +113,8 @@ class SubversionPullResult(PullResult):
         self._show_tag_conficts(to_file)
 
 
-class SubversionBranchPushResult(BranchPushResult):
-    """Subversion branch push result."""
+class SubversionTargetBranchPushResult(BranchPushResult):
+    """Subversion target branch push result."""
 
     def _lookup_revno(self, revid):
         # Try in source branch first, it'll be faster
@@ -125,11 +125,30 @@ class SubversionBranchPushResult(BranchPushResult):
 
     @property
     def old_revno(self):
-        return self._lookup_revno(revid)
+        return self._lookup_revno(self.old_revid)
 
     @property
     def new_revno(self):
-        return self._lookup_revno(revid)
+        return self._lookup_revno(self.new_revid)
+
+
+class SubversionTargetPullResult(PullResult):
+    """Subversion target branch pull result."""
+
+    def _lookup_revno(self, revid):
+        # Try in source branch first, it'll be faster
+        try:
+            return self.source_branch.revision_id_to_revno(revid)
+        except NoSuchRevision:
+            return self.target_branch.revision_id_to_revno(revid)
+
+    @property
+    def old_revno(self):
+        return self._lookup_revno(self.old_revid)
+
+    @property
+    def new_revno(self):
+        return self._lookup_revno(self.new_revid)
 
 
 class SvnBranch(ForeignBranch):
@@ -638,7 +657,7 @@ class InterSvnOtherBranch(InterBranch):
              _hook_master=None, run_hooks=True, possible_transports=None,
              _override_hook_target=None):
         """See InterBranch.pull()."""
-        result = SubversionPullResult()
+        result = SubversionSourcePullResult()
         if _override_hook_target is None:
             result.target_branch = self
         else:
@@ -733,7 +752,7 @@ class InterOtherSvnBranch(InterBranch):
     def push(self, overwrite=False, stop_revision=None, 
             _push_merged=None, _override_svn_revprops=None):
         """See InterBranch.push()."""
-        result = SubversionBranchPushResult()
+        result = SubversionTargetBranchPushResult()
         result.target_branch = self.target
         result.master_branch = None
         result.source_branch = self.source
@@ -745,7 +764,7 @@ class InterOtherSvnBranch(InterBranch):
                                   _override_svn_revprops=_override_svn_revprops)
             result.tag_conflicts = self.source.tags.merge_to(self.target.tags, 
                 overwrite)
-            result.new_revid = self.target.last_revision_info()
+            result.new_revid = self.target.last_revision()
             return result
         finally:
             self.source.unlock()
@@ -754,7 +773,7 @@ class InterOtherSvnBranch(InterBranch):
              _hook_master=None, run_hooks=True, possible_transports=None,
              _push_merged=None, _override_svn_revprops=None):
         """See InterBranch.pull()."""
-        result = PullResult()
+        result = SubversionTargetPullResult()
         result.source_branch = self.source
         result.master_branch = None
         result.target_branch = self.target
@@ -765,8 +784,8 @@ class InterOtherSvnBranch(InterBranch):
             self.update_revisions(stop_revision, overwrite, 
                                   _push_merged=_push_merged,
                                   _override_svn_revprops=_override_svn_revprops)
-            result.tag_conflicts = self.source.tags.merge_to(self.target.tags, 
-                overwrite)
+            result.tag_conflicts = self.source.tags.merge_to(
+                self.target.tags, overwrite)
             (result.new_revno, result.new_revid) = \
                     self.target.last_revision_info()
             return result
