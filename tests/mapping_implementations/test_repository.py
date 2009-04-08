@@ -131,7 +131,15 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.client_copy("dc/pykleur", "dc/pygments", 1)
         self.client_delete('dc/pykleur')
         self.client_update("dc")
-        self.client_commit("dc", "commit")
+        if ra.version()[1] >= 5:
+            from subvertpy.wc import (
+                CONFLICT_CHOOSE_MINE_FULL,
+                )
+            self.client_resolve("dc/pykleur", 1, CONFLICT_CHOOSE_MINE_FULL)
+        try:
+            self.client_commit("dc", "commit")
+        except Exception, e:
+            import pdb; pdb.set_trace()
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(1))
         results = [(l.branch_path, l.get_paths(), l.revnum) for l in repos._revmeta_provider.iter_reverse_branch_changes("pygments/trunk", 3, 0)]
