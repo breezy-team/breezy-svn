@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subvertpy.ra import RemoteAccess
+from subvertpy.ra import RemoteAccess, Auth, get_username_provider
 from subvertpy.tests import TestCommitEditor
 
 from bzrlib.repository import Repository
@@ -56,7 +56,8 @@ class TestWithRepository(SubversionTestCase):
         dc.close()
 
         mapping = mapping_registry.get_default()()
-        ra = RemoteAccess(repos_url.encode("utf-8"))
+        ra = RemoteAccess(repos_url.encode("utf-8"),
+                          auth=Auth([get_username_provider()]))
         revnum = ra.get_latest_revnum()
         revprops = { SVN_REVPROP_BZR_REPOS_UUID: "otheruuid",
                     "svn:log": "bla",

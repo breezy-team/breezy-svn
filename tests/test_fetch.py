@@ -15,36 +15,61 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+
 """Subversion fetch tests."""
 
-import os, sys
-import shutil
 
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir
-from bzrlib.osutils import has_symlinks
-from bzrlib.repository import Repository
-from bzrlib.revision import NULL_REVISION
+import os
+import shutil
+import sys
+
+from bzrlib.branch import (
+    Branch,
+    )
+from bzrlib.bzrdir import (
+    BzrDir,
+    )
+from bzrlib.osutils import (
+    has_symlinks,
+    )
+from bzrlib.repository import (
+    Repository,
+    )
+from bzrlib.revision import (
+    NULL_REVISION,
+    )
 from bzrlib.tests import (
     KnownFailure,
     TestSkipped,
     )
-from bzrlib.trace import mutter
+from bzrlib.trace import (
+    mutter,
+    )
 
 from bzrlib.plugins.svn import (
     format,
     remote,
     )
-from bzrlib.plugins.svn.convert import load_dumpfile
-from bzrlib.plugins.svn.errors import InvalidFileName
+from bzrlib.plugins.svn.convert import (
+    load_dumpfile,
+    )
+from bzrlib.plugins.svn.errors import (
+    InvalidFileName,
+    )
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
     )
-from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.transport import SvnRaTransport
+from bzrlib.plugins.svn.tests import (
+    SubversionTestCase,
+    )
+from bzrlib.plugins.svn.transport import (
+    SvnRaTransport,
+    )
+
 
 class TestFetchWorks(SubversionTestCase):
+
     def test_fetch_trunk1(self):
         repos_url = self.make_repository('d')
 
@@ -185,7 +210,6 @@ class TestFetchWorks(SubversionTestCase):
         trunk = dc.add_dir("trunk")
         trunk.add_file("trunk/bar").modify("data")
         dc.close()
-
         self.client_set_revprop(repos_url, 1, "bzr:gpg-signature", "SIGNATURE")
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
