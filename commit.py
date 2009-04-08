@@ -17,9 +17,11 @@
 
 """Committing to Subversion repositories."""
 
-from collections import (
-    defaultdict,
-    )
+try:
+    from collections import defaultdict
+except ImportError:
+    from bzrlib.plugins.svn.pycompat import defaultdict
+
 from cStringIO import (
     StringIO,
     )
