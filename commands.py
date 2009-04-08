@@ -278,3 +278,29 @@ class cmd_svn_serve(Command):
                 port = SVN_PORT
             server = TCPSVNServer(backend, ('0.0.0.0', port), self.outf)
         server.serve()
+
+
+class cmd_svn_push(Command):
+    """Dummy command that will tell you to use "bzr push".
+
+    This command used to have a function in older versions of bzr-svn. It 
+    will be completely removed in bzr-svn 0.6. Use the normal "push" command 
+    instead.
+    """
+    takes_args = ['location?']
+    takes_options = ['revision', 'remember', Option('directory',
+            help='Branch to push from, '
+                 'rather than the one containing the working directory.',
+            short_name='d',
+            type=unicode,
+            ),
+            Option("merged", help="Push merged (right hand side) revisions."),
+            Option("svn-override-revprops", type=str, 
+                help="Comma-separated list of svn properties to override (date/author)")
+            ]
+    hidden = True
+
+    def run(self, location=None, revision=None, remember=False, 
+            directory=None, merged=None, svn_override_revprops=None):
+        from bzrlib.errors import BzrCommandError
+        raise BzrCommandError("svn-push has been removed. Use regular push instead.")
