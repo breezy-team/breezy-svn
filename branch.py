@@ -51,6 +51,9 @@ from bzrlib.errors import (
     NotBranchError,
     UnstackableBranchFormat,
     )
+from bzrlib.foreign import (
+    ForeignBranch,
+    )
 from bzrlib.revision import (
     NULL_REVISION,
     is_null,
@@ -80,7 +83,6 @@ from bzrlib.plugins.svn.errors import (
     NotSvnBranchPath,
     )
 from bzrlib.plugins.svn.foreign import (
-    ForeignBranch,
     FakeControlFiles,
     )
 from bzrlib.plugins.svn.format import (
