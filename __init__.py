@@ -76,7 +76,7 @@ else:
     version_string = '%d.%d.%d%s%d' % version_info
 __version__ = version_string
 
-COMPATIBLE_BZR_VERSIONS = [(1, 14, 0)]
+COMPATIBLE_BZR_VERSIONS = [(1, 15, 0)]
 MINIMUM_SUBVERTPY_VERSION = (0, 6, 1)
 
 
@@ -207,11 +207,9 @@ def update_stanza(rev, stanza):
     stanza.add("svn-uuid", revmeta.uuid)
 
 
-try:
-    RioVersionInfoBuilder.hooks.install_named_hook('revision',
-        update_stanza, None)
-except AttributeError:
-    pass
+RioVersionInfoBuilder.hooks.install_named_hook('revision',
+    update_stanza, None)
+
 
 def test_suite():
     """Returns the testsuite for bzr-svn."""
