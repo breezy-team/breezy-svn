@@ -1065,6 +1065,9 @@ class InterFromSvnRepository(InterRepository):
         self._content_cache = lru_cache.LRUCache(TEXT_CACHE_SIZE /
                                                  (1*1024*1024))
 
+        self._use_replay_range = self.source.transport.has_capability("partial-replay") and False
+        self._use_replay = self.source.transport.has_capability("partial-replay") and False
+
     def copy_content(self, revision_id=None, pb=None):
         """See InterRepository.copy_content."""
         self.fetch(revision_id, pb, find_ghosts=False)
@@ -1211,9 +1214,6 @@ class InterFromSvnRepository(InterRepository):
         if pb:
             pb.update("fetch phase", 0, 2)
 
-        use_replay_range = self.source.transport.has_capability("partial-replay") and False
-        use_replay = self.source.transport.has_capability("partial-replay") and False
-
         # Loop over all the revnums until revision_id
         # (or youngest_revnum) and call self.target.add_revision() 
         # or self.target.add_inventory() each time
@@ -1254,10 +1254,11 @@ class InterFromSvnRepository(InterRepository):
             else:
                 nested_pb = None
             try:
-                if use_replay_range:
+                if self._use_replay_range:
                     self._fetch_revision_chunks(needed, pb)
                 else:
-                    self._fetch_revisions(needed, pb, use_replay=use_replay)
+                    self._fetch_revisions(needed, pb,
+                        use_replay=self._use_replay)
             finally:
                 if nested_pb is not None:
                     nested_pb.finished()
