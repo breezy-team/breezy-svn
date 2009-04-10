@@ -60,7 +60,7 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
     def make_client_and_bzrdir(self, repospath, clientpath):
         repos_url = self.make_client(repospath, clientpath)
 
-        return BzrDir.open("svn+%s" % repos_url)
+        return BzrDir.open(repos_url)
 
 
 def test_suite():

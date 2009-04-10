@@ -194,6 +194,7 @@ class SvnRaTest(SubversionTestCase):
  
 
 class UrlConversionTest(TestCase):
+
     def test_bzr_to_svn_url(self):
         self.assertEqual("svn://host/location", 
                          bzr_to_svn_url("svn://host/location"))
@@ -201,10 +202,8 @@ class UrlConversionTest(TestCase):
                          bzr_to_svn_url("svn+ssh://host/location"))
         self.assertEqual("http://host/location", 
                          bzr_to_svn_url("http://host/location"))
-        self.assertEqual("http://host/location", 
-                         bzr_to_svn_url("svn+http://host/location"))
         self.assertEqual("http://host/gtk+/location", 
-                         bzr_to_svn_url("svn+http://host/gtk%2B/location"))
+                         bzr_to_svn_url("http://host/gtk%2B/location"))
 
     def test_url_unescape_uri(self):
         self.assertEquals("http://svn.gnome.org/svn/gtk+/trunk",
