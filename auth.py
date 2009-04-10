@@ -27,6 +27,9 @@ from bzrlib.config import (
     AuthenticationConfig,
     CredentialStore,
     )
+from bzrlib.errors import (
+    BzrError,
+    )
 from bzrlib.trace import (
     mutter,
     )
@@ -210,8 +213,18 @@ class SubversionCredentialStore(CredentialStore):
         super(SubversionCredentialStore, self).__init__()
         self.auth = ra.Auth([ra.get_simple_provider()])
 
+    def _get_realm(self, credentials):
+        if credentials.get('port') is None:
+            import socket
+            try:
+                credentials['port'] = socket.getservbyname(credentials['scheme'])
+            except socket.error:
+                raise BzrError("Unable to look up default port for %(scheme)s"
+                    % credentials)
+        return "<%(scheme)s://%(host)s:%(port)s> %(realm)s" % credentials
+
     def decode_password(self, credentials):
-        svn_realm = "<%(scheme)s://%(host)s:%(port)s> %(realm)s" % credentials
+        svn_realm = self._get_realm(credentials)
         creds = self.auth.credentials("svn.simple", svn_realm)
         try:
             (username, password, may_save) = creds.next()
@@ -221,4 +234,19 @@ class SubversionCredentialStore(CredentialStore):
             # Subversion changed the username
             return None
         return password
+
+    def get_credentials(self, scheme, host, port=None, user=None, path=None, 
+                        realm=None):
+        assert isinstance(realm, str) or realm is None
+        credentials = { "scheme": scheme, "host": host, "port": port, 
+            "realm": realm, "user": user}
+        svn_realm = self._get_realm(credentials)
+        creds = self.auth.credentials("svn.simple", svn_realm)
+        try:
+            (username, password, may_save) = creds.next()
+        except StopIteration:
+            return None
+        credentials['user'] = username
+        credentials['password'] = password
+        return credentials
 

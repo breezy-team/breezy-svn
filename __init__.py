@@ -163,7 +163,7 @@ revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec",
 
 config.credential_store_registry.register_lazy(
     "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
-    help=__doc__)
+    help=__doc__, fallback=True)
 
 foreign_vcs_registry.register_lazy("svn", "bzrlib.plugins.svn.mapping",
                                    "foreign_vcs_svn")

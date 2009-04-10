@@ -1,5 +1,16 @@
 bzr-svn 0.6.0					UNRELEASED
 
+  FEATURES
+
+   * The version-info command now prints 'svn revno' and 'svn uuid' 
+     when used in Subversion checkouts.
+
+   * Now registers a fallback credentials store, allowing 
+     Subversion credentials to be used for non-Subversion 
+	 access. This is useful accessing http(s) URLs will 
+	 always attempt to open using the native Bazaar formats 
+	 first.
+
 bzr-svn 0.5.4					2009-04-08
 
   BUG FIXES
