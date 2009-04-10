@@ -161,9 +161,14 @@ format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.format", "Svn
 revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec", 
     "RevisionSpec_svn")
 
-config.credential_store_registry.register_lazy(
-    "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
-    help=__doc__, fallback=True)
+try:
+    config.credential_store_registry.register_lazy(
+        "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
+        help=__doc__, fallback=True)
+except TypeError:
+    config.credential_store_registry.register_lazy(
+        "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
+        help=__doc__)
 
 foreign_vcs_registry.register_lazy("svn", "bzrlib.plugins.svn.mapping",
                                    "foreign_vcs_svn")
