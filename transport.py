@@ -113,26 +113,11 @@ def url_join_unescaped_path(url, path):
     return _url_escape_uri(urlutils.join(url, path))
 
 
-svnplus_warning_showed = False
-
-def warn_svnplus(url):
-    global svnplus_warning_showed
-    if not svnplus_warning_showed:
-        warning("The svn+ syntax is deprecated, use %s instead.", url)
-        svnplus_warning_showed = True
-
-
 def bzr_to_svn_url(url):
     """Convert a Bazaar URL to a URL understood by Subversion.
 
     This will possibly remove the svn+ prefix.
     """
-    if (url.startswith("svn+http://") or 
-        url.startswith("svn+file://") or
-        url.startswith("svn+https://")):
-        url = url[len("svn+"):] # Skip svn+
-        warn_svnplus(url)
-
     url = _url_unescape_uri(url)
 
     # The SVN libraries don't like trailing slashes...

@@ -1,5 +1,11 @@
 bzr-svn 0.6.0					UNRELEASED
 
+  CHANGES
+
+   * The svn+http://, svn+https:// and svn+file:// URLs are 
+     no longer supported. Use http://, https:// and file://
+	 instead.
+
   FEATURES
 
    * The version-info command now prints 'svn revno' and 'svn uuid' 
