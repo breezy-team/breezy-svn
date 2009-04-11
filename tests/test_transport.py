@@ -43,9 +43,9 @@ class SvnRaTest(SubversionTestCase):
 
     def test_create(self):
         repos_url = self.make_repository('a')
-        t = SvnRaTransport("svn+%s" % repos_url)
+        t = SvnRaTransport(repos_url)
         self.assertIsInstance(t, SvnRaTransport)
-        self.assertEqual(t.base, "svn+%s" % repos_url)
+        self.assertEqual(t.base, repos_url)
 
     def test_create_direct(self):
         repos_url = self.make_repository('a')

@@ -149,14 +149,14 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
     """WorkingTree implementation that uses a svn working copy for storage."""
 
     def __init__(self, bzrdir, local_path, branch):
-        version = check_wc(local_path)
-        self._format = SvnWorkingTreeFormat(version)
+        assert isinstance(local_path, unicode)
         self.basedir = local_path
-        assert isinstance(self.basedir, unicode)
+        version = check_wc(self.basedir.encode("utf-8"))
+        self._format = SvnWorkingTreeFormat(version)
         self.bzrdir = bzrdir
         self._branch = branch
         self.base_revnum = 0
-        max_rev = revision_status(self.basedir, None, True)[1]
+        max_rev = revision_status(self.basedir.encode("utf-8"), None, True)[1]
         self._update_base_revnum(max_rev)
         self._detect_case_handling()
         self._transport = bzrdir.get_workingtree_transport(None)
@@ -171,6 +171,9 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         self._control_files = LockableFiles(control_transport, 'lock', LockDir)
         self.views = self._make_views()
 
+    def __repr__(self):
+        return "<%s of %s>" % (self.__class__.__name__, self.basedir.encode('utf-8'))
+
     def get_ignore_list(self):
         """Obtain the list of ignore patterns for this working tree.
 
@@ -181,8 +184,10 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         ignores.update(svn_config.get_default_ignores())
 
         def dir_add(wc, prefix, patprefix):
+            assert isinstance(prefix, unicode)
+            assert isinstance(patprefix, str)
             ignorestr = wc.prop_get(properties.PROP_IGNORE, 
-                                    self.abspath(prefix).encode("utf-8").rstrip("/"))
+                self.abspath(prefix).rstrip("/").encode("utf-8"))
             if ignorestr is not None:
                 for pat in ignorestr.splitlines():
                     ignores.add(urlutils.joinpath(patprefix, pat))
@@ -196,7 +201,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 if entries[entry].kind != subvertpy.NODE_DIR:
                     continue
 
-                subprefix = os.path.join(prefix, entry)
+                subprefix = osutils.pathjoin(prefix, entry.decode("utf-8"))
 
                 subwc = self._get_wc(subprefix, base=wc)
                 try:
@@ -206,7 +211,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
         wc = self._get_wc()
         try:
-            dir_add(wc, "", ".")
+            dir_add(wc, u"", ".")
         finally:
             wc.close()
 
@@ -227,7 +232,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         try:
             conn = self.branch.repository.transport.get_connection(self.branch.get_branch_path())
             try:
-                update_wc(adm, self.basedir, conn, revnum)
+                update_wc(adm, self.basedir.encode("utf-8"), conn, revnum)
             finally:
                 self.branch.repository.transport.add_connection(conn)
         finally:
@@ -261,13 +266,15 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         self.read_working_inventory()
 
     @convert_svn_error
-    def _get_wc(self, relpath="", write_lock=False, depth=0, base=None):
+    def _get_wc(self, relpath=u"", write_lock=False, depth=0, base=None):
         """Open a working copy handle."""
+        assert isinstance(relpath, unicode)
         return WorkingCopy(base, 
             self.abspath(relpath).rstrip("/").encode("utf-8"), 
             write_lock, depth)
 
     def _get_rel_wc(self, relpath, write_lock=False):
+        assert isinstance(relpath, unicode)
         dir = os.path.dirname(relpath)
         file = os.path.basename(relpath)
         return (self._get_wc(dir, write_lock), file)
@@ -278,23 +285,27 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         if after:
             raise NotImplementedError("move after not supported")
         for entry in from_paths:
-            to_wc = self._get_wc(to_dir, write_lock=True)
+            from_abspath = osutils.safe_utf8(self.abspath(entry))
+            to_wc = self._get_wc(osutils.safe_unicode(to_dir), write_lock=True)
             try:
-                to_wc.copy(self.abspath(entry).encode("utf-8"), os.path.basename(entry))
+                to_wc.copy(from_abspath, osutils.safe_utf8(os.path.basename(entry)))
             finally:
                 to_wc.close()
             from_wc = self._get_wc(write_lock=True)
             try:
-                from_wc.delete(self.abspath(entry).encode("utf-8"))
+                from_wc.delete(from_abspath)
             finally:
                 from_wc.close()
-            new_name = urlutils.join(to_dir, os.path.basename(entry))
+            new_name = osutils.pathjoin(osutils.safe_utf8(to_dir), 
+                                        osutils.safe_utf8(os.path.basename(entry)))
             self._change_fileid_mapping(self.inventory.path2id(entry), new_name)
             self._change_fileid_mapping(None, entry)
 
         self.read_working_inventory()
 
     def rename_one(self, from_rel, to_rel, after=False):
+        from_rel = osutils.safe_unicode(from_rel)
+        to_rel = osutils.safe_unicode(to_rel)
         # FIXME: Use after
         if after:
             raise NotImplementedError("rename_one after not supported")
@@ -308,8 +319,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 (from_wc, _) = self._get_rel_wc(from_rel, write_lock=True)
             try:
                 from_id = self.inventory.path2id(from_rel)
-                to_wc.copy(self.abspath(from_rel).encode("utf-8"), to_file)
-                from_wc.delete(self.abspath(from_rel).encode("utf-8"))
+                to_wc.copy(self.abspath(from_rel), to_file)
+                from_wc.delete(self.abspath(from_rel))
             finally:
                 from_wc.close()
         finally:
@@ -350,10 +361,11 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             :param parent_id: File id of parent directory
             """
             assert isinstance(relpath, unicode)
-            if os.path.islink(self.abspath(relpath)):
+            abspath = self.abspath(relpath)
+            if os.path.islink(abspath):
                 file = InventoryLink(id, os.path.basename(relpath), parent_id)
                 file.revision = revid
-                file.symlink_target = os.readlink(self.abspath(relpath).encode(osutils._fs_enc))
+                file.symlink_target = os.readlink(abspath.encode(osutils._fs_enc)).decode(osutils._fs_enc)
                 file.text_sha1 = None
                 file.text_size = None
                 file.executable = False
@@ -362,7 +374,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 file = InventoryFile(id, os.path.basename(relpath), parent_id)
                 file.revision = revid
                 try:
-                    data = osutils.fingerprint_file(open(self.abspath(relpath)))
+                    data = osutils.fingerprint_file(open(abspath.encode(osutils._fs_enc)))
                     file.text_sha1 = data['sha1']
                     file.text_size = data['size']
                     file.executable = self.is_executable(id, relpath)
@@ -371,7 +383,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                     # Ignore non-existing files
                     pass
 
-        def find_copies(url, relpath=""):
+        def find_copies(url, relpath=u""):
             """Find copies of the specified path
 
             :param url: URL of which to find copies
@@ -383,16 +395,16 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             try:
                 entries = wc.entries_read(False)
                 for entry in entries.values():
-                    subrelpath = os.path.join(relpath, entry.name)
+                    subrelpath = osutils.pathjoin(relpath, entry.name.decode("utf-8"))
                     if entry.name == "" or entry.kind != 'directory':
                         if ((entry.copyfrom_url == url or entry.url == url) and 
                             not (entry.schedule in (SCHEDULE_DELETE,
                                                     SCHEDULE_REPLACE))):
-                            ret.append(os.path.join(
-                                    self.branch.get_branch_path().strip("/"), 
+                            ret.append(osutils.pathjoin(
+                                    self.branch.get_branch_path().strip("/").decode("utf-8"), 
                                     subrelpath))
                     else:
-                        find_copies(subrelpath)
+                        find_copies(url, subrelpath)
             finally:
                 wc.close()
             return ret
@@ -475,18 +487,21 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         self._set_inventory(inv, dirty=False)
         return inv
 
+    def _set_base(self, revid, revnum, tree=None):
+        assert isinstance(revid, str)
+        self.base_revid = revid
+        assert isinstance(revnum, int)
+        self.base_revnum = revnum
+        self.base_tree = tree
+
     def set_last_revision(self, revid):
         mutter('setting last revision to %r', revid)
         if revid is None or revid == NULL_REVISION:
-            self.base_revid = revid
-            self.base_revnum = 0
-            self.base_tree = None
+            self._set_base(revid, 0)
             return
 
         rev = self.branch.lookup_revision_id(revid)
-        self.base_revnum = rev
-        self.base_revid = revid
-        self.base_tree = None
+        self._set_base(revid, rev)
 
     def set_parent_trees(self, parents_list, allow_leftmost_as_ghost=False):
         """See MutableTree.set_parent_trees."""
@@ -512,7 +527,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                     pass
 
             adm.prop_set(svk.SVN_PROP_SVK_MERGE, 
-                         svk.serialize_svk_features(svk_merges), self.basedir)
+                         svk.serialize_svk_features(svk_merges), self.basedir.encode("utf-8"))
         finally:
             adm.close()
 
@@ -530,21 +545,22 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
         for file_path in file_list:
             todo = []
-            file_path = os.path.abspath(file_path)
+            file_path = os.path.abspath(osutils.safe_unicode(file_path))
             f = self.relpath(file_path)
-            wc = self._get_wc(os.path.dirname(f), write_lock=True)
+            wc = self._get_wc(os.path.dirname(f.encode(osutils._fs_enc)).decode(osutils._fs_enc), write_lock=True)
             try:
                 if not self.inventory.has_filename(f):
                     if save:
                         mutter('adding %r', file_path)
-                        wc.add(file_path)
+                        wc.add(file_path.encode("utf-8"))
                     added.append(file_path)
-                if recurse and osutils.file_kind(file_path) == 'directory':
+                if recurse and osutils.file_kind(file_path.encode(osutils._fs_enc)) == 'directory':
                     # Filter out ignored files and update ignored
-                    for c in os.listdir(file_path):
+                    for c in os.listdir(file_path.encode(osutils._fs_enc)):
                         if self.is_control_filename(c):
                             continue
-                        c_path = os.path.join(file_path, c)
+                        c = c.decode(osutils._fs_enc)
+                        c_path = osutils.pathjoin(file_path, c)
                         ignore_glob = self.is_ignored(c)
                         if ignore_glob is not None:
                             ignored[ignore_glob].append(c_path)
@@ -568,10 +584,10 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             ids = iter(ids)
         assert isinstance(files, list)
         for f in files:
-            wc = self._get_wc(os.path.dirname(f), write_lock=True)
+            wc = self._get_wc(os.path.dirname(osutils.safe_unicode(f)), write_lock=True)
             try:
                 try:
-                    wc.add(self.abspath(f).encode("utf-8"))
+                    wc.add(osutils.safe_utf8(self.abspath(f)))
                     if ids is not None:
                         self._change_fileid_mapping(ids.next(), f, wc)
                 except subvertpy.SubversionException, (_, num):
@@ -595,9 +611,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         return self.base_tree
 
     def _update_base_revnum(self, fetched):
-        self.base_revnum = fetched
-        self.base_revid = self.branch.generate_revision_id(fetched)
-        self.base_tree = None
+        self._set_base(self.branch.generate_revision_id(fetched), fetched)
         self.read_working_inventory()
 
     def pull(self, source, overwrite=False, stop_revision=None, 
@@ -612,20 +626,20 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         return result
 
     def get_file_properties(self, file_id, path=None):
-        if not path:
+        if path is None:
             path = self._inventory.id2path(file_id)
         wc = self._get_wc()
         try:
-            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir)
+            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir.encode("utf-8"))
         finally:
             wc.close()
         return apply_prop_changes(orig_props, prop_changes)
 
     def get_file_sha1(self, file_id, path=None, stat_value=None):
         """Determine the SHA1 for a file."""
-        if not path:
+        if path is None:
             path = self._inventory.id2path(file_id)
-        return osutils.fingerprint_file(open(self.abspath(path)))['sha1']
+        return osutils.fingerprint_file(open(self.abspath(path).encode(osutils._fs_enc)))['sha1']
 
     def _change_fileid_mapping(self, id, path, wc=None):
         if wc is None:
@@ -651,7 +665,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         wc = self._get_wc()
         try:
             ret = {}
-            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir)
+            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir.encode("utf-8"))
             for k,v in prop_changes:
                 ret[k] = (orig_props.get(k), v)
             return ret
@@ -661,19 +675,19 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
     def _get_branch_props(self):
         wc = self._get_wc()
         try:
-            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir)
+            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir.encode("utf-8"))
             return apply_prop_changes(orig_props, prop_changes)
         finally:
             wc.close()
 
     def _set_branch_props(self, wc, fileprops):
         for k,v in fileprops.iteritems():
-            wc.prop_set(k, v, self.basedir)
+            wc.prop_set(k, v, self.basedir.encode("utf-8"))
 
     def _get_base_branch_props(self):
         wc = self._get_wc()
         try:
-            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir)
+            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir.encode("utf-8"))
             return orig_props
         finally:
             wc.close()
@@ -696,7 +710,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         """See Tree.path_content_summary."""
         abspath = self.abspath(path)
         try:
-            stat_result = _lstat(abspath)
+            stat_result = _lstat(abspath.encode(osutils._fs_enc))
         except OSError, e:
             if getattr(e, 'errno', None) == errno.ENOENT:
                 # no file.
@@ -713,7 +727,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         elif kind == 'directory':
             return kind, None, None, None
         elif kind == 'symlink':
-            return ('symlink', None, None, os.readlink(abspath.encode(osutils._fs_enc)))
+            return ('symlink', None, None, os.readlink(abspath.encode(osutils._fs_enc)).decode(osutils._fs_enc))
         else:
             return (kind, None, None, None)
 
@@ -732,7 +746,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         This will probe the repository for its lock as well.
         """
         if getattr(subvertpy.wc, "cleanup", None) is not None:
-            subvertpy.wc.cleanup(self.basedir)
+            subvertpy.wc.cleanup(self.basedir.encode("utf-8"))
         self._control_files.break_lock()
 
     def unlock(self):
@@ -773,9 +787,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             the changes from the current left most parent revision to new_revid.
         """
         rev = self.branch.lookup_revision_id(new_revid)
-        self.base_revnum = rev
-        self.base_revid = new_revid
-        self.base_tree = None
+        self._set_base(new_revid, rev)
 
         # TODO: Implement more efficient version
         newrev = self.branch.repository.get_revision(new_revid)
@@ -800,28 +812,32 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
         def process_committed(adm, relpath, fileprops, revid):
             mutter("process %r -> %r", relpath, revid)
-            abspath = self.abspath(relpath).encode("utf-8").rstrip("/")
+            abspath = self.abspath(relpath).rstrip("/")
             revnum = int(fileprops['svn:entry:committed-rev'])
             date = fileprops['svn:entry:committed-date']
             author = fileprops.get('svn:entry:last-author', '')
-            adm.process_committed(abspath, False, revnum, date, author)
+            adm.process_committed(abspath.encode("utf-8"), False, revnum, date, author)
             mutter("doneprocess %r -> %r", relpath, revid)
 
         def update_settings(adm, path, id):
+            assert isinstance(path, unicode)
             if newrevtree.inventory[id].kind != 'directory':
                 return
 
             entries = adm.entries_read(False)
             for name, entry in entries.iteritems():
+                name = name.decode("utf-8")
                 if name == "":
                     fileprops = newrevtree.get_file_properties(id, path)
                     process_committed(adm, path, fileprops, 
                                   newrevtree.inventory[id].revision)
                     continue
 
-                child_path = os.path.join(path, name.decode("utf-8"))
+                child_path = os.path.join(path, name)
+                assert isinstance(child_path, unicode)
                 child_id = newrevtree.inventory.path2id(child_path)
-                child_abspath = self.abspath(child_path).encode("utf-8").rstrip("/")
+                child_abspath = self.abspath(child_path).rstrip("/")
+                assert isinstance(child_abspath, unicode)
 
                 if not child_id in newrevtree.inventory:
                     pass
@@ -832,11 +848,12 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                     finally:
                         subwc.close()
                 else:
-                    pristine_abspath = get_pristine_copy_path(child_abspath)
-                    if os.path.exists(pristine_abspath):
-                        os.remove(pristine_abspath)
-                    source_f = open(child_abspath, "r")
-                    target_f = open(pristine_abspath, "w")
+                    pristine_abspath = get_pristine_copy_path(
+                        child_abspath.encode("utf-8")).decode("utf-8")
+                    if os.path.exists(pristine_abspath.encode(osutils._fs_enc)):
+                        os.remove(pristine_abspath.encode(osutils._fs_enc))
+                    source_f = open(child_abspath.encode(osutils._fs_enc), "r")
+                    target_f = open(pristine_abspath.encode(osutils._fs_enc), "w")
                     target_f.write(source_f.read())
                     target_f.close()
                     source_f.close()
@@ -848,7 +865,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         # Set proper version for all files in the wc
         adm = self._get_wc(write_lock=True)
         try:
-            update_settings(adm, "", newrevtree.inventory.root.file_id)
+            update_settings(adm, u"", newrevtree.inventory.root.file_id)
         finally:
             adm.close()
 
@@ -886,14 +903,14 @@ class SvnCheckout(BzrDir):
     def __init__(self, transport, format):
         super(SvnCheckout, self).__init__(transport, format)
         self.local_path = transport.local_abspath(".")
-        
+
         # Open related remote repository + branch
         try:
-            wc = WorkingCopy(None, self.local_path)
+            wc = WorkingCopy(None, self.local_path.encode("utf-8"))
         except subvertpy.SubversionException, (msg, ERR_WC_UNSUPPORTED_FORMAT):
             raise UnsupportedFormatError(msg, kind='workingtree')
         try:
-            self.svn_url = wc.entry(self.local_path, True).url
+            self.svn_url = wc.entry(self.local_path.encode("utf-8"), True).url
         finally:
             wc.close()
 

@@ -102,7 +102,7 @@ class TestComplexFileids(SubversionTestCase):
         dc.add_file("bar", "foo", 1).modify("data2")
         dc.close()
 
-        bzrdir = BzrDir.open("svn+%s" % repos_url)
+        bzrdir = BzrDir.open(repos_url)
         repository = bzrdir.find_repository()
 
         mapping = repository.get_mapping()
@@ -127,7 +127,7 @@ class TestComplexFileids(SubversionTestCase):
         dc.delete("foo")
         dc.close()
 
-        bzrdir = BzrDir.open("svn+%s" % repos_url)
+        bzrdir = BzrDir.open(repos_url)
         repository = bzrdir.find_repository()
         mapping = repository.get_mapping()
 

@@ -17,6 +17,11 @@ bzr-svn 0.6.0					UNRELEASED
 	 always attempt to open using the native Bazaar formats 
 	 first.
 
+  BUG FIXES
+
+   * Support working copies with non-ascii characters in the 
+     base path. (#356845)
+
 bzr-svn 0.5.4					2009-04-08
 
   BUG FIXES

@@ -27,6 +27,7 @@ from subvertpy import (
     )
 
 from bzrlib import (
+    osutils,
     tag,
     ui,
     urlutils,
@@ -312,14 +313,14 @@ class SvnBranch(ForeignBranch):
             revnum = self.get_revnum()
 
         svn_url = bzr_to_svn_url(self.base)
-        os.mkdir(to_location)
-        wc.ensure_adm(to_location, self.repository.uuid, svn_url,
+        os.mkdir(to_location.encode(osutils._fs_enc))
+        wc.ensure_adm(to_location.encode("utf-8"), self.repository.uuid, svn_url,
                       bzr_to_svn_url(self.repository.base), revnum)
-        adm = wc.WorkingCopy(None, to_location, write_lock=True)
+        adm = wc.WorkingCopy(None, to_location.encode("utf-8"), write_lock=True)
         try:
             conn = self.repository.transport.connections.get(svn_url)
             try:
-                update_wc(adm, to_location, conn, revnum)
+                update_wc(adm, to_location.encode("utf-8"), conn, revnum)
             finally:
                 if not conn.busy:
                     self.repository.transport.add_connection(conn)

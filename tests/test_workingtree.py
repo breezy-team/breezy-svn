@@ -109,6 +109,18 @@ class TestWorkingTree(SubversionTestCase):
         self.assertTrue(inv.has_filename("bl"))
         self.assertFalse(inv.has_filename("aa"))
 
+    def test_smart_add_unicode(self):
+        try:
+            self.make_client('a', u'dć'.encode(osutils._fs_enc))
+        except UnicodeDecodeError:
+            raise TestSkipped("This platform does not support unicode paths")
+        self.build_tree({u"dć/bé".encode(osutils._fs_enc): "data"})
+        tree = WorkingTree.open(u"dć")
+        tree.smart_add([u"dć/bé"])
+        inv = tree.read_working_inventory()
+        self.assertIsInstance(inv, Inventory)
+        self.assertTrue(inv.has_filename(u"bé"))
+
     def test_is_control_filename(self):
         self.make_client('a', 'dc')
         bzrdir = BzrDir.open("dc")
@@ -754,6 +766,7 @@ class TestWorkingTree(SubversionTestCase):
 
 
 class IgnoreListTests(TestCase):
+
     def test_empty(self):
         self.assertEquals([], generate_ignore_list({}))
 

@@ -311,7 +311,8 @@ class SvnBasisTree(SubversionTree,RevisionTree):
     """Optimized version of SvnRevisionTree."""
 
     def __init__(self, workingtree):
-        mutter("opening basistree for %r at %d; %s" % (workingtree, workingtree.base_revnum, workingtree.base_revid))
+        mutter("opening basistree for %r at %d; %s", 
+            workingtree, workingtree.base_revnum, workingtree.base_revid)
         self.workingtree = workingtree
         self._revision_id = workingtree.base_revid
         self.id_map = workingtree.branch.repository.get_fileid_map(
@@ -321,6 +322,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
         self._repository = workingtree.branch.repository
 
         def add_file_to_inv(relpath, id, revid, adm):
+            assert isinstance(relpath, unicode)
             (propchanges, props) = adm.get_prop_diffs(self.workingtree.abspath(relpath).encode("utf-8"))
             if props.has_key(properties.PROP_SPECIAL):
                 is_symlink = (self.get_file_byname(relpath).read(5) == "link ")
@@ -345,6 +347,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
 
         def find_ids(entry):
             relpath = urllib.unquote(entry.url[len(entry.repos):].strip("/"))
+            assert isinstance(relpath, str)
             if entry.schedule in (wc.SCHEDULE_NORMAL, 
                                   wc.SCHEDULE_DELETE, 
                                   wc.SCHEDULE_REPLACE):
@@ -352,6 +355,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             return (None, None)
 
         def add_dir_to_inv(relpath, adm, parent_id):
+            assert isinstance(relpath, unicode)
             entries = adm.entries_read(False)
             entry = entries[""]
             (id, revid) = find_ids(entry)
@@ -365,14 +369,13 @@ class SvnBasisTree(SubversionTree,RevisionTree):
                 self._inventory.revision_id = revid
 
             for name, entry in entries.iteritems():
-                name = name.decode("utf-8")
-                if name == u"":
+                if name == "":
                     continue
 
                 assert isinstance(relpath, unicode)
-                assert isinstance(name, unicode)
+                assert isinstance(name, str)
 
-                subrelpath = os.path.join(relpath, name)
+                subrelpath = os.path.join(relpath, name.decode("utf-8"))
 
                 assert entry
                 
@@ -394,10 +397,12 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             adm.close()
 
     def abspath(self, relpath):
-        return wc.get_pristine_copy_path(self.workingtree.abspath(relpath).encode("utf-8"))
+        assert isinstance(relpath, unicode)
+        return wc.get_pristine_copy_path(self.workingtree.abspath(relpath).encode("utf-8")).decode("utf-8")
 
     def get_file_byname(self, name):
-        return open(self.abspath(name))
+        assert isinstance(name, unicode)
+        return open(self.abspath(name).encode(osutils._fs_enc))
 
     def get_file_text(self, file_id, path=None):
         if path is None:
@@ -409,7 +414,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             path = self.id2path(file_id)
         wc = self.workingtree._get_wc(path)
         try:
-            (_, orig_props) = wc.get_prop_diffs(self.workingtree.abspath(path).encode("utf-8"))
+            (_, orig_props) = wc.get_prop_diffs(self.workingtree.abspath(path))
         finally:
             wc.close()
         return orig_props
