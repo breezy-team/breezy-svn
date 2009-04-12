@@ -118,6 +118,10 @@ def bzr_to_svn_url(url):
 
     This will possibly remove the svn+ prefix.
     """
+    if (url.startswith("svn+http://") or 
+        url.startswith("svn+https://")):
+        url = url[len("svn+"):] # Skip svn+
+
     url = _url_unescape_uri(url)
 
     # The SVN libraries don't like trailing slashes...
