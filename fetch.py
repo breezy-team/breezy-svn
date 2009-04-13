@@ -767,7 +767,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             except KeyError:
                 raise FileIdMapIncomplete(basename, self.old_inventory.id2path(parent_id), self.revmeta) 
         else:
-            ret = parent_id_basename_index.iteritems([(parent_id, basename)])
+            ret = parent_id_basename_index.iteritems([(parent_id or '', basename.encode("utf-8"))])
             try:
                 return ret.next()[1]
             except IndexError:

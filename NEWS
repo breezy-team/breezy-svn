@@ -18,6 +18,8 @@ bzr-svn 0.6.0					UNRELEASED
 
    * Fix handling of newlines in Bazaar revision properties round-tripped to 
      Subversion file properties. (#360477)
+
+   * utf8-encode basenames when looking up file ids in CHKInventories.
      
 
 bzr-svn 0.5.4					2009-04-08
