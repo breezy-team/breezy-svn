@@ -72,6 +72,13 @@ class MetadataMarshallerTests(TestCase):
                 generate_revision_metadata(None, None,
                     None, {"propbla": "bloe", "propfoo": "bla"}))
 
+    def test_generate_revision_metadata_properties_newline(self):
+        self.assertEquals("properties: \n" + 
+                "\tpropbla: bloe\n" +
+                "\tpropbla: bla\n",
+                generate_revision_metadata(None, None,
+                    None, {"propbla": "bloe\nbla"}))
+
     def test_parse_revision_metadata_empty(self):
         parse_revision_metadata("", None)
 
@@ -103,6 +110,14 @@ class MetadataMarshallerTests(TestCase):
                                 "\tfoo: bar\n" + 
                                 "\tha: ha\n", rev)
         self.assertEquals({"foo": "bar", "ha": "ha"}, rev.properties)
+
+    def test_parse_revision_metadata_properties_newline(self):
+        rev = Revision('someid')
+        parse_revision_metadata("properties: \n" + 
+                                "\tfoo: bar\n" + 
+                                "\tfoo: bar2\n" +
+                                "\tha: ha\n", rev)
+        self.assertEquals({"foo": "bar\nbar2", "ha": "ha"}, rev.properties)
 
     def test_parse_revision_metadata_no_colon(self):
         rev = Revision('someid')
