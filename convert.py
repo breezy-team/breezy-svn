@@ -191,7 +191,12 @@ def convert_repository(source_repos, output_url, layout=None,
         format = get_rich_root_format()
     dirs = {}
     to_transport = get_transport(output_url)
-    def get_dir(path):
+    def get_dir(path, prefix=None):
+        if prefix is not None:
+            assert path.startswith(prefix)
+            path = path[len(prefix):].strip("/")
+        if path is None:
+            path = ""
         if dirs.has_key(path):
             return dirs[path]
         nt = to_transport.clone(path)
@@ -210,12 +215,12 @@ def convert_repository(source_repos, output_url, layout=None,
 
     if create_shared_repo:
         try:
-            target_repos = get_dir("").open_repository()
+            target_repos = get_dir(prefix, prefix).open_repository()
             target_repos_is_empty = False # FIXME: Call Repository.is_empty() ?
             assert (layout.is_branch("") or 
                     target_repos.is_shared())
         except NoRepositoryPresent:
-            target_repos = get_dir("").create_repository(shared=True)
+            target_repos = get_dir(prefix, prefix).create_repository(shared=True)
             target_repos_is_empty = True
         target_repos.set_make_working_trees(working_trees)
     else:
@@ -304,7 +309,7 @@ def convert_repository(source_repos, output_url, layout=None,
                         source_branch.get_revnum()), i, len(existing_branches))
                 except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                     continue
-                target_dir = get_dir(source_branch.get_branch_path())
+                target_dir = get_dir(source_branch.get_branch_path(), prefix)
                 if not create_shared_repo:
                     try:
                         target_dir.open_repository()

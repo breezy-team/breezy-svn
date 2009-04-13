@@ -332,6 +332,7 @@ class TestConversion(SubversionTestCase):
         self.assertRaises(NotBranchError, Repository.open, "e")
 
 class TestConversionFromDumpfile(SubversionTestCase):
+
     def test_dumpfile_open_empty(self):
         dumpfile = os.path.join(self.test_dir, "dumpfile")
         open(dumpfile, 'w').write(
@@ -451,4 +452,38 @@ data
         branch = Branch.open(os.path.join(self.test_dir, "e", "trunk"))
         self.assertEqual(local_path_to_url(os.path.join(self.test_dir, "e", "trunk")), branch.base.rstrip("/"))
         self.assertEqual(mapping.revision_id_foreign_to_bzr(("6987ef2d-cd6b-461f-9991-6f1abef3bd59", 'trunk', 1)), branch.last_revision())
+
+
+class TestPrefixed(SubversionTestCase):
+
+    def setUp(self):
+        super(TestPrefixed, self).setUp()
+        self.repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor()
+        b = dc.add_dir("base")
+        t = b.add_dir("base/trunk")
+        t.add_file("base/trunk/file").modify("data")
+        bs = b.add_dir("base/branches")
+        ab = bs.add_dir("base/branches/abranch")
+        ab.add_file("base/branches/abranch/anotherfile").modify("data2")
+        dc.close()
+
+        dc = self.get_commit_editor()
+        b = dc.open_dir("base")
+        t = b.open_dir("base/trunk")
+        t.open_file("base/trunk/file").modify("otherdata")
+        dc.close()
+
+    def get_commit_editor(self):
+        return super(TestPrefixed, self).get_commit_editor(self.repos_url)
+
+    def test_convert_simple(self): 
+        oldrepos = Repository.open(self.repos_url)
+        convert_repository(oldrepos, "e", TrunkLayout(1), 
+                prefix="base",
+            create_shared_repo=True)
+        self.assertTrue(os.path.exists("e/trunk"))
+        self.assertTrue(os.path.exists("e/branches/abranch"))
+        self.assertFalse(os.path.exists("e/base"))
 
