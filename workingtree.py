@@ -175,9 +175,17 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         self._control_files = LockableFiles(control_transport, 'lock', LockDir)
         self.views = self._make_views()
 
+    def _setup_directory_is_tree_reference(self):
+        self._directory_is_tree_reference = \
+            self._directory_is_never_tree_reference
+
     @property
-    def idmap(self):
-        return self.basis_tree().id_map
+    def basis_idmap(self):
+        if self._base_idmap is None:
+            self._base_idmap = self.branch.repository.get_fileid_map(
+                    self._get_base_revmeta(),
+                    self.mapping)
+        return self._base_idmap
 
     def get_branch_path(self, revnum=None):
         if revnum is None:
@@ -504,6 +512,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         assert revid is None or isinstance(revid, str)
         self.base_revid = revid
         assert isinstance(revnum, int)
+        self._base_idmap = None
         self.base_revnum = revnum
         self.base_tree = tree
 
@@ -686,7 +695,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         ids = self._get_new_file_ids()
         if path in ids:
             return (ids[path], None)
-        return idmap_lookup(self.idmap, self.mapping, path)[:2]
+        return idmap_lookup(self.basis_idmap, self.mapping, path)[:2]
 
     def _get_changed_branch_props(self):
         wc = self._get_wc()

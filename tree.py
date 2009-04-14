@@ -323,9 +323,6 @@ class SvnBasisTree(SubversionTree,RevisionTree):
         mutter("opening basistree for %r at %d", 
                 workingtree, workingtree.base_revnum)
         self.workingtree = workingtree
-        self.id_map = workingtree.branch.repository.get_fileid_map(
-                workingtree._get_base_revmeta(),
-                workingtree.branch.mapping)
         self._inventory = Inventory(root_id=None)
         self._repository = workingtree.branch.repository
 
@@ -405,7 +402,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             adm.close()
 
     def lookup_id(self, path):
-        return idmap_lookup(self.id_map, self.workingtree.branch.mapping, path)[:2]
+        return idmap_lookup(self.workingtree.basis_idmap, self.workingtree.branch.mapping, path)[:2]
 
     def get_revision_id(self):
         return self.workingtree.last_revision()
