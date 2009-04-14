@@ -174,3 +174,15 @@ class RepositoryCache(object):
     def open_revid_map(self):
         from bzrlib.plugins.svn.revids import RevisionIdMapCache
         return RevisionIdMapCache(self.open_sqlite())
+
+    def open_logwalker(self):
+        from bzrlib.plugins.svn.logwalker import LogCache
+        return LogCache(self.open_sqlite())
+
+    def open_revision_cache(self):
+        from bzrlib.plugins.svn.revids import RevisionInfoCache
+        return RevisionInfoCache(self.open_sqlite())
+
+    def open_parents(self):
+        from bzrlib.plugins.svn.parents import ParentsCache
+        return ParentsCache(self.open_sqlite())

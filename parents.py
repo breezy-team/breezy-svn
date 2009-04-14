@@ -24,8 +24,8 @@ from bzrlib.plugins.svn.cache import CacheTable
 class DiskCachingParentsProvider(object):
     """Parents provider that caches parents in a SQLite database."""
 
-    def __init__(self, actual, cachedb=None):
-        self._cache = ParentsCache(cachedb)
+    def __init__(self, actual, cache):
+        self._cache = cache
         self.actual = actual
 
     def get_parent_map(self, keys):

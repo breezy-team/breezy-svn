@@ -359,7 +359,7 @@ class SvnRepository(ForeignRepository):
 
         if "log" in use_cache:
             self._log = logwalker.CachingLogWalker(self._log,
-                cache_db=cache_obj.open_sqlite())
+                cache_obj.open_logwalker())
 
         if "fileids" in use_cache:
             self.fileid_map = CachingFileIdMap(cache_obj.open_fileid_map(), 
@@ -368,12 +368,12 @@ class SvnRepository(ForeignRepository):
         if "revids" in use_cache:
             self.revmap = DiskCachingRevidMap(self.revmap, cache_obj.open_revid_map())
             self._real_parents_provider = DiskCachingParentsProvider(
-                self._real_parents_provider, cache_obj.open_sqlite())
+                self._real_parents_provider, cache_obj.open_parents())
         else:
             self.revmap = MemoryCachingRevidMap(self.revmap)
 
         if "revinfo" in use_cache:
-            self.revinfo_cache = RevisionInfoCache(cache_obj.open_sqlite())
+            self.revinfo_cache = cache_obj.open_revision_cache()
         else:
             self.revinfo_cache = None
 

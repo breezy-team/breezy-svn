@@ -16,12 +16,16 @@
 
 """Branch property access tests."""
 
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from bzrlib.plugins.svn.cache import (
+    connect_cachefile,
+    )
 from bzrlib.plugins.svn.branchprops import PathPropertyProvider
 from bzrlib.plugins.svn.logwalker import (
+    LogCache,
     LogWalker,
     CachingLogWalker,
     )
+from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.transport import SvnRaTransport
 
 class TestBranchProps(SubversionTestCase):
@@ -29,7 +33,8 @@ class TestBranchProps(SubversionTestCase):
         super(TestBranchProps, self).setUp()
 
     def get_log_walker(self, transport):
-        return CachingLogWalker(LogWalker(transport=transport))
+        return CachingLogWalker(LogWalker(transport=transport), 
+                LogCache(connect_cachefile(":memory:")))
 
     def test_get_old_properties(self):
         repos_url = self.make_repository('d')

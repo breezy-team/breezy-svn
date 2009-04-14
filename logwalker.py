@@ -220,8 +220,8 @@ class LogCache(CacheTable):
 class CachingLogWalker(CacheTable):
     """Subversion log browser."""
 
-    def __init__(self, actual, cache_db=None):
-        self.cache = LogCache(cache_db)
+    def __init__(self, actual, cache):
+        self.cache = cache
         self.actual = actual
         self.quick_revprops = actual.quick_revprops
         self._transport = actual._transport
