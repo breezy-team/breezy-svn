@@ -355,10 +355,10 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         assert isinstance(path, str)
 
         rp = self.unprefix(path)
-        entry = idmap_lookup(self.basis_tree().id_map, self.basis_tree().workingtree.branch.mapping, rp.decode("utf-8"))
+        entry = self.lookup_id(rp.decode("utf-8"))
         assert entry[0] is not None
         assert isinstance(entry[0], str), "fileid %r for %r is not a string" % (entry[0], path)
-        return entry[:2]
+        return entry
 
     def read_working_inventory(self):
         """'Read' the working inventory.
@@ -444,7 +444,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                     list(find_copies(entry.copyfrom_url)) == [relpath]):
                     return self.path_to_file_id(entry.copyfrom_rev, 
                         entry.revision, entry.copyfrom_url[len(entry.repos):])
-                ids = self._get_new_file_ids(rootwc)
+                ids = self._get_new_file_ids()
                 if ids.has_key(relpath):
                     return (ids[relpath], None)
                 # FIXME: Generate more random file ids
@@ -669,7 +669,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         else:
             subwc = wc
         try:
-            new_entries = self._get_new_file_ids(subwc)
+            new_entries = self._get_new_file_ids()
             if id is None:
                 if new_entries.has_key(path):
                     del new_entries[path]
@@ -682,6 +682,12 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         finally:
             if wc is None:
                 subwc.close()
+
+    def lookup_id(self, path):
+        ids = self._get_new_file_ids()
+        if path in ids:
+            return (ids[path], None)
+        return self.basis_tree().lookup_id(path)
 
     def _get_changed_branch_props(self):
         wc = self._get_wc()
@@ -709,7 +715,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         finally:
             wc.close()
 
-    def _get_new_file_ids(self, wc):
+    def _get_new_file_ids(self):
         return self.branch.mapping.import_fileid_map_fileprops(
             self._get_changed_branch_props())
 

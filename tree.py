@@ -58,6 +58,14 @@ class SubversionTree(object):
 
     def supports_content_filtering(self):
         return True
+    
+    def lookup_id(self, path):
+        """Lookup the idmap data for a path.
+
+        :param path: Path to look up.
+        :return: Tuple with file id and text revision
+        """
+        raise NotImplementedError(self.lookup_id)
 
     def _get_rules_searcher(self, default_searcher):
         """Get the RulesSearcher for this tree given the default one."""
@@ -164,6 +172,9 @@ class SvnRevisionTree(SubversionTree,RevisionTree):
         finally:
             repository.transport.add_connection(conn)
 
+    def lookup_id(self, path):
+        return idmap_lookup(self.id_map, self.mapping, path)[:2]
+
     def get_file_text(self, file_id, path=None):
         return self.file_data[file_id]
 
@@ -173,6 +184,7 @@ class SvnRevisionTree(SubversionTree,RevisionTree):
 
 class TreeBuildEditor(object):
     """Builds a tree given Subversion tree transform calls."""
+
     def __init__(self, tree):
         self.tree = tree
         self.repository = tree._repository
@@ -182,8 +194,7 @@ class TreeBuildEditor(object):
         self.revnum = revnum
 
     def open_root(self, revnum):
-        file_id, revision_id, _ = idmap_lookup(self.tree.id_map, 
-                                               self.tree.mapping, "")
+        file_id, revision_id = self.tree.lookup_id("")
         ie = self.tree._inventory.add_path("", 'directory', file_id)
         ie.revision = revision_id
         return DirectoryTreeEditor(self.tree, file_id)
@@ -204,8 +215,7 @@ class DirectoryTreeEditor(object):
 
     def add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         path = path.decode("utf-8")
-        file_id, revision_id, _ = idmap_lookup(self.tree.id_map, 
-                                               self.tree.mapping, path)
+        file_id, revision_id = self.tree.lookup_id(path)
         ie = self.tree._inventory.add_path(path, 'directory', file_id)
         ie.revision = revision_id
         return DirectoryTreeEditor(self.tree, file_id)
@@ -242,8 +252,7 @@ class FileTreeEditor(object):
         self.is_special = None
         self.is_symlink = False
         self.last_file_rev = None
-        self.file_id, self.revision_id, _ = idmap_lookup(self.tree.id_map, 
-                                               self.tree.mapping, self.path)
+        self.file_id, self.revision_id = self.tree.lookup_id(self.path)
         self.tree.file_properties[self.file_id] = {}
 
     def change_prop(self, name, value):
@@ -350,7 +359,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             if entry.schedule in (wc.SCHEDULE_NORMAL, 
                                   wc.SCHEDULE_DELETE, 
                                   wc.SCHEDULE_REPLACE):
-                return idmap_lookup(self.id_map, workingtree.branch.mapping, workingtree.unprefix(relpath.decode("utf-8")))[:2]
+                return self.lookup_id(workingtree.unprefix(relpath.decode("utf-8")))
             return (None, None)
 
         def add_dir_to_inv(relpath, adm, parent_id):
@@ -394,6 +403,9 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             add_dir_to_inv(u"", adm, None)
         finally:
             adm.close()
+
+    def lookup_id(self, path):
+        return idmap_lookup(self.id_map, self.workingtree.branch.mapping, path)[:2]
 
     def get_revision_id(self):
         return self.workingtree.last_revision()
