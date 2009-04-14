@@ -348,17 +348,12 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         """Generate a bzr file id from a Subversion file name. 
         
         :param revnum: Revision number.
-        :param path: Absolute path within the Subversion repository.
+        :param path: Path of the file
         :return: Tuple with file id and revision id.
         """
         assert isinstance(revnum, int) and revnum >= 0
-        assert isinstance(path, str)
-
-        rp = self.unprefix(path)
-        entry = self.lookup_id(rp.decode("utf-8"))
-        assert entry[0] is not None
-        assert isinstance(entry[0], str), "fileid %r for %r is not a string" % (entry[0], path)
-        return entry
+        assert isinstance(path, unicode)
+        return self.lookup_id(path)
 
     def read_working_inventory(self):
         """'Read' the working inventory.
@@ -423,8 +418,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 wc.close()
             return ret
 
-        def find_ids(entry, rootwc):
-            relpath = urllib.unquote(entry.url[len(entry.repos):].strip("/"))
+        def find_ids(relpath, entry, rootwc):
             assert entry.schedule in (SCHEDULE_NORMAL, 
                                       SCHEDULE_DELETE,
                                       SCHEDULE_ADD,
@@ -441,13 +435,13 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 # See if the file this file was copied from disappeared
                 # and has no other copies -> in that case, take id of other file
                 if (entry.copyfrom_url and 
-                    list(find_copies(entry.copyfrom_url)) == [relpath]):
+                    list(find_copies(entry.copyfrom_url)) == [relpath.encode("utf-8")]):
                     return self.path_to_file_id(entry.copyfrom_rev, 
-                        entry.revision, entry.copyfrom_url[len(entry.repos):])
+                        entry.revision, self.unprefix(entry.copyfrom_url[len(entry.repos):]).decode("utf-8"))
                 ids = self._get_new_file_ids()
                 if ids.has_key(relpath):
                     return (ids[relpath], None)
-                # FIXME: Generate more random file ids
+                # FIXME: Generate more random but consistent file ids
                 return ("NEW-" + escape_svn_path(entry.url[len(entry.repos):].strip("/")), None)
 
         def add_dir_to_inv(relpath, wc, parent_id):
@@ -456,7 +450,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             entry = entries[""]
             assert parent_id is None or isinstance(parent_id, str), \
                     "%r is not a string" % parent_id
-            (id, revid) = find_ids(entry, rootwc)
+            (id, revid) = find_ids(relpath, entry, rootwc)
             if id is None:
                 mutter('no id for %r', entry.url)
                 return
@@ -485,7 +479,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                     finally:
                         subwc.close()
                 else:
-                    (subid, subrevid) = find_ids(entry, rootwc)
+                    (subid, subrevid) = find_ids(subrelpath, entry, rootwc)
                     if subid:
                         assert isinstance(subrelpath, unicode)
                         add_file_to_inv(subrelpath, subid, subrevid, id)
@@ -683,7 +677,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             if wc is None:
                 subwc.close()
 
-    def lookup_id(self, path):
+    def lookup_id(self, path, entry=None):
         ids = self._get_new_file_ids()
         if path in ids:
             return (ids[path], None)
