@@ -836,7 +836,7 @@ foohosts""")
 
         oldbranch = Branch.open(repos_url+"/trunk")
         newtree = oldbranch.create_checkout("e", lightweight=True)
-        self.assertEqual(oldbranch.generate_revision_id(1), newtree.base_revid)
+        self.assertEqual(oldbranch.generate_revision_id(1), newtree.last_revision())
         self.assertTrue(os.path.exists("e/.svn"))
         self.assertFalse(os.path.exists("e/.bzr"))
 
@@ -859,7 +859,7 @@ foohosts""")
         newtree = oldbranch.create_checkout("e", revision_id=
            oldbranch.generate_revision_id(1), lightweight=True)
         self.assertEqual(oldbranch.generate_revision_id(1),
-           newtree.base_revid)
+           newtree.last_revision())
         self.assertTrue(os.path.exists("e/.svn"))
         self.assertFalse(os.path.exists("e/.bzr"))
 

@@ -311,10 +311,9 @@ class SvnBasisTree(SubversionTree,RevisionTree):
     """Optimized version of SvnRevisionTree."""
 
     def __init__(self, workingtree):
-        mutter("opening basistree for %r at %d; %s", 
-            workingtree, workingtree.base_revnum, workingtree.base_revid)
+        mutter("opening basistree for %r at %d", 
+                workingtree, workingtree.base_revnum)
         self.workingtree = workingtree
-        self._revision_id = workingtree.base_revid
         self.id_map = workingtree.branch.repository.get_fileid_map(
                 workingtree._get_base_revmeta(),
                 workingtree.branch.mapping)
@@ -351,7 +350,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             if entry.schedule in (wc.SCHEDULE_NORMAL, 
                                   wc.SCHEDULE_DELETE, 
                                   wc.SCHEDULE_REPLACE):
-                return idmap_lookup(self.id_map, workingtree.branch.mapping, workingtree.branch.unprefix(relpath.decode("utf-8")))[:2]
+                return idmap_lookup(self.id_map, workingtree.branch.mapping, workingtree.unprefix(relpath.decode("utf-8")))[:2]
             return (None, None)
 
         def add_dir_to_inv(relpath, adm, parent_id):
@@ -395,6 +394,9 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             add_dir_to_inv(u"", adm, None)
         finally:
             adm.close()
+
+    def get_revision_id(self):
+        return self.workingtree.last_revision()
 
     def abspath(self, relpath):
         assert isinstance(relpath, unicode)

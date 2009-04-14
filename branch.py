@@ -216,15 +216,6 @@ class SvnBranch(ForeignBranch):
     def _get_append_revisions_only(self):
         return self.get_config().get_append_revisions_only()
 
-    def unprefix(self, relpath):
-        """Remove the branch path from a relpath.
-
-        :param relpath: path from the repository root.
-        """
-        assert relpath.startswith(self.get_branch_path()), \
-                "expected %s prefix, got %s" % (self.get_branch_path(), relpath)
-        return relpath[len(self.get_branch_path()):].strip("/")
-
     def get_branch_path(self, revnum=None):
         """Find the branch path of this branch in the specified revnum.
 

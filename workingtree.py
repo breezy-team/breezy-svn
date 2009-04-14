@@ -56,7 +56,10 @@ from bzrlib.inventory import (
     )
 from bzrlib.lockable_files import LockableFiles
 from bzrlib.lockdir import LockDir
-from bzrlib.revision import NULL_REVISION
+from bzrlib.revision import (
+    NULL_REVISION,
+    ensure_null,
+    )
 from bzrlib.trace import mutter
 from bzrlib.transport import get_transport
 from bzrlib.workingtree import (
@@ -148,13 +151,13 @@ def generate_ignore_list(ignore_map):
 class SvnWorkingTree(SubversionTree,WorkingTree):
     """WorkingTree implementation that uses a svn working copy for storage."""
 
-    def __init__(self, bzrdir, local_path, branch):
+    def __init__(self, bzrdir, local_path):
         assert isinstance(local_path, unicode)
         self.basedir = local_path
         version = check_wc(self.basedir.encode("utf-8"))
         self._format = SvnWorkingTreeFormat(version)
         self.bzrdir = bzrdir
-        self._branch = branch
+        self._branch = None
         self.base_revnum = 0
         max_rev = revision_status(self.basedir.encode("utf-8"), None, True)[1]
         self._update_base_revnum(max_rev)
@@ -170,6 +173,17 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                                                    get_adm_dir(), 'bzr'))
         self._control_files = LockableFiles(control_transport, 'lock', LockDir)
         self.views = self._make_views()
+
+    def get_branch_path(self, revnum=None):
+        if revnum is None:
+            return self.bzrdir.branch_path
+        return self.branch.get_branch_path(revnum)
+
+    @property
+    def branch(self):
+        if self._branch is None:
+            self._branch = self.bzrdir.open_branch()
+        return self._branch
 
     def __repr__(self):
         return "<%s of %s>" % (self.__class__.__name__, self.basedir.encode('utf-8'))
@@ -230,7 +244,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             revnum = self.branch.get_revnum()
         adm = self._get_wc(write_lock=True, depth=-1)
         try:
-            conn = self.branch.repository.transport.get_connection(self.branch.get_branch_path())
+            conn = self.branch.repository.transport.get_connection(self.get_branch_path())
             try:
                 update_wc(adm, self.basedir.encode("utf-8"), conn, revnum)
             finally:
@@ -340,7 +354,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         assert isinstance(revnum, int) and revnum >= 0
         assert isinstance(path, str)
 
-        rp = self.branch.unprefix(path)
+        rp = self.unprefix(path)
         entry = idmap_lookup(self.basis_tree().id_map, self.basis_tree().workingtree.branch.mapping, rp.decode("utf-8"))
         assert entry[0] is not None
         assert isinstance(entry[0], str), "fileid %r for %r is not a string" % (entry[0], path)
@@ -401,7 +415,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                             not (entry.schedule in (SCHEDULE_DELETE,
                                                     SCHEDULE_REPLACE))):
                             ret.append(osutils.pathjoin(
-                                    self.branch.get_branch_path().strip("/").decode("utf-8"), 
+                                    self.get_branch_path().strip("/").decode("utf-8"), 
                                     subrelpath))
                     else:
                         find_copies(url, subrelpath)
@@ -488,7 +502,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         return inv
 
     def _set_base(self, revid, revnum, tree=None):
-        assert isinstance(revid, str)
+        assert revid is None or isinstance(revid, str)
         self.base_revid = revid
         assert isinstance(revnum, int)
         self.base_revnum = revnum
@@ -496,10 +510,6 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
     def set_last_revision(self, revid):
         mutter('setting last revision to %r', revid)
-        if revid is None or revid == NULL_REVISION:
-            self._set_base(revid, 0)
-            return
-
         rev = self.branch.lookup_revision_id(revid)
         self._set_base(revid, rev)
 
@@ -602,16 +612,22 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
     def basis_tree(self):
         """Return the basis tree for a working tree."""
-        if self.base_revid is None or self.base_revid == NULL_REVISION:
-            return self.branch.repository.revision_tree(self.base_revid)
-
         if self.base_tree is None:
             self.base_tree = SvnBasisTree(self)
 
         return self.base_tree
 
+    def unprefix(self, relpath):
+        """Remove the branch path from a relpath.
+
+        :param relpath: path from the repository root.
+        """
+        assert relpath.startswith(self.get_branch_path()), \
+                "expected %s prefix, got %s" % (self.get_branch_path(), relpath)
+        return relpath[len(self.get_branch_path()):].strip("/")
+
     def _update_base_revnum(self, fetched):
-        self._set_base(self.branch.generate_revision_id(fetched), fetched)
+        self._set_base(None, fetched)
         self.read_working_inventory()
 
     def pull(self, source, overwrite=False, stop_revision=None, 
@@ -703,6 +719,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         assert delta == []
 
     def _last_revision(self):
+        if self.base_revid is None:
+            self.base_revid = self.branch.generate_revision_id(self.base_revnum)
         return self.base_revid
 
     def path_content_summary(self, path, _lstat=os.lstat,
@@ -732,7 +750,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             return (kind, None, None, None)
 
     def _get_base_revmeta(self):
-        return self.branch.repository._revmeta_provider.lookup_revision(self.branch.get_branch_path(self.base_revnum), self.base_revnum)
+        return self.branch.repository._revmeta_provider.lookup_revision(self.get_branch_path(self.base_revnum), self.base_revnum)
 
     def _reset_data(self):
         pass
@@ -910,11 +928,15 @@ class SvnCheckout(BzrDir):
         except subvertpy.SubversionException, (msg, ERR_WC_UNSUPPORTED_FORMAT):
             raise UnsupportedFormatError(msg, kind='workingtree')
         try:
-            self.svn_url = wc.entry(self.local_path.encode("utf-8"), True).url
+            self.entry = wc.entry(self.local_path.encode("utf-8"), True)
         finally:
             wc.close()
 
-        self._remote_transport = None
+        assert self.entry.url.startswith(self.entry.repos)
+        self.branch_path = self.entry.url[len(self.entry.repos):].strip("/")
+
+        self._remote_branch_transport = None
+        self._remote_repo_transport = None
         self._remote_bzrdir = None
         self.svn_controldir = os.path.join(self.local_path, get_adm_dir())
         self.root_transport = self.transport = transport
@@ -933,16 +955,16 @@ class SvnCheckout(BzrDir):
         return self._remote_bzrdir
 
     def get_remote_transport(self):
-        if self._remote_transport is None:
-            self._remote_transport = SvnRaTransport(self.svn_url)
-        return self._remote_transport
+        if self._remote_branch_transport is None:
+            self._remote_branch_transport = SvnRaTransport(self.entry.url, from_transport=self._remote_repo_transport)
+        return self._remote_branch_transport
         
     def clone(self, path, revision_id=None, force_new_repo=False):
         raise NotImplementedError(self.clone)
 
     def open_workingtree(self, _unsupported=False, recommend_upgrade=False):
         try:
-            return SvnWorkingTree(self, self.local_path, self.open_branch())
+            return SvnWorkingTree(self, self.local_path)
         except bzrsvn_errors.NotSvnBranchPath, e:
             raise NoWorkingTree(self.local_path)
 
@@ -969,8 +991,10 @@ class SvnCheckout(BzrDir):
         raise NoRepositoryPresent(self)
 
     def _find_repository(self):
-        return SvnRepository(self, self.get_remote_transport().clone_root(), 
-                             self.get_remote_bzrdir().branch_path)
+        if self._remote_repo_transport is None:
+            self._remote_repo_transport = SvnRaTransport(self.entry.repos, from_transport=self._remote_branch_transport)
+        return SvnRepository(self, self._remote_repo_transport, 
+                self.branch_path)
 
     def needs_format_conversion(self, format=None):
         if format is None:
@@ -998,7 +1022,7 @@ class SvnCheckout(BzrDir):
         repos = self._find_repository()
 
         try:
-            branch = SvnBranch(repos, self.get_remote_bzrdir().branch_path)
+            branch = SvnBranch(repos, self.branch_path)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_WC_NOT_DIRECTORY:
                 raise NotBranchError(path=self.base)
