@@ -339,8 +339,8 @@ class FileIdMapCache(object):
 class CachingFileIdMap(object):
     """A file id map that uses a cache."""
 
-    def __init__(self, cache_transport, actual):
-        self.cache = FileIdMapCache(cache_transport)
+    def __init__(self, cache, actual):
+        self.cache = cache
         self.actual = actual
         self.repos = actual.repos
         self.get_idmap_delta = actual.get_idmap_delta

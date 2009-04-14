@@ -23,7 +23,6 @@ except ImportError:
 from itertools import chain
 import os
 import subvertpy
-import threading
 
 from bzrlib import (
     branch,
@@ -135,17 +134,6 @@ class SvnRepositoryFormat(RepositoryFormat):
     def check_conversion_target(self, target_repo_format):
         return target_repo_format.rich_root_data
 
-
-CACHE_DB_VERSION = 5
-
-_cachedbs = threading.local()
-def cachedbs():
-    """Get a cache for this thread's db connections."""
-    try:
-        return _cachedbs.cache
-    except AttributeError:
-        _cachedbs.cache = {}
-        return _cachedbs.cache
 
 
 class SubversionRepositoryCheckResult(branch.BranchCheckResult):
@@ -367,34 +355,25 @@ class SvnRepository(ForeignRepository):
                 use_cache = set(["fileids", "revids", "revinfo", "log"])
 
         if use_cache:
-            cache_dir = self.create_cache_dir()
-            assert isinstance(cache_dir, str)
-
-        if "log" in use_cache or "revids" in use_cache:
-            cache_file = os.path.join(cache_dir, 'cache-v%d' % CACHE_DB_VERSION)
-            assert isinstance(cache_file, str)
-            if not cachedbs().has_key(cache_file):
-                cachedbs()[cache_file] = cache.connect_cachefile(cache_file.decode(osutils._fs_enc).encode("utf-8"))
-            self.cachedb = cachedbs()[cache_file]
+            cache_obj = cache.RepositoryCache(self.uuid)
 
         if "log" in use_cache:
             self._log = logwalker.CachingLogWalker(self._log,
-                cache_db=self.cachedb)
+                cache_db=cache_obj.open_sqlite())
 
         if "fileids" in use_cache:
-            cachedir_transport = get_transport(cache_dir.decode(osutils._fs_enc))
-            self.fileid_map = CachingFileIdMap(cachedir_transport, 
+            self.fileid_map = CachingFileIdMap(cache_obj.open_fileid_map(), 
                 self.fileid_map)
 
         if "revids" in use_cache:
-            self.revmap = DiskCachingRevidMap(self.revmap, self.cachedb)
+            self.revmap = DiskCachingRevidMap(self.revmap, cache_obj.open_revid_map())
             self._real_parents_provider = DiskCachingParentsProvider(
-                self._real_parents_provider, self.cachedb)
+                self._real_parents_provider, cache_obj.open_sqlite())
         else:
             self.revmap = MemoryCachingRevidMap(self.revmap)
 
         if "revinfo" in use_cache:
-            self.revinfo_cache = RevisionInfoCache(self.cachedb)
+            self.revinfo_cache = RevisionInfoCache(cache_obj.open_sqlite())
         else:
             self.revinfo_cache = None
 
@@ -666,14 +645,6 @@ class SvnRepository(ForeignRepository):
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.base)
-
-    def create_cache_dir(self):
-        cache_dir = cache.create_cache_dir()
-        dir = os.path.join(cache_dir, self.uuid)
-        if not os.path.exists(dir):
-            info("Initialising Subversion metadata cache in %s" % dir.decode(osutils._fs_enc))
-            os.mkdir(dir)
-        return dir
 
     def _check(self, revision_ids):
         ret = SubversionRepositoryCheckResult(self)

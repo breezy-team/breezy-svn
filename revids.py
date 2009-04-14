@@ -186,8 +186,8 @@ class MemoryCachingRevidMap(object):
 
 class DiskCachingRevidMap(object):
 
-    def __init__(self, actual, cachedb=None):
-        self.cache = RevisionIdMapCache(cachedb)
+    def __init__(self, actual, cache):
+        self.cache = cache
         self.actual = actual
         self.revid_seen = set()
 

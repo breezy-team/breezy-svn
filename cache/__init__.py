@@ -17,19 +17,20 @@
 
 import os
 import sys
+import threading
 
 import bzrlib
 from bzrlib import (
     debug, 
     osutils,
+    trace,
     )
 from bzrlib.config import (
     config_dir,
     ensure_config_dir_exists,
     )
-from bzrlib.trace import (
-    mutter,
-    warning,
+from bzrlib.transport import (
+    get_transport,
     )
 
 from bzrlib.plugins.svn import version_info
@@ -80,7 +81,7 @@ def check_pysqlite_version(sqlite3):
     if (sqlite3.sqlite_version_info[0] < 3 or 
             (sqlite3.sqlite_version_info[0] == 3 and 
              sqlite3.sqlite_version_info[1] < 3)):
-        warning('Needs at least sqlite 3.3.x')
+        trace.warning('Needs at least sqlite 3.3.x')
         raise bzrlib.errors.BzrError("incompatible sqlite library")
 
 try:
@@ -91,7 +92,7 @@ try:
         from pysqlite2 import dbapi2 as sqlite3
         check_pysqlite_version(sqlite3)
 except:
-    warning('Needs at least Python2.5 or Python2.4 with the pysqlite2 '
+    trace.warning('Needs at least Python2.5 or Python2.4 with the pysqlite2 '
             'module')
     raise bzrlib.errors.BzrError("missing sqlite library")
 
@@ -125,4 +126,51 @@ class CacheTable(object):
     @staticmethod
     def mutter(text, *args):
         if "cache" in debug.debug_flags:
-            mutter(text, *args)
+            trace.mutter(text, *args)
+
+
+CACHE_DB_VERSION = 5
+
+
+_cachedbs = threading.local()
+def cachedbs():
+    """Get a cache for this thread's db connections."""
+    try:
+        return _cachedbs.cache
+    except AttributeError:
+        _cachedbs.cache = {}
+        return _cachedbs.cache
+
+
+class RepositoryCache(object):
+    """Object that provides a cache related to a particular UUID."""
+
+    def __init__(self, uuid):
+        self.uuid = uuid
+
+    def create_cache_dir(self):
+        cache_dir = create_cache_dir()
+        dir = os.path.join(cache_dir, self.uuid)
+        if not os.path.exists(dir):
+            trace.info("Initialising Subversion metadata cache in %s",
+                       dir.decode(osutils._fs_enc))
+            os.mkdir(dir)
+        return dir
+
+    def open_sqlite(self):
+        cache_file = os.path.join(self.create_cache_dir(), 'cache-v%d' % CACHE_DB_VERSION)
+        assert isinstance(cache_file, str)
+        if not cachedbs().has_key(cache_file):
+            cachedbs()[cache_file] = connect_cachefile(cache_file.decode(osutils._fs_enc).encode("utf-8"))
+        return cachedbs()[cache_file]
+
+    def open_transport(self):
+        return get_transport(self.create_cache_dir().decode(osutils._fs_enc))
+
+    def open_fileid_map(self):
+        from bzrlib.plugins.svn.fileids import FileIdMapCache
+        return FileIdMapCache(self.open_transport())
+
+    def open_revid_map(self):
+        from bzrlib.plugins.svn.revids import RevisionIdMapCache
+        return RevisionIdMapCache(self.open_sqlite())
