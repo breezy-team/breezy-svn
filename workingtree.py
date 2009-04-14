@@ -160,6 +160,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         self._branch = None
         self.base_revnum = 0
         max_rev = revision_status(self.basedir.encode("utf-8"), None, True)[1]
+        self.mapping = self.branch.mapping
         self._update_base_revnum(max_rev)
         self._detect_case_handling()
         self._transport = bzrdir.get_workingtree_transport(None)
@@ -173,6 +174,10 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                                                    get_adm_dir(), 'bzr'))
         self._control_files = LockableFiles(control_transport, 'lock', LockDir)
         self.views = self._make_views()
+
+    @property
+    def idmap(self):
+        return self.basis_tree().id_map
 
     def get_branch_path(self, revnum=None):
         if revnum is None:
@@ -437,7 +442,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 if (entry.copyfrom_url and 
                     list(find_copies(entry.copyfrom_url)) == [relpath.encode("utf-8")]):
                     return self.path_to_file_id(entry.copyfrom_rev, 
-                        entry.revision, self.unprefix(entry.copyfrom_url[len(entry.repos):]).decode("utf-8"))
+                        entry.revision, self.unprefix(urllib.unquote(entry.copyfrom_url[len(entry.repos):])).decode("utf-8"))
                 ids = self._get_new_file_ids()
                 if ids.has_key(relpath):
                     return (ids[relpath], None)
@@ -671,7 +676,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 assert isinstance(id, str)
                 new_entries[path] = id
             fileprops = self._get_branch_props()
-            self.branch.mapping.export_fileid_map_fileprops(new_entries, fileprops)
+            self.mapping.export_fileid_map_fileprops(new_entries, fileprops)
             self._set_branch_props(subwc, fileprops)
         finally:
             if wc is None:
@@ -681,7 +686,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         ids = self._get_new_file_ids()
         if path in ids:
             return (ids[path], None)
-        return self.basis_tree().lookup_id(path)
+        return idmap_lookup(self.idmap, self.mapping, path)[:2]
 
     def _get_changed_branch_props(self):
         wc = self._get_wc()
@@ -710,7 +715,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             wc.close()
 
     def _get_new_file_ids(self):
-        return self.branch.mapping.import_fileid_map_fileprops(
+        return self.mapping.import_fileid_map_fileprops(
             self._get_changed_branch_props())
 
     def _get_svk_merges(self, base_branch_props):
