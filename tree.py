@@ -414,9 +414,15 @@ class SvnBasisTree(SubversionTree,RevisionTree):
     def get_file_properties(self, file_id, path=None):
         if path is None:
             path = self.id2path(file_id)
-        wc = self.workingtree._get_wc(path)
+        else:
+            path = osutils.safe_unicode(path)
+        abspath = self.workingtree.abspath(path)
+        if not os.path.isdir(abspath.encode(osutils._fs_enc)):
+            wc = self.workingtree._get_wc(urlutils.split(path)[0])
+        else:
+            wc = self.workingtree._get_wc(path)
         try:
-            (_, orig_props) = wc.get_prop_diffs(self.workingtree.abspath(path))
+            (_, orig_props) = wc.get_prop_diffs(self.workingtree.abspath(path).encode("utf-8"))
         finally:
             wc.close()
         return orig_props

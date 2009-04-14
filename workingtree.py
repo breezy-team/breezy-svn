@@ -644,9 +644,15 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
     def get_file_properties(self, file_id, path=None):
         if path is None:
             path = self._inventory.id2path(file_id)
-        wc = self._get_wc()
+        else:
+            path = osutils.safe_unicode(path)
+        abspath = self.abspath(path)
+        if not os.path.isdir(abspath.encode(osutils._fs_enc)):
+            wc = self._get_wc(urlutils.split(path)[0])
+        else:
+            wc = self._get_wc(path)
         try:
-            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir.encode("utf-8"))
+            (prop_changes, orig_props) = wc.get_prop_diffs(abspath.encode("utf-8"))
         finally:
             wc.close()
         return apply_prop_changes(orig_props, prop_changes)
@@ -689,12 +695,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             wc.close()
 
     def _get_branch_props(self):
-        wc = self._get_wc()
-        try:
-            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir.encode("utf-8"))
-            return apply_prop_changes(orig_props, prop_changes)
-        finally:
-            wc.close()
+        return self.get_file_properties(None, "")
 
     def _set_branch_props(self, wc, fileprops):
         for k,v in fileprops.iteritems():

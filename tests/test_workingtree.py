@@ -764,6 +764,24 @@ class TestWorkingTree(SubversionTestCase):
         self.client_commit("dc", "Added files and links")
         WorkingTree.open("dc").read_working_inventory()
 
+    def test_get_dir_properties(self):
+        repos_url = self.make_client('a', 'dc')
+        self.build_tree({"dc/bla": None})
+        self.client_add("dc/bla")
+        self.client_set_prop("dc/bla", "bzrbla", "bloe")
+        wt = WorkingTree.open('dc')
+        props = wt.get_file_properties(wt.path2id('bla'), 'bla')
+        self.assertEquals("bloe", props["bzrbla"])
+
+    def test_get_file_properties(self):
+        repos_url = self.make_client('a', 'dc')
+        self.build_tree({"dc/bla": "data"})
+        self.client_add("dc/bla")
+        self.client_set_prop("dc/bla", "bzrbla", "bloe")
+        wt = WorkingTree.open('dc')
+        props = wt.get_file_properties(wt.path2id('bla'), 'bla')
+        self.assertEquals("bloe", props["bzrbla"])
+
 
 class IgnoreListTests(TestCase):
 
