@@ -23,9 +23,6 @@ from bzrlib.tests.test_graph import (
     InstrumentedParentsProvider,
     )
 
-from bzrlib.plugins.svn.cache import (
-    connect_cachefile,
-    )
 from bzrlib.plugins.svn.parents import (
     DiskCachingParentsProvider,
     ParentsCache,
@@ -35,7 +32,7 @@ class ParentsCacheTests(TestCase):
 
     def setUp(self):
         TestCase.setUp(self)
-        self.cache = ParentsCache(connect_cachefile(":memory:"))
+        self.cache = ParentsCache()
     
     def test_noparents(self):
         self.cache.insert_parents("myrevid", ())
@@ -65,7 +62,7 @@ class TestCachingParentsProvider(TestCase):
         dict_pp = _mod_graph.DictParentsProvider({'a':('b',)})
         self.inst_pp = InstrumentedParentsProvider(dict_pp)
         self.caching_pp = DiskCachingParentsProvider(self.inst_pp, 
-                ParentsCache(connect_cachefile(":memory:")))
+                ParentsCache())
 
     def test_get_parent_map(self):
         """Requesting the same revision should be returned from cache"""
