@@ -140,6 +140,8 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     ie = TreeReference(file_id, name, parent.file_id, revision=revid)
     if ref_revnum is not None:
         ie.reference_revision = reference_branch.get_rev_id(ref_revnum)
+    else:
+        ie.reference_revision = CURRENT_REVISION
     inv.add(ie)
 
 

@@ -24,7 +24,10 @@ from bzrlib.inventory import (
     )
 from bzrlib.osutils import has_symlinks
 from bzrlib.repository import Repository
-from bzrlib.revision import NULL_REVISION
+from bzrlib.revision import (
+    NULL_REVISION,
+    CURRENT_REVISION,
+    )
 from bzrlib.tests import TestSkipped
 from bzrlib.workingtree import WorkingTree
 
@@ -209,6 +212,7 @@ class TestBasisTree(SubversionTestCase):
 
 
 class TestInventoryExternals(SubversionTestCase):
+
     def test_add_nested_norev(self):
         """Add a nested tree with no specific revision referenced."""
         repos_url = self.make_client('d', 'dc')
@@ -221,6 +225,7 @@ class TestInventoryExternals(SubversionTestCase):
         self.assertEqual(TreeReference(
             mapping.generate_file_id((repos.uuid, "", 0), u""),
              'bla', inv.path2id('blie'), 
+             reference_revision=CURRENT_REVISION,
              revision=mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1))), 
              inv[inv.path2id('blie/bla')])
 
@@ -236,6 +241,7 @@ class TestInventoryExternals(SubversionTestCase):
         self.assertEqual(TreeReference(
             mapping.generate_file_id((repos.uuid, "", 0), u""),
              'bla', 'blabloe', 
+             reference_revision=CURRENT_REVISION,
              revision=mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1))), 
              inv[inv.path2id('bla')])
 
@@ -258,6 +264,7 @@ class TestInventoryExternals(SubversionTestCase):
 
 
 class TestSvnRevisionTree(SubversionTestCase):
+
     def setUp(self):
         super(TestSvnRevisionTree, self).setUp()
         repos_url = self.make_client('d', 'dc')
