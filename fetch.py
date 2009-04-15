@@ -98,8 +98,6 @@ from bzrlib.plugins.svn.transport import (
     url_join_unescaped_path,
     )
 
-# Number of revisions to fetch before writing pack to disk
-FETCH_COMMIT_WRITE_SIZE = 999
 # Max size of group in which revids are checked when looking for missing 
 # revisions
 MAX_CHECK_PRESENT_INTERVAL = 1000
@@ -1159,23 +1157,22 @@ class InterFromSvnRepository(InterRepository):
         accidental_file_revs = set()
         self._prev_inv = None
 
-        for num, (revmeta, mapping) in enumerate(revs):
-            try:
-                revid = revmeta.get_revision_id(mapping)
-            except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                continue
-            assert revid != NULL_REVISION
-            if pb is not None:
-                pb.update('copying revision', num, len(revs))
+        self.target.start_write_group()
+        try:
+            for num, (revmeta, mapping) in enumerate(revs):
+                try:
+                    revid = revmeta.get_revision_id(mapping)
+                except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                    continue
+                assert revid != NULL_REVISION
+                if pb is not None:
+                    pb.update('copying revision', num, len(revs))
 
-            parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
-            if parent_revmeta in accidental_file_revs:
-                accidental_file_revs.add(revmeta)
-                continue
+                parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
+                if parent_revmeta in accidental_file_revs:
+                    accidental_file_revs.add(revmeta)
+                    continue
 
-            if not self.target.is_in_write_group():
-                self.target.start_write_group()
-            try:
                 editor = self._get_editor(revmeta, mapping)
                 try:
                     if use_replay:
@@ -1192,16 +1189,9 @@ class InterFromSvnRepository(InterRepository):
                 except:
                     editor.abort()
                     raise
-            except:
-                if self.target.is_in_write_group():
-                    self.target.abort_write_group()
-                raise
-            if num % FETCH_COMMIT_WRITE_SIZE == 0:
-                self.target.commit_write_group()
-
-            self._prev_inv = editor.inventory
-            assert self._prev_inv.revision_id == revid
-        if self.target.is_in_write_group():
+                self._prev_inv = editor.inventory
+                assert self._prev_inv.revision_id == revid
+        finally:
             self.target.commit_write_group()
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False, 
@@ -1270,8 +1260,6 @@ class InterFromSvnRepository(InterRepository):
                 # itself was roundtripped.
                 raise NoSuchRevision(self.source, revision_id)
         finally:
-            if self.target.is_in_write_group():
-                self.target.abort_write_group()
             self.target.unlock()
 
     def _fetch_revision_chunks(self, revs, pb=None):
@@ -1295,9 +1283,7 @@ class InterFromSvnRepository(InterRepository):
         finally:
             pb.finished()
 
-        if not self.target.is_in_write_group():
-            self.target.start_write_group()
-
+        self.target.start_write_group()
         try:
             def cmprange((ak, av),(bk, bv)):
                 return cmp(av[0], bv[0])
@@ -1325,12 +1311,8 @@ class InterFromSvnRepository(InterRepository):
                 finally:
                     if not conn.busy:
                         self.source.transport.add_connection(conn)
-
-                if i % FETCH_COMMIT_WRITE_SIZE == 0:
-                    self.target.commit_write_group()
         finally:
-            if self.target.is_in_write_group():
-                self.target.commit_write_group()
+            self.target.commit_write_group()
 
     @staticmethod
     def is_compatible(source, target):
