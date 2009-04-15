@@ -246,12 +246,14 @@ class SvnRaTransport(Transport):
         if from_transport is None:
             self.connections = ConnectionPool(bzr_url)
             if credentials is not None:
+                assert isinstance(credentials, dict)
                 self.connections.set_credentials(credentials)
             # Make sure that the URL is valid by connecting to it.
             self.connections.add(self.connections.get(self.svn_url))
         else:
             self.connections = from_transport.connections
             if credentials is not None:
+                assert isinstance(credentials, dict)
                 self.connections.set_credentials(credentials)
         self._repos_root = None
         self._uuid = None
