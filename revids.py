@@ -191,6 +191,13 @@ class DiskCachingRevidMap(object):
         self.actual = actual
         self.revid_seen = set()
 
+    def remember_entry(self, entry_revid, branch, min_revnum, max_revnum, 
+                       mappingname):
+        if entry_revid not in self.revid_seen:
+            self.cache.insert_revid(entry_revid, branch, min_revnum, max_revnum,
+                                    mappingname)
+            self.revid_seen.add(entry_revid)
+
     def get_branch_revnum(self, revid, layout, project=None):
         # Check the record out of the cache, if it exists
         try:
@@ -218,18 +225,16 @@ class DiskCachingRevidMap(object):
                     fileprops_to_revnum = min(fileprops_to_revnum, revnum)
                     if entry_revid == revid:
                         found = (branch, revnum, revnum, mapping)
-                    if entry_revid not in self.revid_seen:
-                        self.cache.insert_revid(entry_revid, branch, revnum, revnum, mapping.name)
-                        self.revid_seen.add(entry_revid)
+                    self.remember_entry(entry_revid, branch, revnum, 
+                                            revnum, mapping.name)
             finally:
                 pb.finished()
             for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_fileprop_revids(layout, last_checked, fileprops_to_revnum, project):
                 min_revno = max(last_checked, min_revno)
                 if entry_revid == revid:
                     found = (branch, min_revno, max_revno, mapping)
-                if entry_revid not in self.revid_seen:
-                    self.cache.insert_revid(entry_revid, branch, min_revno, max_revno, mapping.name)
-                    self.revid_seen.add(entry_revid)
+                self.remember_entry(entry_revid, branch, min_revno, 
+                                    max_revno, mapping.name)
             # We've added all the revision ids for this layout in the
             # repository, so no need to check again unless new revisions got 
             # added
@@ -242,7 +247,7 @@ class DiskCachingRevidMap(object):
 
         ((uuid, branch_path, revnum), mapping) = self.actual.bisect_revid_revnum(revid, 
             branch_path, min_revnum, max_revnum)
-        self.cache.insert_revid(revid, branch_path, revnum, revnum, mapping.name)
+        self.remember_entry(revid, branch_path, revnum, revnum, mapping.name)
         return (uuid, branch_path, revnum), mapping
 
 
