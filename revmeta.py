@@ -1131,8 +1131,9 @@ class RevisionMetadataBrowser(object):
             assert revnum <= self.from_revnum
             # Dictionary mapping branch paths to Metabranches
             if self._pb:
-                self._pb.update("discovering revisions", revnum-self.to_revnum, 
-                          self.from_revnum-self.to_revnum)
+                self._pb.update("discovering revisions", 
+                        abs(self.from_revnum-revnum),
+                        abs(self.from_revnum-self.to_revnum))
 
             if self._last_revnum is not None:
                 # Import all metabranches_history where key > revnum
