@@ -118,7 +118,6 @@ class LogCache(CacheTable):
             create unique index if not exists revprop_rev_name on revprop(rev, name);
             create unique index if not exists revinfo_rev on revinfo(rev);
         """)
-        self._commit_interval = 5000
     
     def find_latest_change(self, path, revnum):
         if path == "":
@@ -309,7 +308,6 @@ class CachingLogWalker(CacheTable):
             self.cache.insert_revprops(revision, revprops)
             self.cache.insert_revinfo(revision, todo_revprops is None)
             self.saved_revnum = revision
-            self.cache.commit_conditionally()
 
         self.mutter("get_log %d->%d", self.saved_revnum, to_revnum)
 
@@ -328,9 +326,9 @@ class CachingLogWalker(CacheTable):
                         revision="Revision number %d" % to_revnum)
                 raise
         finally:
+            self.cache.commit()
             if pb is None:
                 nested_pb.finished()
-        self.cache.commit()
 
 
 def strip_slashes(changed_paths):
