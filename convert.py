@@ -217,8 +217,8 @@ def convert_repository(source_repos, output_url, layout=None,
         try:
             target_repos = get_dir(prefix, prefix).open_repository()
             target_repos_is_empty = False # FIXME: Call Repository.is_empty() ?
-            assert (layout.is_branch("") or 
-                    target_repos.is_shared())
+            if not layout.is_branch("") and not target_repos.is_shared():
+                raise BzrError("Repository %r is not shared." % target_repos)
         except NoRepositoryPresent:
             target_repos = get_dir(prefix, prefix).create_repository(shared=True)
             target_repos_is_empty = True
