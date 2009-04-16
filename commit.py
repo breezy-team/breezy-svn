@@ -193,13 +193,17 @@ def set_svn_revprops(repository, revnum, revprops):
     :param revprops: Dictionary with revision properties to set.
     """
     logcache = getattr(repository._log, "cache", None)
-    for (name, value) in revprops.iteritems():
-        try:
-            repository.transport.change_rev_prop(revnum, name, value)
-            if logcache is not None:
-                logcache.insert_revprop(revnum, name, value)
-        except SubversionException, (_, ERR_REPOS_DISABLED_FEATURE):
-            raise RevpropChangeFailed(name)
+    succeeded_revprops = {}
+    try:
+        for (name, value) in revprops.iteritems():
+            try:
+                repository.transport.change_rev_prop(revnum, name, value)
+                succeeded_revprops[name] = value
+            except SubversionException, (_, ERR_REPOS_DISABLED_FEATURE):
+                raise RevpropChangeFailed(name)
+    finally:
+        if logcache is not None:
+            logcache.insert_revprops(revnum, succeeded_revprops)
 
 
 def file_editor_send_changes(file_id, reader, file_editor):

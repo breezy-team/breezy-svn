@@ -540,12 +540,12 @@ class TestLogCache(TestCase):
         super(TestLogCache, self).setUp()
         self.cache = logwalker.LogCache()
 
-    def test_insert_path(self):
-        self.cache.insert_path(42, u"foo", "A", None, -1)
+    def test_insert_paths(self):
+        self.cache.insert_paths(42, {u"foo": ("A", None, -1)})
         self.assertEquals({"foo": ("A", None, -1)}, self.cache.get_revision_paths(42))
 
-    def test_insert_revprop(self):
-        self.cache.insert_revprop(100, "some", "data")
+    def test_insert_revprops(self):
+        self.cache.insert_revprops(100, {"some": "data"})
         self.assertEquals({"some": "data"}, self.cache.get_revprops(100))
 
     def test_insert_revinfo(self):
@@ -555,7 +555,7 @@ class TestLogCache(TestCase):
         self.assertFalse(self.cache.has_all_revprops(42))
 
     def test_find_latest_change(self):
-        self.cache.insert_path(42, u"foo", "A")
+        self.cache.insert_paths(42, {u"foo": ("A", None, -1)})
         self.assertEquals(42, self.cache.find_latest_change("foo", 42))
         self.assertEquals(42, self.cache.find_latest_change("foo", 45))
 

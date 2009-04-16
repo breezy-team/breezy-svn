@@ -144,22 +144,25 @@ class LogCache(CacheTable):
                 cf = cf.encode("utf-8")
             paths[p.encode("utf-8")] = (act, cf, cr)
         return paths
-    
-    def insert_path(self, rev, path, action, copyfrom_path=None, copyfrom_rev=-1):
+
+    def insert_paths(self, rev, orig_paths):
         """Insert new history information into the cache.
         
         :param rev: Revision number of the revision
-        :param path: Path that was changed
-        :param action: Action on path (single-character)
-        :param copyfrom_path: Optional original path this path was copied from.
-        :param copyfrom_rev: Optional original rev this path was copied from.
+        :param orig_paths: SVN-style changes dictionary
         """
-        assert action in ("A", "R", "D", "M")
-        assert not path.startswith("/")
-        assert isinstance(path, unicode)
-        assert copyfrom_path is None or isinstance(copyfrom_path, unicode)
-        self.cachedb.execute("replace into changed_path (rev, path, action, copyfrom_path, copyfrom_rev) values (?, ?, ?, ?, ?)", (rev, path, action, copyfrom_path, copyfrom_rev))
+        if orig_paths is None or orig_paths == {}:
+            return
+        new_paths = []
+        for p in orig_paths:
+            copyfrom_path = orig_paths[p][1]
+            if copyfrom_path is not None:
+                copyfrom_path = copyfrom_path.strip("/").decode("utf-8")
 
+            new_paths.append((rev, p.strip("/").decode("utf-8"), orig_paths[p][0], copyfrom_path, orig_paths[p][2]))
+
+        self.cachedb.executemany("replace into changed_path (rev, path, action, copyfrom_path, copyfrom_rev) values (?, ?, ?, ?, ?)", new_paths)
+    
     def drop_revprops(self, revnum):
         self.cachedb.execute("update revinfo set all_revprops = 0 where rev = ?", (revnum,))
 
@@ -169,26 +172,12 @@ class LogCache(CacheTable):
         :param revnum: Revision number of revision to retrieve revprops for.
         """
         result = self.cachedb.execute("select name, value from revprop where rev = ?", (revnum,))
-        revprops = {}
-        for k, v in result:
-            revprops[k.encode("utf-8")] = v.encode("utf-8")
-        return revprops
+        return dict((k.encode("utf-8"), v.encode("utf-8")) for (k, v) in result)
 
-    def insert_revprop(self, rev, name, value):
-        """Add a revision property.
-
-        :param rev: Revision number of the revision.
-        :param name: Name of the revision property.
-        :param value: Contents of the revision property.
-        """
-        assert isinstance(name, str) and isinstance(value, str)
-        self.cachedb.execute("replace into revprop (rev, name, value) values (?, ?, ?)", (rev, name.decode("utf-8", "replace"), value.decode("utf-8", "replace")))
-    
     def insert_revprops(self, revision, revprops):
         if revprops is None:
             return
-        for k, v in revprops.iteritems():
-            self.insert_revprop(revision, k, v)
+        self.cachedb.executemany("replace into revprop (rev, name, value) values (?, ?, ?)", [(revision, name.decode("utf-8", "replace"), value.decode("utf-8", "replace")) for (name, value) in revprops.iteritems()])
 
     def has_all_revprops(self, revnum):
         """Check whether all revprops for a revision have been cached.
@@ -316,14 +305,7 @@ class CachingLogWalker(CacheTable):
 
         def rcvr(orig_paths, revision, revprops, has_children=None):
             nested_pb.update('fetching svn revision info', revision, to_revnum)
-            if orig_paths is None:
-                orig_paths = {}
-            for p in orig_paths:
-                copyfrom_path = orig_paths[p][1]
-                if copyfrom_path is not None:
-                    copyfrom_path = copyfrom_path.strip("/").decode("utf-8")
-
-                self.cache.insert_path(revision, p.strip("/").decode("utf-8"), orig_paths[p][0], copyfrom_path, orig_paths[p][2])
+            self.cache.insert_paths(revision, orig_paths)
             self.cache.insert_revprops(revision, revprops)
             self.cache.insert_revinfo(revision, todo_revprops is None)
             self.saved_revnum = revision
