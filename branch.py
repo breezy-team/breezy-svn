@@ -446,9 +446,9 @@ class SvnBranch(ForeignBranch):
         # get_push_location not supported on Subversion
         return None
 
-    def _iter_revision_meta_ancestry(self):
+    def _iter_revision_meta_ancestry(self, pb=None):
         return self.repository._iter_reverse_revmeta_mapping_ancestry(
-            self.get_branch_path(), self._revnum or self.repository.get_latest_revnum(), self.mapping, lhs_history=self._revision_meta_history())
+            self.get_branch_path(), self._revnum or self.repository.get_latest_revnum(), self.mapping, lhs_history=self._revision_meta_history(), pb=pb)
 
     def _revision_meta_history(self):
         if self._revmeta_cache is None:

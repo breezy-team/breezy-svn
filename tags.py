@@ -22,6 +22,7 @@ from subvertpy import (
     )
 
 from bzrlib import (
+    ui,
     urlutils,
     )
 from bzrlib.errors import (
@@ -192,16 +193,20 @@ class SubversionTags(BasicTags):
         ret = {}
         # Try to find the tags that are in the ancestry of this branch
         # and use their appropriate mapping
-        for (revmeta, mapping) in self.branch._iter_revision_meta_ancestry():
-            if revmeta not in reverse_tag_revmetas:
-                continue
-            if len(reverse_tag_revmetas) == 0:
-                # No more tag revmetas to resolve, just return immediately
-                return ret
-            for name in reverse_tag_revmetas[revmeta]:
-                assert isinstance(name, basestring)
-                ret[name] = revmeta.get_revision_id(mapping)
-            del reverse_tag_revmetas[revmeta]
+        pb = ui.ui_factory.nested_progress_bar()
+        try:
+            for (revmeta, mapping) in self.branch._iter_revision_meta_ancestry(pb=pb):
+                if revmeta not in reverse_tag_revmetas:
+                    continue
+                if len(reverse_tag_revmetas) == 0:
+                    # No more tag revmetas to resolve, just return immediately
+                    return ret
+                for name in reverse_tag_revmetas[revmeta]:
+                    assert isinstance(name, basestring)
+                    ret[name] = revmeta.get_revision_id(mapping)
+                del reverse_tag_revmetas[revmeta]
+        finally:
+            pb.finished()
         ret.update(self._resolve_reverse_tags_fallback(reverse_tag_revmetas))
         return ret
 

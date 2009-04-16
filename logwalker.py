@@ -46,7 +46,7 @@ from bzrlib.plugins.svn.util import (
 MAX_OVERHEAD_FETCH = 1000
 
 def iter_changes(paths, from_revnum, to_revnum, get_revision_paths, 
-    revprop_list, limit=0, pb=None):
+    revprop_list, limit=0):
     ascending = (to_revnum > from_revnum)
 
     revnum = from_revnum
@@ -63,11 +63,6 @@ def iter_changes(paths, from_revnum, to_revnum, get_revision_paths,
 
     while ((not ascending and revnum >= to_revnum) or
            (ascending and revnum <= to_revnum)):
-        if pb is not None:
-            if ascending:
-                pb.update("determining changes", revnum-from_revnum, to_revnum-from_revnum)
-            else:
-                pb.update("determining changes", from_revnum-revnum, from_revnum-to_revnum)
         if not (revnum > 0 or path == ""):
             raise AssertionError("Inconsistent path,revnum: %r,%r" % (revnum, path))
         revpaths = get_revision_paths(revnum)
@@ -248,7 +243,7 @@ class CachingLogWalker(CacheTable):
         self._fetch_revisions(max(from_revnum, to_revnum), pb=pb)
 
         return iter(iter_changes(paths, from_revnum, to_revnum, 
-            self.get_revision_paths, self.revprop_list, limit, pb))
+            self.get_revision_paths, self.revprop_list, limit))
 
     def get_revision_paths(self, revnum):
         if revnum == 0:
@@ -402,8 +397,6 @@ class LogWalker(object):
                                                     True, False, False, revprops=todo_revprops)
 
             for (changed_paths, revnum, known_revprops, has_children) in iterator:
-                if pb is not None:
-                    pb.update("determining changes", from_revnum-revnum, from_revnum-to_revnum)
                 if revnum == 0 and changed_paths is None:
                     revpaths = changes.REV0_CHANGES
                 elif isinstance(changed_paths, dict):
@@ -450,7 +443,7 @@ class DictBasedLogWalker(object):
 
     def iter_changes(self, paths, from_revnum, to_revnum=0, limit=0, pb=None):
         return iter(iter_changes(paths, from_revnum, to_revnum, 
-            self.get_revision_paths, self.revprop_list, limit, pb))
+            self.get_revision_paths, self.revprop_list, limit))
 
     def get_revision_paths(self, revnum):
         if revnum == 0:

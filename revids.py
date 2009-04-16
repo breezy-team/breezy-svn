@@ -52,15 +52,19 @@ class RevidMap(object):
         """
         last_revnum = self.repos.get_latest_revnum()
         fileprops_to_revnum = last_revnum
-        for entry_revid, branch, revnum, mapping in self.discover_revprop_revids(last_revnum, 0):
-            if revid == entry_revid:
-                return (self.repos.uuid, branch, revnum), mapping
-            fileprops_to_revnum = min(fileprops_to_revnum, revnum)
+        pb = ui.ui_factory.nested_progress_bar()
+        try:
+            for entry_revid, branch, revnum, mapping in self.discover_revprop_revids(last_revnum, 0, pb=pb):
+                if revid == entry_revid:
+                    return (self.repos.uuid, branch, revnum), mapping
+                fileprops_to_revnum = min(fileprops_to_revnum, revnum)
 
-        for entry_revid, branch, min_revno, max_revno, mapping in self.discover_fileprop_revids(layout, 0, fileprops_to_revnum, project):
-            if revid == entry_revid:
-                (foreign_revid, mapping_name) = self.bisect_revid_revnum(revid, branch, min_revno, max_revno)
-                return (foreign_revid, mapping_name)
+            for entry_revid, branch, min_revno, max_revno, mapping in self.discover_fileprop_revids(layout, 0, fileprops_to_revnum, project, pb=pb):
+                if revid == entry_revid:
+                    (foreign_revid, mapping_name) = self.bisect_revid_revnum(revid, branch, min_revno, max_revno)
+                    return (foreign_revid, mapping_name)
+        finally:
+            pb.finished()
         raise NoSuchRevision(self, revid)
 
     def discover_revprop_revids(self, from_revnum, to_revnum, pb=None):
@@ -83,12 +87,14 @@ class RevidMap(object):
                 if revid is not None:
                     yield (revid, branch_path.strip("/"), revnum, mapping)
 
-    def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None):
+    def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None, pb=None):
         reuse_policy = self.repos.get_config().get_reuse_revisions()
         assert reuse_policy in ("other-branches", "removed-branches", "none") 
         check_removed = (reuse_policy == "removed-branches")
         # TODO: Some sort of progress indication
         for (branch, revno, exists) in self.repos.find_fileprop_paths(layout, from_revnum, to_revnum, project, check_removed=check_removed):
+            if pb is not None:
+                pb.update("finding fileprop revids", revno-from_revnum, to_revnum-from_revnum)
             assert isinstance(branch, str)
             assert isinstance(revno, int)
             # Look at their bzr:revision-id-vX
@@ -227,14 +233,14 @@ class DiskCachingRevidMap(object):
                         found = (branch, revnum, revnum, mapping)
                     self.remember_entry(entry_revid, branch, revnum, 
                                             revnum, mapping.name)
+                for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_fileprop_revids(layout, last_checked, fileprops_to_revnum, project, pb):
+                    min_revno = max(last_checked, min_revno)
+                    if entry_revid == revid:
+                        found = (branch, min_revno, max_revno, mapping)
+                    self.remember_entry(entry_revid, branch, min_revno, 
+                                        max_revno, mapping.name)
             finally:
                 pb.finished()
-            for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_fileprop_revids(layout, last_checked, fileprops_to_revnum, project):
-                min_revno = max(last_checked, min_revno)
-                if entry_revid == revid:
-                    found = (branch, min_revno, max_revno, mapping)
-                self.remember_entry(entry_revid, branch, min_revno, 
-                                    max_revno, mapping.name)
             # We've added all the revision ids for this layout in the
             # repository, so no need to check again unless new revisions got 
             # added
