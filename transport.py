@@ -29,12 +29,13 @@ from bzrlib import (
     urlutils,
     )
 from bzrlib.errors import (
-    NoSuchFile,
-    TransportNotPossible, 
+    BzrError,    
     FileExists,
-    NotLocalUrl,
     InvalidURL,
+    NoSuchFile,
+    NotLocalUrl,
     RedirectRequested,
+    TransportNotPossible, 
     )
 from bzrlib.trace import (
     mutter,
@@ -56,7 +57,14 @@ from bzrlib.plugins.svn.errors import (
     convert_error,
     )
 
-svn_config = get_config()
+ERR_MALFORMED_FILE = getattr(subvertpy, "ERR_MALFORMED_FILE", 200002) 
+
+try:
+    svn_config = get_config()
+except subvertpy.SubversionException, (msg, num):
+    if num == ERR_MALFORMED_FILE:
+        raise BzrError(msg)
+    raise
 
 
 # This variable is here to allow tests to temporarily disable features
