@@ -65,7 +65,7 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
         """
         mutter("Obtaining username for SVN connection")
         username = self.get_user(self.scheme, host=self.host, path=self.path, 
-                                 realm=realm)
+                                 realm=realm, ask=True)
         if username is None:
             return None
         return (username, False)
@@ -81,7 +81,7 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
         mutter("Obtaining username and password for SVN connection %r (username: %r)", 
                realm, username)
         username = self.get_user(self.scheme, 
-                host=self.host, path=self.path, realm=realm) or username
+                host=self.host, path=self.path, realm=realm, ask=True) or username
         password = self.get_password(self.scheme, host=self.host, 
             path=self.path, user=username, 
             realm=realm, prompt="%s %s password" % (realm, username))
