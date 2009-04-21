@@ -52,7 +52,10 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
     """
     def __init__(self, scheme, host, port, path, file=None):
         super(SubversionAuthenticationConfig, self).__init__(file)
-        self.scheme = scheme
+        if scheme.startswith('svn+http'):
+            self.scheme = scheme[len("svn+"):]
+        else:
+            self.scheme = scheme
         self.host = host
         self.port = port
         self.path = path
@@ -66,9 +69,7 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
         mutter("Obtaining username for SVN connection")
         username = self.get_user(self.scheme, host=self.host, path=self.path, 
                                  realm=realm, ask=True)
-        if username is None:
-            return None
-        return (username, False)
+        return (username.encode('utf-8'), False)
 
     def get_svn_simple(self, realm, username, may_save):
         """Look up a Subversion user name+password combination in the Bazaar 
@@ -81,7 +82,7 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
         mutter("Obtaining username and password for SVN connection %r (username: %r)", 
                realm, username)
         username = self.get_user(self.scheme, 
-                host=self.host, path=self.path, realm=realm, ask=True) or username
+                host=self.host, path=self.path, realm=realm, ask=True)
         password = self.get_password(self.scheme, host=self.host, 
             path=self.path, user=username, 
             realm=realm, prompt="%s %s password" % (realm, username))
