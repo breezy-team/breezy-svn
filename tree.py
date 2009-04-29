@@ -433,7 +433,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
         else:
             wc = self.workingtree._get_wc(path)
         try:
-            (_, orig_props) = wc.get_prop_diffs(self.workingtree.abspath(path).encode("utf-8"))
+            (_, orig_props) = wc.get_prop_diffs(abspath.encode("utf-8"))
         finally:
             wc.close()
         return orig_props
