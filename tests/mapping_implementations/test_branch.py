@@ -27,7 +27,7 @@ import os
 from unittest import TestCase
 
 import subvertpy
-from bzrlib.plugins.svn.branch import FakeControlFiles, SvnBranchFormat
+from bzrlib.plugins.svn.branch import SvnBranchFormat
 from bzrlib.plugins.svn.convert import load_dumpfile
 from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_REVISION_ID, mapping_registry
 from bzrlib.plugins.svn.tests import SubversionTestCase

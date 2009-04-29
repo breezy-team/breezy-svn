@@ -83,9 +83,6 @@ from bzrlib.plugins.svn.config import (
 from bzrlib.plugins.svn.errors import (
     NotSvnBranchPath,
     )
-from bzrlib.plugins.svn.foreign import (
-    FakeControlFiles,
-    )
 from bzrlib.plugins.svn.format import (
     get_rich_root_format,
     )
@@ -173,7 +170,6 @@ class SvnBranch(ForeignBranch):
         self.layout = self.repository.get_layout()
         assert isinstance(self.repository, SvnRepository)
         super(SvnBranch, self).__init__(mapping or self.repository.get_mapping())
-        self.control_files = FakeControlFiles()
         self._lock_mode = None
         self._lock_count = 0
         self._branch_path = branch_path.strip("/")
@@ -520,6 +516,9 @@ class SvnBranch(ForeignBranch):
 
     def is_locked(self):
         return self._lock_count != 0
+
+    def break_lock(self):
+        pass
 
     def lock_write(self):
         """See Branch.lock_write()."""

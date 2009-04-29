@@ -35,7 +35,6 @@ from bzrlib.revision import NULL_REVISION
 from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn.branch import (
-    FakeControlFiles,
     SvnBranchFormat,
     )
 from bzrlib.plugins.svn.convert import load_dumpfile
@@ -406,7 +405,7 @@ class WorkingSubversionBranch(SubversionTestCase):
     def test_break_lock(self):
         repos_url = self.make_repository('a')
         branch = Branch.open(repos_url)
-        branch.control_files.break_lock()
+        branch.break_lock()
 
     def test_repr(self):
         repos_url = self.make_repository('a')
@@ -955,17 +954,6 @@ foohosts""")
                 newdir.open_branch().last_revision())
         newdir.find_repository().get_revision_inventory(
                 newdir.open_branch().last_revision())
-
-
-class TestFakeControlFiles(TestCase):
-    def test_get_utf8(self):
-        f = FakeControlFiles()
-        self.assertRaises(NoSuchFile, f.get_utf8, "foo")
-
-
-    def test_get(self):
-        f = FakeControlFiles()
-        self.assertRaises(NoSuchFile, f.get, "foobla")
 
 
 class BranchFormatTests(TestCase):
