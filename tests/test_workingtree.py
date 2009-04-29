@@ -521,7 +521,8 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({"dc/bl": None})
 
         tree = WorkingTree.open("dc")
-        self.assertEqual(['.svn', 'bl'], list(tree.extras()))
+        extras = list(tree.extras())
+        self.assertEqual([u'bl'], extras)
 
     def test_executable(self):
         if not supports_executable():
