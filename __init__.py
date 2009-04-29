@@ -204,6 +204,24 @@ plugin_cmds.register_lazy('cmd_svn_serve', [],
 lazy_register_filter_stack_map("svn-keywords", 
         "bzrlib.plugins.svn.keywords", "create_svn_keywords_filter")
 
+
+def info_svn_repository(stats, outf):
+    if "svn-uuid" in stats:
+        outf.write("Subversion UUID: %s\n" % stats["svn-uuid"])
+    if "svn-last-revnum" in stats:
+        outf.write("Subversion Last Revision: %d\n" % stats["svn-last-revnum"])
+
+
+try:
+    from bzrlib.info import (
+        hooks as info_hooks,
+        )
+except ImportError:
+    pass
+else:
+    info_hooks.install_named_hook('repository', info_svn_repository, None)
+
+
 def update_stanza(rev, stanza):
     revmeta = getattr(rev, "svn_meta", None)
     if revmeta is None:
