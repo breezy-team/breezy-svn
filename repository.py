@@ -488,6 +488,8 @@ class SvnRepository(ForeignRepository):
         result['latestrev'] = revdate(self.get_latest_revnum())
         # Approximate number of revisions
         result['revisions'] = self.get_latest_revnum()+1
+        result['svn-uuid'] = self.uuid
+        result['svn-last-revnum'] = self.get_latest_revnum()
         return result
 
     def get_mapping_class(self):
