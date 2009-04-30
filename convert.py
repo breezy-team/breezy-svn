@@ -321,16 +321,8 @@ def convert_repository(source_repos, output_url, layout=None,
                     target_branch = target_dir.create_branch()
                     target_branch.set_parent(source_branch.base)
                 if source_branch.last_revision() != target_branch.last_revision():
-                    # Check if target_branch contains a subset of 
-                    # source_branch. If that is not the case, 
-                    # assume that source_branch has been replaced 
-                    # and remove target_branch
-                    if not source_graph.is_ancestor(
-                            ensure_null(target_branch.last_revision()),
-                            ensure_null(source_branch.last_revision())):
-                        target_branch.set_revision_history([])
                     try:
-                        target_branch.pull(source_branch)
+                        target_branch.pull(source_branch, overwrite=True)
                     except NoSuchRevision:
                         if source_branch.check_path() == NODE_FILE:
                             to_transport.delete_tree(source_branch.get_branch_path())
