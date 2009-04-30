@@ -669,12 +669,16 @@ class InterSvnOtherBranch(InterBranch):
         self.source.lock_read()
         try:
             (result.old_revno, result.old_revid) = self.target.last_revision_info()
-            try:
-                result.old_revmeta, _ = self.source.repository._get_revmeta(result.old_revid)
-                tags_since_revnum = result.old_revmeta.revnum
-            except NoSuchRevision:
+            if result.old_revid == NULL_REVISION:
                 result.old_revmeta = None
                 tags_since_revnum = None
+            else:
+                try:
+                    result.old_revmeta, _ = self.source.repository._get_revmeta(result.old_revid)
+                    tags_since_revnum = result.old_revmeta.revnum
+                except NoSuchRevision:
+                    result.old_revmeta = None
+                    tags_since_revnum = None
             if stop_revision == NULL_REVISION:
                 result.new_revmeta = None
                 tags_until_revnum = 0
