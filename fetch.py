@@ -434,7 +434,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             text_parents = self.editor._get_text_parents(self.path) or self.parent_revids
             self.editor.texts.add_lines(
                 (self.new_id, self.new_ie.revision),
-                [(self.new_id, revid) for revid in text_parents], [])
+                tuple([(self.new_id, revid) for revid in text_parents]), [])
             self.editor._inv_delta.append((self.old_path, self.path, self.new_id, self.new_ie))
         if self._renew_fileids:
             # Make sure files get re-added that weren't mentioned explicitly
@@ -562,7 +562,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
         text_parents = self.editor._get_text_parents(self.path)
         if text_parents is None:
             text_parents = self.file_parents
-        parent_keys = [(self.file_id, revid) for revid in text_parents]
+        parent_keys = tuple([(self.file_id, revid) for revid in text_parents])
         parent_texts = {}
         if parent_keys:
             parent_text = self.editor._content_cache.get(parent_keys[0], None)
