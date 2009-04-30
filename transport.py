@@ -207,10 +207,13 @@ class ConnectionPool(object):
         self.auth_baton = create_auth_baton(url)
 
     def set_credentials(self, credentials):
-        user = credentials.get('user')
+        if isinstance(credentials, dict):
+            user = credentials.get('user')
+            password = credentials.get('password')
+        else:
+            user, password = credentials[:2]
         if user is not None:
             self.auth_baton.set_parameter(AUTH_PARAM_DEFAULT_USERNAME, user)
-        password = credentials.get('password')
         if password is not None:
             self.auth_baton.set_parameter(AUTH_PARAM_DEFAULT_PASSWORD, password)
 
