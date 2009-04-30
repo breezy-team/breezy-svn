@@ -67,6 +67,18 @@ class SubversionPushResult(PushResult):
         else:
             self.branch_push_result.report(to_file)
 
+    @property
+    def old_revno(self):
+        if self.branch_push_result is None:
+            return 0
+        return self.branch_push_result.old_revno
+
+    @property
+    def old_revid(self):
+        if self.branch_push_result is None:
+            return NULL_REVISION
+        return self.branch_push_result.old_revid
+
 
 class SvnRemoteAccess(BzrDir):
     """BzrDir implementation for Subversion connections.
@@ -240,8 +252,6 @@ class SvnRemoteAccess(BzrDir):
             finally:
                 target_branch.unlock()
         except NotBranchError:
-            ret.old_revno = 0
-            ret.old_revid = NULL_REVISION
             ret.target_branch_path = "/%s" % self.branch_path.lstrip("/")
             ret.target_branch = self.import_branch(source, revision_id)
             if source.get_push_location() is None or remember:
