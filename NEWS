@@ -5,6 +5,9 @@ bzr-svn 0.6.0					UNRELEASED
    * The version-info command now prints 'svn revno' and 'svn uuid' 
      when used in Subversion checkouts.
 
+   * The info command now prints the repository UUID and last committed 
+     revision number when used on Subversion repositories. (#320271)
+
    * Now registers a fallback credentials store, allowing 
      Subversion credentials to be used for non-Subversion 
 	 access. This is useful accessing http(s) URLs will 
