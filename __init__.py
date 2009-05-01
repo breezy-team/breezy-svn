@@ -205,7 +205,7 @@ lazy_register_filter_stack_map("svn-keywords",
         "bzrlib.plugins.svn.keywords", "create_svn_keywords_filter")
 
 
-def info_svn_repository(stats, outf):
+def info_svn_repository(repository, stats, outf):
     if "svn-uuid" in stats:
         outf.write("Subversion UUID: %s\n" % stats["svn-uuid"])
     if "svn-last-revnum" in stats:
