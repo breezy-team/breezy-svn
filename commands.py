@@ -223,14 +223,33 @@ class cmd_svn_layout(Command):
     "bzr help svn-layout" for more information about repository 
     layouts.
     """
-    takes_args = ["repos_url"]
+    takes_args = ["path?"]
 
-    def run(self, repos_url):
+    def run(self, path="."):
+        from bzrlib import (
+            errors,
+            urlutils,
+            )
+        from bzrlib.branch import Branch
         from bzrlib.repository import Repository
 
-        repos = Repository.open(repos_url)
+        try:
+            branch, _ = Branch.open_containing(path)
+            repos = branch.repository
+        except errors.NotBranchError:
+            repos = Repository.open(path)
+            branch = None
         layout = repos.get_layout()
+        self.outf.write("Repository root: %s\n" % repos.base)
         self.outf.write("Layout: %s\n" % str(layout))
+        if branch is not None:
+            self.outf.write("Branch path: %s\n" % branch.get_branch_path())
+            if branch.project:
+                self.outf.write("Project: %s\n" % branch.project)
+            self.outf.write("Tag container directory: %s\n" % 
+                    urlutils.dirname(layout.get_tag_path("test", branch.project)))
+            self.outf.write("Branch container directory: %s\n" % 
+                    urlutils.dirname(layout.get_branch_path("test", branch.project)))
 
 
 class cmd_svn_serve(Command):
