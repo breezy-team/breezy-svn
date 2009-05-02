@@ -239,6 +239,8 @@ class cmd_svn_layout(Command):
         except errors.NotBranchError:
             repos = Repository.open(path)
             branch = None
+        if getattr(repos, "uuid", None) is None:
+            raise errors.BzrCommandError("Not a Subversion branch or repository.")
         layout = repos.get_layout()
         self.outf.write("Repository root: %s\n" % repos.base)
         self.outf.write("Layout: %s\n" % str(layout))
