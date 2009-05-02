@@ -248,10 +248,14 @@ class cmd_svn_layout(Command):
             self.outf.write("Branch path: %s\n" % branch.get_branch_path())
             if branch.project:
                 self.outf.write("Project: %s\n" % branch.project)
-            self.outf.write("Tag container directory: %s\n" % 
-                    urlutils.dirname(layout.get_tag_path("test", branch.project)))
-            self.outf.write("Branch container directory: %s\n" % 
-                    urlutils.dirname(layout.get_branch_path("test", branch.project)))
+            test_tag_path = layout.get_tag_path("test", branch.project)
+            if test_tag_path:
+                self.outf.write("Tag container directory: %s\n" % 
+                        urlutils.dirname(test_tag_path))
+            test_branch_path = layout.get_branch_path("test", branch.project)
+            if test_branch_path:
+                self.outf.write("Branch container directory: %s\n" % 
+                        urlutils.dirname(test_branch_path))
 
 
 class cmd_svn_serve(Command):
