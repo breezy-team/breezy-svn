@@ -217,7 +217,7 @@ class cmd_svn_set_revprops(Command):
 
 
 class cmd_svn_layout(Command):
-    """Print the repository layout in use for a repository.
+    """Print the repository layout in use for a Subversion repository.
 
     This will print the name of the repository layout. See 
     "bzr help svn-layout" for more information about repository 
