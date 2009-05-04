@@ -256,6 +256,8 @@ class cmd_svn_layout(Command):
             if test_branch_path:
                 self.outf.write("Branch container directory: %s\n" % 
                         urlutils.dirname(test_branch_path))
+            self.outf.write("Push merged revisions: %s\n" % 
+                    branch.get_push_merged_revisions())
 
 
 class cmd_svn_serve(Command):
