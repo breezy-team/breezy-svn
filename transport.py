@@ -16,6 +16,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Simple transport for accessing Subversion smart servers."""
 
+import stat
 import subvertpy
 from subvertpy import ERR_FS_NOT_DIRECTORY
 from subvertpy.client import get_config
@@ -284,9 +285,7 @@ class SvnRaTransport(Transport):
 
     def has(self, relpath):
         """See Transport.has()."""
-        # TODO: Raise TransportNotPossible here instead and 
-        # catch it in bzrdir.py
-        return False
+        return self.check_path(relpath, -1) != subvertpy.NODE_NONE
 
     def get(self, relpath):
         """See Transport.get()."""
@@ -296,7 +295,20 @@ class SvnRaTransport(Transport):
 
     def stat(self, relpath):
         """See Transport.stat()."""
-        raise TransportNotPossible('stat not supported on Subversion')
+        class StatResult(object):
+            def __init__(self, svn_stat):
+                if svn_stat['kind'] == subvertpy.NODE_DIR:
+                    self.st_mode = stat.S_IFDIR
+                elif svn_stat['kind'] == subvertpy.NODE_FILE:
+                    self.st_mode = stat.S_IFREG
+        conn = self.get_connection()
+        try:
+            stat_fn = getattr(conn, "stat", None)
+            if stat_fn is None:
+                raise TransportNotPossible("stat not supported in this version")
+            return StatResult(stat_fn(relpath, -1))
+        finally:
+            self.add_connection(conn)
 
     def put_file(self, name, file, mode=0):
         raise TransportNotPossible("put_file not supported on Subversion")

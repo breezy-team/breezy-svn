@@ -16,6 +16,7 @@
 
 """Subversion transport tests."""
 
+import stat
 import subvertpy
 from subvertpy import ra
 from unittest import TestCase
@@ -25,6 +26,7 @@ from bzrlib.errors import (
     FileExists,
     InvalidURL,
     NoSuchFile,
+    TransportNotPossible,
     )
 
 from bzrlib.plugins.svn.tests import SubversionTestCase
@@ -144,7 +146,16 @@ class SvnRaTest(SubversionTestCase):
 
     def test_has_dot(self):
         t = SvnRaTransport(self.make_repository('a'))
-        self.assertEqual(False, t.has("."))
+        self.assertEqual(True, t.has("."))
+
+    def test_stat(self):
+        t = SvnRaTransport(self.make_repository('a'))
+        try:
+            statob = t.stat(".")
+        except TransportNotPossible:
+            pass
+        else:
+            self.assertTrue(stat.S_ISDIR(statob.st_mode))
 
     def test_has_nonexistent(self):
         t = SvnRaTransport(self.make_repository('a'))
