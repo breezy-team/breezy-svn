@@ -301,6 +301,8 @@ class SvnRaTransport(Transport):
                     self.st_mode = stat.S_IFDIR
                 elif svn_stat['kind'] == subvertpy.NODE_FILE:
                     self.st_mode = stat.S_IFREG
+                self.st_size = svn_stat['size']
+                self.st_mtime = svn_stat['time']
         conn = self.get_connection()
         try:
             stat_fn = getattr(conn, "stat", None)
