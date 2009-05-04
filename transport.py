@@ -583,6 +583,10 @@ class MutteringRemoteAccess(object):
         mutter('svn check-path -r%d %s' % (revnum, path))
         return self.actual.check_path(path, revnum)
 
+    def stat(self, path, revnum):
+        mutter('svn stat -r%d %s' % (revnum, path))
+        return self.actual.stat(path, revnum)
+
     def has_capability(self, cap):
         return self.actual.has_capability(cap)
 
