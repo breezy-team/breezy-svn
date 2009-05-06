@@ -152,6 +152,8 @@ class TrunkLayout(RepositoryLayout):
 TrunkLayout0 = partial(TrunkLayout, 0)
 TrunkLayout1 = partial(TrunkLayout, 1)
 TrunkLayout2 = partial(TrunkLayout, 2)
+TrunkLayout3 = partial(TrunkLayout, 3)
+TrunkLayout4 = partial(TrunkLayout, 4)
 
 
 class RootLayout(RepositoryLayout):
