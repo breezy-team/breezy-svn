@@ -48,6 +48,7 @@ from bzrlib.decorators import (
     )
 from bzrlib.errors import (
     DivergedBranches,
+    LocalRequiresBoundBranch,
     NoSuchRevision,
     NotBranchError,
     UnstackableBranchFormat,
@@ -656,8 +657,10 @@ class InterSvnOtherBranch(InterBranch):
 
     def pull(self, overwrite=False, stop_revision=None, 
              _hook_master=None, run_hooks=True, possible_transports=None,
-             _override_hook_target=None):
+             _override_hook_target=None, local=False):
         """See InterBranch.pull()."""
+        if local:
+            raise LocalRequiresBoundBranch()
         result = SubversionSourcePullResult()
         if _override_hook_target is None:
             result.target_branch = self
@@ -785,8 +788,10 @@ class InterOtherSvnBranch(InterBranch):
 
     def pull(self, overwrite=False, stop_revision=None, 
              _hook_master=None, run_hooks=True, possible_transports=None,
-             _push_merged=None, _override_svn_revprops=None):
+             _push_merged=None, _override_svn_revprops=None, local=False):
         """See InterBranch.pull()."""
+        if local:
+            raise LocalRequiresBoundBranch()
         result = SubversionTargetPullResult()
         result.source_branch = self.source
         result.master_branch = None

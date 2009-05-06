@@ -639,12 +639,13 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         self.read_working_inventory()
 
     def pull(self, source, overwrite=False, stop_revision=None, 
-             delta_reporter=None, possible_transports=None):
+             delta_reporter=None, possible_transports=None, local=False):
         """Pull in changes from another branch into this working tree."""
         # FIXME: Use delta_reporter
         # FIXME: Use source
         # FIXME: Use overwrite
-        result = self.branch.pull(source, overwrite=overwrite, stop_revision=stop_revision)
+        result = self.branch.pull(source, overwrite=overwrite, stop_revision=stop_revision, 
+                                  local=local)
         fetched = self._update(self.branch.get_revnum())
         self._update_base_revnum(fetched)
         return result
