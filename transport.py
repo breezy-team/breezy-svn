@@ -308,7 +308,10 @@ class SvnRaTransport(Transport):
             stat_fn = getattr(conn, "stat", None)
             if stat_fn is None:
                 raise TransportNotPossible("stat not supported in this version")
-            return StatResult(stat_fn(relpath, -1))
+            try:
+                return StatResult(stat_fn(relpath, -1))
+            except NotImplementedError:
+                raise TransportNotPossible("stat not supported in this version")
         finally:
             self.add_connection(conn)
 
