@@ -1,0 +1,42 @@
+TDB cache file format
+=====================
+
+Parents
+-------
+
+A single entry is stored per revision id. The key is named::
+
+	parent/<revid>
+
+The data is a space-separated joined list of parent revids.
+
+Revision id map
+---------------
+
+Two entries are stored per revision id::
+
+ * native-revid/<revid> as key, for the value: <min-revnum> <max-revnum> mapping path
+
+To remember the last checked revnum per layout, the following key is used::
+
+	revidmap-last/<layout>
+
+
+Revision info cache
+-------------------
+
+The revision info is stored in various separate keys. 
+    
+    original-mapping/<revnum> <path>
+	revno/<revnum> <mapping> <path>
+	hidden/<revnum> <mapping> <path>
+	lhs-parent-revid/<revnum> <mapping> <path>
+
+Logwalker
+---------
+
+revprops/<revnum>
+revprops-complete/<revnum>
+paths/<revnum>
+
+.. vim: ft=rest
