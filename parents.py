@@ -19,8 +19,6 @@ from bzrlib.trace import mutter
 from bzrlib.revision import NULL_REVISION
 from bzrlib.versionedfile import ConstantMapper
 
-from bzrlib.plugins.svn.cache import CacheTable
-
 class DiskCachingParentsProvider(object):
     """Parents provider that caches parents in a SQLite database."""
 
@@ -47,29 +45,10 @@ class DiskCachingParentsProvider(object):
         return ret
 
 
-class ParentsCache(CacheTable):
-
-    def _create_table(self):
-        self.cachedb.executescript("""
-        create table if not exists parent (rev text, parent text, idx int);
-        create unique index if not exists rev_parent_idx on parent (rev, idx);
-        create unique index if not exists rev_parent on parent (rev, parent);
-        """)
-        self._commit_interval = 200
+class ParentsCache(object):
 
     def insert_parents(self, revid, parents):
-        if "cache" in debug.debug_flags:
-            mutter('insert parents: %r -> %r', revid, parents)
-        if len(parents) == 0:
-            self.cachedb.execute("replace into parent (rev, parent, idx) values (?, NULL, -1)", (revid,))
-        else:
-            for i, p in enumerate(parents):
-                self.cachedb.execute("replace into parent (rev, parent, idx) values (?, ?, ?)", (revid, p, i))
+        raise NotImplementedError(self.insert_parents)
 
     def lookup_parents(self, revid):
-        if "cache" in debug.debug_flags:
-            mutter('lookup parents: %r', revid)
-        rows = self.cachedb.execute("select parent from parent where rev = ? order by idx", (revid, )).fetchall()
-        if len(rows) == 0:
-            return None
-        return tuple([row[0].encode("utf-8") for row in rows if row[0] is not None])
+        raise NotImplementedError(self.lookup_parents)

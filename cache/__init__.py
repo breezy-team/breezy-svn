@@ -74,64 +74,6 @@ See http://bazaar-vcs.org/BzrForeignBranches/Subversion for details.
     return cache_dir
 
 
-def check_pysqlite_version(sqlite3):
-    """Check that sqlite library is compatible.
-
-    """
-    if (sqlite3.sqlite_version_info[0] < 3 or 
-            (sqlite3.sqlite_version_info[0] == 3 and 
-             sqlite3.sqlite_version_info[1] < 3)):
-        trace.warning('Needs at least sqlite 3.3.x')
-        raise bzrlib.errors.BzrError("incompatible sqlite library")
-
-try:
-    try:
-        import sqlite3
-        check_pysqlite_version(sqlite3)
-    except (ImportError, bzrlib.errors.BzrError), e: 
-        from pysqlite2 import dbapi2 as sqlite3
-        check_pysqlite_version(sqlite3)
-except:
-    trace.warning('Needs at least Python2.5 or Python2.4 with the pysqlite2 '
-            'module')
-    raise bzrlib.errors.BzrError("missing sqlite library")
-
-connect_cachefile = sqlite3.connect
-
-class CacheTable(object):
-    """Simple base class for SQLite-based caches."""
-    def __init__(self, cache_db=None):
-        if cache_db is None:
-            self.cachedb = sqlite3.connect(":memory:")
-        else:
-            self.cachedb = cache_db
-        self._commit_interval = 500
-        self._create_table()
-        self.cachedb.commit()
-        self._commit_countdown = self._commit_interval
-
-    def commit(self):
-        """Commit the changes to the database."""
-        self.cachedb.commit()
-        self._commit_countdown = self._commit_interval
-
-    def commit_conditionally(self):
-        self._commit_countdown -= 1
-        if self._commit_countdown <= 0:
-            self.commit()
-
-    def _create_table(self):
-        pass
-
-    @staticmethod
-    def mutter(text, *args):
-        if "cache" in debug.debug_flags:
-            trace.mutter(text, *args)
-
-
-CACHE_DB_VERSION = 5
-
-
 _cachedbs = threading.local()
 def cachedbs():
     """Get a cache for this thread's db connections."""
@@ -157,13 +99,6 @@ class RepositoryCache(object):
             os.mkdir(dir)
         return dir
 
-    def open_sqlite(self):
-        cache_file = os.path.join(self.create_cache_dir(), 'cache-v%d' % CACHE_DB_VERSION)
-        assert isinstance(cache_file, str)
-        if not cachedbs().has_key(cache_file):
-            cachedbs()[cache_file] = connect_cachefile(cache_file.decode(osutils._fs_enc).encode("utf-8"))
-        return cachedbs()[cache_file]
-
     def open_transport(self):
         return get_transport(self.create_cache_dir().decode(osutils._fs_enc))
 
@@ -172,17 +107,16 @@ class RepositoryCache(object):
         return FileIdMapCache(self.open_transport())
 
     def open_revid_map(self):
-        from bzrlib.plugins.svn.revids import RevisionIdMapCache
-        return RevisionIdMapCache(self.open_sqlite())
+        raise NotImplementedError(self.open_revid_map)
 
     def open_logwalker(self):
-        from bzrlib.plugins.svn.logwalker import LogCache
-        return LogCache(self.open_sqlite())
+        raise NotImplementedError(self.open_logwalker)
 
     def open_revision_cache(self):
-        from bzrlib.plugins.svn.revids import RevisionInfoCache
-        return RevisionInfoCache(self.open_sqlite())
+        raise NotImplementedError(self.open_revision_cache)
 
     def open_parents(self):
-        from bzrlib.plugins.svn.parents import ParentsCache
-        return ParentsCache(self.open_sqlite())
+        raise NotImplementedError(self.open_parents)
+
+from bzrlib.plugins.svn.cache.sql import SqliteRepositoryCache
+cache_cls = SqliteRepositoryCache

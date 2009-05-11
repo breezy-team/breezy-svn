@@ -25,7 +25,6 @@ from bzrlib.errors import (
     )
 from bzrlib.lru_cache import LRUCache
 
-from bzrlib.plugins.svn.cache import CacheTable
 from bzrlib.plugins.svn.errors import (
     InvalidBzrSvnRevision,
     InvalidPropertyValue,
@@ -257,24 +256,11 @@ class DiskCachingRevidMap(object):
         return (uuid, branch_path, revnum), mapping
 
 
-class RevisionIdMapCache(CacheTable):
+class RevisionIdMapCache(object):
     """Revision id mapping store. 
 
     Stores mapping from revid -> (path, revnum, mapping)
     """
-    def _create_table(self):
-        self.cachedb.executescript("""
-        create table if not exists revmap (revid text, path text, min_revnum integer, max_revnum integer, mapping text);
-        create index if not exists revid on revmap (revid);
-        create unique index if not exists revid_path_mapping on revmap (revid, path, mapping);
-        drop index if exists lookup_branch_revnum;
-        create index if not exists lookup_branch_revnum_non_unique on revmap (max_revnum, min_revnum, path, mapping);
-        create table if not exists revids_seen (layout text, max_revnum int);
-        create unique index if not exists layout on revids_seen (layout);
-        """)
-        # Revisions ids are quite expensive
-        self._commit_interval = 500
-
     def set_last_revnum_checked(self, layout, revnum):
         """Remember the latest revision number that has been checked
         for a particular layout.
@@ -282,8 +268,7 @@ class RevisionIdMapCache(CacheTable):
         :param layout: Repository layout.
         :param revnum: Revision number.
         """
-        self.cachedb.execute("replace into revids_seen (layout, max_revnum) VALUES (?, ?)", (layout, revnum))
-        self.commit_conditionally()
+        raise NotImplementedError(self.set_last_revnum_checked)
 
     def last_revnum_checked(self, layout):
         """Retrieve the latest revision number that has been checked 
@@ -292,13 +277,8 @@ class RevisionIdMapCache(CacheTable):
         :param layout: Repository layout.
         :return: Last revision number checked or 0.
         """
-        self.mutter("last revnum checked %r", layout)
-        ret = self.cachedb.execute(
-            "select max_revnum from revids_seen where layout = ?", (layout,)).fetchone()
-        if ret is None:
-            return 0
-        return int(ret[0])
-    
+        raise NotImplementedError(self.last_revnum_checked)
+
     def lookup_revid(self, revid):
         """Lookup the details for a particular revision id.
 
@@ -306,17 +286,7 @@ class RevisionIdMapCache(CacheTable):
         :return: Tuple with path inside repository, minimum revision number, maximum revision number and 
             mapping.
         """
-        assert isinstance(revid, str)
-        self.mutter("lookup revid %r", revid)
-        ret = self.cachedb.execute(
-            "select path, min_revnum, max_revnum, mapping from revmap where revid=? order by abs(min_revnum-max_revnum) asc", (revid,)).fetchone()
-        if ret is None:
-            raise NoSuchRevision(self, revid)
-        (path, min_revnum, max_revnum, mapping) = (ret[0].encode("utf-8"), int(ret[1]), int(ret[2]), ret[3].encode("utf-8"))
-        if min_revnum > max_revnum:
-            return (path, max_revnum, min_revnum, mapping)
-        else:
-            return (path, min_revnum, max_revnum, mapping)
+        raise NotImplementedError(self.lookup_revid)
 
     def lookup_branch_revnum(self, revnum, path, mapping):
         """Lookup a revision by revision number, branch path and mapping.
@@ -325,17 +295,7 @@ class RevisionIdMapCache(CacheTable):
         :param path: Subversion branch path.
         :param mapping: Mapping
         """
-        assert isinstance(revnum, int)
-        assert isinstance(path, str)
-        assert isinstance(mapping, str)
-        row = self.cachedb.execute(
-                "select revid from revmap where max_revnum=? and min_revnum=? and path=? and mapping=?", (revnum, revnum, path, mapping)).fetchone()
-        if row is not None:
-            ret = str(row[0])
-        else:
-            ret = None
-        self.mutter("lookup branch,revnum %r:%r -> %r", path, revnum, ret)
-        return ret
+        raise NotImplementedError(self.lookup_branch_revnum)
 
     def insert_revid(self, revid, branch, min_revnum, max_revnum, mapping):
         """Insert a revision id into the revision id cache.
@@ -349,34 +309,10 @@ class RevisionIdMapCache(CacheTable):
         :param mapping: Name of the mapping with which the revision 
                        was found
         """
-        assert revid is not None and revid != ""
-        assert isinstance(mapping, str)
-        assert isinstance(branch, str)
-        assert isinstance(min_revnum, int) and isinstance(max_revnum, int)
-        assert min_revnum <= max_revnum
-        self.mutter("insert revid %r:%r-%r -> %r", branch, min_revnum, max_revnum, revid)
-        if min_revnum == max_revnum:
-            cursor = self.cachedb.execute(
-                "update revmap set min_revnum = ?, max_revnum = ? WHERE revid=? AND path=? AND mapping=?",
-                (min_revnum, max_revnum, revid, branch, mapping))
-        else:
-            cursor = self.cachedb.execute(
-                "update revmap set min_revnum = MAX(min_revnum,?), max_revnum = MIN(max_revnum, ?) WHERE revid=? AND path=? AND mapping=?",
-                (min_revnum, max_revnum, revid, branch, mapping))
-        if cursor.rowcount == 0:
-            self.cachedb.execute(
-                "insert into revmap (revid,path,min_revnum,max_revnum,mapping) VALUES (?,?,?,?,?)",
-                (revid, branch, min_revnum, max_revnum, mapping))
+        raise NotImplementedError(self.insert_revid)
 
 
-class RevisionInfoCache(CacheTable):
-
-    def _create_table(self):
-        self.cachedb.executescript("""
-        create table if not exists revmetainfo (path text, revnum integer, mapping text, revid text, revno int, hidden int, original_mapping text, stored_lhs_parent_revid text);
-        create unique index if not exists revmeta_path_mapping on revmetainfo(revnum, path, mapping);
-        """)
-        self._commit_interval = 500
+class RevisionInfoCache(object):
 
     def insert_revision(self, foreign_revid, mapping, revid, revno, hidden, 
             original_mapping, stored_lhs_parent_revid):
@@ -390,11 +326,7 @@ class RevisionInfoCache(CacheTable):
         :param original_mapping: Original mapping used
         :param stored_lhs_parent_revid: Stored lhs parent revision
         """
-        if original_mapping is not None:
-            orig_mapping_name = original_mapping.name
-        else:
-            orig_mapping_name = None
-        self.cachedb.execute("insert into revmetainfo (path, revnum, mapping, revid, revno, hidden, original_mapping, stored_lhs_parent_revid) values (?, ?, ?, ?, ?, ?, ?, ?)", (foreign_revid[1], foreign_revid[2], mapping.name, revid, revno, hidden, orig_mapping_name, stored_lhs_parent_revid))
+        raise NotImplementedError(self.insert_revision)
 
     def get_revision(self, foreign_revid, mapping):
         """Get the revision metadata info for a (foreign_revid, mapping) tuple.
@@ -404,21 +336,7 @@ class RevisionInfoCache(CacheTable):
         :return: Tuple with revid, stored revno, hidden, original_mapping, 
             stored_lhs_parent_revid
         """
-        # Will raise KeyError if not present
-        # returns tuple with (revid, revno, hidden, original_mapping, stored_lhs_parent_revid)
-        row = self.cachedb.execute("select revid, revno, hidden, original_mapping, stored_lhs_parent_revid from revmetainfo where path = ? and revnum = ? and mapping = ?", (foreign_revid[1], foreign_revid[2], mapping.name)).fetchone()
-        if row is None:
-            raise KeyError((foreign_revid, mapping))
-        else:
-            if row[3] is None:
-                original_mapping = None
-            else:
-                original_mapping = mapping_registry.parse_mapping_name("svn-" + row[3].encode("utf-8"))
-            if row[4] is None:
-                stored_lhs_parent_revid = None
-            else:
-                stored_lhs_parent_revid = row[4].encode("utf-8")
-            return (row[0].encode("utf-8"), row[1], row[2], original_mapping, stored_lhs_parent_revid)
+        raise NotImplementedError(self.get_revision)
 
     def get_original_mapping(self, foreign_revid):
         """Find the original mapping for a revision.
@@ -426,10 +344,4 @@ class RevisionInfoCache(CacheTable):
         :param foreign_revid: Foreign revision id
         :return: Mapping object or None
         """
-        row = self.cachedb.execute("select original_mapping from revmetainfo where path = ? and revnum = ?", (foreign_revid[1], foreign_revid[2])).fetchone()
-        if row is None:
-            raise KeyError(foreign_revid)
-        if row[0] is None:
-            return None
-        else:
-            return mapping_registry.parse_mapping_name("svn-" + row[0].encode("utf-8"))
+        raise NotImplementedError(self.get_original_mapping)

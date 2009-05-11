@@ -31,9 +31,6 @@ from bzrlib.errors import (
 from bzrlib.plugins.svn import (
     changes,
     )
-from bzrlib.plugins.svn.cache import (
-    CacheTable,
-    )
 from bzrlib.plugins.svn.transport import (
     SvnRaTransport,
     )
@@ -91,53 +88,18 @@ def iter_changes(paths, from_revnum, to_revnum, get_revision_paths,
         assert isinstance(revnum, int)
 
 
-
-class LogCache(CacheTable):
-    """Log browser cache table manager. The methods of this class
-    encapsulate the SQL commands used by CachingLogWalker to access
-    the log cache tables."""
-    
-    def __init__(self, cache_db=None):
-        CacheTable.__init__(self, cache_db)
-
-    def _create_table(self):
-        self.cachedb.executescript("""
-            create table if not exists changed_path(rev integer, action text, path text, copyfrom_path text, copyfrom_rev integer);
-            create index if not exists path_rev on changed_path(rev);
-            create unique index if not exists path_rev_path on changed_path(rev, path);
-            create unique index if not exists path_rev_path_action on changed_path(rev, path, action);
-
-            create table if not exists revprop(rev integer, name text, value text);
-            create table if not exists revinfo(rev integer, all_revprops int);
-            create index if not exists revprop_rev on revprop(rev);
-            create unique index if not exists revprop_rev_name on revprop(rev, name);
-            create unique index if not exists revinfo_rev on revinfo(rev);
-        """)
+class LogCache(object):
+    """Log browser cache. """
     
     def find_latest_change(self, path, revnum):
-        if path == "":
-            return self.cachedb.execute("select max(rev) from changed_path where rev <= ?", (revnum,)).fetchone()[0]
-        return self.cachedb.execute("""
-            select max(rev) from changed_path
-            where rev <= ?
-            and (path=?
-                 or path glob ?
-                 or (? glob (path || '/*')
-                     and action in ('A', 'R')))
-        """, (revnum, path, path + "/*", path)).fetchone()[0]
+        raise NotImplementedError(self.find_latest_change)
 
     def get_revision_paths(self, revnum):
         """Return all history information for a given revision number.
         
         :param revnum: Revision number of revision.
         """
-        result = self.cachedb.execute("select path, action, copyfrom_path, copyfrom_rev from changed_path where rev=?", (revnum,))
-        paths = {}
-        for p, act, cf, cr in result:
-            if cf is not None:
-                cf = cf.encode("utf-8")
-            paths[p.encode("utf-8")] = (act, cf, cr)
-        return paths
+        raise NotImplementedError(self.get_revision_paths)
 
     def insert_paths(self, rev, orig_paths):
         """Insert new history information into the cache.
@@ -145,43 +107,27 @@ class LogCache(CacheTable):
         :param rev: Revision number of the revision
         :param orig_paths: SVN-style changes dictionary
         """
-        if orig_paths is None or orig_paths == {}:
-            return
-        new_paths = []
-        for p in orig_paths:
-            copyfrom_path = orig_paths[p][1]
-            if copyfrom_path is not None:
-                copyfrom_path = copyfrom_path.strip("/").decode("utf-8")
-
-            new_paths.append((rev, p.strip("/").decode("utf-8"), orig_paths[p][0], copyfrom_path, orig_paths[p][2]))
-
-        self.cachedb.executemany("replace into changed_path (rev, path, action, copyfrom_path, copyfrom_rev) values (?, ?, ?, ?, ?)", new_paths)
+        raise NotImplementedError(self.insert_paths)
     
     def drop_revprops(self, revnum):
-        self.cachedb.execute("update revinfo set all_revprops = 0 where rev = ?", (revnum,))
+        raise NotImplementedError(self.drop_revprops)
 
     def get_revprops(self, revnum):
         """Retrieve all the cached revision properties.
 
         :param revnum: Revision number of revision to retrieve revprops for.
         """
-        result = self.cachedb.execute("select name, value from revprop where rev = ?", (revnum,))
-        return dict((k.encode("utf-8"), v.encode("utf-8")) for (k, v) in result)
+        raise NotImplementedError(self.get_revprops)
 
     def insert_revprops(self, revision, revprops):
-        if revprops is None:
-            return
-        self.cachedb.executemany("replace into revprop (rev, name, value) values (?, ?, ?)", [(revision, name.decode("utf-8", "replace"), value.decode("utf-8", "replace")) for (name, value) in revprops.iteritems()])
+        raise NotImplementedError(self.insert_revprops)
 
     def has_all_revprops(self, revnum):
         """Check whether all revprops for a revision have been cached.
 
         :param revnum: Revision number of the revision.
         """
-        row = self.cachedb.execute("select all_revprops from revinfo where rev = ?", (revnum,)).fetchone()
-        if row is None:
-            return False
-        return row[0]
+        raise NotImplementedError(self.has_all_revprops)
 
     def insert_revinfo(self, rev, all_revprops):
         """Insert metadata for a revision.
@@ -189,18 +135,13 @@ class LogCache(CacheTable):
         :param rev: Revision number of the revision.
         :param all_revprops: Whether or not the full revprops have been stored.
         """
-        self.cachedb.execute("""
-            replace into revinfo (rev, all_revprops) values (?, ?)
-        """, (rev, all_revprops))
+        raise NotImplementedError(self.insert_revinfo)
 
     def last_revnum(self):
-        saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM revinfo").fetchone()[0]
-        if saved_revnum is None:
-            return 0
-        return saved_revnum
+        raise NotImplementedError(self.last_revnum)
 
 
-class CachingLogWalker(CacheTable):
+class CachingLogWalker(object):
     """Subversion log browser."""
 
     def __init__(self, actual, cache):

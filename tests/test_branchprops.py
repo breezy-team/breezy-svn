@@ -30,7 +30,7 @@ class TestBranchProps(SubversionTestCase):
         super(TestBranchProps, self).setUp()
 
     def get_log_walker(self, transport):
-        return CachingLogWalker(LogWalker(transport=transport), LogCache())
+        return LogWalker(transport=transport)
 
     def test_get_old_properties(self):
         repos_url = self.make_repository('d')

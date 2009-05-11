@@ -355,7 +355,7 @@ class SvnRepository(ForeignRepository):
                 use_cache = set(["fileids", "revids", "revinfo", "log"])
 
         if use_cache:
-            cache_obj = cache.RepositoryCache(self.uuid)
+            cache_obj = cache.cache_cls(self.uuid)
 
         if "log" in use_cache:
             self._log = logwalker.CachingLogWalker(self._log,

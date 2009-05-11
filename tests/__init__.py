@@ -30,6 +30,7 @@ from bzrlib import (
     urlutils,
     )
 from bzrlib.plugins.svn import cache
+from bzrlib.plugins.svn.cache import sql
 
 import subvertpy.tests
 
@@ -42,12 +43,15 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         subvertpy.tests.SubversionTestCase.setUp(self)
         subvertpy.tests.SubversionTestCase.tearDown(self)
         TestCaseInTempDir.setUp(self)
-        self._old_connect_cachefile = cache.connect_cachefile
-        cache.connect_cachefile = lambda path: cache.sqlite3.connect(":memory:")
+        self._old_connect_cachefile = sql.connect_cachefile
+        self.addCleanup(self.restore_cachefile)
+        sql.connect_cachefile = lambda path: sql.sqlite3.connect(":memory:")
 
     def tearDown(self):
         TestCaseInTempDir.tearDown(self)
-        cache.connect_cachefile = self._old_connect_cachefile
+
+    def restore_cachefile(self):
+        sql.connect_cachefile = self._old_connect_cachefile
 
     def make_local_bzrdir(self, repos_path, relpath):
         """Create a repository and checkout."""
