@@ -17,22 +17,21 @@
 """Tests for the bzr-svn plugin."""
 
 import os
+import subvertpy.tests
 import sys
 
-import bzrlib
-from bzrlib.bzrdir import BzrDir
-from bzrlib.tests import TestCaseInTempDir
-from bzrlib.trace import mutter
-from bzrlib.workingtree import WorkingTree
 
 from bzrlib import (
     osutils,
     urlutils,
     )
-from bzrlib.plugins.svn import cache
-from bzrlib.plugins.svn.cache import sql
+from bzrlib.bzrdir import (
+    BzrDir,
+    )
+from bzrlib.tests import (
+    TestCaseInTempDir,
+    )
 
-import subvertpy.tests
 
 class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
@@ -43,15 +42,31 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         subvertpy.tests.SubversionTestCase.setUp(self)
         subvertpy.tests.SubversionTestCase.tearDown(self)
         TestCaseInTempDir.setUp(self)
-        self._old_connect_cachefile = sql.connect_cachefile
-        self.addCleanup(self.restore_cachefile)
-        sql.connect_cachefile = lambda path: sql.sqlite3.connect(":memory:")
+
+        try:
+            from bzrlib.plugins.svn.cache import sqlitecache
+        except ImportError:
+            pass
+        else:
+            self._old_connect_sqlite = sqlitecache.connect_cachefile
+            def restore_sqlite():
+                sqlitecache.connect_cachefile = self._old_connect_sqlite
+            self.addCleanup(restore_sqlite)
+            sqlitecache.connect_cachefile = lambda path: sqlitecache.sqlite3.connect(":memory:")
+
+        try:
+            from bzrlib.plugins.svn.cache import tdbcache
+        except ImportError:
+            pass
+        else:
+            self._old_open_tdb = tdbcache.tdb_open
+            def restore_tdb():
+                tdbcache.tdb_open = self._old_open_tdb
+            self.addCleanup(restore_tdb)
+            tdbcache.tdb_open = lambda path: dict()
 
     def tearDown(self):
         TestCaseInTempDir.tearDown(self)
-
-    def restore_cachefile(self):
-        sql.connect_cachefile = self._old_connect_cachefile
 
     def make_local_bzrdir(self, repos_path, relpath):
         """Create a repository and checkout."""
