@@ -536,6 +536,7 @@ class TestCachingLogWalker(TestLogWalker):
 
 
 class TestLogCache(TestCase):
+
     def setUp(self):
         super(TestLogCache, self).setUp()
         self.cache = logwalker.LogCache()

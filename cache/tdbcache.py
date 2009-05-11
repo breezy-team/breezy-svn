@@ -38,6 +38,9 @@ from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     )
 
+def tdb_open(path):
+    return tdb.open(path, 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT)
+
 
 CACHE_DB_VERSION = 1
 
@@ -46,6 +49,9 @@ class CacheTable(object):
 
     def __init__(self, db):
         self.db = db
+
+    def commit_conditionally(self):
+        pass
 
 
 class RevisionIdMapCache(CacheTable):
@@ -82,8 +88,11 @@ class RevisionIdMapCache(CacheTable):
         :return: Tuple with path inside repository, minimum revision number, maximum revision number and 
             mapping.
         """
-        (min_revnum, max_revnum, mapping_name, path) = self.db["native-revid/%s" % revid].split(" ", 4)
-        return (path, int(min_revnum), int(max_revnum), mapping_registry.parse_mapping_name("svn-" + mapping_name))
+        try:
+            (min_revnum, max_revnum, mapping_name, path) = self.db["native-revid/%s" % revid].split(" ", 4)
+        except KeyError:
+            raise errors.NoSuchRevision(self, revid)
+        return (path, int(min_revnum), int(max_revnum), mapping_name)
 
     def lookup_branch_revnum(self, revnum, path, mapping):
         """Lookup a revision by revision number, branch path and mapping.
@@ -109,9 +118,10 @@ class RevisionIdMapCache(CacheTable):
         :param mapping: Name of the mapping with which the revision 
                        was found
         """
-        self.db["native-revid/%s" % revid] = "%d %d %s %s" % (min_revnum, max_revnum, mapping.name, branch)
+        mappingname = getattr(mapping, "name", mapping)
+        self.db["native-revid/%s" % revid] = "%d %d %s %s" % (min_revnum, max_revnum, mappingname, branch)
         if min_revnum == max_revnum:
-            self.db["foreign-revid/%d %s %s" % (min_revnum, mapping.name, branch)] = revid
+            self.db["foreign-revid/%d %s %s" % (min_revnum, mappingname, branch)] = revid
 
 
 class RevisionInfoCache(CacheTable):
@@ -128,7 +138,7 @@ class RevisionInfoCache(CacheTable):
         :param original_mapping: Original mapping used
         :param stored_lhs_parent_revid: Stored lhs parent revision
         """
-        if orig_mapping is not None:
+        if original_mapping is not None:
             self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])] = original_mapping.name
         basekey = "%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
         self.db["revno/%s" % basekey] = str(revno)
@@ -158,7 +168,7 @@ class RevisionInfoCache(CacheTable):
         :param foreign_revid: Foreign revision id
         :return: Mapping object or None
         """
-        return mapping_registry.parse_mapping_name("svn-" + self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1]))
+        return mapping_registry.parse_mapping_name("svn-" + self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])])
 
 
 class LogCache(CacheTable):
@@ -267,10 +277,10 @@ class TdbRepositoryCache(RepositoryCache):
         cache_file = os.path.join(self.create_cache_dir(), 'cache.tdb')
         assert isinstance(cache_file, str)
         if not cachedbs().has_key(cache_file):
-            cachedbs()[cache_file] = tdb.open(cache_file, 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT)
+            cachedbs()[cache_file] = tdb_open(cache_file)
         db = cachedbs()[cache_file]
         if not "version" in db:
-            db["version"] = CACHE_DB_VERSION
+            db["version"] = str(CACHE_DB_VERSION)
         else:
             assert int(db["version"]) == CACHE_DB_VERSION
         return db

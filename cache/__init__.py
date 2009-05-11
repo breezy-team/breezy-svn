@@ -118,5 +118,9 @@ class RepositoryCache(object):
     def open_parents(self):
         raise NotImplementedError(self.open_parents)
 
-from bzrlib.plugins.svn.cache.sql import SqliteRepositoryCache
-cache_cls = SqliteRepositoryCache
+try:
+    from bzrlib.plugins.svn.cache.tdbcache import TdbRepositoryCache
+    cache_cls = TdbRepositoryCache
+except ImportError:
+    from bzrlib.plugins.svn.cache.sqlitecache import SqliteRepositoryCache
+    cache_cls = SqliteRepositoryCache
