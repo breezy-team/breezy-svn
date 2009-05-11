@@ -94,6 +94,7 @@ def test_suite():
     testmod_names = [
             'test_branch', 
             'test_branchprops', 
+            'test_cache',
             'test_changes',
             'test_checkout',
             'test_commit',
