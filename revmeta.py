@@ -820,7 +820,8 @@ class CachingRevisionMetadata(RevisionMetadata):
         assert mapping is not None
         (self._revid[mapping], self._distance_to_null[mapping], self._hidden[mapping],
          self._original_mapping, self._stored_lhs_parent_revid[mapping]) = \
-                 self._revinfo_cache.get_revision(self.get_foreign_revid(), mapping)
+                 self._revinfo_cache.get_revision(self.get_foreign_revid(),
+                                                  mapping)
 
     def get_original_mapping(self):
         if self._original_mapping_set:
@@ -1176,7 +1177,8 @@ class RevisionMetadataBrowser(object):
             # Dictionary with the last revision known for each branch
             # Report the new revisions
             for bp in changed_bps:
-                revmeta = self._provider.get_revision(bp, revnum, paths, revprops, metaiterator=self)
+                revmeta = self._provider.get_revision(bp, revnum, paths,
+                    revprops, metaiterator=self)
                 assert revmeta is not None
                 for c in self._ancestors[bp]:
                     c._set_direct_lhs_parent_revmeta(revmeta)
@@ -1261,20 +1263,27 @@ class RevisionMetadataProvider(object):
                                  revprops, changed_fileprops=changed_fileprops,
                                  fileprops=fileprops, metaiterator=metaiterator)
 
+    def add_metaiterator(self, iterator):
+        self._open_metaiterators.append(iterator)
+
     def lookup_revision(self, path, revnum, revprops=None):
         """Lookup a revision, optionally checking whether there are any 
         unchecked metaiterators that perhaps contain the revision."""
-        # finish fetching any open revisionmetadata branches for 
-        # which the latest fetched revnum > revnum
-        for mb in self._open_metaiterators:
-            if (path, revnum) in self._revmeta_cache:
-                break
-            mb.fetch_until(revnum)
+        if not getattr(self._log, "cache", False):
+            # finish fetching any open revisionmetadata branches for 
+            # which the latest fetched revnum > revnum
+            for mb in self._open_metaiterators:
+                if self.in_cache(path, revnum):
+                    break
+                mb.fetch_until(revnum)
         return self.get_revision(path, revnum, revprops=revprops)
 
     def finish_metaiterators(self):
         for mb in self._open_metaiterators:
             mb.fetch_until(0)
+
+    def in_cache(self, path, revnum):
+        return (path, revnum) in self._revmeta_cache
 
     def get_revision(self, path, revnum, changes=None, revprops=None, 
                      changed_fileprops=None, fileprops=None, metaiterator=None):
@@ -1282,7 +1291,7 @@ class RevisionMetadataProvider(object):
         assert isinstance(path, str)
         assert isinstance(revnum, int)
 
-        if (path, revnum) in self._revmeta_cache:
+        if self.in_cache(path, revnum):
             cached = self._revmeta_cache[path,revnum]
             if changes is not None:
                 cached.paths = changes
@@ -1349,7 +1358,7 @@ class RevisionMetadataProvider(object):
             return ret
         metabranch = RevisionMetadataBranch(self, limit)
         metabranch._get_next = imap(convert, history_iter).next
-        self._open_metaiterators.append(metabranch)
+        self.add_metaiterator(metabranch)
         return metabranch
 
     def iter_all_revisions(self, layout, check_unusual_path, from_revnum, 
@@ -1387,7 +1396,7 @@ class RevisionMetadataProvider(object):
         
         browser = RevisionMetadataBrowser(prefixes, from_revnum, to_revnum, 
                                           layout, self, project, pb=pb)
-        self._open_metaiterators.append(browser)
+        self.add_metaiterator(browser)
         for kind, item in browser:
             if kind != "revision" or check_unusual_path(item.branch_path):
                 yield kind, item
