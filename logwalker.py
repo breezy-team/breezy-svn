@@ -21,7 +21,9 @@
 import subvertpy
 
 from bzrlib import (
+    debug,
     ui,
+    trace,
     urlutils,
     )
 from bzrlib.errors import (
@@ -151,6 +153,10 @@ class CachingLogWalker(object):
         self._transport = actual._transport
         self.saved_revnum = self.cache.last_revnum()
         self._latest_revnum = None
+
+    def mutter(self, text, *args, **kwargs):
+        if "logwalker" in debug.debug_flags:
+            trace.mutter(text, *args, **kwargs)
 
     def find_latest_change(self, path, revnum):
         """Find latest revision that touched path.

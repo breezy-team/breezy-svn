@@ -50,6 +50,9 @@ class CacheTable(object):
     def __init__(self, db):
         self.db = db
 
+    def commit(self):
+        pass
+
     def commit_conditionally(self):
         pass
 
@@ -193,6 +196,7 @@ class LogCache(CacheTable):
         
         :param revnum: Revision number of revision.
         """
+        ret = {}
         db = bdecode(self.db["paths/%d" % revnum])
         for key, (action, cp, cr) in db.iteritems():
             if cp == "" and cr == -1:
@@ -213,12 +217,14 @@ class LogCache(CacheTable):
         for p in orig_paths:
             copyfrom_path = orig_paths[p][1]
             if copyfrom_path is not None:
-                copyfrom_path = copyfrom_path.strip("/").decode("utf-8")
+                copyfrom_path = copyfrom_path.strip("/")
             else:
                 copyfrom_path = ""
                 assert orig_paths[p][2] == -1
             new_paths[p.strip("/")] = (orig_paths[p][0], copyfrom_path, orig_paths[p][2])
-        self.db["paths/%d" % revnum] = bencode(new_paths)
+        x = bencode(new_paths)
+        assert type(x) == str, "%r not string" % x
+        self.db["paths/%d" % rev] = x
     
     def drop_revprops(self, revnum):
         self.db["revprops/%d" % revnum] = bencode({})
@@ -239,7 +245,7 @@ class LogCache(CacheTable):
         :param revnum: Revision number of the revision.
         """
         try:
-            return bool(self.db["revprops-complete/%d" % revnum])
+            return bool(int(self.db["revprops-complete/%d" % revnum]))
         except KeyError:
             return False
 
@@ -249,13 +255,19 @@ class LogCache(CacheTable):
         :param rev: Revision number of the revision.
         :param all_revprops: Whether or not the full revprops have been stored.
         """
-        self.db["revprops-complete/%d" % rev] = str(all_revprops)
+        self.db["revprops-complete/%d" % rev] = str(int(all_revprops))
 
     def last_revnum(self):
-        saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM revinfo").fetchone()[0]
-        if saved_revnum is None:
-            return 0
-        return saved_revnum
+        min = 0
+        max = 1
+        while ("revprops-complete/%d" % max) in self.db:
+            min = max
+            max *= 2
+        # FIXME: This could be more efficient
+        for i in xrange(max-1, min-1, -1):
+            if ("revprops-complete/%d" % i) in self.db:
+                return i
+        return 0
 
 
 class ParentsCache(CacheTable):
