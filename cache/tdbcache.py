@@ -30,6 +30,9 @@ from bzrlib.util.bencode import (
     bencode,
     )
 
+from bzrlib.plugins.svn import (
+    changes,
+    )
 from bzrlib.plugins.svn.cache import (
     RepositoryCache,
     cachedbs,
@@ -147,7 +150,8 @@ class RevisionInfoCache(CacheTable):
             orig_mapping_name = ""
         self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])] = orig_mapping_name
         basekey = "%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
-        self.db["revno/%s" % basekey] = str(revno)
+        if revno is not None:
+            self.db["revno/%s" % basekey] = "%d" % revno
         self.db["hidden/%s" % basekey] = str(int(hidden))
         self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
         if stored_lhs_parent_revid:
@@ -163,7 +167,10 @@ class RevisionInfoCache(CacheTable):
         """
         basekey = "%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
         revid = self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])]
-        revno = int(self.db["revno/%s" % basekey])
+        try:
+            revno = int(self.db["revno/%s" % basekey])
+        except KeyError:
+            revno = None
         hidden = bool(int(self.db["hidden/%s" % basekey]))
         original_mapping = self.get_original_mapping(foreign_revid)
         stored_lhs_parent_revid = self.db.get("lhs-parent-revid/%s" % basekey)
@@ -187,16 +194,16 @@ class LogCache(CacheTable):
     the log cache tables."""
     
     def find_latest_change(self, path, revnum):
-        if path == "":
-            return self.cachedb.execute("select max(rev) from changed_path where rev <= ?", (revnum,)).fetchone()[0]
-        return self.cachedb.execute("""
-            select max(rev) from changed_path
-            where rev <= ?
-            and (path=?
-                 or path glob ?
-                 or (? glob (path || '/*')
-                     and action in ('A', 'R')))
-        """, (revnum, path, path + "/*", path)).fetchone()[0]
+        for i in xrange(revnum, -1, -1):
+            try:
+                paths = self.get_revision_paths(i)
+            except KeyError:
+                continue
+            if path == "":
+                return i
+            if changes.changes_path(paths, path, True):
+                return i
+        raise AssertionError("Path %s:%d not found" % (path, revnum))
 
     def get_revision_paths(self, revnum):
         """Return all history information for a given revision number.
