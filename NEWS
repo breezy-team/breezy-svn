@@ -1,6 +1,13 @@
-bzr-svn 0.6.0					UNRELEASED
+bzr-svn 0.6.0                    UNRELEASED
 
   FEATURES
+
+   * New cache database based on TDB (http://tdb.samba.org/). This is 
+     significantly faster than the previous SQLite backend. The TDB 
+     backend will automatically be used if TDB is available; if not, 
+     the old SQLite database will be used.
+
+     TDB allows multiple writers to the database. (#185200)
 
    * The version-info command now prints 'svn revno' and 'svn uuid' 
      when used in Subversion checkouts.
@@ -10,9 +17,9 @@ bzr-svn 0.6.0					UNRELEASED
 
    * Now registers a fallback credentials store, allowing 
      Subversion credentials to be used for non-Subversion 
-	 access. This is useful accessing http(s) URLs will 
-	 always attempt to open using the native Bazaar formats 
-	 first.
+     access. This is useful accessing http(s) URLs will 
+     always attempt to open using the native Bazaar formats 
+     first.
 
   BUG FIXES
 
@@ -25,7 +32,7 @@ bzr-svn 0.6.0					UNRELEASED
    * utf8-encode basenames when looking up file ids in CHKInventories.
      
 
-bzr-svn 0.5.4					2009-04-08
+bzr-svn 0.5.4                    2009-04-08
 
   BUG FIXES
 
@@ -133,13 +140,13 @@ bzr-svn 0.5.3                   2009-03-10
 
    * Annotate run against Subversion repositories now works. (#335735)
 
-bzr-svn 0.5.2					2009-02-18
+bzr-svn 0.5.2                    2009-02-18
 
   BUG FIXES
 
    * Fix installation of cache module.
 
-bzr-svn 0.5.1					2009-02-17
+bzr-svn 0.5.1                    2009-02-17
 
   BUG FIXES
 
@@ -181,7 +188,7 @@ bzr-svn 0.5.1					2009-02-17
 
    * More efficient pull from Subversion branches, by using the local 
      branch ancestry to find out tag revision ids rather than the remote 
-	 Subversion branch.
+     Subversion branch.
 
    * Use VersionedFiles.insert_record_stream() rather than 
      VersionedFiles.add_lines(), should be slightly faster.
@@ -194,7 +201,7 @@ bzr-svn 0.5.1					2009-02-17
    
    * Use only a single graph object during push, rather than two.
 
-bzr-svn 0.5.0					2009-02-03
+bzr-svn 0.5.0                    2009-02-03
 
   BUG FIXES
 
@@ -217,7 +224,7 @@ bzr-svn 0.5.0					2009-02-03
 
    * Added --idmap-file option to svn-upgrade. 
 
-bzr-svn 0.5.0~rc2				2009-01-30
+bzr-svn 0.5.0~rc2                2009-01-30
 
   BUG FIXES
 
@@ -269,7 +276,7 @@ bzr-svn 0.5.0~rc2				2009-01-30
 
    * New implicit file id handling for copied directories.
     + Correctly handles implicit children when parent is copied from outside of the 
-	  branch. (#304134)
+      branch. (#304134)
     + Correctly handles file id map generation for some stacked branches. (#310916)
 
   * Handle children implicitly copied when replacing a directory with an older 
@@ -312,13 +319,13 @@ bzr-svn 0.5.0~rc2				2009-01-30
 
    * Bazaar can now use credentials stored in ~/.subversion/auth/, but this 
      requires pending changes in Bazaar to pass the realm along to 
-	 credentials providers.
+     credentials providers.
    
    * When possible, bzr-svn will now copy from existing paths in the repository
      when committing/pushing rather than duplicating the contents. 
-	 (generic implementation that also fixes #320742)
+     (generic implementation that also fixes #320742)
 
-bzr-svn 0.5.0~rc1			2008-12-08
+bzr-svn 0.5.0~rc1            2008-12-08
 
   CHANGES
 
@@ -326,12 +333,12 @@ bzr-svn 0.5.0~rc1			2008-12-08
 
    * Introduces a new Bzr<->Svn mapping format. Please 
      read UPGRADING for details.
-	 
-	 + Uses revision properties where possible. (#127736)
+     
+     + Uses revision properties where possible. (#127736)
 
      + Branching schemes are no longer used and are 
-	   replaced by "repository layouts", which are 
-	   much more flexible. (#130372)
+       replaced by "repository layouts", which are 
+       much more flexible. (#130372)
 
    * Will avoid browsing the full repository for bzr-revisions, 
      only closely related paths. (#158657)
@@ -388,13 +395,13 @@ bzr-svn 0.5.0~rc1			2008-12-08
 
     + Standard commit code provides commit notification. (#79333)
 
-bzr-svn 0.4.17	2008-01-13
+bzr-svn 0.4.17    2008-01-13
 
   BUG FIXES
 
    * Mark as compatible with Bazaar 1.11.
 
-bzr-svn 0.4.16	2008-12-06
+bzr-svn 0.4.16    2008-12-06
 
   BUG FIXES
 
@@ -414,7 +421,7 @@ bzr-svn 0.4.16	2008-12-06
 
    * Fix compatibility with bzr 1.10.
 
-bzr-svn 0.4.15	2008-11-10
+bzr-svn 0.4.15    2008-11-10
 
   BUG FIXES
 
@@ -432,7 +439,7 @@ bzr-svn 0.4.15	2008-11-10
    * Don't take over when pulling from WebDAV source (without Subversion)
      (#274840)
 
-bzr-svn 0.4.14	2008-11-03
+bzr-svn 0.4.14    2008-11-03
 
   BUG FIXES
 
@@ -447,7 +454,7 @@ bzr-svn 0.4.14	2008-11-03
 
    * Ignore tags that happen to be files. (#290664)
 
-bzr-svn 0.4.13	2008-09-24
+bzr-svn 0.4.13    2008-09-24
 
   BUG FIXES
 
@@ -467,7 +474,7 @@ bzr-svn 0.4.13	2008-09-24
 
    * Add support for using Apple keychain.
 
-bzr-svn 0.4.12	2008-09-01
+bzr-svn 0.4.12    2008-09-01
 
   BUG FIXES
 
@@ -482,7 +489,7 @@ bzr-svn 0.4.12	2008-09-01
 
    * No longer show backtrace when a generic DAV error occurs, as 
      this is usually a sign of a server-side error rather than a bug.
-	 (#255159)
+     (#255159)
 
    * Fix forward declarations of Python types, fixes 
      compilation on mingw. (#263284)
@@ -504,9 +511,9 @@ bzr-svn 0.4.12	2008-09-01
 
    * Use native Windows password prompter on Windows. (#263287)
 
-bzr-svn 0.4.11	2008-08-26
+bzr-svn 0.4.11    2008-08-26
 
-bzr-svn 0.4.11~rc2	2008-08-26
+bzr-svn 0.4.11~rc2    2008-08-26
 
   CHANGES
 
@@ -525,7 +532,7 @@ bzr-svn 0.4.11~rc2	2008-08-26
 
    * svn-import will now remove branches removed in Subversion. 
      (#246243). The --keep option can be specified to keep 
-	 branches removed in Subversion around.
+     branches removed in Subversion around.
 
    * Add --incremental option to bzr-svn for incremental imports.
 
@@ -538,7 +545,7 @@ bzr-svn 0.4.11~rc2	2008-08-26
 
    * Improve tag/branch discovery.
 
-bzr-svn 0.4.11~rc1	2008-08-08
+bzr-svn 0.4.11~rc1    2008-08-08
 
   CHANGES
 
@@ -550,7 +557,7 @@ bzr-svn 0.4.11~rc1	2008-08-08
      the Subversion development libraries and should be possible by 
      simply running ``make`` from the plugin directory. 
 
-	 This fixes some existing bzr-svn related bugs caused by Python-Subversion:
+     This fixes some existing bzr-svn related bugs caused by Python-Subversion:
 
      * KeyboardInterrupts are now no longer swallowed.  (#242217)
 
@@ -561,7 +568,7 @@ bzr-svn 0.4.11~rc1	2008-08-08
 
    * The "svn+https://..." syntax has been deprecated. It still works in the 
      current release but will be removed in the future. If you are unable to 
-	 get a repository to work without the svn+ prefix, please file a bug.
+     get a repository to work without the svn+ prefix, please file a bug.
 
   FEATURES
   
@@ -573,7 +580,7 @@ bzr-svn 0.4.11~rc1	2008-08-08
 
    * Basic (experimental) support for stacked branches. Not very
      efficient at the moment because of certain assumptions in the 
-	 stacking implementation.
+     stacking implementation.
 
    * Avoid reopening connections to branch and repository when finding 
      branches. (#243749)
@@ -591,7 +598,7 @@ bzr-svn 0.4.11~rc1	2008-08-08
    * Support bzr uncommit.
 
    * Support bzr sign-my-commits. (Requires revision properties in the 
-	 Subversion repository to be mutable)
+     Subversion repository to be mutable)
 
    * Support pushing merged revisions. To enable, set 
      ``push_merged_revisions = True'' in the repository config. (#158883)
@@ -662,7 +669,7 @@ bzr-svn 0.4.11~rc1	2008-08-08
 
    * Avoid showing backtrace for RA_DAV_REQUEST_FAILED errors, since 
      they may be raised in other situations than when a bug is hit.
-	 (#253376)
+     (#253376)
 
    * Fixed http exception during expensive log -v. (#94316)
 
