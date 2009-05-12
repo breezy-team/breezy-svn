@@ -37,13 +37,14 @@ class LogCacheTests(object):
 
     def test_insert_revprops(self):
         self.cache.insert_revprops(100, {"some": "data"}, True)
-        self.assertEquals({"some": "data"}, self.cache.get_revprops(100))
+        self.assertEquals(({"some": "data"}, True), 
+                           self.cache.get_revprops(100))
 
     def test_insert_revinfo(self):
         self.cache.insert_revprops(45, {"some": "data"}, True)
         self.cache.insert_revprops(42, {"some": "data"}, False)
-        self.assertTrue(self.cache.has_all_revprops(45))
-        self.assertFalse(self.cache.has_all_revprops(42))
+        self.assertEquals(({"some": "data"}, True), self.cache.get_revprops(45))
+        self.assertEquals(({"some": "data"}, False), self.cache.get_revprops(42))
 
     def test_find_latest_change(self):
         self.cache.insert_paths(42, {"foo": ("A", None, -1)})

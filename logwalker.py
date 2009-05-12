@@ -124,13 +124,6 @@ class LogCache(object):
     def insert_revprops(self, revision, revprops, all):
         raise NotImplementedError(self.insert_revprops)
 
-    def has_all_revprops(self, revnum):
-        """Check whether all revprops for a revision have been cached.
-
-        :param revnum: Revision number of the revision.
-        """
-        raise NotImplementedError(self.has_all_revprops)
-
     def last_revnum(self):
         raise NotImplementedError(self.last_revnum)
 
@@ -196,8 +189,7 @@ class CachingLogWalker(object):
         self._fetch_revisions(revnum)
 
         if revnum > 0:
-            has_all_revprops = self.cache.has_all_revprops(revnum)
-            known_revprops = self.cache.get_revprops(revnum)
+            (known_revprops, has_all_revprops) = self.cache.get_revprops(revnum)
         else:
             has_all_revprops = False
             known_revprops = {}
