@@ -25,7 +25,6 @@ from bzrlib.tests.test_graph import (
 
 from bzrlib.plugins.svn.parents import (
     DiskCachingParentsProvider,
-    ParentsCache,
     )
 
 class TestCachingParentsProvider(TestCase):
@@ -34,6 +33,7 @@ class TestCachingParentsProvider(TestCase):
         TestCase.setUp(self)
         dict_pp = _mod_graph.DictParentsProvider({'a':('b',)})
         self.inst_pp = InstrumentedParentsProvider(dict_pp)
+        from bzrlib.plugins.svn.cache.sqlitecache import ParentsCache
         self.caching_pp = DiskCachingParentsProvider(self.inst_pp, 
                 ParentsCache())
 
