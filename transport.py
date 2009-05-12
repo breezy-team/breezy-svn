@@ -590,7 +590,10 @@ class MutteringRemoteAccess(object):
 
     def stat(self, path, revnum):
         mutter('svn stat -r%d %s' % (revnum, path))
-        return self.actual.stat(path, revnum)
+        stat = getattr(self.actual, "stat", None)
+        if stat is None:
+            raise NotImplementedError(self.stat)
+        return stat(path, revnum)
 
     def has_capability(self, cap):
         return self.actual.has_capability(cap)
