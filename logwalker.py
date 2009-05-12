@@ -154,7 +154,10 @@ class CachingLogWalker(object):
         self._fetch_revisions(revnum)
 
         self.mutter("latest change: %r:%r", path, revnum)
-        revnum = self.cache.find_latest_change(path.strip("/"), revnum)
+        try:
+            revnum = self.cache.find_latest_change(path.strip("/"), revnum)
+        except NotImplementedError:
+            return self.actual.find_latest_change(path, revnum)
         if revnum is None and path == "":
             return 0
         
