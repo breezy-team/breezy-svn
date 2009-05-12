@@ -270,18 +270,13 @@ class LogCache(CacheTable):
         :param all_revprops: Whether or not the full revprops have been stored.
         """
         self.db["revprops-complete/%d" % rev] = str(int(all_revprops))
+        self.db["log-last"] = "%d" % max(self.last_revnum(), rev)
 
     def last_revnum(self):
-        min = 0
-        max = 1
-        while ("revprops-complete/%d" % max) in self.db:
-            min = max
-            max *= 2
-        # FIXME: This could be more efficient
-        for i in xrange(max-1, min-1, -1):
-            if ("revprops-complete/%d" % i) in self.db:
-                return i
-        return 0
+        try:
+            return int(self.db["log-last"])
+        except KeyError:
+            return 0
 
 
 class ParentsCache(CacheTable):
