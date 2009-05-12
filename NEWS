@@ -20,6 +20,11 @@ bzr-svn 0.6.0                    UNRELEASED
      access. This is useful accessing http(s) URLs will 
      always attempt to open using the native Bazaar formats 
      first.
+ 
+  PERFORMANCE
+
+   * A custom reverse-tag dictionary implementation is now provided, making 
+     "bzr log" a lot faster since there's no need to find all tags beforehand.
 
   BUG FIXES
 
