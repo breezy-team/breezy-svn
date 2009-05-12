@@ -254,8 +254,10 @@ class LogCache(CacheTable):
         """
         return bdecode(self.db["revprops/%d" % revnum])
 
-    def insert_revprops(self, revision, revprops):
+    def insert_revprops(self, revision, revprops, all_revprops):
         self.db["revprops/%d" % revision] = bencode(revprops)
+        self.db["revprops-complete/%d" % rev] = str(int(all_revprops))
+        self.db["log-last"] = "%d" % max(self.last_revnum(), rev)
 
     def has_all_revprops(self, revnum):
         """Check whether all revprops for a revision have been cached.
@@ -266,15 +268,6 @@ class LogCache(CacheTable):
             return bool(int(self.db["revprops-complete/%d" % revnum]))
         except KeyError:
             return False
-
-    def insert_revinfo(self, rev, all_revprops):
-        """Insert metadata for a revision.
-
-        :param rev: Revision number of the revision.
-        :param all_revprops: Whether or not the full revprops have been stored.
-        """
-        self.db["revprops-complete/%d" % rev] = str(int(all_revprops))
-        self.db["log-last"] = "%d" % max(self.last_revnum(), rev)
 
     def last_revnum(self):
         try:

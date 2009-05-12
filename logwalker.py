@@ -121,7 +121,7 @@ class LogCache(object):
         """
         raise NotImplementedError(self.get_revprops)
 
-    def insert_revprops(self, revision, revprops):
+    def insert_revprops(self, revision, revprops, all):
         raise NotImplementedError(self.insert_revprops)
 
     def has_all_revprops(self, revnum):
@@ -130,14 +130,6 @@ class LogCache(object):
         :param revnum: Revision number of the revision.
         """
         raise NotImplementedError(self.has_all_revprops)
-
-    def insert_revinfo(self, rev, all_revprops):
-        """Insert metadata for a revision.
-
-        :param rev: Revision number of the revision.
-        :param all_revprops: Whether or not the full revprops have been stored.
-        """
-        raise NotImplementedError(self.insert_revinfo)
 
     def last_revnum(self):
         raise NotImplementedError(self.last_revnum)
@@ -217,8 +209,7 @@ class CachingLogWalker(object):
 
     def _caching_revprop_list(self, revnum):
         revprops = self._transport.revprop_list(revnum)
-        self.cache.insert_revprops(revnum, revprops)
-        self.cache.insert_revinfo(revnum, True)
+        self.cache.insert_revprops(revnum, revprops, True)
         self.cache.commit()
         return revprops
 
@@ -247,8 +238,8 @@ class CachingLogWalker(object):
         def rcvr(orig_paths, revision, revprops, has_children=None):
             nested_pb.update('fetching svn revision info', revision, to_revnum)
             self.cache.insert_paths(revision, orig_paths)
-            self.cache.insert_revprops(revision, revprops)
-            self.cache.insert_revinfo(revision, todo_revprops is None)
+            self.cache.insert_revprops(revision, revprops, 
+                                       todo_revprops is None)
             self.saved_revnum = revision
 
         self.mutter("get_log %d->%d", self.saved_revnum, to_revnum)

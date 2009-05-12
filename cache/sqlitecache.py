@@ -347,10 +347,13 @@ class LogCache(CacheTable):
         result = self.cachedb.execute("select name, value from revprop where rev = ?", (revnum,))
         return dict((k.encode("utf-8"), v.encode("utf-8")) for (k, v) in result)
 
-    def insert_revprops(self, revision, revprops):
+    def insert_revprops(self, revision, revprops, all_revprops):
         if revprops is None:
             return
         self.cachedb.executemany("replace into revprop (rev, name, value) values (?, ?, ?)", [(revision, name.decode("utf-8", "replace"), value.decode("utf-8", "replace")) for (name, value) in revprops.iteritems()])
+        self.cachedb.execute("""
+            replace into revinfo (rev, all_revprops) values (?, ?)
+        """, (rev, all_revprops))
 
     def has_all_revprops(self, revnum):
         """Check whether all revprops for a revision have been cached.
@@ -361,16 +364,6 @@ class LogCache(CacheTable):
         if row is None:
             return False
         return row[0]
-
-    def insert_revinfo(self, rev, all_revprops):
-        """Insert metadata for a revision.
-
-        :param rev: Revision number of the revision.
-        :param all_revprops: Whether or not the full revprops have been stored.
-        """
-        self.cachedb.execute("""
-            replace into revinfo (rev, all_revprops) values (?, ?)
-        """, (rev, all_revprops))
 
     def last_revnum(self):
         saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM revinfo").fetchone()[0]

@@ -36,12 +36,12 @@ class LogCacheTests(object):
         self.assertEquals({"foo": ("A", None, -1)}, self.cache.get_revision_paths(42))
 
     def test_insert_revprops(self):
-        self.cache.insert_revprops(100, {"some": "data"})
+        self.cache.insert_revprops(100, {"some": "data"}, True)
         self.assertEquals({"some": "data"}, self.cache.get_revprops(100))
 
     def test_insert_revinfo(self):
-        self.cache.insert_revinfo(45, True)
-        self.cache.insert_revinfo(42, False)
+        self.cache.insert_revprops(45, {"some": "data"}, True)
+        self.cache.insert_revprops(42, {"some": "data"}, False)
         self.assertTrue(self.cache.has_all_revprops(45))
         self.assertFalse(self.cache.has_all_revprops(42))
 
