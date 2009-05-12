@@ -230,7 +230,6 @@ class LogCache(CacheTable):
         """
         if orig_paths is None:
             orig_paths = {}
-        text = ""
         new_paths = {}
         for p in orig_paths:
             copyfrom_path = orig_paths[p][1]
@@ -240,9 +239,7 @@ class LogCache(CacheTable):
                 copyfrom_path = ""
                 assert orig_paths[p][2] == -1
             new_paths[p.strip("/")] = (orig_paths[p][0], copyfrom_path, orig_paths[p][2])
-        x = bencode(new_paths)
-        assert type(x) == str, "%r not string" % x
-        self.db["paths/%d" % rev] = x
+        self.db["paths/%d" % rev] = bencode(new_paths)
     
     def drop_revprops(self, revnum):
         self.db["revprops/%d" % revnum] = bencode({})
