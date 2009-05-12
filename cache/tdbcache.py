@@ -152,7 +152,8 @@ class RevisionInfoCache(CacheTable):
         basekey = "%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
         if revno is not None:
             self.db["revno/%s" % basekey] = "%d" % revno
-        self.db["hidden/%s" % basekey] = str(int(hidden))
+        if hidden:
+            self.db["hidden/%s" % basekey] = "1"
         self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
         if stored_lhs_parent_revid:
             self.db["lhs-parent-revid/%s" % basekey] = stored_lhs_parent_revid
@@ -171,7 +172,10 @@ class RevisionInfoCache(CacheTable):
             revno = int(self.db["revno/%s" % basekey])
         except KeyError:
             revno = None
-        hidden = bool(int(self.db["hidden/%s" % basekey]))
+        try:
+            hidden = bool(int(self.db["hidden/%s" % basekey]))
+        except KeyError:
+            hidden = False
         original_mapping = self.get_original_mapping(foreign_revid)
         stored_lhs_parent_revid = self.db.get("lhs-parent-revid/%s" % basekey)
         return (revid, revno, hidden, original_mapping, stored_lhs_parent_revid)
