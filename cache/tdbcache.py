@@ -99,6 +99,7 @@ class RevisionIdMapCache(CacheTable):
         :return: Tuple with path inside repository, minimum revision number, maximum revision number and 
             mapping.
         """
+        self.mutter('lookup-revid %s', revid)
         try:
             (min_revnum, max_revnum, mapping_name, path) = self.db["native-revid/%s" % revid].split(" ", 4)
         except KeyError:
@@ -112,6 +113,7 @@ class RevisionIdMapCache(CacheTable):
         :param path: Subversion branch path.
         :param mapping: Mapping
         """
+        self.mutter('lookup-branch-revnum %s:%d', path, revnum)
         try:
             return self.db["foreign-revid/%d %s %s" % (revnum, getattr(mapping, "name", mapping), path)]
         except KeyError:
@@ -267,6 +269,7 @@ class ParentsCache(CacheTable):
         self.db["parents/%s" % revid] = " ".join(parents)
 
     def lookup_parents(self, revid):
+        self.mutter("lookup-parents %s", revid)
         try:
             return tuple([p for p in self.db["parents/%s" % revid].split(" ") if p != ""])
         except KeyError:
