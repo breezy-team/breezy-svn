@@ -284,7 +284,7 @@ class ParentsCache(CacheTable):
 
     def lookup_parents(self, revid):
         try:
-            return tuple(self.db["parents/%s" % revid].split(" "))
+            return tuple([p for p in self.db["parents/%s" % revid].split(" ") if p != ""])
         except KeyError:
             return None
 

@@ -164,3 +164,45 @@ class TdbRevInfoCacheTests(TestCaseInTempDir,RevInfoCacheTests):
         except ImportError:
             raise UnavailableFeature
         self.cache = RevisionInfoCache(tdb_open("cache.tdb"))
+
+
+class ParentsCacheTests:
+
+    def test_noparents(self):
+        self.cache.insert_parents("myrevid", ())
+        self.assertEquals((), self.cache.lookup_parents("myrevid"))
+
+    def test_single(self):
+        self.cache.insert_parents("myrevid", ("single",))
+        self.assertEquals(("single",), self.cache.lookup_parents("myrevid"))
+
+    def test_multiple(self):
+        self.cache.insert_parents("myrevid", ("one", "two"))
+        self.assertEquals(("one", "two"), self.cache.lookup_parents("myrevid"))
+
+    def test_nonexistant(self):
+        self.assertEquals(None, self.cache.lookup_parents("myrevid"))
+
+    def test_insert_twice(self):
+        self.cache.insert_parents("myrevid", ("single",))
+        self.cache.insert_parents("myrevid", ("second",))
+        self.assertEquals(("second",), self.cache.lookup_parents("myrevid"))
+        
+
+class SqliteParentsCacheTests(TestCase,ParentsCacheTests):
+
+    def setUp(self):
+        super(SqliteParentsCacheTests, self).setUp()
+        from bzrlib.plugins.svn.cache.sqlitecache import ParentsCache
+        self.cache = ParentsCache()
+
+
+class TdbParentsCacheTests(TestCaseInTempDir,ParentsCacheTests):
+
+    def setUp(self):
+        super(TdbParentsCacheTests, self).setUp()
+        try:
+            from bzrlib.plugins.svn.cache.tdbcache import ParentsCache, tdb_open
+        except ImportError:
+            raise UnavailableFeature
+        self.cache = ParentsCache(tdb_open("cache.tdb"))

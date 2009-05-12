@@ -28,33 +28,6 @@ from bzrlib.plugins.svn.parents import (
     ParentsCache,
     )
 
-class ParentsCacheTests(TestCase):
-
-    def setUp(self):
-        TestCase.setUp(self)
-        self.cache = ParentsCache()
-    
-    def test_noparents(self):
-        self.cache.insert_parents("myrevid", ())
-        self.assertEquals((), self.cache.lookup_parents("myrevid"))
-
-    def test_single(self):
-        self.cache.insert_parents("myrevid", ("single",))
-        self.assertEquals(("single",), self.cache.lookup_parents("myrevid"))
-
-    def test_multiple(self):
-        self.cache.insert_parents("myrevid", ("one", "two"))
-        self.assertEquals(("one", "two"), self.cache.lookup_parents("myrevid"))
-
-    def test_nonexistant(self):
-        self.assertEquals(None, self.cache.lookup_parents("myrevid"))
-
-    def test_insert_twice(self):
-        self.cache.insert_parents("myrevid", ("single",))
-        self.cache.insert_parents("myrevid", ("second",))
-        self.assertEquals(("second",), self.cache.lookup_parents("myrevid"))
-        
-
 class TestCachingParentsProvider(TestCase):
 
     def setUp(self):
