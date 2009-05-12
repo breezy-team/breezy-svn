@@ -4,7 +4,10 @@ more tests:
 - bzr svn-set-revprops
 
 performance:
-- generate deltas rather than fulltexts when creating file id maps for the cache
+- use chk maps for file ids
+- when looking for fileprop revids, do a get_dir() on branches/ and tags/ and look at "has_props"
+- when walking history, also update revid cache if possible
+ - and perhaps tags info?
 - fix copyfrom in replay and replay_range
 - faster function for finding all *existing* branches
 - automatically disable cache in some situations, allow partial cache?
