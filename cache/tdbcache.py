@@ -23,6 +23,7 @@ import tdb
 from bzrlib import (
     debug,
     errors,
+    trace,
     osutils,
     )
 from bzrlib.util.bencode import (
@@ -55,6 +56,10 @@ class CacheTable(object):
 
     def commit(self):
         pass
+
+    def mutter(self, text, *args, **kwargs):
+        if "cache" in debug.debug_flags:
+            trace.mutter(text, *args, **kwargs)
 
     def commit_conditionally(self):
         pass
@@ -198,22 +203,14 @@ class LogCache(CacheTable):
     the log cache tables."""
     
     def find_latest_change(self, path, revnum):
-        for i in xrange(revnum, -1, -1):
-            try:
-                paths = self.get_revision_paths(i)
-            except KeyError:
-                continue
-            if path == "":
-                return i
-            if changes.changes_path(paths, path, True):
-                return i
-        raise AssertionError("Path %s:%d not found" % (path, revnum))
+        raise NotImplementedError(self.find_latest_change)
 
     def get_revision_paths(self, revnum):
         """Return all history information for a given revision number.
         
         :param revnum: Revision number of revision.
         """
+        self.mutter("get-revision-paths %d", revnum)
         ret = {}
         db = bdecode(self.db["paths/%d" % revnum])
         for key, (action, cp, cr) in db.iteritems():
@@ -249,6 +246,7 @@ class LogCache(CacheTable):
 
         :param revnum: Revision number of revision to retrieve revprops for.
         """
+        self.mutter("get-revision-properties %d", revnum)
         ret = bdecode(self.db["revprops/%d" % revnum])
         return (ret[0], bool(ret[1]))
 
