@@ -14,11 +14,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-
+from bzrlib.errors import (
+    NoSuchRevision,
+    )
 from bzrlib.tests import (
     TestCase,
     TestCaseInTempDir,
     UnavailableFeature,
+    )
+
+
+from bzrlib.plugins.svn.mapping4 import (
+    BzrSvnMappingv4,
     )
 
 
@@ -62,3 +69,98 @@ class TdbLogCacheTests(TestCaseInTempDir,LogCacheTests):
             raise UnavailableFeature
         self.cache = LogCache(tdb_open("cache.tdb"))
 
+
+class RevidMapCacheTests(object):
+
+    def test_lookup_revids_seen(self):
+        self.assertEquals(0, self.cache.last_revnum_checked("trunk"))
+        self.cache.set_last_revnum_checked("trunk", 45)
+        self.assertEquals(45, self.cache.last_revnum_checked("trunk"))
+
+    def test_lookup_revid_nonexistant(self):
+        self.assertRaises(NoSuchRevision, lambda: self.cache.lookup_revid("bla"))
+
+    def test_lookup_revid(self):
+        self.cache.insert_revid("bla", "mypath", 42, 42, "brainslug")
+        self.assertEquals(("mypath", 42, 42, "brainslug"), 
+                self.cache.lookup_revid("bla"))
+
+    def test_lookup_branch(self):
+        self.cache.insert_revid("bla", "mypath", 42, 42, "brainslug")
+        self.assertEquals("bla", 
+                self.cache.lookup_branch_revnum(42, "mypath", "brainslug"))
+
+    def test_lookup_branch_nonexistant(self):
+        self.assertIs(None,
+                self.cache.lookup_branch_revnum(42, "mypath", "foo"))
+
+    def test_lookup_branch_incomplete(self):
+        self.cache.insert_revid("bla", "mypath", 42, 200, "brainslug")
+        self.assertEquals(None, 
+                self.cache.lookup_branch_revnum(42, "mypath", "brainslug"))
+
+
+class SqliteRevidMapCacheTests(TestCase,RevidMapCacheTests):
+
+    def setUp(self):
+        super(SqliteRevidMapCacheTests, self).setUp()
+        from bzrlib.plugins.svn.cache.sqlitecache import RevisionIdMapCache
+        self.cache = RevisionIdMapCache()
+
+
+class TdbRevidMapCacheTests(TestCaseInTempDir,RevidMapCacheTests):
+
+    def setUp(self):
+        super(TdbRevidMapCacheTests, self).setUp()
+        try:
+            from bzrlib.plugins.svn.cache.tdbcache import RevisionIdMapCache, tdb_open
+        except ImportError:
+            raise UnavailableFeature
+        self.cache = RevisionIdMapCache(tdb_open("cache.tdb"))
+
+
+class RevInfoCacheTests(object):
+
+    def test_get_unknown_revision(self):
+        self.assertRaises(KeyError, 
+            self.cache.get_revision, ("bfdshfksdjh", "mypath", 1), 
+            BzrSvnMappingv4())
+
+    def test_get_revision(self):
+        self.cache.insert_revision(("fsdkjhfsdkjhfsd", "mypath", 1), 
+            BzrSvnMappingv4(), "somerevid", 42, False, None, "oldlhs")
+        self.assertEquals(("somerevid", 42, False, None, "oldlhs"),
+            self.cache.get_revision(("bfdshfksdjh", "mypath", 1), 
+            BzrSvnMappingv4()))
+
+    def test_get_original_mapping_none(self):
+        self.cache.insert_revision(("fsdkjhfsdkjhfsd", "mypath", 1), 
+            BzrSvnMappingv4(), "somerevid", 42, False, None, "oldlhs")
+        self.assertEquals(None, self.cache.get_original_mapping(("fkjhfsdkjh", "mypath", 1)))
+
+    def test_get_original_mapping_unknown(self):
+        self.assertRaises(KeyError, self.cache.get_original_mapping, ("fkjhfsdkjh", "mypath", 1))
+
+    def test_get_original_mapping_v4(self):
+        self.cache.insert_revision(("fsdkjhfsdkjhfsd", "mypath", 1), 
+            BzrSvnMappingv4(), "somerevid", 42, False, BzrSvnMappingv4(), "oldlhs")
+        self.assertEquals(BzrSvnMappingv4(), self.cache.get_original_mapping(("fkjhfsdkjh", "mypath", 1)))
+
+
+class SqliteRevInfoCacheTests(TestCase,RevInfoCacheTests):
+
+    def setUp(self):
+        super(SqliteRevInfoCacheTests, self).setUp()
+        from bzrlib.plugins.svn.cache.sqlitecache import RevisionInfoCache
+        self.cache = RevisionInfoCache()
+
+
+class TdbRevInfoCacheTests(TestCaseInTempDir,RevInfoCacheTests):
+
+    def setUp(self):
+        super(TdbRevInfoCacheTests, self).setUp()
+        try:
+            from bzrlib.plugins.svn.cache.tdbcache import RevisionInfoCache, tdb_open
+        except ImportError:
+            raise UnavailableFeature
+        self.cache = RevisionInfoCache(tdb_open("cache.tdb"))

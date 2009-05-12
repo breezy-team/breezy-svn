@@ -105,7 +105,7 @@ class RevisionIdMapCache(CacheTable):
         :param mapping: Mapping
         """
         try:
-            return self.db["foreign-revid/%d %s %s" % (revnum, mapping.name, path)]
+            return self.db["foreign-revid/%d %s %s" % (revnum, getattr(mapping, "name", mapping), path)]
         except KeyError:
             return None
 
@@ -142,10 +142,14 @@ class RevisionInfoCache(CacheTable):
         :param stored_lhs_parent_revid: Stored lhs parent revision
         """
         if original_mapping is not None:
-            self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])] = original_mapping.name
+            orig_mapping_name = original_mapping.name
+        else:
+            orig_mapping_name = ""
+        self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])] = orig_mapping_name
         basekey = "%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
         self.db["revno/%s" % basekey] = str(revno)
-        self.db["hidden/%s" % basekey] = str(hidden)
+        self.db["hidden/%s" % basekey] = str(int(hidden))
+        self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
         if stored_lhs_parent_revid:
             self.db["lhs-parent-revid/%s" % basekey] = stored_lhs_parent_revid
 
@@ -160,7 +164,7 @@ class RevisionInfoCache(CacheTable):
         basekey = "%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
         revid = self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])]
         revno = int(self.db["revno/%s" % basekey])
-        hidden = bool(self.db["hidden/%s" % basekey])
+        hidden = bool(int(self.db["hidden/%s" % basekey]))
         original_mapping = self.get_original_mapping(foreign_revid)
         stored_lhs_parent_revid = self.db.get("lhs-parent-revid/%s" % basekey)
         return (revid, revno, hidden, original_mapping, stored_lhs_parent_revid)
@@ -171,7 +175,10 @@ class RevisionInfoCache(CacheTable):
         :param foreign_revid: Foreign revision id
         :return: Mapping object or None
         """
-        return mapping_registry.parse_mapping_name("svn-" + self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])])
+        ret = self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])]
+        if ret == "":
+            return None
+        return mapping_registry.parse_mapping_name("svn-" + ret)
 
 
 class LogCache(CacheTable):
