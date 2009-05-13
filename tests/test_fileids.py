@@ -531,11 +531,11 @@ class LookupTests(TestCase):
 
     def test_trivial(self):
         idmap = {"filename": ("myfileid", "myrev", None)}
-        self.assertEquals(("myfileid", "myrev", None), idmap_lookup(idmap, None, "filename"))
+        self.assertEquals(("myfileid", "myrev", None), idmap_lookup(idmap.__getitem__, None, "filename"))
 
     def test_nonexistent(self):
         idmap = {}
-        self.assertRaises(KeyError, idmap_lookup, idmap, None, "filename")
+        self.assertRaises(KeyError, idmap_lookup, idmap.__getitem__, None, "filename")
 
     def test_implicit(self):
         idmap = {"parent": ("parentfileid", "parentrev", ("someuuid", "somebp", 42))}
@@ -543,12 +543,12 @@ class LookupTests(TestCase):
         self.assertEquals((mapping.generate_file_id(("someuuid", "somebp", 42), u"parent/foo"),
                            mapping.revision_id_foreign_to_bzr(("someuuid", "somebp", 42)),
                          ('someuuid', 'somebp', 42)),
-                          idmap_lookup(idmap, mapping, u"parent/foo"))
+                          idmap_lookup(idmap.__getitem__, mapping, u"parent/foo"))
 
     def test_not_implicit_asserts(self):
         idmap = {"parent": ("parentfileid", "parentrev", None)}
         mapping = mapping_registry.get_default()()
-        self.assertRaises(AssertionError, idmap_lookup, idmap, mapping, u"parent/foo")
+        self.assertRaises(KeyError, idmap_lookup, idmap.__getitem__, mapping, u"parent/foo")
 
 
 class ReverseLookupTests(TestCase):

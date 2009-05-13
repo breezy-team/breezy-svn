@@ -63,16 +63,16 @@ from bzrlib.plugins.svn import (
 # = rev 2
 #    A /bla (from /foo:1)
 
-def idmap_lookup(idmap, mapping, path):
+def idmap_lookup(get, mapping, path):
     """Lookup a path in an idmap.
 
-    :param idmap: The idmap to look up in.
+    :param get: Function to access idmap
     :param mapping: Mapping
     :param path: Path to look up
     :return: Tuple with file id and text revision
     """
     try:
-        return idmap[path]
+        return get(path)
     except KeyError:
         base = path
         while base != "":
@@ -80,13 +80,15 @@ def idmap_lookup(idmap, mapping, path):
                 base = base.rsplit("/", 1)[0]
             else:
                 base = u""
-            if base in idmap:
-                create_revid = idmap[base][2]
+            try:
+                create_revid = get(base)[2]
                 if create_revid is None:
                     raise AssertionError("Inconsistency; child %s appeared while parent was never copied" % path)
                 return (mapping.generate_file_id(create_revid, path),
                         mapping.revision_id_foreign_to_bzr(create_revid),
                         create_revid)
+            except:
+                pass
         raise KeyError("Unable to determine file id for %r" % path)
 
 
@@ -253,7 +255,7 @@ class DictFileIdMap(FileIdMap):
         return self.data
 
     def lookup(self, mapping, path):
-        return idmap_lookup(self.data, mapping, path)
+        return idmap_lookup(self.data.__getitem__, mapping, path)
 
     def reverse_lookup(self, mapping, fileid):
         return idmap_reverse_lookup(self.data, mapping, fileid)
