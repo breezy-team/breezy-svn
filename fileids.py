@@ -317,9 +317,9 @@ class FileIdMapStore(object):
         todo = []
         next_parent_revs = []
         if mapping.is_branch(""):
-            map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION, None)}
+            map = DictFileIdMap({u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION, None)})
         else:
-            map = {}
+            map = DictFileIdMap({})
 
         # No history -> empty map
         todo = list(self.repos._iter_reverse_revmeta_mapping_history(branch, revnum, to_revnum=0, mapping=mapping))
@@ -332,7 +332,7 @@ class FileIdMapStore(object):
                 self.update_idmap(map, revmeta, mapping)
         finally:
             pb.finished()
-        return DictFileIdMap(map)
+        return map
 
 
 
@@ -409,7 +409,7 @@ class CachingFileIdMapStore(object):
                     continue
                 revid = revmeta.get_revision_id(mapping)
                 try:
-                    map = self.cache.load(revid)
+                    map = DictFileIdMap(self.cache.load(revid))
                     # found the nearest cached map
                     next_parent_revs = [revid]
                     break
@@ -420,13 +420,13 @@ class CachingFileIdMapStore(object):
        
         # target revision was present
         if len(todo) == 0:
-            return DictFileIdMap(map)
+            return map
 
         if len(next_parent_revs) == 0:
             if mapping.is_branch(""):
-                map = {u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION, None)}
+                map = DictFileIdMap({u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION, None)})
             else:
-                map = {}
+                map = DictFileIdMap({})
 
         pb = ui.ui_factory.nested_progress_bar()
 
@@ -441,5 +441,5 @@ class CachingFileIdMapStore(object):
                 next_parent_revs = [revid]
         finally:
             pb.finished()
-        return DictFileIdMap(map)
+        return map
 
