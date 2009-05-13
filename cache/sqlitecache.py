@@ -392,8 +392,7 @@ class ParentsCache(CacheTable):
                 self.cachedb.execute("replace into parent (rev, parent, idx) values (?, ?, ?)", (revid, p, i))
 
     def lookup_parents(self, revid):
-        if "cache" in debug.debug_flags:
-            mutter('lookup parents: %r', revid)
+        self.mutter('lookup parents: %r', revid)
         rows = self.cachedb.execute("select parent from parent where rev = ? order by idx", (revid, )).fetchall()
         if len(rows) == 0:
             return None
