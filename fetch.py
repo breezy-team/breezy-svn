@@ -84,8 +84,6 @@ from bzrlib.plugins.svn.errors import (
     )
 from bzrlib.plugins.svn.fileids import (
     get_local_changes,
-    idmap_lookup,
-    idmap_reverse_lookup,
     )
 from bzrlib.plugins.svn.mapping import (
     SVN_PROP_BZR_PREFIX,
@@ -882,16 +880,13 @@ class TreeDeltaBuildEditor(DeltaBuildEditor):
 
     def _was_renamed(self, path):
         fileid = self._get_new_id(path)
-        for fid, _ in self._parent_idmap.values():
-            if fileid == fid:
-                return True
-        return False
+        return self._parent_idmap.has_fileid(fid)
 
     def _get_old_id(self, path):
-        return idmap_lookup(self._parent_idmap, self.mapping, path)[0]
+        return self._parent_idmap.lookup(self.mapping, path)[0]
 
     def _get_new_id(self, path):
-        return idmap_lookup(self._idmap, self.mapping, path)[0]
+        return self._idmap.lookup(self.mapping, path)[0]
 
 
 @convert_svn_error

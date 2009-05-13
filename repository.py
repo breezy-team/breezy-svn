@@ -71,10 +71,8 @@ from bzrlib.plugins.svn import (
 from bzrlib.plugins.svn.branchprops import PathPropertyProvider
 from bzrlib.plugins.svn.config import SvnRepositoryConfig
 from bzrlib.plugins.svn.fileids import (
-    CachingFileIdMap,
-    FileIdMap,
-    idmap_lookup,
-    idmap_reverse_lookup,
+    CachingFileIdMapStore,
+    FileIdMapStore,
     simple_apply_changes,
     )
 from bzrlib.plugins.svn.layout.standard import WildcardLayout
@@ -295,10 +293,10 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             # Every text revision either has to match the actual revision's 
             # revision id (if it was last changed there) or the text revisions 
             # in one of the parents.
-            fileid = idmap_lookup(fileid_map, mapping, path)[0]
+            fileid = fileid_map.lookup(mapping, path)[0]
             parent_text_revisions = []
             for parent_fileid_map, parent_mapping in zip(parent_fileid_maps, parent_mappings):
-                parent_text_revisions.append(idmap_reverse_lookup(parent_fileid_map, parent_mapping, fileid))
+                parent_text_revisions.append(parent_fileid_map.reverse_lookup(parent_mapping, fileid))
             if (text_revision != revmeta.get_revision_id(mapping) and 
                     not ghost_parents and not text_revision in parent_text_revisions):
                 self.invalid_text_revisions += 1
@@ -336,7 +334,7 @@ class SvnRepository(ForeignRepository):
         self._serializer = xml6.serializer_v6
         self.get_config().add_location(self.base)
         self._log = logwalker.LogWalker(transport=transport)
-        self.fileid_map = FileIdMap(simple_apply_changes, self)
+        self.fileid_map = FileIdMapStore(simple_apply_changes, self)
         self.revmap = RevidMap(self)
         self._default_mapping = None
         self._hinted_branch_path = branch_path
@@ -362,8 +360,8 @@ class SvnRepository(ForeignRepository):
                 cache_obj.open_logwalker())
 
         if "fileids" in use_cache:
-            self.fileid_map = CachingFileIdMap(cache_obj.open_fileid_map(), 
-                self.fileid_map)
+            self.fileid_map = CachingFileIdMapStore(
+                cache_obj.open_fileid_map(), self.fileid_map)
 
         if "revids" in use_cache:
             self.revmap = DiskCachingRevidMap(self.revmap, cache_obj.open_revid_map())

@@ -80,9 +80,6 @@ from bzrlib.plugins.svn.commit import (
 from bzrlib.plugins.svn.errors import (
     convert_svn_error,
     )
-from bzrlib.plugins.svn.fileids import (
-    idmap_lookup,
-    )
 from bzrlib.plugins.svn.format import (
     get_rich_root_format,
     )
@@ -696,7 +693,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         ids = self._get_new_file_ids()
         if path in ids:
             return (ids[path], None)
-        return idmap_lookup(self.basis_idmap, self.mapping, path)[:2]
+        return self.basis_idmap.lookup(self.mapping, path)[:2]
 
     def _get_changed_branch_props(self):
         wc = self._get_wc()

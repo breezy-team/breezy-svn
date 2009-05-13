@@ -33,10 +33,6 @@ from bzrlib.versionedfile import (
 from bzrlib.plugins.svn.errors import (
     convert_svn_error,
     )
-from bzrlib.plugins.svn.fileids import (
-    idmap_lookup,
-    idmap_reverse_lookup,
-    )
 
 _warned_experimental = False
 
@@ -63,7 +59,7 @@ class SvnTexts(VersionedFiles):
         (fileid, revid) = key
         revmeta, mapping = self.repository._get_revmeta(revid)
         map = self.repository.get_fileid_map(revmeta, mapping)
-        path = idmap_reverse_lookup(map, mapping, fileid)
+        path = map.reverse_lookup(mapping, fileid)
         return (urlutils.join(revmeta.branch_path, path).strip("/"),
                 revmeta.revnum, mapping)
 
@@ -98,7 +94,7 @@ class SvnTexts(VersionedFiles):
         revmeta, mapping = self.repository._get_revmeta(revid)
         fileidmap = self.repository.get_fileid_map(revmeta, mapping)
         try:
-            path = idmap_reverse_lookup(fileidmap, mapping, fileid)
+            path = fileidmap.reverse_lookup(mapping, fileid)
         except KeyError:
             return None
 
@@ -116,11 +112,11 @@ class SvnTexts(VersionedFiles):
             revmeta, mapping = self.repository._get_revmeta(revid)
             fileidmap = self.repository.get_fileid_map(revmeta, mapping)
             try:
-                path = idmap_reverse_lookup(fileidmap, mapping, fileid)
+                path = fileidmap.reverse_lookup(mapping, fileid)
             except KeyError:
                 pass
             else:
-                text_parent = idmap_lookup(fileidmap, mapping, path)[1]
+                text_parent = fileidmap.lookup(mapping, path)[1]
                 if text_parent not in ret:
                     ret.append(text_parent)
 

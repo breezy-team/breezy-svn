@@ -31,9 +31,6 @@ from bzrlib.annotate import (
 from bzrlib.plugins.svn import (
     changes,
     )
-from bzrlib.plugins.svn.fileids import (
-    idmap_lookup,
-    )
 
 
 class Annotater(object):
@@ -68,7 +65,7 @@ class Annotater(object):
             raise KeyError(path)
         ip = path[len(revmeta.branch_path):].strip("/")
         idmap = self._repository.get_fileid_map(revmeta, mapping)
-        return idmap_lookup(idmap, mapping, ip)
+        return idmap.lookup(mapping, ip)
 
     def _handler(self, path, rev, revprops):
         try:

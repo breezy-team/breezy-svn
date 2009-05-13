@@ -222,6 +222,42 @@ def simple_apply_changes(new_file_id, changes):
 
 
 class FileIdMap(object):
+
+    def has_fileid(self, fileid):
+        raise NotImplementedError(self.has_fileid)
+
+    def as_dict(self):
+        raise NotImplementedError(self.as_dict)
+
+    def lookup(self, mapping, path):
+        raise NotImplementedError(self.lookup)
+
+    def reverse_lookup(self, mapping, fileid):
+        raise NotImplementedError(self.reverse_lookup)
+
+
+class DictFileIdMap(FileIdMap):
+
+    def __init__(self, data):
+        self.data = data
+
+    def has_fileid(self, fileid):
+        for fid, _ in self.data.itervalues():
+            if fid == fileid:
+                return True
+        return False
+
+    def as_dict(self):
+        return self.data
+
+    def lookup(self, mapping, path):
+        return idmap_lookup(self.data, mapping, path)
+
+    def reverse_lookup(self, mapping, fileid):
+        return idmap_reverse_lookup(self.data, mapping, fileid)
+
+
+class FileIdMapStore(object):
     """File id store. 
 
     Keeps a map
@@ -265,9 +301,9 @@ class FileIdMap(object):
         # First, find the last cached map
         if revnum == 0:
             assert branch == ""
-            return {"": (mapping.generate_file_id(foreign_revid, u""), 
+            return DictFileIdMap({"": (mapping.generate_file_id(foreign_revid, u""), 
                 self.repos.lookup_foreign_revision_id((uuid, "", 0), mapping), 
-                None)}
+                None)})
 
         todo = []
         next_parent_revs = []
@@ -287,7 +323,8 @@ class FileIdMap(object):
                 self.update_idmap(map, revmeta, mapping)
         finally:
             pb.finished()
-        return map
+        return DictFileIdMap(map)
+
 
 
 class FileIdMapCache(object):
@@ -336,7 +373,7 @@ class FileIdMapCache(object):
         return map
 
 
-class CachingFileIdMap(object):
+class CachingFileIdMapStore(object):
     """A file id map that uses a cache."""
 
     def __init__(self, cache, actual):
@@ -374,7 +411,7 @@ class CachingFileIdMap(object):
        
         # target revision was present
         if len(todo) == 0:
-            return map
+            return DictFileIdMap(map)
 
         if len(next_parent_revs) == 0:
             if mapping.is_branch(""):
@@ -395,5 +432,5 @@ class CachingFileIdMap(object):
                 next_parent_revs = [revid]
         finally:
             pb.finished()
-        return map
+        return DictFileIdMap(map)
 

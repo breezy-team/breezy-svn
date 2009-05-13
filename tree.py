@@ -47,9 +47,6 @@ from bzrlib.revisiontree import (
     )
 from bzrlib.trace import mutter
 
-from bzrlib.plugins.svn.fileids import (
-    idmap_lookup,
-    )
 
 class SubversionTree(object):
 
@@ -175,7 +172,7 @@ class SvnRevisionTree(SubversionTree,RevisionTree):
             repository.transport.add_connection(conn)
 
     def lookup_id(self, path):
-        return idmap_lookup(self.id_map, self.mapping, path)[:2]
+        return self.id_map.lookup(self.mapping, path)[:2]
 
     def get_file_text(self, file_id, path=None):
         return self.file_data[file_id]
@@ -404,7 +401,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             adm.close()
 
     def lookup_id(self, path):
-        return idmap_lookup(self.workingtree.basis_idmap, self.workingtree.branch.mapping, path)[:2]
+        return self.workingtree.basis_idmap.lookup(self.workingtree.branch.mapping, path)[:2]
 
     def get_revision_id(self):
         return self.workingtree.last_revision()
