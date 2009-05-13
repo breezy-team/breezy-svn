@@ -384,8 +384,7 @@ class ParentsCache(CacheTable):
         self._commit_interval = 200
 
     def insert_parents(self, revid, parents):
-        if "cache" in debug.debug_flags:
-            mutter('insert parents: %r -> %r', revid, parents)
+        self.mutter('insert parents: %r -> %r', revid, parents)
         if len(parents) == 0:
             self.cachedb.execute("replace into parent (rev, parent, idx) values (?, NULL, -1)", (revid,))
         else:
