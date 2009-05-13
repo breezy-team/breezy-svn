@@ -106,7 +106,7 @@ def idmap_reverse_lookup(idmap, mapping, fileid):
     else:
         uuid = None
     # Unfortunately, the map is the other way around
-    for k in sorted(idmap.keys()):
+    for k in sorted(idmap.iterkeys()):
         (v, ck, child_create_foreign_revid) = idmap[k]
         if v == fileid:
             return k
@@ -138,36 +138,6 @@ def determine_text_revisions(changes, default_revid, specific_revids):
         if data[0] in ('A', 'R', 'M') and p not in ret and p != u"":
             ret[p] = default_revid
     return ret
-
-
-def apply_idmap_delta(map, text_revisions, delta, changes, default_revid, 
-                      mapping, foreign_revid):
-    """Update a file id map.
-
-    :param map: Existing file id map that needs to be updated
-    :param text_revisions: Text revisions for the map
-    :param delta: Id map delta.
-    :param changes: Changes for the revision in question.
-    """
-    for p, data in changes.iteritems():
-        if data[0] in ('D', 'R'):
-            for xp in map.keys():
-                if (p == xp or xp.startswith(u"%s/" % p)) and not xp in delta:
-                    del map[xp]
-
-    for x in sorted(text_revisions.keys() + delta.keys()):
-        assert isinstance(x, unicode)
-        if x in delta and (not x in map or map[x][0] != delta[x]):
-            if x in changes and changes[x][1] is not None:
-                # if this was a copy from somewhere else there can be 
-                # implicit children
-                child_create_revid = foreign_revid
-            else:
-                child_create_revid = None
-            map[x] = (delta[x], text_revisions.get(x) or default_revid, child_create_revid)
-        else:
-            prev_entry = idmap_lookup(map, mapping, x)
-            map[x] = (prev_entry[0], text_revisions.get(x) or default_revid, prev_entry[2])
 
 
 def get_local_changes(paths, branch, mapping, layout, generate_revid):
@@ -247,8 +217,31 @@ class DictFileIdMap(FileIdMap):
 
     def apply_delta(self, text_revisions, delta, changes, default_revid, 
                       mapping, foreign_revid):
-        return apply_idmap_delta(self.data, text_revisions, delta, changes, 
-                                 default_revid, mapping, foreign_revid)
+        """Update a file id map.
+
+        :param text_revisions: Text revisions for the map
+        :param delta: Id map delta.
+        :param changes: Changes for the revision in question.
+        """
+        for p, data in changes.iteritems():
+            if data[0] in ('D', 'R'):
+                for xp in self.data.keys():
+                    if (p == xp or xp.startswith(u"%s/" % p)) and not xp in delta:
+                        del self.data[xp]
+
+        for x in sorted(text_revisions.keys() + delta.keys()):
+            assert isinstance(x, unicode)
+            if x in delta and (not x in self.data or self.data[x][0] != delta[x]):
+                if x in changes and changes[x][1] is not None:
+                    # if this was a copy from somewhere else there can be 
+                    # implicit children
+                    child_create_revid = foreign_revid
+                else:
+                    child_create_revid = None
+                self.data[x] = (delta[x], text_revisions.get(x) or default_revid, child_create_revid)
+            else:
+                prev_entry = self.lookup(mapping, x)
+                self.data[x] = (prev_entry[0], text_revisions.get(x) or default_revid, prev_entry[2])
 
     def has_fileid(self, fileid):
         for fid, _ in self.data.itervalues():
@@ -393,10 +386,8 @@ class CachingFileIdMapStore(object):
 
     def get_map(self, (uuid, branch, revnum), mapping):
         """Make sure the map is up to date until revnum."""
-        # First, find the last cached map
         if revnum == 0:
             return self.actual.get_map((uuid, branch, revnum), mapping)
-
         todo = []
         next_parent_revs = []
 
@@ -437,7 +428,7 @@ class CachingFileIdMapStore(object):
                 self.actual.update_idmap(map, revmeta, mapping)
                 parent_revs = next_parent_revs
                 if revnum % FILEID_MAP_SAVE_INTERVAL == 0 or revnum == revmeta.revnum:
-                    self.cache.save(revid, parent_revs, map)
+                    self.cache.save(revid, parent_revs, map.as_dict())
                 next_parent_revs = [revid]
         finally:
             pb.finished()
