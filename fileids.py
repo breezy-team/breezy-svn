@@ -235,11 +235,20 @@ class FileIdMap(object):
     def reverse_lookup(self, mapping, fileid):
         raise NotImplementedError(self.reverse_lookup)
 
+    def apply_delta(self, text_revisions, delta, changes, default_revid, 
+                      mapping, foreign_revid):
+        raise NotImplementedError(self.apply_delta)
+
 
 class DictFileIdMap(FileIdMap):
 
     def __init__(self, data):
         self.data = data
+
+    def apply_delta(self, text_revisions, delta, changes, default_revid, 
+                      mapping, foreign_revid):
+        return apply_idmap_delta(self.data, text_revisions, delta, changes, 
+                                 default_revid, mapping, foreign_revid)
 
     def has_fileid(self, fileid):
         for fid, _ in self.data.itervalues():
@@ -292,7 +301,7 @@ class FileIdMapStore(object):
         revid = revmeta.get_revision_id(mapping)
         text_revisions = determine_text_revisions(local_changes, revid, 
                 revmeta.get_text_revisions(mapping))
-        apply_idmap_delta(map, text_revisions, idmap, local_changes, revid,
+        map.apply_delta(text_revisions, idmap, local_changes, revid,
                           mapping, revmeta.get_foreign_revid())
 
     def get_map(self, foreign_revid, mapping):
