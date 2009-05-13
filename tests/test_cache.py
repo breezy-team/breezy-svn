@@ -20,6 +20,7 @@ from bzrlib.errors import (
 from bzrlib.tests import (
     TestCase,
     TestCaseInTempDir,
+    TestSkipped,
     UnavailableFeature,
     )
 
@@ -48,8 +49,11 @@ class LogCacheTests(object):
 
     def test_find_latest_change(self):
         self.cache.insert_paths(42, {"foo": ("A", None, -1)})
-        self.assertEquals(42, self.cache.find_latest_change("foo", 42))
-        self.assertEquals(42, self.cache.find_latest_change("foo", 45))
+        try:
+            self.assertEquals(42, self.cache.find_latest_change("foo", 42))
+            self.assertEquals(42, self.cache.find_latest_change("foo", 45))
+        except NotImplementedError:
+            raise TestSkipped()
 
 
 class SqliteLogCacheTests(TestCase,LogCacheTests):
