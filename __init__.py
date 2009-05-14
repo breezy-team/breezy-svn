@@ -152,10 +152,12 @@ topic_registry.register_lazy('svn-layout',
                              'help_layout', 'Subversion repository layouts')
 BzrDirFormat.register_control_format(format.SvnRemoteFormat)
 BzrDirFormat.register_control_format(format.SvnWorkingTreeDirFormat)
-format_registry.register_lazy("subversion", "bzrlib.plugins.svn.format", "SvnRemoteFormat", 
+format_registry.register_lazy("subversion", "bzrlib.plugins.svn.format", 
+                         "SvnRemoteFormat", 
                          "Subversion repository. ", 
                          native=False)
-format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.format", "SvnWorkingTreeDirFormat", 
+format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.format", 
+                         "SvnWorkingTreeDirFormat", 
                          "Subversion working copy. ", 
                          native=False, hidden=True)
 revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec", 
@@ -166,6 +168,7 @@ try:
         "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
         help=__doc__, fallback=True)
 except TypeError:
+    # Fallback credentials stores were introduced in Bazaar 1.15
     config.credential_store_registry.register_lazy(
         "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
         help=__doc__)
@@ -215,6 +218,7 @@ try:
         hooks as info_hooks,
         )
 except ImportError:
+    # Info hooks were introduced in Bazaar 1.15
     pass
 else:
     info_hooks.install_named_hook('repository', info_svn_repository, None)
