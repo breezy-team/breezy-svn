@@ -76,10 +76,13 @@ MAX_FILEPROP_SHARED = 5000
 
 _warned_slow_revprops = False
 
-def warn_slow_revprops():
+def warn_slow_revprops(server):
     global _warned_slow_revprops
     if not _warned_slow_revprops:
-        warning("Upgrade to Subversion 1.5 or higher for faster retrieving of revision properties.")
+        if server:
+            warning("Upgrade server to svn 1.5 or higher for faster retrieving of revision properties.")
+        else:
+            warning("Upgrade to svn 1.5 or higher for faster retrieving of revision properties.")
         _warned_slow_revprops = True
 
 
@@ -665,8 +668,9 @@ class RevisionMetadata(object):
         # Check revprops if the last descendant has bzr:check-revprops set;
         #   if it has and the revnum there is < self.revnum
         if can_use_revprops and not self.knows_revprops() and self.consider_bzr_revprops():
-            if self._log._transport.has_capability("log-revprops") in (None, False):
-                warn_slow_revprops()
+            log_revprops_capab = self._log._transport.has_capability("log-revprops")
+            if log_revprops_capab in (None, False):
+                warn_slow_revprops(log_revprops_capab == False)
             revprops = self.get_revprops()
             if revprops_acceptable(revprops):
                 ret = revprop_fn(revprops)
