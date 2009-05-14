@@ -63,6 +63,9 @@ $(TMP_PLUGINS_DIR)/svn: $(TMP_PLUGINS_DIR)
 check:: build-inplace $(TMP_PLUGINS_DIR)/svn 
 	BZR_PLUGIN_PATH=$(TMP_PLUGINS_DIR):$(BZR_PLUGIN_PATH) $(DEBUGGER) $(PYTHON) $(PYTHON_OPTIONS) $(BZR) $(BZR_OPTIONS) selftest $(TEST_OPTIONS) --starting-with=bzrlib.plugins.svn $(TESTS)
 
+coverage::
+	$(MAKE) check BZR_OPTIONS="--coverage coverage"
+
 check-verbose::
 	$(MAKE) check TEST_OPTIONS=-v
 
