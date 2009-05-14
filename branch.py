@@ -466,10 +466,6 @@ class SvnBranch(ForeignBranch):
         last_revmeta, mapping = self.last_revmeta()
         return last_revmeta.get_revision_id(mapping)
 
-    @needs_write_lock
-    def dpull(self, source, stop_revision=None):
-        return dpush(self, source, stop_revision)
-
     def get_push_merged_revisions(self):
         return (self.layout.push_merged_revisions(self.project) and 
                 self.get_config().get_push_merged_revisions())
@@ -766,6 +762,21 @@ class InterOtherSvnBranch(InterBranch):
         assert isinstance(new_last_revid, str)
         assert isinstance(old_last_revid, str)
         return (old_last_revid, new_last_revid, new_foreign_info)
+
+    def lossy_push(self, stop_revision=None):
+        result = SubversionTargetBranchPushResult()
+        result.target_branch = self.target
+        result.master_branch = None
+        result.source_branch = self.source
+        self.source.lock_write()
+        try:
+            result.old_revid = self.target.last_revision()
+            result.revidmap = dpush(self.target, self.source, stop_revision)
+            result.new_revid = self.target.last_revision()
+            # FIXME: Tags ?
+            return result
+        finally:
+            self.source.unlock()
 
     def push(self, overwrite=False, stop_revision=None, 
             _push_merged=None, _override_svn_revprops=None):

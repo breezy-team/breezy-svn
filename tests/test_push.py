@@ -89,7 +89,12 @@ class TestDPush(SubversionTestCase):
         wt = self.bzrdir.open_workingtree()
         newid = wt.commit(message="Commit from Bzr")
 
-        revid_map = dpush(self.svndir.open_branch(), self.bzrdir.open_branch())
+        source_branch = self.bzrdir.open_branch()
+        source_branch.lock_write()
+        try:
+            revid_map = dpush(self.svndir.open_branch(), source_branch)
+        finally:
+            source_branch.unlock()
 
         self.assertEquals([newid], revid_map.keys())
 
@@ -113,7 +118,12 @@ class TestDPush(SubversionTestCase):
         self.build_tree({'dc/foo/bla': 'yet other data'})
         newid2 = wt.commit(message="Commit from Bzr")
 
-        revid_map = dpush(self.svndir.open_branch(), self.bzrdir.open_branch())
+        source_branch = self.bzrdir.open_branch()
+        source_branch.lock_write()
+        try:
+            revid_map = dpush(self.svndir.open_branch(), source_branch)
+        finally:
+            source_branch.unlock()
 
         self.assertEquals(set([newid1, newid2]), set(revid_map.keys()))
 
@@ -139,7 +149,12 @@ class TestDPush(SubversionTestCase):
         wt.add(["foo/bliel"])
         newid2 = wt.commit(message="Commit from Bzr")
 
-        revid_map = dpush(self.svndir.open_branch(), self.bzrdir.open_branch())
+        source_branch = self.bzrdir.open_branch()
+        source_branch.lock_write()
+        try:
+            revid_map = dpush(self.svndir.open_branch(), source_branch)
+        finally:
+            source_branch.unlock()
 
         self.assertEquals(set([newid1, newid2]), set(revid_map.keys()))
         repos = self.svndir.find_repository()
@@ -159,9 +174,14 @@ class TestDPush(SubversionTestCase):
         wt.add('file')
         wt.commit(message="Commit from Bzr")
 
-        self.assertRaises(DivergedBranches, 
-                          dpush, svndir.open_branch(),
-                          self.bzrdir.open_branch())
+        source_branch = self.bzrdir.open_branch()
+        source_branch.lock_write()
+        try:
+            self.assertRaises(DivergedBranches, 
+                              dpush, svndir.open_branch(),
+                              source_branch)
+        finally:
+            source_branch.unlock()
 
 
 class TestPush(SubversionTestCase):
@@ -553,9 +573,11 @@ class PushNewBranchTests(SubversionTestCase):
         newtree = newrepos.revision_tree(revid)
 
         bzrwt.lock_read()
-        self.assertEquals(bzrwt.inventory.root.file_id,
-                          newtree.inventory.root.file_id)
-        bzrwt.unlock()
+        try:
+            self.assertEquals(bzrwt.inventory.root.file_id,
+                              newtree.inventory.root.file_id)
+        finally:
+            bzrwt.unlock()
 
     def test_single_revision(self):
         repos_url = self.make_repository("a")
@@ -564,9 +586,11 @@ class PushNewBranchTests(SubversionTestCase):
         newbranch = newdir.import_branch(bzrwt.branch)
         newtree = newbranch.repository.revision_tree(revid)
         bzrwt.lock_read()
-        self.assertEquals(bzrwt.inventory.root.file_id,
-                          newtree.inventory.root.file_id)
-        bzrwt.unlock()
+        try:
+            self.assertEquals(bzrwt.inventory.root.file_id,
+                              newtree.inventory.root.file_id)
+        finally:
+            bzrwt.unlock()
         self.assertEquals(revid, newbranch.last_revision())
         self.assertEquals([revid], newbranch.revision_history())
 
@@ -989,16 +1013,18 @@ class PushNewBranchTests(SubversionTestCase):
         bzrwt.add(["foo"])
         revid1 = bzrwt.commit("Initial")
         bzrwt.lock_write()
-        old_ie = bzrwt.inventory.root.copy()
-        new_ie = bzrwt.inventory.root.copy()
-        foo_ie = bzrwt.inventory[bzrwt.path2id("foo")].copy()
-        new_ie.file_id = "mynewroot"
-        foo_ie.parent_id = new_ie.file_id
-        bzrwt.apply_inventory_delta([
-            ("", None, old_ie.file_id, None),
-            (None, "", new_ie.file_id, new_ie),
-            ("foo", "foo", foo_ie.file_id, foo_ie)])
-        bzrwt.unlock()
+        try:
+            old_ie = bzrwt.inventory.root.copy()
+            new_ie = bzrwt.inventory.root.copy()
+            foo_ie = bzrwt.inventory[bzrwt.path2id("foo")].copy()
+            new_ie.file_id = "mynewroot"
+            foo_ie.parent_id = new_ie.file_id
+            bzrwt.apply_inventory_delta([
+                ("", None, old_ie.file_id, None),
+                (None, "", new_ie.file_id, new_ie),
+                ("foo", "foo", foo_ie.file_id, foo_ie)])
+        finally:
+            bzrwt.unlock()
         revid2 = bzrwt.commit(message="Commit from Bzr")
         return bzrwt, old_ie, new_ie, foo_ie, revid1, revid2
 
@@ -1155,13 +1181,15 @@ class PushNewBranchTests(SubversionTestCase):
         bzrdir = svndir.sprout("dc")
         wt = bzrdir.open_workingtree()
         wt.lock_write()
-        wt.apply_inventory_delta([
-            ("", None, wt.inventory.root.file_id, None),
-            ("mysubdir", "", wt.inventory.path2id("mysubdir"), 
-                InventoryDirectory(wt.inventory.path2id("mysubdir"), "", None))])
-        os.rename("dc/mysubdir/myfile", "dc/myfile")
-        osutils.rmtree("dc/mysubdir")
-        wt.unlock()
+        try:
+            wt.apply_inventory_delta([
+                ("", None, wt.inventory.root.file_id, None),
+                ("mysubdir", "", wt.inventory.path2id("mysubdir"), 
+                    InventoryDirectory(wt.inventory.path2id("mysubdir"), "", None))])
+            os.rename("dc/mysubdir/myfile", "dc/myfile")
+            osutils.rmtree("dc/mysubdir")
+        finally:
+            wt.unlock()
         wt.commit("Change branch root")
         svnbranch = svndir.open_branch()
         svnbranch.pull(wt.branch)
@@ -1183,10 +1211,13 @@ class PushNewBranchTests(SubversionTestCase):
 
         wt = bzrdir.open_workingtree()
         wt.lock_write()
-        wt.commit("This is pointless.")
-        svnbranch = svndir.open_branch()
-        svnbranch.pull(wt.branch)
-        self.assertEquals(svnbranch.last_revision(), wt.branch.last_revision())
+        try: 
+            wt.commit("This is pointless.")
+            svnbranch = svndir.open_branch()
+            svnbranch.pull(wt.branch)
+            self.assertEquals(svnbranch.last_revision(), wt.branch.last_revision())
+        finally:
+            wt.unlock()
  
 
 class TestPushTwice(SubversionTestCase):
