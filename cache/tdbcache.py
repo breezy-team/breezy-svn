@@ -173,6 +173,7 @@ class RevisionInfoCache(CacheTable):
         :return: Tuple with revid, stored revno, hidden, original_mapping, 
             stored_lhs_parent_revid
         """
+        self.mutter("get-revision %r,%r", foreign_revid, mapping)
         basekey = "%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
         revid = self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])]
         try:
@@ -193,6 +194,7 @@ class RevisionInfoCache(CacheTable):
         :param foreign_revid: Foreign revision id
         :return: Mapping object or None
         """
+        self.mutter("get-original-mapping %r", foreign_revid)
         ret = self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])]
         if ret == "":
             return None
@@ -253,6 +255,8 @@ class LogCache(CacheTable):
         return (ret[0], bool(ret[1]))
 
     def insert_revprops(self, revision, revprops, all_revprops):
+        if revprops is None:
+            revprops = {}
         self.db["revprops/%d" % revision] = bencode((revprops, all_revprops))
         self.db["log-last"] = "%d" % max(self.last_revnum(), revision)
 
