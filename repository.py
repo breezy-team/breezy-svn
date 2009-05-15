@@ -455,11 +455,10 @@ class SvnRepository(ForeignRepository):
         # XXX: Note ATM no callers actually pay attention to this return
         #      instead they just use the list of revision ids and ignore
         #      missing sigs. Consider removing this work entirely
-        revisions_with_signatures = set(self.signatures.get_parent_map(
-            [(r,) for r in revision_ids]))
-        revisions_with_signatures = set(
-            [r for (r,) in revisions_with_signatures])
-        revisions_with_signatures.intersection_update(revision_ids)
+        revisions_with_signatures = set()
+        for revid in revision_ids:
+            if self.has_signature_for_revision_id(revid):
+                revisions_with_signatures.add(revid)
         yield ("signatures", None, revisions_with_signatures)
         yield ("revisions", None, revision_ids)
 

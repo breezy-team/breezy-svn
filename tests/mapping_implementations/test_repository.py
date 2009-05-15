@@ -1013,7 +1013,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertEquals([
             ('file', mapping.generate_file_id((b.repository.uuid, "", 1), u"foo"), set([revid])),
             ('inventory', None, [revid]),
-            ('signatures', None, set([revid])),
+            ('signatures', None, set([])),
             ('revisions', None, [revid])], ch)
 
     def test_fetch_file_from_non_branch(self):

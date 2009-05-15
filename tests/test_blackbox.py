@@ -57,8 +57,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
     def test_branch_onerev_stacked(self):
         repos_url = self.make_client('d', 'de')
         self.commit_something(repos_url)
-        self.run_bzr("branch --stacked %s dc" % repos_url)
-        self.check_output("2\n", "revno de")
+        self.run_bzr("branch --stacked %s dc" % repos_url, retcode=3)
         
     def test_log_empty(self):
         repos_url = self.make_repository('d')
