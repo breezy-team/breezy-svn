@@ -37,6 +37,7 @@ from bzrlib.branch import (
     BranchFormat,
     BranchCheckResult,
     BranchPushResult,
+    GenericInterBranch,
     InterBranch,
     PullResult,
     )
@@ -570,6 +571,10 @@ class SvnBranch(ForeignBranch):
 
     __repr__ = __str__
 
+    def _basic_push(self, target, overwrite=False, stop_revision=None):
+        return InterBranch.get(self, target)._basic_push(
+            overwrite, stop_revision)
+
 
 class SvnBranchFormat(BranchFormat):
     """Branch format for Subversion Branches."""
@@ -605,7 +610,7 @@ class SvnBranchFormat(BranchFormat):
             return tag.DisabledTags(branch)
 
 
-class InterSvnOtherBranch(InterBranch):
+class InterSvnOtherBranch(GenericInterBranch):
     """InterBranch implementation that is optimized for copying from 
     Subversion.
 
@@ -648,8 +653,16 @@ class InterSvnOtherBranch(InterBranch):
         finally:
             self.source.unlock()
 
-    def push(self, overwrite=False, stop_revision=None):
-        raise NotImplementedError(self.push)
+    def _basic_push(self, overwrite=False, stop_revision=None):
+        result = BranchPushResult()
+        result.source_branch = self.source
+        result.target_branch = self.target
+        graph = self.target.repository.get_graph(self.source.repository)
+        result.old_revno, result.old_revid = self.target.last_revision_info()
+        self.update_revisions(stop_revision, overwrite=overwrite, graph=graph)
+        # FIXME: Tags
+        result.new_revno, result.new_revid = self.target.last_revision_info()
+        return result
 
     def pull(self, overwrite=False, stop_revision=None, 
              _hook_master=None, run_hooks=True, possible_transports=None,
