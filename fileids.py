@@ -302,19 +302,16 @@ class FileIdMapStore(object):
     def get_map(self, foreign_revid, mapping):
         """Make sure the map is up to date until revnum."""
         (uuid, branch, revnum) = foreign_revid
-        # First, find the last cached map
-        if revnum == 0:
-            assert branch == ""
-            return DictFileIdMap({"": (mapping.generate_file_id(foreign_revid, u""), 
-                self.repos.lookup_foreign_revision_id((uuid, "", 0), mapping), 
-                None)})
-
         todo = []
         next_parent_revs = []
         if mapping.is_branch(""):
-            map = DictFileIdMap({u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION, None)})
+            map = DictFileIdMap({u"": (mapping.generate_file_id((uuid, "", 0), u""), mapping.revision_id_foreign_to_bzr((uuid, "", 0)), None)})
         else:
             map = DictFileIdMap({})
+
+        if revnum == 0:
+            assert branch == ""
+            return map
 
         # No history -> empty map
         todo = list(self.repos._iter_reverse_revmeta_mapping_history(branch, revnum, to_revnum=0, mapping=mapping))
