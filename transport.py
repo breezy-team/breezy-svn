@@ -174,7 +174,8 @@ def Connection(url, auth=None):
                 progress_cb=progress_cb)
         if 'transport' in debug.debug_flags:
             ret = MutteringRemoteAccess(ret)
-    except subvertpy.SubversionException, (msg, num):
+    except subvertpy.SubversionException, e:
+        msg, num = e.args
         if num in (subvertpy.ERR_RA_SVN_REPOS_NOT_FOUND,):
             raise NoSvnRepositoryPresent(url=url)
         if num == subvertpy.ERR_BAD_URL:
@@ -194,7 +195,7 @@ def Connection(url, auth=None):
             raise RedirectRequested(source=_url_escape_uri(url),
                                     target=_url_escape_uri(urlutils.join(url, new_url)), 
                                     is_permanent=True)
-        raise convert_error(subvertpy.SubversionException(msg, num))
+        raise convert_error(e)
     from bzrlib.plugins.svn import lazy_check_versions
     lazy_check_versions()
     return ret
