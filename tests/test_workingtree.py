@@ -243,13 +243,9 @@ class TestWorkingTree(SubversionTestCase):
         self.make_client('a', 'dc')
         tree = WorkingTree.open("dc")
         tree.lock_write()
+        tree.unlock()
 
     def test_lock_read(self):
-        self.make_client('a', 'dc')
-        tree = WorkingTree.open("dc")
-        tree.lock_read()
-
-    def test_unlock(self):
         self.make_client('a', 'dc')
         tree = WorkingTree.open("dc")
         tree.lock_read()
