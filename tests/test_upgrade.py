@@ -16,8 +16,15 @@
 
 """Mapping upgrade tests."""
 
-from bzrlib.bzrdir import BzrDir
-from bzrlib.repository import Repository
+from bzrlib.bzrdir import (
+    BzrDir,
+    )
+from bzrlib.errors import (
+    IncompatibleAPI,
+    )
+from bzrlib.repository import (
+    Repository,
+    )
 from bzrlib.tests import (
     TestCase,
     TestSkipped,
@@ -46,6 +53,8 @@ from bzrlib.plugins.svn.tests import (
 def import_upgrade():
     try:
         from bzrlib.plugins.rebase import upgrade
+    except IncompatibleAPI, e:
+        raise TestSkipped(e)
     except ImportError, e:
         raise TestSkipped(e)
     return upgrade
