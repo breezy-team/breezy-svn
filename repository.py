@@ -31,7 +31,6 @@ from bzrlib import (
     osutils,
     ui,
     urlutils,
-    xml6,
     )
 from bzrlib.foreign import ForeignRepository
 from bzrlib.inventory import Inventory
@@ -63,7 +62,6 @@ from bzrlib.plugins.svn import (
     cache,
     changes,
     errors,
-    foreign,
     layout,
     logwalker,
     revmeta,
@@ -96,11 +94,6 @@ from bzrlib.plugins.svn.revids import (
     )
 from bzrlib.plugins.svn.tree import SvnRevisionTree
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
-from bzrlib.plugins.svn.foreign.versionedfiles import (
-    VirtualRevisionTexts, 
-    VirtualInventoryTexts,
-    VirtualSignatureTexts,
-    )
 
 LAYOUT_SOURCE_GUESSED = 'guess'
 LAYOUT_SOURCE_CONFIG = 'config'
@@ -331,7 +324,7 @@ class SvnRepository(ForeignRepository):
         self.base = transport.base
         assert self.base is not None
         self._config = None
-        self._serializer = xml6.serializer_v6
+        self._serializer = None
         self.get_config().add_location(self.base)
         self._log = logwalker.LogWalker(transport=transport)
         self.fileid_map = FileIdMapStore(simple_apply_changes, self)
@@ -378,9 +371,9 @@ class SvnRepository(ForeignRepository):
         self._parents_provider = graph.CachingParentsProvider(
             self._real_parents_provider)
         self.texts = SvnTexts(self)
-        self.revisions = VirtualRevisionTexts(self)
-        self.inventories = VirtualInventoryTexts(self)
-        self.signatures = VirtualSignatureTexts(self)
+        self.revisions = None
+        self.inventories = None
+        self.signatures = None
 
         self.branchprop_list = PathPropertyProvider(self._log)
 

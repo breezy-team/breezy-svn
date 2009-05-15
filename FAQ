@@ -27,11 +27,7 @@ the history from the Subversion branch.
 bzr-svn will work significantly faster against a Subversion 1.5 server, so if 
 you have control over the server it may be worthwhile to upgrade it.
 
-Alternatively, you may want to just check out the tip of the Subversion branch
-and access the earlier revisions only when necessary by using stacked branches,
-e.g.::
-
- $ bzr branch --stacked svn://svn.gnome.org/svn/gnome-specimen/trunk
+In the future it should hopefully be possible to use stacked branches.
 
 The Bazaar revno's differ from the Subversion revno's
 -----------------------------------------------------

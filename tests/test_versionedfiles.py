@@ -15,13 +15,29 @@
 
 from bzrlib.tests import TestCase
 
-from bzrlib.plugins.svn.foreign.test_versionedfiles import BasicTextsTests
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
 
 
-class SvnTextsTests(TestCase, BasicTextsTests):
+class SvnTextsTests(TestCase):
 
     def setUp(self):
         TestCase.setUp(self)
         self.texts = SvnTexts(self)
+
+    def test_add_lines(self):
+        self.assertRaises(NotImplementedError, 
+                self.texts.add_lines, "foo", [], [])
+
+    def test_add_mpdiffs(self):
+        self.assertRaises(NotImplementedError, 
+                self.texts.add_mpdiffs, [])
+
+    def test_check(self):
+        self.assertTrue(self.texts.check())
+
+    def test_insert_record_stream(self):
+        self.assertRaises(NotImplementedError, self.texts.insert_record_stream,
+                          [])
+
+
 

@@ -124,6 +124,5 @@ def test_suite():
             'mapping3',
             'mapping3.test_scheme']
     suite.addTest(loader.loadTestsFromModuleNames(["%s.%s" % (__name__, i) for i in testmod_names]))
-    suite.addTest(loader.loadTestsFromModuleNames(["bzrlib.plugins.svn.foreign.test_versionedfiles"]))
 
     return suite
