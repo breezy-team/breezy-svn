@@ -115,11 +115,9 @@ class RevisionMetadata(object):
         self._revprops = revprops
         self._changed_fileprops = changed_fileprops
         self._fileprops = fileprops
-        self._is_bzr_revision = None
         self._direct_lhs_parent_known = False
         self._consider_bzr_fileprops = None
         self._consider_bzr_revprops = None
-        self._consider_svk_fileprops = None
         self._estimated_fileprop_ancestors = {}
         self.metaiterators = set()
         if metaiterator is not None:
