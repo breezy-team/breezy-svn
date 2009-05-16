@@ -192,6 +192,7 @@ class RevisionInfoCache(CacheTable):
             hidden = False
         except ValueError: # empty string
             hidden = True
+            revno = None
         return ((revno, revid, hidden), original_mapping, stored_lhs_parent_revid)
 
     def get_original_mapping(self, foreign_revid):

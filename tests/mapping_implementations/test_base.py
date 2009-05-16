@@ -181,7 +181,7 @@ class RoundtripMappingTests(TestCase):
             raise TestNotApplicable
         fileprops = {}
         self.mapping.export_revision_fileprops(432432432.0, 0, "somebody", {}, "arevid", 4, ["parent", "merge1"], fileprops)
-        self.assertEquals((4, "arevid"), self.mapping.get_revision_id_fileprops(changed_props(fileprops)))
+        self.assertEquals((4, "arevid", False), self.mapping.get_revision_id_fileprops(changed_props(fileprops)))
 
     def test_revision_id_revprops(self):
         if not self.mapping.roundtripping:
@@ -190,15 +190,15 @@ class RoundtripMappingTests(TestCase):
             raise TestNotApplicable
         revprops = {}
         self.mapping.export_revision_revprops("someuuid", "branchp", 432432432.0, 0, "somebody", {}, "arevid", 4, ["parent", "merge1"], revprops)
-        self.assertEquals((4, "arevid"), self.mapping.get_revision_id_revprops(revprops))
+        self.assertEquals((4, "arevid", False), self.mapping.get_revision_id_revprops(revprops))
     
     def test_revision_id_none(self):
         if not self.mapping.roundtripping:
             raise TestNotApplicable
         if self.mapping.can_use_fileprops:
-            self.assertEquals((None, None), self.mapping.get_revision_id_fileprops({}))
+            self.assertEquals((None, None, False), self.mapping.get_revision_id_fileprops({}))
         if self.mapping.can_use_revprops:
-            self.assertEquals((None, None), self.mapping.get_revision_id_revprops({}))
+            self.assertEquals((None, None, False), self.mapping.get_revision_id_revprops({}))
 
     def test_parse_revision_id_unknown(self):
         self.assertRaises(InvalidRevisionId, 

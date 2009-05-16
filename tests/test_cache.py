@@ -34,7 +34,8 @@ class LogCacheTests(object):
 
     def test_insert_paths(self):
         self.cache.insert_paths(42, {"foo": ("A", None, -1)})
-        self.assertEquals({"foo": ("A", None, -1)}, self.cache.get_revision_paths(42))
+        self.assertEquals({"foo": ("A", None, -1)}, 
+                self.cache.get_revision_paths(42))
 
     def test_insert_revprops(self):
         self.cache.insert_revprops(100, {"some": "data"}, True)
@@ -133,14 +134,14 @@ class RevInfoCacheTests(object):
 
     def test_get_revision(self):
         self.cache.insert_revision(("fsdkjhfsdkjhfsd", "mypath", 1), 
-            BzrSvnMappingv4(), "somerevid", 42, False, None, "oldlhs")
-        self.assertEquals(("somerevid", 42, False, None, "oldlhs"),
+            BzrSvnMappingv4(), (42, "somerevid", False), BzrSvnMappingv4(), "oldlhs")
+        self.assertEquals(((42, "somerevid", False), BzrSvnMappingv4(), "oldlhs"),
             self.cache.get_revision(("bfdshfksdjh", "mypath", 1), 
             BzrSvnMappingv4()))
 
     def test_get_original_mapping_none(self):
         self.cache.insert_revision(("fsdkjhfsdkjhfsd", "mypath", 1), 
-            BzrSvnMappingv4(), "somerevid", 42, False, None, "oldlhs")
+            BzrSvnMappingv4(), (42, "somerevid", False), None, "oldlhs")
         self.assertEquals(None, self.cache.get_original_mapping(("fkjhfsdkjh", "mypath", 1)))
 
     def test_get_original_mapping_unknown(self):
@@ -148,7 +149,7 @@ class RevInfoCacheTests(object):
 
     def test_get_original_mapping_v4(self):
         self.cache.insert_revision(("fsdkjhfsdkjhfsd", "mypath", 1), 
-            BzrSvnMappingv4(), "somerevid", 42, False, BzrSvnMappingv4(), "oldlhs")
+            BzrSvnMappingv4(), (42, "somerevid", False), BzrSvnMappingv4(), "oldlhs")
         self.assertEquals(BzrSvnMappingv4(), self.cache.get_original_mapping(("fkjhfsdkjh", "mypath", 1)))
 
 
