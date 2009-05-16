@@ -314,8 +314,11 @@ class RevisionIdMapCache(object):
 
 class RevisionInfoCache(object):
 
+    def set_original_mapping(self, foreign_revid, original_mapping):
+        raise NotImplementedError(self.set_original_mapping)
+
     def insert_revision(self, foreign_revid, mapping, revinfo, 
-            original_mapping, stored_lhs_parent_revid):
+            stored_lhs_parent_revid):
         """Insert a revision to the cache.
 
         :param foreign_revid: Foreign revision id

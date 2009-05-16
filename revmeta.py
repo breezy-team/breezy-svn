@@ -797,24 +797,23 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._stored_lhs_parent_revid = {}
 
     def _update_cache(self, mapping):
-        if self._original_mapping is not None and self._revision_info[mapping][1] is not None:
+        if (self.get_original_mapping() is not None and 
+            self._revision_info[mapping][1] is not None):
             self._revid_cache.insert_revid(self._revision_info[mapping][1],
                 self.branch_path, self.revnum, self.revnum, mapping.name)
             self._revid_cache.commit_conditionally()
         self._revinfo_cache.insert_revision(self.get_foreign_revid(), mapping, 
             self._revision_info[mapping], 
-            self._original_mapping, self._stored_lhs_parent_revid[mapping])
+            self._stored_lhs_parent_revid[mapping])
         self._revinfo_cache.commit_conditionally()
 
     def _determine(self, mapping):
         self._revision_info[mapping] = super(CachingRevisionMetadata, self).get_revision_info(mapping)
-        self._original_mapping_set = True
-        self._original_mapping = super(CachingRevisionMetadata, self).get_original_mapping()
         self._stored_lhs_parent_revid[mapping] = super(CachingRevisionMetadata, self).get_stored_lhs_parent_revid(mapping)
 
     def _retrieve(self, mapping):
         assert mapping is not None
-        (self._revision_info[mapping], self._original_mapping, 
+        (self._revision_info[mapping], 
                 self._stored_lhs_parent_revid[mapping]) = \
                  self._revinfo_cache.get_revision(self.get_foreign_revid(),
                                                   mapping)
@@ -822,10 +821,13 @@ class CachingRevisionMetadata(RevisionMetadata):
     def get_original_mapping(self):
         if self._original_mapping_set:
             return self._original_mapping
+
         try:
             self._original_mapping = self._revinfo_cache.get_original_mapping(self.get_foreign_revid())
         except KeyError:
             self._original_mapping = super(CachingRevisionMetadata, self).get_original_mapping()
+            self._revinfo_cache.set_original_mapping(self.get_foreign_revid(),
+                    self._original_mapping)
         self._original_mapping_set = True
         return self._original_mapping
 

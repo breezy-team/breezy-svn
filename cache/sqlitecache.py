@@ -214,48 +214,47 @@ class RevisionInfoCache(CacheTable):
         self.cachedb.executescript("""
         create table if not exists revmetainfo (path text, revnum integer, mapping text, revid text, revno int, hidden int, original_mapping text, stored_lhs_parent_revid text);
         create unique index if not exists revmeta_path_mapping on revmetainfo(revnum, path, mapping);
+        create table if not exists original_mapping (path text, revnum integer, original_mapping text);
+        create unique index if not exists original_mapping_path_revnum on original_mapping (path, revnum);
         """)
         self._commit_interval = 500
 
+    def set_original_mapping(self, foreign_revid, original_mapping):
+        if original_mapping is not None:
+            orig_mapping_name = original_mapping.name
+        else:
+            orig_mapping_name = None
+        self.cachedb.execute("insert into original_mapping (path, revnum, original_mapping) values (?, ?, ?)", (foreign_revid[1], foreign_revid[2], orig_mapping_name))
+
     def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden), 
-            original_mapping, stored_lhs_parent_revid):
+            stored_lhs_parent_revid):
         """Insert a revision to the cache.
 
         :param foreign_revid: Foreign revision id
         :param mapping: Mapping used
         :param info: Tuple with (revno, revid, hidden)
-        :param original_mapping: Original mapping used
         :param stored_lhs_parent_revid: Stored lhs parent revision
         """
-        if original_mapping is not None:
-            orig_mapping_name = original_mapping.name
-        else:
-            orig_mapping_name = None
-        self.cachedb.execute("insert into revmetainfo (path, revnum, mapping, revid, revno, hidden, original_mapping, stored_lhs_parent_revid) values (?, ?, ?, ?, ?, ?, ?, ?)", (foreign_revid[1], foreign_revid[2], mapping.name, revid, revno, hidden, orig_mapping_name, stored_lhs_parent_revid))
+        self.cachedb.execute("insert into revmetainfo (path, revnum, mapping, revid, revno, hidden, stored_lhs_parent_revid) values (?, ?, ?, ?, ?, ?, ?)", (foreign_revid[1], foreign_revid[2], mapping.name, revid, revno, hidden, stored_lhs_parent_revid))
 
     def get_revision(self, foreign_revid, mapping):
         """Get the revision metadata info for a (foreign_revid, mapping) tuple.
 
-        :param foreign_revid: Foreign reviasion id
+        :param foreign_revid: Foreign revision id
         :param mapping: Mapping
-        :return: Tuple with (stored revno, revid, hidden), original_mapping, 
+        :return: Tuple with (stored revno, revid, hidden), 
             stored_lhs_parent_revid
         """
         # Will raise KeyError if not present
-        # returns tuple with (revid, revno, hidden, original_mapping, stored_lhs_parent_revid)
-        row = self.cachedb.execute("select revno, revid, hidden, original_mapping, stored_lhs_parent_revid from revmetainfo where path = ? and revnum = ? and mapping = ?", (foreign_revid[1], foreign_revid[2], mapping.name)).fetchone()
+        row = self.cachedb.execute("select revno, revid, hidden, stored_lhs_parent_revid from revmetainfo where path = ? and revnum = ? and mapping = ?", (foreign_revid[1], foreign_revid[2], mapping.name)).fetchone()
         if row is None:
             raise KeyError((foreign_revid, mapping))
         else:
             if row[3] is None:
-                original_mapping = None
-            else:
-                original_mapping = mapping_registry.parse_mapping_name("svn-" + row[3].encode("utf-8"))
-            if row[4] is None:
                 stored_lhs_parent_revid = None
             else:
-                stored_lhs_parent_revid = row[4].encode("utf-8")
-            return ((row[0], row[1].encode("utf-8"), row[2]), original_mapping, stored_lhs_parent_revid)
+                stored_lhs_parent_revid = row[3].encode("utf-8")
+            return ((row[0], row[1].encode("utf-8"), row[2]), stored_lhs_parent_revid)
 
     def get_original_mapping(self, foreign_revid):
         """Find the original mapping for a revision.
@@ -263,7 +262,7 @@ class RevisionInfoCache(CacheTable):
         :param foreign_revid: Foreign revision id
         :return: Mapping object or None
         """
-        row = self.cachedb.execute("select original_mapping from revmetainfo where path = ? and revnum = ?", (foreign_revid[1], foreign_revid[2])).fetchone()
+        row = self.cachedb.execute("select original_mapping from original_mapping where path = ? and revnum = ?", (foreign_revid[1], foreign_revid[2])).fetchone()
         if row is None:
             raise KeyError(foreign_revid)
         if row[0] is None:

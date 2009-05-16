@@ -139,8 +139,15 @@ class RevisionIdMapCache(CacheTable):
 
 class RevisionInfoCache(CacheTable):
 
+    def set_original_mapping(self, foreign_revid, original_mapping):
+        if original_mapping is not None:
+            orig_mapping_name = original_mapping.name
+        else:
+            orig_mapping_name = ""
+        self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])] = orig_mapping_name
+
     def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden), 
-            original_mapping, stored_lhs_parent_revid):
+            stored_lhs_parent_revid):
         """Insert a revision to the cache.
 
         :param foreign_revid: Foreign revision id
@@ -151,13 +158,8 @@ class RevisionInfoCache(CacheTable):
         :param original_mapping: Original mapping used
         :param stored_lhs_parent_revid: Stored lhs parent revision
         """
-        if original_mapping is not None:
-            orig_mapping_name = original_mapping.name
-            if revid is not None:
-                self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
-        else:
-            orig_mapping_name = ""
-        self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])] = orig_mapping_name
+        if revid is not None:
+            self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
         basekey = "%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
         assert not hidden or revno is None
         if revno is not None:
@@ -172,18 +174,12 @@ class RevisionInfoCache(CacheTable):
 
         :param foreign_revid: Foreign revision id
         :param mapping: Mapping
-        :return: Tuple with (stored revno, revid, hidden), original_mapping, 
-            stored_lhs_parent_revid
+        :return: Tuple with (stored revno, revid, hidden), stored_lhs_parent_revid
         """
         self.mutter("get-revision %r,%r", foreign_revid, mapping)
-        original_mapping = self.get_original_mapping(foreign_revid)
         basekey = "%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
-        if original_mapping is None:
-            revid = mapping.revision_id_foreign_to_bzr(foreign_revid)
-            stored_lhs_parent_revid = None
-        else:
-            revid = self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])]
-            stored_lhs_parent_revid = self.db.get("lhs-parent-revid/%s" % basekey)
+        revid = self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])]
+        stored_lhs_parent_revid = self.db.get("lhs-parent-revid/%s" % basekey)
         try:
             revno = int(self.db["revno/%s" % basekey])
             hidden = False
@@ -193,7 +189,7 @@ class RevisionInfoCache(CacheTable):
         except ValueError: # empty string
             hidden = True
             revno = None
-        return ((revno, revid, hidden), original_mapping, stored_lhs_parent_revid)
+        return ((revno, revid, hidden), stored_lhs_parent_revid)
 
     def get_original_mapping(self, foreign_revid):
         """Find the original mapping for a revision.
