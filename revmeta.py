@@ -803,9 +803,10 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._stored_lhs_parent_revid = {}
 
     def _update_cache(self, mapping):
-        self._revid_cache.insert_revid(self._revid[mapping], self.branch_path, 
-                                       self.revnum, self.revnum, mapping.name)
-        self._revid_cache.commit_conditionally()
+        if self._original_mapping is not None:
+            self._revid_cache.insert_revid(self._revid[mapping],
+                self.branch_path, self.revnum, self.revnum, mapping.name)
+            self._revid_cache.commit_conditionally()
         self._revinfo_cache.insert_revision(self.get_foreign_revid(), mapping, 
             self._revid[mapping], self._distance_to_null[mapping], self._hidden[mapping],
             self._original_mapping, self._stored_lhs_parent_revid[mapping])

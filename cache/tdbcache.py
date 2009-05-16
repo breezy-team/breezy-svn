@@ -153,6 +153,7 @@ class RevisionInfoCache(CacheTable):
         """
         if original_mapping is not None:
             orig_mapping_name = original_mapping.name
+            self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
         else:
             orig_mapping_name = ""
         self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])] = orig_mapping_name
@@ -162,8 +163,7 @@ class RevisionInfoCache(CacheTable):
             self.db["revno/%s" % basekey] = "%d" % revno
         elif hidden:
             self.db["revno/%s" % basekey] = ""
-        self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
-        if stored_lhs_parent_revid:
+        if stored_lhs_parent_revid is not None:
             self.db["lhs-parent-revid/%s" % basekey] = stored_lhs_parent_revid
 
     def get_revision(self, foreign_revid, mapping):
@@ -175,8 +175,14 @@ class RevisionInfoCache(CacheTable):
             stored_lhs_parent_revid
         """
         self.mutter("get-revision %r,%r", foreign_revid, mapping)
+        original_mapping = self.get_original_mapping(foreign_revid)
         basekey = "%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
-        revid = self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])]
+        if original_mapping is None:
+            revid = mapping.revision_id_foreign_to_bzr(foreign_revid)
+            stored_lhs_parent_revid = None
+        else:
+            revid = self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])]
+            stored_lhs_parent_revid = self.db.get("lhs-parent-revid/%s" % basekey)
         try:
             revno = int(self.db["revno/%s" % basekey])
             hidden = False
@@ -185,8 +191,6 @@ class RevisionInfoCache(CacheTable):
             hidden = False
         except ValueError: # empty string
             hidden = True
-        original_mapping = self.get_original_mapping(foreign_revid)
-        stored_lhs_parent_revid = self.db.get("lhs-parent-revid/%s" % basekey)
         return (revid, revno, hidden, original_mapping, stored_lhs_parent_revid)
 
     def get_original_mapping(self, foreign_revid):
