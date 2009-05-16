@@ -30,8 +30,26 @@ For more information about bzr-svn, see the bzr-svn FAQ.
 
 """
 import bzrlib
-from bzrlib import config
 import bzrlib.api
+
+# versions ending in 'exp' mean experimental mappings
+# versions ending in 'dev' mean development version
+# versions ending in 'final' mean release (well tested, etc)
+version_info = (0, 6, 0, 'dev', 0)
+
+if version_info[3] == 'final':
+    version_string = '%d.%d.%d' % version_info[:3]
+else:
+    version_string = '%d.%d.%d%s%d' % version_info
+__version__ = version_string
+
+COMPATIBLE_BZR_VERSIONS = [(1, 15, 0)]
+MINIMUM_SUBVERTPY_VERSION = (0, 6, 1)
+
+bzrlib.api.require_any_api(bzrlib, COMPATIBLE_BZR_VERSIONS)
+
+
+from bzrlib import config
 from bzrlib.bzrdir import (
     BzrDirFormat,
     format_registry,
@@ -65,19 +83,6 @@ from bzrlib.version_info_formats.format_rio import (
     RioVersionInfoBuilder,
     )
 
-# versions ending in 'exp' mean experimental mappings
-# versions ending in 'dev' mean development version
-# versions ending in 'final' mean release (well tested, etc)
-version_info = (0, 6, 0, 'dev', 0)
-
-if version_info[3] == 'final':
-    version_string = '%d.%d.%d' % version_info[:3]
-else:
-    version_string = '%d.%d.%d%s%d' % version_info
-__version__ = version_string
-
-COMPATIBLE_BZR_VERSIONS = [(1, 15, 0)]
-MINIMUM_SUBVERTPY_VERSION = (0, 6, 1)
 
 
 def check_subversion_version():
@@ -126,7 +131,6 @@ def lazy_check_versions():
         return
     _versions_checked = True
     init_subvertpy()
-    bzrlib.api.require_any_api(bzrlib, COMPATIBLE_BZR_VERSIONS)
 
 from bzrlib.plugins.svn import format
 
