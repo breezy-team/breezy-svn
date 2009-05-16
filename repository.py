@@ -1000,12 +1000,18 @@ class SvnRepository(ForeignRepository):
         assert from_revnum <= to_revnum
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            entries = list(self._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, to_revnum, from_revnum, project=project, pb=pb))
+            entries = []
+            for kind, item in self._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, to_revnum, from_revnum, project=project):
+                if kind == "revision":
+                    pb.update("discovering tags", to_revnum-item.revnum, to_revnum-from_revnum)
+                    if layout.is_tag(item.branch_path):
+                        entries.append((kind, (item.branch_path, (item.revnum, item.get_tag_revmeta(mapping)))))
+                else:
+                    entries.append((kind, item))
             for kind, item in reversed(entries):
                 if kind == "revision":
-                    revmeta = item
-                    if layout.is_tag(revmeta.branch_path):
-                        tags[revmeta.branch_path] = (revmeta.revnum, revmeta.get_tag_revmeta(mapping))
+                    (branch_path, tag) = item
+                    tags[branch_path] = tag
                 elif kind == "delete":
                     (path, revnum) = item
                     for t, (lastrevnum, tagrevmeta) in tags.items():
