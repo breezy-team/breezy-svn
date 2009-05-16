@@ -94,7 +94,7 @@ class RepositoryCache(object):
         cache_dir = create_cache_dir()
         dir = os.path.join(cache_dir, self.uuid)
         if not os.path.exists(dir):
-            trace.info("Initialising Subversion metadata cache in %s",
+            trace.info("Initialising Subversion metadata cache in %s.",
                        dir.decode(osutils._fs_enc))
             os.mkdir(dir)
         return dir
