@@ -793,36 +793,31 @@ class CachingRevisionMetadata(RevisionMetadata):
                                       "_cache", None)
         self._revid_cache = self.repository.revmap.cache
         self._revinfo_cache = self.repository.revinfo_cache
-        self._revid = {}
-        self._distance_to_null = {}
+        self._revision_info = {}
         self._original_mapping = None
         self._original_mapping_set = False
-        self._hidden = {}
         self._stored_lhs_parent_revid = {}
 
     def _update_cache(self, mapping):
-        if self._original_mapping is not None:
-            self._revid_cache.insert_revid(self._revid[mapping],
+        if self._original_mapping is not None and self._revision_info[mapping][1] is not None:
+            self._revid_cache.insert_revid(self._revision_info[mapping][1],
                 self.branch_path, self.revnum, self.revnum, mapping.name)
             self._revid_cache.commit_conditionally()
         self._revinfo_cache.insert_revision(self.get_foreign_revid(), mapping, 
-            self._revid[mapping], self._distance_to_null[mapping], self._hidden[mapping],
+            self._revision_info[mapping], 
             self._original_mapping, self._stored_lhs_parent_revid[mapping])
         self._revinfo_cache.commit_conditionally()
 
     def _determine(self, mapping):
-        self._distance_to_null[mapping] = super(CachingRevisionMetadata, self).get_distance_to_null(mapping)
-        self._revid[mapping] = super(CachingRevisionMetadata, self).get_revision_id(
-            mapping)
-        self._hidden[mapping] = super(CachingRevisionMetadata, self).is_hidden(mapping)
+        self._revision_info[mapping] = super(CachingRevisionMetadata, self).get_revision_info(mapping)
         self._original_mapping_set = True
         self._original_mapping = super(CachingRevisionMetadata, self).get_original_mapping()
         self._stored_lhs_parent_revid[mapping] = super(CachingRevisionMetadata, self).get_stored_lhs_parent_revid(mapping)
 
     def _retrieve(self, mapping):
         assert mapping is not None
-        (self._revid[mapping], self._distance_to_null[mapping], self._hidden[mapping],
-         self._original_mapping, self._stored_lhs_parent_revid[mapping]) = \
+        (self._revision_info[mapping], self._original_mapping, 
+                self._stored_lhs_parent_revid[mapping]) = \
                  self._revinfo_cache.get_revision(self.get_foreign_revid(),
                                                   mapping)
 
@@ -856,39 +851,18 @@ class CachingRevisionMetadata(RevisionMetadata):
         else:
             return self._stored_lhs_parent_revid[mapping]
 
-    def get_revision_id(self, mapping):
-        """Find the revision id of a revision."""
-        if mapping in self._revid:
-            return self._revid[mapping]
+    def get_revision_info(self, mapping):
+        if mapping in self._revision_info:
+            return self._revision_info[mapping]
         try:
             self._retrieve(mapping)
         except KeyError:
             self._determine(mapping)
             self._update_cache(mapping)
-        return self._revid[mapping]
-
-    def get_distance_to_null(self, mapping):
-        if mapping in self._distance_to_null:
-            return self._distance_to_null[mapping]
-        try:
-            self._retrieve(mapping)
-        except KeyError:
-            self._determine(mapping)
-            self._update_cache(mapping)
-        return self._distance_to_null[mapping]
+        return self._revision_info[mapping]
 
     def get_rhs_parents(self, mapping):
         return self.get_parent_ids(mapping)[1:]
-
-    def is_hidden(self, mapping):
-        if mapping in self._hidden:
-            return self._hidden[mapping]
-        try:
-            self._retrieve(mapping)
-        except KeyError:
-            self._determine(mapping)
-            self._update_cache(mapping)
-        return self._hidden[mapping]
 
     def get_parent_ids(self, mapping):
         """Find the parent ids of a revision."""

@@ -139,7 +139,7 @@ class RevisionIdMapCache(CacheTable):
 
 class RevisionInfoCache(CacheTable):
 
-    def insert_revision(self, foreign_revid, mapping, revid, revno, hidden, 
+    def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden), 
             original_mapping, stored_lhs_parent_revid):
         """Insert a revision to the cache.
 
@@ -153,7 +153,8 @@ class RevisionInfoCache(CacheTable):
         """
         if original_mapping is not None:
             orig_mapping_name = original_mapping.name
-            self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
+            if revid is not None:
+                self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
         else:
             orig_mapping_name = ""
         self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])] = orig_mapping_name
@@ -171,7 +172,7 @@ class RevisionInfoCache(CacheTable):
 
         :param foreign_revid: Foreign revision id
         :param mapping: Mapping
-        :return: Tuple with revid, stored revno, hidden, original_mapping, 
+        :return: Tuple with (stored revno, revid, hidden), original_mapping, 
             stored_lhs_parent_revid
         """
         self.mutter("get-revision %r,%r", foreign_revid, mapping)
@@ -191,7 +192,7 @@ class RevisionInfoCache(CacheTable):
             hidden = False
         except ValueError: # empty string
             hidden = True
-        return (revid, revno, hidden, original_mapping, stored_lhs_parent_revid)
+        return ((revno, revid, hidden), original_mapping, stored_lhs_parent_revid)
 
     def get_original_mapping(self, foreign_revid):
         """Find the original mapping for a revision.

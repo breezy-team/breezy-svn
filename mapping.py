@@ -790,8 +790,8 @@ class BzrSvnMappingFileProps(object):
             return (None, None, self.is_bzr_revision_hidden_fileprops(fileprops))
 
         try:
-            (revid, revno) = parse_revid_property(new_lines[0])
-            return (revid, revno, self.is_bzr_revision_hidden_fileprops(fileprops))
+            (revno, revid) = parse_revid_property(new_lines[0])
+            return (revno, revid, self.is_bzr_revision_hidden_fileprops(fileprops))
         except errors.InvalidPropertyValue, e:
             mutter(str(e))
             return (None, None, self.is_bzr_revision_hidden_fileprops(fileprops))

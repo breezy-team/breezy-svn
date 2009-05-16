@@ -314,15 +314,13 @@ class RevisionIdMapCache(object):
 
 class RevisionInfoCache(object):
 
-    def insert_revision(self, foreign_revid, mapping, revid, revno, hidden, 
+    def insert_revision(self, foreign_revid, mapping, revinfo, 
             original_mapping, stored_lhs_parent_revid):
         """Insert a revision to the cache.
 
         :param foreign_revid: Foreign revision id
         :param mapping: Mapping used
-        :param revid: Revision id
-        :param revno: Revision number
-        :param hidden: Whether revision is hidden
+        :param revinfo: Tuple with (revno, revid, hidden)
         :param original_mapping: Original mapping used
         :param stored_lhs_parent_revid: Stored lhs parent revision
         """
@@ -333,7 +331,7 @@ class RevisionInfoCache(object):
 
         :param foreign_revid: Foreign reviasion id
         :param mapping: Mapping
-        :return: Tuple with revid, stored revno, hidden, original_mapping, 
+        :return: Tuple with (stored revno, revid, hidden), original_mapping, 
             stored_lhs_parent_revid
         """
         raise NotImplementedError(self.get_revision)
