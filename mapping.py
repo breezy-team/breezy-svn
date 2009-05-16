@@ -775,23 +775,26 @@ class BzrSvnMappingFileProps(object):
         # Lookup the revision from the bzr:revision-id-vX property
         text = fileprops.get(SVN_PROP_BZR_REVISION_ID+self.name, None)
         if text is None:
-            return (None, None)
+            return (None, None, 
+                    self.is_bzr_revision_hidden_fileprops(fileprops))
 
         try:
             new_lines = find_new_lines(text)
         except ValueError, e:
             mutter(str(e))
-            return (None, None)
+            return (None, None, 
+                    self.is_bzr_revision_hidden_fileprops(fileprops))
 
         if len(new_lines) != 1:
             mutter("unexpected number of lines: %r" % new_lines)
-            return (None, None)
+            return (None, None, self.is_bzr_revision_hidden_fileprops(fileprops))
 
         try:
-            return parse_revid_property(new_lines[0])
+            (revid, revno) = parse_revid_property(new_lines[0])
+            return (revid, revno, self.is_bzr_revision_hidden_fileprops(fileprops))
         except errors.InvalidPropertyValue, e:
             mutter(str(e))
-            return (None, None)
+            return (None, None, self.is_bzr_revision_hidden_fileprops(fileprops))
 
     def export_fileid_map_fileprops(self, fileids, fileprops):
         if fileids != {}:
@@ -870,10 +873,10 @@ class BzrSvnMappingRevProps(object):
     def get_revision_id_revprops(self, revprops):
         if (not is_bzr_revision_revprops(revprops) or 
             not SVN_REVPROP_BZR_REVISION_ID in revprops):
-            return (None, None)
+            return (None, None, self.is_bzr_revision_hidden_revprops(revprops))
         revid = revprops[SVN_REVPROP_BZR_REVISION_ID]
         revno = int(revprops[SVN_REVPROP_BZR_REVNO])
-        return (revno, revid)
+        return (revno, revid, self.is_bzr_revision_hidden_revprops(revprops))
 
     def export_message_revprops(self, message, revprops):
         revprops[SVN_REVPROP_BZR_LOG] = message.encode("utf-8")

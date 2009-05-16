@@ -164,15 +164,18 @@ class RevisionMetadata(object):
             self._paths = self._log.get_revision_paths(self.revnum)
         return self._paths
 
+    def get_revision_info(self, mapping):
+        return self._import_from_props(mapping, 
+                mapping.get_revision_id_fileprops,
+                mapping.get_revision_id_revprops,
+                (None, None, None), self.consider_bzr_fileprops)
+
     def get_revision_id(self, mapping):
         """Determine the revision id for this revision.
         """
         if mapping.roundtripping:
             # See if there is a bzr:revision-id revprop set
-            (_, revid) = self._import_from_props(mapping, 
-                    mapping.get_revision_id_fileprops,
-                    mapping.get_revision_id_revprops,
-                    (None, None), self.consider_bzr_fileprops)
+            (_, revid, _) = self.get_revision_info(mapping)
         else:
             revid = None
 
@@ -484,20 +487,15 @@ class RevisionMetadata(object):
         """Check whether this revision should be hidden from Bazaar history."""
         if not mapping.supports_hidden:
             return False
-        return self._import_from_props(mapping, 
-                mapping.is_bzr_revision_hidden_fileprops,
-                mapping.is_bzr_revision_hidden_revprops,
-                False, consider_fileprops_fn=self.consider_bzr_hidden_fileprops)
+        (bzr_revno, revid, hidden) = self.get_revision_info(mapping)
+        return hidden
 
     def get_distance_to_null(self, mapping):
         """Return the stored number of revisions between this one and the 
         left hand side NULL_REVISION, if known.
         """
         if mapping.roundtripping:
-            (bzr_revno, _) = self._import_from_props(mapping, 
-                    mapping.get_revision_id_fileprops,
-                    mapping.get_revision_id_revprops,
-                    (None, None), self.consider_bzr_fileprops)
+            (bzr_revno, revid, hidden) = self.get_revision_info(mapping)
             if bzr_revno is not None:
                 return bzr_revno
         return None

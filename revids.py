@@ -82,7 +82,7 @@ class RevidMap(object):
                 branch_path = mapping.get_branch_root(revprops)
                 if branch_path is None:
                     continue
-                revno, revid = mapping.get_revision_id_revprops(revprops)
+                revno, revid, hidden = mapping.get_revision_id_revprops(revprops)
                 if revid is not None:
                     yield (revid, branch_path.strip("/"), revnum, mapping)
 
