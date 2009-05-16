@@ -490,8 +490,8 @@ class RevisionMetadata(object):
                 False, consider_fileprops_fn=self.consider_bzr_hidden_fileprops)
 
     def get_distance_to_null(self, mapping):
-        """Return the number of revisions between this one and the left hand 
-        side NULL_REVISION, if known.
+        """Return the stored number of revisions between this one and the 
+        left hand side NULL_REVISION, if known.
         """
         if mapping.roundtripping:
             (bzr_revno, _) = self._import_from_props(mapping, 

@@ -4,6 +4,7 @@ more tests:
 - bzr svn-set-revprops
 
 performance:
+- store hidden/revno as one field ? revmetas that are hidden don't have a revno
 - use chk maps for file ids
 - when looking for fileprop revids, do a get_dir() on branches/ and tags/ and look at "has_props"
 - when walking history, also update revid cache if possible

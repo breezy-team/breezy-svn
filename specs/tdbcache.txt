@@ -29,7 +29,8 @@ The revision info is stored in various separate keys.
     
     original-mapping/<revnum> <path>
 	revno/<revnum> <mapping> <path>
-	hidden/<revnum> <mapping> <path>
+		value is either the known revno or an empty string 
+		if this revision is "hidden"
 	lhs-parent-revid/<revnum> <mapping> <path>
 
 Logwalker
