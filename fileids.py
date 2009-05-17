@@ -133,23 +133,21 @@ def determine_text_revisions(changes, default_revid, specific_revids):
     """
     ret = {}
     ret.update(specific_revids)
-    for p, data in changes.iteritems():
+    for p, (action, copy_from) in changes.iteritems():
         assert isinstance(p, unicode)
         # The root changes often because of file properties, so we don't 
         # consider it really changing.
-        if data[0] in ('A', 'R', 'M') and p not in ret and p != u"":
+        if action in ('A', 'R', 'M') and p not in ret and p != u"":
             ret[p] = default_revid
     return ret
 
 
-def get_local_changes(paths, branch, layout, generate_revid):
+def get_local_changes(paths, branch):
     """Obtain all of the changes relative to a particular path
     (usually a branch path).
 
     :param paths: Changes
     :param branch: Path under which to select changes
-    :param layout: Layout to use 
-    :param generate_revid: Function for generating revision id from svn revnum
     """
     new_paths = {}
     for p in sorted(paths.keys(), reverse=False):
@@ -158,18 +156,13 @@ def get_local_changes(paths, branch, layout, generate_revid):
         data = paths[p]
         new_p = p[len(branch):].strip("/")
         if data[1] is not None:
-            try:
-                (pt, proj, cbp, crp) = layout.parse(data[1])
-
-                # Branch copy
-                if (crp == "" and new_p == ""):
-                    data = ('M', None, None)
-                else:
-                    data = (data[0], crp, generate_revid(data[2], cbp))
-            except errors.NotSvnBranchPath:
-                # Copied from outside of a known branch
-                data = (data[0], data[1], None)
-
+            # Branch copy
+            if new_p == "":
+                data = ('M', None)
+            else:
+                data = (data[0], (data[1], data[2]))
+        else:
+            data = (data[0], None)
         new_paths[new_p.decode("utf-8")] = data
     return new_paths
 
@@ -183,10 +176,10 @@ def simple_apply_changes(new_file_id, changes):
     Does not track renames. """
     delta = {}
     for p in sorted(changes.keys(), reverse=False):
-        data = changes[p]
+        (action, copy_from) = changes[p]
         assert isinstance(p, unicode)
         # Only generate new file ids for root if it's new
-        if data[0] in ('A', 'R') and (p != u"" or data[1] is None):
+        if action in ('A', 'R') and (p != u"" or copy_from is None):
             delta[p] = new_file_id(p)
     return delta 
 
@@ -224,8 +217,8 @@ class DictFileIdMap(FileIdMap):
         :param changes: Changes for the revision in question.
         """
         assert "" in self.data
-        for p, data in changes.iteritems():
-            if data[0] in ('D', 'R'):
+        for p, (action, copy_from) in changes.iteritems():
+            if action in ('D', 'R'):
                 for xp in self.data.keys():
                     if (p == xp or xp.startswith(u"%s/" % p)) and not xp in delta:
                         del self.data[xp]
@@ -289,9 +282,7 @@ class FileIdMapStore(object):
         return idmap
 
     def update_idmap(self, map, revmeta, mapping):
-        local_changes = get_local_changes(revmeta.get_paths(), 
-                    revmeta.branch_path, self.repos.get_layout(),
-                    lambda revnum, path: self.repos.generate_revision_id(revnum, path, mapping))
+        local_changes = get_local_changes(revmeta.get_paths(), revmeta.branch_path)
         idmap = self.get_idmap_delta(local_changes, revmeta, mapping)
         revid = revmeta.get_revision_id(mapping)
         text_revisions = determine_text_revisions(local_changes, revid, 

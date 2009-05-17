@@ -219,13 +219,13 @@ class TestFileMapping(TestCase):
         return map
 
     def test_simple(self):
-        map = self.apply_mappings({(1, ""): {u"foo": ('A', None, None)}})
+        map = self.apply_mappings({(1, ""): {u"foo": ('A', None)}})
         self.assertEqual({ u'foo': ("1@uuid::foo",
                                        (1, ""))
                          }, map)
 
     def test_simple_add(self):
-        map = self.apply_mappings({(1, ""): {u"": ('A', None, None), u"foo": ('A', None, None)}})
+        map = self.apply_mappings({(1, ""): {u"": ('A', None), u"foo": ('A', None)}})
         self.assertEqual({
             u'': ('1@uuid::', (1, "")),
             u'foo': ("1@uuid::foo", (1, "")) 
@@ -234,12 +234,12 @@ class TestFileMapping(TestCase):
     def test_copy(self):
         map = self.apply_mappings({
                 (1, ""): {
-                                   u"foo": ('A', None, None), 
-                                   u"foo/blie": ('A', None, None),
-                                   u"foo/bla": ('A', None, None)},
+                                   u"foo": ('A', None), 
+                                   u"foo/blie": ('A', None),
+                                   u"foo/bla": ('A', None)},
                 (2, ""): {
-                                   u"foob": ('A', 'foo', 1), 
-                                   u"foob/bla": ('M', None, None)}
+                                   u"foob": ('A', ('foo', 1)), 
+                                   u"foob/bla": ('M', None)}
                 })
         self.assertEquals(map,
             {u'foo': (u'1@uuid::foo', (1, '')),
@@ -250,10 +250,10 @@ class TestFileMapping(TestCase):
     def test_touchparent(self):
         map = self.apply_mappings(
                 {(1, ""): {
-                                   u"foo": ('A', None, None), 
-                                   u"foo/bla": ('A', None, None)},
+                                   u"foo": ('A', None), 
+                                   u"foo/bla": ('A', None)},
                  (2, ""): {
-                                   u"foo/bla": ('M', None, None)}
+                                   u"foo/bla": ('M', None)}
                 })
         self.assertEqual((1, ""), 
                          map[u"foo"][1])
@@ -263,10 +263,10 @@ class TestFileMapping(TestCase):
     def test_usemap(self):
         map = self.apply_mappings(
                 {(1, ""): {
-                                   u"foo": ('A', None, None), 
-                                   u"foo/bla": ('A', None, None)},
+                                   u"foo": ('A', None), 
+                                   u"foo/bla": ('A', None)},
                  (2, ""): {
-                                   u"foo/bla": ('M', None, None)}
+                                   u"foo/bla": ('M', None)}
                  }, 
                 renames={(1, ""): {u"foo": "myid"}})
         self.assertEqual("myid", map[u"foo"][0])
@@ -274,10 +274,10 @@ class TestFileMapping(TestCase):
     def test_usemap_later(self):
         map = self.apply_mappings(
                 {(1, ""): {
-                                   u"foo": ('A', None, None), 
-                                   u"foo/bla": ('A', None, None)},
+                                   u"foo": ('A', None), 
+                                   u"foo/bla": ('A', None)},
                  (2, ""): {
-                                   u"foo/bla": ('M', None, None)}
+                                   u"foo/bla": ('M', None)}
                  }, 
                 renames={(2, ""): {u"foo": "myid"}})
         self.assertEqual("1@uuid::foo", map[u"foo"][0])
@@ -590,12 +590,10 @@ class LocalChangesTests(TestCase):
     def test_trivial_change(self):
         paths = { "trunk/path": ("M", None, -1)}
         branch = "trunk"
-        self.assertEquals({"path": ("M", None, -1)},
-            get_local_changes(paths, branch, TrunkLayout(), None))
+        self.assertEquals({"path": ("M", None)}, get_local_changes(paths, branch))
 
     def test_bug_352509(self):
         paths = { "trunk/internal/org.restlet": ('R', 'trunk/plugins/internal/org.restlet', 1111) }
         branch = "trunk/internal/org.restlet"
-        layout = CustomLayout(['trunk/modules/org.restlet'],[])
-        self.assertEquals({"": ("R", "", "trunk/plugins/internal/org.restlet:1111")},
-            get_local_changes(paths, branch, layout, self._generate_revid))
+        self.assertEquals({"": ("M", None)},
+            get_local_changes(paths, branch))
