@@ -28,12 +28,16 @@ from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn.fileids import (
     FileIdMapCache,
+    get_local_changes,
     idmap_lookup,
     idmap_reverse_lookup,
     simple_apply_changes,
     )
-from bzrlib.plugins.svn.mapping import mapping_registry
+from bzrlib.plugins.svn.mapping import (
+    mapping_registry,
+    )
 from bzrlib.plugins.svn.layout.standard import (
+    CustomLayout,
     RootLayout,
     TrunkLayout,
     )
@@ -576,3 +580,22 @@ class ReverseLookupTests(TestCase):
         self.assertRaises(KeyError, 
                           idmap_reverse_lookup, idmap, mapping, 
                           mapping.generate_file_id(("someuuid", "somebp", 42), u"parent/foo"))
+
+
+class LocalChangesTests(TestCase):
+
+    def _generate_revid(self, revnum, path):
+        return "%s:%d" % (path, revnum)
+
+    def test_trivial_change(self):
+        paths = { "trunk/path": ("M", None, -1)}
+        branch = "trunk"
+        self.assertEquals({"path": ("M", None, -1)},
+            get_local_changes(paths, branch, TrunkLayout(), None))
+
+    def test_bug_352509(self):
+        paths = { "trunk/internal/org.restlet": ('R', 'trunk/plugins/internal/org.restlet', 1111) }
+        branch = "trunk/internal/org.restlet"
+        layout = CustomLayout(['trunk/modules/org.restlet'],[])
+        self.assertEquals({"": ("R", "", "trunk/plugins/internal/org.restlet:1111")},
+            get_local_changes(paths, branch, layout, self._generate_revid))

@@ -142,13 +142,12 @@ def determine_text_revisions(changes, default_revid, specific_revids):
     return ret
 
 
-def get_local_changes(paths, branch, mapping, layout, generate_revid):
+def get_local_changes(paths, branch, layout, generate_revid):
     """Obtain all of the changes relative to a particular path
     (usually a branch path).
 
     :param paths: Changes
     :param branch: Path under which to select changes
-    :param mapping: Mapping to use to determine what are valid branch paths
     :param layout: Layout to use 
     :param generate_revid: Function for generating revision id from svn revnum
     """
@@ -166,8 +165,7 @@ def get_local_changes(paths, branch, mapping, layout, generate_revid):
                 if (crp == "" and new_p == ""):
                     data = ('M', None, None)
                 else:
-                    data = (data[0], crp, generate_revid(
-                                  data[2], cbp, mapping))
+                    data = (data[0], crp, generate_revid(data[2], cbp))
             except errors.NotSvnBranchPath:
                 # Copied from outside of a known branch
                 data = (data[0], data[1], None)
@@ -292,9 +290,8 @@ class FileIdMapStore(object):
 
     def update_idmap(self, map, revmeta, mapping):
         local_changes = get_local_changes(revmeta.get_paths(), 
-                    revmeta.branch_path, mapping,
-                    self.repos.get_layout(),
-                    self.repos.generate_revision_id)
+                    revmeta.branch_path, self.repos.get_layout(),
+                    lambda revnum, path: self.repos.generate_revision_id(revnum, path, mapping))
         idmap = self.get_idmap_delta(local_changes, revmeta, mapping)
         revid = revmeta.get_revision_id(mapping)
         text_revisions = determine_text_revisions(local_changes, revid, 
