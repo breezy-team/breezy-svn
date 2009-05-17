@@ -225,6 +225,7 @@ class DictFileIdMap(FileIdMap):
         :param delta: Id map delta.
         :param changes: Changes for the revision in question.
         """
+        assert "" in self.data
         for p, data in changes.iteritems():
             if data[0] in ('D', 'R'):
                 for xp in self.data.keys():
@@ -244,6 +245,8 @@ class DictFileIdMap(FileIdMap):
             else:
                 prev_entry = self.lookup(mapping, x)
                 self.data[x] = (prev_entry[0], text_revisions.get(x) or default_revid, prev_entry[2])
+
+        assert "" in self.data
 
     def has_fileid(self, fileid):
         for fid, _ in self.data.itervalues():
