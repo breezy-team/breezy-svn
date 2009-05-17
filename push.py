@@ -82,62 +82,6 @@ def find_push_base_revision(source, target, stop_revision):
     return start_revid
 
 
-def dpush(target, source, stop_revision=None):
-    """Push derivatives of the revisions missing from target from source into 
-    target.
-
-    :param target: Branch to push into
-    :param source: Branch to retrieve revisions from
-    :param stop_revision: If not None, stop at this revision.
-    :return: Map of old revids to new revids.
-    """
-    source.lock_write()
-    try:
-        if stop_revision is None:
-            stop_revision = ensure_null(source.last_revision())
-        if target.last_revision() in (stop_revision, source.last_revision()):
-            return { source.last_revision(): source.last_revision() }
-        # Request graph from source repository, since it is most likely
-        # faster than the target (Subversion) repository
-        graph = source.repository.get_graph(target.repository)
-        if not graph.is_ancestor(target.last_revision(), stop_revision):
-            if graph.is_ancestor(stop_revision, target.last_revision()):
-                return { source.last_revision(): source.last_revision() }
-            raise DivergedBranches(source, target)
-        todo = target._missing_revisions(source.repository, stop_revision)
-        if todo is None:
-            raise DivergedBranches(self, other)
-        revid_map = {}
-        target_branch_path = target.get_branch_path()
-        target_config = target.get_config()
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
-            # FIXME: Call create_branch_with_hidden_commit if the revision is 
-            # already present in the target repository ?
-            for rev in source.repository.get_revisions(todo):
-                pb.update("pushing revisions", todo.index(rev.revision_id), 
-                          len(todo))
-                if len(rev.parent_ids) == 0:
-                    base_revid = NULL_REVISION
-                elif rev.parent_ids[0] in revid_map:
-                    base_revid = revid_map[rev.parent_ids[0]]
-                else:
-                    base_revid = rev.parent_ids[0]
-                revid_map[rev.revision_id], _ = push(graph, target.repository,
-                        target_branch_path, target_config, base_revid, 
-                        source.repository, rev, push_metadata=False)
-        finally:
-            pb.finished()
-        source.repository.fetch(target.repository, 
-                                revision_id=revid_map[rev.revision_id])
-        target._clear_cached_state()
-        assert stop_revision in revid_map
-        assert len(revid_map.keys()) > 0
-        return revid_map
-    finally:
-        source.unlock()
-
-
 def replay_delta(builder, old_trees, new_tree):
     """Replays a delta to a commit builder.
 

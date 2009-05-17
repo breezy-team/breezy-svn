@@ -42,6 +42,9 @@ from bzrlib.plugins.svn import (
     format,
     transport,
     )
+from bzrlib.plugins.svn.branch import (
+    InterOtherSvnBranch,
+    )
 from bzrlib.plugins.svn.errors import MissingPrefix
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
@@ -52,7 +55,6 @@ from bzrlib.plugins.svn.mapping import (
     )
 from bzrlib.plugins.svn.push import (
     determine_branch_path,
-    dpush, 
     push,
     )
 from bzrlib.plugins.svn.tests import (
@@ -76,13 +78,15 @@ class TestDPush(SubversionTestCase):
         os.mkdir("dc")
         self.bzrdir = self.svndir.sprout("dc")
 
-
     def tearDown(self):
         TestCase.tearDown(self)
         transport.disabled_capabilities = set()
 
     def commit_editor(self):
         return self.get_commit_editor(self.repos_url)
+
+    def dpush(self, source, target):
+        return InterOtherSvnBranch(source, target)._update_revisions_lossy()
 
     def test_change_single(self):
         self.build_tree({'dc/foo/bla': 'other data'})
@@ -92,7 +96,7 @@ class TestDPush(SubversionTestCase):
         source_branch = self.bzrdir.open_branch()
         source_branch.lock_write()
         try:
-            revid_map = dpush(self.svndir.open_branch(), source_branch)
+            revid_map = self.dpush(source_branch, self.svndir.open_branch())
         finally:
             source_branch.unlock()
 
@@ -121,7 +125,7 @@ class TestDPush(SubversionTestCase):
         source_branch = self.bzrdir.open_branch()
         source_branch.lock_write()
         try:
-            revid_map = dpush(self.svndir.open_branch(), source_branch)
+            revid_map = self.dpush(source_branch, self.svndir.open_branch())
         finally:
             source_branch.unlock()
 
@@ -152,7 +156,7 @@ class TestDPush(SubversionTestCase):
         source_branch = self.bzrdir.open_branch()
         source_branch.lock_write()
         try:
-            revid_map = dpush(self.svndir.open_branch(), source_branch)
+            revid_map = self.dpush(source_branch, self.svndir.open_branch())
         finally:
             source_branch.unlock()
 
@@ -178,8 +182,8 @@ class TestDPush(SubversionTestCase):
         source_branch.lock_write()
         try:
             self.assertRaises(DivergedBranches, 
-                              dpush, svndir.open_branch(),
-                              source_branch)
+                              self.dpush, source_branch, 
+                              svndir.open_branch())
         finally:
             source_branch.unlock()
 

@@ -76,7 +76,6 @@ from bzrlib.plugins.svn import (
 from bzrlib.plugins.svn.push import (
     InterToSvnRepository,
     create_branch_with_hidden_commit,
-    dpush,
     push,
     )
 from bzrlib.plugins.svn.config import (
@@ -743,7 +742,7 @@ class InterOtherSvnBranch(InterBranch):
             stop_revision = ensure_null(self.source.last_revision())
         if old_last_revid == stop_revision:
             return old_last_revid, old_last_revid, None
-        # Request graph from other repository, since it's most likely 
+        # Request graph from other repository, since it's most likely faster
         # than Subversion
         graph = self.source.repository.get_graph(self.target.repository)
         if not graph.is_ancestor(old_last_revid, stop_revision):
@@ -776,6 +775,60 @@ class InterOtherSvnBranch(InterBranch):
         assert isinstance(old_last_revid, str)
         return (old_last_revid, new_last_revid, new_foreign_info)
 
+    def _update_revisions_lossy(self, stop_revision=None):
+        """Push derivatives of the revisions missing from target from source into 
+        target.
+
+        :param target: Branch to push into
+        :param source: Branch to retrieve revisions from
+        :param stop_revision: If not None, stop at this revision.
+        :return: Map of old revids to new revids.
+        """
+        self.source.lock_write()
+        try:
+            if stop_revision is None:
+                stop_revision = ensure_null(self.source.last_revision())
+            if self.target.last_revision() in (stop_revision, self.source.last_revision()):
+                return { self.source.last_revision(): self.source.last_revision() }
+            # Request graph from source repository, since it is most likely
+            # faster than the target (Subversion) repository
+            graph = self.source.repository.get_graph(self.target.repository)
+            if not graph.is_ancestor(self.target.last_revision(), stop_revision):
+                if graph.is_ancestor(stop_revision, self.target.last_revision()):
+                    return { self.source.last_revision(): self.source.last_revision() }
+                raise DivergedBranches(self.source, self.target)
+            todo = self.target._missing_revisions(self.source.repository, stop_revision)
+            assert todo is not None
+            revid_map = {}
+            target_branch_path = self.target.get_branch_path()
+            target_config = self.target.get_config()
+            pb = ui.ui_factory.nested_progress_bar()
+            try:
+                # FIXME: Call create_branch_with_hidden_commit if the revision is 
+                # already present in the target repository ?
+                for rev in self.source.repository.get_revisions(todo):
+                    pb.update("pushing revisions", todo.index(rev.revision_id), 
+                              len(todo))
+                    if len(rev.parent_ids) == 0:
+                        base_revid = NULL_REVISION
+                    elif rev.parent_ids[0] in revid_map:
+                        base_revid = revid_map[rev.parent_ids[0]]
+                    else:
+                        base_revid = rev.parent_ids[0]
+                    revid_map[rev.revision_id], _ = push(graph, self.target.repository,
+                            target_branch_path, target_config, base_revid, 
+                            self.source.repository, rev, push_metadata=False)
+            finally:
+                pb.finished()
+            self.source.repository.fetch(self.target.repository, 
+                                    revision_id=revid_map[rev.revision_id])
+            self.target._clear_cached_state()
+            assert stop_revision in revid_map
+            assert len(revid_map.keys()) > 0
+            return revid_map
+        finally:
+            self.source.unlock()
+
     def lossy_push(self, stop_revision=None):
         result = SubversionTargetBranchPushResult()
         result.target_branch = self.target
@@ -784,7 +837,7 @@ class InterOtherSvnBranch(InterBranch):
         self.source.lock_write()
         try:
             result.old_revid = self.target.last_revision()
-            result.revidmap = dpush(self.target, self.source, stop_revision)
+            result.revidmap = self._update_revisions_lossy(self.target, self.source, stop_revision)
             result.new_revid = self.target.last_revision()
             # FIXME: Tags ?
             return result
