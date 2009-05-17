@@ -738,9 +738,9 @@ class RevisionBuildEditor(DeltaBuildEditor):
             return self._id_map
 
         local_changes = get_local_changes(self.revmeta.get_paths(), 
-                    self.revmeta.branch_path, self.mapping,
+                    self.revmeta.branch_path, 
                     self.source.get_layout(),
-                    self.source.generate_revision_id)
+                    lambda revnum, path: self.source.generate_revision_id(revnum, path, self.mapping))
         self._id_map = self.source.fileid_map.get_idmap_delta(local_changes, self.revmeta, 
             self.mapping)
 

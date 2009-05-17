@@ -276,8 +276,8 @@ class FileIdMapStore(object):
     def get_idmap_delta(self, changes, revmeta, mapping):
         """Change file id map to incorporate specified changes.
 
+        :param changes: Dictionary with (local) changes
         :param revmeta: RevisionMetadata object for revision with changes
-        :param renames: List of renames (known file ids for particular paths)
         :param mapping: Mapping
         """
         foreign_revid = revmeta.get_foreign_revid()
