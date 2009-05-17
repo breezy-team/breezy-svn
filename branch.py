@@ -83,6 +83,7 @@ from bzrlib.plugins.svn.config import (
     )
 from bzrlib.plugins.svn.errors import (
     NotSvnBranchPath,
+    PushToEmptyBranch,
     )
 from bzrlib.plugins.svn.format import (
     get_rich_root_format,
@@ -734,12 +735,22 @@ class InterOtherSvnBranch(InterBranch):
         self._update_revisions(stop_revision=stop_revision, overwrite=overwrite,
             graph=graph)
 
+    def _target_is_empty(self, graph, revid):
+        parent_revids = tuple(graph.get_parent_map([revid])[revid])
+        if parent_revids != (NULL_REVISION,):
+            return False
+        tree_contents = self.target.repository.transport.get_dir(
+            self.target.get_branch_path(), self.target.get_revnum())[0]
+        return tree_contents == {}
+
     def _todo(self, graph, stop_revision, overwrite=False):
         old_last_revid = self.target.last_revision()
         if not graph.is_ancestor(old_last_revid, stop_revision):
             if graph.is_ancestor(stop_revision, old_last_revid):
                 return []
             if not overwrite:
+                if self._target_is_empty(graph, old_last_revid):
+                    raise PushToEmptyBranch(self.target, self.source)
                 raise DivergedBranches(self.target, self.source)
         todo = self.target._missing_revisions(self.source.repository,
             stop_revision, overwrite)

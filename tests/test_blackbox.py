@@ -84,6 +84,38 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("push -d dc %s" % repos_url)
         self.check_output("", "status dc")
 
+    def test_push_empty_existing(self):
+        repos_url = self.make_repository('d')
+        
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("trunk")
+        dc.close()
+
+        self.run_bzr("init dc")
+        self.build_tree({"dc/foo": "blaaaa"})
+        self.run_bzr("add dc/foo")
+        self.run_bzr("commit -m msg dc")
+        self.run_bzr_error([
+            # Ideally this should say:
+            # ['ERROR: Empty branch already exists at /trunk. Specify --overwrite or remove it before pushing.\n'
+             'ERROR: These branches have diverged.  Try using "merge" and then "push".\n'
+            ], ["push", "-d", "dc", "%s/trunk" % repos_url])
+
+    def test_dpush_empty_existing(self):
+        repos_url = self.make_repository('d')
+        
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("trunk")
+        dc.close()
+
+        self.run_bzr("init dc")
+        self.build_tree({"dc/foo": "blaaaa"})
+        self.run_bzr("add dc/foo")
+        self.run_bzr("commit -m msg dc")
+        self.run_bzr_error(
+            ['ERROR: Empty branch already exists at /trunk. Specify --overwrite or remove it before pushing.\n'],
+            ["dpush", "-d", "dc", "%s/trunk" % repos_url])
+
     def test_push_verbose(self):
         repos_url = self.make_repository('d')
         self.run_bzr("init dc")

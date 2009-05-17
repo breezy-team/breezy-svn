@@ -20,6 +20,9 @@ bzr-svn 0.6.0                    UNRELEASED
      access. This is useful accessing http(s) URLs will 
      always attempt to open using the native Bazaar formats 
      first.
+
+   * Better error when pushing to a (diverged) empty branch. Unfortunately
+     "bzr push" masks this better error at the moment. (#354929)
  
   PERFORMANCE
 

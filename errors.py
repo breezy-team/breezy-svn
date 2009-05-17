@@ -26,6 +26,7 @@ from bzrlib.errors import (
     BzrError,
     ConnectionError,
     ConnectionReset,
+    DivergedBranches,
     InvalidRevisionSpec,
     LockError,
     PermissionDenied,
@@ -247,7 +248,15 @@ class AmbiguousRevisionSpec(InvalidRevisionSpec):
 
 
 class NoCustomBranchPaths(BzrError):
+
     _fmt = """Layout %(layout)r does not support custom branch paths."""
 
     def __init__(self, layout=None):
         BzrError.__init__(self, layout=layout)
+
+
+class PushToEmptyBranch(DivergedBranches):
+
+    _fmt = ("Empty branch already exists at /trunk. "
+            "Specify --overwrite or remove it before pushing.")
+
