@@ -35,8 +35,6 @@ from bzrlib.errors import (
     UnexpectedEndOfContainerError,
     )
 
-from bzrlib.lazy_import import lazy_import
-
 
 class InvalidBzrSvnRevision(NoSuchRevision):
     _fmt = """Revision id %(revid)s was added incorrectly"""
@@ -137,6 +135,7 @@ def convert_svn_error(unbound):
 
 
 class InvalidPropertyValue(BzrError):
+
     _fmt = 'Invalid property value for Subversion property %(property)s: %(msg)s'
 
     def __init__(self, property, msg):
@@ -146,6 +145,7 @@ class InvalidPropertyValue(BzrError):
 
 
 class InvalidFileName(BzrError):
+
     _fmt = "Unable to convert Subversion path %(path)s because it contains characters invalid in Bazaar."
 
     def __init__(self, path):
@@ -154,7 +154,8 @@ class InvalidFileName(BzrError):
 
 
 class CorruptMappingData(BzrError):
-    _fmt = """An invalid change was made to the bzr-specific properties in %(path)s."""
+
+    _fmt = "An invalid change was made to the bzr-specific properties in %(path)s."
 
     def __init__(self, path):
         BzrError.__init__(self)
@@ -162,7 +163,7 @@ class CorruptMappingData(BzrError):
 
 
 class LayoutUnusable(BzrError):
-    _fmt = """Unable to use layout %(layout)r with mapping %(mapping)r."""
+    _fmt = "Unable to use layout %(layout)r with mapping %(mapping)r."
 
     def __init__(self, layout, mapping):
         BzrError.__init__(self)
@@ -173,12 +174,13 @@ class LayoutUnusable(BzrError):
 class AppendRevisionsOnlyViolation(bzrlib.errors.AppendRevisionsOnlyViolation):
 
     _fmt = ('Operation denied because it would change the main history.'
-           ' Set the append_revisions_only setting to yes on'
-           ' branch "%(location)s".')
+            ' Set the append_revisions_only setting to yes on'
+            ' branch "%(location)s".')
 
 
 class FileIdMapIncomplete(BzrError):
-    _fmt = """Unable to find file id for child '%(child)s' in '%(parent)s' in %(revmeta)r."""
+
+    _fmt = "Unable to find file id for child '%(child)s' in '%(parent)s' in %(revmeta)r."
 
     def __init__(self, child, parent, revmeta):
         BzrError.__init__(self)
@@ -188,7 +190,8 @@ class FileIdMapIncomplete(BzrError):
 
 
 class InvalidFileId(BzrError):
-    _fmt = """Unable to parse file id %(fileid)s."""
+
+    _fmt = "Unable to parse file id %(fileid)s."
 
     def __init__(self, fileid):
         BzrError.__init__(self)
@@ -196,7 +199,8 @@ class InvalidFileId(BzrError):
 
 
 class DifferentSubversionRepository(BzrError):
-    _fmt = """UUID %(got)s does not match expected UUID %(expected)s."""
+
+    _fmt = "UUID %(got)s does not match expected UUID %(expected)s."
 
     def __init__(self, got, expected):
         BzrError.__init__(self)
@@ -205,7 +209,10 @@ class DifferentSubversionRepository(BzrError):
 
 
 class InconsistentLHSParent(BzrError):
-    _fmt = """Recorded left hand side parent %(recorded_lhs)s for revision %(revision)r does not match actual left hand side parent %(actual_lhs)s."""
+
+    _fmt = ("Recorded left hand side parent %(recorded_lhs)s for revision "
+            "%(revision)r does not match actual left hand side parent "
+            "%(actual_lhs)s.")
 
     def __init__(self, revision, recorded_lhs, actual_lhs):
         BzrError.__init__(self)
@@ -215,6 +222,7 @@ class InconsistentLHSParent(BzrError):
 
 
 class UnknownMapping(BzrError):
+
     _fmt = """Attempt to use unknown mapping. %(extra)s """
 
     def __init__(self, mapping, extra=None):
@@ -223,6 +231,7 @@ class UnknownMapping(BzrError):
 
 
 class AbsentPath(BzrError):
+
     _fmt = """Unable to access %(path)s: no permission?. """
     
     def __init__(self, path):
@@ -230,6 +239,7 @@ class AbsentPath(BzrError):
 
 
 class AmbiguousRevisionSpec(InvalidRevisionSpec):
+
     _fmt = """Revision specifier %(revspec)s is ambiguous for %(branch)s. """
 
     def __init__(self, revspec, branch):
