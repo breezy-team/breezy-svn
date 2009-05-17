@@ -734,6 +734,19 @@ class InterOtherSvnBranch(InterBranch):
         self._update_revisions(stop_revision=stop_revision, overwrite=overwrite,
             graph=graph)
 
+    def _todo(self, graph, stop_revision, overwrite=False):
+        old_last_revid = self.target.last_revision()
+        if not graph.is_ancestor(old_last_revid, stop_revision):
+            if graph.is_ancestor(stop_revision, old_last_revid):
+                return []
+            if not overwrite:
+                raise DivergedBranches(self.target, self.source)
+        todo = self.target._missing_revisions(self.source.repository,
+            stop_revision, overwrite)
+        if todo is None:
+            raise DivergedBranches(self.target, self.source)
+        return todo
+
     def _update_revisions(self, stop_revision=None, overwrite=False, graph=None,
         push_merged=False, override_svn_revprops=None):
         """See Branch.update_revisions()."""
@@ -745,15 +758,9 @@ class InterOtherSvnBranch(InterBranch):
         # Request graph from other repository, since it's most likely faster
         # than Subversion
         graph = self.source.repository.get_graph(self.target.repository)
-        if not graph.is_ancestor(old_last_revid, stop_revision):
-            if graph.is_ancestor(stop_revision, old_last_revid):
-                return old_last_revid, old_last_revid, None
-            if not overwrite:
-                raise DivergedBranches(self.target, self.source)
-        todo = self.target._missing_revisions(self.source.repository,
-            stop_revision, overwrite)
-        if todo is None:
-            raise DivergedBranches(self.target, self.source)
+        todo = self._todo(graph, stop_revision, overwrite=overwrite)
+        if todo == []:
+            return old_last_revid, old_last_revid, None
         if push_merged is None:
             push_merged = self.target.get_push_merged_revisions() 
         if self.target.mapping.supports_hidden and self.target.repository.has_revision(stop_revision):
@@ -788,17 +795,10 @@ class InterOtherSvnBranch(InterBranch):
         try:
             if stop_revision is None:
                 stop_revision = ensure_null(self.source.last_revision())
-            if self.target.last_revision() in (stop_revision, self.source.last_revision()):
-                return { self.source.last_revision(): self.source.last_revision() }
-            # Request graph from source repository, since it is most likely
-            # faster than the target (Subversion) repository
             graph = self.source.repository.get_graph(self.target.repository)
-            if not graph.is_ancestor(self.target.last_revision(), stop_revision):
-                if graph.is_ancestor(stop_revision, self.target.last_revision()):
-                    return { self.source.last_revision(): self.source.last_revision() }
-                raise DivergedBranches(self.source, self.target)
-            todo = self.target._missing_revisions(self.source.repository, stop_revision)
-            assert todo is not None
+            todo = self._todo(graph, stop_revision)
+            if todo == []:
+                return { self.source.last_revision(): self.source.last_revision() }
             revid_map = {}
             target_branch_path = self.target.get_branch_path()
             target_config = self.target.get_config()
@@ -837,7 +837,7 @@ class InterOtherSvnBranch(InterBranch):
         self.source.lock_write()
         try:
             result.old_revid = self.target.last_revision()
-            result.revidmap = self._update_revisions_lossy(self.target, self.source, stop_revision)
+            result.revidmap = self._update_revisions_lossy(stop_revision)
             result.new_revid = self.target.last_revision()
             # FIXME: Tags ?
             return result

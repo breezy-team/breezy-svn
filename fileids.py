@@ -216,7 +216,7 @@ class DictFileIdMap(FileIdMap):
         :param delta: Id map delta.
         :param changes: Changes for the revision in question.
         """
-        assert "" in self.data
+        assert "" in self.data or self.data == {}, "'' missing in %r" % self.data
         for p, (action, copy_from) in changes.iteritems():
             if action in ('D', 'R'):
                 for xp in self.data.keys():
