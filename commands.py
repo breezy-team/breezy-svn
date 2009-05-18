@@ -78,14 +78,20 @@ class cmd_svn_import(Command):
     def run(self, from_location, to_location=None, trees=False, 
             standalone=False, layout=None, all=False, prefix=None, keep=False,
             incremental=False, until=None):
+        from bzrlib import (
+            osutils,
+            trace,
+            urlutils,
+            )
         from bzrlib.bzrdir import BzrDir
-        from bzrlib.errors import BzrCommandError, NoRepositoryPresent
-        from bzrlib import osutils, urlutils
+        from bzrlib.errors import (
+            BzrCommandError,
+            NoRepositoryPresent,
+            )
         from bzrlib.plugins.svn.convert import convert_repository
         from bzrlib.plugins.svn.remote import SvnRemoteAccess
         from bzrlib.plugins.svn.repository import SvnRepository
         from bzrlib.plugins.svn.workingtree import SvnCheckout
-        from bzrlib.trace import info
         import os
         from subvertpy import NODE_NONE
 
@@ -163,7 +169,7 @@ class cmd_svn_import(Command):
                     return False
                 return True
 
-            info("Using repository layout: %s" % (layout or from_repos.get_layout(),))
+            trace.info("Using repository layout: %s" % (layout or from_repos.get_layout(),))
             convert_repository(from_repos, to_location, layout, 
                                not standalone, trees, all, 
                                filter_branch=filter_branch,
@@ -281,15 +287,17 @@ class cmd_svn_serve(Command):
     ]
 
     def run(self, inet=None, port=None, directory=None):
+        from bzrlib import (
+            trace,
+            )
         from bzrlib.plugins.svn import lazy_check_versions
         lazy_check_versions()
         from subvertpy.ra_svn import SVNServer, TCPSVNServer, SVN_PORT
         from bzrlib.plugins.svn.server import BzrServerBackend
-        from bzrlib.trace import warning
         import os
         import sys
 
-        warning("server support in bzr-svn is experimental.")
+        trace.warning("server support in bzr-svn is experimental.")
 
         if directory is None:
             directory = os.getcwd()
