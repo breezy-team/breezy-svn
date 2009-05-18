@@ -93,24 +93,6 @@ def put_latest_svn_import_revision(repo, uuid, revnum):
                              "%s %d\n" % (uuid, revnum))
 
 
-def transport_makedirs(transport, location_url):
-    """Create missing directories.
-    
-    :param transport: Transport to use.
-    :param location_url: URL for which parents should be created.
-    """
-    needed = [(transport, transport.relpath(location_url))]
-    while needed:
-        try:
-            transport, relpath = needed[-1]
-            transport.mkdir(relpath)
-            needed.pop()
-        except NoSuchFile:
-            if relpath == "":
-                raise
-            needed.append((transport, urlutils.dirname(relpath)))
-
-
 class NotDumpFile(BzrError):
     """A file specified was not a dump file."""
     _fmt = """%(dumpfile)s is not a dump file."""
@@ -203,8 +185,7 @@ def convert_repository(source_repos, output_url, layout=None,
         try:
             dirs[path] = bzrdir.BzrDir.open_from_transport(nt)
         except NotBranchError:
-            transport_makedirs(to_transport, 
-                               urlutils.join(to_transport.base, path))
+            to_transport.create_prefix()
             dirs[path] = format.initialize_on_transport(nt)
         return dirs[path]
 
