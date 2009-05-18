@@ -138,23 +138,163 @@ def contains_parent_path(s, p):
     return False
 
 
-def convert_repository(source_repos, output_url, layout=None,
-                       create_shared_repo=True, working_trees=False, all=False,
-                       format=None, filter_branch=None, keep=False, 
-                       incremental=False, to_revnum=None, prefix=None):
-    """Convert a Subversion repository and its' branches to a 
-    Bazaar repository.
+class RepositoryConverter(object):
 
-    :param source_repos: Subversion repository
-    :param output_url: URL to write Bazaar repository to.
-    :param layout: Repository layout (object) to use
-    :param create_shared_repo: Whether to create a shared Bazaar repository
-    :param working_trees: Whether to create working trees
-    :param all: Whether old revisions, even those not part of any existing 
-        branches, should be imported
-    :param format: Format to use
-    """
-    def remove_branches(to_transport, removed_branches, exceptions):
+    def __init__(self, source_repos, output_url, layout=None, 
+                 create_shared_repo=True, working_trees=False, all=False,
+                 format=None, filter_branch=None, keep=False, 
+                 incremental=False, to_revnum=None, prefix=None):
+        """Convert a Subversion repository and its' branches to a 
+        Bazaar repository.
+
+        :param source_repos: Subversion repository
+        :param output_url: URL to write Bazaar repository to.
+        :param layout: Repository layout (object) to use
+        :param create_shared_repo: Whether to create a shared Bazaar repository
+        :param working_trees: Whether to create working trees
+        :param all: Whether old revisions, even those not part of any existing 
+            branches, should be imported
+        :param format: Format to use
+        """
+        assert not all or create_shared_repo
+        if format is None:
+            self._format = get_rich_root_format()
+        else:
+            self._format = format
+        self.dirs = {}
+        self.to_transport = get_transport(output_url)
+        if layout is not None:
+            source_repos.set_layout(layout)
+        else:
+            layout = source_repos.get_layout()
+
+        if create_shared_repo:
+            try:
+                target_repos = self.get_dir(prefix, prefix).open_repository()
+                target_repos_is_empty = False # FIXME: Call Repository.is_empty() ?
+                if not layout.is_branch("") and not target_repos.is_shared():
+                    raise BzrError("Repository %r is not shared." % target_repos)
+            except NoRepositoryPresent:
+                target_repos = self.get_dir(prefix, prefix).create_repository(shared=True)
+                target_repos_is_empty = True
+            target_repos.set_make_working_trees(working_trees)
+        else:
+            target_repos = None
+            target_repos_is_empty = False
+
+        source_repos.lock_read()
+        try:
+            if incremental and target_repos is not None:
+                from_revnum = get_latest_svn_import_revision(target_repos, 
+                                                             source_repos.uuid)
+            else:
+                from_revnum = 0
+            project = None
+            if to_revnum is None:
+                to_revnum = source_repos.get_latest_revnum()
+            if to_revnum < from_revnum:
+                return
+            mapping = source_repos.get_mapping()
+            existing_branches = {}
+            deleted = set()
+            it = source_repos._revmeta_provider.iter_all_changes(layout, 
+                    mapping.is_branch_or_tag, to_revnum, from_revnum, 
+                    project=project, prefix=prefix)
+            if create_shared_repo:
+                revfinder = FetchRevisionFinder(source_repos, target_repos, 
+                                                target_repos_is_empty)
+                revmetas = []
+            else:
+                revmetas = None
+            pb = ui.ui_factory.nested_progress_bar()
+            if all:
+                heads = None
+            else:
+                heads = set()
+            try:
+                for kind, item in it:
+                    if kind == "revision":
+                        pb.update("finding branches", to_revnum-item.revnum, 
+                                  to_revnum-from_revnum)
+                        if (not item.branch_path in existing_branches and 
+                            layout.is_branch(item.branch_path, project=project) and 
+                            not contains_parent_path(deleted, item.branch_path)):
+                            existing_branches[item.branch_path] = SvnBranch(
+                                source_repos, item.branch_path, revnum=item.revnum,
+                                _skip_check=True, mapping=mapping)
+                            if heads is not None:
+                                heads.add(item)
+                        if revmetas is not None:
+                            revmetas.append(item)
+                    elif kind == "delete":
+                        (path, revnum) = item
+                        deleted.add(path)
+            finally:
+                pb.finished()
+
+            if create_shared_repo:
+                inter = InterRepository.get(source_repos, target_repos)
+                if (target_repos.is_shared() and 
+                    getattr(inter, '_supports_revmetas', None) and 
+                    inter._supports_revmetas):
+                    # TODO: Skip revisions in removed branches unless all=True
+                    pb = ui.ui_factory.nested_progress_bar()
+                    try:
+                        pb.update("checking revisions to fetch", 0, len(revmetas))
+                        revfinder.find_iter_revisions(revmetas, mapping, 
+                            heads=heads, prefix=prefix, pb=pb)
+                    finally:
+                        pb.finished()
+                    inter.fetch(needed=revfinder.get_missing())
+                else:
+                    inter.fetch()
+
+            if not keep:
+                self.remove_branches(deleted, existing_branches.keys())
+
+            existing_branches = existing_branches.values()
+            if filter_branch is not None:
+                existing_branches = filter(filter_branch, existing_branches)
+            source_graph = source_repos.get_graph()
+            pb = ui.ui_factory.nested_progress_bar()
+            try:
+                for i, source_branch in enumerate(existing_branches):
+                    try:
+                        pb.update("%s:%d" % (source_branch.get_branch_path(), 
+                            source_branch.get_revnum()), i, len(existing_branches))
+                    except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                        continue
+                    target_dir = self.get_dir(source_branch.get_branch_path(), prefix)
+                    if not create_shared_repo:
+                        try:
+                            target_dir.open_repository()
+                        except NoRepositoryPresent:
+                            target_dir.create_repository()
+                    try:
+                        target_branch = target_dir.open_branch()
+                    except NotBranchError:
+                        target_branch = target_dir.create_branch()
+                        target_branch.set_parent(source_branch.base)
+                    if source_branch.last_revision() != target_branch.last_revision():
+                        try:
+                            target_branch.pull(source_branch, overwrite=True)
+                        except NoSuchRevision:
+                            if source_branch.check_path() == NODE_FILE:
+                                self.to_transport.delete_tree(source_branch.get_branch_path())
+                                continue
+                            raise
+                    if working_trees and not target_dir.has_workingtree():
+                        target_dir.create_workingtree()
+            finally:
+                pb.finished()
+        finally:
+            source_repos.unlock()
+
+        if target_repos is not None:
+            put_latest_svn_import_revision(target_repos, source_repos.uuid, 
+                                           to_revnum)
+     
+    def remove_branches(self, removed_branches, exceptions):
         # Remove removed branches
         for bp in removed_branches:
             skip = False
@@ -164,159 +304,26 @@ def convert_repository(source_repos, output_url, layout=None,
                     break
             if skip:
                 continue
-            fullpath = to_transport.local_abspath(bp)
+            fullpath = self.to_transport.local_abspath(bp)
             if not os.path.isdir(fullpath):
                 continue
             osutils.rmtree(fullpath)
-    assert not all or create_shared_repo
-    if format is None:
-        format = get_rich_root_format()
-    dirs = {}
-    to_transport = get_transport(output_url)
-    def get_dir(path, prefix=None):
+
+    def get_dir(self, path, prefix=None):
         if prefix is not None:
             assert path.startswith(prefix)
             path = path[len(prefix):].strip("/")
         if path is None:
             path = ""
-        if dirs.has_key(path):
-            return dirs[path]
-        nt = to_transport.clone(path)
+        if self.dirs.has_key(path):
+            return self.dirs[path]
+        nt = self.to_transport.clone(path)
         try:
-            dirs[path] = bzrdir.BzrDir.open_from_transport(nt)
+            self.dirs[path] = bzrdir.BzrDir.open_from_transport(nt)
         except NotBranchError:
             nt.create_prefix()
-            dirs[path] = format.initialize_on_transport(nt)
-        return dirs[path]
+            self.dirs[path] = self._format.initialize_on_transport(nt)
+        return self.dirs[path]
 
-    if layout is not None:
-        source_repos.set_layout(layout)
-    else:
-        layout = source_repos.get_layout()
-
-    if create_shared_repo:
-        try:
-            target_repos = get_dir(prefix, prefix).open_repository()
-            target_repos_is_empty = False # FIXME: Call Repository.is_empty() ?
-            if not layout.is_branch("") and not target_repos.is_shared():
-                raise BzrError("Repository %r is not shared." % target_repos)
-        except NoRepositoryPresent:
-            target_repos = get_dir(prefix, prefix).create_repository(shared=True)
-            target_repos_is_empty = True
-        target_repos.set_make_working_trees(working_trees)
-    else:
-        target_repos = None
-        target_repos_is_empty = False
-
-    source_repos.lock_read()
-    try:
-        if incremental and target_repos is not None:
-            from_revnum = get_latest_svn_import_revision(target_repos, 
-                                                         source_repos.uuid)
-        else:
-            from_revnum = 0
-        project = None
-        if to_revnum is None:
-            to_revnum = source_repos.get_latest_revnum()
-        if to_revnum < from_revnum:
-            return
-        mapping = source_repos.get_mapping()
-        existing_branches = {}
-        deleted = set()
-        it = source_repos._revmeta_provider.iter_all_changes(layout, 
-                mapping.is_branch_or_tag, to_revnum, from_revnum, 
-                project=project, prefix=prefix)
-        if create_shared_repo:
-            revfinder = FetchRevisionFinder(source_repos, target_repos, 
-                                            target_repos_is_empty)
-            revmetas = []
-        else:
-            revmetas = None
-        pb = ui.ui_factory.nested_progress_bar()
-        if all:
-            heads = None
-        else:
-            heads = set()
-        try:
-            for kind, item in it:
-                if kind == "revision":
-                    pb.update("finding branches", to_revnum-item.revnum, 
-                              to_revnum-from_revnum)
-                    if (not item.branch_path in existing_branches and 
-                        layout.is_branch(item.branch_path, project=project) and 
-                        not contains_parent_path(deleted, item.branch_path)):
-                        existing_branches[item.branch_path] = SvnBranch(
-                            source_repos, item.branch_path, revnum=item.revnum,
-                            _skip_check=True, mapping=mapping)
-                        if heads is not None:
-                            heads.add(item)
-                    if revmetas is not None:
-                        revmetas.append(item)
-                elif kind == "delete":
-                    (path, revnum) = item
-                    deleted.add(path)
-        finally:
-            pb.finished()
-
-        if create_shared_repo:
-            inter = InterRepository.get(source_repos, target_repos)
-            if (target_repos.is_shared() and 
-                getattr(inter, '_supports_revmetas', None) and 
-                inter._supports_revmetas):
-                # TODO: Skip revisions in removed branches unless all=True
-                pb = ui.ui_factory.nested_progress_bar()
-                try:
-                    pb.update("checking revisions to fetch", 0, len(revmetas))
-                    revfinder.find_iter_revisions(revmetas, mapping, 
-                        heads=heads, prefix=prefix, pb=pb)
-                finally:
-                    pb.finished()
-                inter.fetch(needed=revfinder.get_missing())
-            else:
-                inter.fetch()
-
-        if not keep:
-            remove_branches(to_transport, deleted, existing_branches.keys())
-
-        existing_branches = existing_branches.values()
-        if filter_branch is not None:
-            existing_branches = filter(filter_branch, existing_branches)
-        source_graph = source_repos.get_graph()
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
-            for i, source_branch in enumerate(existing_branches):
-                try:
-                    pb.update("%s:%d" % (source_branch.get_branch_path(), 
-                        source_branch.get_revnum()), i, len(existing_branches))
-                except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                    continue
-                target_dir = get_dir(source_branch.get_branch_path(), prefix)
-                if not create_shared_repo:
-                    try:
-                        target_dir.open_repository()
-                    except NoRepositoryPresent:
-                        target_dir.create_repository()
-                try:
-                    target_branch = target_dir.open_branch()
-                except NotBranchError:
-                    target_branch = target_dir.create_branch()
-                    target_branch.set_parent(source_branch.base)
-                if source_branch.last_revision() != target_branch.last_revision():
-                    try:
-                        target_branch.pull(source_branch, overwrite=True)
-                    except NoSuchRevision:
-                        if source_branch.check_path() == NODE_FILE:
-                            to_transport.delete_tree(source_branch.get_branch_path())
-                            continue
-                        raise
-                if working_trees and not target_dir.has_workingtree():
-                    target_dir.create_workingtree()
-        finally:
-            pb.finished()
-    finally:
-        source_repos.unlock()
-
-    if target_repos is not None:
-        put_latest_svn_import_revision(target_repos, source_repos.uuid, 
-                                       to_revnum)
-        
+def convert_repository(*args, **kwargs):
+    RepositoryConverter(*args, **kwargs)
