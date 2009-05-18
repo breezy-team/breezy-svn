@@ -59,7 +59,7 @@ class cmd_svn_import(Command):
                      Option('standalone', help='Create standalone branches.'),
                      Option('all', 
                          help='Convert all revisions, even those not in '
-                              'current branch history (forbids --standalone).'),
+                              'current branch history.'),
                      Option('layout', type=get_layout,
                          help='Repository layout (none, trunk, etc). '
                               'Default: auto.'),
