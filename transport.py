@@ -95,7 +95,9 @@ def get_svn_ra_transport(bzr_transport):
         creds = shared_connection.credentials[0]
     else:
         creds = None
-    ra_transport = SvnRaTransport(bzr_transport.base, credentials=creds)
+    svnbase = bzr_transport.base
+    svnbase = svnbase.lstrip("readonly+")
+    ra_transport = SvnRaTransport(svnbase, credentials=creds)
     bzr_transport._svn_ra = ra_transport
     return ra_transport
 
