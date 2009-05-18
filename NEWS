@@ -23,6 +23,9 @@ bzr-svn 0.6.0                    UNRELEASED
 
    * Better error when pushing to a (diverged) empty branch. Unfortunately
      "bzr push" masks this better error at the moment. (#354929)
+
+   * New option ``warn-upgrade`` that can be used to turn off the 
+     warnings about slow servers. (#377949)
  
   PERFORMANCE
 
