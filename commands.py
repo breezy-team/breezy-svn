@@ -68,6 +68,7 @@ class cmd_svn_import(Command):
                      Option('incremental',
                          help="Import revisions incrementally."),
                      Option('prefix', type=str, 
+                         hidden=True,
                          help='Only consider branches of which path starts '
                               'with prefix.'),
                      Option('until', type=int,
