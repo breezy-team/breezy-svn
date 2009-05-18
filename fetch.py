@@ -43,6 +43,7 @@ from bzrlib import (
     delta,
     lru_cache,
     osutils,
+    trace,
     ui,
     urlutils,
     )
@@ -61,9 +62,6 @@ from bzrlib.revision import (
     )
 from bzrlib.repository import (
     InterRepository,
-    )
-from bzrlib.trace import (
-    mutter,
     )
 from bzrlib.versionedfile import (
     FulltextContentFactory,
@@ -325,7 +323,7 @@ class DirectoryBuildEditor(object):
         elif (name.startswith(properties.PROP_WC_PREFIX)):
             pass
         elif name.startswith(properties.PROP_PREFIX):
-            mutter('unsupported dir property %r', name)
+            trace.mutter('unsupported dir property %r', name)
 
         if (not name.startswith(properties.PROP_ENTRY_PREFIX) and
             not name.startswith(properties.PROP_WC_PREFIX)):
@@ -371,7 +369,7 @@ class FileBuildEditor(object):
         elif name == properties.PROP_ENTRY_COMMITTED_REV:
             self.last_file_rev = int(value)
         elif name == properties.PROP_EXTERNALS:
-            mutter('svn:externals property on file!')
+            trace.mutter('svn:externals property on file!')
         elif name in (properties.PROP_ENTRY_COMMITTED_DATE,
                       properties.PROP_ENTRY_LAST_AUTHOR,
                       properties.PROP_ENTRY_LOCK_TOKEN,
@@ -382,7 +380,7 @@ class FileBuildEditor(object):
             pass
         elif (name.startswith(properties.PROP_PREFIX) or
               name.startswith(SVN_PROP_BZR_PREFIX)):
-            mutter('unsupported file property %r', name)
+            trace.mutter('unsupported file property %r', name)
 
     def close(self, checksum=None):
         assert isinstance(self.path, unicode)
