@@ -193,18 +193,11 @@ def set_svn_revprops(repository, revnum, revprops):
     :param revnum: Revision number of revision to change metadata of.
     :param revprops: Dictionary with revision properties to set.
     """
-    logcache = getattr(repository._log, "cache", None)
-    succeeded_revprops = {}
-    try:
-        for (name, value) in revprops.iteritems():
-            try:
-                repository.transport.change_rev_prop(revnum, name, value)
-                succeeded_revprops[name] = value
-            except SubversionException, (_, ERR_REPOS_DISABLED_FEATURE):
-                raise RevpropChangeFailed(name)
-    finally:
-        if logcache is not None:
-            logcache.insert_revprops(revnum, succeeded_revprops)
+    for (name, value) in revprops.iteritems():
+        try:
+            repository.transport.change_rev_prop(revnum, name, value)
+        except SubversionException, (_, ERR_REPOS_DISABLED_FEATURE):
+            raise RevpropChangeFailed(name)
 
 
 def file_editor_send_changes(file_id, reader, file_editor):
@@ -863,6 +856,9 @@ class SvnCommitBuilder(RootCommitBuilder):
                 new_revprops[properties.PROP_REVISION_DATE] = properties.time_to_cstring(1000000*self._timestamp)
             set_svn_revprops(self.repository, result_revision, new_revprops)
             self._svn_revprops.update(new_revprops)
+        logcache = getattr(self.repository._log, "cache", None)
+        if logcache is not None:
+            logcache.insert_revprops(result_revision, self._svn_revprops, True)
 
         self.revmeta = self.repository._revmeta_provider.get_revision(self.branch_path, result_revision, 
                 None, # FIXME: Generate changes dictionary
