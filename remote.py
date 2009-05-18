@@ -144,9 +144,9 @@ class SvnRemoteAccess(BzrDir):
         else:
             return SvnRepository(self, transport, self.branch_path)
 
-    def cloning_metadir(self, stacked=False):
+    def cloning_metadir(self, require_stacking=False):
         """Produce a metadir suitable for cloning with."""
-        return get_rich_root_format(stacked)
+        return get_rich_root_format(require_stacking)
 
     def open_workingtree(self, _unsupported=False,
             recommend_upgrade=True):
@@ -220,7 +220,7 @@ class SvnRemoteAccess(BzrDir):
         branch.bzrdir = self
         return branch
 
-    def open_branch(self, unsupported=True):
+    def open_branch(self, unsupported=True, ignore_fallbacks=False):
         """See BzrDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         repos = self.find_repository()

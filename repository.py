@@ -106,6 +106,7 @@ class SvnRepositoryFormat(RepositoryFormat):
     """
     rich_root_data = True
     supports_tree_reference = False
+    _serializer = None
 
     def __get_matchingbzrdir(self):
         from remote import SvnRemoteFormat
