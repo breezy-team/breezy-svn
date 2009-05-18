@@ -34,6 +34,7 @@ from bzrlib import (
     )
 from bzrlib.errors import (
     BzrError,
+    FileExists,
     NotBranchError,
     NoSuchFile,
     NoSuchRevision,
@@ -163,6 +164,10 @@ class RepositoryConverter(object):
             self._format = format
         self.dirs = {}
         self.to_transport = get_transport(output_url)
+        try:
+            self.to_transport.mkdir('.')
+        except FileExists:
+            pass
         if layout is not None:
             source_repos.set_layout(layout)
         else:
