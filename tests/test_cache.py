@@ -91,6 +91,11 @@ class RevidMapCacheTests(object):
         self.assertEquals(("mypath", 42, 42, "brainslug"), 
                 self.cache.lookup_revid("bla"))
 
+    def test_lookup_revid_space(self):
+        self.cache.insert_revid("bla", "my path", 42, 42, "brainslug")
+        self.assertEquals(("my path", 42, 42, "brainslug"), 
+                self.cache.lookup_revid("bla"))
+
     def test_lookup_branch(self):
         self.cache.insert_revid("bla", "mypath", 42, 42, "brainslug")
         self.assertEquals("bla", 

@@ -101,7 +101,7 @@ class RevisionIdMapCache(CacheTable):
         """
         self.mutter('lookup-revid %s', revid)
         try:
-            (min_revnum, max_revnum, mapping_name, path) = self.db["native-revid/%s" % revid].split(" ", 4)
+            (min_revnum, max_revnum, mapping_name, path) = self.db["native-revid/" + revid].split(" ", 3)
         except KeyError:
             raise errors.NoSuchRevision(self, revid)
         return (path, int(min_revnum), int(max_revnum), mapping_name)
@@ -132,7 +132,7 @@ class RevisionIdMapCache(CacheTable):
                        was found
         """
         mappingname = getattr(mapping, "name", mapping)
-        self.db["native-revid/%s" % revid] = "%d %d %s %s" % (min_revnum, max_revnum, mappingname, branch)
+        self.db["native-revid/" + revid] = "%d %d %s %s" % (min_revnum, max_revnum, mappingname, branch)
         if min_revnum == max_revnum:
             self.db["foreign-revid/%d %s %s" % (min_revnum, mappingname, branch)] = revid
 
