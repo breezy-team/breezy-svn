@@ -782,6 +782,13 @@ class SvnRepository(ForeignRepository):
         ancestry.reverse()
         return ancestry
 
+    def has_revisions(self, revision_ids):
+        ret = set()
+        for revision_id in revision_ids:
+            if self.has_revision(revision_id):
+                ret.add(revision_id)
+        return ret
+
     def has_revision(self, revision_id, project=None):
         """See Repository.has_revision()."""
         if revision_id is None:
