@@ -478,6 +478,10 @@ class SvnRaTransport(Transport):
             self.add_connection(conn)
 
     @convert_svn_error
+    def create_prefix(self, relpath):
+        raise NotImplementedError(self.create_prefix)
+
+    @convert_svn_error
     def mkdir(self, relpath, message="Creating directory"):
         conn = self.get_connection()
         try:
