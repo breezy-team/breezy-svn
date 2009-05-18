@@ -43,6 +43,8 @@ bzr-svn 0.6.0                    UNRELEASED
    * utf8-encode basenames when looking up file ids in CHKInventories.
 
    * Handle root replaces when doing lightweight checkouts. (#352509)
+
+   * Simplify finding local changes. (#370755)
      
 
 bzr-svn 0.5.4                    2009-04-08
