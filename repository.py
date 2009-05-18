@@ -119,6 +119,9 @@ class SvnRepositoryFormat(RepositoryFormat):
     def get_format_description(self):
         return "Subversion Repository"
 
+    def network_name(self):
+        return "subversion"
+
     def initialize(self, url, shared=False, _internal=False):
         raise bzr_errors.UninitializableFormat(self)
 

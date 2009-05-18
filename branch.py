@@ -578,8 +578,12 @@ class SvnBranch(ForeignBranch):
 
 class SvnBranchFormat(BranchFormat):
     """Branch format for Subversion Branches."""
+
     def __init__(self):
         BranchFormat.__init__(self)
+
+    def network_name(self):
+        return "subversion"
 
     def __get_matchingbzrdir(self):
         """See BranchFormat.__get_matchingbzrdir()."""

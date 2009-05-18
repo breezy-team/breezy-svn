@@ -50,6 +50,9 @@ bzrlib.api.require_any_api(bzrlib, COMPATIBLE_BZR_VERSIONS)
 
 
 from bzrlib import config
+from bzrlib.branch import (
+    network_format_registry as branch_network_format_registry,
+    )
 from bzrlib.bzrdir import (
     BzrDirFormat,
     format_registry,
@@ -68,6 +71,9 @@ from bzrlib.foreign import (
     )
 from bzrlib.help_topics import (
     topic_registry,
+    )
+from bzrlib.repository import (
+    network_format_registry as repository_network_format_registry,
     )
 from bzrlib.revisionspec import (
     revspec_registry,
@@ -156,6 +162,11 @@ topic_registry.register_lazy('svn-layout',
                              'help_layout', 'Subversion repository layouts')
 BzrDirFormat.register_control_format(format.SvnRemoteFormat)
 BzrDirFormat.register_control_format(format.SvnWorkingTreeDirFormat)
+branch_network_format_registry.register_lazy("subversion",
+        'bzrlib.plugins.svn.branch', 'SvnBranchFormat')
+repository_network_format_registry.register_lazy("subversion",
+        'bzrlib.plugins.svn.repository', 'SvnRepositoryFormat')
+
 format_registry.register_lazy("subversion", "bzrlib.plugins.svn.format", 
                          "SvnRemoteFormat", 
                          "Subversion repository. ", 
