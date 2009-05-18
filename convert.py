@@ -185,7 +185,7 @@ def convert_repository(source_repos, output_url, layout=None,
         try:
             dirs[path] = bzrdir.BzrDir.open_from_transport(nt)
         except NotBranchError:
-            to_transport.create_prefix()
+            nt.create_prefix()
             dirs[path] = format.initialize_on_transport(nt)
         return dirs[path]
 
