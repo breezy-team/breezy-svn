@@ -71,11 +71,9 @@ def iter_changes(paths, from_revnum, to_revnum, get_revision_paths,
         else:
             next = changes.find_prev_location(revpaths, path, revnum)
 
-        revprops = revprop_list(revnum)
-
         if path == "" or changes.changes_path(revpaths, path, True):
             assert isinstance(revnum, int)
-            yield (revpaths, revnum, revprops)
+            yield (revpaths, revnum, revprop_list(revnum))
             i += 1
             if limit != 0 and i == limit:
                 break
