@@ -234,7 +234,10 @@ class DictFileIdMap(FileIdMap):
                     child_create_revid = None
                 self.data[x] = (delta[x], text_revisions.get(x) or default_revid, child_create_revid)
             else:
-                prev_entry = self.lookup(mapping, x)
+                try:
+                    prev_entry = self.lookup(mapping, x)
+                except KeyError:
+                    raise AssertionError("Unable to find old fileid for %s in %r" % (x, foreign_revid))
                 self.data[x] = (prev_entry[0], text_revisions.get(x) or default_revid, prev_entry[2])
 
         assert "" in self.data
