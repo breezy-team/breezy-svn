@@ -56,7 +56,8 @@ def iter_changes(paths, from_revnum, to_revnum, get_revision_paths,
         assert len(paths) == 1
         path = paths[0].strip("/")
 
-    assert from_revnum >= to_revnum or path == ""
+    assert from_revnum >= to_revnum or path == "", \
+            "path: %s, %d >= %d" % (path, from_revnum, to_revnum)
 
     i = 0
 
