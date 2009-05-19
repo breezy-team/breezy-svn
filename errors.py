@@ -209,19 +209,6 @@ class DifferentSubversionRepository(BzrError):
         self.expected = expected
 
 
-class InconsistentLHSParent(BzrError):
-
-    _fmt = ("Recorded left hand side parent %(recorded_lhs)s for revision "
-            "%(revision)r does not match actual left hand side parent "
-            "%(actual_lhs)s.")
-
-    def __init__(self, revision, recorded_lhs, actual_lhs):
-        BzrError.__init__(self)
-        self.revision = revision
-        self.recorded_lhs = recorded_lhs
-        self.actual_lhs = actual_lhs
-
-
 class UnknownMapping(BzrError):
 
     _fmt = """Attempt to use unknown mapping. %(extra)s """

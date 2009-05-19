@@ -77,7 +77,6 @@ from bzrlib.plugins.svn.errors import (
     AbsentPath,
     FileIdMapIncomplete,
     InvalidFileName,
-    InconsistentLHSParent,
     convert_svn_error,
     )
 from bzrlib.plugins.svn.fileids import (
@@ -1075,6 +1074,14 @@ class InterFromSvnRepository(InterRepository):
             assert self.target.has_revision(revid)
         return self.target.get_inventory(revid)
 
+    def _inconsistent_lhs_parent(self, revid, stored_lhs_parent_revid, 
+            found_lhs_parent_revid):
+        trace.warning(
+            "Recorded left hand side parent %s for revision "
+            "%s does not match actual left hand side parent "
+            "%s.", revid, stored_lhs_parent_revid, found_lhs_parent_revid)
+        self.fetch(found_lhs_parent_revid)
+
     def _get_editor(self, revmeta, mapping):
         revid = revmeta.get_revision_id(mapping)
         assert revid is not None
@@ -1086,7 +1093,9 @@ class InterFromSvnRepository(InterRepository):
             lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
             expected_lhs_parent_revid = revmeta.get_implicit_lhs_parent_revid(mapping)
             if revmeta.get_stored_lhs_parent_revid(mapping) not in (None, expected_lhs_parent_revid):
-                raise InconsistentLHSParent(revmeta, revmeta.get_stored_lhs_parent_revid(mapping), expected_lhs_parent_revid)
+                self._inconsistent_lhs_parent(revmeta.get_revision_id(mapping),
+                    revmeta.get_stored_lhs_parent_revid(mapping), 
+                    expected_lhs_parent_revid)
             raise
 
     def _fetch_revision_switch(self, editor, revmeta, parent_revmeta):
