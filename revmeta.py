@@ -821,7 +821,7 @@ class CachingRevisionMetadata(RevisionMetadata):
 
     def _determine(self, mapping):
         self._revision_info[mapping] = self.base.get_revision_info(mapping)
-        self._stored_lhs_parent_revid[mapping] = self.base.get_stored_lhs_parent_revid(mapping)
+        self._stored_lhs_parent_revid[mapping] = self.base._get_stored_lhs_parent_revid(mapping)
 
     def _retrieve(self, mapping):
         assert mapping is not None
