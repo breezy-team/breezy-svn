@@ -268,7 +268,8 @@ class RevisionMetadata(object):
         """Determine the file properties changed in this revision."""
         if self._changed_fileprops is None:
             if self.changes_branch_root():
-                self._changed_fileprops = util.lazy_dict({}, properties.diff, self.get_fileprops(), self.get_previous_fileprops())
+                self._changed_fileprops = util.lazy_dict({}, properties.diff, 
+                    self.get_fileprops(), self.get_previous_fileprops())
             else:
                 self._changed_fileprops = {}
         return self._changed_fileprops
@@ -469,10 +470,12 @@ class RevisionMetadata(object):
 
     def estimate_svk_fileprop_ancestors(self):
         """Estimate how many svk ancestors this revision has."""
-        return self._estimate_fileprop_ancestors("svk:merge", estimate_svk_ancestors)
+        return self._estimate_fileprop_ancestors("svk:merge", 
+            estimate_svk_ancestors)
 
     def estimate_bzr_hidden_fileprop_ancestors(self):
-        return self._estimate_fileprop_ancestors(SVN_PROP_BZR_HIDDEN, estimate_bzr_ancestors)
+        return self._estimate_fileprop_ancestors(SVN_PROP_BZR_HIDDEN, 
+            estimate_bzr_ancestors)
 
     def is_changes_root(self):
         """Check whether this revisions root is the root of the changes 
@@ -486,7 +489,8 @@ class RevisionMetadata(object):
     def changes_outside_root(self):
         """Check if there are any changes in this svn revision not under 
         this revmeta's root."""
-        return changes.changes_outside_branch_path(self.branch_path, self.get_paths().keys())
+        return changes.changes_outside_branch_path(self.branch_path, 
+            self.get_paths().keys())
 
     def is_hidden(self, mapping):
         """Check whether this revision should be hidden from Bazaar history."""
@@ -670,7 +674,8 @@ class RevisionMetadata(object):
 
         # Check revprops if the last descendant has bzr:check-revprops set;
         #   if it has and the revnum there is < self.revnum
-        if can_use_revprops and not self.knows_revprops() and self.consider_bzr_revprops():
+        if (can_use_revprops and not self.knows_revprops() and 
+            self.consider_bzr_revprops()):
             log_revprops_capab = self._log._transport.has_capability("log-revprops")
             if log_revprops_capab in (None, False):
                 warn_slow_revprops(self.repository.get_config(), 
@@ -683,7 +688,8 @@ class RevisionMetadata(object):
 
         # Check whether we should consider file properties at all 
         # for this revision, if we should -> check fileprops
-        if can_use_fileprops and not self.knows_changed_fileprops() and consider_fileprops_fn():
+        if (can_use_fileprops and not self.knows_changed_fileprops() and 
+            consider_fileprops_fn()):
             ret = fileprop_fn(self.get_changed_fileprops())
             if ret != default:
                 return ret
@@ -793,7 +799,8 @@ class CachingRevisionMetadata(RevisionMetadata):
     """Wrapper around RevisionMetadata that stores some results in a cache."""
 
     def __init__(self, repository, *args, **kwargs):
-        super(CachingRevisionMetadata, self).__init__(repository, *args, 
+        self.base = super(CachingRevisionMetadata, self)
+        self.base.__init__(repository, *args, 
             **kwargs)
         self._parents_cache = getattr(self.repository._real_parents_provider, 
                                       "_cache", None)
@@ -816,8 +823,8 @@ class CachingRevisionMetadata(RevisionMetadata):
         self._revinfo_cache.commit_conditionally()
 
     def _determine(self, mapping):
-        self._revision_info[mapping] = super(CachingRevisionMetadata, self).get_revision_info(mapping)
-        self._stored_lhs_parent_revid[mapping] = super(CachingRevisionMetadata, self).get_stored_lhs_parent_revid(mapping)
+        self._revision_info[mapping] = self.base.get_revision_info(mapping)
+        self._stored_lhs_parent_revid[mapping] = self.base.get_stored_lhs_parent_revid(mapping)
 
     def _retrieve(self, mapping):
         assert mapping is not None
@@ -831,9 +838,10 @@ class CachingRevisionMetadata(RevisionMetadata):
             return self._original_mapping
 
         try:
-            self._original_mapping = self._revinfo_cache.get_original_mapping(self.get_foreign_revid())
+            self._original_mapping = self._revinfo_cache.get_original_mapping(
+                self.get_foreign_revid())
         except KeyError:
-            self._original_mapping = super(CachingRevisionMetadata, self).get_original_mapping()
+            self._original_mapping = self.base.get_original_mapping()
             self._revinfo_cache.set_original_mapping(self.get_foreign_revid(),
                     self._original_mapping)
         self._original_mapping_set = True
@@ -855,7 +863,7 @@ class CachingRevisionMetadata(RevisionMetadata):
         try:
             self._retrieve(mapping)
         except KeyError:
-            return super(CachingRevisionMetadata, self)._get_stored_lhs_parent_revid(mapping)
+            return self.base._get_stored_lhs_parent_revid(mapping)
         else:
             return self._stored_lhs_parent_revid[mapping]
 
@@ -879,8 +887,7 @@ class CachingRevisionMetadata(RevisionMetadata):
             parent_ids = self._parents_cache.lookup_parents(myrevid)
             if parent_ids is not None:
                 return parent_ids
-        parent_ids = super(CachingRevisionMetadata, self).get_parent_ids(
-            mapping)
+        parent_ids = self.base.get_parent_ids(mapping)
         self._parents_cache.insert_parents(myrevid, parent_ids)
         self._parents_cache.commit_conditionally()
         return parent_ids
@@ -1087,7 +1094,9 @@ class RevisionMetadataBrowser(object):
                 for new_name, old_name, old_rev in changes.apply_reverse_changes([revmeta.branch_path], revmeta.get_paths()):
                     if new_name == revmeta.branch_path:
                         from_path = old_name
-                if (from_path is not None and not self.under_prefixes(from_path, self.prefixes)) or not self.under_prefixes(revmeta.branch_path, self.prefixes):
+                if ((from_path is not None and 
+                    not self.under_prefixes(from_path, self.prefixes)) or 
+                    not self.under_prefixes(revmeta.branch_path, self.prefixes)):
                     raise MetaHistoryIncomplete("Invalid prefix %r for prefixes %r" % (from_path, self.prefixes))
                 raise AssertionError("Unable to find direct lhs parent for %r" % revmeta)
         return revmeta._direct_lhs_parent_revmeta
@@ -1113,6 +1122,9 @@ class RevisionMetadataBrowser(object):
         return ret
 
     def do(self):
+        """Yield revisions and deleted branches.
+
+        """
         for (paths, revnum, revprops) in self._iter_log:
             assert revnum <= self.from_revnum
             # Dictionary mapping branch paths to Metabranches
