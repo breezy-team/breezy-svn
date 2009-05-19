@@ -250,8 +250,13 @@ class FakeRevision(object):
 
 class MetadataBrowserTests(TestCase):
 
+    def setUp(self):
+        TestCase.setUp(self)
+        self._get_revs = []
+
     def get_revision(self, path, revnum, changes=None, revprops=None,
                      changed_fileprops=None, fileprops=None, metaiterator=None):
+        self._get_revs.append((path, revnum))
         return FakeRevision(path, revnum)
 
     def get_browser(self, prefixes, from_revnum, to_revnum, layout, paths):
@@ -406,3 +411,24 @@ class MetadataBrowserTests(TestCase):
         self.assertEquals(("revision", FakeRevision("", 1)), rev3)
         rev4 = browser.next()
         self.assertEquals(("revision", FakeRevision("", 0)), rev4)
+
+    def test_ignore_sideeffects(self):
+        browser = self.get_browser(["python"], 8, 0, TrunkLayout(1), 
+                { 1: { "python": ('A', None, -1),
+                       "python/tags": ('A', None, -1),
+                       "python/trunk": ('A', None, -1)},
+                  5: { "python/trunk/bar": ('A', None, -1),
+                       "something/trunk": ("M", None ,-1)},
+                  6: { "python/branches/bla": ("A", "something/trunk", 5) }
+                  })
+        rev1 = browser.next()
+        self.assertEquals(('revision', FakeRevision('python/branches/bla',6)), rev1)
+        rev2 = browser.next()
+        self.assertEquals(('revision', FakeRevision('python/trunk',5)), rev2)
+        rev3 = browser.next()
+        self.assertEquals(('revision', FakeRevision('python/trunk',1)), rev3)
+        self.assertRaises(StopIteration, browser.next)
+        self.assertFalse(rev1[1]._parent_revmeta_set)
+        self.assertTrue(rev2[1]._parent_revmeta_set)
+        self.assertTrue(rev3[1]._parent_revmeta_set)
+        self.assertEquals([('python/branches/bla', 6), ('python/trunk', 5), ('python/trunk', 1)], self._get_revs)

@@ -211,11 +211,11 @@ class RepositoryConverter(object):
                 revmetas = []
             else:
                 revmetas = None
-            pb = ui.ui_factory.nested_progress_bar()
             if all:
                 heads = None
             else:
                 heads = set()
+            pb = ui.ui_factory.nested_progress_bar()
             try:
                 for kind, item in it:
                     if kind == "revision":

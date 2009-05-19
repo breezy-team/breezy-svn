@@ -35,6 +35,7 @@ from subvertpy import (
 
 from bzrlib import (
     errors as bzr_errors,
+    trace,
     ui,
     )
 from bzrlib.foreign import (
@@ -42,9 +43,6 @@ from bzrlib.foreign import (
     )
 from bzrlib.revision import (
     NULL_REVISION, 
-    )
-from bzrlib.trace import (
-    warning,
     )
 from bzrlib.plugins.svn import (
     changes, 
@@ -87,9 +85,9 @@ def warn_slow_revprops(config, server):
         warn_upgrade = True
     if warn_upgrade:
         if server:
-            warning("Upgrade server to svn 1.5 or higher for faster retrieving of revision properties.")
+            trace.warning("Upgrade server to svn 1.5 or higher for faster retrieving of revision properties.")
         else:
-            warning("Upgrade to svn 1.5 or higher for faster retrieving of revision properties.")
+            trace.warning("Upgrade to svn 1.5 or higher for faster retrieving of revision properties.")
         _warned_slow_revprops = True
 
 
@@ -645,8 +643,7 @@ class RevisionMetadata(object):
                 return (mapping.get_branch_root(revprops) == self.branch_path and 
                         mapping.get_repository_uuid(revprops) in (None, self.uuid))
         if revprops_sufficient is None:
-            def revprops_sufficient(revprops):
-                return revprops_complete(revprops)
+            revprops_sufficient = revprops_complete
 
         # Check revprops if self.knows_revprops() and can_use_revprops
         if can_use_revprops and self.knows_revprops():
@@ -848,8 +845,10 @@ class CachingRevisionMetadata(RevisionMetadata):
         return self._original_mapping
 
     def get_stored_lhs_parent_revid(self, mapping):
-        if mapping in self._stored_lhs_parent_revid:
+        try:
             return self._stored_lhs_parent_revid[mapping]
+        except KeyError:
+            pass
         try:
             self._retrieve(mapping)
         except KeyError:
@@ -858,8 +857,10 @@ class CachingRevisionMetadata(RevisionMetadata):
         return self._stored_lhs_parent_revid[mapping]
 
     def _get_stored_lhs_parent_revid(self, mapping):
-        if mapping in self._stored_lhs_parent_revid:
+        try:
             return self._stored_lhs_parent_revid[mapping]
+        except KeyError:
+            pass
         try:
             self._retrieve(mapping)
         except KeyError:
@@ -868,8 +869,10 @@ class CachingRevisionMetadata(RevisionMetadata):
             return self._stored_lhs_parent_revid[mapping]
 
     def get_revision_info(self, mapping):
-        if mapping in self._revision_info:
+        try:
             return self._revision_info[mapping]
+        except KeyError:
+            pass
         try:
             self._retrieve(mapping)
         except KeyError:
@@ -1031,7 +1034,10 @@ class RevisionMetadataBrowser(object):
         :param project: Project name
         :param pb: Optional progress bar
         """
-        self.prefixes = prefixes
+        if prefixes == [""]:
+            self.from_prefixes = None
+        else:
+            self.from_prefixes = [prefix.strip("/") for prefix in prefixes]
         self.from_revnum = from_revnum
         self.to_revnum = to_revnum
         self._last_revnum = None
@@ -1039,12 +1045,18 @@ class RevisionMetadataBrowser(object):
         # Two-dimensional dictionary for each set of revision meta 
         # branches that exist *after* a revision
         self._pending_ancestors = defaultdict(lambda: defaultdict(set))
+        if self.from_prefixes is None:
+            self._pending_prefixes = None
+            self._prefixes = None
+        else:
+            self._pending_prefixes = defaultdict(set)
+            self._prefixes = set(self.from_prefixes)
         self._ancestors = defaultdict(set)
         self._unusual = set()
         self._unusual_history = defaultdict(set)
         self._provider = provider
         self._actions = []
-        self._iter_log = self._provider._log.iter_changes(self.prefixes, self.from_revnum, self.to_revnum, pb=pb)
+        self._iter_log = self._provider._log.iter_changes(self.from_prefixes, self.from_revnum, self.to_revnum, pb=pb)
         self._project = project
         self._pb = pb
         self._iter = self.do()
@@ -1059,17 +1071,17 @@ class RevisionMetadataBrowser(object):
         return (type(self) == type(other) and 
                 self.from_revnum == other.from_revnum and 
                 self.to_revnum == other.to_revnum and
-                self.prefixes == other.prefixes and
+                self.from_prefixes == other.from_prefixes and
                 self.layout == other.layout)
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __hash__(self):
-        if self.prefixes is None:
+        if self.from_prefixes is None:
             prefixes = None
         else:
-            prefixes = tuple(self.prefixes)
+            prefixes = tuple(self.from_prefixes)
         return hash((type(self), self.from_revnum, self.to_revnum, prefixes, hash(self.layout)))
 
     def under_prefixes(self, path, prefixes):
@@ -1087,17 +1099,8 @@ class RevisionMetadataBrowser(object):
             try:
                 self.next()
             except StopIteration:
-                if self.to_revnum > 0:
-                    raise MetaHistoryIncomplete("Reached revision 0")
-                from_path = None
-                # Maybe this branch was copied from outside of the prefixes ?
-                for new_name, old_name, old_rev in changes.apply_reverse_changes([revmeta.branch_path], revmeta.get_paths()):
-                    if new_name == revmeta.branch_path:
-                        from_path = old_name
-                if ((from_path is not None and 
-                    not self.under_prefixes(from_path, self.prefixes)) or 
-                    not self.under_prefixes(revmeta.branch_path, self.prefixes)):
-                    raise MetaHistoryIncomplete("Invalid prefix %r for prefixes %r" % (from_path, self.prefixes))
+                if self.to_revnum > 0 or self.from_prefixes:
+                    raise MetaHistoryIncomplete("Reached revision 0 or outside of prefixes.")
                 raise AssertionError("Unable to find direct lhs parent for %r" % revmeta)
         return revmeta._direct_lhs_parent_revmeta
 
@@ -1124,10 +1127,10 @@ class RevisionMetadataBrowser(object):
     def do(self):
         """Yield revisions and deleted branches.
 
+        This is where the *real* magic happens.
         """
         for (paths, revnum, revprops) in self._iter_log:
             assert revnum <= self.from_revnum
-            # Dictionary mapping branch paths to Metabranches
             if self._pb:
                 self._pb.update("discovering revisions", 
                         abs(self.from_revnum-revnum),
@@ -1141,6 +1144,18 @@ class RevisionMetadataBrowser(object):
                     del self._pending_ancestors[x]
                     self._unusual.update(self._unusual_history[x])
                     del self._unusual_history[x]
+                    if self._prefixes:
+                        self._prefixes.update(self._pending_prefixes[x])
+
+            # Eliminate anything that's not under prefixes/
+            if self._prefixes:
+                for bp in self._ancestors.keys():
+                    if not self.under_prefixes(bp, self._prefixes):
+                        del self._ancestors[bp]
+                        try:
+                            self._unusual.remove(bp)
+                        except KeyError:
+                            pass
 
             changed_bps = set()
             deletes = []
@@ -1150,6 +1165,8 @@ class RevisionMetadataBrowser(object):
 
             # Find out what branches have changed
             for p in sorted(paths):
+                if self._prefixes and not self.under_prefixes(p, self._prefixes):
+                    continue
                 action = paths[p][0]
                 try:
                     (_, bp, ip) = self.layout.split_project_path(p, self._project)
@@ -1207,6 +1224,20 @@ class RevisionMetadataBrowser(object):
                     self._pending_ancestors[old_rev][old_name].update(data)
                     if not self.layout.is_branch_or_tag(old_name, self._project):
                         self._unusual_history[old_rev].add(old_name)
+
+            # Update the prefixes, if necessary
+            if self._prefixes:
+                for new_name, old_name, old_rev in changes.apply_reverse_changes(
+                    self._prefixes, paths):
+                    if old_name is None:
+                        # Didn't exist previously, terminate prefix
+                        self._prefixes.remove(new_name)
+                        if len(self._prefixes) == 0:
+                            return
+                    else:
+                        self._prefixes.remove(new_name)
+                        self._pending_prefixes[old_rev].add(old_name)
+
             self._last_revnum = revnum
 
 

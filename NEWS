@@ -45,6 +45,9 @@ bzr-svn 0.6.0                    UNRELEASED
    * Handle root replaces when doing lightweight checkouts. (#352509)
 
    * Simplify finding local changes. (#370755)
+
+   * Handle browsing of revisions outside of prefix in repository with 
+     branch container directories (e.g. project1/trunk, etc). (#343382)
      
 
 bzr-svn 0.5.4                    2009-04-08
