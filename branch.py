@@ -859,6 +859,9 @@ class InterOtherSvnBranch(InterBranch):
         finally:
             self.source.unlock()
 
+    def update_tags(self, overwrite=False):
+        return self.source.tags.merge_to(self.target.tags, overwrite)
+
     def push(self, overwrite=False, stop_revision=None, 
             _push_merged=None, _override_svn_revprops=None):
         """See InterBranch.push()."""
@@ -872,8 +875,7 @@ class InterOtherSvnBranch(InterBranch):
                 self._update_revisions(stop_revision, overwrite, 
                     push_merged=_push_merged, 
                     override_svn_revprops=_override_svn_revprops)
-            result.tag_conflicts = self.source.tags.merge_to(
-                self.target.tags, overwrite)
+            result.tag_conflicts = self.update_tags(overwrite)
             return result
         finally:
             self.source.unlock()
@@ -894,8 +896,7 @@ class InterOtherSvnBranch(InterBranch):
                 self._update_revisions(stop_revision, overwrite, 
                     push_merged=_push_merged, 
                     override_svn_revprops=_override_svn_revprops)
-            result.tag_conflicts = self.source.tags.merge_to(
-                self.target.tags, overwrite)
+            result.tag_conflicts = self.update_tags(overwrite)
             return result
         finally:
             self.source.unlock()
