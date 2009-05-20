@@ -1034,7 +1034,7 @@ class RevisionMetadataBrowser(object):
         :param project: Project name
         :param pb: Optional progress bar
         """
-        if prefixes == [""]:
+        if prefixes in ([""], None):
             self.from_prefixes = None
         else:
             self.from_prefixes = [prefix.strip("/") for prefix in prefixes]
