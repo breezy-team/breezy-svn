@@ -144,6 +144,15 @@ class RevInfoCacheTests(object):
             self.cache.get_revision(("bfdshfksdjh", "mypath", 1), 
             BzrSvnMappingv4()))
 
+    def test_get_revision_null_revid(self):
+        mapping = BzrSvnMappingv4()
+        foreign_revid = ("fsdkjhfsdkjhfsd", "mypath", 1)
+        self.cache.insert_revision(foreign_revid, 
+            mapping, (None, None, False), "oldlhs")
+        self.assertEquals(
+            ((None, mapping.revision_id_foreign_to_bzr(foreign_revid), False), "oldlhs"),
+            self.cache.get_revision(foreign_revid, mapping))
+
     def test_get_original_mapping_none(self):
         self.cache.set_original_mapping(("fsdkjhfsdkjhfsd", "mypath", 1), 
             None)

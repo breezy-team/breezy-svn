@@ -158,8 +158,9 @@ class RevisionInfoCache(CacheTable):
         :param original_mapping: Original mapping used
         :param stored_lhs_parent_revid: Stored lhs parent revision
         """
-        if revid is not None:
-            self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
+        if revid is None:
+            revid = mapping.revision_id_foreign_to_bzr(foreign_revid)
+        self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
         basekey = "%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
         assert not hidden or revno is None
         if revno is not None:

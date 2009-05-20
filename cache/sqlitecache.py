@@ -254,7 +254,11 @@ class RevisionInfoCache(CacheTable):
                 stored_lhs_parent_revid = None
             else:
                 stored_lhs_parent_revid = row[3].encode("utf-8")
-            return ((row[0], row[1].encode("utf-8"), row[2]), stored_lhs_parent_revid)
+            if row[1] is None:
+                stored_revid = mapping.revision_id_foreign_to_bzr(foreign_revid)
+            else:
+                stored_revid = row[1].encode("utf-8")
+            return ((row[0], stored_revid, row[2]), stored_lhs_parent_revid)
 
     def get_original_mapping(self, foreign_revid):
         """Find the original mapping for a revision.
