@@ -245,6 +245,7 @@ class LogCache(CacheTable):
                 assert orig_paths[p][2] == -1
             new_paths[p.strip("/")] = (orig_paths[p][0], copyfrom_path, orig_paths[p][2])
         self.db["paths/%d" % rev] = bencode(new_paths)
+        self.db["log-last"] = "%d" % max(self.last_revnum(), rev)
     
     def drop_revprops(self, revnum):
         self.db["revprops/%d" % revnum] = bencode({})
@@ -262,7 +263,6 @@ class LogCache(CacheTable):
         if revprops is None:
             revprops = {}
         self.db["revprops/%d" % revision] = bencode((revprops, all_revprops))
-        self.db["log-last"] = "%d" % max(self.last_revnum(), revision)
 
     def last_revnum(self):
         try:

@@ -1,5 +1,12 @@
 bzr-svn 0.6.1                    UNRELEASED
 
+  BUG FIXES
+
+   * Cope with credentials in shared connections sometimes being a direct 
+     dictionary.
+
+   * Fix cache inspection after push when using the TDB database.
+
 bzr-svn 0.6.0                    2009-05-20
 
   FEATURES
