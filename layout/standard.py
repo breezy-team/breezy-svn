@@ -311,6 +311,18 @@ class CustomLayout(RepositoryLayout):
     def __repr__(self):
         return "%s(%r,%r)" % (self.__class__.__name__, self.branches, self.tags)
 
+    def _is_prefix(self, prefixes, path, project=None):
+        for branch in prefixes:
+            if branch.startswith("%s/" % path):
+                return True
+        return False
+
+    def is_branch_parent(self, path, project=None):
+        return self._is_prefix(self.branches, path, project)
+
+    def is_tag_parent(self, path, project=None):
+        return self._is_prefix(self.tags, path, project)
+
 
 class WildcardLayout(RepositoryLayout):
 

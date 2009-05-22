@@ -21,6 +21,7 @@ from bzrlib.plugins.svn.errors import (
     NotSvnBranchPath,
     )
 from bzrlib.plugins.svn.layout.standard import (
+    CustomLayout,
     RootLayout,
     TrunkLayout,
     WildcardLayout,
@@ -131,3 +132,16 @@ class WildcardLayoutTests(TestCase):
         self.assertEquals("bla", x.get_tag_name("tags/bla"))
         x = WildcardLayout(["trunk"], ["tags/bla"])
         self.assertEquals(None, x.get_tag_name("bla"))
+
+
+class CustomLayoutTests(TestCase):
+
+    def test_is_branch(self):
+        x = CustomLayout(["foo/bar"])
+        self.assertTrue(x.is_branch("foo/bar"))
+        self.assertFalse(x.is_branch("foo"))
+
+    def test_is_branch_parent(self):
+        x = CustomLayout(["foo/bar"])
+        self.assertFalse(x.is_branch_parent("foo/bar"))
+        self.assertTrue(x.is_branch_parent("foo"))
