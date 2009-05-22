@@ -46,7 +46,7 @@ It is used for performance reasons only and can be removed
 without losing data.
 
 See http://bazaar-vcs.org/BzrForeignBranches/Subversion for details.
-""" + extra)
+""")
         if version_info[3] == 'exp':
             f.write("This is the directory used by the experimental version of bzr-svn.\n")
     finally:
@@ -72,12 +72,22 @@ def create_cache_dir():
         if type(s) == str:
             s = s.decode(bzrlib.user_encoding)
         base_cache_dir = s.encode(osutils._fs_enc)
+        cache_dir = os.path.join(base_cache_dir, name)
     else:
         base_cache_dir = config_dir()
-    cache_dir = os.path.join(base_cache_dir, name)
+        cache_dir = os.path.join(base_cache_dir, name)
+        # Check and use old location if possible
+        if os.path.exists(cache_dir):
+            return cache_dir
+        try:
+            from xdg.BaseDirectory import xdg_cache_home
+        except ImportError:
+            pass
+        else:
+            cache_dir = os.path.join(xdg_cache_home, "bazaar", "svn")
 
     if not os.path.exists(cache_dir):
-        os.mkdir(cache_dir)
+        os.makedirs(cache_dir)
         write_cache_readme(os.path.join(cache_dir, "README"))
 
     return cache_dir

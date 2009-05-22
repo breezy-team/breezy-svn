@@ -12,6 +12,9 @@ bzr-svn 0.6.1                    UNRELEASED
 
    * Avoid buggy LogWalker.find_latest_change(). (#378799)
 
+   * Use xdg cache directory (~/.cache/bzr-svn usually) if the Python XDG
+     module is available.
+
 bzr-svn 0.6.0                    2009-05-20
 
   FEATURES
