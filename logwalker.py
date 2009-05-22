@@ -173,7 +173,7 @@ class CachingLogWalker(object):
             in revnum.
         """
         assert from_revnum >= 0 and to_revnum >= 0, "%r -> %r" % (from_revnum, to_revnum)
-        self.mutter("iter changes %r->%r (%r)", from_revnum, to_revnum, paths)
+        self.mutter("iter changes %r->%r (%r)", from_revnum, to_revnum, prefixes)
         self._fetch_revisions(max(from_revnum, to_revnum), pb=pb)
 
         return iter(iter_changes(prefixes, from_revnum, to_revnum, 
