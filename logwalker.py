@@ -44,17 +44,17 @@ from bzrlib.plugins.svn.util import (
 # Maximum number of extra revisions to fetch in caching logwalker
 MAX_OVERHEAD_FETCH = 1000
 
-def iter_changes(paths, from_revnum, to_revnum, get_revision_paths, 
+def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths, 
     revprop_list, limit=0):
     ascending = (to_revnum > from_revnum)
 
     revnum = from_revnum
 
-    if paths is None:
+    if prefixes is None:
         path = ""
     else:
-        assert len(paths) == 1
-        path = paths[0].strip("/")
+        assert len(prefixes) == 1
+        path = prefixes[0].strip("/")
 
     assert from_revnum >= to_revnum or path == "", \
             "path: %s, %d >= %d" % (path, from_revnum, to_revnum)
@@ -162,10 +162,10 @@ class CachingLogWalker(object):
         
         return revnum
 
-    def iter_changes(self, paths, from_revnum, to_revnum=0, limit=0, pb=None):
+    def iter_changes(self, prefixes, from_revnum, to_revnum=0, limit=0, pb=None):
         """Return iterator over all the revisions between from_revnum and to_revnum named path or inside path.
 
-        :param paths:    Paths to report about.
+        :param prefixes:    Prefixes of paths to report about
         :param from_revnum:  Start revision.
         :param to_revnum: End revision.
         :return: An iterator that yields tuples with (paths, revnum, revprops)
@@ -176,7 +176,7 @@ class CachingLogWalker(object):
         self.mutter("iter changes %r->%r (%r)", from_revnum, to_revnum, paths)
         self._fetch_revisions(max(from_revnum, to_revnum), pb=pb)
 
-        return iter(iter_changes(paths, from_revnum, to_revnum, 
+        return iter(iter_changes(prefixes, from_revnum, to_revnum, 
             self.get_revision_paths, self.revprop_list, limit))
 
     def get_revision_paths(self, revnum):
@@ -307,10 +307,10 @@ class LogWalker(object):
     def revprop_list(self, revnum):
         return lazy_dict({}, self._transport.revprop_list, revnum)
 
-    def iter_changes(self, paths, from_revnum, to_revnum=0, limit=0, pb=None):
+    def iter_changes(self, prefixes, from_revnum, to_revnum=0, limit=0, pb=None):
         """Return iterator over all the revisions between revnum and 0 named path or inside path.
 
-        :param paths:    Paths report about (in revnum)
+        :param prefixes:    Prefixes to report about (in from_revnum)
         :param from_revnum:  Start revision.
         :param to_revnum: End revision.
         :return: An iterator that yields tuples with (paths, revnum, revprops)
@@ -325,7 +325,7 @@ class LogWalker(object):
             else:
                 todo_revprops = ["svn:author", "svn:log", "svn:date"]
 
-            iterator = self._transport.iter_log(paths, from_revnum, to_revnum, limit, 
+            iterator = self._transport.iter_log(prefixes, from_revnum, to_revnum, limit, 
                                                     True, False, False, revprops=todo_revprops)
 
             for (changed_paths, revnum, known_revprops, has_children) in iterator:
@@ -373,8 +373,8 @@ class DictBasedLogWalker(object):
         self.paths = paths
         self.revprops = revprops
 
-    def iter_changes(self, paths, from_revnum, to_revnum=0, limit=0, pb=None):
-        return iter(iter_changes(paths, from_revnum, to_revnum, 
+    def iter_changes(self, prefixes, from_revnum, to_revnum=0, limit=0, pb=None):
+        return iter(iter_changes(prefixes, from_revnum, to_revnum, 
             self.get_revision_paths, self.revprop_list, limit))
 
     def get_revision_paths(self, revnum):
