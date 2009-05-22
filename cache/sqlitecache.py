@@ -368,7 +368,7 @@ class LogCache(CacheTable):
         """
 
     def last_revnum(self):
-        saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM revinfo").fetchone()[0]
+        saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM changed_path").fetchone()[0]
         if saved_revnum is None:
             return 0
         return saved_revnum

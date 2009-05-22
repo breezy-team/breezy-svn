@@ -32,6 +32,10 @@ from bzrlib.plugins.svn.mapping4 import (
 
 class LogCacheTests(object):
 
+    def test_last_revnum(self):
+        self.cache.insert_paths(42, {"foo": ("A", None, -1)})
+        self.assertEquals(42, self.cache.last_revnum())
+
     def test_insert_paths(self):
         self.cache.insert_paths(42, {"foo": ("A", None, -1)})
         self.assertEquals({"foo": ("A", None, -1)}, 
