@@ -137,7 +137,7 @@ def update_svk_features(oldvalue, merges, lookup_revid=None):
     return None
 
 
-def update_mergeinfo(repository, graph, oldvalue, baserevid, merges):
+def update_mergeinfo(lookup_revid, graph, oldvalue, baserevid, merges):
     """Update a svn:mergeinfo property to include a specified list of merges."""
     pb = ui.ui_factory.nested_progress_bar()
     try:
@@ -148,7 +148,7 @@ def update_mergeinfo(repository, graph, oldvalue, baserevid, merges):
                 if graph.is_ancestor(revid, baserevid):
                     break
                 try:
-                    (uuid, path, revnum), mapping = repository.lookup_revision_id(revid)
+                    (uuid, path, revnum), mapping = lookup_revid(revid)
                 except NoSuchRevision:
                     break
 
@@ -481,6 +481,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             if base_foreign_revid is None or base_mapping is None:
                 base_foreign_revid, base_mapping = \
                     repository.lookup_revision_id(self.base_revid)
+            self.base_foreign_revid = base_foreign_revid
             (uuid, self.base_path, self.base_revnum) = base_foreign_revid
             self.base_mapping = base_mapping
             self._base_revmeta = self.repository._revmeta_provider.lookup_revision(self.base_path, self.base_revnum)
@@ -537,12 +538,15 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         if len(merges) > 0:
             old_svk_merges = self._base_branch_props.get(SVN_PROP_SVK_MERGE, "")
+            def lookup_revid(revid):
+                return repository.lookup_revision_id(revid, 
+                    foreign_sibling=self.base_foreign_revid)
             new_svk_merges = update_svk_features(old_svk_merges, merges, 
-                                            self.repository.lookup_revision_id)
+                                                 lookup_revid)
             if new_svk_merges is not None:
                 self._svnprops[SVN_PROP_SVK_MERGE] = new_svk_merges
 
-            new_mergeinfo = update_mergeinfo(self.repository, graph,
+            new_mergeinfo = update_mergeinfo(lookup_revid, graph,
                 self._base_branch_props.get(properties.PROP_MERGEINFO, ""), 
                 self.base_revid, merges)
             if new_mergeinfo is not None:
@@ -667,7 +671,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 continue
             try:
                 (uuid, base_path, base_revnum), base_mapping = \
-                    self.repository.lookup_revision_id(p)
+                    self.repository.lookup_revision_id(p, foreign_sibling=self.base_foreign_revid)
             except NoSuchRevision:
                 continue
             inv = None

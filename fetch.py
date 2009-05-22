@@ -976,7 +976,8 @@ class FetchRevisionFinder(object):
         from_revnum = self.source.get_latest_revnum()
         return self.find_iter_revisions(self.source._revmeta_provider.iter_all_revisions(self.source.get_layout(), check_unusual_path=mapping.is_branch_or_tag, from_revnum=from_revnum, pb=pb), mapping)
 
-    def find_mainline(self, foreign_revid, mapping, project=None, find_ghosts=False, pb=None):
+    def find_mainline(self, foreign_revid, mapping, 
+                      find_ghosts=False, pb=None):
         if (foreign_revid, mapping) in self.checked:
             return []
         revmetas = deque()
@@ -1008,26 +1009,26 @@ class FetchRevisionFinder(object):
         for revmeta, mapping in revmetas:
             for p in revmeta.get_rhs_parents(mapping):
                 try:
-                    foreign_revid, rhs_mapping = self.source.lookup_revision_id(p, project=project)
+                    foreign_revid, rhs_mapping = self.source.lookup_revision_id(p, foreign_sibling=revmeta.get_foreign_revid())
                 except NoSuchRevision:
                     pass # Ghost
                 else:
-                    self.extra.append((foreign_revid, project, rhs_mapping))
+                    self.extra.append((foreign_revid, rhs_mapping))
         return revmetas
 
-    def find_until(self, foreign_revid, mapping, find_ghosts=False, pb=None,
-                    project=None):
+    def find_until(self, foreign_revid, mapping, find_ghosts=False, 
+                   pb=None):
         """Find all missing revisions until revision_id
 
         :param revision_id: Stop revision
         :param find_ghosts: Find ghosts
         :return: List with revmeta, mapping tuples to fetch
         """
-        self.extra.append((foreign_revid, project, mapping))
+        self.extra.append((foreign_revid, mapping))
         while len(self.extra) > 0:
-            foreign_revid, project, mapping = self.extra.pop()
+            foreign_revid, mapping = self.extra.pop()
             self.needed.extend(self.find_mainline(foreign_revid, mapping, 
-                project, find_ghosts=find_ghosts, pb=pb))
+                find_ghosts=find_ghosts, pb=pb))
 
 
 class InterFromSvnRepository(InterRepository):
@@ -1194,7 +1195,7 @@ class InterFromSvnRepository(InterRepository):
             self.target.commit_write_group()
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False, 
-              needed=None, mapping=None, fetch_spec=None):
+              needed=None, mapping=None, project=None, fetch_spec=None):
         """Fetch revisions. """
         if revision_id == NULL_REVISION:
             return
@@ -1216,14 +1217,16 @@ class InterFromSvnRepository(InterRepository):
                                                      target_is_empty)
                 if needed is None:
                     if revision_id is not None:
-                        foreign_revid, mapping = self.source.lookup_revision_id(revision_id)
+                        foreign_revid, mapping = self.source.lookup_revision_id(revision_id, project=project)
                         revisionfinder.find_until(foreign_revid,
-                            mapping, find_ghosts, pb=nested_pb)
+                            mapping, find_ghosts=find_ghosts,
+                            pb=nested_pb)
                     elif fetch_spec is not None:
                         for head in fetch_spec.heads:
-                            foreign_revid, mapping = self.source.lookup_revision_id(head)
+                            foreign_revid, mapping = self.source.lookup_revision_id(head, project=project)
                             revisionfinder.find_until(foreign_revid,
-                                mapping, find_ghosts, pb=nested_pb)
+                                mapping, find_ghosts=find_ghosts,
+                                pb=nested_pb)
                     else:
                         revisionfinder.find_all(self.source.get_mapping(), pb=nested_pb)
                     needed = revisionfinder.get_missing()

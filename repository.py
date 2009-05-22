@@ -725,7 +725,7 @@ class SvnRepository(ForeignRepository):
             yield entry
             for rhs_parent_revid in revmeta.get_rhs_parents(mapping):
                 try:
-                    (_, rhs_parent_bp, rhs_parent_revnum), rhs_parent_mapping = self.lookup_revision_id(rhs_parent_revid)
+                    (_, rhs_parent_bp, rhs_parent_revnum), rhs_parent_mapping = self.lookup_revision_id(rhs_parent_revid, foreign_sibling=revmeta.get_foreign_revid())
                 except bzr_errors.NoSuchRevision:
                     pass
                 else:
@@ -751,7 +751,7 @@ class SvnRepository(ForeignRepository):
             if (expected_revid is not None and
                 not revid in (None, expected_revid)):
                 # Need to restart, branch root has changed
-                (_, branch_path, revnum), mapping = self.lookup_revision_id(revid)
+                (_, branch_path, revnum), mapping = self.lookup_revision_id(revid, foreign_sibling=revmeta.get_foreign_revid())
                 iter = self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=to_revnum, pb=pb, limit=limit)
             if not mapping.is_branch_or_tag(revmeta.branch_path):
                 return
@@ -760,11 +760,12 @@ class SvnRepository(ForeignRepository):
             mapping = lhs_mapping
         if expected_revid is not None and expected_revid != NULL_REVISION:
             # Need to restart, branch root has changed
-            (_, branch_path, revnum), mapping = self.lookup_revision_id(expected_revid)
+            (_, branch_path, revnum), mapping = self.lookup_revision_id(expected_revid, foreign_sibling=revmeta.get_foreign_revid())
             for (revmeta, mapping) in self._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=to_revnum, mapping=mapping, pb=pb, limit=limit):
                 yield (revmeta, mapping)
 
-    def iter_reverse_revision_history(self, revision_id, pb=None, limit=0):
+    def iter_reverse_revision_history(self, revision_id, pb=None, limit=0, 
+                                      project=None):
         """Iterate backwards through revision ids in the lefthand history
 
         :param revision_id: The revision id to start with.  All its lefthand
@@ -772,7 +773,7 @@ class SvnRepository(ForeignRepository):
         """
         if revision_id in (None, NULL_REVISION):
             return
-        (uuid, branch_path, revnum), mapping = self.lookup_revision_id(revision_id)
+        (uuid, branch_path, revnum), mapping = self.lookup_revision_id(revision_id, project=project)
         assert uuid == self.uuid
         for revmeta, mapping in self._iter_reverse_revmeta_mapping_history(
             branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb, 
@@ -904,7 +905,7 @@ class SvnRepository(ForeignRepository):
         return self.lookup_foreign_revision_id((self.uuid, path, revnum), mapping)
 
     def lookup_revision_id(self, revid, layout=None, ancestry=None, 
-                           project=None):
+                           project=None, foreign_sibling=None):
         """Parse an existing Subversion-based revision id.
 
         :param revid: The revision id.
@@ -915,9 +916,6 @@ class SvnRepository(ForeignRepository):
         """
         # FIXME: Use ancestry
         # If there is no entry in the map, walk over all branches:
-        if layout is None:
-            layout = self.get_layout()
-
         # Try a simple parse
         try:
             (uuid, branch_path, revnum), mapping = mapping_registry.parse_revision_id(revid)
@@ -931,6 +929,13 @@ class SvnRepository(ForeignRepository):
         except bzr_errors.InvalidRevisionId:
             pass
 
+        if layout is None:
+            layout = self.get_layout()
+        if foreign_sibling is not None and project is None:
+            try:
+                project = layout.parse(foreign_sibling[1])[1]
+            except errors.NotSvnBranchPath:
+                project = None
         return self.revmap.get_branch_revnum(revid, layout, project)
 
     def seen_bzr_revprops(self):

@@ -73,6 +73,9 @@ from bzrlib.workingtree import (
 from bzrlib.plugins.svn import (
     util,
     )
+from bzrlib.plugins.svn.fetch import (
+    InterFromSvnRepository,
+    )
 from bzrlib.plugins.svn.push import (
     InterToSvnRepository,
     create_branch_with_hidden_commit,
@@ -645,7 +648,10 @@ class InterSvnOtherBranch(GenericInterBranch):
             # common case of having something to pull, and so that the 
             # check for already merged can operate on the just fetched 
             # graph, which will be cached in memory.
-            self.target.fetch(self.source, stop_revision)
+            interrepo = InterFromSvnRepository(self.source.repository,
+                                               self.target.repository)
+            interrepo.fetch(stop_revision, project=self.source.project,
+                            mapping=self.source.mapping)
             # Check to see if one is an ancestor of the other
             if not overwrite:
                 if graph is None:
@@ -837,8 +843,11 @@ class InterOtherSvnBranch(InterBranch):
                             self.source.repository, rev, push_metadata=False)
             finally:
                 pb.finished()
-            self.source.repository.fetch(self.target.repository, 
-                                    revision_id=revid_map[rev.revision_id])
+            interrepo = InterFromSvnRepository(self.target.repository, 
+                                               self.source.repository)
+            interrepo.fetch(revision_id=revid_map[rev.revision_id],
+                            mapping=self.target.mapping,
+                            project=self.target.project)
             self.target._clear_cached_state()
             assert stop_revision in revid_map
             assert len(revid_map.keys()) > 0

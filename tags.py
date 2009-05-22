@@ -49,14 +49,16 @@ def reverse_dict(orig):
 
 class ReverseTagDict(object):
 
-    def __init__(self, repository, tags):
+    def __init__(self, repository, tags, project):
         self.repository = repository
+        self.project = project
         self._by_foreign_revid = {}
         for name, revmeta in tags.iteritems():
             self._by_foreign_revid.setdefault(revmeta.get_foreign_revid(), []).append(name)
 
     def get(self, revid):
-        foreign_revid, mapping = self.repository.lookup_revision_id(revid)
+        foreign_revid, mapping = self.repository.lookup_revision_id(revid, 
+            project=self.project)
         return self._by_foreign_revid.get(foreign_revid)
 
 
@@ -257,7 +259,8 @@ class SubversionTags(BasicTags):
     def get_reverse_tag_dict(self):
         """Returns a dict with revisions as keys
            and a list of tags for that revision as value"""
-        return ReverseTagDict(self.repository, self._get_tag_dict_revmeta())
+        return ReverseTagDict(self.repository, self._get_tag_dict_revmeta(),
+                              self.branch.project)
 
     def delete_tag(self, tag_name):
         path = self.branch.layout.get_tag_path(tag_name, self.branch.project)

@@ -366,7 +366,8 @@ class InterToSvnRepository(InterRepository):
         if parent_revid == NULL_REVISION:
             target_project = None
         else:
-            (_, bp, _), _ = self.target.lookup_revision_id(parent_revid)
+            (_, bp, _), _ = self.target.lookup_revision_id(parent_revid,
+                foreign_sibling=rev.foreign_revid)
             (_, target_project, _, _) = layout.parse(bp)
         bp = determine_branch_path(rev, layout, target_project)
         target_config = self._get_branch_config(bp)
