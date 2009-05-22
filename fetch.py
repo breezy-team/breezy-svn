@@ -925,8 +925,6 @@ class FetchRevisionFinder(object):
         map = {}
         for revmeta, mapping in revmetas:
             try:
-                if revmeta.is_hidden(mapping):
-                    continue
                 map[revmeta, mapping] = revmeta.get_revision_id(mapping)
             except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                 continue
@@ -958,14 +956,15 @@ class FetchRevisionFinder(object):
                     not m.is_branch_or_tag(revmeta.branch_path)):
                     continue
                 if prefix is not None:
-                    lhs_parent_revmeta = revmeta.get_direct_lhs_parent_revmeta()
+                    lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(m)
                     if lhs_parent_revmeta is not None and not changes.path_is_child(prefix, lhs_parent_revmeta.branch_path):
                         # Parent branch path is outside of prefix; we need to 
                         # check manually
                         self.needed.extend(self.find_mainline(lhs_parent_revmeta.get_foreign_revid(), lhsm))
                 if lhsm != master_mapping or heads is not None:
-                    needed_mappings[revmeta.get_direct_lhs_parent_revmeta()].add(lhsm)
-                needs_checking.append((revmeta, m))
+                    needed_mappings[revmeta.get_lhs_parent_revmeta(m)].add(lhsm)
+                if not revmeta.is_hidden(m):
+                    needs_checking.append((revmeta, m))
         self.needed.extend(reversed(self.check_revmetas(needs_checking)))
 
     def find_all(self, mapping, pb=None):

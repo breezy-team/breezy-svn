@@ -733,6 +733,10 @@ class SvnRepository(ForeignRepository):
 
     def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum, 
         to_revnum, mapping, pb=None, limit=0): 
+        """Iterate over the history of a RevisionMetadata object.
+
+        This will skip hidden revisions.
+        """
         assert mapping is not None
         expected_revid = None
         iter = self._revmeta_provider.iter_reverse_branch_changes(branch_path, 
@@ -740,6 +744,9 @@ class SvnRepository(ForeignRepository):
         for revmeta in iter:
             (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(mapping)
             assert not lhs_mapping.newer_than(mapping), "LHS mapping %r newer than %r" % (lhs_mapping, mapping)
+            if revmeta.is_hidden(mapping):
+                mapping = lhs_mapping
+                continue
             revid = revmeta.get_revision_id(mapping)
             if (expected_revid is not None and
                 not revid in (None, expected_revid)):

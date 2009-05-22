@@ -494,6 +494,8 @@ class RevisionMetadata(object):
         """Check whether this revision should be hidden from Bazaar history."""
         if not mapping.supports_hidden:
             return False
+        if not self.changes_branch_root():
+            return False
         (bzr_revno, revid, hidden) = self.get_revision_info(mapping)
         return hidden
 

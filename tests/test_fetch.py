@@ -1853,6 +1853,39 @@ Node-copyfrom-path: x
         self.assertEqual(oldrepos.generate_revision_id(2, "", mapping), 
                          inv2[inv2.path2id("bla")].revision)
 
+    def test_fetch_hidden(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.add_dir("trunk")
+        trunk.add_file("trunk/bla").modify("data")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        branches = dc.add_dir("branches")
+        branch = branches.add_dir("branches/brancha", "trunk")
+        dc.close()
+
+        self.client_set_revprop(repos_url, 2, "bzr:hidden", "")
+        self.client_set_revprop(repos_url, 2, "bzr:root", "branches/brancha")
+
+        dc = self.get_commit_editor(repos_url)
+        branches = dc.open_dir("branches")
+        brancha = branches.open_dir("branches/brancha")
+        brancha.add_file("branches/brancha/lala")
+        dc.close()
+
+        oldrepos = Repository.open(repos_url)
+        oldrepos.set_layout(TrunkLayout(0))
+        dir = BzrDir.create("f", format.get_rich_root_format())
+        newrepos = dir.create_repository()
+        self.copy_content(oldrepos, newrepos)
+
+        mapping = oldrepos.get_mapping()
+        self.assertTrue(newrepos.has_revision(mapping.revision_id_foreign_to_bzr((oldrepos.uuid, "branches/brancha", 3))))
+        self.assertTrue(newrepos.has_revision(mapping.revision_id_foreign_to_bzr((oldrepos.uuid, "trunk", 1))))
+        self.assertFalse(newrepos.has_revision(mapping.revision_id_foreign_to_bzr((oldrepos.uuid, "branches/brancha", 2))))
+
     def test_fetch_svk_merge(self):
         repos_url = self.make_repository('d')
 
