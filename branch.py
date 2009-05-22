@@ -110,7 +110,7 @@ class SubversionSourcePullResult(PullResult):
             if self.old_revid in (self.new_revid, NULL_REVISION):
                 to_file.write('No revisions to pull.\n')
             else:
-                if result.new_revmeta is None:
+                if self.new_revmeta is None:
                     self.new_revmeta, _ = self.source_branch.repository._get_revmeta(self.new_revid)
                 to_file.write('Now on revision %d (svn revno: %d).\n' % 
                         (self.new_revno, self.new_revmeta.revnum))
