@@ -35,6 +35,24 @@ from bzrlib.transport import (
 
 from bzrlib.plugins.svn import version_info
 
+
+def write_cache_readme(path):
+    f = open(path, 'w')
+    try:
+        f.write(
+"""This directory contains information cached by the bzr-svn plugin.
+
+It is used for performance reasons only and can be removed 
+without losing data.
+
+See http://bazaar-vcs.org/BzrForeignBranches/Subversion for details.
+""" + extra)
+        if version_info[3] == 'exp':
+            f.write("This is the directory used by the experimental version of bzr-svn.\n")
+    finally:
+        f.close()
+
+
 def create_cache_dir():
     """Create the top-level bzr-svn cache directory.
     
@@ -43,10 +61,8 @@ def create_cache_dir():
     ensure_config_dir_exists()
     if version_info[3] == 'exp':
         name = 'svn-cache-exp'
-        extra = "This is the directory used by the experimental version of bzr-svn.\n"
     else:
         name = 'svn-cache'
-        extra = ""
     if sys.platform in ("nt", "win32"):
         from bzrlib.win32utils import get_local_appdata_location
         s = get_local_appdata_location()
@@ -62,15 +78,8 @@ def create_cache_dir():
 
     if not os.path.exists(cache_dir):
         os.mkdir(cache_dir)
+        write_cache_readme(os.path.join(cache_dir, "README"))
 
-        open(os.path.join(cache_dir, "README"), 'w').write(
-"""This directory contains information cached by the bzr-svn plugin.
-
-It is used for performance reasons only and can be removed 
-without losing data.
-
-See http://bazaar-vcs.org/BzrForeignBranches/Subversion for details.
-""" + extra)
     return cache_dir
 
 
