@@ -7,6 +7,11 @@ bzr-svn 0.6.1                    UNRELEASED
 
    * Fix cache inspection after push when using the TDB database.
 
+   * Prevent NoSuchRevision exception when pulling into a local branch that 
+     is ahead of the remote branch.
+
+   * Avoid buggy LogWalker.find_latest_change(). (#378799)
+
 bzr-svn 0.6.0                    2009-05-20
 
   FEATURES

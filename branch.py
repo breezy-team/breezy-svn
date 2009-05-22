@@ -107,9 +107,11 @@ class SubversionSourcePullResult(PullResult):
 
     def report(self, to_file):
         if not is_quiet():
-            if self.old_revid == self.new_revid:
+            if self.old_revid in (self.new_revid, NULL_REVISION):
                 to_file.write('No revisions to pull.\n')
             else:
+                if result.new_revmeta is None:
+                    self.new_revmeta, _ = self.source_branch.repository._get_revmeta(self.new_revid)
                 to_file.write('Now on revision %d (svn revno: %d).\n' % 
                         (self.new_revno, self.new_revmeta.revnum))
         self._show_tag_conficts(to_file)
@@ -696,19 +698,19 @@ class InterSvnOtherBranch(GenericInterBranch):
                     result.old_revmeta = None
                     tags_since_revnum = None
             if stop_revision == NULL_REVISION:
+                result.new_revid = NULL_REVISION
                 result.new_revmeta = None
                 tags_until_revnum = 0
             elif stop_revision is not None:
                 result.new_revmeta, _ = self.source.repository._get_revmeta(stop_revision)
                 tags_until_revnum = result.new_revmeta.revnum
             else:
+                result.new_revmeta = None
                 tags_until_revnum = self.source.repository.get_latest_revnum()
             self.update_revisions(stop_revision, overwrite)
             if self.source.supports_tags():
                 result.tag_conflicts = self.source.tags.merge_to(self.target.tags, overwrite, _from_revnum=tags_since_revnum, _to_revnum=tags_until_revnum)
             (result.new_revno, result.new_revid) = self.target.last_revision_info()
-            if stop_revision is None:
-                result.new_revmeta, _ = self.source.repository._get_revmeta(result.new_revid)
             if _hook_master:
                 result.master_branch = _hook_master
                 result.local_branch = result.target_branch

@@ -87,14 +87,15 @@ class RevidMap(object):
                     yield (revid, branch_path.strip("/"), revnum, mapping)
 
     def find_branch_tips(self, layout, from_revnum, to_revnum, project=None):
+        # TODO: Use RevisionMetadataBrowser to find the tip revmetas all at once
         reuse_policy = self.repos.get_config().get_reuse_revisions()
         assert reuse_policy in ("other-branches", "removed-branches", "none") 
         check_removed = (reuse_policy == "removed-branches")
         for (branch, revno, exists) in self.repos.find_fileprop_paths(layout, from_revnum, to_revnum, project, check_removed=check_removed):
             assert isinstance(branch, str)
             assert isinstance(revno, int)
-            revmeta = self.repos._revmeta_provider.lookup_revision(branch, self.repos._log.find_latest_change(branch, revno))
-            yield revmeta
+            iterator = self.repos._revmeta_provider.iter_reverse_branch_changes(branch, revno, to_revnum=0, limit=0)
+            yield iterator.next()
 
     def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None, pb=None):
         for revmeta in self.find_branch_tips(layout, from_revnum, to_revnum, project):
