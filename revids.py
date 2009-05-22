@@ -86,20 +86,25 @@ class RevidMap(object):
                 if revid is not None:
                     yield (revid, branch_path.strip("/"), revnum, mapping)
 
-    def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None, pb=None):
+    def find_branch_tips(self, layout, from_revnum, to_revnum, project=None):
         reuse_policy = self.repos.get_config().get_reuse_revisions()
         assert reuse_policy in ("other-branches", "removed-branches", "none") 
         check_removed = (reuse_policy == "removed-branches")
-        # TODO: Some sort of progress indication
         for (branch, revno, exists) in self.repos.find_fileprop_paths(layout, from_revnum, to_revnum, project, check_removed=check_removed):
-            if pb is not None:
-                pb.update("finding fileprop revids", revno-from_revnum, to_revnum-from_revnum)
             assert isinstance(branch, str)
             assert isinstance(revno, int)
+            revmeta = self.repos._revmeta_provider.lookup_revision(branch, self.repos._log.find_latest_change(branch, revno))
+            yield revmeta
+
+    def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None, pb=None):
+        for revmeta in self.find_branch_tips(layout, from_revnum, to_revnum, project):
+        # TODO: Some sort of progress indication
+            if pb is not None:
+                pb.update("finding fileprop revids", 
+                    revmeta.revnum-from_revnum, to_revnum-from_revnum)
             # Look at their bzr:revision-id-vX
             revids = set()
             try:
-                revmeta = self.repos._revmeta_provider.lookup_revision(branch, self.repos._log.find_latest_change(branch, revno))
                 if revmeta.consider_bzr_fileprops():
                     for revid, bzr_revno, mapping_name in revmeta.get_roundtrip_ancestor_revids():
                         revids.add(((bzr_revno, revid), mapping_name))
@@ -116,7 +121,8 @@ class RevidMap(object):
                 except KeyError:
                     pass
                 else:
-                    yield (entry_revid, branch, 0, revno, mapping)
+                    yield (entry_revid, revmeta.branch_path, 0,
+                           revmeta.revnum, mapping)
 
     def bisect_revid_revnum(self, revid, branch_path, min_revnum, max_revnum):
         """Find out what the actual revnum was that corresponds to a revid.
