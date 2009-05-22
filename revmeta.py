@@ -1144,11 +1144,11 @@ class RevisionMetadataBrowser(object):
                     del self._pending_ancestors[x]
                     self._unusual.update(self._unusual_history[x])
                     del self._unusual_history[x]
-                    if self._prefixes:
+                    if self._prefixes is not None:
                         self._prefixes.update(self._pending_prefixes[x])
 
             # Eliminate anything that's not under prefixes/
-            if self._prefixes:
+            if self._prefixes is not None:
                 for bp in self._ancestors.keys():
                     if not self.under_prefixes(bp, self._prefixes):
                         del self._ancestors[bp]
@@ -1165,7 +1165,7 @@ class RevisionMetadataBrowser(object):
 
             # Find out what branches have changed
             for p in sorted(paths):
-                if self._prefixes and not self.under_prefixes(p, self._prefixes):
+                if self._prefixes is not None and not self.under_prefixes(p, self._prefixes):
                     continue
                 action = paths[p][0]
                 try:
