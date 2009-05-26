@@ -1,5 +1,9 @@
 bzr-svn 0.6.2                    UNRELEASED
 
+  FEATURES
+
+   * Integrated "bzr svn-serve" into "bzr serve --svn".
+
 bzr-svn 0.6.1                    2009-05-22
 
   BUG FIXES

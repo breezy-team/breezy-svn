@@ -191,6 +191,15 @@ except TypeError:
 foreign_vcs_registry.register_lazy("svn", "bzrlib.plugins.svn.mapping",
                                    "foreign_vcs_svn")
 
+try:
+    from bzrlib.transport import transport_server_registry
+except ImportError:
+    pass
+else:
+    transport_server_registry.register_lazy('svn', 
+        'bzrlib.plugins.svn.server', 'serve_svn', 
+        "Subversion svn_ra protocol. (default port: 3690)")
+
 _optimizers_registered = False
 def lazy_register_optimizers():
     """Register optimizers for fetching between Subversion and Bazaar 
@@ -213,8 +222,6 @@ plugin_cmds.register_lazy('cmd_svn_branching_scheme', [],
 plugin_cmds.register_lazy('cmd_svn_set_revprops', [], 
                           'bzrlib.plugins.svn.commands')
 plugin_cmds.register_lazy('cmd_svn_layout', [], 
-                          'bzrlib.plugins.svn.commands')
-plugin_cmds.register_lazy('cmd_svn_serve', [], 
                           'bzrlib.plugins.svn.commands')
 
 lazy_register_filter_stack_map("svn-keywords", 

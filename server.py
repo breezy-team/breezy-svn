@@ -13,22 +13,37 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 """Subversion server implementation."""
+
+
+from bzrlib.plugins.svn import lazy_check_versions
+lazy_check_versions()
 
 import os
 import subvertpy
 from subvertpy import properties
+from subvertpy.ra_svn import (
+    SVN_PORT,
+    SVNServer,
+    TCPSVNServer,
+    )
 from subvertpy.server import (
     ServerBackend,
     ServerRepositoryBackend,
     )
+import sys
 import time
 
-from bzrlib import urlutils
+from bzrlib import (
+    trace,
+    urlutils,
+    )
 from bzrlib.branch import Branch
 from bzrlib.inventory import Inventory
 
 from bzrlib.plugins.svn.commit import dir_editor_send_changes
+
 
 def determine_changed_paths(repository, branch_path, rev, revno):
     def fixpath(p):
@@ -177,3 +192,25 @@ class BzrServerBackend(ServerBackend):
     def open_repository(self, path):
         (branch, relpath) = Branch.open_containing(os.path.join(self.rootdir, path))
         return RepositoryBackend(branch), relpath
+
+
+def serve_svn(transport, host=None, port=None, inet=False):
+    trace.warning("server support in bzr-svn is experimental.")
+
+    if directory is None:
+        directory = os.getcwd()
+
+    backend = BzrServerBackend(directory)
+    if inet:
+        def send_fn(data):
+            sys.stdout.write(data)
+            sys.stdout.flush()
+        server = SVNServer(backend, sys.stdin.read, send_fn, 
+                           self.outf)
+    else:
+        if port is None:
+            port = SVN_PORT
+        if host is None:
+            host = '0.0.0.0'
+        server = TCPSVNServer(backend, (host, port), self.outf)
+    server.serve()
