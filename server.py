@@ -197,20 +197,19 @@ class BzrServerBackend(ServerBackend):
 def serve_svn(transport, host=None, port=None, inet=False):
     trace.warning("server support in bzr-svn is experimental.")
 
-    if directory is None:
-        directory = os.getcwd()
+    url = transport.base.lstrip("readonly+")
+    path = urlutils.local_path_from_url(url)
 
-    backend = BzrServerBackend(directory)
+    backend = BzrServerBackend(path)
     if inet:
         def send_fn(data):
             sys.stdout.write(data)
             sys.stdout.flush()
-        server = SVNServer(backend, sys.stdin.read, send_fn, 
-                           self.outf)
+        server = SVNServer(backend, sys.stdin.read, send_fn)
     else:
         if port is None:
             port = SVN_PORT
         if host is None:
             host = '0.0.0.0'
-        server = TCPSVNServer(backend, (host, port), self.outf)
+        server = TCPSVNServer(backend, (host, port))
     server.serve()
