@@ -23,7 +23,6 @@ Most Bazaar commands should work fine with Subversion branches.
 bzr-svn also adds four new commands to Bazaar:
 
  - bzr svn-import
- - bzr svn-serve
  - bzr svn-layout
 
 For more information about bzr-svn, see the bzr-svn FAQ.
