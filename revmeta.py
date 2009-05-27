@@ -1154,10 +1154,7 @@ class RevisionMetadataBrowser(object):
                 for bp in self._ancestors.keys():
                     if not self.under_prefixes(bp, self._prefixes):
                         del self._ancestors[bp]
-                        try:
-                            self._unusual.remove(bp)
-                        except KeyError:
-                            pass
+                        self._unusual.discard(bp)
 
             changed_bps = set()
             deletes = []
@@ -1210,8 +1207,7 @@ class RevisionMetadataBrowser(object):
             # Apply reverse renames and the like for the next round
             for new_name, old_name, old_rev in changes.apply_reverse_changes(
                 self._ancestors.keys(), paths):
-                if new_name in self._unusual:
-                    self._unusual.remove(new_name)
+                self._unusual.discard(new_name)
                 if old_name is None: 
                     # Didn't exist previously, mark as beginning and remove.
                     for rev in self._ancestors[new_name]:
@@ -1233,11 +1229,11 @@ class RevisionMetadataBrowser(object):
                     self._prefixes, paths):
                     if old_name is None:
                         # Didn't exist previously, terminate prefix
-                        self._prefixes.remove(new_name)
+                        self._prefixes.discard(new_name)
                         if len(self._prefixes) == 0:
                             return
                     else:
-                        self._prefixes.remove(new_name)
+                        self._prefixes.discard(new_name)
                         self._pending_prefixes[old_rev].add(old_name)
 
             self._last_revnum = revnum
