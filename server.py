@@ -197,7 +197,8 @@ class BzrServerBackend(ServerBackend):
 def serve_svn(transport, host=None, port=None, inet=False):
     trace.warning("server support in bzr-svn is experimental.")
 
-    url = transport.base.lstrip("readonly+")
+    if transport.base.startswith("readonly+"):
+        url = transport.base[len("readonly+"):]
     path = urlutils.local_path_from_url(url)
 
     backend = BzrServerBackend(path)

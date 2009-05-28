@@ -39,6 +39,7 @@ from bzrlib.plugins.svn.transport import (
     )
 
 class SvnRaTest(SubversionTestCase):
+
     def test_open_nonexisting(self):
         self.assertRaises(InvalidURL, SvnRaTransport, 
                           "svn+nonexisting://foo/bar")

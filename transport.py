@@ -99,7 +99,8 @@ def get_svn_ra_transport(bzr_transport):
     else:
         creds = None
     svnbase = bzr_transport.base
-    svnbase = svnbase.lstrip("readonly+")
+    if svnbase.startswith("readonly+"):
+        svnbase = svnbase[len("readonly+"):]
     ra_transport = SvnRaTransport(svnbase, credentials=creds)
     bzr_transport._svn_ra = ra_transport
     return ra_transport
