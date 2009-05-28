@@ -404,6 +404,10 @@ class SvnRepository(ForeignRepository):
             self._lock_mode = None
             self._clear_cached_state()
 
+    def reconcile(self, other=None, thorough=False):
+        # TODO: Perhaps run set-svn-revprops here?
+        pass
+
     def _clear_cached_state(self, revnum=None):
         self._cached_tags = {}
         self._cached_revnum = revnum
