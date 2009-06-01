@@ -42,7 +42,7 @@ from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     )
 
-from tdb import open as tdb_open
+from tdb import Tdb as tdb_open
 
 
 CACHE_DB_VERSION = 1
