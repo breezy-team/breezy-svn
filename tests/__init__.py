@@ -63,7 +63,7 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
             def restore_tdb():
                 tdbcache.tdb_open = self._old_open_tdb
             self.addCleanup(restore_tdb)
-            tdbcache.tdb_open = lambda path: dict()
+            tdbcache.tdb_open = lambda *args: dict()
 
     def tearDown(self):
         TestCaseInTempDir.tearDown(self)

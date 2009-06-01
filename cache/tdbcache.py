@@ -42,8 +42,7 @@ from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     )
 
-def tdb_open(path):
-    return tdb.open(path, 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT)
+from tdb import open as tdb_open
 
 
 CACHE_DB_VERSION = 1
@@ -291,7 +290,7 @@ class TdbRepositoryCache(RepositoryCache):
         cache_file = os.path.join(self.create_cache_dir(), 'cache.tdb')
         assert isinstance(cache_file, str)
         if not cachedbs().has_key(cache_file):
-            cachedbs()[cache_file] = tdb_open(cache_file)
+            cachedbs()[cache_file] = tdb_open(cache_file, 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT)
         db = cachedbs()[cache_file]
         if not "version" in db:
             db["version"] = str(CACHE_DB_VERSION)

@@ -14,6 +14,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+import os
+
+
 from bzrlib.errors import (
     NoSuchRevision,
     )
@@ -77,7 +80,8 @@ class TdbLogCacheTests(TestCaseInTempDir,LogCacheTests):
             from bzrlib.plugins.svn.cache.tdbcache import LogCache, tdb_open
         except ImportError:
             raise UnavailableFeature
-        self.cache = LogCache(tdb_open("cache.tdb"))
+        import tdb
+        self.cache = LogCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
 
 class RevidMapCacheTests(object):
@@ -131,7 +135,8 @@ class TdbRevidMapCacheTests(TestCaseInTempDir,RevidMapCacheTests):
             from bzrlib.plugins.svn.cache.tdbcache import RevisionIdMapCache, tdb_open
         except ImportError:
             raise UnavailableFeature
-        self.cache = RevisionIdMapCache(tdb_open("cache.tdb"))
+        import tdb
+        self.cache = RevisionIdMapCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
 
 class RevInfoCacheTests(object):
@@ -187,7 +192,8 @@ class TdbRevInfoCacheTests(TestCaseInTempDir,RevInfoCacheTests):
             from bzrlib.plugins.svn.cache.tdbcache import RevisionInfoCache, tdb_open
         except ImportError:
             raise UnavailableFeature
-        self.cache = RevisionInfoCache(tdb_open("cache.tdb"))
+        import tdb
+        self.cache = RevisionInfoCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
 
 class ParentsCacheTests:
@@ -229,4 +235,5 @@ class TdbParentsCacheTests(TestCaseInTempDir,ParentsCacheTests):
             from bzrlib.plugins.svn.cache.tdbcache import ParentsCache, tdb_open
         except ImportError:
             raise UnavailableFeature
-        self.cache = ParentsCache(tdb_open("cache.tdb"))
+        import tdb
+        self.cache = ParentsCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
