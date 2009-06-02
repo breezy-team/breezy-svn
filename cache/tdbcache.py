@@ -283,7 +283,7 @@ class ParentsCache(CacheTable):
             return None
 
 
-TDB_HASH__SIZE = 10000
+TDB_HASH_SIZE = 10000
 
 
 class TdbRepositoryCache(RepositoryCache):
