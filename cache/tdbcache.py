@@ -283,6 +283,9 @@ class ParentsCache(CacheTable):
             return None
 
 
+TDB_HASH__SIZE = 10000
+
+
 class TdbRepositoryCache(RepositoryCache):
     """Object that provides a cache related to a particular UUID."""
 
@@ -290,7 +293,8 @@ class TdbRepositoryCache(RepositoryCache):
         cache_file = os.path.join(self.create_cache_dir(), 'cache.tdb')
         assert isinstance(cache_file, str)
         if not cachedbs().has_key(cache_file):
-            cachedbs()[cache_file] = tdb_open(cache_file, 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT)
+            cachedbs()[cache_file] = tdb_open(cache_file, TDB_HASH_SIZE, 
+                tdb.DEFAULT, os.O_RDWR|os.O_CREAT)
         db = cachedbs()[cache_file]
         if not "version" in db:
             db["version"] = str(CACHE_DB_VERSION)
