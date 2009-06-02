@@ -676,7 +676,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             basis_id = NULL_REVISION
         rev.inventory_sha1, self.inventory = self.target.add_inventory_by_delta(basis_id,
                   self._inv_delta, rev.revision_id,
-                  [r for r in rev.parent_ids if r in self.target.has_revisions(rev.parent_ids)])
+                  tuple([r for r in rev.parent_ids if r in self.target.has_revisions(rev.parent_ids)]))
         self.target.add_revision(self.revid, rev)
 
         # Only fetch signature if it's cheap
