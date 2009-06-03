@@ -669,6 +669,10 @@ class SvnRepository(ForeignRepository):
         assert revision_id != None
         return self.revision_tree(revision_id).inventory
 
+    def _iter_inventories(self, revision_ids):
+        for revid in revision_ids:
+            yield self.get_inventory(revid)
+
     def get_fileid_map(self, revmeta, mapping):
         return self.fileid_map.get_map(revmeta.get_foreign_revid(), mapping)
 
