@@ -363,6 +363,9 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         """
         assert isinstance(revnum, int) and revnum >= 0
         assert isinstance(path, unicode)
+        path = osutils.normpath(path)
+        if path == u".":
+            path = u""
         return self.lookup_id(path)
 
     def read_working_inventory(self):
