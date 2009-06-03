@@ -539,7 +539,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
     def _apply_textdelta(self, base_checksum=None):
         actual_checksum = md5_strings(self.file_data)
         if base_checksum is not None and base_checksum != actual_checksum:
-            raise VersionedFileInvalidChecksum("base checksum mismatch: %r != %r" % (base_checksum, actual_checksum))
+            raise VersionedFileInvalidChecksum("base checksum mismatch: %r != %r in %s (%s:%d)" % (base_checksum, actual_checksum, self.editor.revid, self.editor.branch_path, self.editor.revnum))
         self.file_stream = StringIO()
         return apply_txdelta_handler_chunks(self.file_data, self.file_stream)
 
