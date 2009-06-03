@@ -46,13 +46,69 @@ def reverse_dict(orig):
         ret.setdefault(v, []).append(k)
     return ret
 
+def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
+    """Determine the revids for tags that were not found in the branch 
+    ancestry.
+    """
+    ret = {}
+    # For anything that's not in the branches' ancestry, just use 
+    # the latest mapping
+    for (revmeta, names) in reverse_tag_revmetas.iteritems():
+        mapping = revmeta.get_original_mapping() or branch.mapping
+        try:
+            revid = revmeta.get_revision_id(mapping)
+        except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+            continue
+        for name in names:
+            assert isinstance(name, basestring)
+            ret[name] = revid
+    return ret
+
+def _resolve_tags_svn_ancestry(branch, tag_revmetas):
+    """Resolve a name -> revmeta dictionary to a name -> revid dict.
+
+    The tricky bit here is figuring out what mapping to use. Preferably, 
+    we should be using whatever mapping makes the tag useful to the user, 
+    which generally means using the revid that is in the ancestry of the 
+    branch.
+
+    As fallback, we will use the mapping used by the branch. That will 
+    however cause question marks to show up rather than revno's in 
+    "bzr tags".
+    """
+    if len(tag_revmetas) == 0:
+        return {}
+    reverse_tag_revmetas = reverse_dict(tag_revmetas)
+    ret = {}
+    # Try to find the tags that are in the ancestry of this branch
+    # and use their appropriate mapping
+    pb = ui.ui_factory.nested_progress_bar()
+    try:
+        for (revmeta, mapping) in branch._iter_revision_meta_ancestry(
+            pb=pb):
+            if revmeta not in reverse_tag_revmetas:
+                continue
+            if len(reverse_tag_revmetas) == 0:
+                # No more tag revmetas to resolve, just return immediately
+                return ret
+            for name in reverse_tag_revmetas[revmeta]:
+                assert isinstance(name, basestring)
+                ret[name] = revmeta.get_revision_id(mapping)
+            del reverse_tag_revmetas[revmeta]
+    finally:
+        pb.finished()
+    ret.update(_resolve_reverse_tags_fallback(branch, reverse_tag_revmetas))
+    return ret
+
 
 class ReverseTagDict(object):
 
-    def __init__(self, repository, tags, project):
+    def __init__(self, branch, repository, tags, project):
+        self.branch = branch
         self.repository = repository
         self.project = project
         self._by_foreign_revid = {}
+        self._tags = tags
         for name, revmeta in tags.iteritems():
             self._by_foreign_revid.setdefault(revmeta.get_foreign_revid(), []).append(name)
 
@@ -60,6 +116,12 @@ class ReverseTagDict(object):
         foreign_revid, mapping = self.repository.lookup_revision_id(revid, 
             project=self.project)
         return self._by_foreign_revid.get(foreign_revid)
+
+    def items(self):
+        return _resolve_tags_svn_ancestry(self.branch, self._tags)
+
+    def iteritems(self):
+        return iter(self.items())
 
 
 class SubversionTags(BasicTags):
@@ -173,59 +235,6 @@ class SubversionTags(BasicTags):
                     from_revnum=from_revnum,
                     to_revnum=to_revnum)
 
-    def _resolve_reverse_tags_fallback(self, reverse_tag_revmetas):
-        """Determine the revids for tags that were not found in the branch 
-        ancestry.
-        """
-        ret = {}
-        # For anything that's not in the branches' ancestry, just use 
-        # the latest mapping
-        for (revmeta, names) in reverse_tag_revmetas.iteritems():
-            mapping = revmeta.get_original_mapping() or self.branch.mapping
-            try:
-                revid = revmeta.get_revision_id(mapping)
-            except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                continue
-            for name in names:
-                assert isinstance(name, basestring)
-                ret[name] = revid
-        return ret
-
-    def _resolve_tags_svn_ancestry(self, tag_revmetas):
-        """Resolve a name -> revmeta dictionary to a name -> revid dict.
-
-        The tricky bit here is figuring out what mapping to use. Preferably, 
-        we should be using whatever mapping makes the tag useful to the user, 
-        which generally means using the revid that is in the ancestry of the 
-        branch.
-
-        As fallback, we will use the mapping used by the branch. That will 
-        however cause question marks to show up rather than revno's in 
-        "bzr tags".
-        """
-        if len(tag_revmetas) == 0:
-            return {}
-        reverse_tag_revmetas = reverse_dict(tag_revmetas)
-        ret = {}
-        # Try to find the tags that are in the ancestry of this branch
-        # and use their appropriate mapping
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
-            for (revmeta, mapping) in self.branch._iter_revision_meta_ancestry(pb=pb):
-                if revmeta not in reverse_tag_revmetas:
-                    continue
-                if len(reverse_tag_revmetas) == 0:
-                    # No more tag revmetas to resolve, just return immediately
-                    return ret
-                for name in reverse_tag_revmetas[revmeta]:
-                    assert isinstance(name, basestring)
-                    ret[name] = revmeta.get_revision_id(mapping)
-                del reverse_tag_revmetas[revmeta]
-        finally:
-            pb.finished()
-        ret.update(self._resolve_reverse_tags_fallback(reverse_tag_revmetas))
-        return ret
-
     def _resolve_tags_ancestry(self, tag_revmetas, graph, last_revid):
         """Resolve a name -> revmeta dictionary using the ancestry of a branch.
         """
@@ -254,12 +263,13 @@ class SubversionTags(BasicTags):
 
     def get_tag_dict(self):
         tag_revmetas = self._get_tag_dict_revmeta()
-        return self._resolve_tags_svn_ancestry(tag_revmetas)
+        return _resolve_tags_svn_ancestry(self.branch, tag_revmetas)
 
     def get_reverse_tag_dict(self):
         """Returns a dict with revisions as keys
            and a list of tags for that revision as value"""
-        return ReverseTagDict(self.repository, self._get_tag_dict_revmeta(),
+        return ReverseTagDict(self.branch, self.repository, 
+                              self._get_tag_dict_revmeta(),
                               self.branch.project)
 
     def delete_tag(self, tag_name):
