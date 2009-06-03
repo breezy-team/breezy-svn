@@ -112,9 +112,15 @@ class ReverseTagDict(object):
         for name, revmeta in tags.iteritems():
             self._by_foreign_revid.setdefault(revmeta.get_foreign_revid(), []).append(name)
 
+    def _lookup_revid(self, revid):
+        return self.repository.lookup_revision_id(revid, project=self.project)
+
+    def has_key(self, revid):
+        foreign_revid, mapping = self._lookup_revid(revid)
+        return self._by_foreign_revid.has_key(foreign_revid)
+
     def get(self, revid):
-        foreign_revid, mapping = self.repository.lookup_revision_id(revid, 
-            project=self.project)
+        foreign_revid, mapping = self._lookup_revid(revid)
         return self._by_foreign_revid.get(foreign_revid)
 
     def items(self):
