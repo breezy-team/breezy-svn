@@ -264,7 +264,7 @@ class SubversionTags(BasicTags):
                 assert isinstance(name, basestring)
                 ret[name] = revid
             del reverse_tag_revmetas[revmeta]
-        ret.update(self._resolve_reverse_tags_fallback(reverse_tag_revmetas))
+        ret.update(_resolve_reverse_tags_fallback(self.branch, reverse_tag_revmetas))
         return ret
 
     def get_tag_dict(self):
