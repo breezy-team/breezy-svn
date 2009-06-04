@@ -4,6 +4,17 @@ bzr-svn 0.6.2                    UNRELEASED
 
    * Integrated "bzr svn-serve" into "bzr serve --svn".
 
+  BUG FIXES
+
+   * Only look for file properties if there are actually new file properties.
+     (#383414)
+
+   * Repository.iter_inventories() is now implemented.
+
+   * Tags.get_reverse_dict().has_key() is now implemented.
+
+   * Tags.get_reverse_dict().iteritems() is now implemented.
+
 bzr-svn 0.6.1                    2009-05-22
 
   BUG FIXES

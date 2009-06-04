@@ -239,12 +239,13 @@ class DiskCachingRevidMap(object):
                         found = (branch, revnum, revnum, mapping)
                     self.remember_entry(entry_revid, branch, revnum, 
                                             revnum, mapping.name)
-                for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_fileprop_revids(layout, last_checked, fileprops_to_revnum, project, pb):
-                    min_revno = max(last_checked, min_revno)
-                    if entry_revid == revid:
-                        found = (branch, min_revno, max_revno, mapping)
-                    self.remember_entry(entry_revid, branch, min_revno, 
-                                        max_revno, mapping.name)
+                if fileprops_to_revnum > last_checked:
+                    for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_fileprop_revids(layout, last_checked, fileprops_to_revnum, project, pb):
+                        min_revno = max(last_checked, min_revno)
+                        if entry_revid == revid:
+                            found = (branch, min_revno, max_revno, mapping)
+                        self.remember_entry(entry_revid, branch, min_revno, 
+                                            max_revno, mapping.name)
             finally:
                 pb.finished()
             # We've added all the revision ids for this layout in the
