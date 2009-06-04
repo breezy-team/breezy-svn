@@ -1086,9 +1086,7 @@ class SvnRepository(ForeignRepository):
                     layout=layout, mapping=mapping, from_revnum=0, to_revnum=revnum)
         return self._cached_tags[layout]
 
-    def find_branchpaths(self, layout,
-                         from_revnum=0, to_revnum=None, 
-                         project=None):
+    def find_branchpaths(self, layout, from_revnum, to_revnum, project=None):
         """Find all branch paths that were changed in the specified revision 
         range.
 
@@ -1097,6 +1095,7 @@ class SvnRepository(ForeignRepository):
             still exists). The revision number is the revision in which the 
             branch last existed.
         """
+        assert from_revnum >= to_revnum
         if to_revnum is None:
             to_revnum = self.get_latest_revnum()
 
@@ -1173,11 +1172,12 @@ class SvnRepository(ForeignRepository):
 
     def find_fileprop_paths(self, layout, from_revnum, to_revnum, 
                                project=None, check_removed=False):
-        if not check_removed and from_revnum == 0:
+        assert from_revnum >= to_revnum
+        if not check_removed and to_revnum == 0:
             it = iter([])
-            it = chain(it, layout.get_branches(self, to_revnum, project))
-            it = chain(it, layout.get_tags(self, to_revnum, project))
-            return iter(((branch, to_revnum, True) for (project, branch, nick) in it))
+            it = chain(it, layout.get_branches(self, from_revnum, project))
+            it = chain(it, layout.get_tags(self, from_revnum, project))
+            return iter(((branch, from_revnum, True) for (project, branch, nick) in it))
         else:
             return iter(self.find_branchpaths(layout, from_revnum, to_revnum, project))
 
