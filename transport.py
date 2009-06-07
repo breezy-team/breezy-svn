@@ -89,6 +89,21 @@ def get_svn_ra_transport(bzr_transport):
     if ra_transport is not None:
         return ra_transport
 
+    svnbase = bzr_transport.base
+    if svnbase.startswith("readonly+"):
+        svnbase = svnbase[len("readonly+"):]
+    # If this is a HTTP transport, use the existing connection to check 
+    # that the remote end supports version control.
+    from bzrlib.transport.http._urllib import HttpTransport_urllib, Request
+    if isinstance(bzr_transport, HttpTransport_urllib):
+        url = bzr_transport._unsplit_url(bzr_transport._unqualified_scheme,
+            None, None, bzr_transport._host, bzr_transport._port, 
+            bzr_transport._path)
+        req = Request('OPTIONS', url, accepted_errors=[200])
+        resp = bzr_transport._perform(req)
+        dav_entries = list(itertools.chain(*[entry.split(",") for entry in resp.headers.getheaders('DAV')]))
+        if not "version-control" in dav_entries:
+            raise subvertpy.SubversionException("version control not supported for remote URL", subvertpy.ERR_RA_DAV_NOT_VCC)
     # Save _svn_ra transport here so we don't have to connect again next time
     # we try to use bzr svn on this transport
     shared_connection = getattr(bzr_transport, "_shared_connection", None)
@@ -99,18 +114,6 @@ def get_svn_ra_transport(bzr_transport):
             creds = shared_connection.credentials[0]
     else:
         creds = None
-    svnbase = bzr_transport.base
-    if svnbase.startswith("readonly+"):
-        svnbase = svnbase[len("readonly+"):]
-    # If this is a HTTP transport, use the existing connection to check 
-    # that the remote end supports version control.
-    from bzrlib.transport.http._urllib import HttpTransport_urllib, Request
-    if isinstance(bzr_transport, HttpTransport_urllib):
-        req = Request('OPTIONS', bzr_transport.base, accepted_errors=[200])
-        resp = bzr_transport._perform(req)
-        dav_entries = list(itertools.chain(*[entry.split(",") for entry in resp.headers.getheaders('DAV')]))
-        if not "version-control" in dav_entries:
-            raise subvertpy.SubversionException("version control not supported for remote URL", subvertpy.ERR_RA_DAV_NOT_VCC)
     ra_transport = SvnRaTransport(svnbase, credentials=creds)
     bzr_transport._svn_ra = ra_transport
     return ra_transport
