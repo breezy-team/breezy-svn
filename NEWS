@@ -15,6 +15,10 @@ bzr-svn 0.6.2                    UNRELEASED
 
    * Tags.get_reverse_dict().iteritems() is now implemented.
 
+   * Register Subversion smart server as first server control format, 
+     before the Bazaar smart client attempts to send POST to .bzr/smart over 
+     HTTP.
+
 bzr-svn 0.6.1                    2009-05-22
 
   BUG FIXES
