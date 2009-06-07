@@ -108,12 +108,15 @@ class SvnRemoteFormat(SvnControlFormat):
         try:
             transport = get_svn_ra_transport(transport)
         except subvertpy.SubversionException, (msg, num):
+            if num == subvertpy.ERR_RA_DAV_NOT_VCC:
+                raise bzr_errors.NotBranchError(path=transport.base)
             if num in (subvertpy.ERR_RA_ILLEGAL_URL, \
                        subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED, \
                        subvertpy.ERR_BAD_URL):
                 trace.mutter("Unable to open %r with Subversion: %s", 
                     transport, msg)
                 raise bzr_errors.NotBranchError(path=transport.base)
+            raise
         except bzr_errors.InvalidURL:
             raise bzr_errors.NotBranchError(path=transport.base)
         except DavRequestFailed, e:
