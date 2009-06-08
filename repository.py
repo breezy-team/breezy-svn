@@ -1170,7 +1170,7 @@ class SvnRepository(ForeignRepository):
                            revision_id=None):
         """See Repository.get_commit_builder()."""
         from bzrlib.plugins.svn.commit import SvnCommitBuilder
-        append_revisions_only = self.get_config().get_append_revisions_only()
+        append_revisions_only = branch.get_config().get_append_revisions_only()
         if append_revisions_only is None:
             append_revisions_only = True
         return SvnCommitBuilder(self, branch.get_branch_path(), parents, 
