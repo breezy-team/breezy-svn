@@ -55,7 +55,6 @@ from bzrlib.plugins.svn import (
     )
 from bzrlib.plugins.svn.commit import (
     SvnCommitBuilder,
-    _check_dirs_exist,
     )
 from bzrlib.plugins.svn.config import (
     BranchConfig,
@@ -70,6 +69,7 @@ from bzrlib.plugins.svn.repository import (
     SvnRepository,
     )
 from bzrlib.plugins.svn.transport import (
+    check_dirs_exist,
     create_branch_prefix,
     url_join_unescaped_path,
     )
@@ -472,7 +472,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
     parent = urlutils.dirname(branch_path)
 
     bp_parts = branch_path.split("/")
-    existing_bp_parts =_check_dirs_exist(repository.transport, bp_parts, -1)
+    existing_bp_parts = check_dirs_exist(repository.transport, bp_parts, -1)
     if (len(bp_parts) not in (len(existing_bp_parts), len(existing_bp_parts)+1)):
         raise MissingPrefix("/".join(bp_parts), "/".join(existing_bp_parts))
 

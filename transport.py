@@ -495,8 +495,10 @@ class SvnRaTransport(Transport):
             self.add_connection(conn)
 
     @convert_svn_error
-    def create_prefix(self, relpath):
-        raise NotImplementedError(self.create_prefix)
+    def create_prefix(self):
+        create_branch_prefix(self.clone_root(),
+                {"svn:log": "Creating prefix"},
+                self.svn_url[len(self.get_repos_root()):].strip("/").split("/")[:-1])
 
     @convert_svn_error
     def mkdir(self, relpath, message="Creating directory"):
@@ -702,7 +704,7 @@ class MutteringRemoteAccess(object):
         return self.actual.replay(revision, low_water_mark, editor, send_deltas)
 
 
-def create_branch_prefix(transport, revprops, bp_parts, existing_bp_parts):
+def create_branch_prefix(transport, revprops, bp_parts, existing_bp_parts=None):
     """Create a branch prefixes (e.g. "branches")
 
     :param transport: Subversion transport
@@ -712,6 +714,8 @@ def create_branch_prefix(transport, revprops, bp_parts, existing_bp_parts):
     :param existing_bp_parts: Branch path elements that already exist.
     """
     conn = transport.get_connection()
+    if existing_bp_parts is None:
+        existing_bp_parts = check_dirs_exist(conn, bp_parts, -1)
     try:
         ci = convert_svn_error(conn.get_commit_editor)(revprops)
         try:
@@ -738,3 +742,21 @@ def create_branch_prefix(transport, revprops, bp_parts, existing_bp_parts):
         ci.close()
     finally:
         transport.add_connection(conn)
+
+
+def check_dirs_exist(transport, bp_parts, base_rev):
+    """Make sure that the specified directories exist.
+
+    :param transport: SvnRaTransport to use.
+    :param bp_parts: List of directory names in the format returned by 
+        os.path.split()
+    :param base_rev: Base revision to check.
+    :return: List of the directories that exists in base_rev.
+    """
+    for i in range(len(bp_parts), 0, -1):
+        current = bp_parts[:i]
+        path = "/".join(current).strip("/")
+        assert isinstance(path, str)
+        if transport.check_path(path, base_rev) == subvertpy.NODE_DIR:
+            return current
+    return []

@@ -72,6 +72,7 @@ from bzrlib.plugins.svn.svk import (
     SVN_PROP_SVK_MERGE
     )
 from bzrlib.plugins.svn.transport import (
+    check_dirs_exist,
     url_join_unescaped_path,
     )
 from bzrlib.plugins.svn.util import (
@@ -96,24 +97,6 @@ def _revision_id_to_svk_feature(revid, lookup_revid):
     # TODO: What about renamed revisions? Should use 
     # repository.lookup_revision_id here.
     return generate_svk_feature(foreign_revid)
-
-
-def _check_dirs_exist(transport, bp_parts, base_rev):
-    """Make sure that the specified directories exist.
-
-    :param transport: SvnRaTransport to use.
-    :param bp_parts: List of directory names in the format returned by 
-        os.path.split()
-    :param base_rev: Base revision to check.
-    :return: List of the directories that exists in base_rev.
-    """
-    for i in range(len(bp_parts), 0, -1):
-        current = bp_parts[:i]
-        path = "/".join(current).strip("/")
-        assert isinstance(path, str)
-        if transport.check_path(path, base_rev) == NODE_DIR:
-            return current
-    return []
 
 
 def update_svk_features(oldvalue, merges, lookup_revid=None):
@@ -758,7 +741,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self.base_path == self.branch_path):
                 existing_bp_parts = bp_parts
             else:
-                existing_bp_parts = _check_dirs_exist(self.repository.transport, 
+                existing_bp_parts = check_dirs_exist(self.repository.transport, 
                                               bp_parts, -1)
             self.revision_metadata = None
             for prop in self._svn_revprops:

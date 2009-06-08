@@ -233,7 +233,7 @@ class SvnRemoteAccess(BzrDir):
         return self.open_repository()
 
     def push_branch(self, source, revision_id=None, overwrite=False,
-        remember=False):
+        remember=False, create_prefix=False):
         ret = SubversionPushResult()
         ret.source_branch = source
         ret.workingtree_updated = None
@@ -253,6 +253,8 @@ class SvnRemoteAccess(BzrDir):
                 target_branch.unlock()
         except NotBranchError:
             ret.target_branch_path = "/%s" % self.branch_path.lstrip("/")
+            if create_prefix:
+                self.root_transport.create_prefix()
             ret.target_branch = self.import_branch(source, revision_id)
             if source.get_push_location() is None or remember:
                 source.set_push_location(ret.target_branch.base)

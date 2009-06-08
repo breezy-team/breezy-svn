@@ -40,6 +40,7 @@ from bzrlib.plugins.svn import (
     push,
     )
 from bzrlib.plugins.svn.transport import (
+    check_dirs_exist,
     create_branch_prefix,
     )
 
@@ -152,7 +153,7 @@ class SubversionTags(BasicTags):
             return True
         assert isinstance(parent, str)
         bp_parts = parent.split("/")
-        existing_bp_parts = commit._check_dirs_exist(
+        existing_bp_parts = check_dirs_exist(
                 self.repository.transport, 
                 bp_parts, self.repository.get_latest_revnum())
         if existing_bp_parts == bp_parts:

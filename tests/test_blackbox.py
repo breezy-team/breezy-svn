@@ -71,6 +71,22 @@ class TestBranch(SubversionTestCase, ExternalBase):
         repos_url = self.make_repository('d')
         self.run_bzr('pack %s' % repos_url)
 
+    def test_push_create_prefix(self):
+        repos_url = self.make_repository('d')
+        
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.add_dir("trunk")
+        trunk.add_file("trunk/foo").modify()
+        dc.close()
+
+        self.run_bzr("branch %s/trunk dc" % repos_url)
+        self.build_tree({"dc/foo": "blaaaa"})
+        self.run_bzr("commit -m msg dc")
+        self.run_bzr_error([
+             'ERROR: Prefix missing for branches\\/mybranch; please create it before pushing.'],
+             ["push", "-d", "dc", "%s/branches/mybranch" % repos_url])
+        self.run_bzr("push --create-prefix -d dc %s/branches/mybranch" % repos_url)
+
     def test_push(self):
         repos_url = self.make_repository('d')
         
