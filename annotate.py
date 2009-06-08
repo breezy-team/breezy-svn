@@ -70,10 +70,11 @@ class Annotater(object):
     def _handler(self, path, rev, revprops):
         try:
             fileid, revid, _ = self._get_ids(path, rev, revprops)
+            assert revid is not None
         except KeyError:
-            # Not interested, doesn't appear to be related
-            return None
-        assert revid is not None
+            # Related file in Subversion but not in Bazaar
+            # We still apply the delta since we'll need the fulltext later
+            fileid = None
         stream = StringIO()
         def apply_window(window):
             if window is None:

@@ -30,6 +30,8 @@ bzr-svn 0.6.2                    UNRELEASED
 
    * Cope with forbidden parts of the repository a bit better. (#261194)
 
+   * Handle annotate after copies in Subversion. (#381523)
+
 bzr-svn 0.6.1                    2009-05-22
 
   BUG FIXES
