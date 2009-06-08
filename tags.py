@@ -61,7 +61,7 @@ def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
         mapping = revmeta.get_original_mapping() or branch.mapping
         try:
             revid = revmeta.get_revision_id(mapping)
-        except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+        except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY,):
             continue
         for name in names:
             assert isinstance(name, basestring)

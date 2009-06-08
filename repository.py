@@ -24,6 +24,8 @@ from itertools import chain
 import os
 import subvertpy
 
+ERR_RA_DAV_FORBIDDEN = getattr(subvertpy, "ERR_RA_DAV_FORBIDDEN", 175013)
+
 from bzrlib import (
     branch,
     errors as bzr_errors,
@@ -1090,6 +1092,8 @@ class SvnRepository(ForeignRepository):
         """Find all branch paths that were changed in the specified revision 
         range.
 
+        :note: This ignores forbidden paths.
+
         :param revnum: Revision to search for branches.
         :return: iterator that returns tuples with (path, revision number, 
             still exists). The revision number is the revision in which the 
@@ -1141,8 +1145,9 @@ class SvnRepository(ForeignRepository):
                                         elif layout.is_branch_or_tag_parent(n, project):
                                             parents.append(n)
                                 except subvertpy.SubversionException, (_, num):
-                                    if num == subvertpy.ERR_FS_NOT_DIRECTORY:
-                                        pass
+                                    if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
+                                               ERR_RA_DAV_FORBIDDEN):
+                                        continue
                                     raise
         finally:
             pb.finished()

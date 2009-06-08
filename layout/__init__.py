@@ -18,6 +18,8 @@
 import subvertpy
 from subvertpy.ra import DIRENT_KIND
 
+ERR_RA_DAV_FORBIDDEN = getattr(subvertpy, "ERR_RA_DAV_FORBIDDEN", 175013)
+
 from bzrlib import (
     registry,
     urlutils,
@@ -212,7 +214,8 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None, pb=Non
         except subvertpy.SubversionException, (msg, num):
             if num in (subvertpy.ERR_FS_NOT_DIRECTORY, 
                        subvertpy.ERR_FS_NOT_FOUND, 
-                       subvertpy.ERR_RA_DAV_PATH_NOT_FOUND):
+                       subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
+                       ERR_RA_DAV_FORBIDDEN):
                 return None
             raise
         return [d for d in dirents if dirents[d]['kind'] == subvertpy.NODE_DIR]
