@@ -220,12 +220,15 @@ class SubversionCredentialStore(CredentialStore):
             try:
                 credentials['port'] = socket.getservbyname(credentials['scheme'])
             except socket.error:
-                raise BzrError("Unable to look up default port for %(scheme)s"
-                    % credentials)
+                mutter("Unable to look up default port for %(scheme)s", 
+                       credentials)
+                return None
         return "<%(scheme)s://%(host)s:%(port)s> %(realm)s" % credentials
 
     def decode_password(self, credentials):
         svn_realm = self._get_realm(credentials)
+        if svn_realm is None:
+            return None
         creds = self.auth.credentials("svn.simple", svn_realm)
         try:
             (username, password, may_save) = creds.next()
@@ -242,6 +245,8 @@ class SubversionCredentialStore(CredentialStore):
         credentials = { "scheme": scheme, "host": host, "port": port, 
             "realm": realm, "user": user}
         svn_realm = self._get_realm(credentials)
+        if svn_realm is None:
+            return None
         creds = self.auth.credentials("svn.simple", svn_realm)
         try:
             (username, password, may_save) = creds.next()

@@ -25,6 +25,9 @@ bzr-svn 0.6.2                    UNRELEASED
 
    * Support "bzr push --create-prefix". (#383778)
 
+   * In authentication fallback, ignore schemes that can not be 
+     mapped to ports rather than erroring out. (#384813)
+
 bzr-svn 0.6.1                    2009-05-22
 
   BUG FIXES
