@@ -165,33 +165,6 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
     return revid, (builder.result_foreign_revid, builder.mapping)
 
 
-def push(graph, target_repo, target_path, target_config, base_revid, source_repo, rev, push_metadata=True, base_foreign_revid=None, base_mapping=None):
-    """Push a revision into Subversion.
-
-    This will do a new commit in the target branch.
-
-    :param target: Branch to push to
-    :param source_repo: Branch to pull the revision from
-    :param rev: Revision id for the revision to push
-    :return: revision id of revision that was pushed
-    """
-    assert isinstance(source_repo, Repository)
-    mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
-
-    source_repo.lock_read()
-    try:
-        revid, foreign_revid = push_revision_tree(graph, target_repo, target_path, 
-            target_config, source_repo, base_revid, rev.revision_id, rev, 
-            push_metadata=push_metadata, 
-            append_revisions_only=target_config.get_append_revisions_only(), 
-            override_svn_revprops=target_config.get_override_svn_revprops(),
-            base_foreign_revid=base_foreign_revid, base_mapping=base_mapping)
-    finally:
-        source_repo.unlock()
-    assert revid == rev.revision_id or not push_metadata
-    return revid, foreign_revid
-
-
 class InterToSvnRepository(InterRepository):
     """Any to Subversion repository actions."""
 
@@ -243,13 +216,23 @@ class InterToSvnRepository(InterRepository):
         finally:
             pb.finished()
 
-    def push(self, target_path, target_config, rev, push_metadata=True):
-        if rev.parent_ids:
-            base_revid = rev.parent_ids[0]
-        else:
-            base_revid = NULL_REVISION
-        base_foreign_revid, base_mapping = self._get_base_revision(base_revid, target_path)
-        revid, foreign_info = push(self.get_graph(), self.target, target_path, target_config, base_revid, self.source, rev, push_metadata=push_metadata, base_foreign_revid=base_foreign_revid, base_mapping=base_mapping)
+    def push(self, target_path, target_config, rev, push_metadata=True, 
+             base_revid=None):
+        if base_revid is None:
+            if rev.parent_ids:
+                base_revid = rev.parent_ids[0]
+            else:
+                base_revid = NULL_REVISION
+        base_foreign_revid, base_mapping = self._get_base_revision(base_revid,
+            target_path)
+        mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
+        revid, foreign_info = push_revision_tree(self.get_graph(), self.target,
+            target_path, target_config, self.source, base_revid,
+            rev.revision_id, rev, push_metadata=push_metadata, 
+            append_revisions_only=target_config.get_append_revisions_only(), 
+            override_svn_revprops=target_config.get_override_svn_revprops(),
+            base_foreign_revid=base_foreign_revid, base_mapping=base_mapping)
+        assert revid == rev.revision_id or not push_metadata
         self._foreign_info[revid][target_path] = foreign_info
         return (revid, foreign_info)
 

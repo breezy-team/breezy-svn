@@ -79,7 +79,6 @@ from bzrlib.plugins.svn.fetch import (
 from bzrlib.plugins.svn.push import (
     InterToSvnRepository,
     create_branch_with_hidden_commit,
-    push,
     )
 from bzrlib.plugins.svn.config import (
     BranchConfig,
@@ -365,9 +364,8 @@ class SvnBranch(ForeignBranch):
             base_revid = rev.parent_ids[0]
         else:
             base_revid = NULL_REVISION
-        push(self.repository.get_graph(), self.repository, 
-             self.get_branch_path(), self.get_config(), base_revid, 
-             self.repository, rev)
+        interrepo = InterToSvnRepository(self.repository, self.repository)
+        interrepo.push(self.get_branch_path(), self.get_config(), rev)
         self._clear_cached_state()
 
     def set_last_revision_info(self, revno, revid):
@@ -822,6 +820,10 @@ class InterOtherSvnBranch(InterBranch):
             revid_map = {}
             target_branch_path = self.target.get_branch_path()
             target_config = self.target.get_config()
+            # Request graph from other repository, since it's most likely faster
+            # than Subversion
+            interrepo = InterToSvnRepository(self.source.repository,
+                self.target.repository)
             pb = ui.ui_factory.nested_progress_bar()
             try:
                 # FIXME: Call create_branch_with_hidden_commit if the revision is 
@@ -835,9 +837,9 @@ class InterOtherSvnBranch(InterBranch):
                         base_revid = revid_map[rev.parent_ids[0]]
                     else:
                         base_revid = rev.parent_ids[0]
-                    revid_map[rev.revision_id], _ = push(graph, self.target.repository,
-                            target_branch_path, target_config, base_revid, 
-                            self.source.repository, rev, push_metadata=False)
+                    revid_map[rev.revision_id], _ = interrepo.push(
+                        target_branch_path, target_config, rev, 
+                        push_metadata=False, base_revid=base_revid)
             finally:
                 pb.finished()
             interrepo = InterFromSvnRepository(self.target.repository, 
