@@ -155,7 +155,7 @@ class SubversionTags(BasicTags):
         if existing_bp_parts == bp_parts:
             self._parent_exists.add(parent)
             return True
-        push.create_branch_prefix(self.repository, 
+        push.create_branch_prefix(self.repository.transport, 
                 self._revprops("Add tags base directory."),
                 bp_parts, existing_bp_parts)
         self._parent_exists.add(parent)

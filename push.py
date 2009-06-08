@@ -331,7 +331,7 @@ class InterToSvnRepository(InterRepository):
                 revprops = {properties.PROP_REVISION_LOG: "Add branches directory."}
                 if self.target.transport.has_capability("commit-revprops"):
                     revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
-                create_branch_prefix(self.target, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
+                create_branch_prefix(self.target.transport, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
                 self.push_new(rhs_branch_path, x, append_revisions_only=False)
 
     def push_new_branch(self, layout, project, target_branch_path, 
@@ -441,16 +441,16 @@ def determine_branch_path(rev, layout, project=None):
         return layout.get_branch_path(nick, project)
 
 
-def create_branch_prefix(repository, revprops, bp_parts, existing_bp_parts):
+def create_branch_prefix(transport, revprops, bp_parts, existing_bp_parts):
     """Create a branch prefixes (e.g. "branches")
 
-    :param repository: Subversion repository
+    :param transport: Subversion transport
     :param revprops: Revision properties to set
     :param bp_parts: Branch path elements that should be created (list of names, 
         ["branches", "foo"] for "branches/foo")
     :param existing_bp_parts: Branch path elements that already exist.
     """
-    conn = repository.transport.get_connection()
+    conn = transport.get_connection()
     try:
         ci = convert_svn_error(conn.get_commit_editor)(revprops)
         try:
@@ -476,7 +476,7 @@ def create_branch_prefix(repository, revprops, bp_parts, existing_bp_parts):
             raise
         ci.close()
     finally:
-        repository.transport.add_connection(conn)
+        transport.add_connection(conn)
 
 
 def create_branch_with_hidden_commit(repository, branch_path, revid,
