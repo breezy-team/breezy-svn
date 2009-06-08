@@ -175,7 +175,7 @@ class LayoutUnusable(BzrError):
 class AppendRevisionsOnlyViolation(bzrlib.errors.AppendRevisionsOnlyViolation):
 
     _fmt = ('Operation denied because it would change the main history.'
-            ' Set the append_revisions_only setting to yes on'
+            ' Set the append_revisions_only setting to False on'
             ' branch "%(location)s".')
 
 
