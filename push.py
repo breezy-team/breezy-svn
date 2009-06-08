@@ -152,6 +152,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
             parent_trees.append(source_repo.revision_tree(p))
         except NoSuchRevision:
             pass # Ghost, ignore
+    # TODO: Use iter_changes() ?
     replay_delta(builder, parent_trees, old_tree)
     try:
         revid = builder.commit(rev.message)
@@ -196,7 +197,7 @@ class InterToSvnRepository(InterRepository):
         return None
 
     def push_branch(self, todo, layout, project, target_branch, target_config,
-        push_merged):
+        push_merged, overwrite):
         """Push a series of revisions into a Subversion repository.
 
         """
@@ -210,14 +211,15 @@ class InterToSvnRepository(InterRepository):
                 if push_merged and len(rev.parent_ids) > 1:
                     self.push_ancestors(layout, project, 
                         rev.parent_ids, create_prefix=True)
-                last = self.push(target_branch, target_config, rev)
+                last = self.push(target_branch, target_config, rev, 
+                    overwrite=overwrite)
                 count += 1
             return (count, last)
         finally:
             pb.finished()
 
     def push(self, target_path, target_config, rev, push_metadata=True, 
-             base_revid=None):
+             base_revid=None, overwrite=False):
         if base_revid is None:
             if rev.parent_ids:
                 base_revid = rev.parent_ids[0]
@@ -229,7 +231,7 @@ class InterToSvnRepository(InterRepository):
         revid, foreign_info = push_revision_tree(self.get_graph(), self.target,
             target_path, target_config, self.source, base_revid,
             rev.revision_id, rev, push_metadata=push_metadata, 
-            append_revisions_only=target_config.get_append_revisions_only(), 
+            append_revisions_only=self.get_append_revisions_only(target_config, overwrite), 
             override_svn_revprops=target_config.get_override_svn_revprops(),
             base_foreign_revid=base_foreign_revid, base_mapping=base_mapping)
         assert revid == rev.revision_id or not push_metadata
@@ -319,7 +321,8 @@ class InterToSvnRepository(InterRepository):
                 self.push_new(rhs_branch_path, x, append_revisions_only=False)
 
     def push_new_branch(self, layout, project, target_branch_path, 
-        stop_revision, push_merged=None, override_svn_revprops=None):
+        stop_revision, push_merged=None, override_svn_revprops=None,
+        overwrite=False):
         if self.target.transport.check_path(target_branch_path,
             self.target.get_latest_revnum()) != subvertpy.NODE_NONE:
             raise AlreadyBranchError(target_branch_path)
@@ -338,7 +341,7 @@ class InterToSvnRepository(InterRepository):
         todo.reverse()
         if todo != []:
             self.push_branch(todo, layout, project, target_branch_path, 
-                target_config, push_merged)
+                target_config, push_merged, overwrite)
 
     def push_nonmainline_revision(self, rev, layout):
         mutter('pushing %r', rev.revision_id)
@@ -363,7 +366,15 @@ class InterToSvnRepository(InterRepository):
         return push_revision_tree(self.get_graph(), self.target, 
             bp, target_config, 
             self.source, parent_revid, rev.revision_id, rev, 
-            append_revisions_only=target_config.get_append_revisions_only())
+            append_revisions_only=self.get_append_revisions_only(target_config))
+
+    def get_append_revisions_only(self, target_config, overwrite=False):
+        ret = target_config.get_append_revisions_only()
+        if ret is None:
+            if overwrite:
+                return False
+            return True
+        return ret
 
     def get_graph(self):
         if self._graph is None:

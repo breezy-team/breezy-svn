@@ -19,10 +19,12 @@ from subvertpy import ra
 
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import NoSuchRevision
+from bzrlib.errors import (
+    AppendRevisionsOnlyViolation,
+    NoSuchRevision,
+    )
 from bzrlib.repository import Repository
 from bzrlib.tests import TestCase
-from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn import format
@@ -437,7 +439,6 @@ class RepositoryTests(SubversionTestCase):
         tree = newrepos.revision_tree(oldrepos.generate_revision_id(2, "", mapping))
         self.assertEquals("bloe", tree.path2id("dir"))
         self.assertIs(None, tree.path2id("dir/adir"))
-        mutter('entries: %r' % tree.inventory.entries())
         self.assertEquals("bla", tree.path2id("bdir"))
 
     def test_store_branching_scheme(self):
@@ -559,6 +560,9 @@ class RepositoryTests(SubversionTestCase):
         revid2 = bzrwt.commit("Merge something", rev_id="mergerevid")
         bzr_parents = bzrwt.branch.repository.get_revision(revid2).parent_ids
         trunk = Branch.open(repos_url + "/trunk")
+        self.assertRaises(AppendRevisionsOnlyViolation, 
+            trunk.pull, bzrwt.branch)
+        trunk.get_config().set_user_option('append_revisions_only', 'False')
         trunk.pull(bzrwt.branch)
 
         self.assertEquals(tuple(bzr_parents), 

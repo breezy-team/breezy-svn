@@ -479,7 +479,7 @@ class SvnBranch(ForeignBranch):
         assert todo != []
         interrepo.push_branch(todo, self.layout, self.project, 
             self.get_branch_path(), self.get_config(),
-            self.get_push_merged_revisions())
+            self.get_push_merged_revisions(), overwrite=False)
 
     def generate_revision_history(self, revision_id, last_rev=None, 
         other_branch=None):
@@ -794,7 +794,7 @@ class InterOtherSvnBranch(InterBranch):
             (count, (new_last_revid, new_foreign_info)) = interrepo.push_branch(
                 todo, self.target.layout, self.target.project, 
                 self.target.get_branch_path(), self.target.get_config(), 
-                push_merged)
+                push_merged, overwrite=overwrite)
         self.target._clear_cached_state()
         assert isinstance(new_last_revid, str)
         assert isinstance(old_last_revid, str)

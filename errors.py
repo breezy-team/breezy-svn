@@ -174,9 +174,9 @@ class LayoutUnusable(BzrError):
 
 class AppendRevisionsOnlyViolation(bzrlib.errors.AppendRevisionsOnlyViolation):
 
-    _fmt = ('Operation denied because it would change the main history.'
+    _fmt = ('Operation denied because it would change the mainline history.'
             ' Set the append_revisions_only setting to False on'
-            ' branch "%(location)s".')
+            ' branch "%(location)s" to allow the mainline to change.')
 
 
 class FileIdMapIncomplete(BzrError):

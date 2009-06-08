@@ -399,6 +399,7 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         branch = Branch.open(repos_url+"/trunk")
         orig_history = branch.revision_history()
+        branch.get_config().set_user_option('append_revisions_only', 'False')
         branch.set_revision_history(orig_history[:-1])
         self.assertEquals(orig_history[:-1], branch.revision_history())
 

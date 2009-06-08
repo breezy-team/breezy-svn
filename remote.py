@@ -174,8 +174,8 @@ class SvnRemoteAccess(BzrDir):
             format = BzrDirFormat.get_default_format()
         return not isinstance(self._format, format.__class__)
 
-    def import_branch(self, source, stop_revision=None, _push_merged=None,
-                      _override_svn_revprops=None):
+    def import_branch(self, source, stop_revision=None, overwrite=False, 
+                      _push_merged=None, _override_svn_revprops=None):
         """Create a new branch in this repository, possibly 
         with the specified history, optionally importing revisions.
         
@@ -199,8 +199,9 @@ class SvnRemoteAccess(BzrDir):
             if type not in ('branch', 'tag') or ip != '':
                 raise NotBranchError(branch_path)
             inter.push_new_branch(layout, project, target_branch_path, 
-                    stop_revision, override_svn_revprops=_override_svn_revprops,
-                    push_merged=_push_merged)
+                    stop_revision, 
+                    override_svn_revprops=_override_svn_revprops,
+                    push_merged=_push_merged, overwrite=overwrite)
             return self.open_branch()
         finally:
             source.unlock()
@@ -255,7 +256,8 @@ class SvnRemoteAccess(BzrDir):
             ret.target_branch_path = "/%s" % self.branch_path.lstrip("/")
             if create_prefix:
                 self.root_transport.create_prefix()
-            ret.target_branch = self.import_branch(source, revision_id)
+            ret.target_branch = self.import_branch(source, revision_id, 
+                overwrite=overwrite)
             if source.get_push_location() is None or remember:
                 source.set_push_location(ret.target_branch.base)
         return ret

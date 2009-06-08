@@ -4,6 +4,10 @@ bzr-svn 0.6.2                    UNRELEASED
 
    * Integrated "bzr svn-serve" into "bzr serve --svn".
 
+   * ``append_revisions_only`` now defaults to True, to prevent new users
+     from accidently changing their Subversion mainline and upsetting their 
+     fellow committers. (#383777)
+
   BUG FIXES
 
    * Only look for file properties if there are actually new file properties.

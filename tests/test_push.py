@@ -26,6 +26,7 @@ from bzrlib.errors import (
     AlreadyBranchError,
     BzrError,
     DivergedBranches,
+    AppendRevisionsOnlyViolation,
     )
 from bzrlib.inventory import InventoryDirectory
 from bzrlib.merge import (
@@ -718,7 +719,10 @@ class PushNewBranchTests(SubversionTestCase):
         finally:
             wt.unlock()
         self.assertTrue(os.path.exists("bzrco/baz.txt"))
-        wt.branch.push(Branch.open(repos_url+"/trunk"))
+        target_branch = Branch.open(repos_url+"/trunk")
+        self.assertRaises(AppendRevisionsOnlyViolation, wt.branch.push, target_branch)
+        target_branch.get_config().set_user_option('append_revisions_only', 'False')
+        wt.branch.push(target_branch)
 
     def test_push_merge_unchanged_file(self):
         def check_tree(t):
@@ -957,8 +961,6 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertEquals(bzrwt2.branch.revision_history(),
                 Branch.open(repos_url+"/trunk").revision_history())
 
-
-
     def test_complex_rename(self):
         repos_url = self.make_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c", 
@@ -1152,6 +1154,9 @@ class PushNewBranchTests(SubversionTestCase):
         revid3 = bzrwt.commit("Merge something", rev_id="mergerevid")
 
         trunk = Branch.open(repos_url + "/branches/foo")
+        self.assertRaises(AppendRevisionsOnlyViolation, trunk.pull, 
+            bzrwt.branch)
+        trunk.get_config().set_user_option('append_revisions_only', 'False')
         trunk.pull(bzrwt.branch)
 
         self.assertEquals([revid1, revid2, revid3], trunk.revision_history())
