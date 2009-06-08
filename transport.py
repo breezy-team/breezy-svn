@@ -89,7 +89,7 @@ def get_svn_ra_transport(bzr_transport):
     if ra_transport is not None:
         return ra_transport
 
-    svnbase = bzr_transport.base
+    svnbase = bzr_transport.external_url()
     if svnbase.startswith("readonly+"):
         svnbase = svnbase[len("readonly+"):]
     # If this is a HTTP transport, use the existing connection to check 
