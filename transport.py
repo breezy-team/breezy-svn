@@ -110,8 +110,10 @@ def get_svn_ra_transport(bzr_transport):
     if shared_connection is not None and shared_connection.credentials is not None:
         if isinstance(shared_connection.credentials, dict):
             creds = shared_connection.credentials
-        else:
+        elif isinstance(shared_connection.credentials[0], dict):
             creds = shared_connection.credentials[0]
+        else:
+            creds = None
     else:
         creds = None
     ra_transport = SvnRaTransport(svnbase, credentials=creds)
