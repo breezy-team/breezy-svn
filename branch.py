@@ -216,9 +216,6 @@ class SvnBranch(ForeignBranch):
         """
         self._branch_path = branch_path.strip("/")
 
-    def _get_append_revisions_only(self):
-        return self.get_config().get_append_revisions_only()
-
     def get_branch_path(self, revnum=None):
         """Find the branch path of this branch in the specified revnum.
 
