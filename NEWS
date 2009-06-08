@@ -19,6 +19,8 @@ bzr-svn 0.6.2                    UNRELEASED
      before the Bazaar smart client attempts to send POST to .bzr/smart over 
      HTTP.
 
+   * Support "bzr push --create-prefix". (#383778)
+
 bzr-svn 0.6.1                    2009-05-22
 
   BUG FIXES
