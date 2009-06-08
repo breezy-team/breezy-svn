@@ -701,3 +701,40 @@ class MutteringRemoteAccess(object):
         mutter("svn replay %d (low water mark: %d)" % (revision, low_water_mark))
         return self.actual.replay(revision, low_water_mark, editor, send_deltas)
 
+
+def create_branch_prefix(transport, revprops, bp_parts, existing_bp_parts):
+    """Create a branch prefixes (e.g. "branches")
+
+    :param transport: Subversion transport
+    :param revprops: Revision properties to set
+    :param bp_parts: Branch path elements that should be created (list of names, 
+        ["branches", "foo"] for "branches/foo")
+    :param existing_bp_parts: Branch path elements that already exist.
+    """
+    conn = transport.get_connection()
+    try:
+        ci = convert_svn_error(conn.get_commit_editor)(revprops)
+        try:
+            root = ci.open_root()
+            name = None
+            batons = [root]
+            for p in existing_bp_parts:
+                if name is None:
+                    name = p
+                else:
+                    name += "/" + p
+                batons.append(batons[-1].open_directory(name))
+            for p in bp_parts[len(existing_bp_parts):]:
+                if name is None:
+                    name = p
+                else:
+                    name += "/" + p
+                batons.append(batons[-1].add_directory(name))
+            for baton in reversed(batons):
+                baton.close()
+        except:
+            ci.abort()
+            raise
+        ci.close()
+    finally:
+        transport.add_connection(conn)

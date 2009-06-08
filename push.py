@@ -70,6 +70,7 @@ from bzrlib.plugins.svn.repository import (
     SvnRepository,
     )
 from bzrlib.plugins.svn.transport import (
+    create_branch_prefix,
     url_join_unescaped_path,
     )
 
@@ -439,44 +440,6 @@ def determine_branch_path(rev, layout, project=None):
         return layout.get_branch_path(nick)
     else:
         return layout.get_branch_path(nick, project)
-
-
-def create_branch_prefix(transport, revprops, bp_parts, existing_bp_parts):
-    """Create a branch prefixes (e.g. "branches")
-
-    :param transport: Subversion transport
-    :param revprops: Revision properties to set
-    :param bp_parts: Branch path elements that should be created (list of names, 
-        ["branches", "foo"] for "branches/foo")
-    :param existing_bp_parts: Branch path elements that already exist.
-    """
-    conn = transport.get_connection()
-    try:
-        ci = convert_svn_error(conn.get_commit_editor)(revprops)
-        try:
-            root = ci.open_root()
-            name = None
-            batons = [root]
-            for p in existing_bp_parts:
-                if name is None:
-                    name = p
-                else:
-                    name += "/" + p
-                batons.append(batons[-1].open_directory(name))
-            for p in bp_parts[len(existing_bp_parts):]:
-                if name is None:
-                    name = p
-                else:
-                    name += "/" + p
-                batons.append(batons[-1].add_directory(name))
-            for baton in reversed(batons):
-                baton.close()
-        except:
-            ci.abort()
-            raise
-        ci.close()
-    finally:
-        transport.add_connection(conn)
 
 
 def create_branch_with_hidden_commit(repository, branch_path, revid,
