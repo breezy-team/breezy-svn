@@ -22,6 +22,7 @@ import os
 from bzrlib import (
     debug,
     errors,
+    trace,
     osutils,
     )
 
