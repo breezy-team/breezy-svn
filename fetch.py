@@ -170,7 +170,8 @@ class PathStrippingDirectoryEditor(object):
         if path.strip("/") == self.editor.prefix:
             t = self.editor.actual.open_root(base_revnum)
         elif self.actual is not None:
-            t = self.actual.open_directory(self.editor.strip_prefix(path), base_revnum)
+            t = self.actual.open_directory(self.editor.strip_prefix(path),
+                base_revnum)
         else:
             t = None
         return PathStrippingDirectoryEditor(self.editor, path, t)
@@ -259,7 +260,8 @@ class DeltaBuildEditor(object):
         self.mapping = mapping
 
     def set_target_revision(self, revnum):
-        assert self.revmeta.revnum == revnum, "Expected %d, got %d" % (self.revmeta.revnum, revnum)
+        if self.revmeta.revnum != revnum:
+            raise AssertionError("Expected %d, got %d" % (self.revmeta.revnum, revnum))
 
     def open_root(self, base_revnum=None):
         return self._open_root(base_revnum)
@@ -281,7 +283,8 @@ class DirectoryBuildEditor(object):
         if self.path == "":
             # If it has changed, it has definitely been reported by now
             if not self.editor.revmeta.knows_fileprops():
-                self.editor.revmeta._fileprops = self.editor.revmeta.get_previous_fileprops()
+                self.editor.revmeta._fileprops = \
+                    self.editor.revmeta.get_previous_fileprops()
         self._close()
 
     def add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
@@ -305,7 +308,8 @@ class DirectoryBuildEditor(object):
         if self.path == "":
             # Replay lazy_dict, since it may be more expensive
             if not self.editor.revmeta.knows_fileprops():
-                self.editor.revmeta._fileprops = dict(self.editor.revmeta.get_previous_fileprops())
+                self.editor.revmeta._fileprops = dict(
+                    self.editor.revmeta.get_previous_fileprops())
             if value is None:
                 if name in self.editor.revmeta._fileprops:
                     del self.editor.revmeta._fileprops[name]
@@ -388,8 +392,8 @@ class FileBuildEditor(object):
 
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
-    def __init__(self, editor, old_path, path, old_id, new_id, parent_file_id, 
-        parent_revids=[], renew_fileids=None):
+    def __init__(self, editor, old_path, path, old_id, new_id, 
+            parent_file_id, parent_revids=[], renew_fileids=None):
         super(DirectoryRevisionBuildEditor, self).__init__(editor, path)
         assert isinstance(new_id, str)
         self.old_id = old_id
@@ -931,7 +935,8 @@ class FetchRevisionFinder(object):
         present_revids = self.target.has_revisions(map.values())
         return [k for k in revmetas if k in map and map[k] not in present_revids]
 
-    def find_iter_revisions(self, iter, master_mapping, prefix=None, heads=None, pb=None):
+    def find_iter_revisions(self, iter, master_mapping, prefix=None, heads=None,
+        pb=None):
         """Find revisions to fetch based on an iterator over available revmetas.
         
         :param iter: Iterator over RevisionMetadata objects
