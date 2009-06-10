@@ -123,9 +123,9 @@ class ReverseTagDict(object):
         foreign_revid, mapping = self._lookup_revid(revid)
         return self._by_foreign_revid.has_key(foreign_revid)
 
-    def get(self, revid):
+    def get(self, revid, default=None):
         foreign_revid, mapping = self._lookup_revid(revid)
-        return self._by_foreign_revid.get(foreign_revid)
+        return self._by_foreign_revid.get(foreign_revid, default)
 
     def items(self):
         return _resolve_tags_svn_ancestry(self.branch, self._tags)
