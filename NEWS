@@ -8,6 +8,10 @@ bzr-svn 0.6.2                    UNRELEASED
      from accidently changing their Subversion mainline and upsetting their 
      fellow committers. (#383777)
 
+  PERFORMANCE
+
+   * Avoid expensive fetching of tags just to figure out they are supported.
+
   BUG FIXES
 
    * Only look for file properties if there are actually new file properties.

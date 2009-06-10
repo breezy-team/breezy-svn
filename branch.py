@@ -199,6 +199,9 @@ class SvnBranch(ForeignBranch):
         if type not in ('branch', 'tag') or ip != '':
             raise NotBranchError(branch_path)
 
+    def _push_should_merge_tags(self):
+        return self.supports_tags()
+
     def check_path(self):
         return self.repository.transport.check_path(self._branch_path, self._revnum or self.repository.get_latest_revnum())
 
@@ -507,10 +510,8 @@ class SvnBranch(ForeignBranch):
           be None to copy complete history.
         """
         if revision_id is None:
-            revno, revision_id = self.last_revision_info()
-        else:
-            revno = self.revision_id_to_revno(revision_id)
-        destination.set_last_revision_info(revno, revision_id)
+            revision_id = self.last_revision()
+        destination.generate_revision_history(revision_id)
 
     def is_locked(self):
         return self._lock_count != 0
