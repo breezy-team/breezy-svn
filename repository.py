@@ -1020,7 +1020,7 @@ class SvnRepository(ForeignRepository):
         branches = []
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for project, bp, nick in layout.get_branches(self, revnum, pb=pb):
+            for project, bp, nick, has_props in layout.get_branches(self, revnum, pb=pb):
                 branches.append(SvnBranch(self, bp, _skip_check=True))
         finally:
             pb.finished()
@@ -1185,7 +1185,7 @@ class SvnRepository(ForeignRepository):
             it = iter([])
             it = chain(it, layout.get_branches(self, from_revnum, project))
             it = chain(it, layout.get_tags(self, from_revnum, project))
-            return iter(((branch, from_revnum, True) for (project, branch, nick) in it))
+            return iter(((branch, from_revnum, True) for (project, branch, nick, has_props) in it if has_props in (True, None)))
         else:
             return iter(self.find_branchpaths(layout, from_revnum, to_revnum, project))
 

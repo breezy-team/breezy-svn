@@ -16,7 +16,7 @@
 """Repository layouts."""
 
 import subvertpy
-from subvertpy.ra import DIRENT_KIND
+from subvertpy.ra import DIRENT_KIND, DIRENT_HAS_PROPS
 
 ERR_RA_DAV_FORBIDDEN = getattr(subvertpy, "ERR_RA_DAV_FORBIDDEN", 175013)
 
@@ -169,7 +169,7 @@ def expand_branch_pattern(begin, todo, check_path, get_children, project=None):
     # If all elements have already been handled, just check the path exists
     if len(todo) == 0:
         if check_path(path):
-            return [path]
+            return [(path, None)]
         else:
             return []
     # Not a wildcard? Just expand next bits
@@ -182,11 +182,11 @@ def expand_branch_pattern(begin, todo, check_path, get_children, project=None):
     ret = []
     pb = ui.ui_factory.nested_progress_bar()
     try:
-        for idx, c in enumerate(children):
+        for idx, (c, has_props) in enumerate(children):
             pb.update("browsing branches", idx, len(children))
             if len(todo) == 1:
                 # Last path element, so return directly
-                ret.append("/".join(begin+[c]))
+                ret.append(("/".join(begin+[c]), has_props))
             else:
                 ret += expand_branch_pattern(begin+[c], todo[1:], check_path, 
                                              get_children, project)
@@ -204,13 +204,14 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None, pb=Non
     :param verify_fn: Function that checks if a path is acceptable.
     :param project: Optional project branch/tag should be in.
     :param pb: Optional progress bar.
+    :return: Iterator over project, branch path, nick, has_props
     """
     def check_path(path):
         return repository.transport.check_path(path, revnum) == subvertpy.NODE_DIR
     def find_children(path):
         try:
             assert not path.startswith("/")
-            dirents = repository.transport.get_dir(path, revnum, DIRENT_KIND)[0]
+            dirents = repository.transport.get_dir(path, revnum, DIRENT_KIND|DIRENT_HAS_PROPS)[0]
         except subvertpy.SubversionException, (msg, num):
             if num in (subvertpy.ERR_FS_NOT_DIRECTORY, 
                        subvertpy.ERR_FS_NOT_FOUND, 
@@ -218,16 +219,16 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None, pb=Non
                        ERR_RA_DAV_FORBIDDEN):
                 return None
             raise
-        return [d for d in dirents if dirents[d]['kind'] == subvertpy.NODE_DIR]
+        return [(d, dirents[d]['has_props']) for d in dirents if dirents[d]['kind'] == subvertpy.NODE_DIR]
 
     for idx, pattern in enumerate(itemlist):
         assert isinstance(pattern, str)
         if pb is not None:
             pb.update("finding branches", idx, len(itemlist))
-        for bp in expand_branch_pattern([], pattern.strip("/").split("/"), check_path,
+        for bp, has_props in expand_branch_pattern([], pattern.strip("/").split("/"), check_path,
                 find_children, project):
             if verify_fn(bp, project):
-                yield project, bp, bp.split("/")[-1]
+                yield project, bp, bp.split("/")[-1], has_props
 
 
 help_layout = """Subversion repository layouts.

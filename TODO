@@ -6,7 +6,6 @@ more tests:
 performance:
 - use chk maps for file ids
 - store changes root path in tdb cache, for quicker iter_changes().
-- when looking for fileprop revids, do a get_dir() on branches/ and tags/ and look at "has_props"
 - when walking history, also update revid cache if possible
  - and perhaps tags info?
  - and perhaps revno info ?

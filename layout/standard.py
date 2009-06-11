@@ -123,7 +123,7 @@ class TrunkLayout(RepositoryLayout):
     def get_branches(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path)
+        :result: Iterator over tuples with (project, branch path, has_props)
         """
         return get_root_paths(repository, 
              [self._add_project(x, project) for x in "branches/*", "trunk"], 
@@ -218,7 +218,7 @@ class RootLayout(RepositoryLayout):
 
         :result: Iterator over tuples with (project, branch path)
         """
-        return [("", "", "trunk")]
+        return [("", "", "trunk", None)]
 
     def get_tags(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.

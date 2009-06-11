@@ -249,7 +249,7 @@ class RootLegacyLayout(LegacyLayout):
         return path == ""
 
     def get_branches(self, repository, revnum, project="", pb=None):
-        return [("", "", "trunk")]
+        return [("", "", "trunk", True)]
 
     def get_tags(self, repository, revnum, project="", pb=None):
         return []
