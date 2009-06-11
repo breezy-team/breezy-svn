@@ -26,10 +26,10 @@ from bzrlib import (
     trace,
     osutils,
     )
-from bzrlib.util.bencode import (
-    bdecode,
-    bencode,
-    )
+try:
+    from bzrlib import bencode
+except ImportError:
+    from bzrlib.util import bencode
 
 from bzrlib.plugins.svn import (
     changes,
@@ -219,7 +219,7 @@ class LogCache(CacheTable):
         """
         self.mutter("get-revision-paths %d", revnum)
         ret = {}
-        db = bdecode(self.db["paths/%d" % revnum])
+        db = bencode.bdecode(self.db["paths/%d" % revnum])
         for key, (action, cp, cr) in db.iteritems():
             if cp == "" and cr == -1:
                 cp = None
@@ -243,11 +243,11 @@ class LogCache(CacheTable):
                 copyfrom_path = ""
                 assert orig_paths[p][2] == -1
             new_paths[p.strip("/")] = (orig_paths[p][0], copyfrom_path, orig_paths[p][2])
-        self.db["paths/%d" % rev] = bencode(new_paths)
+        self.db["paths/%d" % rev] = bencode.bencode(new_paths)
         self.db["log-last"] = "%d" % max(self.last_revnum(), rev)
     
     def drop_revprops(self, revnum):
-        self.db["revprops/%d" % revnum] = bencode({})
+        self.db["revprops/%d" % revnum] = bencode.bencode({})
 
     def get_revprops(self, revnum):
         """Retrieve all the cached revision properties.
@@ -255,13 +255,13 @@ class LogCache(CacheTable):
         :param revnum: Revision number of revision to retrieve revprops for.
         """
         self.mutter("get-revision-properties %d", revnum)
-        ret = bdecode(self.db["revprops/%d" % revnum])
+        ret = bencode.bdecode(self.db["revprops/%d" % revnum])
         return (ret[0], bool(ret[1]))
 
     def insert_revprops(self, revision, revprops, all_revprops):
         if revprops is None:
             revprops = {}
-        self.db["revprops/%d" % revision] = bencode((revprops, all_revprops))
+        self.db["revprops/%d" % revision] = bencode.bencode((revprops, all_revprops))
 
     def last_revnum(self):
         try:
