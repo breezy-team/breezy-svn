@@ -143,6 +143,12 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("commit -m msg dc")
         self.run_bzr("push -v -d dc %s/trunk" % repos_url)
 
+    def test_reconcile(self):
+        repos_url = self.make_repository('d')
+
+        output, err = self.run_bzr("reconcile %s" % repos_url, retcode=0)
+        self.assertContainsRe(output, "Reconciliation complete.\n")
+
     def test_missing(self):
         repos_url = self.make_repository('d')
         
