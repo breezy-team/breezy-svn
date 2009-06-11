@@ -39,6 +39,7 @@ from bzrlib.revision import (
 from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn import (
+    changes,
     errors,
     get_client_string,
     version_info,

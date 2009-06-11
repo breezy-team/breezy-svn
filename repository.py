@@ -407,8 +407,11 @@ class SvnRepository(ForeignRepository):
             self._clear_cached_state()
 
     def reconcile(self, other=None, thorough=False):
-        # TODO: Perhaps run set-svn-revprops here?
-        pass
+        """Reconcile this repository."""
+        from bzrlib.plugins.svn.reconcile import RepoReconciler
+        reconciler = RepoReconciler(self, thorough=thorough)
+        reconciler.reconcile()
+        return reconciler
 
     def _clear_cached_state(self, revnum=None):
         self._cached_tags = {}

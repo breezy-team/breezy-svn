@@ -1,7 +1,7 @@
 more tests:
 - Run all tests against repository with revprop changing allowed and without
 - performance tests (count roundtrips?)
-- bzr svn-set-revprops
+- reconcile
 
 performance:
 - use chk maps for file ids

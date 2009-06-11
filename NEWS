@@ -8,6 +8,8 @@ bzr-svn 0.6.2                    UNRELEASED
      from accidently changing their Subversion mainline and upsetting their 
      fellow committers. (#383777)
 
+   * ``bzr svn-set-revprops`` has been folded into ``bzr reconcile``.
+
   PERFORMANCE
 
    * Avoid expensive fetching of tags just to figure out they are supported.
