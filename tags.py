@@ -128,7 +128,7 @@ class ReverseTagDict(object):
         return self._by_foreign_revid.get(foreign_revid, default)
 
     def items(self):
-        return _resolve_tags_svn_ancestry(self.branch, self._tags)
+        return _resolve_tags_svn_ancestry(self.branch, self._tags).items()
 
     def iteritems(self):
         return iter(self.items())
