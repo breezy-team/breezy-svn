@@ -10,7 +10,6 @@ performance:
  - and perhaps tags info?
  - and perhaps revno info ?
 - fix copyfrom in replay and replay_range
-- faster function for finding all *existing* branches
 - automatically disable cache in some situations, allow partial cache?
  - perhaps for large repositories?
 - special LRU cache for revisionmetadata

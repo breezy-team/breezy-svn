@@ -620,7 +620,8 @@ class SvnRepository(ForeignRepository):
         layoutname = self.get_config().get_guessed_layout()
         if layoutname is not None:
             config_guessed_layout = layout.layout_registry.get(layoutname)()
-            if self._hinted_branch_path is None or config_guessed_layout.is_branch(self._hinted_branch_path):
+            if (self._hinted_branch_path is None or 
+                config_guessed_layout.is_branch(self._hinted_branch_path)):
                 self._guessed_layout = config_guessed_layout
                 self._guessed_appropriate_layout = config_guessed_layout
                 return
