@@ -64,8 +64,8 @@ def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
         except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY,):
             continue
         for name in names:
-            assert isinstance(name, basestring)
-            ret[name] = revid
+            assert isinstance(name, str)
+            ret[name.decode("utf-8")] = revid
     return ret
 
 def _resolve_tags_svn_ancestry(branch, tag_revmetas):
@@ -96,8 +96,8 @@ def _resolve_tags_svn_ancestry(branch, tag_revmetas):
                 # No more tag revmetas to resolve, just return immediately
                 return ret
             for name in reverse_tag_revmetas[revmeta]:
-                assert isinstance(name, basestring)
-                ret[name] = revmeta.get_revision_id(mapping)
+                assert isinstance(name, str)
+                ret[name.decode("utf-8")] = revmeta.get_revision_id(mapping)
             del reverse_tag_revmetas[revmeta]
     finally:
         pb.finished()
@@ -265,8 +265,8 @@ class SubversionTags(BasicTags):
                 continue
             revmeta = foreign_revid_map[foreign_revid]
             for name in reverse_tag_revmetas[revmeta]:
-                assert isinstance(name, basestring)
-                ret[name] = revid
+                assert isinstance(name, str)
+                ret[name.decode("utf-8")] = revid
             del reverse_tag_revmetas[revmeta]
         ret.update(_resolve_reverse_tags_fallback(self.branch, reverse_tag_revmetas))
         return ret

@@ -44,6 +44,8 @@ bzr-svn 0.6.2                    UNRELEASED
 
    * Handle annotate after copies in Subversion. (#381523)
 
+   * Support unicode characters in tag names. (#385813)
+
 bzr-svn 0.6.1                    2009-05-22
 
   BUG FIXES
