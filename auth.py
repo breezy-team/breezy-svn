@@ -17,6 +17,7 @@
 """Authentication token retrieval."""
 
 
+import subvertpy
 from subvertpy import (
     ra,
     )
@@ -37,14 +38,17 @@ from bzrlib.ui import (
     ui_factory,
     )
 
-AUTH_PARAM_DEFAULT_USERNAME = 'svn:auth:username'
-AUTH_PARAM_DEFAULT_PASSWORD = 'svn:auth:password'
+AUTH_PARAM_DEFAULT_USERNAME = getattr(subvertpy, "AUTH_PARAM_DEFAULT_USERNAME",
+                                      'svn:auth:username')
+AUTH_PARAM_DEFAULT_PASSWORD = getattr(subvertpy, "AUTH_PARAM_DEFAULT_PASSWORD", 
+                                      'svn:auth:password')
 
-SSL_NOTYETVALID = 0x00000001
-SSL_EXPIRED     = 0x00000002
-SSL_CNMISMATCH  = 0x00000004
-SSL_UNKNOWNCA   = 0x00000008
-SSL_OTHER       = 0x40000000
+SSL_NOTYETVALID = getattr(subvertpy, "SSL_NOTYETVALID", 0x00000001)
+SSL_EXPIRED     = getattr(subvertpy, "SSL_EXPIRED", 0x00000002)
+SSL_CNMISMATCH  = getattr(subvertpy, "SSL_CNMISMATCH", 0x00000004)
+SSL_UNKNOWNCA   = getattr(subvertpy, "SSL_UNKNOWNCA", 0x00000008)
+SSL_OTHER       = getattr(subvertpy, "SSL_OTHER", 0x40000000)
+
 
 class SubversionAuthenticationConfig(AuthenticationConfig):
     """Simple extended version of AuthenticationConfig that can provide 
