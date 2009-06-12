@@ -99,7 +99,8 @@ def get_svn_ra_transport(bzr_transport):
         url = bzr_transport._unsplit_url(bzr_transport._unqualified_scheme,
             None, None, bzr_transport._host, bzr_transport._port, 
             bzr_transport._path)
-        req = Request('OPTIONS', url, accepted_errors=[200])
+        req = Request('OPTIONS', url, accepted_errors=[200]) 
+        req.follow_redirections = True
         resp = bzr_transport._perform(req)
         dav_entries = list(itertools.chain(*[entry.split(",") for entry in resp.headers.getheaders('DAV')]))
         if not "version-control" in dav_entries:
