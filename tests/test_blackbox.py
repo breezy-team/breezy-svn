@@ -510,6 +510,22 @@ if len(sys.argv) == 2:
         self.monkey_patch_gpg()
         self.run_bzr('sign-my-commits')
 
+    def test_pull_old(self):
+        svn_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(svn_url)
+        trunk = dc.add_dir("trunk")
+        trunk.add_file("trunk/foo").modify("bar1")
+        dc.close()
+
+        dc = self.get_commit_editor(svn_url)
+        trunk = dc.open_dir("trunk")
+        trunk.open_file("trunk/foo").modify("bar2")
+        dc.close()
+
+        self.run_bzr('branch %s/trunk trunk' % svn_url)
+        self.run_bzr('pull -d trunk -r1 %s/trunk' % svn_url)
+
     def test_knit_corruption(self):
         cwd = os.getcwd()
         svn_url = self.make_client('d', 'wc')

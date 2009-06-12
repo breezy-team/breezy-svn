@@ -238,12 +238,15 @@ class SubversionTags(BasicTags):
                     layout=self.branch.layout,
                     mapping=self.branch.mapping,
                     revnum=self.branch._revnum)
-        else:
-            return self.repository.find_tags_between(project=self.branch.project,
+        elif from_revnum <= to_revnum:
+            return self.repository.find_tags_between(
+                    project=self.branch.project,
                     layout=self.branch.layout,
                     mapping=self.branch.mapping,
                     from_revnum=from_revnum,
                     to_revnum=to_revnum)
+        else:
+            return {}
 
     def _resolve_tags_ancestry(self, tag_revmetas, graph, last_revid):
         """Resolve a name -> revmeta dictionary using the ancestry of a branch.

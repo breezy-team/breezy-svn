@@ -1031,7 +1031,8 @@ class SvnRepository(ForeignRepository):
         return branches
 
     @needs_read_lock
-    def find_tags_between(self, project, layout, mapping, from_revnum, to_revnum, tags=None):
+    def find_tags_between(self, project, layout, mapping, from_revnum, 
+                          to_revnum, tags=None):
         if tags is None:
             tags = {}
         assert from_revnum <= to_revnum
@@ -1089,7 +1090,8 @@ class SvnRepository(ForeignRepository):
 
         if not layout in self._cached_tags:
             self._cached_tags[layout] = self.find_tags_between(project=project,
-                    layout=layout, mapping=mapping, from_revnum=0, to_revnum=revnum)
+                    layout=layout, mapping=mapping, from_revnum=0, 
+                    to_revnum=revnum)
         return self._cached_tags[layout]
 
     def find_branchpaths(self, layout, from_revnum, to_revnum, project=None):
