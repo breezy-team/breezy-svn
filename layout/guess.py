@@ -23,7 +23,7 @@ from bzrlib.plugins.svn.layout.standard import (
         )
 
 # Number of revisions to evaluate when guessing the repository layout
-GUESS_SAMPLE_SIZE = 2000
+GUESS_SAMPLE_SIZE = 300
 
 def find_commit_paths(changed_paths):
     """Find the commit-paths used in a bunch of revisions.

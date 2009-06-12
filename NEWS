@@ -17,6 +17,9 @@ bzr-svn 0.6.2                    UNRELEASED
    * Only check paths that actually have file properties set for 
      Bazaar revision id properties.
 
+   * Reduced number of revisions analysed for repository layout from 2000 to 
+     300.
+
   BUG FIXES
 
    * Only look for file properties if there are actually new file properties.
