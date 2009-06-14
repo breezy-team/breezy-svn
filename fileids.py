@@ -241,7 +241,7 @@ class DictFileIdMap(FileIdMap):
                 self.data[x] = (prev_entry[0], text_revisions.get(x) or default_revid, prev_entry[2])
 
         if not "" in self.data:
-            raise AssertionError("root no longer exists in %r" % self.data)
+            raise AssertionError("root no longer exists after %r in %r" % (foreign_revid, self.data))
 
     def has_fileid(self, fileid):
         for fid, _ in self.data.itervalues():
