@@ -982,7 +982,8 @@ class FetchRevisionFinder(object):
             self.source._revmeta_provider.iter_all_revisions(
                 self.source.get_layout(), 
                 check_unusual_path=mapping.is_branch_or_tag,
-                from_revnum=from_revnum, pb=pb), mapping)
+                from_revnum=from_revnum, pb=pb), mapping,
+            lambda x: False)
 
     def find_mainline(self, foreign_revid, mapping, find_ghosts=False,
                       pb=None):
