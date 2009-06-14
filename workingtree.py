@@ -22,6 +22,7 @@ except ImportError:
 
 import os
 import subvertpy
+ERR_WC_SCHEDULE_CONFLICT = getattr(subvertpy, "ERR_WC_SCHEDULE_CONFLICT", 155013)
 import subvertpy.wc
 from subvertpy import properties
 from subvertpy.wc import *
@@ -43,6 +44,7 @@ from bzrlib.bzrdir import (
 from bzrlib.errors import (
     NotBranchError,
     NoSuchFile,
+    NoSuchId,
     NoSuchRevision,
     NoRepositoryPresent,
     NoWorkingTree,
@@ -149,8 +151,9 @@ def generate_ignore_list(ignore_map):
 class SvnWorkingTree(SubversionTree,WorkingTree):
     """WorkingTree implementation that uses a svn working copy for storage."""
 
-    def __init__(self, bzrdir, local_path):
+    def __init__(self, bzrdir, local_path, entry):
         assert isinstance(local_path, unicode)
+        self.entry = entry
         self.basedir = local_path
         version = check_wc(self.basedir.encode("utf-8"))
         self._format = SvnWorkingTreeFormat(version)
@@ -365,7 +368,6 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         :param path: Path of the file
         :return: Tuple with file id and revision id.
         """
-        assert isinstance(revnum, int) and revnum >= 0
         assert isinstance(path, unicode)
         path = osutils.normpath(path)
         if path == u".":
@@ -609,33 +611,39 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 ids = [ids]
         if ids is not None:
             ids = iter(ids)
+        if _copyfrom is not None:
+            _copyfrom = iter(_copyfrom)
+        if kinds is not None:
+            kinds = iter(kinds)
+        else:
+            kinds = (self._kind(file) for file in files)
         assert isinstance(files, list)
         for f in files:
+            if _copyfrom is not None:
+                copyfrom = _copyfrom.next()
+            else:
+                copyfrom = (None, -1)
+            kind = kinds.next()
             wc = self._get_wc(os.path.dirname(osutils.safe_unicode(f)), write_lock=True)
             try:
                 try:
-                    if _copyfrom is not None:
-                        copyfrom = _copyfrom.next()
-                    else:
-                        copyfrom = (None, -1)
                     utf8_abspath = osutils.safe_utf8(self.abspath(f))
+                    if kind == "directory":
+                        ensure_adm(utf8_abspath, self.entry.uuid, 
+                           urlutils.join(self.entry.url, self.relpath(f)),
+                           self.entry.repos, self.base_revnum)
                     wc.add(utf8_abspath, copyfrom[0], copyfrom[1])
-                    if ids is not None:
-                        self._change_fileid_mapping(ids.next(), f, wc)
                 except subvertpy.SubversionException, (_, num):
-                    if num == subvertpy.ERR_ENTRY_EXISTS:
+                    if num in (subvertpy.ERR_ENTRY_EXISTS,
+                            ERR_WC_SCHEDULE_CONFLICT):
                         continue
                     elif num == subvertpy.ERR_WC_PATH_NOT_FOUND:
                         raise NoSuchFile(path=f)
                     raise
-                else:
-                    if ie.executable:
-                        value = properties.PROP_EXECUTABLE_VALUE
-                    else:
-                        value = None
-                    wc.prop_set(properties.PROP_EXECUTABLE, value, utf8_abspath)
             finally:
                 wc.close()
+            if ids is not None:
+                self._change_fileid_mapping(ids.next(), f)
         self.read_working_inventory()
 
     def basis_tree(self):
@@ -644,7 +652,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             try:
                 self.base_tree = SvnBasisTree(self)
             except BasisTreeIncomplete:
-                self.base_tree = self.branch.repository.revision_tree(self.base_revid)
+                self.base_tree = self.branch.basis_tree()
 
         return self.base_tree
 
@@ -755,21 +763,40 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
     def _get_svk_merges(self, base_branch_props):
         return base_branch_props.get(svk.SVN_PROP_SVK_MERGE, "")
 
-    def _apply_inventory_delta_change(self, old_path, new_path, file_id, ie):
+    def _apply_inventory_delta_change(self, base_tree, old_path, new_path, 
+                                      file_id, ie):
+        already_there = (old_path == new_path and base_tree._inventory[file_id].kind == ie.kind)
         if old_path is not None:
             old_abspath = osutils.safe_utf8(self.abspath(old_path))
-            self.remove([old_path], keep_files=True)
-            copyfrom = (urlutils.join(self.entry.url, self.relpath(old_path)), 
+            if not already_there:
+                self.remove([old_path], keep_files=True)
+            copyfrom = (urlutils.join(self.entry.url, old_path), 
                         self.base_revnum)
         else:
-            copyfrom = (None, -1)
+            try:
+                old_path = base_tree.id2path(file_id)
+            except NoSuchId:
+                copyfrom = (None, -1)
+            else:
+                copyfrom = (urlutils.join(self.entry.url, old_path),
+                            self.base_revnum)
         if new_path is not None:
-            self.add([new_path], [file_id], _copyfrom=[copyfrom])
+            if not already_there:
+                # if base_tree.id2path(file_id) == new_path and base_tree._inventory[file_id].kind == ie.kind
+                # FIXME: Revert
+                # else:
+                self.add([new_path], [file_id], _copyfrom=[copyfrom])
 
     def apply_inventory_delta(self, delta):
         """Apply an inventory delta."""
+        def cmp_delta_changes(a, b):
+            # Only sort on new_path for now
+            return cmp(a[1], b[1])
+        delta.sort(cmp_delta_changes)
+        base_tree = self.basis_tree()
         for (old_path, new_path, file_id, ie) in delta:
-            self._apply_inventory_delta_change(old_path, new_path, file_id, ie)
+            self._apply_inventory_delta_change(base_tree, old_path, new_path,
+                file_id, ie)
 
     def _last_revision(self):
         if self.base_revid is None:
@@ -1018,7 +1045,7 @@ class SvnCheckout(BzrDir):
 
     def open_workingtree(self, _unsupported=False, recommend_upgrade=False):
         try:
-            return SvnWorkingTree(self, self.local_path)
+            return SvnWorkingTree(self, self.local_path, self.entry)
         except bzrsvn_errors.NotSvnBranchPath, e:
             raise NoWorkingTree(self.local_path)
 

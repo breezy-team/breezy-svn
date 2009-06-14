@@ -68,7 +68,7 @@ class SvnTexts(VersionedFiles):
         warn_stacking_experimental()
         # TODO: there may be valid text revisions that only exist as 
         # ghosts in the repository itself. This function will 
-        # not be able to report them.
+        # not be able to find them.
         # TODO: Sort keys by file id and issue just one get_file_revs() call 
         # per file-id ?
         for k in list(keys):
