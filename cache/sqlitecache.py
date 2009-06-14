@@ -43,19 +43,19 @@ def check_pysqlite_version(sqlite3):
             (sqlite3.sqlite_version_info[0] == 3 and 
              sqlite3.sqlite_version_info[1] < 3)):
         trace.warning('Needs at least sqlite 3.3.x')
-        raise bzrlib.errors.BzrError("incompatible sqlite library")
+        raise errors.BzrError("incompatible sqlite library")
 
 try:
     try:
         import sqlite3
         check_pysqlite_version(sqlite3)
-    except (ImportError, bzrlib.errors.BzrError), e: 
+    except (ImportError, errors.BzrError), e: 
         from pysqlite2 import dbapi2 as sqlite3
         check_pysqlite_version(sqlite3)
 except:
     trace.warning('Needs at least Python2.5 or Python2.4 with the pysqlite2 '
             'module')
-    raise bzrlib.errors.BzrError("missing sqlite library")
+    raise errors.BzrError("missing sqlite library")
 
 
 connect_cachefile = sqlite3.connect
