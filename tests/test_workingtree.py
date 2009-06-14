@@ -779,6 +779,23 @@ class TestWorkingTree(SubversionTestCase):
         props = wt.get_file_properties(wt.path2id('bla'), 'bla')
         self.assertEquals("bloe", props["bzrbla"])
 
+    def test_invdelta_remove(self):
+        repos_url = self.make_client('a', 'dc')
+        self.build_tree({"dc/bla": "data"})
+        self.client_add("dc/bla")
+        wt = WorkingTree.open('dc')
+        wt.apply_inventory_delta([("bla", None, wt.path2id("bla"), None)])
+
+    def test_invdelta_executibility(self):
+        repos_url = self.make_client('a', 'dc')
+        self.build_tree({"dc/bla": "data"})
+        self.client_add("dc/bla")
+        wt = WorkingTree.open('dc')
+        new_ie = wt.inventory[wt.path2id("bla")].copy()
+        new_ie.executable = True
+        wt.apply_inventory_delta([("bla", "bla", wt.path2id("bla"), new_ie)])
+        self.assertEquals("*", self.client_get_prop("dc/bla", "svn:executable"))
+
 
 class IgnoreListTests(TestCase):
 

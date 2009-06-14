@@ -245,9 +245,6 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         """Check whether path is a control file (used by bzr or svn)."""
         return is_adm_dir(path)
 
-    def apply_inventory_delta(self, changes):
-        raise NotImplementedError(self.apply_inventory_delta)
-
     def _update(self, revnum=None):
         if revnum is None:
             # FIXME: should be able to use -1 here
@@ -673,6 +670,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         return osutils.fingerprint_file(open(self.abspath(path).encode(osutils._fs_enc)))['sha1']
 
     def _change_fileid_mapping(self, id, path, wc=None):
+        """Change the file id mapping for a particular path."""
         if wc is None:
             subwc = self._get_wc(write_lock=True)
         else:
@@ -731,8 +729,35 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
     def _get_svk_merges(self, base_branch_props):
         return base_branch_props.get(svk.SVN_PROP_SVK_MERGE, "")
 
+    def _apply_inventory_delta_change(self, adm, old_path, new_path, file_id, ie):
+        if old_path is not None:
+            old_abspath = osutils.safe_utf8(self.abspath(old_path))
+            old_entry = adm.entry(old_abspath)
+            adm.delete(old_abspath, keep_local=True)
+            self._change_fileid_mapping(None, old_path, adm)
+            copyfrom = (old_entry.url, old_entry.revision)
+        else:
+            copyfrom = (None, -1)
+        if new_path is not None:
+            new_abspath = osutils.safe_utf8(self.abspath(new_path))
+            adm.add(new_abspath, copyfrom_url=copyfrom[0], 
+                    copyfrom_rev=copyfrom[1])
+            self._change_fileid_mapping(file_id, new_path, adm)
+            if ie.executable:
+                value = properties.PROP_EXECUTABLE_VALUE
+            else:
+                value = None
+            adm.prop_set(properties.PROP_EXECUTABLE, value, new_abspath)
+
     def apply_inventory_delta(self, delta):
-        assert delta == []
+        """Apply an inventory delta."""
+        wc = self._get_wc(write_lock=True)
+        try:
+            for (old_path, new_path, file_id, ie) in delta:
+                self._apply_inventory_delta_change(wc, old_path, new_path, 
+                                                   file_id, ie)
+        finally:
+            wc.close()
 
     def _last_revision(self):
         if self.base_revid is None:
@@ -755,7 +780,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         if kind == 'file':
             size = stat_result.st_size
             # try for a stat cache lookup
-            executable = self._is_executable_from_path_and_stat(path, stat_result)
+            executable = self._is_executable_from_path_and_stat(path, 
+                stat_result)
             return (kind, size, executable, self._sha_from_stat(
                 path, stat_result))
         elif kind == 'directory':

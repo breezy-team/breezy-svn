@@ -52,6 +52,8 @@ bzr-svn 0.6.2                    UNRELEASED
    * "bzr svn-import --incremental" now handles resurrected branches correctly.
      (#383980)
 
+   * Initial support for WorkingTree.apply_inventory_delta(). (#332107)
+
 bzr-svn 0.6.1                    2009-05-22
 
   BUG FIXES
