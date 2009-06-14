@@ -49,6 +49,9 @@ bzr-svn 0.6.2                    UNRELEASED
    * Support pulling older revisions that are direct ancestors of the current
      tip. (#386198)
 
+   * "bzr svn-import --incremental" now handles resurrected branches correctly.
+     (#383980)
+
 bzr-svn 0.6.1                    2009-05-22
 
   BUG FIXES

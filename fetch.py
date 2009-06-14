@@ -935,8 +935,8 @@ class FetchRevisionFinder(object):
         present_revids = self.target.has_revisions(map.values())
         return [k for k in revmetas if k in map and map[k] not in present_revids]
 
-    def find_iter_revisions(self, iter, master_mapping, prefix=None, heads=None,
-        pb=None):
+    def find_iter_revisions(self, iter, master_mapping, needs_manual_check,
+                            heads=None, pb=None):
         """Find revisions to fetch based on an iterator over available revmetas.
         
         :param iter: Iterator over RevisionMetadata objects
@@ -961,13 +961,10 @@ class FetchRevisionFinder(object):
                     not m.is_branch_or_tag(revmeta.branch_path)):
                     continue
                 lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(m)
-                if prefix is not None:
-                    if (lhs_parent_revmeta is not None and 
-                        not changes.path_is_child(prefix, lhs_parent_revmeta.branch_path)):
-                        # Parent branch path is outside of prefix; we need to 
-                        # check manually
-                        self.needed.extend(self.find_mainline(
-                            lhs_parent_revmeta.get_foreign_revid(), lhsm))
+                if (lhs_parent_revmeta is not None and 
+                    needs_manual_check(lhs_parent_revmeta)):
+                    self.needed.extend(self.find_mainline(
+                        lhs_parent_revmeta.get_foreign_revid(), lhsm))
                 if lhsm != master_mapping or heads is not None:
                     needed_mappings[lhs_parent_revmeta].add(lhsm)
                 if not revmeta.is_hidden(m):

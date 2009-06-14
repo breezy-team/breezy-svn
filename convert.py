@@ -48,6 +48,9 @@ from bzrlib.transport import (
     get_transport,
     )
 
+from bzrlib.plugins.svn import (
+    changes,
+    )
 from bzrlib.plugins.svn.branch import (
     SvnBranch,
     )
@@ -241,8 +244,8 @@ class RepositoryConverter(object):
                 if not InterFromSvnRepository.is_compatible(source_repos, target_repos):
                     raise IncompatibleRepositories(source_repos, target_repos)
                 inter = InterFromSvnRepository.get(source_repos, target_repos)
-                self._fetch_to_shared_repo(inter, prefix, revmetas, revfinder,
-                                           mapping, heads)
+                self._fetch_to_shared_repo(inter, prefix, from_revnum, revmetas,
+                                           revfinder, mapping, heads)
 
             if not keep:
                 self._remove_branches(deleted, existing_branches.keys())
@@ -269,14 +272,24 @@ class RepositoryConverter(object):
                 revnum=revmeta.revnum, _skip_check=True,
                 mapping=mapping)
 
-    def _fetch_to_shared_repo(self, inter, prefix, revmetas, revfinder,
-                              mapping, heads):
+    def _fetch_to_shared_repo(self, inter, prefix, from_revnum, revmetas,
+                              revfinder, mapping, heads):
+        def needs_manual_check(revmeta):
+            if (prefix is not None and 
+                not changes.path_is_child(prefix, revmeta.branch_path)):
+                # Parent branch path is outside of prefix; we need to 
+                # check manually
+                return True
+            if revmeta.revnum < from_revnum:
+                return True
+            return False
+
         # TODO: Skip revisions in removed branches unless all=True
         pb = ui.ui_factory.nested_progress_bar()
         try:
             pb.update("checking revisions to fetch", 0,
                       len(revmetas))
-            revfinder.find_iter_revisions(revmetas, mapping, prefix=prefix,
+            revfinder.find_iter_revisions(revmetas, mapping, needs_manual_check,
                                           pb=pb, heads=heads)
         finally:
             pb.finished()
