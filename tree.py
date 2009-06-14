@@ -183,6 +183,32 @@ class SvnRevisionTree(SubversionTree,RevisionTree):
     def get_file_text(self, file_id, path=None):
         return self.file_data[file_id]
 
+    def iter_files_bytes(self, desired_files):
+        """Iterate through file contents.
+
+        Files will not necessarily be returned in the order they occur in
+        desired_files.  No specific order is guaranteed.
+
+        Yields pairs of identifier, bytes_iterator.  identifier is an opaque
+        value supplied by the caller as part of desired_files.  It should
+        uniquely identify the file version in the caller's context.  (Examples:
+        an index number or a TreeTransform trans_id.)
+
+        bytes_iterator is an iterable of bytestrings for the file.  The
+        kind of iterable and length of the bytestrings are unspecified, but for
+        this implementation, it is a tuple containing a single bytestring with
+        the complete text of the file.
+
+        :param desired_files: a list of (file_id, identifier) pairs
+        """
+        for file_id, identifier in desired_files:
+            # We wrap the string in a tuple so that we can return an iterable
+            # of bytestrings.  (Technically, a bytestring is also an iterable
+            # of bytestrings, but iterating through each character is not
+            # performant.)
+            cur_file = (self.get_file_text(file_id),)
+            yield identifier, cur_file
+
     def get_file_properties(self, file_id, path=None):
         return self.file_properties[file_id]
 

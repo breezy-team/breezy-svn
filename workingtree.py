@@ -284,7 +284,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         wc = self._get_wc(write_lock=True)
         try:
             for file in files:
-                wc.delete(self.abspath(file).encode("utf-8"))
+                wc.delete(osutils.safe_utf8(self.abspath(file)), 
+                          keep_local=keep_files)
         finally:
             wc.close()
 
@@ -617,8 +618,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                         copyfrom = _copyfrom.next()
                     else:
                         copyfrom = (None, -1)
-                    wc.add(osutils.safe_utf8(self.abspath(f)), copyfrom[0],
-                           copyfrom[1])
+                    utf8_abspath = osutils.safe_utf8(self.abspath(f))
+                    wc.add(utf8_abspath, copyfrom[0], copyfrom[1])
                     if ids is not None:
                         self._change_fileid_mapping(ids.next(), f, wc)
                 except subvertpy.SubversionException, (_, num):
@@ -627,6 +628,12 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                     elif num == subvertpy.ERR_WC_PATH_NOT_FOUND:
                         raise NoSuchFile(path=f)
                     raise
+                else:
+                    if ie.executable:
+                        value = properties.PROP_EXECUTABLE_VALUE
+                    else:
+                        value = None
+                    wc.prop_set(properties.PROP_EXECUTABLE, value, utf8_abspath)
             finally:
                 wc.close()
         self.read_working_inventory()
@@ -748,28 +755,21 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
     def _get_svk_merges(self, base_branch_props):
         return base_branch_props.get(svk.SVN_PROP_SVK_MERGE, "")
 
-    def _apply_inventory_delta_change(self, adm, old_path, new_path, file_id, ie):
+    def _apply_inventory_delta_change(self, old_path, new_path, file_id, ie):
         if old_path is not None:
             old_abspath = osutils.safe_utf8(self.abspath(old_path))
-            old_entry = adm.entry(old_abspath)
-            adm.delete(old_abspath, keep_local=True)
-            self._change_fileid_mapping(None, old_path, adm)
-            copyfrom = (old_entry.url, old_entry.revision)
+            self.remove([old_path], keep_files=True)
+            copyfrom = (urlutils.join(self.entry.url, self.relpath(old_path)), 
+                        self.base_revnum)
         else:
             copyfrom = (None, -1)
         if new_path is not None:
             self.add([new_path], [file_id], _copyfrom=[copyfrom])
-            if ie.executable:
-                value = properties.PROP_EXECUTABLE_VALUE
-            else:
-                value = None
-            adm.prop_set(properties.PROP_EXECUTABLE, value, new_abspath)
 
     def apply_inventory_delta(self, delta):
         """Apply an inventory delta."""
         for (old_path, new_path, file_id, ie) in delta:
-            self._apply_inventory_delta_change(wc, old_path, new_path, 
-                                                   file_id, ie)
+            self._apply_inventory_delta_change(old_path, new_path, file_id, ie)
 
     def _last_revision(self):
         if self.base_revid is None:
