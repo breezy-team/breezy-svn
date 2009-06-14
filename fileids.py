@@ -240,7 +240,8 @@ class DictFileIdMap(FileIdMap):
                     raise AssertionError("Unable to find old fileid for %s in %r" % (x, foreign_revid))
                 self.data[x] = (prev_entry[0], text_revisions.get(x) or default_revid, prev_entry[2])
 
-        assert "" in self.data
+        if not "" in self.data:
+            raise AssertionError("root no longer exists in %r" % self.data)
 
     def has_fileid(self, fileid):
         for fid, _ in self.data.itervalues():

@@ -962,10 +962,12 @@ class FetchRevisionFinder(object):
                     continue
                 lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(m)
                 if prefix is not None:
-                    if lhs_parent_revmeta is not None and not changes.path_is_child(prefix, lhs_parent_revmeta.branch_path):
+                    if (lhs_parent_revmeta is not None and 
+                        not changes.path_is_child(prefix, lhs_parent_revmeta.branch_path)):
                         # Parent branch path is outside of prefix; we need to 
                         # check manually
-                        self.needed.extend(self.find_mainline(lhs_parent_revmeta.get_foreign_revid(), lhsm))
+                        self.needed.extend(self.find_mainline(
+                            lhs_parent_revmeta.get_foreign_revid(), lhsm))
                 if lhsm != master_mapping or heads is not None:
                     needed_mappings[lhs_parent_revmeta].add(lhsm)
                 if not revmeta.is_hidden(m):
@@ -979,10 +981,14 @@ class FetchRevisionFinder(object):
         :return: List with revmeta, mapping tuples to fetch
         """
         from_revnum = self.source.get_latest_revnum()
-        return self.find_iter_revisions(self.source._revmeta_provider.iter_all_revisions(self.source.get_layout(), check_unusual_path=mapping.is_branch_or_tag, from_revnum=from_revnum, pb=pb), mapping)
+        return self.find_iter_revisions(
+            self.source._revmeta_provider.iter_all_revisions(
+                self.source.get_layout(), 
+                check_unusual_path=mapping.is_branch_or_tag,
+                from_revnum=from_revnum, pb=pb), mapping)
 
-    def find_mainline(self, foreign_revid, mapping, 
-                      find_ghosts=False, pb=None):
+    def find_mainline(self, foreign_revid, mapping, find_ghosts=False,
+                      pb=None):
         if (foreign_revid, mapping) in self.checked:
             return []
         revmetas = deque()
@@ -998,7 +1004,8 @@ class FetchRevisionFinder(object):
                 # This revision (and its ancestry) has already been checked
                 break
             needs_checking.append((revmeta, mapping))
-            if not find_ghosts and not self.target_is_empty and len(needs_checking) == self._check_present_interval:
+            if (not find_ghosts and not self.target_is_empty and 
+                len(needs_checking) == self._check_present_interval):
                 missing_revmetas = self.check_revmetas(needs_checking)
                 for r in missing_revmetas:
                     revmetas.appendleft(r)
@@ -1053,8 +1060,8 @@ class InterFromSvnRepository(InterRepository):
             return sum(map(len, lines))
         self._text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE,
                                                   compute_size=lines_to_size)
-        # TODO: it would be nice to get rid of this extra cache, we don't (yet)
-        #       because the cached content objects are supposed to be opaque
+        # TODO: it would be nice to get rid of this extra cache, we don't
+        # (yet) because the cached content objects are supposed to be opaque
         self._content_cache = lru_cache.LRUCache(TEXT_CACHE_SIZE /
                                                  (1*1024*1024))
 
