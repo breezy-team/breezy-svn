@@ -97,6 +97,7 @@ from bzrlib.plugins.svn.transport import (
     svn_config,
     )
 from bzrlib.plugins.svn.tree import (
+    BasisTreeIncomplete,
     SvnBasisTree,
     SubversionTree,
     )
@@ -227,7 +228,12 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
                 subprefix = osutils.pathjoin(prefix, entry.decode("utf-8"))
 
-                subwc = self._get_wc(subprefix, base=wc)
+                try:
+                    subwc = self._get_wc(subprefix, base=wc)
+                except subvertpy.SubversionException, (_, num):
+                    if num == subvertpy.ERR_WC_NOT_DIRECTORY:
+                        continue
+                    raise
                 try:
                     dir_add(subwc, subprefix, urlutils.joinpath(patprefix, entry))
                 finally:
@@ -482,7 +488,12 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 assert entry
                 
                 if entry.kind == subvertpy.NODE_DIR:
-                    subwc = self._get_wc(subrelpath, base=wc)
+                    try:
+                        subwc = self._get_wc(subrelpath, base=wc)
+                    except subvertpy.SubversionException, (_, num):
+                        if num == subvertpy.ERR_WC_NOT_DIRECTORY:
+                            continue
+                        raise
                     try:
                         assert isinstance(subrelpath, unicode)
                         add_dir_to_inv(subrelpath, subwc, id)
@@ -588,7 +599,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 ignored.update(cignored)
         return added, ignored
 
-    def add(self, files, ids=None, kinds=None):
+    def add(self, files, ids=None, kinds=None, _copyfrom=None):
         """Add files to the working tree."""
         # TODO: Use kinds
         if isinstance(files, str):
@@ -602,7 +613,12 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             wc = self._get_wc(os.path.dirname(osutils.safe_unicode(f)), write_lock=True)
             try:
                 try:
-                    wc.add(osutils.safe_utf8(self.abspath(f)))
+                    if _copyfrom is not None:
+                        copyfrom = _copyfrom.next()
+                    else:
+                        copyfrom = (None, -1)
+                    wc.add(osutils.safe_utf8(self.abspath(f)), copyfrom[0],
+                           copyfrom[1])
                     if ids is not None:
                         self._change_fileid_mapping(ids.next(), f, wc)
                 except subvertpy.SubversionException, (_, num):
@@ -618,7 +634,10 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
     def basis_tree(self):
         """Return the basis tree for a working tree."""
         if self.base_tree is None:
-            self.base_tree = SvnBasisTree(self)
+            try:
+                self.base_tree = SvnBasisTree(self)
+            except BasisTreeIncomplete:
+                self.base_tree = self.branch.repository.revision_tree(self.base_revid)
 
         return self.base_tree
 
@@ -739,10 +758,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         else:
             copyfrom = (None, -1)
         if new_path is not None:
-            new_abspath = osutils.safe_utf8(self.abspath(new_path))
-            adm.add(new_abspath, copyfrom_url=copyfrom[0], 
-                    copyfrom_rev=copyfrom[1])
-            self._change_fileid_mapping(file_id, new_path, adm)
+            self.add([new_path], [file_id], _copyfrom=[copyfrom])
             if ie.executable:
                 value = properties.PROP_EXECUTABLE_VALUE
             else:
@@ -751,13 +767,9 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
     def apply_inventory_delta(self, delta):
         """Apply an inventory delta."""
-        wc = self._get_wc(write_lock=True)
-        try:
-            for (old_path, new_path, file_id, ie) in delta:
-                self._apply_inventory_delta_change(wc, old_path, new_path, 
+        for (old_path, new_path, file_id, ie) in delta:
+            self._apply_inventory_delta_change(wc, old_path, new_path, 
                                                    file_id, ie)
-        finally:
-            wc.close()
 
     def _last_revision(self):
         if self.base_revid is None:

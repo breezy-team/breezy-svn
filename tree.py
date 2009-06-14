@@ -17,15 +17,16 @@
 
 from cStringIO import StringIO
 import os
+import subvertpy
 from subvertpy import (
     delta,
     properties,
     wc,
-    NODE_DIR,
     )
 import urllib
 
 from bzrlib import (
+    errors,
     rules,
     osutils,
     urlutils,
@@ -46,6 +47,11 @@ from bzrlib.revisiontree import (
     RevisionTree,
     )
 from bzrlib.trace import mutter
+
+
+class BasisTreeIncomplete(errors.BzrError):
+    _fmt = "The Subversion basis tree can not be retrieved because it is incomplete."""
+    internal_error = True
 
 
 class SubversionTree(object):
@@ -383,8 +389,13 @@ class SvnBasisTree(SubversionTree,RevisionTree):
 
                 assert entry
                 
-                if entry.kind == NODE_DIR:
-                    subwc = self.workingtree._get_wc(subrelpath)
+                if entry.kind == subvertpy.NODE_DIR:
+                    try:
+                        subwc = self.workingtree._get_wc(subrelpath)
+                    except subvertpy.SubversionException, (_, num):
+                        if num == subvertpy.ERR_WC_NOT_DIRECTORY:
+                            raise BasisTreeIncomplete()
+                        raise
                     try:
                         add_dir_to_inv(subrelpath, subwc, id)
                     finally:
