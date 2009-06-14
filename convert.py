@@ -195,7 +195,6 @@ class RepositoryConverter(object):
                     source_repos.uuid)
             else:
                 from_revnum = 0
-            project = None
             if to_revnum is None:
                 to_revnum = source_repos.get_latest_revnum()
             if to_revnum < from_revnum:
@@ -205,7 +204,7 @@ class RepositoryConverter(object):
             deleted = set()
             it = source_repos._revmeta_provider.iter_all_changes(layout, 
                     mapping.is_branch_or_tag, to_revnum, from_revnum, 
-                    project=project, prefix=prefix)
+                    prefix=prefix)
             if create_shared_repo:
                 revfinder = FetchRevisionFinder(source_repos, target_repos, 
                                                 target_repos_is_empty)
@@ -223,7 +222,7 @@ class RepositoryConverter(object):
                         pb.update("finding branches", to_revnum-item.revnum, 
                                   to_revnum-from_revnum)
                         if (not item.branch_path in existing_branches and 
-                            layout.is_branch(item.branch_path, project=project) and 
+                            layout.is_branch(item.branch_path) and 
                             not contains_parent_path(deleted, item.branch_path)):
                             existing_branches[item.branch_path] = SvnBranch(
                                 source_repos, item.branch_path, 
@@ -241,39 +240,54 @@ class RepositoryConverter(object):
 
             if create_shared_repo:
                 inter = InterRepository.get(source_repos, target_repos)
-                if (target_repos.is_shared() and 
-                    getattr(inter, '_supports_revmetas', None) and 
-                    inter._supports_revmetas):
-                    # TODO: Skip revisions in removed branches unless all=True
-                    pb = ui.ui_factory.nested_progress_bar()
-                    try:
-                        pb.update("checking revisions to fetch", 0,
-                                  len(revmetas))
-                        revfinder.find_iter_revisions(revmetas, mapping, 
-                            heads=heads, prefix=prefix, pb=pb)
-                    finally:
-                        pb.finished()
-                    inter.fetch(needed=revfinder.get_missing())
-                else:
-                    inter.fetch()
+                self._fetch_to_shared_repo(inter, prefix, revmetas, revfinder,
+                                           mapping, heads)
 
             if not keep:
-                self.remove_branches(deleted, existing_branches.keys())
+                self._remove_branches(deleted, existing_branches.keys())
 
             existing_branches = existing_branches.values()
             if filter_branch is not None:
                 existing_branches = filter(filter_branch, existing_branches)
-            source_graph = source_repos.get_graph()
-            self.create_branches(existing_branches, prefix, create_shared_repo, 
-                working_trees)
+            self._create_branches(existing_branches, prefix, 
+                                  create_shared_repo, working_trees)
         finally:
             source_repos.unlock()
 
         if target_repos is not None:
             put_latest_svn_import_revision(target_repos, source_repos.uuid, 
                                            to_revnum)
+    
+    def _check_branch_exists(self, revmeta, existing_branches, 
+                             deleted_branches):
+        if (not revmeta.branch_path in existing_branches and 
+            layout.is_branch(revmeta.branch_path) and 
+            not contains_parent_path(deleted_branches, revmeta.branch_path)):
+            existing_branches[revmeta.branch_path] = SvnBranch(
+                source_repos, revmeta.branch_path, 
+                revnum=revmeta.revnum, _skip_check=True,
+                mapping=mapping)
 
-    def create_branches(self, existing_branches, prefix, shared, working_trees):
+    def _fetch_to_shared_repo(self, inter, prefix, revmetas, revfinder,
+                              mapping, heads):
+        if (inter.target.is_shared() and 
+            getattr(inter, '_supports_revmetas', None) and 
+            inter._supports_revmetas):
+            # TODO: Skip revisions in removed branches unless all=True
+            pb = ui.ui_factory.nested_progress_bar()
+            try:
+                pb.update("checking revisions to fetch", 0,
+                          len(revmetas))
+                revfinder.find_iter_revisions(revmetas, mapping, prefix=prefix,
+                                              pb=pb, heads=heads)
+            finally:
+                pb.finished()
+            inter.fetch(needed=revfinder.get_missing())
+        else:
+            inter.fetch()
+
+    def _create_branches(self, existing_branches, prefix, shared, 
+                         working_trees):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for i, source_branch in enumerate(existing_branches):
@@ -307,8 +321,7 @@ class RepositoryConverter(object):
         finally:
             pb.finished()
 
-     
-    def remove_branches(self, removed_branches, exceptions):
+    def _remove_branches(self, removed_branches, exceptions):
         """Recursively remove a set of branches.
 
         :param removed_branches: Branches to remove recursively
