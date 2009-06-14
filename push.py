@@ -309,8 +309,7 @@ class InterToSvnRepository(InterRepository):
             rev = self.source.get_revision(x)
             rhs_branch_path = determine_branch_path(rev, layout, project)
             try:
-                self.push_new(rhs_branch_path, 
-                         x, append_revisions_only=False)
+                self.push_new(rhs_branch_path, x, append_revisions_only=False)
             except MissingPrefix, e:
                 if not create_prefix:
                     raise
@@ -369,12 +368,7 @@ class InterToSvnRepository(InterRepository):
             append_revisions_only=self.get_append_revisions_only(target_config))
 
     def get_append_revisions_only(self, target_config, overwrite=False):
-        ret = target_config.get_append_revisions_only()
-        if ret is None:
-            if overwrite:
-                return False
-            return True
-        return ret
+        return target_config.get_append_revisions_only(not overwrite)
 
     def get_graph(self):
         if self._graph is None:

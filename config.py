@@ -369,13 +369,13 @@ class BranchConfig(Config):
                 return value
         return None
 
-    def get_append_revisions_only(self):
+    def get_append_revisions_only(self, default=None):
         """Check whether it is possible to remove revisions from the mainline.
         """
         try:
             return self.get_bool("append_revisions_only")
         except KeyError:
-            return None
+            return default
 
     def _get_user_id(self):
         """Get the user id from the 'email' key in the current section."""
