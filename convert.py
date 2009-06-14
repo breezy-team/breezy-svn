@@ -35,14 +35,12 @@ from bzrlib import (
 from bzrlib.errors import (
     BzrError,
     FileExists,
+    IncompatibleRepositories,
     NotBranchError,
     NoSuchFile,
     NoSuchRevision,
     NoRepositoryPresent,
     ) 
-from bzrlib.repository import (
-    InterRepository,
-    )
 from bzrlib.revision import (
     ensure_null,
     )
@@ -55,6 +53,7 @@ from bzrlib.plugins.svn.branch import (
     )
 from bzrlib.plugins.svn.fetch import (
     FetchRevisionFinder,
+    InterFromSvnRepository,
     )
 from bzrlib.plugins.svn.format import (
     get_rich_root_format,
@@ -239,7 +238,9 @@ class RepositoryConverter(object):
                 pb.finished()
 
             if create_shared_repo:
-                inter = InterRepository.get(source_repos, target_repos)
+                if not InterFromSvnRepository.is_compatible(source_repos, target_repos):
+                    raise IncompatibleRepositories(source_repos, target_repos)
+                inter = InterFromSvnRepository.get(source_repos, target_repos)
                 self._fetch_to_shared_repo(inter, prefix, revmetas, revfinder,
                                            mapping, heads)
 
@@ -270,21 +271,16 @@ class RepositoryConverter(object):
 
     def _fetch_to_shared_repo(self, inter, prefix, revmetas, revfinder,
                               mapping, heads):
-        if (inter.target.is_shared() and 
-            getattr(inter, '_supports_revmetas', None) and 
-            inter._supports_revmetas):
-            # TODO: Skip revisions in removed branches unless all=True
-            pb = ui.ui_factory.nested_progress_bar()
-            try:
-                pb.update("checking revisions to fetch", 0,
-                          len(revmetas))
-                revfinder.find_iter_revisions(revmetas, mapping, prefix=prefix,
-                                              pb=pb, heads=heads)
-            finally:
-                pb.finished()
-            inter.fetch(needed=revfinder.get_missing())
-        else:
-            inter.fetch()
+        # TODO: Skip revisions in removed branches unless all=True
+        pb = ui.ui_factory.nested_progress_bar()
+        try:
+            pb.update("checking revisions to fetch", 0,
+                      len(revmetas))
+            revfinder.find_iter_revisions(revmetas, mapping, prefix=prefix,
+                                          pb=pb, heads=heads)
+        finally:
+            pb.finished()
+        inter.fetch(needed=revfinder.get_missing())
 
     def _create_branches(self, existing_branches, prefix, shared, 
                          working_trees):
