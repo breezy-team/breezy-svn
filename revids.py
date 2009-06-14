@@ -102,11 +102,11 @@ class RevidMap(object):
 
     def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None, pb=None):
         assert from_revnum >= to_revnum
-        for revmeta in self.find_branch_tips(layout, from_revnum, to_revnum, project):
-        # TODO: Some sort of progress indication
+        for revmeta in self.find_branch_tips(layout, from_revnum, to_revnum,
+                                             project):
             if pb is not None:
                 pb.update("finding fileprop revids", 
-                    revmeta.revnum-from_revnum, to_revnum-from_revnum)
+                    from_revnum-revmeta.revnum, from_revnum-to_revnum)
             # Look at their bzr:revision-id-vX
             revids = set()
             try:
