@@ -764,13 +764,16 @@ class SvnCommitBuilder(RootCommitBuilder):
                 if len(bp_parts) == len(existing_bp_parts):
                     if self.base_path is None or self.base_path.strip("/") != "/".join(bp_parts).strip("/"):
                         replace_existing = True
+                        if self._append_revisions_only:
+                            raise AppendRevisionsOnlyViolation(
+                                urlutils.join(self.repository.base, self.branch_path))
                     elif self.base_revnum < self.repository._log.find_latest_change(self.branch_path, repository_latest_revnum):
                         replace_existing = True
+                        if self._append_revisions_only:
+                            raise AppendRevisionsOnlyViolation(
+                                urlutils.join(self.repository.base, self.branch_path))
                     elif self.old_inv.root.file_id != self.new_root_id:
                         replace_existing = True
-
-                if replace_existing and self._append_revisions_only:
-                    raise AppendRevisionsOnlyViolation(urlutils.join(self.repository.base, self.branch_path))
 
                 if self.new_root_id in self.old_inv:
                     root_from = self.old_inv.id2path(self.new_root_id)
@@ -778,8 +781,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                     root_from = None
 
                 branch_editors = self.open_branch_editors(root, bp_parts,
-                    existing_bp_parts, self.base_url, self.base_revnum, root_from,
-                    replace_existing)
+                    existing_bp_parts, self.base_url, self.base_revnum, 
+                    root_from, replace_existing)
 
                 changed = dir_editor_send_changes(
                         (self.old_inv, self.base_url, self.base_revnum), 

@@ -605,33 +605,23 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
     def add(self, files, ids=None, kinds=None, _copyfrom=None):
         """Add files to the working tree."""
         # TODO: Use kinds
-        if isinstance(files, str):
+        if isinstance(files, basestring):
             files = [files]
             if isinstance(ids, str):
                 ids = [ids]
-        if ids is not None:
-            ids = iter(ids)
-        if _copyfrom is not None:
-            _copyfrom = iter(_copyfrom)
-        if kinds is not None:
-            kinds = iter(kinds)
-        else:
-            kinds = (self._kind(file) for file in files)
+        if ids is None:
+            ids = [None] * len(files)
+        if _copyfrom is None:
+            _copyfrom = [(None, -1)] * len(files)
+        if kinds is None:
+            kinds = [self._kind(file) for file in files]
         assert isinstance(files, list)
-        for f in files:
-            if _copyfrom is not None:
-                copyfrom = _copyfrom.next()
-            else:
-                copyfrom = (None, -1)
-            kind = kinds.next()
-            wc = self._get_wc(os.path.dirname(osutils.safe_unicode(f)), write_lock=True)
+        for f, kind, file_id, copyfrom in zip(files, kinds, ids, _copyfrom):
+            wc = self._get_wc(os.path.dirname(osutils.safe_unicode(f)), 
+                              write_lock=True)
             try:
                 try:
                     utf8_abspath = osutils.safe_utf8(self.abspath(f))
-                    if kind == "directory":
-                        ensure_adm(utf8_abspath, self.entry.uuid, 
-                           urlutils.join(self.entry.url, self.relpath(f)),
-                           self.entry.repos, self.base_revnum)
                     wc.add(utf8_abspath, copyfrom[0], copyfrom[1])
                 except subvertpy.SubversionException, (_, num):
                     if num in (subvertpy.ERR_ENTRY_EXISTS,
@@ -642,8 +632,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                     raise
             finally:
                 wc.close()
-            if ids is not None:
-                self._change_fileid_mapping(ids.next(), f)
+            if file_id is not None:
+                self._change_fileid_mapping(file_id, f)
         self.read_working_inventory()
 
     def basis_tree(self):
