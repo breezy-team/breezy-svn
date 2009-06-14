@@ -151,10 +151,11 @@ class RepositoryConverter(object):
         :param source_repos: Subversion repository
         :param output_url: URL to write Bazaar repository to.
         :param layout: Repository layout (object) to use
-        :param create_shared_repo: Whether to create a shared Bazaar repository
+        :param create_shared_repo: Whether to create a shared Bazaar 
+            repository
         :param working_trees: Whether to create working trees
-        :param all: Whether old revisions, even those not part of any existing 
-            branches, should be imported
+        :param all: Whether old revisions, even those not part of any 
+            existing branches, should be imported.
         :param format: Format to use
         """
         assert not all or create_shared_repo
@@ -190,8 +191,8 @@ class RepositoryConverter(object):
         source_repos.lock_read()
         try:
             if incremental and target_repos is not None:
-                from_revnum = get_latest_svn_import_revision(target_repos, 
-                                                             source_repos.uuid)
+                from_revnum = get_latest_svn_import_revision(target_repos,
+                    source_repos.uuid)
             else:
                 from_revnum = 0
             project = None
@@ -225,8 +226,9 @@ class RepositoryConverter(object):
                             layout.is_branch(item.branch_path, project=project) and 
                             not contains_parent_path(deleted, item.branch_path)):
                             existing_branches[item.branch_path] = SvnBranch(
-                                source_repos, item.branch_path, revnum=item.revnum,
-                                _skip_check=True, mapping=mapping)
+                                source_repos, item.branch_path, 
+                                revnum=item.revnum, _skip_check=True,
+                                mapping=mapping)
                             if heads is not None:
                                 heads.add(item)
                         if revmetas is not None:
@@ -245,7 +247,8 @@ class RepositoryConverter(object):
                     # TODO: Skip revisions in removed branches unless all=True
                     pb = ui.ui_factory.nested_progress_bar()
                     try:
-                        pb.update("checking revisions to fetch", 0, len(revmetas))
+                        pb.update("checking revisions to fetch", 0,
+                                  len(revmetas))
                         revfinder.find_iter_revisions(revmetas, mapping, 
                             heads=heads, prefix=prefix, pb=pb)
                     finally:
@@ -261,45 +264,56 @@ class RepositoryConverter(object):
             if filter_branch is not None:
                 existing_branches = filter(filter_branch, existing_branches)
             source_graph = source_repos.get_graph()
-            pb = ui.ui_factory.nested_progress_bar()
-            try:
-                for i, source_branch in enumerate(existing_branches):
-                    try:
-                        pb.update("%s:%d" % (source_branch.get_branch_path(), 
-                            source_branch.get_revnum()), i, len(existing_branches))
-                    except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                        continue
-                    target_dir = self.get_dir(source_branch.get_branch_path(), prefix)
-                    if not create_shared_repo:
-                        try:
-                            target_dir.open_repository()
-                        except NoRepositoryPresent:
-                            target_dir.create_repository()
-                    try:
-                        target_branch = target_dir.open_branch()
-                    except NotBranchError:
-                        target_branch = target_dir.create_branch()
-                        target_branch.set_parent(source_branch.base)
-                    if source_branch.last_revision() != target_branch.last_revision():
-                        try:
-                            target_branch.pull(source_branch, overwrite=True)
-                        except NoSuchRevision:
-                            if source_branch.check_path() == NODE_FILE:
-                                self.to_transport.delete_tree(source_branch.get_branch_path())
-                                continue
-                            raise
-                    if working_trees and not target_dir.has_workingtree():
-                        target_dir.create_workingtree()
-            finally:
-                pb.finished()
+            self.create_branches(existing_branches, prefix, create_shared_repo, 
+                working_trees)
         finally:
             source_repos.unlock()
 
         if target_repos is not None:
             put_latest_svn_import_revision(target_repos, source_repos.uuid, 
                                            to_revnum)
+
+    def create_branches(self, existing_branches, prefix, shared, working_trees):
+        pb = ui.ui_factory.nested_progress_bar()
+        try:
+            for i, source_branch in enumerate(existing_branches):
+                try:
+                    pb.update("%s:%d" % (source_branch.get_branch_path(), 
+                        source_branch.get_revnum()), i, 
+                        len(existing_branches))
+                except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                    continue
+                target_dir = self.get_dir(source_branch.get_branch_path(), prefix)
+                if not shared:
+                    try:
+                        target_dir.open_repository()
+                    except NoRepositoryPresent:
+                        target_dir.create_repository()
+                try:
+                    target_branch = target_dir.open_branch()
+                except NotBranchError:
+                    target_branch = target_dir.create_branch()
+                    target_branch.set_parent(source_branch.base)
+                if source_branch.last_revision() != target_branch.last_revision():
+                    try:
+                        target_branch.pull(source_branch, overwrite=True)
+                    except NoSuchRevision:
+                        if source_branch.check_path() == NODE_FILE:
+                            self.to_transport.delete_tree(source_branch.get_branch_path())
+                            continue
+                        raise
+                if working_trees and not target_dir.has_workingtree():
+                    target_dir.create_workingtree()
+        finally:
+            pb.finished()
+
      
     def remove_branches(self, removed_branches, exceptions):
+        """Recursively remove a set of branches.
+
+        :param removed_branches: Branches to remove recursively
+        :param exceptions: Branches to *not* remove
+        """
         # Remove removed branches
         for bp in removed_branches:
             skip = False
@@ -315,6 +329,7 @@ class RepositoryConverter(object):
             osutils.rmtree(fullpath)
 
     def get_dir(self, path, prefix=None):
+        """Open BzrDir for path, optionally creating it."""
         if prefix is not None:
             assert path.startswith(prefix)
             path = path[len(prefix):].strip("/")
