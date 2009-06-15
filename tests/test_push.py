@@ -509,26 +509,15 @@ class TestPush(SubversionTestCase):
         self.build_tree({'mybranch/foo': 'bladata'})
         wt = self.bzrdir.open_workingtree()
         revid = wt.commit(message="Commit from Bzr")
+
         b = Branch.open("%s/trunk" % self.repos_url)
-        wt.lock_read()
-        try:
-            interrepo = InterToSvnRepository(wt.branch.repository, b.repository)
-            interrepo.push(b.get_branch_path(), b.get_config(), 
-                wt.branch.repository.get_revision(wt.branch.revision_history()[-2]))
-        finally:
-            wt.unlock()
+        wt.branch.push(b, stop_revision=wt.branch.revision_history()[-2])
         mutter('log %r' % self.client_log("%s/trunk" % self.repos_url, 0, 4)[4][0])
         if not b.mapping.can_use_revprops and b.mapping.can_use_fileprops:
             self.assertEquals('M',
                 self.client_log("%s/trunk" % self.repos_url, 0, 4)[4][0]['/trunk'][0])
         b = Branch.open("%s/trunk" % self.repos_url)
-        wt.lock_read()
-        try:
-            interrepo = InterToSvnRepository(wt.branch.repository, b.repository)
-            interrepo.push(b.get_branch_path(), b.get_config(), 
-                wt.branch.repository.get_revision(wt.branch.last_revision()))
-        finally:
-            wt.unlock()
+        wt.branch.push(b)
         mutter('log %r' % self.client_log("%s/trunk" % self.repos_url, 0, 5)[5][0])
         self.assertEquals("/branches/mybranch", 
             self.client_log("%s/trunk" % self.repos_url, 0, 5)[5][0]['/trunk'][1])
