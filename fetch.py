@@ -66,9 +66,6 @@ from bzrlib.repository import (
 from bzrlib.versionedfile import (
     FulltextContentFactory,
     )
-from bzrlib.xml_serializer import (
-    escape_invalid_chars,
-    )
 
 from bzrlib.plugins.svn import (
     changes,
@@ -673,7 +670,9 @@ class RevisionBuildEditor(DeltaBuildEditor):
         rev = self.revmeta.get_revision(self.mapping)
         # Escaping the commit message is really the task of the serialiser
         if rev.message is not None:
-            rev.message, num_replaced = escape_invalid_chars(rev.message)
+            if getattr(self.target._serializer, "squashes_xml_invalid_characters", True):
+                from bzrlib.xml_serializer import escape_invalid_chars
+                rev.message, num_replaced = escape_invalid_chars(rev.message)
         try:
             basis_id = rev.parent_ids[0]
         except IndexError:
