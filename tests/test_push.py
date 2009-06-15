@@ -83,8 +83,8 @@ class TestDPush(SubversionTestCase):
         TestCase.tearDown(self)
         transport.disabled_capabilities = set()
 
-    def commit_editor(self):
-        return self.get_commit_editor(self.repos_url)
+    def commit_editor(self, message="Test commit"):
+        return self.get_commit_editor(self.repos_url, message)
 
     def dpush(self, source, target):
         return InterOtherSvnBranch(source, target)._update_revisions_lossy()
@@ -204,8 +204,8 @@ class TestPush(SubversionTestCase):
         os.mkdir("dc")
         self.bzrdir = self.svndir.sprout("dc")
 
-    def commit_editor(self):
-        return self.get_commit_editor(self.repos_url)
+    def commit_editor(self, message="Test commit"):
+        return self.get_commit_editor(self.repos_url, message)
 
     def test_empty(self):
         svnbranch = self.svndir.open_branch()
@@ -488,15 +488,15 @@ class TestPush(SubversionTestCase):
                 lambda: Branch.open(oc_url).pull(self.bzrdir.open_branch()))
 
     def test_different_branch_path(self):
-        # A       ,> C
+        # A       ,> C -> D
         # \ -> B /
-        dc = self.commit_editor()
+        dc = self.commit_editor("Test commit 1")
         trunk = dc.add_dir("trunk")
         trunk.add_file('trunk/foo').modify("data")
         dc.add_dir("branches")
         dc.close()
 
-        dc = self.commit_editor()
+        dc = self.commit_editor("Test commit 2")
         branches = dc.open_dir('branches')
         mybranch = branches.add_dir('branches/mybranch', 'trunk')
         mybranch.open_file("branches/mybranch/foo").modify('data2')
