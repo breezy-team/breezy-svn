@@ -98,11 +98,11 @@ def replay_delta(builder, old_trees, new_tree):
 
 
 def push_revision_tree(graph, target_repo, branch_path, config, source_repo, 
-                       base_revid, revision_id, rev, push_metadata=True,
+                       base_revid, revision_id, rev, 
+                       base_foreign_revid, base_mapping,
+                       push_metadata=True,
                        append_revisions_only=True,
-                       override_svn_revprops=None,
-                       base_foreign_revid=None,
-                       base_mapping=None):
+                       override_svn_revprops=None):
     """Push a revision tree into a target repository.
 
     :param graph: Repository graph.
@@ -137,15 +137,13 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
     builder = SvnCommitBuilder(target_repo, branch_path, base_revids,
                                config, rev.timestamp,
                                rev.timezone, rev.committer, rev.properties, 
-                               revision_id, 
+                               revision_id, base_foreign_revid, base_mapping,
                                base_tree.inventory,
                                push_metadata=push_metadata,
                                graph=graph, opt_signature=opt_signature,
                                texts=source_repo.texts,
                                append_revisions_only=append_revisions_only,
-                               override_svn_revprops=override_svn_revprops,
-                               base_foreign_revid=base_foreign_revid,
-                               base_mapping=base_mapping)
+                               override_svn_revprops=override_svn_revprops)
     parent_trees = [base_tree]
     for p in rev.parent_ids[1:]:
         try:
@@ -184,8 +182,11 @@ class InterToSvnRepository(InterRepository):
         return self.target.has_revision(revid)
 
     def _get_base_revision(self, revid, path):
-        if not revid in self._foreign_info:
+        """Find the revision info for a revision id."""
+        if revid == NULL_REVISION:
             return None, None
+        if not revid in self._foreign_info:
+            return self.target.lookup_revision_id(revid)
         if path in self._foreign_info[revid]:
             return self._foreign_info[revid][path]
         else:
@@ -230,10 +231,11 @@ class InterToSvnRepository(InterRepository):
         mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
         revid, foreign_info = push_revision_tree(self.get_graph(), self.target,
             target_path, target_config, self.source, base_revid,
-            rev.revision_id, rev, push_metadata=push_metadata, 
+            rev.revision_id, rev, 
+            base_foreign_revid, base_mapping,
+            push_metadata=push_metadata, 
             append_revisions_only=self.get_append_revisions_only(target_config, overwrite), 
-            override_svn_revprops=target_config.get_override_svn_revprops(),
-            base_foreign_revid=base_foreign_revid, base_mapping=base_mapping)
+            override_svn_revprops=target_config.get_override_svn_revprops())
         assert revid == rev.revision_id or not push_metadata
         self._foreign_info[revid][target_path] = foreign_info
         return (revid, foreign_info)
@@ -280,10 +282,10 @@ class InterToSvnRepository(InterRepository):
             revid, foreign_info = push_revision_tree(self.get_graph(), self.target, target_branch_path, 
                 self._get_branch_config(target_branch_path), 
                 self.source, start_revid_parent, start_revid, 
-                rev, push_metadata=push_metadata,
+                rev, base_foreign_revid, base_mapping,
+                push_metadata=push_metadata,
                 append_revisions_only=append_revisions_only,
-                override_svn_revprops=override_svn_revprops, 
-                base_foreign_revid=base_foreign_revid, base_mapping=base_mapping)
+                override_svn_revprops=override_svn_revprops) 
         self._foreign_info[revid][target_branch_path] = foreign_info
         return revid, foreign_info
 
@@ -351,10 +353,12 @@ class InterToSvnRepository(InterRepository):
 
         if parent_revid == NULL_REVISION:
             target_project = None
+            base_foreign_revid = None
+            base_mapping = None
         else:
-            (_, bp, _), _ = self.target.lookup_revision_id(parent_revid,
+            base_foreign_revid, base_mapping = self.target.lookup_revision_id(parent_revid,
                 foreign_sibling=rev.foreign_revid)
-            (_, target_project, _, _) = layout.parse(bp)
+            (_, target_project, _, _) = layout.parse(base_foreign_revid[1])
         bp = determine_branch_path(rev, layout, target_project)
         target_config = self._get_branch_config(bp)
         if (layout.push_merged_revisions(target_project) and 
@@ -365,6 +369,7 @@ class InterToSvnRepository(InterRepository):
         return push_revision_tree(self.get_graph(), self.target, 
             bp, target_config, 
             self.source, parent_revid, rev.revision_id, rev, 
+            base_foreign_revid, base_mapping,
             append_revisions_only=self.get_append_revisions_only(target_config))
 
     def get_append_revisions_only(self, target_config, overwrite=False):

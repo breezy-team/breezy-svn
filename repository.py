@@ -1179,9 +1179,16 @@ class SvnRepository(ForeignRepository):
         append_revisions_only = branch.get_config().get_append_revisions_only()
         if append_revisions_only is None:
             append_revisions_only = True
+        if parents == [] or parents == [NULL_REVISION]:
+            base_foreign_revid = None
+            base_mapping = None
+        else:
+            base_foreign_revid, base_mapping = \
+                self.lookup_revision_id(parents[0], project=branch.project)
         return SvnCommitBuilder(self, branch.get_branch_path(), parents, 
                                 config, timestamp, timezone, committer, 
                                 revprops, revision_id, 
+                                base_foreign_revid, base_mapping,
                                 append_revisions_only=append_revisions_only)
 
     def find_fileprop_paths(self, layout, from_revnum, to_revnum, 

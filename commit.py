@@ -402,11 +402,11 @@ class SvnCommitBuilder(RootCommitBuilder):
     """Commit Builder implementation wrapped around svn_delta_editor. """
 
     def __init__(self, repository, branch_path, parents, config, timestamp, 
-                 timezone, committer, revprops, revision_id, old_inv=None,
+                 timezone, committer, revprops, revision_id,
+                 base_foreign_revid, base_mapping, old_inv=None, 
                  push_metadata=True, graph=None, opt_signature=None,
                  texts=None, append_revisions_only=True, 
-                 override_svn_revprops=None, base_foreign_revid=None,
-                 base_mapping=None):
+                 override_svn_revprops=None):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -450,6 +450,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         if graph is None:
             graph = self.repository.get_graph()
         self.base_revno = graph.find_distance_to_null(self.base_revid, [])
+        self.base_foreign_revid = base_foreign_revid
         if self.base_revid == NULL_REVISION:
             self._base_revmeta = None
             self._base_branch_props = {}
@@ -461,10 +462,6 @@ class SvnCommitBuilder(RootCommitBuilder):
             else:
                 self.base_mapping = repository.get_mapping()
         else:
-            if base_foreign_revid is None or base_mapping is None:
-                base_foreign_revid, base_mapping = \
-                    repository.lookup_revision_id(self.base_revid)
-            self.base_foreign_revid = base_foreign_revid
             (uuid, self.base_path, self.base_revnum) = base_foreign_revid
             self.base_mapping = base_mapping
             self._base_revmeta = self.repository._revmeta_provider.lookup_revision(self.base_path, self.base_revnum)
