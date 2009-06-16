@@ -780,6 +780,15 @@ class InterOtherSvnBranch(InterBranch):
             raise DivergedBranches(self.target, self.source)
         return todo
 
+    def _get_interrepo(self, graph):
+        interrepo = InterToSvnRepository(self.source.repository, 
+                self.target.repository, graph)
+        last_revmeta, last_mapping = self.target.last_revmeta()
+        interrepo.add_path_info(last_revmeta.get_revision_id(last_mapping), 
+            self.target.get_branch_path(),
+            (last_revmeta.get_foreign_revid(), last_mapping))
+        return interrepo
+
     def _update_revisions(self, stop_revision=None, overwrite=False, graph=None,
         push_merged=False, override_svn_revprops=None):
         old_last_revid = self.target.last_revision()
@@ -803,8 +812,7 @@ class InterOtherSvnBranch(InterBranch):
                 self.target.repository, self.target.get_branch_path(),
                 stop_revision, set_metadata=True, deletefirst=True)
         else:
-            interrepo = InterToSvnRepository(self.source.repository, 
-                self.target.repository, graph)
+            interrepo = self._get_interrepo(graph)
             assert todo != []
             (count, (new_last_revid, new_foreign_info)) = interrepo.push_branch(
                 todo, self.target.layout, self.target.project, 
@@ -837,8 +845,7 @@ class InterOtherSvnBranch(InterBranch):
             target_config = self.target.get_config()
             # Request graph from other repository, since it's most likely faster
             # than Subversion
-            interrepo = InterToSvnRepository(self.source.repository,
-                self.target.repository)
+            interrepo = self._get_interrepo(graph)
             pb = ui.ui_factory.nested_progress_bar()
             try:
                 # FIXME: Call create_branch_with_hidden_commit if the revision 

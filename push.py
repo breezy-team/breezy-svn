@@ -186,11 +186,15 @@ class InterToSvnRepository(InterRepository):
         if revid == NULL_REVISION:
             return None, None
         if not revid in self._foreign_info:
+            # FIXME: Prefer revisions in path
             return self.target.lookup_revision_id(revid)
         if path in self._foreign_info[revid]:
             return self._foreign_info[revid][path]
         else:
             return self._foreign_info[revid].values()[0]
+
+    def add_path_info(self, revid, path, foreign_info):
+        self._foreign_info[revid][path] = foreign_info
 
     @staticmethod
     def _get_repo_format_to_test():
@@ -237,7 +241,7 @@ class InterToSvnRepository(InterRepository):
             append_revisions_only=self.get_append_revisions_only(target_config, overwrite), 
             override_svn_revprops=target_config.get_override_svn_revprops())
         assert revid == rev.revision_id or not push_metadata
-        self._foreign_info[revid][target_path] = foreign_info
+        self.add_path_info(target_path, revid, foreign_info)
         return (revid, foreign_info)
 
     def _get_branch_config(self, branch_path):
@@ -269,7 +273,8 @@ class InterToSvnRepository(InterRepository):
         mapping = self.target.get_mapping()
         if (start_revid != NULL_REVISION and 
             start_revid_parent != NULL_REVISION and 
-            stop_revision == start_revid and mapping.supports_hidden):
+            stop_revision == start_revid and mapping.supports_hidden and
+            not append_revisions_only):
             if (self._target_has_revision(start_revid) or 
                 start_revid == NULL_REVISION):
                 revid = start_revid
@@ -286,7 +291,7 @@ class InterToSvnRepository(InterRepository):
                 push_metadata=push_metadata,
                 append_revisions_only=append_revisions_only,
                 override_svn_revprops=override_svn_revprops) 
-        self._foreign_info[revid][target_branch_path] = foreign_info
+        self.add_path_info(target_branch_path, revid, foreign_info)
         return revid, foreign_info
 
     def push_ancestors(self, layout, project, parent_revids, 
