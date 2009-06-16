@@ -519,8 +519,8 @@ class TestPush(SubversionTestCase):
         b = Branch.open("%s/trunk" % self.repos_url)
         wt.branch.push(b)
         mutter('log %r' % self.client_log("%s/trunk" % self.repos_url, 0, 5)[5][0])
-        self.assertEquals("/branches/mybranch", 
-            self.client_log("%s/trunk" % self.repos_url, 0, 5)[5][0]['/trunk'][1])
+        self.assertEquals({'/trunk/foo': ('M', None, -1)},
+            self.client_log("%s/trunk" % self.repos_url, 0, 5)[5][0])
 
     def test_comics(self):
         dc = self.commit_editor()

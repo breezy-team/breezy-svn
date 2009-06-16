@@ -244,8 +244,7 @@ class SvnBranch(ForeignBranch):
         """Return the revmeta element for the last revision in this branch.
         """
         for revmeta, mapping in self._revision_meta_history():
-            if not revmeta.is_hidden(mapping):
-                return revmeta, mapping
+            return revmeta, mapping
         return None, None
 
     def check(self):
@@ -466,7 +465,7 @@ class SvnBranch(ForeignBranch):
 
     def _gen_revision_history(self):
         """Generate the revision history from last revision."""
-        history = [revmeta.get_revision_id(mapping) for revmeta, mapping in self._revision_meta_history() if not revmeta.is_hidden(mapping)]
+        history = [revmeta.get_revision_id(mapping) for revmeta, mapping in self._revision_meta_history()]
         history.reverse()
         return history
 
@@ -783,10 +782,16 @@ class InterOtherSvnBranch(InterBranch):
     def _get_interrepo(self, graph):
         interrepo = InterToSvnRepository(self.source.repository, 
                 self.target.repository, graph)
-        last_revmeta, last_mapping = self.target.last_revmeta()
-        interrepo.add_path_info(last_revmeta.get_revision_id(last_mapping), 
-            self.target.get_branch_path(),
-            (last_revmeta.get_foreign_revid(), last_mapping))
+        # Add the current branch path as a hint, since it's very likely we'll 
+        # need it as base for new revisions that will be pushed, and 
+        # push should preferably use it over other paths in the 
+        # repository that contain the same data.
+        last_branch_path = self.target.get_branch_path()
+        last_revnum = self.target.repository._log.find_latest_change(
+            last_branch_path, self.target.repository.get_latest_revnum())
+        interrepo.add_path_info(self.target.last_revision(),
+            last_branch_path,
+            ((self.target.repository.uuid, last_branch_path, last_revnum), self.target.mapping))
         return interrepo
 
     def _update_revisions(self, stop_revision=None, overwrite=False, graph=None,
