@@ -1008,7 +1008,7 @@ class SvnRepository(ForeignRepository):
             raise errors.RevpropChangeFailed(SVN_REVPROP_BZR_SIGNATURE)
 
     @needs_read_lock
-    def find_branches(self, layout=None, revnum=None):
+    def find_branches(self, using=False, layout=None, revnum=None):
         """Find branches underneath this repository.
 
         This will include branches inside other branches.

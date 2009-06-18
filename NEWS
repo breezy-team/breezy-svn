@@ -54,6 +54,8 @@ bzr-svn 0.6.2                    UNRELEASED
 
    * Initial support for WorkingTree.apply_inventory_delta(). (#332107)
 
+   * Support using parameter to Repository.find_branches(). (#388960)
+
 bzr-svn 0.6.1                    2009-05-22
 
   BUG FIXES
