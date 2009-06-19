@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import subvertpy
+
 from bzrlib.tests import (
     TestCase,
     )
@@ -145,3 +147,21 @@ class CustomLayoutTests(TestCase):
         x = CustomLayout(["foo/bar"])
         self.assertFalse(x.is_branch_parent("foo/bar"))
         self.assertTrue(x.is_branch_parent("foo"))
+
+    def test_get_branches(self):
+        x = CustomLayout(["foo/bar"])
+        class MockTransport(object):
+
+            def __init__(self, available_paths):
+                self._paths = available_paths
+
+            def check_path(self, path, revnum):
+                return self._paths.get(path, subvertpy.NODE_NONE)
+
+        class MockRepository(object):
+
+            def __init__(self, available_paths):
+                self.transport = MockTransport(available_paths)
+
+        self.assertEquals([(None, "foo/bar", "bar", None)],
+            x.get_branches(MockRepository({"foo/bar": subvertpy.NODE_DIR}), 3))

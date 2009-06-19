@@ -299,14 +299,14 @@ class CustomLayout(RepositoryLayout):
 
         :result: Iterator over tuples with (project, branch path)
         """
-        return [(project, b, b.split("/")[-1]) for b in self.branches if repository.transport.check_path(b, revnum) == NODE_DIR]
+        return [(project, b, b.split("/")[-1], None) for b in self.branches if repository.transport.check_path(b, revnum) == NODE_DIR]
 
     def get_tags(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
         :result: Iterator over tuples with (project, branch path)
         """
-        return [(project, t, t.split("/")[-1]) for t in self.tags if repository.transport.check_path(t, revnum) == NODE_DIR]
+        return [(project, t, t.split("/")[-1], None) for t in self.tags if repository.transport.check_path(t, revnum) == NODE_DIR]
 
     def __repr__(self):
         return "%s(%r,%r)" % (self.__class__.__name__, self.branches, self.tags)

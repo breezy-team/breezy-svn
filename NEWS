@@ -1,5 +1,9 @@
 bzr-svn 0.6.3                    UNRELEASED
 
+ BUG FIXES
+ 
+  * Fix CustomLayout.get_branches. (Closes: #388698)
+
 bzr-svn 0.6.2                    2009-06-18
 
   FEATURES
