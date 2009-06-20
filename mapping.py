@@ -197,7 +197,7 @@ def parse_svn_dateprop(date):
 
 def parse_svn_log(log):
     if log is None:
-        return None
+        return ""
     try:
         return log.decode("utf-8")
     except UnicodeDecodeError:

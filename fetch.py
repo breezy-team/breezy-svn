@@ -669,10 +669,9 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _finish_commit(self):
         rev = self.revmeta.get_revision(self.mapping)
         # Escaping the commit message is really the task of the serialiser
-        if rev.message is not None:
-            if getattr(self.target._serializer, "squashes_xml_invalid_characters", True):
-                from bzrlib.xml_serializer import escape_invalid_chars
-                rev.message, num_replaced = escape_invalid_chars(rev.message)
+        if getattr(self.target._serializer, "squashes_xml_invalid_characters", True):
+            from bzrlib.xml_serializer import escape_invalid_chars
+            rev.message, num_replaced = escape_invalid_chars(rev.message)
         try:
             basis_id = rev.parent_ids[0]
         except IndexError:
@@ -977,12 +976,11 @@ class FetchRevisionFinder(object):
         :return: List with revmeta, mapping tuples to fetch
         """
         from_revnum = self.source.get_latest_revnum()
-        return self.find_iter_revisions(
-            self.source._revmeta_provider.iter_all_revisions(
+        all_revs = self.source._revmeta_provider.iter_all_revisions(
                 self.source.get_layout(), 
                 check_unusual_path=mapping.is_branch_or_tag,
-                from_revnum=from_revnum, pb=pb), mapping,
-            lambda x: False)
+                from_revnum=from_revnum, pb=pb)
+        return self.find_iter_revisions(all_revs, mapping, lambda x: False)
 
     def find_mainline(self, foreign_revid, mapping, find_ghosts=False,
                       pb=None):
