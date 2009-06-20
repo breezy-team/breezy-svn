@@ -29,7 +29,10 @@ from bzrlib.bzrdir import (
 from bzrlib.tests import (
     TestCaseInTempDir,
     )
-from bzrlib.transport import svn_to_bzr_url
+
+from bzrlib.plugins.svn.transport import (
+    svn_to_bzr_url,
+    )
 
 
 class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
