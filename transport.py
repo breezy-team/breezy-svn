@@ -21,6 +21,7 @@ import stat
 import subvertpy
 from subvertpy import ERR_FS_NOT_DIRECTORY
 from subvertpy.client import get_config
+import sys
 import urlparse
 import urllib
 
@@ -167,6 +168,10 @@ def svn_to_bzr_url(url):
 
     This mainly involves fixing file:// URLs on Windows.
     """
+    if sys.platform == "win32":
+        # Subversion URLs have only two // after file: on Windows
+        if url.startswith("file://"):
+            url = "file:///" + url[len("file://"):]
     return url
 
 

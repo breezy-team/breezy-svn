@@ -16,9 +16,7 @@
 
 """Tests for the bzr-svn plugin."""
 
-import os
 import subvertpy.tests
-import sys
 
 
 from bzrlib import (
@@ -31,12 +29,13 @@ from bzrlib.bzrdir import (
 from bzrlib.tests import (
     TestCaseInTempDir,
     )
+from bzrlib.transport import svn_to_bzr_url
 
 
 class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
     def make_repository(self, *args, **kwargs):
-        return subvertpy.tests.SubversionTestCase.make_repository(self, *args, **kwargs)
+        return svn_to_bzr_url(subvertpy.tests.SubversionTestCase.make_repository(self, *args, **kwargs))
 
     def setUp(self):
         subvertpy.tests.SubversionTestCase.setUp(self)
