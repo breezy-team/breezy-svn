@@ -89,9 +89,7 @@ def get_svn_ra_transport(bzr_transport):
     if ra_transport is not None:
         return ra_transport
 
-    svnbase = bzr_transport.external_url()
-    if svnbase.startswith("readonly+"):
-        svnbase = svnbase[len("readonly+"):]
+    svnbase = bzr_to_svn_url(bzr_transport.external_url())
     # If this is a HTTP transport, use the existing connection to check 
     # that the remote end supports version control.
     from bzrlib.transport.http._urllib import HttpTransport_urllib, Request
@@ -149,6 +147,9 @@ def bzr_to_svn_url(url):
 
     This will possibly remove the svn+ prefix.
     """
+    if url.startswith("readonly+"):
+        url = url[len("readonly+"):]
+
     if (url.startswith("svn+http://") or 
         url.startswith("svn+https://")):
         url = url[len("svn+"):] # Skip svn+
@@ -158,6 +159,14 @@ def bzr_to_svn_url(url):
     # The SVN libraries don't like trailing slashes...
     url = url.rstrip('/')
 
+    return url
+
+
+def svn_to_bzr_url(url):
+    """Convert a Subversion URL to a URL understood by Bazaar.
+
+    This mainly involves fixing file:// URLs on Windows.
+    """
     return url
 
 
