@@ -79,7 +79,7 @@ class TdbLogCacheTests(TestCaseInTempDir,LogCacheTests):
         try:
             from bzrlib.plugins.svn.cache.tdbcache import LogCache, tdb_open
         except ImportError:
-            raise UnavailableFeature
+            raise UnavailableFeature("tdb")
         import tdb
         self.cache = LogCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
@@ -134,7 +134,7 @@ class TdbRevidMapCacheTests(TestCaseInTempDir,RevidMapCacheTests):
         try:
             from bzrlib.plugins.svn.cache.tdbcache import RevisionIdMapCache, tdb_open
         except ImportError:
-            raise UnavailableFeature
+            raise UnavailableFeature("tdb")
         import tdb
         self.cache = RevisionIdMapCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
@@ -191,7 +191,7 @@ class TdbRevInfoCacheTests(TestCaseInTempDir,RevInfoCacheTests):
         try:
             from bzrlib.plugins.svn.cache.tdbcache import RevisionInfoCache, tdb_open
         except ImportError:
-            raise UnavailableFeature
+            raise UnavailableFeature("tdb")
         import tdb
         self.cache = RevisionInfoCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
@@ -234,6 +234,6 @@ class TdbParentsCacheTests(TestCaseInTempDir,ParentsCacheTests):
         try:
             from bzrlib.plugins.svn.cache.tdbcache import ParentsCache, tdb_open
         except ImportError:
-            raise UnavailableFeature
+            raise UnavailableFeature("tdb")
         import tdb
         self.cache = ParentsCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
