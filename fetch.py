@@ -534,6 +534,13 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
 
 def content_starts_with_link(cf):
+    # Shortcut for chunked:
+    if cf.storage_kind == "chunked":
+        chks = cf.get_bytes_as("chunked")
+        if not chks:
+            return False
+        if len(chks[0]) >= 5:
+            return chks[0].startswith("link ")
     return cf.get_bytes_as('fulltext').startswith('link ')
 
 
