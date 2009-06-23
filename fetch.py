@@ -513,7 +513,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         else:
             base_ie = None
         return FileRevisionBuildEditor(self.editor, old_path, path, file_id, 
-                                       self.new_id, base_ie, data=data)
+                                       self.new_id, base_ie)
 
     def _open_file(self, path, base_revnum):
         base_file_id = self.editor._get_old_id(self.old_id, path)
@@ -533,10 +533,14 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                                        is_symlink=is_symlink)
 
 
+def content_starts_with_link(cf):
+    return cf.get_bytes_as('fulltext').startswith('link ')
+
+
 class FileRevisionBuildEditor(FileBuildEditor):
 
     def __init__(self, editor, old_path, path, file_id, parent_file_id,
-                 base_ie, file_parents=[],  is_symlink=False):
+                 base_ie, file_parents=[], is_symlink=False):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
         self.old_path = old_path
         self.file_id = file_id
@@ -564,8 +568,16 @@ class FileRevisionBuildEditor(FileBuildEditor):
             chunks = self.chunks
         else:
             chunks = self.base_chunks
+        md5sum = osutils.md5()
+        shasum = osutils.sha()
+        text_size = 0
+        for chunk in chunks:
+            md5sum.update(chunk)
+            shasum.update(chunk)
+            text_size += len(chunk)
+        text_sha1 = shasum.hexdigest()
         if checksum is not None:
-            actual_checksum = md5_strings(chunks)
+            actual_checksum = md5sum.hexdigest()
             if checksum != actual_checksum:
                 raise VersionedFileInvalidChecksum("created checksum mismatch: %r != %r in %s (%s:%d)" % (checksum, actual_checksum, self.editor.revid, self.editor.revmeta.branch_path, self.editor.revmeta.revnum))
         text_revision = (self.editor._get_text_revision(self.path) or
@@ -575,20 +587,13 @@ class FileRevisionBuildEditor(FileBuildEditor):
             text_parents = self.file_parents
         parent_keys = tuple([(self.file_id, revid) for revid in text_parents])
         file_key = (self.file_id, text_revision)
-        lines = osutils.chunks_to_lines(chunks)
-        text_sha1, text_size, parent_content = self.editor.texts.add_lines(
-            file_key, parent_keys, lines,
-            random_id=False, 
-            check_content=False, # Can we assume we are always line-safe?
-            )
+        cf = ChunkedContentFactory(file_key, parent_keys, text_sha1, chunks)
+        self.editor.texts.insert_record_stream([cf])
         self.editor._text_cache[file_key] = chunks
-        if lines and lines[0].startswith('link '):
-            content_starts_with_link = True
-        else:
-            content_starts_with_link = False
+
         if self.is_special is not None:
-            self.is_symlink = (self.is_special and content_starts_with_link)
-        elif content_starts_with_link:
+            self.is_symlink = (self.is_special and content_starts_with_link(cf))
+        elif content_starts_with_link(cf):
             # This file just might be a file that is svn:special but didn't
             # contain a symlink but does now
             if not self.is_symlink:
@@ -598,14 +603,12 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
         assert self.is_symlink in (True, False)
 
-        if self.editor.old_inventory.has_id(self.file_id):
-            if self.is_executable is None:
-                self.is_executable = self.editor.old_inventory[self.file_id].executable
+        if self.base_ie is not None and self.is_executable is None:
+                self.is_executable = self.base_ie.executable
 
         if self.is_symlink:
             ie = InventoryLink(self.file_id, urlutils.basename(self.path), self.parent_file_id)
-            fulltext = ''.join(lines)
-            ie.symlink_target = fulltext[len("link "):]
+            ie.symlink_target = cf.get_bytes_as('fulltext')[len("link "):]
             if "\n" in ie.symlink_target:
                 raise AssertionError("bzr doesn't support newlines in symlink targets yet")
             ie.text_sha1 = None
@@ -1051,10 +1054,10 @@ class InterFromSvnRepository(InterRepository):
 
     def __init__(self, source, target):
         super(InterFromSvnRepository, self).__init__(source, target)
-        def lines_to_size(lines):
-            return sum(map(len, lines))
+        def chunks_to_size(chunks):
+            return sum(map(len, chunks))
         self._text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE,
-                                                  compute_size=lines_to_size)
+                                                  compute_size=chunks_to_size)
 
         self._use_replay_range = self.source.transport.has_capability("partial-replay") and False
         self._use_replay = self.source.transport.has_capability("partial-replay") and False
