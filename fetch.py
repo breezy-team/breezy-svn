@@ -24,9 +24,6 @@ try:
 except ImportError:
     from bzrlib.plugins.svn.pycompat import defaultdict
 
-from cStringIO import (
-    StringIO,
-    )
 import subvertpy
 from subvertpy import (
     ERR_FS_NOT_DIRECTORY,
