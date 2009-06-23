@@ -491,7 +491,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # to make sure all children get readded with a new file id
             renew_fileids = base_file_id
         return DirectoryRevisionBuildEditor(self.editor, old_path, path, 
-            base_file_id, file_id, self.new_id, file_parents, renew_fileids=renew_fileids)
+            base_file_id, file_id, self.new_id, file_parents,
+            renew_fileids=renew_fileids)
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         file_id = self.editor._get_new_id(path)
@@ -509,35 +510,35 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         if copyfrom_path is not None:
             # Delta's will be against this text
             copyfrom_ie = self.editor.get_old_ie(copyfrom_path, copyfrom_revnum)
-            data = self.editor._get_chunked(ie.file_id, ie.revision)
+            data = self.editor._get_chunked(copyfrom_ie)
         else:
             data = []
-        return FileRevisionBuildEditor(self.editor, old_path, path, file_id, self.new_id,
-            data=data)
+        return FileRevisionBuildEditor(self.editor, old_path, path, file_id, 
+                                       self.new_id, data=data)
 
     def _open_file(self, path, base_revnum):
         base_file_id = self.editor._get_old_id(self.old_id, path)
-        base_revid = self.editor.old_inventory[base_file_id].revision
         file_id = self.editor._get_existing_id(self.old_id, self.new_id, path)
         base_ie = self.editor.old_inventory[base_file_id]
         is_symlink = (base_ie.kind == 'symlink')
-        file_data = self.editor._get_chunked(base_file_id, base_revid)
+        file_data = self.editor._get_chunked(base_ie)
         if file_id == base_file_id:
-            file_parents = [base_revid]
+            file_parents = [base_ie.revision]
             old_path = path
         else:
             # Replace with historical version
             old_path = None
             file_parents = []
             self._delete_entry(path, base_revnum)
-        return FileRevisionBuildEditor(self.editor, old_path, path, file_id, self.new_id, 
-            file_parents, file_data, is_symlink=is_symlink)
+        return FileRevisionBuildEditor(self.editor, old_path, path, file_id, 
+                                       self.new_id, file_parents, file_data,
+                                       is_symlink=is_symlink)
 
 
 class FileRevisionBuildEditor(FileBuildEditor):
 
-    def __init__(self, editor, old_path, path, file_id, parent_file_id, file_parents=[], 
-        data=[], is_symlink=False):
+    def __init__(self, editor, old_path, path, file_id, parent_file_id,
+                 file_parents=[], data=[], is_symlink=False):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
         self.old_path = old_path
         self.file_id = file_id
@@ -651,16 +652,14 @@ class RevisionBuildEditor(DeltaBuildEditor):
         file_id = inv.path2id(path)
         return inv[file_id]
 
-    def _get_record(self, file_id, revision_id):
-        return self.texts.get_record_stream([(file_id, revision_id)], 'unordered', True).next()
-
-    def _get_chunked(self, file_id, revision_id):
-        file_data = self._text_cache.get((file_id, revision_id))
+    def _get_chunked(self, ie):
+        key = (ie.file_id, ie.revision)
+        file_data = self._text_cache.get(key)
         if file_data is not None: 
             return file_data
-        record = self._get_record(file_id, revision_id)
+        record = self.texts.get_record_stream([key], 'unordered', True).next()
         if record.storage_kind == 'absent':
-            raise RevisionNotPresent(revision_id, file_id)
+            raise RevisionNotPresent(ie.revision, ie.file_id)
         return record.get_bytes_as('chunked')
 
     def _finish_commit(self):
