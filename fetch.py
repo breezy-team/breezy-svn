@@ -124,10 +124,10 @@ def inventory_ancestors(inv, fileid, exceptions):
     return ret
 
 
-def md5_strings(lines):
-    """Return the MD5sum of a list of lines."""
+def md5_strings(chunks):
+    """Return the MD5sum of a list of chunks."""
     s = osutils.md5()
-    map(s.update, lines)
+    map(s.update, chunks)
     return s.hexdigest()
 
 
@@ -509,19 +509,17 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_path = None
         if copyfrom_path is not None:
             # Delta's will be against this text
-            copyfrom_ie = self.editor.get_old_ie(copyfrom_path, copyfrom_revnum)
-            data = self.editor._get_chunked(copyfrom_ie)
+            base_ie = self.editor.get_old_ie(copyfrom_path, copyfrom_revnum)
         else:
-            data = []
+            base_ie = None
         return FileRevisionBuildEditor(self.editor, old_path, path, file_id, 
-                                       self.new_id, data=data)
+                                       self.new_id, base_ie, data=data)
 
     def _open_file(self, path, base_revnum):
         base_file_id = self.editor._get_old_id(self.old_id, path)
         file_id = self.editor._get_existing_id(self.old_id, self.new_id, path)
         base_ie = self.editor.old_inventory[base_file_id]
         is_symlink = (base_ie.kind == 'symlink')
-        file_data = self.editor._get_chunked(base_ie)
         if file_id == base_file_id:
             file_parents = [base_ie.revision]
             old_path = path
@@ -531,28 +529,33 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             file_parents = []
             self._delete_entry(path, base_revnum)
         return FileRevisionBuildEditor(self.editor, old_path, path, file_id, 
-                                       self.new_id, file_parents, file_data,
+                                       self.new_id, base_ie, file_parents, 
                                        is_symlink=is_symlink)
 
 
 class FileRevisionBuildEditor(FileBuildEditor):
 
     def __init__(self, editor, old_path, path, file_id, parent_file_id,
-                 file_parents=[], data=[], is_symlink=False):
+                 base_ie, file_parents=[],  is_symlink=False):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
         self.old_path = old_path
         self.file_id = file_id
         # This should be the *chunks* of the file
-        self.base_chunks = data
         self.is_symlink = is_symlink
         self.file_parents = file_parents
+        self.base_ie = base_ie
+        if self.base_ie is None:
+            self.base_chunks = []
+        else:
+            self.base_chunks = self.editor._get_chunked(self.base_ie)
         self.chunks = None
         self.parent_file_id = parent_file_id
 
     def _apply_textdelta(self, base_checksum=None):
-        actual_checksum = md5_strings(self.base_chunks)
-        if base_checksum is not None and base_checksum != actual_checksum:
-            raise VersionedFileInvalidChecksum("base checksum mismatch: %r != %r in %s (%s:%d)" % (base_checksum, actual_checksum, self.editor.revid, self.editor.revmeta.branch_path, self.editor.revmeta.revnum))
+        if base_checksum is not None:
+            actual_checksum = md5_strings(self.base_chunks)
+            if base_checksum != actual_checksum:
+                raise VersionedFileInvalidChecksum("base checksum mismatch: %r != %r in %s (%s:%d)" % (base_checksum, actual_checksum, self.editor.revid, self.editor.revmeta.branch_path, self.editor.revmeta.revnum))
         self.chunks = []
         return apply_txdelta_handler_chunks(self.base_chunks, self.chunks)
 
@@ -561,9 +564,10 @@ class FileRevisionBuildEditor(FileBuildEditor):
             chunks = self.chunks
         else:
             chunks = self.base_chunks
-        lines = osutils.chunks_to_lines(chunks)
-        actual_checksum = md5_strings(lines)
-        assert checksum is None or checksum == actual_checksum
+        if checksum is not None:
+            actual_checksum = md5_strings(chunks)
+            if checksum != actual_checksum:
+                raise VersionedFileInvalidChecksum("created checksum mismatch: %r != %r in %s (%s:%d)" % (checksum, actual_checksum, self.editor.revid, self.editor.revmeta.branch_path, self.editor.revmeta.revnum))
         text_revision = (self.editor._get_text_revision(self.path) or
                          self.editor.revid)
         text_parents = self.editor._get_text_parents(self.path)
@@ -571,15 +575,17 @@ class FileRevisionBuildEditor(FileBuildEditor):
             text_parents = self.file_parents
         parent_keys = tuple([(self.file_id, revid) for revid in text_parents])
         file_key = (self.file_id, text_revision)
+        lines = osutils.chunks_to_lines(chunks)
         text_sha1, text_size, parent_content = self.editor.texts.add_lines(
             file_key, parent_keys, lines,
             random_id=False, 
             check_content=False, # Can we assume we are always line-safe?
             )
-        self.editor._text_cache[file_key] = lines
-        content_starts_with_link = False
+        self.editor._text_cache[file_key] = chunks
         if lines and lines[0].startswith('link '):
             content_starts_with_link = True
+        else:
+            content_starts_with_link = False
         if self.is_special is not None:
             self.is_symlink = (self.is_special and content_starts_with_link)
         elif content_starts_with_link:
