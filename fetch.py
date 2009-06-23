@@ -64,6 +64,7 @@ from bzrlib.repository import (
     InterRepository,
     )
 from bzrlib.versionedfile import (
+    ChunkedContentFactory,
     FulltextContentFactory,
     )
 
@@ -428,9 +429,11 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
             self.new_ie.revision = self.editor._get_text_revision(self.path) or self.editor.revid
             text_parents = self.editor._get_text_parents(self.path) or self.parent_revids
-            self.editor.texts.add_lines(
+            self.editor.texts.insert_record_stream([
+                ChunkedContentFactory(
                 (self.new_id, self.new_ie.revision),
-                tuple([(self.new_id, revid) for revid in text_parents]), [])
+                tuple([(self.new_id, revid) for revid in text_parents]), None,
+                [])])
             self.editor._inv_delta.append((self.old_path, self.path, self.new_id, self.new_ie))
         if self._renew_fileids:
             # Make sure files get re-added that weren't mentioned explicitly
