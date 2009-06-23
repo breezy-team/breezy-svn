@@ -100,8 +100,19 @@ TEXT_CACHE_SIZE = 1024 * 1024 * 50
 ERR_FS_PATH_SYNTAX = getattr(subvertpy, "ERR_FS_PATH_SYNTAX", 160005)
 
 
-def apply_txdelta_handler_chunks(chunks, stream):
-    return apply_txdelta_handler(''.join(chunks), stream)
+try:
+    from subvertpy.delta import apply_txdelta_handler_chunks
+except ImportError:
+    def apply_txdelta_handler_chunks(source_chunks, target_chunks):
+        class ChunkWriteStream(object):
+
+            def __init__(self, l):
+                self.l = l
+
+            def write(self, s):
+                self.l.append(s)
+        return apply_txdelta_handler(''.join(source_chunks), 
+                                     ChunkWriteStream(target_chunks))
 
 
 def inventory_ancestors(inv, fileid, exceptions):
@@ -534,26 +545,25 @@ class FileRevisionBuildEditor(FileBuildEditor):
         self.old_path = old_path
         self.file_id = file_id
         # This should be the *chunks* of the file
-        self.file_data = data
+        self.base_chunks = data
         self.is_symlink = is_symlink
         self.file_parents = file_parents
-        self.file_stream = None
+        self.chunks = None
         self.parent_file_id = parent_file_id
 
     def _apply_textdelta(self, base_checksum=None):
-        actual_checksum = md5_strings(self.file_data)
+        actual_checksum = md5_strings(self.base_chunks)
         if base_checksum is not None and base_checksum != actual_checksum:
             raise VersionedFileInvalidChecksum("base checksum mismatch: %r != %r in %s (%s:%d)" % (base_checksum, actual_checksum, self.editor.revid, self.editor.revmeta.branch_path, self.editor.revmeta.revnum))
-        self.file_stream = StringIO()
-        return apply_txdelta_handler_chunks(self.file_data, self.file_stream)
+        self.chunks = []
+        return apply_txdelta_handler_chunks(self.base_chunks, self.chunks)
 
     def _close(self, checksum=None):
-        if self.file_stream is not None:
-            self.file_stream.seek(0)
-            lines = self.file_stream.readlines()
+        if self.chunks is not None:
+            chunks = self.chunks
         else:
-            # Data didn't change or file is new
-            lines = osutils.chunks_to_lines(self.file_data)
+            chunks = self.base_chunks
+        lines = osutils.chunks_to_lines(chunks)
         actual_checksum = md5_strings(lines)
         assert checksum is None or checksum == actual_checksum
         text_revision = (self.editor._get_text_revision(self.path) or
@@ -607,7 +617,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
         ie.revision = text_revision
         self.editor._inv_delta.append((self.old_path, self.path, self.file_id, ie))
 
-        self.file_stream = None
+        self.chunks = None
 
 
 class RevisionBuildEditor(DeltaBuildEditor):
