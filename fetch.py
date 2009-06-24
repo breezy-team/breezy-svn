@@ -1267,7 +1267,8 @@ class InterFromSvnRepository(InterRepository):
             finally:
                 if nested_pb is not None:
                     nested_pb.finished()
-            self.target.pack(hint=pack_hint)
+            if pack_hint is not None:
+                self.target.pack(hint=pack_hint)
             if (revision_id is not None and 
                 not self.target.has_revision(revision_id)):
                 # Apparently we could find the revision but it wasn't
