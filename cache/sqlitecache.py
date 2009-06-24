@@ -351,7 +351,8 @@ class LogCache(CacheTable):
         result = self.cachedb.execute("select all_revprops from revinfo where rev = ?", (revnum,)).fetchone()
         if result is None:
             all_revprops = False
-        all_revprops = result[0]
+        else:
+            all_revprops = result[0]
         return (revprops, all_revprops)
 
     def insert_revprops(self, revision, revprops, all_revprops):
