@@ -1,5 +1,9 @@
 bzr-svn 0.6.3                    UNRELEASED
 
+ FEATURES
+
+  * Pack relevant parts of the repository after fetch.
+
  BUG FIXES
  
   * Fix CustomLayout.get_branches. (Closes: #388698)

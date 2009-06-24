@@ -1205,7 +1205,7 @@ class InterFromSvnRepository(InterRepository):
                 self._prev_inv = editor.inventory
                 assert self._prev_inv.revision_id == revid
         finally:
-            self.target.commit_write_group()
+            return self.target.commit_write_group()
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False, 
               needed=None, mapping=None, project=None, fetch_spec=None):
@@ -1260,13 +1260,14 @@ class InterFromSvnRepository(InterRepository):
                 nested_pb = None
             try:
                 if self._use_replay_range:
-                    self._fetch_revision_chunks(needed, pb)
+                    pack_hint = self._fetch_revision_chunks(needed, pb)
                 else:
-                    self._fetch_revisions(needed, pb,
+                    pack_hint = self._fetch_revisions(needed, pb,
                         use_replay=self._use_replay)
             finally:
                 if nested_pb is not None:
                     nested_pb.finished()
+            self.target.pack(hint=pack_hint)
             if (revision_id is not None and 
                 not self.target.has_revision(revision_id)):
                 # Apparently we could find the revision but it wasn't
@@ -1327,7 +1328,7 @@ class InterFromSvnRepository(InterRepository):
                     if not conn.busy:
                         self.source.transport.add_connection(conn)
         finally:
-            self.target.commit_write_group()
+            return self.target.commit_write_group()
 
     @staticmethod
     def is_compatible(source, target):
