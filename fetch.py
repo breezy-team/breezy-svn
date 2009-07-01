@@ -1264,7 +1264,7 @@ class InterFromSvnRepository(InterRepository):
                 else:
                     pack_hint = self._fetch_revisions(needed, pb,
                         use_replay=self._use_replay)
-                if pack_hint is not None:
+                if pack_hint is not None and self.target._format.pack_compresses:
                     self.target.pack(hint=pack_hint)
             finally:
                 if nested_pb is not None:
