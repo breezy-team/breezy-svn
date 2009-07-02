@@ -8,7 +8,10 @@ bzr-svn 0.6.3                    UNRELEASED
  
   * Fix CustomLayout.get_branches. (Closes: #388698)
 
-  * Fix fetching of revisions with no commit message set to the 2a repository format.
+  * Fix fetching of revisions with no commit message set to the 2a repository 
+    format.
+
+  * Explain repository UUIDs in "bzr help svn-layout". (#391525)
 
 bzr-svn 0.6.2                    2009-06-18
 
