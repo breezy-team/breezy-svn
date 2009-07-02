@@ -153,9 +153,6 @@ register_lazy_transport('svn://', 'bzrlib.plugins.svn.transport',
                         'SvnRaTransport')
 register_lazy_transport('svn+', 'bzrlib.plugins.svn.transport', 
                         'SvnRaTransport')
-topic_registry.register_lazy('svn-branching-schemes', 
-                             'bzrlib.plugins.svn.mapping3',
-                             'help_schemes', 'Subversion branching schemes')
 topic_registry.register_lazy('svn-layout', 
                              'bzrlib.plugins.svn.layout',
                              'help_layout', 'Subversion repository layouts')

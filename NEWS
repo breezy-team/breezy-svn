@@ -4,6 +4,11 @@ bzr-svn 0.6.3                    UNRELEASED
 
   * Pack relevant parts of the repository after fetch.
 
+ CHANGES
+  
+  * Removed svn-branching-schemes help, because it's not relevant for new 
+    users and might be confusing for users looking at "bzr help topics".
+ 
  BUG FIXES
  
   * Fix CustomLayout.get_branches. (Closes: #388698)
