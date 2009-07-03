@@ -83,8 +83,8 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
         :param username: Username, if it is already known, or None.
         :param may_save: Whether or not the username should be saved.
         """
-        mutter("Obtaining username and password for SVN connection %r (username: %r)", 
-               realm, username)
+        mutter("Obtaining username and password for SVN connection %r"
+               "(username: %r)", realm, username)
         username = self.get_user(self.scheme, 
                 host=self.host, path=self.path, realm=realm, ask=True)
         password = self.get_password(self.scheme, host=self.host, 
@@ -224,7 +224,7 @@ class SubversionCredentialStore(CredentialStore):
             try:
                 credentials['port'] = socket.getservbyname(credentials['scheme'])
             except socket.error:
-                mutter("Unable to look up default port for %(scheme)s", 
+                mutter("Unable to look up default port for %(scheme)s" % 
                        credentials)
                 return None
         return "<%(scheme)s://%(host)s:%(port)s> %(realm)s" % credentials
