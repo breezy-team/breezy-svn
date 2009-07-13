@@ -20,7 +20,7 @@ Bazaar can be used with Subversion branches through the bzr-svn plugin.
 
 Most Bazaar commands should work fine with Subversion branches. 
 
-bzr-svn also adds four new commands to Bazaar:
+bzr-svn also adds new commands to Bazaar:
 
  - bzr svn-import
  - bzr svn-layout
