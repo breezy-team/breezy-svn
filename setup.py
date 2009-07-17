@@ -2,12 +2,13 @@
 # Setup file for bzr-svn
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
 
-from distutils.core import setup
+from info import *
 
-version = (0, 6, 4)
+version = bzr_plugin_version[:3]
 version_string = ".".join([str(x) for x in version])
 
 if __name__ == '__main__':
+    from distutils.core import setup
     setup(name='bzr-svn',
           description='Support for Subversion branches in Bazaar',
           keywords='plugin bzr svn',
