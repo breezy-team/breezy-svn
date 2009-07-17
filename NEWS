@@ -1,4 +1,4 @@
-bzr-svn 0.6.3                    UNRELEASED
+bzr-svn 0.6.3                    2009-07-17
 
  FEATURES
 
@@ -17,6 +17,8 @@ bzr-svn 0.6.3                    UNRELEASED
     format.
 
   * Explain repository UUIDs in "bzr help svn-layout". (#391525)
+
+  * Mark as compatible with bzr 1.17.
 
 bzr-svn 0.6.2                    2009-06-18
 
