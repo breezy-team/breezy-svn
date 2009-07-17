@@ -19,6 +19,8 @@ bzr_minimum_version = bzr_compatible_versions[0]
 
 bzr_maximum_version = bzr_compatible_versions[-1]
 
+bzr_control_formats = {"Subversion":{'.svn/': None}}
+
 if __name__ == '__main__':
     from distutils.core import setup
     version = bzr_plugin_version[:3]
