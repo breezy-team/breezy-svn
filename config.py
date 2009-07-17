@@ -20,13 +20,11 @@
 
 import os
 from subvertpy import (
-    SubversionException,
     properties,
     )
 
 from bzrlib import (
     osutils,
-    urlutils,
     trace,
     )
 from bzrlib.config import (

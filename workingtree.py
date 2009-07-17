@@ -60,7 +60,6 @@ from bzrlib.lockable_files import LockableFiles
 from bzrlib.lockdir import LockDir
 from bzrlib.revision import (
     NULL_REVISION,
-    ensure_null,
     )
 from bzrlib.trace import mutter
 from bzrlib.transport import get_transport

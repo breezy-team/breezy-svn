@@ -34,10 +34,8 @@ from bzrlib.tag import BasicTags
 from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn import (
-    commit,
     errors as svn_errors,
     mapping,
-    push,
     )
 from bzrlib.plugins.svn.transport import (
     check_dirs_exist,

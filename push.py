@@ -28,7 +28,6 @@ from subvertpy import (
     )
 
 from bzrlib import (
-    debug,
     ui,
     urlutils,
     )
@@ -40,19 +39,14 @@ from bzrlib.errors import (
     )
 from bzrlib.repository import (
     InterRepository,
-    Repository,
     )
 from bzrlib.revision import (
     NULL_REVISION,
-    ensure_null,
     )
 from bzrlib.trace import (
     mutter,
     )
 
-from bzrlib.plugins.svn import (
-    mapping,
-    )
 from bzrlib.plugins.svn.commit import (
     SvnCommitBuilder,
     )

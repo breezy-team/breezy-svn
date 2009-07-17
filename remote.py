@@ -18,9 +18,6 @@
 """Subversion BzrDir formats."""
 
 
-import subvertpy
-
-import bzrlib
 from bzrlib import (
     trace,
     )
@@ -195,9 +192,9 @@ class SvnRemoteAccess(BzrDir):
             try:
                 (type, project, _, ip) = layout.parse(target_branch_path)
             except NotSvnBranchPath:
-                raise NotBranchError(branch_path)
+                raise NotBranchError(target_branch_path)
             if type not in ('branch', 'tag') or ip != '':
-                raise NotBranchError(branch_path)
+                raise NotBranchError(target_branch_path)
             inter.push_new_branch(layout, project, target_branch_path, 
                     stop_revision, 
                     override_svn_revprops=_override_svn_revprops,

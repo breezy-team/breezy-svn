@@ -27,7 +27,6 @@ import urllib
 
 from bzrlib import (
     ui,
-    urlutils,
     )
 from bzrlib.errors import (
     RevisionNotPresent,

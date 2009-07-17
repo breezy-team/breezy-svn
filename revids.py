@@ -22,7 +22,6 @@ ERR_RA_DAV_FORBIDDEN = getattr(subvertpy, "ERR_RA_DAV_FORBIDDEN", 175013)
 
 from bzrlib import ui
 from bzrlib.errors import (
-    InvalidRevisionId,
     NoSuchRevision,
     )
 from bzrlib.lru_cache import LRUCache
@@ -32,7 +31,6 @@ from bzrlib.plugins.svn.errors import (
     InvalidPropertyValue,
     )
 from bzrlib.plugins.svn.mapping import (
-    BzrSvnMapping,
     SVN_PROP_BZR_REVISION_ID,
     find_mapping_revprops,
     find_new_lines,

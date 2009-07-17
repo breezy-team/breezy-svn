@@ -54,12 +54,6 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
         mapping.BzrSvnMapping.__init__(self)
         self.name = "v4"
 
-    def __eq__(self, other):
-        return type(self) == type(other)
-
-    def __ne__(self, other):
-        return type(self) != type(other)
-
     def __hash__(self):
         return hash(type(self))
 

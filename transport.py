@@ -42,7 +42,6 @@ from bzrlib.errors import (
     )
 from bzrlib.trace import (
     mutter,
-    warning,
     )
 from bzrlib.transport import (
     Transport,
@@ -500,8 +499,10 @@ class SvnRaTransport(Transport):
             relpath = ""
         try:
             (dirents, _, _) = self.get_dir(relpath, self.get_latest_revnum())
-        except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-            raise NoSuchFile(relpath)
+        except subvertpy.SubversionException, (_, num):
+            if num == ERR_FS_NOT_DIRECTORY:
+                raise NoSuchFile(relpath)
+            raise
         return dirents.keys()
 
     def check_path(self, path, revnum):

@@ -45,9 +45,6 @@ from bzrlib.branch import (
 from bzrlib.bzrdir import (
     BzrDir,
     )
-from bzrlib.decorators import (
-    needs_write_lock,
-    )
 from bzrlib.errors import (
     DivergedBranches,
     LocalRequiresBoundBranch,

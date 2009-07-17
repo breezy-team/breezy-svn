@@ -174,7 +174,7 @@ class RepositoryBackend(ServerRepositoryBackend):
             ret["kind"] = subvertpy.NODE_DIR
             ret["size"] = 0
         else:
-            ret["kind"] = NODE_FILE
+            ret["kind"] = subvertpy.NODE_FILE
             ret["size"] = ie.text_size
         ret["has-props"] = True
         ret["created-rev"] = 0 # FIXME

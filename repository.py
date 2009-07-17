@@ -21,7 +21,6 @@ except ImportError:
     from bzrlib.plugins.svn.pycompat import defaultdict
 
 from itertools import chain
-import os
 import subvertpy
 
 ERR_RA_DAV_FORBIDDEN = getattr(subvertpy, "ERR_RA_DAV_FORBIDDEN", 175013)
@@ -30,7 +29,6 @@ from bzrlib import (
     branch,
     errors as bzr_errors,
     graph,
-    osutils,
     ui,
     urlutils,
     )
@@ -51,13 +49,11 @@ from bzrlib.revision import (
     ensure_null,
     )
 from bzrlib.trace import (
-    info,
     mutter,
     note,
     )
 from bzrlib.transport import (
     Transport,
-    get_transport,
     )
 
 from bzrlib.plugins.svn import (
@@ -92,7 +88,6 @@ from bzrlib.plugins.svn.revids import (
     DiskCachingRevidMap,
     MemoryCachingRevidMap,
     RevidMap,
-    RevisionInfoCache,
     )
 from bzrlib.plugins.svn.tree import SvnRevisionTree
 from bzrlib.plugins.svn.versionedfiles import SvnTexts
@@ -726,7 +721,7 @@ class SvnRepository(ForeignRepository):
                 todo.append(entry)
                 processed.add(entry)
         if lhs_history is None:
-            update_todo(todo, self._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping=mapping, pb=bp))
+            update_todo(todo, self._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb))
         else:
             update_todo(todo, lhs_history)
         i = 0

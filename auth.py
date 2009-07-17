@@ -28,9 +28,6 @@ from bzrlib.config import (
     AuthenticationConfig,
     CredentialStore,
     )
-from bzrlib.errors import (
-    BzrError,
-    )
 from bzrlib.trace import (
     mutter,
     )

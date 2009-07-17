@@ -41,9 +41,6 @@ from bzrlib.errors import (
     NoSuchRevision,
     NoRepositoryPresent,
     ) 
-from bzrlib.revision import (
-    ensure_null,
-    )
 from bzrlib.transport import (
     get_transport,
     )
@@ -60,9 +57,6 @@ from bzrlib.plugins.svn.fetch import (
     )
 from bzrlib.plugins.svn.format import (
     get_rich_root_format,
-    )
-from bzrlib.plugins.svn.revmeta import (
-    filter_revisions,
     )
 
 

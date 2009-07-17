@@ -19,19 +19,14 @@
 
 import bzrlib.reconcile
 
-from itertools import ifilter
 from subvertpy import (
     SubversionException,
-    ERR_FS_NOT_DIRECTORY,
     properties,
     )
 
 from bzrlib import ui
-from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn import (
-    changes,
-    logwalker,
     mapping,
     )
 from bzrlib.plugins.svn.commit import set_svn_revprops

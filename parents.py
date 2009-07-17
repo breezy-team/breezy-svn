@@ -13,11 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib import debug
-from bzrlib.knit import make_file_factory
-from bzrlib.trace import mutter
 from bzrlib.revision import NULL_REVISION
-from bzrlib.versionedfile import ConstantMapper
 
 class DiskCachingParentsProvider(object):
     """Parents provider that caches parents in a SQLite database."""

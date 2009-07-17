@@ -28,6 +28,8 @@ from subvertpy import (
     )
 
 from bzrlib import (
+    debug,
+    trace,
     urlutils,
     )
 from bzrlib.errors import (
@@ -37,12 +39,8 @@ from bzrlib.errors import (
 from bzrlib.filters import (
     ContentFilter,
     )
-from bzrlib.foreign import (
-    ForeignRevision,
-    )
 
 from bzrlib.plugins.svn.mapping import (
-    BzrSvnMapping,
     mapping_registry,
     )
 

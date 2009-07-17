@@ -23,7 +23,6 @@ from bzrlib.commands import (
     )
 from bzrlib.option import (
     Option,
-    RegistryOption,
     )
 
 

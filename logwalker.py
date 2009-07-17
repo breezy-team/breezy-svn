@@ -24,7 +24,6 @@ from bzrlib import (
     debug,
     ui,
     trace,
-    urlutils,
     )
 from bzrlib.errors import (
     NoSuchRevision,

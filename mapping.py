@@ -26,9 +26,6 @@ from bzrlib import (
     foreign,
     osutils,
     )
-from bzrlib.lazy_import import (
-    lazy_import,
-    )
 from bzrlib.errors import (
     InvalidRevisionId,
     )

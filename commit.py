@@ -28,7 +28,6 @@ from cStringIO import (
 from subvertpy import (
     delta, 
     properties, 
-    NODE_DIR, 
     SubversionException, 
     ra,
     )

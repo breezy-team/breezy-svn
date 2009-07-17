@@ -46,6 +46,7 @@ from bzrlib import (
     )
 from bzrlib.errors import (
     NoSuchRevision,
+    RevisionNotPresent,
     VersionedFileInvalidChecksum,
     )
 from bzrlib.inventory import (
@@ -65,9 +66,6 @@ from bzrlib.versionedfile import (
     FulltextContentFactory,
     )
 
-from bzrlib.plugins.svn import (
-    changes,
-    )
 from bzrlib.plugins.svn.errors import (
     AbsentPath,
     FileIdMapIncomplete,
@@ -889,7 +887,7 @@ class TreeDeltaBuildEditor(DeltaBuildEditor):
 
     def _was_renamed(self, path):
         fileid = self._get_new_id(path)
-        return self._parent_idmap.has_fileid(fid)
+        return self._parent_idmap.has_fileid(fileid)
 
     def _get_old_id(self, path):
         return self._parent_idmap.lookup(self.mapping, path)[0]
@@ -940,8 +938,11 @@ class FetchRevisionFinder(object):
         for revmeta, mapping in revmetas:
             try:
                 map[revmeta, mapping] = revmeta.get_revision_id(mapping)
-            except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                continue
+            except SubversionException, (_, num):
+                if num == ERR_FS_NOT_DIRECTORY:
+                    continue
+                else:
+                    raise
         present_revids = self.target.has_revisions(map.values())
         return [k for k in revmetas if k in map and map[k] not in present_revids]
 
@@ -965,8 +966,11 @@ class FetchRevisionFinder(object):
             for m in needed_mappings[revmeta]:
                 try:
                     (m, lhsm) = revmeta.get_appropriate_mappings(m)
-                except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                    continue
+                except SubversionException, (_, num):
+                    if num == ERR_FS_NOT_DIRECTORY:
+                        continue
+                    else:
+                        raise
                 if (m != master_mapping and 
                     not m.is_branch_or_tag(revmeta.branch_path)):
                     continue
