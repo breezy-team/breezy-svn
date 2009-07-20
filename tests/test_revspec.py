@@ -33,6 +33,7 @@ from bzrlib.plugins.svn.tests import SubversionTestCase
 
 
 class TestRevSpec(TestCase):
+    
     def test_present(self):
         self.assertIsNot(None, RevisionSpec.from_string("svn:foo"))
 
@@ -44,6 +45,7 @@ class TestRevSpec(TestCase):
 
 
 class TestRevSpecsBySubversion(SubversionTestCase):
+
     def test_by_single_revno(self):
         revspec = RevisionSpec.from_string("svn:2")
         repos_url = self.make_repository("a")

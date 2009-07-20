@@ -47,7 +47,6 @@ from bzrlib.plugins.svn.commit import (
     )
 from bzrlib.plugins.svn.errors import RevpropChangeFailed
 from bzrlib.plugins.svn.mapping import mapping_registry
-from bzrlib.plugins.svn.transport import SvnRaTransport
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 class TestNativeCommit(SubversionTestCase):

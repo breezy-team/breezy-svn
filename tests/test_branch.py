@@ -24,7 +24,6 @@ from bzrlib import urlutils
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import (
-    NoSuchFile,
     NoSuchRevision,
     NoSuchTag,
     NotBranchError,
@@ -38,7 +37,6 @@ from bzrlib.plugins.svn.branch import (
     SvnBranchFormat,
     )
 from bzrlib.plugins.svn.convert import load_dumpfile
-from bzrlib.plugins.svn.mapping import SVN_PROP_BZR_REVISION_ID
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 class WorkingSubversionBranch(SubversionTestCase):

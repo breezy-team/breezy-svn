@@ -40,6 +40,7 @@ from bzrlib.plugins.svn.tree import (
 
 
 class TestBasisTree(SubversionTestCase):
+
     def test_executable(self):
         repos_url = self.make_client("d", "dc")
 

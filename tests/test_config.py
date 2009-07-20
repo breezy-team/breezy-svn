@@ -20,10 +20,8 @@ from bzrlib.branch import Branch
 from bzrlib.repository import Repository
 from bzrlib.workingtree import WorkingTree
 from bzrlib.plugins.svn.config import (
-    BranchConfig, 
     NoSubversionBuildPackageConfig, 
     PropertyConfig, 
-    SvnRepositoryConfig, 
     SubversionBuildPackageConfig,
     )
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme

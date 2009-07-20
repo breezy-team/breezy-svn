@@ -37,7 +37,6 @@ from bzrlib.plugins.svn.revmeta import (
     filter_revisions,
     restrict_prefixes,
     RevisionMetadataBrowser,
-    RevisionMetadata,
     )
 from bzrlib.plugins.svn.tests import SubversionTestCase
 

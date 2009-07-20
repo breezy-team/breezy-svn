@@ -37,13 +37,13 @@ from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     )
 from bzrlib.plugins.svn.layout.standard import (
-    CustomLayout,
     RootLayout,
     TrunkLayout,
     )
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 class MockRepo(object):
+
     def __init__(self, mapping, uuid="uuid"):
         self.uuid = uuid
 

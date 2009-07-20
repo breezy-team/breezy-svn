@@ -48,6 +48,7 @@ from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.workingtree import generate_ignore_list
 
 class TestWorkingTree(SubversionTestCase):
+
     def test_add_duplicate(self):
         self.make_client('a', 'dc')
         self.build_tree({"dc/bl": "data"})

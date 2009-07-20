@@ -21,12 +21,14 @@ from subvertpy import properties
 from bzrlib import (
     errors as bzr_errors,
     osutils,
-    ui,
     )
 
 from bzrlib.plugins.svn import (
     errors,
     mapping,
+    )
+from bzrlib.plugins.svn.errors import (
+    NoCustomBranchPaths,
     )
 from bzrlib.plugins.svn.layout import (
     RepositoryLayout,
@@ -37,10 +39,8 @@ from bzrlib.plugins.svn.mapping3.scheme import (
     InvalidSvnBranchPath,
     ListBranchingScheme,
     NoBranchingScheme,
-    TrunkBranchingScheme,
     UnknownBranchingScheme,
     guess_scheme_from_branch_path, 
-    guess_scheme_from_history, 
     parse_list_scheme_text,
     repository_guess_scheme,
     scheme_from_layout,
@@ -183,12 +183,6 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
             self.scheme = scheme
         self.guessed_scheme = guessed_scheme
         self.name = "v3-" + str(scheme)
-
-    def __eq__(self, other):
-        return (type(self) == type(other) and self.name == other.name)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     def __hash__(self):
         return hash((type(self), self.name))

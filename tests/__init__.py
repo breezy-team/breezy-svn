@@ -19,10 +19,6 @@
 import subvertpy.tests
 
 
-from bzrlib import (
-    osutils,
-    urlutils,
-    )
 from bzrlib.bzrdir import (
     BzrDir,
     )

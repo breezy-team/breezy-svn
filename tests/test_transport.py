@@ -206,6 +206,7 @@ class SvnRaTest(SubversionTestCase):
  
 
 class UrlConversionTest(TestCase):
+
     def test_bzr_to_svn_url(self):
         self.assertEqual("svn://host/location", 
                          bzr_to_svn_url("svn://host/location"))

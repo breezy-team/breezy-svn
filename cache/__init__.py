@@ -21,7 +21,6 @@ import threading
 
 import bzrlib
 from bzrlib import (
-    debug, 
     osutils,
     trace,
     )

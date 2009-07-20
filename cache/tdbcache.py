@@ -24,16 +24,12 @@ from bzrlib import (
     debug,
     errors,
     trace,
-    osutils,
     )
 try:
     from bzrlib import bencode
 except ImportError:
     from bzrlib.util import bencode
 
-from bzrlib.plugins.svn import (
-    changes,
-    )
 from bzrlib.plugins.svn.cache import (
     RepositoryCache,
     cachedbs,

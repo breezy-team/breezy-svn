@@ -51,11 +51,7 @@ from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
     )
-from bzrlib.plugins.svn.mapping import (
-    SVN_PROP_BZR_REVISION_ID,
-    )
 from bzrlib.plugins.svn.push import (
-    InterToSvnRepository,
     determine_branch_path,
     )
 from bzrlib.plugins.svn.tests import (

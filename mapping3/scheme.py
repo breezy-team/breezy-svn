@@ -554,7 +554,7 @@ def scheme_from_layout(layout):
         return NoBranchingScheme()
     if isinstance(layout, CustomLayout) and len(layout.branches) == 1:
         return SingleBranchingScheme(layout.branches[0])
-    raise LayoutUnusable(layout, self)
+    raise LayoutUnusable(layout, None)
 
 
 def repository_guess_scheme(repository, last_revnum, branch_path=None):
