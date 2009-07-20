@@ -25,10 +25,21 @@ import subvertpy
 ERR_WC_SCHEDULE_CONFLICT = getattr(subvertpy, "ERR_WC_SCHEDULE_CONFLICT", 155013)
 import subvertpy.wc
 from subvertpy import properties
-from subvertpy.wc import *
+from subvertpy.wc import (
+    SCHEDULE_ADD,
+    SCHEDULE_DELETE,
+    SCHEDULE_NORMAL,
+    SCHEDULE_REPLACE,
+    WorkingCopy,
+    check_wc,
+    get_adm_dir,
+    get_pristine_copy_path,
+    is_adm_dir,
+    revision_status,
+    )
 import urllib
 
-import bzrlib, bzrlib.add
+import bzrlib.add
 from bzrlib import (
     osutils,
     urlutils,
@@ -82,6 +93,7 @@ from bzrlib.plugins.svn.errors import (
     convert_svn_error,
     )
 from bzrlib.plugins.svn.format import (
+    SvnWorkingTreeDirFormat,
     get_rich_root_format,
     )
 from bzrlib.plugins.svn.mapping import (
@@ -799,6 +811,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         try:
             stat_result = _lstat(abspath.encode(osutils._fs_enc))
         except OSError, e:
+            import errno
             if getattr(e, 'errno', None) == errno.ENOENT:
                 # no file.
                 return ('missing', None, None, None)
