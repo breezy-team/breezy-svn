@@ -1,5 +1,9 @@
 bzr-svn 0.6.4					 UNRELEASED
 
+ BUG FIXES
+
+  * Handle 404's being returned during http probe. (Closes: #402063)
+
 bzr-svn 0.6.3                    2009-07-17
 
  FEATURES
