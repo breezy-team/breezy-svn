@@ -255,6 +255,12 @@ RioVersionInfoBuilder.hooks.install_named_hook('revision',
     update_stanza, None)
 
 
+from bzrlib.send import format_registry as send_format_registry
+
+send_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
+                                   'send_svn', 'Subversion diff format')
+
+
 def test_suite():
     """Returns the testsuite for bzr-svn."""
     from unittest import TestSuite
