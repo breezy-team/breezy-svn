@@ -4,6 +4,9 @@ bzr-svn 0.6.4					 UNRELEASED
 
   * Handle 404's being returned during http probe. (Closes: #402063)
 
+  * Handle patch change requests that are too large without 
+    printing a traceback. (#394527)
+
 bzr-svn 0.6.3                    2009-07-17
 
  FEATURES

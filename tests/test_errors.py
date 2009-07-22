@@ -27,11 +27,13 @@ from bzrlib.errors import (
 from bzrlib.tests import TestCase
 
 from bzrlib.plugins.svn.errors import (
+    ERR_RA_DAV_PROPPATCH_FAILED,
     convert_error, 
     convert_svn_error, 
     DavRequestFailed, 
     InvalidPropertyValue,
     NotSvnBranchPath,
+    PropertyChangeFailed,
     )
 
 class TestConvertError(TestCase):
@@ -77,6 +79,9 @@ class TestConvertError(TestCase):
 
     def test_not_implemented(self):
         self.assertIsInstance(convert_error(subvertpy.SubversionException("Remote server doesn't support ...", subvertpy.ERR_RA_NOT_IMPLEMENTED)), NotImplementedError)
+
+    def test_proppatch_failed(self):
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("Proppatch failed", ERR_RA_DAV_PROPPATCH_FAILED)), PropertyChangeFailed)
 
     def test_decorator_nothrow(self):
         @convert_svn_error

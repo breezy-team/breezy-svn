@@ -37,6 +37,9 @@ from bzrlib.errors import (
     )
 
 
+ERR_RA_DAV_PROPPATCH_FAILED = getattr(subvertpy, "ERR_RA_DAV_PROPPATCH_FAILED", 175008)
+
+
 class InvalidBzrSvnRevision(NoSuchRevision):
     _fmt = """Revision id %(revid)s was added incorrectly"""
 
@@ -116,6 +119,8 @@ def convert_error(err):
         return ConnectionError(msg=msg)
     elif num == subvertpy.ERR_RA_DAV_REQUEST_FAILED:
         return DavRequestFailed(msg)
+    if num == ERR_RA_DAV_PROPPATCH_FAILED:
+        return PropertyChangeFailed(msg)
     else:
         return err
 
@@ -247,3 +252,10 @@ class PushToEmptyBranch(DivergedBranches):
     _fmt = ("Empty branch already exists at /trunk. "
             "Specify --overwrite or remove it before pushing.")
 
+
+class PropertyChangeFailed(BzrError):
+
+    _fmt = """Unable to set DAV properties: %(msg)s. Perhaps LimitXMLRequestBody is set too low in the server."""
+
+    def __init__(self, msg):
+        BzrError.__init__(self, msg=msg)
