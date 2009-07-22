@@ -28,7 +28,7 @@ from bzrlib.errors import (
     ConnectionReset,
     DivergedBranches,
     InvalidRevisionSpec,
-    LockError,
+    LockActive,
     PermissionDenied,
     NoRepositoryPresent,
     NoSuchRevision,
@@ -106,7 +106,7 @@ def convert_error(err):
     if num == subvertpy.ERR_RA_SVN_CONNECTION_CLOSED:
         return ConnectionReset(msg=msg)
     elif num == subvertpy.ERR_WC_LOCKED:
-        return LockError(message=msg)
+        return LockActive(msg)
     elif num == subvertpy.ERR_RA_NOT_AUTHORIZED:
         return PermissionDenied('.', msg)
     elif num == subvertpy.ERR_INCOMPLETE_DATA:

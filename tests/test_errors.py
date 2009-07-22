@@ -19,7 +19,7 @@ import subvertpy
 from bzrlib.errors import (
     ConnectionError,
     ConnectionReset,
-    LockError,
+    LockActive,
     PermissionDenied,
     TransportError,
     UnexpectedEndOfContainerError,
@@ -66,7 +66,7 @@ class TestConvertError(TestCase):
         self.assertIsInstance(convert_error(subvertpy.SubversionException("Connection closed", subvertpy.ERR_RA_SVN_CONNECTION_CLOSED)), ConnectionReset)
 
     def test_convert_error_lock(self):
-        self.assertIsInstance(convert_error(subvertpy.SubversionException("Working copy locked", subvertpy.ERR_WC_LOCKED)), LockError)
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("Working copy locked", subvertpy.ERR_WC_LOCKED)), LockActive)
 
     def test_convert_perm_denied(self):
         self.assertIsInstance(convert_error(subvertpy.SubversionException("Permission Denied", subvertpy.ERR_RA_NOT_AUTHORIZED)), PermissionDenied)
