@@ -1209,7 +1209,8 @@ class InterFromSvnRepository(InterRepository):
                 self._prev_inv = editor.inventory
                 assert self._prev_inv.revision_id == revid
         finally:
-            return self.target.commit_write_group()
+            pack_hint = self.target.commit_write_group()
+        return pack_hint
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False, 
               needed=None, mapping=None, project=None, fetch_spec=None):
@@ -1333,7 +1334,8 @@ class InterFromSvnRepository(InterRepository):
                     if not conn.busy:
                         self.source.transport.add_connection(conn)
         finally:
-            return self.target.commit_write_group()
+            pack_hint = self.target.commit_write_group()
+        return pack_hint
 
     @staticmethod
     def is_compatible(source, target):
