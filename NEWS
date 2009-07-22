@@ -2,12 +2,15 @@ bzr-svn 0.6.4					 UNRELEASED
 
  BUG FIXES
 
-  * Handle 404's being returned during http probe. (Closes: #402063)
+  * Handle 404's being returned during http probe. (#402063)
 
   * Handle patch change requests that are too large without 
     printing a traceback. (#394527)
 
-  * Avoid printing backtrace on lock contention. (Closes: #401677)
+  * Avoid printing backtrace on lock contention. (#401677)
+
+  * Handle http servers returning 403 Forbidden to OPTIONS requests. 
+    (#399942)
 
 bzr-svn 0.6.3                    2009-07-17
 

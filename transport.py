@@ -97,12 +97,12 @@ def get_svn_ra_transport(bzr_transport):
         url = bzr_transport._unsplit_url(bzr_transport._unqualified_scheme,
             None, None, bzr_transport._host, bzr_transport._port, 
             bzr_transport._path)
-        req = Request('OPTIONS', url, accepted_errors=[200, 404, 405]) 
+        req = Request('OPTIONS', url, accepted_errors=[200, 403, 404, 405]) 
         req.follow_redirections = True
         resp = bzr_transport._perform(req)
         if resp.code == 404:
             raise NoSuchFile(bzr_transport._path)
-        if resp.code == 405:
+        if resp.code in (403, 405):
             raise subvertpy.SubversionException("version control not supported for remote URL", subvertpy.ERR_RA_DAV_NOT_VCC)
         dav_entries = list(itertools.chain(*[entry.split(",") for entry in resp.headers.getheaders('DAV')]))
         if not "version-control" in dav_entries:
