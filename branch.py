@@ -237,7 +237,7 @@ class SvnBranch(ForeignBranch):
         """
         return self.last_revmeta()[0].revnum
 
-   def get_child_submit_format(self):
+    def get_child_submit_format(self):
         """Return the preferred format of submissions to this branch."""
         ret = self.get_config().get_user_option("child_submit_format")
         if ret is not None:

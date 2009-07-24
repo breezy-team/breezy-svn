@@ -1,5 +1,16 @@
 bzr-svn 0.6.4					 UNRELEASED
 
+  BUG FIXES
+
+   * Cope with http exceptions in the bzr-svn probe code a bit more 
+     gracefully.
+
+ FEATURES
+
+   * Implement custom "bzr send" format that matches the format used by "svn diff". 
+     This is used by default when submitting diffs against Subversion branches.
+	 (Lukas Lalinský, Jelmer Vernooij)
+
 bzr-svn 0.6.3                    2009-07-17
 
  FEATURES
