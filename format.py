@@ -121,6 +121,8 @@ class SvnRemoteFormat(SvnControlFormat):
             raise bzr_errors.NotBranchError(path=transport.base)
         except bzr_errors.InvalidURL:
             raise bzr_errors.NotBranchError(path=transport.base)
+        except bzr_errors.InvalidHttpResponse:
+            raise bzr_errors.NotBranchError(path=transport.base)
         except DavRequestFailed, e:
             if "501 Unsupported method" in e.msg:
                 raise bzr_errors.NotBranchError(path=transport.base)
