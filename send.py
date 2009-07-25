@@ -116,8 +116,6 @@ class SvnDiffTree(_mod_diff.DiffTree):
             oldpath, newpath = paths
             oldpath_encoded = get_encoded_path(paths[0])
             newpath_encoded = get_encoded_path(paths[1])
-            old_present = (kind[0] is not None and versioned[0])
-            new_present = (kind[1] is not None and versioned[1])
             renamed = (parent[0], name[0]) != (parent[1], name[1])
             old_properties = self._get_file_properties(self.old_tree, oldpath_encoded, kind[0], executable[0])
             new_properties = self._get_file_properties(self.new_tree, newpath_encoded, kind[1], executable[1])
