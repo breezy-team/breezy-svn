@@ -25,7 +25,7 @@ distribution, or otherwise available from http://launchpad.net/subvertpy.
 bzr-rebase
 ^^^^^^^^^^
 
-In order to be able to use the ``svn-upgrade`` command (for those 
+In order to be able to use the ``foreign-mapping-upgrade`` command (for those 
 who used versions of bzr-svn older than 0.4.0), you will need the `bzr-rebase`_ 
 plugin.
 
