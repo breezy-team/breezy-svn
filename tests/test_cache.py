@@ -16,7 +16,6 @@
 
 import os
 
-
 from bzrlib.errors import (
     NoSuchRevision,
     )
@@ -26,7 +25,6 @@ from bzrlib.tests import (
     TestSkipped,
     UnavailableFeature,
     )
-
 
 from bzrlib.plugins.svn.mapping4 import (
     BzrSvnMappingv4,

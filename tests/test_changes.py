@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Tests for the changes module."""
+
 from bzrlib.tests import TestCase
 
 from bzrlib.plugins.svn.changes import (
@@ -23,6 +25,7 @@ from bzrlib.plugins.svn.changes import (
     )
 
 class PathIsChildTests(TestCase):
+
     def test_both_empty(self):
         self.assertTrue(path_is_child("", ""))
 
@@ -40,6 +43,7 @@ class PathIsChildTests(TestCase):
 
 
 class FindPrevLocationTests(TestCase):
+
     def test_simple_prev_changed(self):
         self.assertEquals(("foo", 1), find_prev_location({"foo": ("M", None, -1)}, "foo", 2))
 
@@ -63,6 +67,7 @@ class FindPrevLocationTests(TestCase):
 
 
 class ChangesRootTests(TestCase):
+
     def test_empty(self):
         self.assertEquals(None, changes_root([]))
 

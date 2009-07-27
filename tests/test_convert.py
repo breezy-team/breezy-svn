@@ -58,6 +58,7 @@ from bzrlib.plugins.svn.tests import (
     )
 
 class TestLoadDumpfile(TestCaseInTempDir):
+
     def test_loaddumpfile(self):
         dumpfile = os.path.join(self.test_dir, "dumpfile")
         open(dumpfile, 'w').write(

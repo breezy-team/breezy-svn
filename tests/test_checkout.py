@@ -29,6 +29,7 @@ from bzrlib.plugins.svn.format import SvnWorkingTreeDirFormat
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 class TestWorkingTreeFormat(TestCase):
+    
     def setUp(self):
         super(TestWorkingTreeFormat, self).setUp()
         self.format = SvnWorkingTreeFormat(4)
@@ -45,6 +46,7 @@ class TestWorkingTreeFormat(TestCase):
 
 
 class TestCheckoutFormat(TestCase):
+
     def setUp(self):
         super(TestCheckoutFormat, self).setUp()
         self.format = SvnWorkingTreeDirFormat()
@@ -58,6 +60,7 @@ class TestCheckoutFormat(TestCase):
 
 
 class TestCheckout(SubversionTestCase):
+
     def test_not_for_writing(self):
         self.make_client("d", "dc")
         x = BzrDir.create_branch_convenience("dc/foo")
