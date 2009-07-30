@@ -206,7 +206,6 @@ def Connection(url, auth=None):
     else:
         progress_cb = None
     try:
-        mutter('opening SVN RA connection to %r' % url)
         ret = subvertpy.ra.RemoteAccess(url.encode('utf8'), 
                 auth=auth,
                 client_string_func=bzrlib.plugins.svn.get_client_string,
