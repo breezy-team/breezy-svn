@@ -2,24 +2,27 @@ bzr-svn 0.6.4					 UNRELEASED
 
  BUG FIXES
 
-  * Handle 404's being returned during http probe. (#402063)
+  * Handle 404's being returned during http probe. (#402063) (Jelmer Vernooij)
 
   * Handle patch change requests that are too large without 
-    printing a traceback. (#394527)
+    printing a traceback. (#394527) (Jelmer Vernooij)
 
-  * Avoid printing backtrace on lock contention. (#401677)
+  * Avoid printing backtrace on lock contention. (#401677) (Jelmer Vernooij)
 
   * Handle http servers returning 403 Forbidden to OPTIONS requests. 
-    (#399942)
+    (#399942) (Jelmer Vernooij)
 
   * Cope with http exceptions in the bzr-svn probe code a bit more 
-    gracefully.
+    gracefully. (Jelmer Vernooij)
 
  FEATURES
 
-   * Implement custom "bzr send" format that matches the format used by "svn diff". 
-     This is used by default when submitting diffs against Subversion branches.
-	 (Lukas Lalinský, Jelmer Vernooij)
+   * Implement custom "bzr send" format that matches the format used by 
+     "svn diff".  This is used by default when submitting diffs against 
+     Subversion branches.  (Lukas Lalinský, Jelmer Vernooij)
+
+   * Provide hint about creating working trees in 'bzr svn-import'.
+     (Jelmer Vernooij)
 
 bzr-svn 0.6.3                    2009-07-17
 

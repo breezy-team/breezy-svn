@@ -177,6 +177,8 @@ class cmd_svn_import(Command):
 
             if tmp_repos is not None:
                 osutils.rmtree(tmp_repos)
+            if not trees:
+                trace.info("Use 'bzr checkout' to create a working tree in the newly created branches.")
         finally:
             from_repos.unlock()
 
