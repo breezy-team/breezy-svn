@@ -57,13 +57,14 @@ class cmd_svn_import(Command):
     This command is resumable; any previously imported revisions will be 
     skipped.
     """
+    _see_also = ['formats']
     takes_args = ['from_location', 'to_location?']
     takes_options = [RegistryOption('format',
                             help='Specify a format for this repository. See'
                                  ' "bzr help formats" for details. Must support rich-root.',
                             lazy_registry=('bzrlib.bzrdir', 'format_registry'),
                             converter=lambda name: bzrdir.format_registry.make_bzrdir(name),
-                            value_switches=True, title='Repository format'),
+                            value_switches=False, title='Repository format'),
                      Option('trees', help='Create working trees.'),
                      Option('standalone', help='Create standalone branches.'),
                      Option('all', 
