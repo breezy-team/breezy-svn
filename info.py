@@ -26,6 +26,8 @@ bzr_plugin_version = (0, 6, 5, 'dev', 0)
 
 bzr_commands = ["svn-import", "svn-layout"]
 
+bzr_transports = ["svn://", "svn+"]
+
 bzr_compatible_versions = [(1, x, 0) for x in [15, 16, 17]]
 
 bzr_minimum_version = bzr_compatible_versions[0]
