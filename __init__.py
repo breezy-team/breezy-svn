@@ -31,7 +31,7 @@ For more information about bzr-svn, see the bzr-svn FAQ.
 import bzrlib
 import bzrlib.api
 
-from setup import (
+from info import (
     bzr_plugin_version as version_info,
     bzr_compatible_versions,
     subvertpy_minimum_version,
