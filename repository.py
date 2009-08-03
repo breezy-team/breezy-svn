@@ -124,7 +124,9 @@ class SvnRepositoryFormat(RepositoryFormat):
         raise bzr_errors.UninitializableFormat(self)
 
     def check_conversion_target(self, target_repo_format):
-        return target_repo_format.rich_root_data
+        if not target_repo_format.rich_root_data:
+            raise bzr_errors.BadConversionTarget(
+                'Does not support rich root data.', target_repo_format)
 
 
 

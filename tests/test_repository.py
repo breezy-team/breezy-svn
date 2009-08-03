@@ -24,7 +24,10 @@ from bzrlib.bzrdir import (
     format_registry,
     )
 from bzrlib.config import GlobalConfig
-from bzrlib.errors import UninitializableFormat
+from bzrlib.errors import (
+    UninitializableFormat,
+    BadConversionTarget,
+    )
 from bzrlib.repository import Repository
 from bzrlib.tests import TestCase
 
@@ -238,12 +241,13 @@ class SvnRepositoryFormatTests(TestCase):
                          self.format.get_format_description())
 
     def test_conversion_target_self(self):
-        self.assertTrue(self.format.check_conversion_target(self.format))
+        self.format.check_conversion_target(self.format)
 
     def test_conversion_target_incompatible(self):
-        self.assertFalse(self.format.check_conversion_target(
-              format_registry.make_bzrdir('weave').repository_format))
+        self.assertRaises(BadConversionTarget,
+                          self.format.check_conversion_target,
+                          format_registry.make_bzrdir('weave').repository_format)
 
     def test_conversion_target_compatible(self):
-        self.assertTrue(self.format.check_conversion_target(
-          format_registry.make_bzrdir('rich-root').repository_format))
+        self.format.check_conversion_target(
+          format_registry.make_bzrdir('rich-root').repository_format)
