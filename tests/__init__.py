@@ -33,7 +33,7 @@ from bzrlib.plugins.svn.transport import (
 
 class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
-    def make_repository(self, *args, **kwargs):
+    def make_repository(self, relpath, allow_revprop_changes=True):
         """Create an SVN repository.
 
         :param relpath: Relative path at which to create the repository.
@@ -43,7 +43,7 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         """
         return svn_to_bzr_url(
             subvertpy.tests.SubversionTestCase.make_repository(self, 
-                *args, **kwargs))
+                relpath, allow_revprop_changes))
 
     def setUp(self):
         subvertpy.tests.SubversionTestCase.setUp(self)
