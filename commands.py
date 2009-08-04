@@ -18,10 +18,14 @@
 """Subversion-specific Bazaar command line subcommands."""
 
 
+from bzrlib import (
+    bzrdir,
+    )
 from bzrlib.commands import (
     Command,
     )
 from bzrlib.option import (
+    RegistryOption,
     Option,
     )
 
@@ -53,8 +57,15 @@ class cmd_svn_import(Command):
     This command is resumable; any previously imported revisions will be 
     skipped.
     """
+    _see_also = ['formats']
     takes_args = ['from_location', 'to_location?']
-    takes_options = [Option('trees', help='Create working trees.'),
+    takes_options = [RegistryOption('format',
+                            help='Specify a format for this repository. See'
+                                 ' "bzr help formats" for details. Must support rich-root.',
+                            lazy_registry=('bzrlib.bzrdir', 'format_registry'),
+                            converter=lambda name: bzrdir.format_registry.make_bzrdir(name),
+                            value_switches=False, title='Repository format'),
+                     Option('trees', help='Create working trees.'),
                      Option('standalone', help='Create standalone branches.'),
                      Option('all', 
                          help='Convert all revisions, even those not in '
@@ -74,7 +85,7 @@ class cmd_svn_import(Command):
                          help="Only import revisions up to specified Subversion revnum"),
                     ]
 
-    def run(self, from_location, to_location=None, trees=False, 
+    def run(self, from_location, to_location=None, format=None, trees=False,
             standalone=False, layout=None, all=False, prefix=None, keep=False,
             incremental=False, until=None):
         from bzrlib import (
@@ -170,7 +181,8 @@ class cmd_svn_import(Command):
 
             trace.info("Using repository layout: %s" % (layout or from_repos.get_layout(),))
             convert_repository(from_repos, to_location, layout, 
-                               not standalone, trees, all, 
+                               not standalone, trees, all,
+                               format=format,
                                filter_branch=filter_branch,
                                keep=keep, incremental=incremental,
                                to_revnum=to_revnum, prefix=prefix)

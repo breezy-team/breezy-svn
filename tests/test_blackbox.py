@@ -568,3 +568,9 @@ if len(sys.argv) == 2:
         os.chdir(cwd)
         os.chdir('shared/trunk')
         self.run_bzr('pull')
+
+    def test_svn_import_format(self):
+        svn_url = self.make_repository('d')
+        
+        self.run_bzr('svn-import --format 1.9-rich-root %s dc' % svn_url)
+        self.check_output("Repository branch (format: 1.14-rich-root or 1.9-rich-root)\nLocation:\n  shared repository: dc\n  repository branch: dc\n\nRelated branches:\n  parent branch: d\n", 'info dc')
