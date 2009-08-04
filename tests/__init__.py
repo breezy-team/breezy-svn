@@ -82,7 +82,6 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
 def test_suite():
     from unittest import TestSuite
-    
     from bzrlib.tests import TestUtil
 
     loader = TestUtil.TestLoader()

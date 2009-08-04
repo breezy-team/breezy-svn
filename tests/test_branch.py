@@ -18,11 +18,14 @@
 
 import os
 import subvertpy
-from unittest import TestCase
 
 from bzrlib import urlutils
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir
+from bzrlib.branch import (
+    Branch,
+    )
+from bzrlib.bzrdir import (
+    BzrDir,
+    )
 from bzrlib.errors import (
     NoSuchRevision,
     NoSuchTag,
@@ -31,6 +34,9 @@ from bzrlib.errors import (
     )
 from bzrlib.repository import Repository
 from bzrlib.revision import NULL_REVISION
+from bzrlib.tests import (
+    TestCase,
+    )
 from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn.branch import (
@@ -96,7 +102,8 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.close()
 
         b = Branch.open(repos_url + "/trunk")
-        b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
+        b.tags.set_tag(u"mytag",
+            b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR, 
                 b.repository.transport.check_path("tags/mytag", 3))
@@ -197,7 +204,8 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.close()
 
         b = Branch.open(repos_url + "/trunk")
-        b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
+        b.tags.set_tag(u"mytag",
+            b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR, 
                 b.repository.transport.check_path("tags", 3))
@@ -375,7 +383,8 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.close()
 
         branch = Branch.open(repos_url+"/trunk")
-        self.assertRaises(NotImplementedError, branch.set_revision_history, ["nonexistantt"])
+        self.assertRaises(NotImplementedError,
+            branch.set_revision_history, ["nonexistantt"])
 
     def test_set_revision_history(self):
         repos_url = self.make_repository('a')

@@ -16,14 +16,21 @@
 
 """Branch property access tests."""
 
-from bzrlib.plugins.svn.branchprops import PathPropertyProvider
+from bzrlib.plugins.svn.branchprops import (
+    PathPropertyProvider,
+    )
 from bzrlib.plugins.svn.logwalker import (
     LogWalker,
     )
-from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.transport import SvnRaTransport
+from bzrlib.plugins.svn.tests import (
+    SubversionTestCase,
+    )
+from bzrlib.plugins.svn.transport import (
+    SvnRaTransport,
+    )
 
 class TestBranchProps(SubversionTestCase):
+
     def setUp(self):
         super(TestBranchProps, self).setUp()
 
