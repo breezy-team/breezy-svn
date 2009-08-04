@@ -34,6 +34,10 @@ from bzrlib.plugins.svn.transport import (
 class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
     def make_repository(self, *args, **kwargs):
+        """Create an SVN repository.
+
+        :return: a bzr-friendly URL for the created repository.
+        """
         return svn_to_bzr_url(subvertpy.tests.SubversionTestCase.make_repository(self, *args, **kwargs))
 
     def setUp(self):
