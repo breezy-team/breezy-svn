@@ -965,7 +965,9 @@ foohosts""")
 
 
 class BranchFormatTests(TestCase):
+
     def setUp(self):
+        super(BranchFormatTests, self).setUp()
         self.format = SvnBranchFormat()
 
     def test_initialize(self):
