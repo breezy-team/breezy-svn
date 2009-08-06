@@ -29,15 +29,12 @@ from bzrlib import (
     branch,
     errors as bzr_errors,
     graph,
+    transactions,
     ui,
     urlutils,
     )
 from bzrlib.foreign import ForeignRepository
 from bzrlib.inventory import Inventory
-from bzrlib.lockable_files import (
-    LockableFiles,
-    TransportLock,
-    )
 from bzrlib.repository import (
     Repository,
     RepositoryFormat,
@@ -97,6 +94,54 @@ LAYOUT_SOURCE_CONFIG = 'config'
 LAYOUT_SOURCE_REGISTRY = 'registry'
 LAYOUT_SOURCE_OVERRIDDEN = 'overridden'
 LAYOUT_SOURCE_MAPPING_MANDATED = 'mapping-mandated'
+
+class DummyLockableFiles(object):
+
+    def __init__(self, transport):
+        self._transport = transport
+
+    def create_lock(self):
+        pass
+
+    def break_lock(self):
+        pass
+
+    def leave_in_place(self):
+        pass
+
+    def dont_leave_in_place(self):
+        pass
+
+    def lock_write(self, token=None):
+        pass
+
+    def lock_read(self):
+        pass
+
+    def unlock(self):
+        pass
+
+    def is_locked(self):
+        """Return true if this LockableFiles group is locked"""
+        return False
+
+    def get_physical_lock_status(self):
+        """Return physical lock status.
+
+        Returns true if a lock is held on the transport. If no lock is held, or
+        the underlying locking mechanism does not support querying lock
+        status, false is returned.
+        """
+        return False
+
+    def get_transaction(self):
+        """Return the current active transaction.
+
+        If no transaction is active, this returns a passthrough object
+        for which all data is immediately flushed and no caching happens.
+        """
+        return transactions.PassThroughTransaction()
+
 
 class SvnRepositoryFormat(RepositoryFormat):
     """Repository format for Subversion repositories (accessed using svn_ra).
@@ -311,7 +356,7 @@ class SvnRepository(ForeignRepository):
 
         assert isinstance(transport, Transport)
 
-        control_files = LockableFiles(transport, '', TransportLock)
+        control_files = DummyLockableFiles(transport)
         Repository.__init__(self, SvnRepositoryFormat(), bzrdir, control_files)
 
         self._cached_revnum = None
