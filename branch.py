@@ -99,7 +99,11 @@ class SubversionBranchCheckResult(BranchCheckResult):
 
 
 class SubversionSourcePullResult(PullResult):
-    """Subversion source pull result. """
+    """Subversion source pull result.
+    
+    The main difference with a standard Bazaar PullResult is that it also 
+    reports the Subversion revision number.
+    """
 
     def report(self, to_file):
         if not trace.is_quiet():
@@ -164,6 +168,7 @@ class SvnBranch(ForeignBranch):
             branch is located at.
         :param revnum: Subversion revision number of the branch to 
             look at; none for latest.
+        :param _skip_check: If True, don't check if the branch actually exists.
         """
         self.repository = repository
         self._format = SvnBranchFormat()

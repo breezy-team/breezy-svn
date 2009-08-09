@@ -44,7 +44,6 @@ from bzrlib.errors import (
     )
 
 
-
 def as_bool(str):
     """Parse a string as a boolean. 
 

@@ -33,14 +33,20 @@ from bzrlib import (
     ui,
     urlutils,
     )
-from bzrlib.foreign import ForeignRepository
-from bzrlib.inventory import Inventory
+from bzrlib.foreign import (
+    ForeignRepository,
+    )
+from bzrlib.inventory import (
+    Inventory,
+    )
 from bzrlib.repository import (
     Repository,
     RepositoryFormat,
     needs_read_lock,
     )
-from bzrlib.revisiontree import RevisionTree
+from bzrlib.revisiontree import (
+    RevisionTree,
+    )
 from bzrlib.revision import (
     NULL_REVISION,
     ensure_null,
@@ -61,15 +67,23 @@ from bzrlib.plugins.svn import (
     logwalker,
     revmeta,
     )
-from bzrlib.plugins.svn.branchprops import PathPropertyProvider
-from bzrlib.plugins.svn.config import SvnRepositoryConfig
+from bzrlib.plugins.svn.branchprops import (
+    PathPropertyProvider,
+    )
+from bzrlib.plugins.svn.config import (
+    SvnRepositoryConfig,
+    )
 from bzrlib.plugins.svn.fileids import (
     CachingFileIdMapStore,
     FileIdMapStore,
     simple_apply_changes,
     )
-from bzrlib.plugins.svn.layout.standard import WildcardLayout
-from bzrlib.plugins.svn.layout.guess import repository_guess_layout
+from bzrlib.plugins.svn.layout.standard import (
+    WildcardLayout,
+    )
+from bzrlib.plugins.svn.layout.guess import (
+    repository_guess_layout,
+    )
 from bzrlib.plugins.svn.mapping import (
     SVN_REVPROP_BZR_SIGNATURE,
     BzrSvnMapping,
@@ -80,14 +94,20 @@ from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     parse_svn_dateprop,
     )
-from bzrlib.plugins.svn.parents import DiskCachingParentsProvider
+from bzrlib.plugins.svn.parents import (
+    DiskCachingParentsProvider,
+    )
 from bzrlib.plugins.svn.revids import (
     DiskCachingRevidMap,
     MemoryCachingRevidMap,
     RevidMap,
     )
-from bzrlib.plugins.svn.tree import SvnRevisionTree
-from bzrlib.plugins.svn.versionedfiles import SvnTexts
+from bzrlib.plugins.svn.tree import (
+    SvnRevisionTree,
+    )
+from bzrlib.plugins.svn.versionedfiles import (
+    SvnTexts,
+    )
 
 LAYOUT_SOURCE_GUESSED = 'guess'
 LAYOUT_SOURCE_CONFIG = 'config'

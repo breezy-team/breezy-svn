@@ -1,5 +1,9 @@
 bzr-svn	0.6.5					 UNRELEASED
 
+ API CHANGES
+
+  * Removed unused SvnRepository.find_children() function.
+
 bzr-svn 0.6.4					 2009-08-03
 
  BUG FIXES
