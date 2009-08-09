@@ -1244,40 +1244,6 @@ class SvnRepository(ForeignRepository):
         else:
             return iter(self.find_branchpaths(layout, from_revnum, to_revnum, project))
 
-    def find_children(self, path, revnum, pb=None):
-        """Find all children of path in revnum.
-
-        :param path:  Path to check
-        :param revnum:  Revision to check
-        """
-        assert isinstance(path, str), "invalid path"
-        path = path.strip("/")
-        conn = self.transport.connections.get(self.transport.get_svn_repos_root())
-        results = []
-        unchecked_dirs = set([path])
-        num_checked = 0
-        try:
-            while len(unchecked_dirs) > 0:
-                if pb is not None:
-                    pb.update("listing branch contents", num_checked, 
-                        num_checked+len(unchecked_dirs))
-                nextp = unchecked_dirs.pop()
-                num_checked += 1
-                try:
-                    dirents = conn.get_dir(nextp, revnum, subvertpy.ra.DIRENT_KIND)[0]
-                except subvertpy.SubversionException, (_, num):
-                    if num == subvertpy.ERR_FS_NOT_DIRECTORY:
-                        continue
-                    raise
-                for k, v in dirents.iteritems():
-                    childp = urlutils.join(nextp, k)
-                    if v['kind'] == subvertpy.NODE_DIR:
-                        unchecked_dirs.add(childp)
-                    results.append(childp)
-        finally:
-            self.transport.connections.add(conn)
-        return results
-
     def abort_write_group(self, suppress_errors=False):
         """See Repository.abort_write_group()."""
         self._write_group = None
