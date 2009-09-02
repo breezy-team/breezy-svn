@@ -177,27 +177,18 @@ format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.format",
 revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec", 
     "RevisionSpec_svn")
 
-try:
-    config.credential_store_registry.register_lazy(
-        "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
-        help=__doc__, fallback=True)
-except TypeError:
-    # Fallback credentials stores were introduced in Bazaar 1.15
-    config.credential_store_registry.register_lazy(
-        "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
-        help=__doc__)
+config.credential_store_registry.register_lazy(
+    "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
+    help=__doc__, fallback=True)
 
 foreign_vcs_registry.register_lazy("svn", "bzrlib.plugins.svn.mapping",
                                    "foreign_vcs_svn")
 
-try:
-    from bzrlib.transport import transport_server_registry
-except ImportError:
-    pass
-else:
-    transport_server_registry.register_lazy('svn', 
-        'bzrlib.plugins.svn.server', 'serve_svn', 
-        "Subversion svn_ra protocol. (default port: 3690)")
+from bzrlib.transport import transport_server_registry
+transport_server_registry.register_lazy('svn', 
+    'bzrlib.plugins.svn.server', 'serve_svn', 
+    "Subversion svn_ra protocol. (default port: 3690)")
+
 
 _optimizers_registered = False
 def lazy_register_optimizers():
@@ -232,15 +223,8 @@ def info_svn_repository(repository, stats, outf):
         outf.write("Subversion Last Revision: %d\n" % stats["svn-last-revnum"])
 
 
-try:
-    from bzrlib.info import (
-        hooks as info_hooks,
-        )
-except ImportError:
-    # Info hooks were introduced in Bazaar 1.15
-    pass
-else:
-    info_hooks.install_named_hook('repository', info_svn_repository, None)
+from bzrlib.info import hooks as info_hooks
+info_hooks.install_named_hook('repository', info_svn_repository, None)
 
 
 def update_stanza(rev, stanza):
