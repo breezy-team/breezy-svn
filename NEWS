@@ -1,14 +1,18 @@
 bzr-svn 1.0.0					 UNRELEASED
 
+ FEATURES
+
+  * Mark as compatible with Bazaar 2.0. (Jelmer Vernooij)
+
 bzr-svn	0.6.5					 2009-09-01
 
  API CHANGES
 
-  * Removed unused SvnRepository.find_children() function.
+  * Removed unused SvnRepository.find_children() function. (Jelmer Vernooij)
 
  FEATURES
 
-  * Mark as compatible with bzr 1.18.
+  * Mark as compatible with bzr 1.18. (Jelmer Vernooij)
 
 bzr-svn 0.6.4					 2009-08-03
 
@@ -49,7 +53,7 @@ bzr-svn 0.6.3                    2009-07-17
  
  BUG FIXES
  
-  * Fix CustomLayout.get_branches. (Closes: #388698)
+  * Fix CustomLayout.get_branches. (#388698)
 
   * Fix fetching of revisions with no commit message set to the 2a repository 
     format.
