@@ -313,6 +313,7 @@ class TestPush(SubversionTestCase):
         self.assertTrue(os.path.islink("dc/south"))
         wt = self.bzrdir.open_workingtree()
         wt.add('south')
+        self.assertEquals("bla", wt.get_symlink_target(wt.path2id("south")))
         wt.commit(message="Commit from Bzr")
 
         self.svndir.open_branch().pull(self.bzrdir.open_branch())
