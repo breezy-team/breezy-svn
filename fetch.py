@@ -371,7 +371,7 @@ class FileBuildEditor(object):
             # how SVN behaves. It appears to consider the presence 
             # of the property sufficient to mark it executable.
             self.is_executable = (value is not None)
-        elif (name == properties.PROP_SPECIAL):
+        elif name == properties.PROP_SPECIAL:
             self.is_special = (value != None)
         elif name == properties.PROP_ENTRY_COMMITTED_REV:
             self.last_file_rev = int(value)
