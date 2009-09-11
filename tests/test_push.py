@@ -46,7 +46,9 @@ from bzrlib.plugins.svn import (
 from bzrlib.plugins.svn.branch import (
     InterOtherSvnBranch,
     )
-from bzrlib.plugins.svn.errors import MissingPrefix
+from bzrlib.plugins.svn.errors import (
+    MissingPrefix,
+    )
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
