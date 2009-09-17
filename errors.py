@@ -117,6 +117,8 @@ def convert_error(err):
         return NotImplementedError("Function not implemented in remote server")
     elif num == subvertpy.ERR_UNKNOWN_HOSTNAME:
         return ConnectionError(msg=msg)
+    elif num == subvertpy.ERR_EAI_NONAME:
+        return ConnectionError(msg=msg)
     elif num == subvertpy.ERR_RA_DAV_REQUEST_FAILED:
         return DavRequestFailed(msg)
     if num == ERR_RA_DAV_PROPPATCH_FAILED:
