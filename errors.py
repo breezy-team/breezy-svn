@@ -38,6 +38,7 @@ from bzrlib.errors import (
 
 
 ERR_RA_DAV_PROPPATCH_FAILED = getattr(subvertpy, "ERR_RA_DAV_PROPPATCH_FAILED", 175008)
+ERR_EAI_NONAME = getattr(subvertpy, "ERR_EAI_NONAME", 670008)
 
 
 class InvalidBzrSvnRevision(NoSuchRevision):
@@ -117,7 +118,7 @@ def convert_error(err):
         return NotImplementedError("Function not implemented in remote server")
     elif num == subvertpy.ERR_UNKNOWN_HOSTNAME:
         return ConnectionError(msg=msg)
-    elif num == subvertpy.ERR_EAI_NONAME:
+    elif num == ERR_EAI_NONAME:
         return ConnectionError(msg=msg)
     elif num == subvertpy.ERR_RA_DAV_REQUEST_FAILED:
         return DavRequestFailed(msg)
