@@ -4,6 +4,11 @@ bzr-svn 1.0.0					 UNRELEASED
 
   * Mark as compatible with Bazaar 2.0. (Jelmer Vernooij)
 
+ BUG FIXES
+
+  * Cope with InProcessTransport errors during format probe. (Jelmer Vernooij,
+															  #433803)
+
 bzr-svn	0.6.5					 2009-09-01
 
  API CHANGES

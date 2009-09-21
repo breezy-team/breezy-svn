@@ -117,6 +117,8 @@ class SvnRemoteFormat(SvnControlFormat):
                     transport, msg)
                 raise bzr_errors.NotBranchError(path=transport.base)
             raise
+        except bzr_errors.InProcessTransport:
+            raise bzr_errors.NotBranchError(path=transport.base)
         except bzr_errors.NoSuchFile:
             raise bzr_errors.NotBranchError(path=transport.base)
         except bzr_errors.InvalidURL:
