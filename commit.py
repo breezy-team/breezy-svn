@@ -822,7 +822,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         (result_revision, result_date, result_author) = self.revision_metadata
         self.result_foreign_revid = (self.repository.uuid, self.branch_path, result_revision)
         
-        self._svn_revprops[properties.PROP_REVISION_AUTHOR] = result_author
+        if result_author is not None:
+            self._svn_revprops[properties.PROP_REVISION_AUTHOR] = result_author
         self._svn_revprops[properties.PROP_REVISION_DATE] = result_date
 
         self.repository._clear_cached_state(result_revision)

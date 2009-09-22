@@ -11,6 +11,8 @@ bzr-svn 1.0.0rc1				  2009-09-20
 
   * Hide backtrace for EAI_NONAME errors. (John Szakmeister)
 
+  * Allow commits without an author. (Jelmer Vernooij, #434230)
+
 bzr-svn	0.6.5					 2009-09-01
 
  API CHANGES
