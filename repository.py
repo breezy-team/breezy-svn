@@ -714,7 +714,7 @@ class SvnRepository(ForeignRepository):
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.base)
 
-    def _check(self, revision_ids):
+    def _check(self, revision_ids, callback_refs=None):
         ret = SubversionRepositoryCheckResult(self)
         pb = ui.ui_factory.nested_progress_bar()
         try:
