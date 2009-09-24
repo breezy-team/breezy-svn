@@ -706,25 +706,29 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
         if self.old_inventory.root is None:
             # First time the root is set
-            old_file_id = None
+            base_file_id = None
             file_id = self._get_new_id(u"")
             file_parents = []
+            renew_fileids = None
+            old_path = None
         else:
             # Just inherit file id from previous 
-            old_file_id = self._get_old_id(None, u"")
+            base_file_id = self._get_old_id(None, u"")
+            base_revid = self.old_inventory[base_file_id].revision
             file_id = self._get_existing_id(None, None, u"")
-            file_parents = [self.old_inventory.root.revision]
-
+            if file_id == base_file_id:
+                file_parents = [base_revid]
+                renew_fileids = None
+                old_path = self.old_inventory.id2path(file_id)
+            else:
+                old_path = None
+                file_parents = []
+                self._inv_delta.append((u"", None, base_file_id, None))
+                renew_fileids =  base_file_id
         assert isinstance(file_id, str)
 
-        if self.old_inventory.root is not None and \
-                file_id == self.old_inventory.root.file_id:
-            old_path = u""
-        else:
-            old_path = None
-
-        return DirectoryRevisionBuildEditor(self, old_path, u"", old_file_id, 
-            file_id, None, file_parents)
+        return DirectoryRevisionBuildEditor(self, old_path, u"", base_file_id, 
+            file_id, None, file_parents, renew_fileids)
 
     def _renew_fileid(self, path):
         """'renew' the fileid of a path."""
