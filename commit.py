@@ -929,7 +929,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 yield file_id, new_path, (new_ie.text_sha1, stat_val)
             elif new_kind == 'symlink':
                 new_ie.symlink_target = tree.get_symlink_target(file_id)
-                self.modified_files[file_id] = StringIO("link %s" % new_ie.symlink_target)
+                self.modified_files[file_id] = StringIO("link %s" % new_ie.symlink_target.encode("utf-8"))
             elif new_kind == 'directory':
                 self.visit_dirs.add(new_path)
             self._visit_parent_dirs(new_path)
@@ -1000,7 +1000,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         if ie.kind == 'file':
             self.modified_files[ie.file_id] = tree.get_file(ie.file_id)
         elif ie.kind == 'symlink':
-            self.modified_files[ie.file_id] = StringIO("link %s" % ie.symlink_target)
+            self.modified_files[ie.file_id] = StringIO("link %s" % ie.symlink_target.encode("utf-8"))
         elif ie.kind == 'directory':
             self.visit_dirs.add(new_path)
         self._visit_parent_dirs(new_path)

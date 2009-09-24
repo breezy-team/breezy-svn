@@ -310,7 +310,7 @@ class TestPush(SubversionTestCase):
         if not osutils.has_symlinks():
             return
         os.symlink("bla", "dc/south")
-        assert os.path.islink("dc/south")
+        self.assertTrue(os.path.islink("dc/south"))
         wt = self.bzrdir.open_workingtree()
         wt.add('south')
         wt.commit(message="Commit from Bzr")
