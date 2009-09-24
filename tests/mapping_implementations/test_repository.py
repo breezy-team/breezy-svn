@@ -107,7 +107,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertFalse(repos.has_signature_for_revision_id("foo"))
 
     def test_set_signature(self):
-        repos_url = self.make_client("a", "dc")
+        repos_url = self.make_repository("a")
         repos = Repository.open(repos_url)
         cb = self.get_commit_editor(repos_url)
         cb.add_file("foo").modify("bar")
@@ -125,22 +125,28 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                repos._revmeta_provider.iter_reverse_branch_changes("/", 20, 0))
 
     def test_follow_branch_switched_parents(self):
-        repos_url = self.make_client('a', 'dc')
-        self.build_tree({'dc/pykleur/trunk/pykleur': None})
-        self.client_add("dc/pykleur")
-        self.client_commit("dc", "initial")
-        self.build_tree({'dc/pykleur/trunk/pykleur/afile': 'contents'})
-        self.client_add("dc/pykleur/trunk/pykleur/afile")
-        self.client_commit("dc", "add file")
-        self.client_copy("dc/pykleur", "dc/pygments", 1)
-        self.client_delete('dc/pykleur')
-        self.client_update("dc")
-        if ra.version()[1] >= 5:
-            from subvertpy.wc import (
-                CONFLICT_CHOOSE_MINE_FULL,
-                )
-            self.client_resolve("dc/pykleur", 1, CONFLICT_CHOOSE_MINE_FULL)
-        self.client_commit("dc", "commit")
+        repos_url = self.make_repository('a')
+
+        cb = self.get_commit_editor(repos_url)
+        pykleur = cb.add_dir("pykleur")
+        trunk = pykleur.add_dir("pykleur/trunk")
+        nested = trunk.add_dir("pykleur/trunk/pykleur")
+        cb.close() #1
+        
+        cb = self.get_commit_editor(repos_url)
+        pykleur = cb.open_dir("pykleur")
+        trunk = pykleur.open_dir("pykleur/trunk")
+        nested = trunk.open_dir("pykleur/trunk/pykleur")
+        afile = nested.add_file("pykleur/trunk/pykleur/afile")
+        afile.modify("contents")
+        afile.close()
+        cb.close() #2
+
+        cb = self.get_commit_editor(repos_url)
+        cb.add_dir("pygments", "pykleur", 1)
+        cb.delete("pykleur")
+        cb.close() #3
+
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(1))
         results = [(l.branch_path, l.get_paths(), l.revnum) for l in repos._revmeta_provider.iter_reverse_branch_changes("pygments/trunk", 3, 0)]
