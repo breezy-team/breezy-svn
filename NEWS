@@ -1,3 +1,22 @@
+bzr-svn 1.0.0					  2009-09-24
+
+ PERFORMANCE
+
+  * Avoid re-fetching the basis inventory during fetch. (Jelmer Vernooij)
+
+ BUG FIXES
+
+  * Generate valid inventory delta's when the root of a tree is replaced with an older 
+    copy of itself. (Jelmer Vernooij)
+
+  * Hide backtrace for EAI_NONAME errors. (John Szakmeister)
+
+  * Allow commits without an author. (Jelmer Vernooij, #434230)
+
+  * Cope with extra arguments to Repository._check(). (Jelmer Vernooij)
+
+  * Properly encode symlink targets when pushing. (Jelmer Vernooij)
+
 bzr-svn 1.0.0rc1				  2009-09-20
 
  FEATURES
@@ -8,10 +27,6 @@ bzr-svn 1.0.0rc1				  2009-09-20
 
   * Cope with InProcessTransport errors during format probe. (Jelmer Vernooij,
 															  #433803)
-
-  * Hide backtrace for EAI_NONAME errors. (John Szakmeister)
-
-  * Allow commits without an author. (Jelmer Vernooij, #434230)
 
 bzr-svn	0.6.5					 2009-09-01
 
