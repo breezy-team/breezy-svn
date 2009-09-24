@@ -58,6 +58,9 @@ from bzrlib.plugins.svn.errors import (
     MissingPrefix,
     convert_svn_error,
     )
+from bzrlib.plugins.svn.mapping import (
+    SVN_REVPROP_BZR_SKIP,
+    )
 from bzrlib.plugins.svn.repository import (
     SvnRepositoryFormat, 
     SvnRepository,
@@ -316,7 +319,7 @@ class InterToSvnRepository(InterRepository):
                     raise
                 revprops = {properties.PROP_REVISION_LOG: "Add branches directory."}
                 if self.target.transport.has_capability("commit-revprops"):
-                    revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
+                    revprops[SVN_REVPROP_BZR_SKIP] = ""
                 create_branch_prefix(self.target.transport, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
                 self.push_new(rhs_branch_path, x, append_revisions_only=False)
 
