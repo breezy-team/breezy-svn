@@ -32,10 +32,13 @@ from bzrlib.lockable_files import (
 
 
 def get_rich_root_format(stacked=False):
-    if not stacked:
-        return format_registry.make_bzrdir('default-rich-root')
-    else:
+    format = format_registry.make_bzrdir('default-rich-root')
+    # If the default format does not support stacking, fall back to 
+    # 1.9-rr. This doesn't have performance issues, since all 
+    # bzr versions that have 2a as default. 
+    if stacked and not format.get_branch_format().supports_stacking():
         return format_registry.make_bzrdir('1.9-rich-root')
+    return format
 
 
 def get_nested_tree_format():
