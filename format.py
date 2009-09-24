@@ -41,17 +41,6 @@ def get_rich_root_format(stacked=False):
     return format
 
 
-def get_nested_tree_format():
-    format = BzrDirFormat.get_default_format()
-    if format.repository_format.supports_tree_reference:
-        return format
-    # Default format does not support rich root data, 
-    # fall back to development-subtree
-    format = format_registry.make_bzrdir('development-subtree')
-    assert format.repository_format.supports_tree_reference
-    return format
-
-
 class SvnControlFormat(BzrDirFormat):
     """Format for a Subversion control dir."""
     _lock_class = TransportLock
