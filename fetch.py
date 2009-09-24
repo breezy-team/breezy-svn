@@ -684,12 +684,15 @@ class RevisionBuildEditor(DeltaBuildEditor):
             rev.message, num_replaced = escape_invalid_chars(rev.message)
         try:
             basis_id = rev.parent_ids[0]
+            basis_inv = self.old_inventory
         except IndexError:
             basis_id = NULL_REVISION
+            basis_inv = None
         present_parent_ids = self.target.has_revisions(rev.parent_ids)
         rev.inventory_sha1, self.inventory = self.target.add_inventory_by_delta(basis_id,
                   self._inv_delta, rev.revision_id,
-                  tuple([r for r in rev.parent_ids if r in present_parent_ids]))
+                  tuple([r for r in rev.parent_ids if r in present_parent_ids]),
+                  basis_inv)
         self.target.add_revision(self.revid, rev)
 
         # Only fetch signature if it's cheap
