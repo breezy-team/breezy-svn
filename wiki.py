@@ -34,6 +34,8 @@ def write_releaselist(f):
 
     def version_sort(a, b):
         def versiontuple(a):
+            if "rc" in a and not "~rc" in a:
+                a = a.replace("rc", "~rc")
             if "~" in a:
                 a = a.split("~")[0]
             return [int(x) for x in a.split(".")]
