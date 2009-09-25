@@ -11,25 +11,11 @@ You will need a recent version of Bazaar, usually the release of Bazaar
 released in the same month as the release of bzr-svn you are using. bzr-svn 
 will warn if the Bazaar release used is too old or too new.
 
-Python
-^^^^^^
-
-You need Python 2.5 or higher.
-
 subvertpy
 ^^^^^^^^^
 
 You need the subvertpy Python module. This may be packaged for your 
 distribution, or otherwise available from http://launchpad.net/subvertpy.
-
-bzr-rebase
-^^^^^^^^^^
-
-In order to be able to use the ``foreign-mapping-upgrade`` command (for those 
-who used versions of bzr-svn older than 0.4.0), you will need the `bzr-rebase`_ 
-plugin.
-
-.. _bzr-rebase: http://bazaar-vcs.org/Rebase
 
 Building
 ~~~~~~~~
@@ -46,6 +32,7 @@ version of it for your platform.
 
 Windows Setup
 ^^^^^^^^^^^^^
+
 The standard `Windows installers for Bazaar`_ include bzr-svn.
 
 .. _Windows installers for Bazaar: https://edge.launchpad.net/bzr/+download
