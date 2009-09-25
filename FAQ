@@ -3,22 +3,6 @@ bzr-svn frequently asked questions
 
 .. contents::
 
-Trying to branch into repository gives an error about incompatibility.
-----------------------------------------------------------------------
-Creating a repository and then trying to clone a Subversion branch into 
-that repository may cause the following error:
-
-::
-
-  bzr: ERROR: Repository KnitRepository is not compatible with repository SvnRepository
-
-bzr-svn requires a repository format that supports recording root file ids. To 
-upgrade the repository, run: 
-
-::
-
- $ bzr upgrade --default-rich-root
-
 Cloning a large Subversion branch is very slow
 ----------------------------------------------
 There is no way around this at the moment, because Bazaar has to import all 
@@ -55,13 +39,6 @@ list of Subversion revision properties you would like to override.
 For example::
 
   override-svn-revprops = svn:log, svn:author
-
-Converted a Subversion repository using svn-import leaves all branches empty
-----------------------------------------------------------------------------
-
-bzr-svn does not create working trees by default. If you need 
-the working trees, run "bzr checkout" in the branch or 
-specify --trees to svn-import.
 
 bzr-svn did a replace operation on the branch I pushed to when I tried to push a merge commit to Subversion
 -----------------------------------------------------------------------------------------------------------
