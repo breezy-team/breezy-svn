@@ -19,6 +19,10 @@
 
 import os
 import tdb
+try:
+    tdb.Tdb.get
+except AttributeError:
+    raise ImportError("tdb is out of date: doesn't have a Tdb.get attribute")
 
 from bzrlib import (
     debug,

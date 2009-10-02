@@ -2,7 +2,9 @@ bzr-svn	1.0.1					  UNRELEASED
 
  BUG FIXES
 
-  * Mark as compatible with Bazaar 2.1.
+  * Mark as compatible with Bazaar 2.1. (Jelmer Vernooij)
+
+  * Only use tdb if Tdb.get is there. (Jelmer Vernooij, #440211)
 
 bzr-svn 1.0.0					  2009-09-24
 
