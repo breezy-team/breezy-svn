@@ -574,3 +574,12 @@ if len(sys.argv) == 2:
         
         self.run_bzr('svn-import --format 1.9-rich-root %s dc' % svn_url)
         self.check_output("Repository branch (format: 1.14-rich-root or 1.9-rich-root)\nLocation:\n  shared repository: dc\n  repository branch: dc\n\nRelated branches:\n  parent branch: d\n", 'info dc')
+
+    def test_svn_layout(self):
+        svn_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(svn_url)
+        dc.add_dir("trunk")
+        dc.close()
+        
+        self.check_output('Repository root: %s\nLayout: root\nBranch path: \nPush merged revisions: False\n' % svn_url, 'svn-layout %s' % svn_url)
