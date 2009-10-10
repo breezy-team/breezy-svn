@@ -441,11 +441,8 @@ class SvnBranch(ForeignBranch):
                 return revmeta.get_revno(mapping)
         raise NoSuchRevision(self, revision_id)
 
-    def get_root_id(self, revnum=None):
-        if revnum is None:
-            tree = self.basis_tree()
-        else:
-            tree = self.repository.revision_tree(self.get_rev_id(revnum))
+    def get_root_id(self):
+        tree = self.basis_tree()
         return tree.get_root_id()
 
     def set_push_location(self, location):
