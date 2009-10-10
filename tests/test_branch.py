@@ -58,6 +58,11 @@ class WorkingSubversionBranch(SubversionTestCase):
         branch = Branch.open(repos_url)
         self.assertEqual("", branch.get_branch_path())
 
+    def test_get_child_submit_format_default(self):
+        repos_url = self.make_repository("a")
+        branch = Branch.open(repos_url)
+        self.assertEquals("svn", branch.get_child_submit_format())
+
     def test_tags_dict(self):
         repos_url = self.make_repository("a")
        
