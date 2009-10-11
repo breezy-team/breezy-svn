@@ -84,6 +84,8 @@ def create_cache_dir():
             pass
         else:
             cache_dir = os.path.join(xdg_cache_home, "bazaar", "svn")
+            if type(cache_dir) == unicode:
+                cache_dir = cache_dir.encode(osutils._fs_enc)
 
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
@@ -110,6 +112,7 @@ class RepositoryCache(object):
 
     def create_cache_dir(self):
         cache_dir = create_cache_dir()
+        assert isinstance(cache_dir, str)
         dir = os.path.join(cache_dir, self.uuid)
         if not os.path.exists(dir):
             trace.note("Initialising Subversion metadata cache in %s.",
