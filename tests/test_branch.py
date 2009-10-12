@@ -36,6 +36,7 @@ from bzrlib.repository import Repository
 from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import (
     TestCase,
+    TestSkipped,
     )
 from bzrlib.trace import mutter
 
@@ -985,3 +986,13 @@ class BranchFormatTests(TestCase):
     def test_get_format_description(self):
         self.assertEqual("Subversion Smart Server", 
                          self.format.get_format_description())
+
+
+class ForeignTestsBranchFactory(object):
+
+    def make_empty_branch(self, transport):
+        raise TestSkipped
+
+    def make_branch(self, transport):
+        subvertpy.repos.create(transport.local_abspath("."))
+        return Branch.open(transport.base)

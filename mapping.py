@@ -1060,6 +1060,11 @@ def revprops_complete(revprops):
 
 class ForeignSubversion(foreign.ForeignVcs):
 
+    @property
+    def branch_format(self):
+        from bzrlib.plugins.svn.branch import SvnBranchFormat
+        return SvnBranchFormat()
+
     def __init__(self):
         super(ForeignSubversion, self).__init__(mapping_registry)
 
