@@ -671,10 +671,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         file_data = self._text_cache.get(key)
         if file_data is not None: 
             return file_data
-        record = self.texts.get_record_stream([key], 'unordered', True).next()
-        if record.storage_kind == 'absent':
-            raise RevisionNotPresent(ie.revision, ie.file_id)
-        return record.get_bytes_as('chunked')
+        return self.target.iter_files_bytes([key + (None,)]).next()[1]
 
     def _finish_commit(self):
         rev = self.revmeta.get_revision(self.mapping)
