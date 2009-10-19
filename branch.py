@@ -613,6 +613,10 @@ class SvnBranchFormat(BranchFormat):
         """See BranchFormat.get_format_string()."""
         return 'Subversion Smart Server'
 
+    def get_foreign_tests_branch_factory(self):
+        from bzrlib.plugins.svn.tests.test_branch import ForeignTestsBranchFactory
+        return ForeignTestsBranchFactory()
+
     def initialize(self, to_bzrdir):
         """See BranchFormat.initialize()."""
         raise NotImplementedError(self.initialize)
@@ -761,6 +765,11 @@ class InterOtherSvnBranch(InterBranch):
     Subversion.
 
     """
+
+    @staticmethod
+    def _get_branch_formats_to_test():
+        return None, None
+
     def update_revisions(self, stop_revision=None, overwrite=False, graph=None):
         """See Branch.update_revisions()."""
         self._update_revisions(stop_revision=stop_revision, overwrite=overwrite,
