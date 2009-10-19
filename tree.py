@@ -441,6 +441,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
         return self.workingtree.basis_idmap.lookup(self.workingtree.branch.mapping, path)[:2]
 
     def get_revision_id(self):
+        """See Tree.get_revision_id()."""
         return self.workingtree.last_revision()
 
     def abspath(self, relpath):
@@ -448,15 +449,18 @@ class SvnBasisTree(SubversionTree,RevisionTree):
         return wc.get_pristine_copy_path(self.workingtree.abspath(relpath).encode("utf-8")).decode("utf-8")
 
     def get_file_byname(self, name):
+        """See Tree.get_file_byname()."""
         assert isinstance(name, unicode)
         return open(self.abspath(name).encode(osutils._fs_enc))
 
     def get_file_text(self, file_id, path=None):
+        """See Tree.get_file_text()."""
         if path is None:
             path = self.id2path(file_id)
         return self.get_file_byname(path).read()
 
     def get_file_properties(self, file_id, path=None):
+        """See SubversionTree.get_file_properties()."""
         if path is None:
             path = self.id2path(file_id)
         else:
