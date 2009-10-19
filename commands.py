@@ -179,7 +179,7 @@ class cmd_svn_import(Command):
                     return False
                 return True
 
-            trace.info("Using repository layout: %s" % (layout or from_repos.get_layout(),))
+            trace.note("Using repository layout: %s" % (layout or from_repos.get_layout(),))
             convert_repository(from_repos, to_location, layout, 
                                not standalone, trees, all,
                                format=format,
@@ -190,7 +190,7 @@ class cmd_svn_import(Command):
             if tmp_repos is not None:
                 osutils.rmtree(tmp_repos)
             if not trees:
-                trace.info("Use 'bzr checkout' to create a working tree in the newly created branches.")
+                trace.note("Use 'bzr checkout' to create a working tree in the newly created branches.")
         finally:
             from_repos.unlock()
 
