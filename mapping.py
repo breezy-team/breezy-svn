@@ -1072,9 +1072,13 @@ class ForeignSubversion(foreign.ForeignVcs):
 
     def __init__(self):
         super(ForeignSubversion, self).__init__(mapping_registry)
+        self.abbreviation = "svn"
 
     def show_foreign_revid(self, (uuid, bp, revnum)):
         return { "svn revno": "%d (on /%s)" % (revnum, bp)}
+
+    def serialize_foreign_revid(self, (uuid, bp, revnum)):
+        return "%s:%d:%s" % (uuid, revnum, urllib.quote(bp))
 
 
 foreign_vcs_svn = ForeignSubversion()
