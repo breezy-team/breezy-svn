@@ -1,4 +1,4 @@
-bzr-svn	1.0.1					  UNRELEASED
+bzr-svn	1.0.1					  2009-10-20
 
  BUG FIXES
 
@@ -7,6 +7,9 @@ bzr-svn	1.0.1					  UNRELEASED
   * Only use tdb if Tdb.get is there. (Jelmer Vernooij, #440211)
 
   * Cope with xdg_cache_home sometimes containing unicode. (Jelmer Vernooij)
+
+  * Provide right infrastructure for bzrlib.tests.per_foreign_vcs. 
+    (Jelmer Vernooij)
 
 bzr-svn 1.0.0					  2009-09-24
 
