@@ -6,6 +6,8 @@ bzr-svn	1.0.1					  UNRELEASED
 
   * Only use tdb if Tdb.get is there. (Jelmer Vernooij, #440211)
 
+  * Cope with xdg_cache_home sometimes containing unicode. (Jelmer Vernooij)
+
 bzr-svn 1.0.0					  2009-09-24
 
  PERFORMANCE
