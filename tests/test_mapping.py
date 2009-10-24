@@ -15,10 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib.errors import InvalidRevisionId
-from bzrlib.osutils import sha
-from bzrlib.revision import Revision
-from bzrlib.tests import TestCase
+from bzrlib.errors import (
+    InvalidRevisionId,
+    )
+from bzrlib.osutils import (
+    sha,
+    )
+from bzrlib.revision import (
+    Revision,
+    )
+from bzrlib.tests import (
+    TestCase,
+    )
 
 from bzrlib.plugins.svn import mapping
 from bzrlib.plugins.svn.errors import (
@@ -46,9 +54,15 @@ from bzrlib.plugins.svn.mapping2 import (
     BzrSvnMappingv1,
     BzrSvnMappingv2,
     )
-from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3
-from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
-from bzrlib.plugins.svn.mapping4 import BzrSvnMappingv4
+from bzrlib.plugins.svn.mapping3.base import (
+    BzrSvnMappingv3,
+    )
+from bzrlib.plugins.svn.mapping3.scheme import (
+    TrunkBranchingScheme,
+    )
+from bzrlib.plugins.svn.mapping4 import (
+    BzrSvnMappingv4,
+    )
 
 
 class MetadataMarshallerTests(TestCase):
