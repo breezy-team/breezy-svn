@@ -255,6 +255,8 @@ class SvnRemoteAccess(BzrDir):
                 self.root_transport.create_prefix()
             ret.target_branch = self.import_branch(source, revision_id, 
                 overwrite=overwrite)
+            ret.tag_conflicts = source.tags.merge_to(ret.target_branch.tags,
+                overwrite)
             if source.get_push_location() is None or remember:
                 source.set_push_location(ret.target_branch.base)
         return ret
