@@ -31,6 +31,7 @@ from bzrlib.bzrdir import (
     )
 from bzrlib.osutils import (
     has_symlinks,
+    sha_string,
     )
 from bzrlib.repository import (
     Repository,
@@ -1696,8 +1697,17 @@ Node-copyfrom-path: x
             oldrepos.generate_revision_id(1, "", mapping)))
         inv1 = newrepos.get_inventory(
                 oldrepos.generate_revision_id(1, "", mapping))
-        self.assertEqual('symlink', inv1[inv1.path2id("mylink")].kind)
-        self.assertEqual('bla', inv1[inv1.path2id("mylink")].symlink_target)
+        ie = inv1[inv1.path2id("mylink")]
+        self.assertEqual('symlink', ie.kind)
+        self.assertEqual('bla', ie.symlink_target)
+        self.assertEquals(None, ie.text_sha1)
+        key = (ie.file_id, ie.revision)
+        newrepos.lock_read()
+        try:
+            self.assertEquals(sha_string(""), 
+                newrepos.texts.get_sha1s([key])[key])
+        finally:
+            newrepos.unlock()
 
     def test_fetch_symlink_with_newlines(self):
         if not has_symlinks():
