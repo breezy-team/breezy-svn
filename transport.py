@@ -205,9 +205,9 @@ def Connection(url, auth=None):
         progress_cb = SubversionProgressReporter(url).update
     else:
         progress_cb = None
+    assert type(url) == str
     try:
-        ret = subvertpy.ra.RemoteAccess(url.encode('utf8'), 
-                auth=auth,
+        ret = subvertpy.ra.RemoteAccess(url, auth=auth,
                 client_string_func=bzrlib.plugins.svn.get_client_string,
                 progress_cb=progress_cb)
         if 'transport' in debug.debug_flags:
@@ -318,6 +318,9 @@ class SvnRaTransport(Transport):
                                         repos_path))
         else:
             return self.connections.get(self.svn_url)
+
+    def external_url(self):
+        return self.base
 
     def add_connection(self, conn):
         self.connections.add(conn)

@@ -20,6 +20,7 @@
 
 from bzrlib import (
     errors as bzr_errors,
+    osutils,
     trace,
     )
 from bzrlib.bzrdir import (
@@ -162,7 +163,8 @@ class SvnRemoteFormat(SvnControlFormat):
                 "Can't create Subversion Repositories/branches on "
                 "non-local transports")
 
-        local_path = transport._local_base.rstrip("/")
+        local_path = transport.local_abspath(".").rstrip("/").encode(osutils._fs_enc)
+        assert type(local_path) == str
         repos.create(local_path)
         # All revision property changes
         revprop_hook = os.path.join(local_path, "hooks", "pre-revprop-change")

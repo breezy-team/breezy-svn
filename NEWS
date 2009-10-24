@@ -4,6 +4,10 @@ bzr-svn 1.0.2					  UNRELEASED
   
   * Push tags when pushing to a new repository. (Jelmer Vernooij, #459444)
 
+  * Cope with non-ascii URLs.
+   * During connect. (#456548, Jelmer Vernooij)
+   * During repository creation. (#458008, Jelmer Vernooij)
+
 bzr-svn	1.0.1					  2009-10-20
 
  BUG FIXES
