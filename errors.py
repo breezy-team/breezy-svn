@@ -32,6 +32,7 @@ from bzrlib.errors import (
     PermissionDenied,
     NoRepositoryPresent,
     NoSuchRevision,
+    TipChangeRejected,
     TransportError,
     UnexpectedEndOfContainerError,
     )
@@ -122,6 +123,8 @@ def convert_error(err):
         return ConnectionError(msg=msg)
     elif num == subvertpy.ERR_RA_DAV_REQUEST_FAILED:
         return DavRequestFailed(msg)
+    elif num == subvertpy.ERR_REPOS_HOOK_FAILURE:
+        return TipChangeRejected(msg)
     if num == ERR_RA_DAV_PROPPATCH_FAILED:
         return PropertyChangeFailed(msg)
     else:
