@@ -8,6 +8,9 @@ bzr-svn 1.0.2					  UNRELEASED
    * During connect. (#456548, Jelmer Vernooij)
    * During repository creation. (#458008, Jelmer Vernooij)
 
+  * Cope with non-ascii characters in svn author names. (#460392, 
+    Jelmer Vernooij)
+
 bzr-svn	1.0.1					  2009-10-20
 
  BUG FIXES
