@@ -21,6 +21,7 @@ from bzrlib.errors import (
     ConnectionReset,
     LockActive,
     PermissionDenied,
+    TipChangeRejected,
     TransportError,
     UnexpectedEndOfContainerError,
     )
@@ -82,6 +83,9 @@ class TestConvertError(TestCase):
 
     def test_proppatch_failed(self):
         self.assertIsInstance(convert_error(subvertpy.SubversionException("Proppatch failed", ERR_RA_DAV_PROPPATCH_FAILED)), PropertyChangeFailed)
+
+    def test_hook_failed(self):
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("Hook failed", subvertpy.ERR_REPOS_HOOK_FAILURE)), TipChangeRejected)
 
     def test_decorator_nothrow(self):
         @convert_svn_error
