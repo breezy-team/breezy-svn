@@ -42,7 +42,7 @@ class Annotater(object):
         self._repository = repository
         self.fileid = fileid
         self._related_revs = {}
-        (_, branch_path, revnum), mapping = self._repository.lookup_revision_id(
+        (_, branch_path, revnum), mapping = self._repository.lookup_bzr_revision_id(
             revid)
         # FIXME: Cope with restarts
         for (revmeta, mapping) in self._repository._iter_reverse_revmeta_mapping_history(branch_path, revnum, 

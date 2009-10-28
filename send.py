@@ -42,7 +42,7 @@ class SvnDiffTree(_mod_diff.DiffTree):
         if rev is None:
             return '(working copy)'
         try:
-            info = self.repository.lookup_revision_id(rev)
+            info = self.repository.lookup_bzr_revision_id(rev)
         except errors.NoSuchRevision:
             return '(working copy)'
         return '(revision %d)' % info[0][2]

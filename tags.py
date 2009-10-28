@@ -115,7 +115,7 @@ class ReverseTagDict(object):
             self._by_foreign_revid.setdefault(revmeta.get_foreign_revid(), []).append(name)
 
     def _lookup_revid(self, revid):
-        return self.repository.lookup_revision_id(revid, project=self.project)
+        return self.repository.lookup_bzr_revision_id(revid, project=self.project)
 
     def has_key(self, revid):
         foreign_revid, mapping = self._lookup_revid(revid)
@@ -169,7 +169,7 @@ class SubversionTags(BasicTags):
         assert isinstance(path, str)
         parent = urlutils.dirname(path)
         try:
-            (from_uuid, from_bp, from_revnum), mapping = self.repository.lookup_revision_id(tag_target, project=self.branch.project)
+            (from_uuid, from_bp, from_revnum), mapping = self.repository.lookup_bzr_revision_id(tag_target, project=self.branch.project)
         except NoSuchRevision:
             mutter("not setting tag %s; unknown revision %s", tag_name, tag_target)
             return

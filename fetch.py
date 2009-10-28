@@ -593,11 +593,11 @@ class FileRevisionBuildEditor(FileBuildEditor):
         parent_keys = tuple([(self.file_id, revid) for revid in text_parents])
         file_key = (self.file_id, text_revision)
         cf = ChunkedContentFactory(file_key, parent_keys, text_sha1, chunks)
-        self.editor.texts.insert_record_stream([cf])
-        self.editor._text_cache[file_key] = chunks
 
         if self.is_special is not None:
             self.is_symlink = (self.is_special and content_starts_with_link(cf))
+            cf = ChunkedContentFactory(file_key, parent_keys, 
+                osutils.sha_string(""), [])
         elif content_starts_with_link(cf):
             # This file just might be a file that is svn:special but didn't
             # contain a symlink but does now
@@ -607,6 +607,9 @@ class FileRevisionBuildEditor(FileBuildEditor):
             self.is_symlink = False
 
         assert self.is_symlink in (True, False)
+
+        self.editor.texts.insert_record_stream([cf])
+        self.editor._text_cache[file_key] = chunks
 
         if self.base_ie is not None and self.is_executable is None:
                 self.is_executable = self.base_ie.executable
@@ -1037,7 +1040,7 @@ class FetchRevisionFinder(object):
         for revmeta, mapping in revmetas:
             for p in revmeta.get_rhs_parents(mapping):
                 try:
-                    foreign_revid, rhs_mapping = self.source.lookup_revision_id(p, foreign_sibling=revmeta.get_foreign_revid())
+                    foreign_revid, rhs_mapping = self.source.lookup_bzr_revision_id(p, foreign_sibling=revmeta.get_foreign_revid())
                 except NoSuchRevision:
                     pass # Ghost
                 else:
@@ -1240,13 +1243,13 @@ class InterFromSvnRepository(InterRepository):
                                                      target_is_empty)
                 if needed is None:
                     if revision_id is not None:
-                        foreign_revid, mapping = self.source.lookup_revision_id(revision_id, project=project)
+                        foreign_revid, mapping = self.source.lookup_bzr_revision_id(revision_id, project=project)
                         revisionfinder.find_until(foreign_revid,
                             mapping, find_ghosts=find_ghosts,
                             pb=nested_pb)
                     elif fetch_spec is not None:
                         for head in fetch_spec.heads:
-                            foreign_revid, mapping = self.source.lookup_revision_id(head, project=project)
+                            foreign_revid, mapping = self.source.lookup_bzr_revision_id(head, project=project)
                             revisionfinder.find_until(foreign_revid,
                                 mapping, find_ghosts=find_ghosts,
                                 pb=nested_pb)

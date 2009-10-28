@@ -796,11 +796,11 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.client_add("dc/bloe")
         self.client_commit("dc", "foobar")
         repository = Repository.open(repos_url)
-        self.assertRaises(NoSuchRevision, repository.lookup_revision_id, 
+        self.assertRaises(NoSuchRevision, repository.lookup_bzr_revision_id, 
             "nonexisting")
         mapping = repository.get_mapping()
         self.assertEqual(((repository.uuid, "bloe", 1), mapping),
-            repository.lookup_revision_id(
+            repository.lookup_bzr_revision_id(
                 repository.generate_revision_id(1, "bloe", mapping))[:2])
 
     def test_lookup_revision_id_invalid_uuid(self):
@@ -808,7 +808,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repository = Repository.open(repos_url)
         mapping = repository.get_mapping()
         self.assertRaises(NoSuchRevision, 
-            repository.lookup_revision_id, 
+            repository.lookup_bzr_revision_id, 
                 mapping.revision_id_foreign_to_bzr(("invaliduuid", "", 0)))
         
     def test_check(self):

@@ -540,7 +540,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
     def set_last_revision(self, revid):
         mutter('setting last revision to %r', revid)
-        rev = self.branch.lookup_revision_id(revid)
+        rev = self.branch.lookup_bzr_revision_id(revid)
         self._set_base(revid, rev)
 
     def set_parent_trees(self, parents_list, allow_leftmost_as_ghost=False):
@@ -562,7 +562,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             for merge in merges:
                 try:
                     svk_merges.add(_revision_id_to_svk_feature(merge,
-                        self.branch.repository.lookup_revision_id))
+                        self.branch.repository.lookup_bzr_revision_id))
                 except NoSuchRevision:
                     pass
 
@@ -887,7 +887,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         :param delta: An inventory delta (see apply_inventory_delta) describing
             the changes from the current left most parent revision to new_revid.
         """
-        rev = self.branch.lookup_revision_id(new_revid)
+        rev = self.branch.lookup_bzr_revision_id(new_revid)
         self._set_base(new_revid, rev)
 
         # TODO: Implement more efficient version
