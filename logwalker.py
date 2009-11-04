@@ -135,6 +135,7 @@ class CachingLogWalker(object):
         self.quick_revprops = actual.quick_revprops
         self._transport = actual._transport
         self.saved_revnum = self.cache.last_revnum()
+        self.saved_minrevnum = self.cache.min_revnum()
         self._latest_revnum = None
 
     def mutter(self, text, *args, **kwargs):
@@ -213,7 +214,9 @@ class CachingLogWalker(object):
         :param to_revnum: End of range to fetch information for
         """
         assert isinstance(self.saved_revnum, int)
-        if to_revnum <= self.saved_revnum:
+        assert isinstance(self.saved_minrevnum, int)
+
+        if to_revnum <= self.saved_revnum and self.saved_minrevnum == 0:
             return
 
         # Try to fetch log data in lumps, if possible.
@@ -233,7 +236,8 @@ class CachingLogWalker(object):
             self.cache.insert_paths(revision, orig_paths)
             self.cache.insert_revprops(revision, revprops, 
                                        todo_revprops is None)
-            self.saved_revnum = revision
+            self.saved_revnum = max(revision, self.saved_revnum)
+            self.saved_minrevnum = min(revision, self.saved_minrevnum)
 
         self.mutter("get_log %d->%d", self.saved_revnum, to_revnum)
 
@@ -245,7 +249,11 @@ class CachingLogWalker(object):
         try:
             nested_pb.update('fetching svn revision info', 0, to_revnum)
             try:
-                self.actual._transport.get_log(rcvr, [""], self.saved_revnum, to_revnum, 0, True, True, False, todo_revprops)
+                # Try to keep the cache consistent by closing any holes early in the history
+                if self.saved_minrevnum != 0:
+                    self.actual._transport.get_log(rcvr, [""], self.saved_minrevnum, 0, 0, True, True, False, todo_revprops)
+
+                self.actual._transport.get_log(rcvr, [""], to_revnum, self.saved_revnum, 0, True, True, False, todo_revprops)
             except subvertpy.SubversionException, (_, num):
                 if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                     raise NoSuchRevision(branch=self, 
