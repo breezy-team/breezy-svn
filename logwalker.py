@@ -231,16 +231,17 @@ class CachingLogWalker(object):
         else:
             todo_revprops = ["svn:author", "svn:log", "svn:date"]
 
+        rcvr_state = {'revs_downloaded': 0}
+
         def rcvr(orig_paths, revision, revprops, has_children=None):
-            nested_pb.update('fetching svn revision info', revision, to_revnum)
+            rcvr_state['revs_downloaded'] += 1
+            nested_pb.update('fetching svn revision info', rcvr_state['revs_downloaded'], to_revnum)
             self.cache.insert_paths(revision, orig_paths)
             self.cache.insert_revprops(revision, revprops, 
                                        todo_revprops is None)
             self.saved_revnum = max(revision, self.saved_revnum)
             self.saved_minrevnum = min(revision, self.saved_minrevnum)
-
-        self.mutter("get_log %d->%d", self.saved_revnum, to_revnum)
-
+        
         if pb is None:
             nested_pb = ui.ui_factory.nested_progress_bar()
         else:
@@ -251,8 +252,10 @@ class CachingLogWalker(object):
             try:
                 # Try to keep the cache consistent by closing any holes early in the history
                 if self.saved_minrevnum != 0:
+                    self.mutter("get_log %d->%d", self.saved_minrevnum, 0)
                     self.actual._transport.get_log(rcvr, [""], self.saved_minrevnum, 0, 0, True, True, False, todo_revprops)
 
+                self.mutter("get_log %d->%d", to_revnum, self.saved_revnum)
                 self.actual._transport.get_log(rcvr, [""], to_revnum, self.saved_revnum, 0, True, True, False, todo_revprops)
             except subvertpy.SubversionException, (_, num):
                 if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
