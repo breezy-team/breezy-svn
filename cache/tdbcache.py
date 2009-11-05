@@ -262,6 +262,7 @@ class LogCache(CacheTable):
         if revprops is None:
             revprops = {}
         self.db["revprops/%d" % revision] = bencode.bencode((revprops, all_revprops))
+        self.db["log-min"] = "%d" % min(self.min_revnum(), revision)
 
     def last_revnum(self):
         try:
@@ -269,6 +270,11 @@ class LogCache(CacheTable):
         except KeyError:
             return 0
 
+    def min_revnum(self):
+        try:
+            return int(self.db["log-min"])
+        except KeyError:
+            return 0
 
 class ParentsCache(CacheTable):
 
