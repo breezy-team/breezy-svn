@@ -272,10 +272,10 @@ class RepositoryTests(SubversionTestCase):
         dc.close()
         repository = Repository.open(self.repos_url)
         mapping = repository.get_mapping()
-        self.assertEqual(((repository.uuid, "", 1), mapping), repository.lookup_revision_id( 
+        self.assertEqual(((repository.uuid, "", 1), mapping), repository.lookup_bzr_revision_id( 
             mapping.revision_id_foreign_to_bzr((repository.uuid, "", 1)))[:2])
         self.assertEqual(((repository.uuid, "", 1), mapping),
-                repository.lookup_revision_id("myid")[:2])
+                repository.lookup_bzr_revision_id("myid")[:2])
 
     def test_lookup_revision_id_overridden_invalid(self):
         dc = self.get_commit_editor(self.repos_url)
@@ -285,9 +285,9 @@ class RepositoryTests(SubversionTestCase):
 
         repository = Repository.open(self.repos_url)
         mapping = repository.get_mapping()
-        self.assertEqual(((repository.uuid, "", 1), mapping), repository.lookup_revision_id( 
+        self.assertEqual(((repository.uuid, "", 1), mapping), repository.lookup_bzr_revision_id( 
             mapping.revision_id_foreign_to_bzr((repository.uuid, "", 1)))[:2])
-        self.assertRaises(NoSuchRevision, repository.lookup_revision_id, 
+        self.assertRaises(NoSuchRevision, repository.lookup_bzr_revision_id, 
             "corrupt-entry")
 
     def test_lookup_revision_id_overridden_invalid_dup(self):
@@ -304,11 +304,11 @@ class RepositoryTests(SubversionTestCase):
         self.client_commit("dc", "foobar")
         repository = Repository.open(self.repos_url)
         mapping = repository.get_mapping()
-        self.assertEqual(((repository.uuid, "", 2), mapping), repository.lookup_revision_id( 
+        self.assertEqual(((repository.uuid, "", 2), mapping), repository.lookup_bzr_revision_id( 
             mapping.revision_id_foreign_to_bzr((repository.uuid, "", 2)))[:2])
-        self.assertEqual(((repository.uuid, "", 1), mapping), repository.lookup_revision_id( 
+        self.assertEqual(((repository.uuid, "", 1), mapping), repository.lookup_bzr_revision_id( 
             mapping.revision_id_foreign_to_bzr((repository.uuid, "", 1)))[:2])
-        self.assertEqual(((repository.uuid, "", 2), mapping), repository.lookup_revision_id( 
+        self.assertEqual(((repository.uuid, "", 2), mapping), repository.lookup_bzr_revision_id( 
             "corrupt-entry")[:2])
 
     def test_lookup_revision_id_overridden_not_found(self):
@@ -321,7 +321,7 @@ class RepositoryTests(SubversionTestCase):
         self.client_commit("dc", "foobar")
         repository = Repository.open(self.repos_url)
         self.assertRaises(NoSuchRevision, 
-                repository.lookup_revision_id, "foobar")
+                repository.lookup_bzr_revision_id, "foobar")
 
     def test_set_branching_scheme_property(self):
         self.make_checkout(self.repos_url, 'dc')

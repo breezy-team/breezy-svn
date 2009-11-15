@@ -11,6 +11,16 @@ bzr-svn 1.0.2					  UNRELEASED
   * Cope with non-ascii characters in svn author names. (#460392, 
     Jelmer Vernooij)
 
+  * Fix expected URL in Repository.__repr__ tests that sometimes causes 
+    troubles if the temporary directory contains special characters. 
+	(John Szakmeister, #460899)
+
+ PERFORMANCE
+
+  * When updating the log cache, fetch from newest to oldest revision as 
+    the Subversion database backends are optimized for this. 
+	(John Szakmeister)
+
 bzr-svn	1.0.1					  2009-10-20
 
  BUG FIXES

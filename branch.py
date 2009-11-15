@@ -282,7 +282,7 @@ class SvnBranch(ForeignBranch):
         checkout_branch.pull(self, stop_revision=revision_id)
         return checkout.create_workingtree(revision_id, hardlink=hardlink)
 
-    def lookup_revision_id(self, revid):
+    def lookup_bzr_revision_id(self, revid):
         """Look up the matching Subversion revision number on the mainline of 
         the branch.
 
@@ -290,7 +290,7 @@ class SvnBranch(ForeignBranch):
         :return: Revision number on the branch. 
         :raises NoSuchRevision: If the revision id was not found.
         """
-        (uuid, bp, revnum), mapping = self.repository.lookup_revision_id(revid, 
+        (uuid, bp, revnum), mapping = self.repository.lookup_bzr_revision_id(revid, 
             ancestry=(self.get_branch_path(), self.get_revnum()), 
             project=self.project)
         assert bp.strip("/") == self.get_branch_path(revnum).strip("/"), \
@@ -306,7 +306,7 @@ class SvnBranch(ForeignBranch):
         """
         from bzrlib.plugins.svn.workingtree import update_wc
         if revision_id is not None:
-            revnum = self.lookup_revision_id(revision_id)
+            revnum = self.lookup_bzr_revision_id(revision_id)
         else:
             revnum = self.get_revnum()
 

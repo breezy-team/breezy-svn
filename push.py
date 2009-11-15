@@ -184,7 +184,7 @@ class InterToSvnRepository(InterRepository):
             return None, None
         if not revid in self._foreign_info:
             # FIXME: Prefer revisions in path
-            return self.target.lookup_revision_id(revid)
+            return self.target.lookup_bzr_revision_id(revid)
         if path in self._foreign_info[revid]:
             return self._foreign_info[revid][path]
         else:
@@ -358,7 +358,7 @@ class InterToSvnRepository(InterRepository):
             base_foreign_revid = None
             base_mapping = None
         else:
-            base_foreign_revid, base_mapping = self.target.lookup_revision_id(parent_revid,
+            base_foreign_revid, base_mapping = self.target.lookup_bzr_revision_id(parent_revid,
                 foreign_sibling=rev.foreign_revid)
             (_, target_project, _, _) = layout.parse(base_foreign_revid[1])
         bp = determine_branch_path(rev, layout, target_project)

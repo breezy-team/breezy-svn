@@ -47,7 +47,7 @@ class MockRepo(object):
     def __init__(self, mapping, uuid="uuid"):
         self.uuid = uuid
 
-    def lookup_revision_id(self, revid):
+    def lookup_bzr_revision_id(self, revid):
         ret = self.mapping.revision_id_foreign_to_bzr(revid)
         return ret, None
 

@@ -94,7 +94,7 @@ def _revision_id_to_svk_feature(revid, lookup_revid):
     assert isinstance(revid, str)
     foreign_revid, _ = lookup_revid(revid)
     # TODO: What about renamed revisions? Should use 
-    # repository.lookup_revision_id here.
+    # repository.lookup_bzr_revision_id here.
     return generate_svk_feature(foreign_revid)
 
 
@@ -518,7 +518,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         if len(merges) > 0:
             old_svk_merges = self._base_branch_props.get(SVN_PROP_SVK_MERGE, "")
             def lookup_revid(revid):
-                return repository.lookup_revision_id(revid, 
+                return repository.lookup_bzr_revision_id(revid, 
                     foreign_sibling=self.base_foreign_revid)
             new_svk_merges = update_svk_features(old_svk_merges, merges, 
                                                  lookup_revid)
@@ -650,7 +650,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 continue
             try:
                 (uuid, base_path, base_revnum), base_mapping = \
-                    self.repository.lookup_revision_id(p, foreign_sibling=self.base_foreign_revid)
+                    self.repository.lookup_bzr_revision_id(p, foreign_sibling=self.base_foreign_revid)
             except NoSuchRevision:
                 continue
             inv = None

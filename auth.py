@@ -87,6 +87,7 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
         password = self.get_password(self.scheme, host=self.host, 
             path=self.path, user=username, 
             realm=realm, prompt="%s %s password" % (realm, username))
+        assert type(password) == str
         return (username.encode("utf-8"), password, False)
 
     def get_svn_ssl_server_trust(self, realm, failures, cert_info, may_save):
@@ -235,6 +236,7 @@ class SubversionCredentialStore(CredentialStore):
             (username, password, may_save) = creds.next()
         except StopIteration:
             return None
+        assert type(password) == str
         if credentials.get("user") not in (username, None):
             # Subversion changed the username
             return None

@@ -332,13 +332,13 @@ class WorkingSubversionBranch(SubversionTestCase):
         repos_url = self.make_repository("a")
         branch = Branch.open(repos_url)
         self.assertRaises(NoSuchRevision, 
-                lambda: branch.lookup_revision_id("bla"))
+                lambda: branch.lookup_bzr_revision_id("bla"))
 
     def test_lookup_revision_id(self):
         repos_url = self.make_repository("a")
         branch = Branch.open(repos_url)
         self.assertEquals(0, 
-                branch.lookup_revision_id(branch.last_revision()))
+                branch.lookup_bzr_revision_id(branch.last_revision()))
 
     def test_set_parent(self):
         repos_url = self.make_repository('a')

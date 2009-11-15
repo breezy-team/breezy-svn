@@ -801,7 +801,7 @@ class SvnRepository(ForeignRepository):
             yield entry
             for rhs_parent_revid in revmeta.get_rhs_parents(mapping):
                 try:
-                    (_, rhs_parent_bp, rhs_parent_revnum), rhs_parent_mapping = self.lookup_revision_id(rhs_parent_revid, foreign_sibling=revmeta.get_foreign_revid())
+                    (_, rhs_parent_bp, rhs_parent_revnum), rhs_parent_mapping = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.get_foreign_revid())
                 except bzr_errors.NoSuchRevision:
                     pass
                 else:
@@ -827,7 +827,7 @@ class SvnRepository(ForeignRepository):
             if (expected_revid is not None and
                 not revid in (None, expected_revid)):
                 # Need to restart, branch root has changed
-                (_, branch_path, revnum), mapping = self.lookup_revision_id(revid, foreign_sibling=revmeta.get_foreign_revid())
+                (_, branch_path, revnum), mapping = self.lookup_bzr_revision_id(revid, foreign_sibling=revmeta.get_foreign_revid())
                 iter = self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=to_revnum, pb=pb, limit=limit)
             if not mapping.is_branch_or_tag(revmeta.branch_path):
                 return
@@ -836,7 +836,7 @@ class SvnRepository(ForeignRepository):
             mapping = lhs_mapping
         if expected_revid is not None and expected_revid != NULL_REVISION:
             # Need to restart, branch root has changed
-            (_, branch_path, revnum), mapping = self.lookup_revision_id(expected_revid, foreign_sibling=revmeta.get_foreign_revid())
+            (_, branch_path, revnum), mapping = self.lookup_bzr_revision_id(expected_revid, foreign_sibling=revmeta.get_foreign_revid())
             for (revmeta, mapping) in self._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=to_revnum, mapping=mapping, pb=pb, limit=limit):
                 yield (revmeta, mapping)
 
@@ -849,7 +849,7 @@ class SvnRepository(ForeignRepository):
         """
         if revision_id in (None, NULL_REVISION):
             return
-        (uuid, branch_path, revnum), mapping = self.lookup_revision_id(revision_id, project=project)
+        (uuid, branch_path, revnum), mapping = self.lookup_bzr_revision_id(revision_id, project=project)
         assert uuid == self.uuid
         for revmeta, mapping in self._iter_reverse_revmeta_mapping_history(
             branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb, 
@@ -883,7 +883,7 @@ class SvnRepository(ForeignRepository):
             return True
 
         try:
-            foreign_revid, _ = self.lookup_revision_id(revision_id, project=project)
+            foreign_revid, _ = self.lookup_bzr_revision_id(revision_id, project=project)
         except bzr_errors.NoSuchRevision:
             return False
 
@@ -928,7 +928,7 @@ class SvnRepository(ForeignRepository):
         return parent_map
 
     def _get_revmeta(self, revision_id):
-        (uuid, branch, revnum), mapping = self.lookup_revision_id(revision_id)
+        (uuid, branch, revnum), mapping = self.lookup_bzr_revision_id(revision_id)
         revmeta = self._revmeta_provider.lookup_revision(branch, revnum)
         return revmeta, mapping
 
@@ -980,7 +980,7 @@ class SvnRepository(ForeignRepository):
         assert isinstance(revnum, int)
         return self.lookup_foreign_revision_id((self.uuid, path, revnum), mapping)
 
-    def lookup_revision_id(self, revid, layout=None, ancestry=None, 
+    def lookup_bzr_revision_id(self, revid, layout=None, ancestry=None, 
                            project=None, foreign_sibling=None):
         """Parse an existing Subversion-based revision id.
 
@@ -1063,7 +1063,7 @@ class SvnRepository(ForeignRepository):
 
     def add_signature_text(self, revision_id, signature):
         """Add a signature text to an existing revision."""
-        (uuid, path, revnum), mapping = self.lookup_revision_id(revision_id)
+        (uuid, path, revnum), mapping = self.lookup_bzr_revision_id(revision_id)
         try:
             self.transport.change_rev_prop(revnum, SVN_REVPROP_BZR_SIGNATURE, signature)
         except subvertpy.SubversionException, (_, subvertpy.ERR_REPOS_DISABLED_FEATURE):
@@ -1246,7 +1246,7 @@ class SvnRepository(ForeignRepository):
             base_mapping = None
         else:
             base_foreign_revid, base_mapping = \
-                self.lookup_revision_id(parents[0], project=branch.project)
+                self.lookup_bzr_revision_id(parents[0], project=branch.project)
         return SvnCommitBuilder(self, branch.get_branch_path(), parents, 
                                 config, timestamp, timezone, committer, 
                                 revprops, revision_id, 
