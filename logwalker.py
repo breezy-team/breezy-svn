@@ -231,11 +231,8 @@ class CachingLogWalker(object):
         else:
             todo_revprops = ["svn:author", "svn:log", "svn:date"]
 
-        rcvr_state = {'revs_downloaded': 0}
-
         def rcvr(orig_paths, revision, revprops, has_children=None):
-            rcvr_state['revs_downloaded'] += 1
-            nested_pb.update('fetching svn revision info', rcvr_state['revs_downloaded'], to_revnum)
+            nested_pb.update('fetching svn revision info', to_revnum - revision, to_revnum)
             self.cache.insert_paths(revision, orig_paths)
             self.cache.insert_revprops(revision, revprops, 
                                        todo_revprops is None)
