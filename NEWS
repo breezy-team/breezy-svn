@@ -15,14 +15,17 @@ bzr-svn 1.0.2					  UNRELEASED
     troubles if the temporary directory contains special characters. 
 	(John Szakmeister, #460899)
 
-  * Fetch history information newest revision to oldest revision because of 
-    speed.  (John Szakmeister, #453789)
+  * Cope with pushing new non-mainline revisions.  (#416328)
 
  PERFORMANCE
 
   * When updating the log cache, fetch from newest to oldest revision as 
     the Subversion database backends are optimized for this. 
 	(John Szakmeister)
+
+  * Fetch history information newest revision to oldest revision because of 
+    speed.  (John Szakmeister, #453789)
+
 
 bzr-svn	1.0.1					  2009-10-20
 
