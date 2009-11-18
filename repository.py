@@ -188,6 +188,10 @@ class SvnRepositoryFormat(RepositoryFormat):
     def initialize(self, url, shared=False, _internal=False):
         raise bzr_errors.UninitializableFormat(self)
 
+    def get_foreign_tests_repository_factory(self):
+        from bzrlib.plugins.svn.tests.test_repository import ForeignTestsRepositoryFactory
+        return ForeignTestsRepositoryFactory()
+
     def check_conversion_target(self, target_repo_format):
         if not target_repo_format.rich_root_data:
             raise bzr_errors.BadConversionTarget(

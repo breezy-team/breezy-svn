@@ -66,7 +66,7 @@ class WorkingSubversionBranch(SubversionTestCase):
 
     def test_tags_dict(self):
         repos_url = self.make_repository("a")
-       
+
         dc = self.get_commit_editor(repos_url)
         tags = dc.add_dir("tags")
         tags.add_dir("tags/foo")

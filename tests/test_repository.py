@@ -31,8 +31,14 @@ from bzrlib.errors import (
 from bzrlib.repository import Repository
 from bzrlib.tests import TestCase
 
-from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.repository import SvnRepositoryFormat
+from bzrlib.plugins.svn.tests import (
+    SubversionTestCase,
+    )
+from bzrlib.plugins.svn.repository import (
+    SvnRepositoryFormat,
+    )
+
+import subvertpy.repos
 
 
 class TestSubversionRepositoryWorks(SubversionTestCase):
@@ -97,7 +103,6 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         bzrdir = BzrDir.open("ac")
         self.assertEqual(bzrdir._format.get_format_string(), \
                 "Subversion Local Checkout")
-        
         self.assertEqual(bzrdir._format.get_format_description(), \
                 "Subversion Local Checkout")
 
@@ -142,3 +147,10 @@ class SvnRepositoryFormatTests(TestCase):
     def test_conversion_target_compatible(self):
         self.format.check_conversion_target(
           format_registry.make_bzrdir('rich-root').repository_format)
+
+
+class ForeignTestsRepositoryFactory(object):
+
+    def make_repository(self, transport):
+        subvertpy.repos.create(transport.local_abspath("."))
+        return Repository.open_from_transport(transport)
