@@ -106,7 +106,7 @@ class SvnRemoteFormat(SvnControlFormat):
             if num in (subvertpy.ERR_RA_ILLEGAL_URL, \
                        subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED, \
                        subvertpy.ERR_BAD_URL):
-                trace.mutter("Unable to open %r with Subversion: %s", 
+                trace.mutter("Unable to open %r with Subversion: %s",
                     transport, msg)
                 raise bzr_errors.NotBranchError(path=transport.base)
             raise
@@ -159,7 +159,7 @@ class SvnRemoteFormat(SvnControlFormat):
         from subvertpy import repos
 
         if not isinstance(transport, LocalTransport):
-            raise NotImplementedError(self.initialize, 
+            raise NotImplementedError(self.initialize,
                 "Can't create Subversion Repositories/branches on "
                 "non-local transports")
 

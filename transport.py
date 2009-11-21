@@ -32,13 +32,14 @@ from bzrlib import (
     urlutils,
     )
 from bzrlib.errors import (
-    BzrError,    
+    BzrError,
+    DependencyNotPresent,
     FileExists,
     InvalidURL,
     NoSuchFile,
     NotLocalUrl,
     RedirectRequested,
-    TransportNotPossible, 
+    TransportNotPossible,
     )
 from bzrlib.trace import (
     mutter,
@@ -59,7 +60,7 @@ from bzrlib.plugins.svn.errors import (
     convert_error,
     )
 
-ERR_MALFORMED_FILE = getattr(subvertpy, "ERR_MALFORMED_FILE", 200002) 
+ERR_MALFORMED_FILE = getattr(subvertpy, "ERR_MALFORMED_FILE", 200002)
 
 try:
     svn_config = get_config()
@@ -74,10 +75,49 @@ except subvertpy.SubversionException, (msg, num):
 disabled_capabilities = set()
 
 
-# Don't run any tests on SvnTransport as it is not intended to be 
+# Don't run any tests on SvnTransport as it is not intended to be
 # a full implementation of Transport
 def get_test_permutations():
     return []
+
+
+def dav_options(transport, url):
+    from bzrlib.transport.http._urllib import HttpTransport_urllib, Request
+    if isinstance(transport, HttpTransport_urllib):
+        req = Request('OPTIONS', url, accepted_errors=[200, 403, 404, 405])
+        req.follow_redirections = True
+        resp = transport._perform(req)
+        if resp.code == 404:
+            raise NoSuchFile(transport._path)
+        if resp.code in (403, 405):
+            raise subvertpy.SubversionException("version control not supported for remote URL", subvertpy.ERR_RA_DAV_NOT_VCC)
+        return resp.headers.getheaders('DAV')
+    else:
+        try:
+            from bzrlib.transport.http._pycurl import PyCurlTransport
+        except DependencyNotPresent:
+            pass
+        else:
+            import pycurl
+            from cStringIO import StringIO
+            if isinstance(transport, PyCurlTransport):
+                conn = transport._get_curl()
+                conn.setopt(pycurl.URL, url)
+                transport._set_curl_options(conn)
+                conn.setopt(pycurl.CUSTOMREQUEST, 'OPTIONS')
+                header = StringIO()
+                data = StringIO()
+                conn.setopt(pycurl.HEADERFUNCTION, header.write)
+                conn.setopt(pycurl.WRITEFUNCTION, data.write)
+                transport._curl_perform(conn, header)
+                code = conn.getinfo(pycurl.HTTP_CODE)
+                if code == 404:
+                    raise NoSuchFile(transport._path)
+                if code in (403, 405):
+                    raise subvertpy.SubversionException("version control not supported for remote URL", subvertpy.ERR_RA_DAV_NOT_VCC)
+                headers = transport._parse_headers(header)
+                return headers.getheaders('DAV')
+    raise NotImplementedError
 
 
 def get_svn_ra_transport(bzr_transport):
@@ -90,21 +130,17 @@ def get_svn_ra_transport(bzr_transport):
         return ra_transport
 
     svnbase = bzr_to_svn_url(bzr_transport.external_url())
-    # If this is a HTTP transport, use the existing connection to check 
+    # If this is a HTTP transport, use the existing connection to check
     # that the remote end supports version control.
-    from bzrlib.transport.http._urllib import HttpTransport_urllib, Request
-    if isinstance(bzr_transport, HttpTransport_urllib):
-        url = bzr_transport._unsplit_url(bzr_transport._unqualified_scheme,
-            None, None, bzr_transport._host, bzr_transport._port, 
-            bzr_transport._path)
-        req = Request('OPTIONS', url, accepted_errors=[200, 403, 404, 405]) 
-        req.follow_redirections = True
-        resp = bzr_transport._perform(req)
-        if resp.code == 404:
-            raise NoSuchFile(bzr_transport._path)
-        if resp.code in (403, 405):
-            raise subvertpy.SubversionException("version control not supported for remote URL", subvertpy.ERR_RA_DAV_NOT_VCC)
-        dav_entries = list(itertools.chain(*[entry.split(",") for entry in resp.headers.getheaders('DAV')]))
+    url = bzr_transport._unsplit_url(bzr_transport._unqualified_scheme,
+        None, None, bzr_transport._host, bzr_transport._port,
+        bzr_transport._path)
+    try:
+        dav_entries = dav_options(bzr_transport, url)
+    except NotImplementedError:
+        pass
+    else:
+        dav_entries = list(itertools.chain(*[entry.split(",") for entry in dav_entries]))
         if not "version-control" in dav_entries:
             raise subvertpy.SubversionException("version control not supported for remote URL", subvertpy.ERR_RA_DAV_NOT_VCC)
     # Save _svn_ra transport here so we don't have to connect again next time

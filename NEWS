@@ -15,7 +15,10 @@ bzr-svn 1.0.2					  UNRELEASED
     troubles if the temporary directory contains special characters. 
 	(John Szakmeister, #460899)
 
-  * Cope with pushing new non-mainline revisions.  (#416328)
+  * Cope with pushing new non-mainline revisions.  (Jelmer Vernooij, #416328)
+
+  * Support probing for Subversion repositories over existing HTTP transports
+    using pycurl. (Jelmer Vernooij, #424626)
 
  PERFORMANCE
 

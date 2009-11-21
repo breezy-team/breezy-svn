@@ -79,8 +79,8 @@ class SubversionPushResult(PushResult):
 
 class SvnRemoteAccess(BzrDir):
     """BzrDir implementation for Subversion connections.
-    
-    This is used for all non-checkout connections 
+
+    This is used for all non-checkout connections
     to Subversion repositories.
     """
 
