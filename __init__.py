@@ -139,8 +139,6 @@ from bzrlib.plugins.svn import format
 
 register_transport_proto('svn+ssh://', 
     help="Access using the Subversion smart server tunneled over SSH.")
-register_transport_proto('svn+file://', 
-    help="Access of local Subversion repositories.")
 register_transport_proto('svn+http://',
     help="Access of Subversion smart servers over HTTP.")
 register_transport_proto('svn+https://',
