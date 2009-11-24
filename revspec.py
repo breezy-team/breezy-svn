@@ -34,11 +34,11 @@ class RevisionSpec_svn(RevisionSpec):
 
     help_txt = """Selects a revision using a Subversion revision number (revno).
 
-    Subversion revision numbers are per-repository whereas Bazaar revision 
-    numbers are per-branch. This revision specifier allows specifying 
+    Subversion revision numbers are per-repository whereas Bazaar revision
+    numbers are per-branch. This revision specifier allows specifying
     a Subversion revision number.
     """
-    
+
     prefix = 'svn:'
 
     def _get_revnum(self):

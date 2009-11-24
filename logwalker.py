@@ -234,11 +234,11 @@ class CachingLogWalker(object):
         def rcvr(orig_paths, revision, revprops, has_children=None):
             nested_pb.update('fetching svn revision info', to_revnum - revision, to_revnum)
             self.cache.insert_paths(revision, orig_paths)
-            self.cache.insert_revprops(revision, revprops, 
+            self.cache.insert_revprops(revision, revprops,
                                        todo_revprops is None)
             self.saved_revnum = max(revision, self.saved_revnum)
             self.saved_minrevnum = min(revision, self.saved_minrevnum)
-        
+
         if pb is None:
             nested_pb = ui.ui_factory.nested_progress_bar()
         else:
@@ -256,7 +256,7 @@ class CachingLogWalker(object):
                 self.actual._transport.get_log(rcvr, [""], to_revnum, self.saved_revnum, 0, True, True, False, todo_revprops)
             except subvertpy.SubversionException, (_, num):
                 if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
-                    raise NoSuchRevision(branch=self, 
+                    raise NoSuchRevision(branch=self,
                         revision="Revision number %d" % to_revnum)
                 raise
         finally:
@@ -305,7 +305,7 @@ class LogWalker(object):
             return self._transport.iter_log([path], revnum, 0, 2, True, False, False, []).next()[1]
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
-                raise NoSuchRevision(branch=self, 
+                raise NoSuchRevision(branch=self,
                     revision="Revision number %d" % revnum)
             if num == subvertpy.ERR_FS_NOT_FOUND:
                 return None
@@ -332,8 +332,8 @@ class LogWalker(object):
             else:
                 todo_revprops = ["svn:author", "svn:log", "svn:date"]
 
-            iterator = self._transport.iter_log(prefixes, from_revnum, to_revnum, limit, 
-                                                    True, False, False, revprops=todo_revprops)
+            iterator = self._transport.iter_log(prefixes, from_revnum,
+                to_revnum, limit, True, False, False, revprops=todo_revprops)
 
             for (changed_paths, revnum, known_revprops, has_children) in iterator:
                 if revnum == 0 and changed_paths is None:
@@ -349,7 +349,7 @@ class LogWalker(object):
                 yield (revpaths, revnum, revprops)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
-                raise NoSuchRevision(branch=self, 
+                raise NoSuchRevision(branch=self,
                     revision="Revision number %d" % from_revnum)
             raise
 
@@ -357,7 +357,7 @@ class LogWalker(object):
         """Obtain dictionary with all the changes in a particular revision.
 
         :param revnum: Subversion revision number
-        :returns: dictionary with paths as keys and 
+        :returns: dictionary with paths as keys and
                   (action, copyfrom_path, copyfrom_rev) as values.
         """
         # To make the existing code happy:
@@ -369,7 +369,7 @@ class LogWalker(object):
                 self._transport.iter_log([""], revnum, revnum, 1, True, True, False, []).next()[0])
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
-                raise NoSuchRevision(branch=self, 
+                raise NoSuchRevision(branch=self,
                     revision="Revision number %d" % revnum)
             raise
 
@@ -381,7 +381,7 @@ class DictBasedLogWalker(object):
         self.revprops = revprops
 
     def iter_changes(self, prefixes, from_revnum, to_revnum=0, limit=0, pb=None):
-        return iter(iter_changes(prefixes, from_revnum, to_revnum, 
+        return iter(iter_changes(prefixes, from_revnum, to_revnum,
             self.get_revision_paths, self.revprop_list, limit))
 
     def get_revision_paths(self, revnum):
