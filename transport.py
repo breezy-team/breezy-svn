@@ -270,7 +270,7 @@ def Connection(url, auth=None):
             else:
                 raise AssertionError("Unable to parse error message: %s" % msg)
             raise RedirectRequested(source=_url_escape_uri(url),
-                                    target=_url_escape_uri(urlutils.join(url, new_url)), 
+                                    target=_url_escape_uri(urlutils.join(url, new_url)),
                                     is_permanent=True)
         raise convert_error(e)
     from bzrlib.plugins.svn import lazy_check_versions

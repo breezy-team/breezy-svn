@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -45,8 +45,8 @@ SVN_PROP_BZR_MERGE = 'bzr:merge'
 class BzrSvnMappingv1(BzrSvnMapping):
     """This was the initial version of the mappings as used by bzr-svn
     0.2.
-    
-    It does not support pushing revisions to Subversion as-is, but only 
+
+    It does not support pushing revisions to Subversion as-is, but only
     as part of a merge.
     """
     name = "v1"
@@ -119,7 +119,7 @@ class BzrSvnMappingv1(BzrSvnMapping):
     def from_repository(cls, repository, _hinted_branch_path=None):
         if _hinted_branch_path is None:
             return cls(TrunkLegacyLayout())
-    
+
         return cls(LegacyLayout.from_branch_path(_hinted_branch_path))
 
     @classmethod
@@ -144,7 +144,7 @@ class BzrSvnMappingv1(BzrSvnMapping):
 class BzrSvnMappingv2(BzrSvnMappingv1):
     """The second version of the mappings as used in the 0.3.x series.
 
-    It does not support pushing revisions to Subversion as-is, but only 
+    It does not support pushing revisions to Subversion as-is, but only
     as part of a merge.
     """
     name = "v2"
@@ -204,18 +204,18 @@ class TrunkLegacyLayout(LegacyLayout):
     def __init__(self, level=0):
         super(TrunkLegacyLayout, self).__init__()
         self.level = level
-    
+
     def parse(self, path):
         parts = path.strip("/").split("/")
         if len(parts) == 0 or self.level >= len(parts):
             raise NotSvnBranchPath(path, self)
 
         if parts[self.level] == "trunk" or parts[self.level] == "hooks":
-            return ("branch", "/".join(parts[0:self.level]), "/".join(parts[0:self.level+1]).strip("/"), 
+            return ("branch", "/".join(parts[0:self.level]), "/".join(parts[0:self.level+1]).strip("/"),
                     "/".join(parts[self.level+1:]).strip("/"))
-        elif ((parts[self.level] == "tags" or parts[self.level] == "branches") and 
+        elif ((parts[self.level] == "tags" or parts[self.level] == "branches") and
               len(parts) >= self.level+2):
-            return ("branch", "/".join(parts[0:self.level]), "/".join(parts[0:self.level+2]).strip("/"), 
+            return ("branch", "/".join(parts[0:self.level]), "/".join(parts[0:self.level+2]).strip("/"),
                     "/".join(parts[self.level+2:]).strip("/"))
         else:
             raise NotSvnBranchPath(path, self)
@@ -232,8 +232,8 @@ class TrunkLegacyLayout(LegacyLayout):
         return False
 
     def get_branches(self, repository, revnum, project="", pb=None):
-        return get_root_paths(repository, 
-             [("*/" * self.level) + x for x in "branches/*", "tags/*", "trunk"], 
+        return get_root_paths(repository,
+             [("*/" * self.level) + x for x in "branches/*", "tags/*", "trunk"],
              revnum, self.is_branch, project)
 
     def get_tags(self, repository, revnum, project="", pb=None):

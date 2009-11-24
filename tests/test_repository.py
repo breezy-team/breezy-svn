@@ -153,4 +153,4 @@ class ForeignTestsRepositoryFactory(object):
 
     def make_repository(self, transport):
         subvertpy.repos.create(transport.local_abspath("."))
-        return Repository.open_from_transport(transport)
+        return BzrDir.open_from_transport(transport).open_repository()

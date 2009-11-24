@@ -118,7 +118,7 @@ class SvnRemoteAccess(BzrDir):
 
     def open_repository(self, _unsupported=False):
         """Open the repository associated with this BzrDir.
-        
+
         :return: instance of SvnRepository.
         """
         if self.branch_path == "":
@@ -130,7 +130,7 @@ class SvnRemoteAccess(BzrDir):
 
     def find_repository(self, _ignore_branch_path=False):
         """Open the repository associated with this BzrDir.
-        
+
         :return: instance of SvnRepository.
         """
         transport = self.root_transport
@@ -149,7 +149,7 @@ class SvnRemoteAccess(BzrDir):
             recommend_upgrade=True):
         """See BzrDir.open_workingtree().
 
-        Will always raise NotLocalUrl as this 
+        Will always raise NotLocalUrl as this
         BzrDir can not be associated with working trees.
         """
         # Working trees never exist on remote Subversion repositories
@@ -158,7 +158,7 @@ class SvnRemoteAccess(BzrDir):
     def create_workingtree(self, revision_id=None, hardlink=None):
         """See BzrDir.create_workingtree().
 
-        Will always raise NotLocalUrl as this 
+        Will always raise NotLocalUrl as this
         BzrDir can not be associated with working trees.
         """
         raise NotLocalUrl(self.root_transport.base)
@@ -171,11 +171,11 @@ class SvnRemoteAccess(BzrDir):
             format = BzrDirFormat.get_default_format()
         return not isinstance(self._format, format.__class__)
 
-    def import_branch(self, source, stop_revision=None, overwrite=False, 
+    def import_branch(self, source, stop_revision=None, overwrite=False,
                       _push_merged=None, _override_svn_revprops=None):
-        """Create a new branch in this repository, possibly 
+        """Create a new branch in this repository, possibly
         with the specified history, optionally importing revisions.
-        
+
         :param source: Source branch
         :param stop_revision: Tip of new branch
         :return: Branch object
@@ -195,8 +195,8 @@ class SvnRemoteAccess(BzrDir):
                 raise NotBranchError(target_branch_path)
             if type not in ('branch', 'tag') or ip != '':
                 raise NotBranchError(target_branch_path)
-            inter.push_new_branch(layout, project, target_branch_path, 
-                    stop_revision, 
+            inter.push_new_branch(layout, project, target_branch_path,
+                    stop_revision,
                     override_svn_revprops=_override_svn_revprops,
                     push_merged=_push_merged, overwrite=overwrite)
             return self.open_branch()
@@ -245,15 +245,15 @@ class SvnRemoteAccess(BzrDir):
             target_branch.lock_write()
             try:
                 ret.branch_push_result = source.push(
-                    target_branch, stop_revision=revision_id, 
-                    overwrite=overwrite) 
+                    target_branch, stop_revision=revision_id,
+                    overwrite=overwrite)
             finally:
                 target_branch.unlock()
         except NotBranchError:
             ret.target_branch_path = "/%s" % self.branch_path.lstrip("/")
             if create_prefix:
                 self.root_transport.create_prefix()
-            ret.target_branch = self.import_branch(source, revision_id, 
+            ret.target_branch = self.import_branch(source, revision_id,
                 overwrite=overwrite)
             ret.tag_conflicts = source.tags.merge_to(ret.target_branch.tags,
                 overwrite)

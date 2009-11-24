@@ -56,7 +56,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         repos_url = self.make_client('d', 'de')
         self.commit_something(repos_url)
         self.run_bzr("branch --stacked %s dc" % repos_url, retcode=3)
-        
+
     def test_log_empty(self):
         repos_url = self.make_repository('d')
         self.run_bzr('log %s' % repos_url)
@@ -71,7 +71,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_push_create_prefix(self):
         repos_url = self.make_repository('d')
-        
+
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         trunk.add_file("trunk/foo").modify()
@@ -87,7 +87,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_push(self):
         repos_url = self.make_repository('d')
-        
+
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
         dc.close()
@@ -100,7 +100,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_push_empty_existing(self):
         repos_url = self.make_repository('d')
-        
+
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
         dc.close()
@@ -114,7 +114,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_dpush_empty_existing(self):
         repos_url = self.make_repository('d')
-        
+
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
         dc.close()
@@ -146,7 +146,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_missing(self):
         repos_url = self.make_repository('d')
-        
+
         self.run_bzr("init dc")
 
         os.chdir("dc")
@@ -163,7 +163,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_push_overwrite(self):
         repos_url = self.make_repository('d')
-        
+
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir('trunk')
         trunk.add_file("trunk/foo").modify()
@@ -184,7 +184,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_dpush(self):
         repos_url = self.make_repository('d')
-        
+
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
         dc.close()
@@ -197,7 +197,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_dpush_new(self):
         repos_url = self.make_repository('d')
-        
+
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
         dc.close()
@@ -212,7 +212,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_dpush_wt_diff(self):
         repos_url = self.make_repository('d')
-        
+
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
         dc.close()

@@ -40,7 +40,7 @@ from bzrlib.plugins.svn.mapping3.scheme import (
     ListBranchingScheme,
     NoBranchingScheme,
     UnknownBranchingScheme,
-    guess_scheme_from_branch_path, 
+    guess_scheme_from_branch_path,
     parse_list_scheme_text,
     repository_guess_scheme,
     scheme_from_layout,
@@ -105,7 +105,7 @@ class SchemeDerivedLayout(RepositoryLayout):
 
 
 def get_stored_scheme(repository):
-    """Retrieve the stored branching scheme, either in the repository 
+    """Retrieve the stored branching scheme, either in the repository
     or in the configuration file.
     """
     scheme = repository.get_config().get_branching_scheme()
@@ -138,7 +138,7 @@ def set_property_scheme(repository, scheme):
             {properties.PROP_REVISION_LOG: "Updating branching scheme for Bazaar."},
             None, None, False)
         root = editor.open_root()
-        root.change_prop(SVN_PROP_BZR_BRANCHING_SCHEME, 
+        root.change_prop(SVN_PROP_BZR_BRANCHING_SCHEME,
                 "".join(map(lambda x: x+"\n", scheme.branch_list)).encode("utf-8"))
         root.close()
         editor.close()
@@ -151,15 +151,15 @@ def config_set_scheme(repository, scheme, guessed_scheme, mandatory=False):
         guessed_scheme_str = None
     else:
         guessed_scheme_str = str(guessed_scheme)
-    repository.get_config().set_branching_scheme(str(scheme), 
+    repository.get_config().set_branching_scheme(str(scheme),
                             guessed_scheme_str, mandatory=mandatory)
 
 
 class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevProps, mapping.BzrSvnMapping):
     """The third version of the mappings as used in the 0.4.x series.
 
-    Relies exclusively on file properties, though 
-    bzr-svn 0.4.11 and up will set some revision properties 
+    Relies exclusively on file properties, though
+    bzr-svn 0.4.11 and up will set some revision properties
     as well if possible.
     """
     experimental = False
@@ -205,10 +205,10 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
     def from_repository(cls, repository, _hinted_branch_path=None):
         (actual_scheme, guessed_scheme, mandatory) = get_stored_scheme(repository)
         if mandatory:
-            return cls(actual_scheme, guessed_scheme) 
+            return cls(actual_scheme, guessed_scheme)
 
         if actual_scheme is not None:
-            if (_hinted_branch_path is None or 
+            if (_hinted_branch_path is None or
                 actual_scheme.is_branch(_hinted_branch_path)):
                 return cls(actual_scheme, guessed_scheme)
 
@@ -228,10 +228,10 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
         assert isinstance(branch, str)
         assert isinstance(inv_path, unicode)
         inv_path = inv_path.encode("utf-8")
-        ret = "%d@%s:%s:%s" % (revnum, uuid, mapping.escape_svn_path(branch), 
+        ret = "%d@%s:%s:%s" % (revnum, uuid, mapping.escape_svn_path(branch),
                                mapping.escape_svn_path(inv_path))
         if len(ret) > 150:
-            ret = "%d@%s:%s;%s" % (revnum, uuid, 
+            ret = "%d@%s:%s;%s" % (revnum, uuid,
                                 mapping.escape_svn_path(branch),
                                 osutils.sha(inv_path).hexdigest())
         assert isinstance(ret, str)
