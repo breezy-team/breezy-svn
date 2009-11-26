@@ -50,8 +50,8 @@ from bzrlib.errors import (
     VersionedFileInvalidChecksum,
     )
 from bzrlib.inventory import (
-    Inventory, 
-    InventoryDirectory, 
+    Inventory,
+    InventoryDirectory,
     InventoryFile,
     InventoryLink,
     )
@@ -86,7 +86,7 @@ from bzrlib.plugins.svn.transport import (
     url_join_unescaped_path,
     )
 
-# Max size of group in which revids are checked when looking for missing 
+# Max size of group in which revids are checked when looking for missing
 # revisions
 MAX_CHECK_PRESENT_INTERVAL = 1000
 # Size of the text cache to keep
@@ -106,7 +106,7 @@ except ImportError:
 
             def write(self, s):
                 self.l.append(s)
-        return apply_txdelta_handler(''.join(source_chunks), 
+        return apply_txdelta_handler(''.join(source_chunks),
                                      ChunkWriteStream(target_chunks))
 
 
@@ -184,7 +184,7 @@ class PathStrippingDirectoryEditor(object):
         if path.strip("/") == self.editor.prefix:
             t = self.editor.actual.open_root(copyfrom_rev)
         elif self.actual is not None:
-            t = self.actual.add_directory(self.editor.strip_prefix(path), 
+            t = self.actual.add_directory(self.editor.strip_prefix(path),
                self.editor.strip_copy_prefix(copyfrom_path), copyfrom_rev)
         else:
             t = None
@@ -255,7 +255,7 @@ class PathStrippingEditor(object):
 
 
 class DeltaBuildEditor(object):
-    """Implementation of the Subversion commit editor interface that 
+    """Implementation of the Subversion commit editor interface that
     converts Subversion to Bazaar semantics.
     """
     def __init__(self, revmeta, mapping):
@@ -365,10 +365,10 @@ class FileBuildEditor(object):
         return self._apply_textdelta(base_checksum)
 
     def change_prop(self, name, value):
-        if name == properties.PROP_EXECUTABLE: 
-            # You'd expect executable to match 
-            # properties.PROP_EXECUTABLE_VALUE, but that's not 
-            # how SVN behaves. It appears to consider the presence 
+        if name == properties.PROP_EXECUTABLE:
+            # You'd expect executable to match
+            # properties.PROP_EXECUTABLE_VALUE, but that's not
+            # how SVN behaves. It appears to consider the presence
             # of the property sufficient to mark it executable.
             self.is_executable = (value is not None)
         elif name == properties.PROP_SPECIAL:
@@ -396,7 +396,7 @@ class FileBuildEditor(object):
 
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
-    def __init__(self, editor, old_path, path, old_id, new_id, 
+    def __init__(self, editor, old_path, path, old_id, new_id,
             parent_file_id, parent_revids=[], renew_fileids=None):
         super(DirectoryRevisionBuildEditor, self).__init__(editor, path)
         assert isinstance(new_id, str)
@@ -426,10 +426,10 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         rec_del(self.editor.old_inventory[self.editor._get_old_id(self.old_id, path)])
 
     def _close(self):
-        if (not self.editor.old_inventory.has_id(self.new_id) or 
-            (self._metadata_changed and self.path != u"") or 
+        if (not self.editor.old_inventory.has_id(self.new_id) or
+            (self._metadata_changed and self.path != u"") or
             self.new_ie != self.editor.old_inventory[self.new_id] or
-            self.old_path != self.path or 
+            self.old_path != self.path or
             self.editor._get_text_revision(self.path) is not None):
             assert self.editor.revid is not None
 
@@ -458,8 +458,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         file_id = self.editor._get_new_id(path)
 
         if self.editor.old_inventory.has_id(file_id):
-            # This directory was moved here from somewhere else, but the 
-            # other location hasn't been removed yet. 
+            # This directory was moved here from somewhere else, but the
+            # other location hasn't been removed yet.
             if copyfrom_path is None:
                 old_path = self.editor.old_inventory.id2path(file_id)
             else:
@@ -470,7 +470,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_path = None
             old_file_id = None
 
-        return DirectoryRevisionBuildEditor(self.editor, old_path, path, old_file_id, file_id, 
+        return DirectoryRevisionBuildEditor(self.editor, old_path, path, old_file_id, file_id,
             self.new_id, [])
 
     def _open_directory(self, path, base_revnum):
@@ -488,15 +488,15 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # If a directory is replaced by a copy of itself, we need
             # to make sure all children get readded with a new file id
             renew_fileids = base_file_id
-        return DirectoryRevisionBuildEditor(self.editor, old_path, path, 
+        return DirectoryRevisionBuildEditor(self.editor, old_path, path,
             base_file_id, file_id, self.new_id, file_parents,
             renew_fileids=renew_fileids)
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         file_id = self.editor._get_new_id(path)
         if self.editor.old_inventory.has_id(file_id):
-            # This file was moved here from somewhere else, but the 
-            # other location hasn't been removed yet. 
+            # This file was moved here from somewhere else, but the
+            # other location hasn't been removed yet.
             if copyfrom_path is None:
                 old_path = self.editor.old_inventory.id2path(file_id)
             else:
@@ -510,7 +510,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             base_ie = self.editor.get_old_ie(copyfrom_path, copyfrom_revnum)
         else:
             base_ie = None
-        return FileRevisionBuildEditor(self.editor, old_path, path, file_id, 
+        return FileRevisionBuildEditor(self.editor, old_path, path, file_id,
                                        self.new_id, base_ie)
 
     def _open_file(self, path, base_revnum):
@@ -526,8 +526,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_path = None
             file_parents = []
             self._delete_entry(path, base_revnum)
-        return FileRevisionBuildEditor(self.editor, old_path, path, file_id, 
-                                       self.new_id, base_ie, file_parents, 
+        return FileRevisionBuildEditor(self.editor, old_path, path, file_id,
+                                       self.new_id, base_ie, file_parents,
                                        is_symlink=is_symlink)
 
 
@@ -596,7 +596,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
         if self.is_special is not None:
             self.is_symlink = (self.is_special and content_starts_with_link(cf))
-            cf = ChunkedContentFactory(file_key, parent_keys, 
+            cf = ChunkedContentFactory(file_key, parent_keys,
                 osutils.sha_string(""), [])
         elif content_starts_with_link(cf):
             # This file just might be a file that is svn:special but didn't
@@ -636,7 +636,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
 
 class RevisionBuildEditor(DeltaBuildEditor):
-    """Implementation of the Subversion commit editor interface that builds a 
+    """Implementation of the Subversion commit editor interface that builds a
     Bazaar revision.
     """
     def __init__(self, source, target, revid, prev_inventory, revmeta, mapping,
@@ -663,7 +663,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             last_revmeta = revmeta
         assert last_revmeta is not None and last_revmeta.revnum == revnum
         revid = last_revmeta.get_revision_id(mapping)
-        # TODO: Use InterRepository._get_inventory() for better performance, 
+        # TODO: Use InterRepository._get_inventory() for better performance,
         # as it does (some) caching ?
         inv = self.target.get_inventory(revid)
         file_id = inv.path2id(path)
@@ -672,7 +672,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _get_chunked(self, ie):
         key = (ie.file_id, ie.revision)
         file_data = self._text_cache.get(key)
-        if file_data is not None: 
+        if file_data is not None:
             return file_data
         return self.target.iter_files_bytes([key + (None,)]).next()[1]
 
@@ -712,7 +712,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             renew_fileids = None
             old_path = None
         else:
-            # Just inherit file id from previous 
+            # Just inherit file id from previous
             base_file_id = self._get_old_id(None, u"")
             base_revid = self.old_inventory[base_file_id].revision
             file_id = self._get_existing_id(None, None, u"")
@@ -727,7 +727,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 renew_fileids =  base_file_id
         assert isinstance(file_id, str)
 
-        return DirectoryRevisionBuildEditor(self, old_path, u"", base_file_id, 
+        return DirectoryRevisionBuildEditor(self, old_path, u"", base_file_id,
             file_id, None, file_parents, renew_fileids)
 
     def _renew_fileid(self, path):
@@ -740,7 +740,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         new_ie.parent_id = self._get_new_id(urlutils.split(path)[0])
         new_ie.revision = self._get_text_revision(path) or self.revid
         # FIXME: Use self._text_cache
-        record = self.texts.get_record_stream([(old_ie.file_id, old_ie.revision)], 
+        record = self.texts.get_record_stream([(old_ie.file_id, old_ie.revision)],
                                                 'unordered', True).next()
         self.texts.insert_record_stream(
                 [FulltextContentFactory(
@@ -754,9 +754,9 @@ class RevisionBuildEditor(DeltaBuildEditor):
         if self._id_map is not None:
             return self._id_map
 
-        local_changes = get_local_changes(self.revmeta.get_paths(), 
+        local_changes = get_local_changes(self.revmeta.get_paths(),
                     self.revmeta.branch_path)
-        self._id_map = self.source.fileid_map.get_idmap_delta(local_changes, self.revmeta, 
+        self._id_map = self.source.fileid_map.get_idmap_delta(local_changes, self.revmeta,
             self.mapping)
 
         return self._id_map
@@ -766,7 +766,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
     def _get_old_id(self, parent_id, old_path):
         assert isinstance(old_path, unicode)
-        assert (isinstance(parent_id, str) or 
+        assert (isinstance(parent_id, str) or
                 (parent_id is None and old_path == ""))
         if old_path == "":
             return self.old_inventory.root.file_id
@@ -776,13 +776,13 @@ class RevisionBuildEditor(DeltaBuildEditor):
             try:
                 return self.old_inventory[parent_id].children[basename].file_id
             except KeyError:
-                raise FileIdMapIncomplete(basename, self.old_inventory.id2path(parent_id), self.revmeta) 
+                raise FileIdMapIncomplete(basename, self.old_inventory.id2path(parent_id), self.revmeta)
         else:
             ret = parent_id_basename_index.iteritems([(parent_id or '', basename.encode("utf-8"))])
             try:
                 return ret.next()[1]
             except IndexError:
-                raise FileIdMapIncomplete(basename, self.old_inventory.id2path(parent_id), self.revmeta) 
+                raise FileIdMapIncomplete(basename, self.old_inventory.id2path(parent_id), self.revmeta)
 
     def _get_existing_id(self, old_parent_id, new_parent_id, path):
         assert isinstance(path, unicode)
@@ -791,8 +791,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
         ret = self._get_id_map().get(path)
         if ret is not None:
             return ret
-        # If there was no explicit mention of this file id in the map, then 
-        # this file_id can only stay the same if the parent file id 
+        # If there was no explicit mention of this file id in the map, then
+        # this file_id can only stay the same if the parent file id
         # didn't change
         if old_parent_id == new_parent_id:
             return self._get_old_id(old_parent_id, path)
@@ -829,7 +829,7 @@ class FileTreeDeltaBuildEditor(FileBuildEditor):
 
     def _close(self, checksum=None):
         text_changed = (self.base_checksum != checksum)
-        metadata_changed = (self.is_special is not None or 
+        metadata_changed = (self.is_special is not None or
                             self.is_executable is not None)
         if self.is_special:
             # FIXME: A special file doesn't necessarily mean a symlink
@@ -839,7 +839,7 @@ class FileTreeDeltaBuildEditor(FileBuildEditor):
             entry_kind = 'file'
         if self.change_kind == 'add':
             if self.copyfrom_path is not None and self._get_map_id(self.path) is not None:
-                self.editor.delta.renamed.append((self.copyfrom_path, self.path, self.editor._get_new_id(self.path), entry_kind, 
+                self.editor.delta.renamed.append((self.copyfrom_path, self.path, self.editor._get_new_id(self.path), entry_kind,
                                                  text_changed, metadata_changed))
             else:
                 self.editor.delta.added.append((self.path, self.editor._get_new_id(self.path), entry_kind))
@@ -878,7 +878,7 @@ class DirectoryTreeDeltaBuildEditor(DirectoryBuildEditor):
 
 
 class TreeDeltaBuildEditor(DeltaBuildEditor):
-    """Implementation of the Subversion commit editor interface that builds a 
+    """Implementation of the Subversion commit editor interface that builds a
     Bazaar TreeDelta.
     """
     def __init__(self, revmeta, mapping, newfileidmap, oldfileidmap):
@@ -957,7 +957,7 @@ class FetchRevisionFinder(object):
     def find_iter_revisions(self, iter, master_mapping, needs_manual_check,
                             heads=None, pb=None):
         """Find revisions to fetch based on an iterator over available revmetas.
-        
+
         :param iter: Iterator over RevisionMetadata objects
         :param master_mapping: Mapping to use
         """
@@ -979,11 +979,11 @@ class FetchRevisionFinder(object):
                         continue
                     else:
                         raise
-                if (m != master_mapping and 
+                if (m != master_mapping and
                     not m.is_branch_or_tag(revmeta.branch_path)):
                     continue
                 lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(m)
-                if (lhs_parent_revmeta is not None and 
+                if (lhs_parent_revmeta is not None and
                     needs_manual_check(lhs_parent_revmeta)):
                     self.needed.extend(self.find_mainline(
                         lhs_parent_revmeta.get_foreign_revid(), lhsm))
@@ -994,14 +994,14 @@ class FetchRevisionFinder(object):
         self.needed.extend(reversed(self.check_revmetas(needs_checking)))
 
     def find_all(self, mapping, pb=None):
-        """Find all revisions from the source repository that are not 
+        """Find all revisions from the source repository that are not
         yet in the target repository.
 
         :return: List with revmeta, mapping tuples to fetch
         """
         from_revnum = self.source.get_latest_revnum()
         all_revs = self.source._revmeta_provider.iter_all_revisions(
-                self.source.get_layout(), 
+                self.source.get_layout(),
                 check_unusual_path=mapping.is_branch_or_tag,
                 from_revnum=from_revnum, pb=pb)
         return self.find_iter_revisions(all_revs, mapping, lambda x: False)
@@ -1017,13 +1017,13 @@ class FetchRevisionFinder(object):
         needs_checking = []
         for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping=mapping):
             if pb:
-                pb.update("determining revisions to fetch", 
+                pb.update("determining revisions to fetch",
                           revnum-revmeta.revnum, revnum)
             if (revmeta.get_foreign_revid(), mapping) in self.checked:
                 # This revision (and its ancestry) has already been checked
                 break
             needs_checking.append((revmeta, mapping))
-            if (not find_ghosts and not self.target_is_empty and 
+            if (not find_ghosts and not self.target_is_empty and
                 len(needs_checking) == self._check_present_interval):
                 missing_revmetas = self.check_revmetas(needs_checking)
                 for r in missing_revmetas:
@@ -1047,7 +1047,7 @@ class FetchRevisionFinder(object):
                     self.extra.append((foreign_revid, rhs_mapping))
         return revmetas
 
-    def find_until(self, foreign_revid, mapping, find_ghosts=False, 
+    def find_until(self, foreign_revid, mapping, find_ghosts=False,
                    pb=None):
         """Find all missing revisions until revision_id
 
@@ -1058,7 +1058,7 @@ class FetchRevisionFinder(object):
         self.extra.append((foreign_revid, mapping))
         while len(self.extra) > 0:
             foreign_revid, mapping = self.extra.pop()
-            self.needed.extend(self.find_mainline(foreign_revid, mapping, 
+            self.needed.extend(self.find_mainline(foreign_revid, mapping,
                 find_ghosts=find_ghosts, pb=pb))
 
 
@@ -1086,7 +1086,7 @@ class InterFromSvnRepository(InterRepository):
         self.fetch(revision_id, pb, find_ghosts=False)
 
     def _get_inventory(self, revid):
-        """Retrieve an inventory, optionally using a inventory previously 
+        """Retrieve an inventory, optionally using a inventory previously
         cached.
 
         :param revid: Revision id to use.
@@ -1099,7 +1099,7 @@ class InterFromSvnRepository(InterRepository):
             assert self.target.has_revision(revid)
         return self.target.get_inventory(revid)
 
-    def _inconsistent_lhs_parent(self, revid, stored_lhs_parent_revid, 
+    def _inconsistent_lhs_parent(self, revid, stored_lhs_parent_revid,
             found_lhs_parent_revid):
         trace.warning(
             "Recorded left hand side parent %s for revision "
@@ -1111,21 +1111,21 @@ class InterFromSvnRepository(InterRepository):
         revid = revmeta.get_revision_id(mapping)
         assert revid is not None
         try:
-            return RevisionBuildEditor(self.source, self.target, revid, 
-                self._get_inventory(revmeta.get_lhs_parent_revid(mapping)), 
+            return RevisionBuildEditor(self.source, self.target, revid,
+                self._get_inventory(revmeta.get_lhs_parent_revid(mapping)),
                 revmeta, mapping, self._text_cache)
         except NoSuchRevision:
             lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
             expected_lhs_parent_revid = revmeta.get_implicit_lhs_parent_revid(mapping)
             if revmeta.get_stored_lhs_parent_revid(mapping) not in (None, expected_lhs_parent_revid):
                 self._inconsistent_lhs_parent(revmeta.get_revision_id(mapping),
-                    revmeta.get_stored_lhs_parent_revid(mapping), 
+                    revmeta.get_stored_lhs_parent_revid(mapping),
                     expected_lhs_parent_revid)
             raise
 
     def _fetch_revision_switch(self, editor, revmeta, parent_revmeta):
         """Fetch a revision using svn.ra.do_switch() or svn.ra.do_update().
-        
+
         :param editor: Editor to report changes to
         :param revmeta: RevisionMetadata object for the revision to fetch
         :param parent_revmeta: RevisionMetadata object for the parent revision.
@@ -1144,8 +1144,8 @@ class InterFromSvnRepository(InterRepository):
             assert revmeta.revnum > parent_revnum or start_empty
 
             if parent_branch != revmeta.branch_path:
-                reporter = conn.do_switch(revmeta.revnum, "", True, 
-                    url_join_unescaped_path(conn.get_repos_root(), revmeta.branch_path), 
+                reporter = conn.do_switch(revmeta.revnum, "", True,
+                    url_join_unescaped_path(conn.get_repos_root(), revmeta.branch_path),
                     editor)
             else:
                 reporter = conn.do_update(revmeta.revnum, "", True, editor)
@@ -1153,7 +1153,7 @@ class InterFromSvnRepository(InterRepository):
             try:
                 report_inventory_contents(reporter, parent_revnum, start_empty)
             except SubversionException, (_, ERR_FS_PATH_SYNTAX):
-                # This seems to occur sometimes when we try to accidently 
+                # This seems to occur sometimes when we try to accidently
                 # import a file over HTTP
                 if conn.check_path("", revmeta.revnum) == NODE_FILE:
                     raise SubversionException("path is a file", ERR_FS_NOT_DIRECTORY)
@@ -1166,7 +1166,7 @@ class InterFromSvnRepository(InterRepository):
         assert revmeta.revnum >= 0
         conn = self.source.transport.get_connection(revmeta.branch_path)
         try:
-            conn.replay(revmeta.revnum, 0, editor_strip_prefix(editor, revmeta.branch_path), 
+            conn.replay(revmeta.revnum, 0, editor_strip_prefix(editor, revmeta.branch_path),
                 True)
         finally:
             if not conn.busy:
@@ -1175,7 +1175,7 @@ class InterFromSvnRepository(InterRepository):
     def _fetch_revisions(self, revs, pb=None, use_replay=False):
         """Copy a set of related revisions using svn.ra.switch.
 
-        :param revids: List of revision ids of revisions to copy, 
+        :param revids: List of revision ids of revisions to copy,
                        newest first.
         :param pb: Optional progress bar.
         """
@@ -1201,11 +1201,11 @@ class InterFromSvnRepository(InterRepository):
                 editor = self._get_editor(revmeta, mapping)
                 try:
                     if use_replay:
-                        self._fetch_revision_replay(editor, revmeta, 
+                        self._fetch_revision_replay(editor, revmeta,
                                                     parent_revmeta)
                     else:
                         try:
-                            self._fetch_revision_switch(editor, revmeta, 
+                            self._fetch_revision_switch(editor, revmeta,
                                                         parent_revmeta)
                         except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                             accidental_file_revs.add(revmeta)
@@ -1220,7 +1220,7 @@ class InterFromSvnRepository(InterRepository):
             pack_hint = self.target.commit_write_group()
         return pack_hint
 
-    def fetch(self, revision_id=None, pb=None, find_ghosts=False, 
+    def fetch(self, revision_id=None, pb=None, find_ghosts=False,
               needed=None, mapping=None, project=None, fetch_spec=None):
         """Fetch revisions. """
         if revision_id == NULL_REVISION:
@@ -1231,7 +1231,7 @@ class InterFromSvnRepository(InterRepository):
             pb.update("fetch phase", 0, 2)
 
         # Loop over all the revnums until revision_id
-        # (or youngest_revnum) and call self.target.add_revision() 
+        # (or youngest_revnum) and call self.target.add_revision()
         # or self.target.add_inventory() each time
         self.target.lock_write()
         try:
@@ -1282,10 +1282,10 @@ class InterFromSvnRepository(InterRepository):
             finally:
                 if nested_pb is not None:
                     nested_pb.finished()
-            if (revision_id is not None and 
+            if (revision_id is not None and
                 not self.target.has_revision(revision_id)):
                 # Apparently we could find the revision but it wasn't
-                # imported using the same mapping or perhaps 
+                # imported using the same mapping or perhaps
                 # revision_id was a mapped revision id and the revision
                 # itself was roundtripped.
                 raise NoSuchRevision(self.source, revision_id)
@@ -1328,7 +1328,7 @@ class InterFromSvnRepository(InterRepository):
                             revmeta = r
                             break
                     revmeta._revprops = revprops
-                    return editor_strip_prefix(self._get_editor(revmeta, mapping), 
+                    return editor_strip_prefix(self._get_editor(revmeta, mapping),
                         revmeta.branch_path)
 
                 def revfinish(revision, revprops, editor):

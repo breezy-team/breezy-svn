@@ -34,9 +34,9 @@ from bzrlib.lockable_files import (
 
 def get_rich_root_format(stacked=False):
     format = format_registry.make_bzrdir('default-rich-root')
-    # If the default format does not support stacking, fall back to 
-    # 1.9-rr. This doesn't have performance issues, since all 
-    # bzr versions that have 2a as default. 
+    # If the default format does not support stacking, fall back to
+    # 1.9-rr. This doesn't have performance issues, since all
+    # bzr versions that have 2a as default.
     if stacked and not format.get_branch_format().supports_stacking():
         return format_registry.make_bzrdir('1.9-rich-root')
     return format
@@ -66,7 +66,7 @@ class SvnControlFormat(BzrDirFormat):
     def is_supported(self):
         """See BzrDir.is_supported()."""
         return True
- 
+
 
 class SvnRemoteFormat(SvnControlFormat):
     """Format for the Subversion smart server."""
@@ -131,15 +131,15 @@ class SvnRemoteFormat(SvnControlFormat):
         import subvertpy
         from bzrlib.plugins.svn import remote
         ERR_XML_MALFORMED = getattr(subvertpy, "ERR_XML_MALFORMED", 130003)
-        try: 
+        try:
             return remote.SvnRemoteAccess(transport, self)
         except subvertpy.SubversionException, (_, num):
-            if num in (subvertpy.ERR_RA_DAV_REQUEST_FAILED, 
+            if num in (subvertpy.ERR_RA_DAV_REQUEST_FAILED,
                        subvertpy.ERR_RA_DAV_NOT_VCC):
                 raise bzr_errors.NotBranchError(transport.base)
             if num == ERR_XML_MALFORMED:
-                # This *could* be an indication of an actual corrupt 
-                # svn server, but usually it just means a broken 
+                # This *could* be an indication of an actual corrupt
+                # svn server, but usually it just means a broken
                 # xml page
                 raise bzr_errors.NotBranchError(transport.base)
             raise

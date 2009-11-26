@@ -81,9 +81,9 @@ def keyword_author(revid, rev, relpath, revmeta):
 
 def keyword_id(*args):
     """basename <space> revno <space> date <space> author"""
-    return "%s %s %s %s" % (urlutils.basename(keyword_url(*args)), 
-            keyword_rev(*args), keyword_date(*args), 
-            keyword_author(*args)) 
+    return "%s %s %s %s" % (urlutils.basename(keyword_url(*args)),
+            keyword_rev(*args), keyword_date(*args),
+            keyword_author(*args))
 
 
 def keyword_url(revid, rev, relpath, revmeta):
@@ -102,7 +102,7 @@ keywords = {
     "LastChangedRevision": keyword_rev,
     "Rev": keyword_rev,
     "Revision": keyword_rev,
-    "LastChangedBy": keyword_author, 
+    "LastChangedBy": keyword_author,
     "Author": keyword_author,
     "HeadURL": keyword_url,
     "URL": keyword_url,
@@ -117,7 +117,7 @@ _KW_COOKED_RE = re.compile(r'\$([\w\-]+):([^$]+)\$')
 
 def expand_keywords(s, allowed_keywords, context=None, encoder=None):
     """Replace raw style keywords in a string.
-    
+
     Note: If the keyword is already in the expanded style, the value is
     not replaced.
 
@@ -143,7 +143,7 @@ def expand_keywords(s, allowed_keywords, context=None, encoder=None):
             continue
         try:
             expansion = keywords[keyword](context.revision_id(),
-                context.revision(), context.relpath(), 
+                context.revision(), context.relpath(),
                 getattr(context.revision(), "svn_meta", None))
         except AttributeError, err:
             if 'error' in debug.debug_flags:
@@ -162,7 +162,7 @@ def expand_keywords(s, allowed_keywords, context=None, encoder=None):
 
 def compress_keywords(s, allowed_keywords):
     """Replace cooked style keywords with raw style in a string.
-    
+
     :param s: the string
     :return: the string with keywords compressed
     """

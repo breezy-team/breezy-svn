@@ -100,8 +100,8 @@ class SubversionBranchCheckResult(BranchCheckResult):
 
 class SubversionSourcePullResult(PullResult):
     """Subversion source pull result.
-    
-    The main difference with a standard Bazaar PullResult is that it also 
+
+    The main difference with a standard Bazaar PullResult is that it also
     reports the Subversion revision number.
     """
 
@@ -112,7 +112,7 @@ class SubversionSourcePullResult(PullResult):
             else:
                 if self.new_revmeta is None:
                     self.new_revmeta, _ = self.source_branch.repository._get_revmeta(self.new_revid)
-                to_file.write('Now on revision %d (svn revno: %d).\n' % 
+                to_file.write('Now on revision %d (svn revno: %d).\n' %
                         (self.new_revno, self.new_revmeta.revnum))
         self._show_tag_conficts(to_file)
 
@@ -166,7 +166,7 @@ class SvnBranch(ForeignBranch):
         :param repos: SvnRepository this branch is part of.
         :param branch_path: Relative path inside the repository this
             branch is located at.
-        :param revnum: Subversion revision number of the branch to 
+        :param revnum: Subversion revision number of the branch to
             look at; none for latest.
         :param _skip_check: If True, don't check if the branch actually exists.
         """
@@ -178,7 +178,7 @@ class SvnBranch(ForeignBranch):
         self._lock_mode = None
         self._lock_count = 0
         self._branch_path = branch_path.strip("/")
-        self.base = urlutils.join(self.repository.base, 
+        self.base = urlutils.join(self.repository.base,
                         self._branch_path).rstrip("/")
         self._revmeta_cache = None
         self._revnum = revnum
@@ -206,7 +206,7 @@ class SvnBranch(ForeignBranch):
 
     def supports_tags(self):
         """See Branch.supports_tags()."""
-        return (self._format.supports_tags() and 
+        return (self._format.supports_tags() and
                 self.mapping.supports_tags() and
                 self.layout.supports_tags())
 
@@ -229,13 +229,13 @@ class SvnBranch(ForeignBranch):
         if revnum == last_revmeta.revnum:
             return last_revmeta.branch_path
 
-        # Use revnum - this branch may have been moved in the past 
+        # Use revnum - this branch may have been moved in the past
         return self.repository.transport.get_locations(
                     last_revmeta.branch_path, last_revmeta.revnum,
                     [revnum])[revnum].strip("/")
 
     def get_revnum(self):
-        """Obtain the Subversion revision number this branch was 
+        """Obtain the Subversion revision number this branch was
         last changed in.
 
         :return: Revision number
@@ -264,7 +264,7 @@ class SvnBranch(ForeignBranch):
         # TODO: Check svn file properties?
         return SubversionBranchCheckResult(self)
 
-    def _create_heavyweight_checkout(self, to_location, revision_id=None, 
+    def _create_heavyweight_checkout(self, to_location, revision_id=None,
                                      hardlink=False):
         """Create a new heavyweight checkout of this branch.
 
@@ -277,21 +277,21 @@ class SvnBranch(ForeignBranch):
             to_location, force_new_tree=False, format=get_rich_root_format())
         checkout = checkout_branch.bzrdir
         checkout_branch.bind(self)
-        # pull up to the specified revision_id to set the initial 
+        # pull up to the specified revision_id to set the initial
         # branch tip correctly, and seed it with history.
         checkout_branch.pull(self, stop_revision=revision_id)
         return checkout.create_workingtree(revision_id, hardlink=hardlink)
 
     def lookup_bzr_revision_id(self, revid):
-        """Look up the matching Subversion revision number on the mainline of 
+        """Look up the matching Subversion revision number on the mainline of
         the branch.
 
         :param revid: Revision id to look up.
-        :return: Revision number on the branch. 
+        :return: Revision number on the branch.
         :raises NoSuchRevision: If the revision id was not found.
         """
-        (uuid, bp, revnum), mapping = self.repository.lookup_bzr_revision_id(revid, 
-            ancestry=(self.get_branch_path(), self.get_revnum()), 
+        (uuid, bp, revnum), mapping = self.repository.lookup_bzr_revision_id(revid,
+            ancestry=(self.get_branch_path(), self.get_revnum()),
             project=self.project)
         assert bp.strip("/") == self.get_branch_path(revnum).strip("/"), \
                 "Got %r, expected %r" % (bp, self.get_branch_path(revnum))
@@ -333,7 +333,7 @@ class SvnBranch(ForeignBranch):
         if lightweight:
             return self._create_lightweight_checkout(to_location, revision_id)
         else:
-            return self._create_heavyweight_checkout(to_location, revision_id, 
+            return self._create_heavyweight_checkout(to_location, revision_id,
                                                      hardlink=hardlink)
 
     def generate_revision_id(self, revnum):
@@ -349,7 +349,7 @@ class SvnBranch(ForeignBranch):
 
     def get_config(self):
         return BranchConfig(self.base, self.repository.uuid)
-       
+
     def _get_nick(self, local=False, possible_master_transports=None):
         """Find the nick name for this branch.
 
@@ -364,7 +364,7 @@ class SvnBranch(ForeignBranch):
 
     def set_revision_history(self, rev_history):
         """See Branch.set_revision_history()."""
-        if (rev_history == [] or 
+        if (rev_history == [] or
             not self.repository.has_revision(rev_history[-1], project=self.project)):
             raise NotImplementedError("set_revision_history can't add ghosts")
         rev = self.repository.get_revision(rev_history[-1])
@@ -383,14 +383,14 @@ class SvnBranch(ForeignBranch):
         todo = self._mainline_missing_revisions(other_repo, stop_revision)
         if todo is not None:
             return todo
-        # Not possible to add cleanly onto mainline, perhaps need a replace 
+        # Not possible to add cleanly onto mainline, perhaps need a replace
         # operation
         return self._otherline_missing_revisions(other_repo, stop_revision,
                                                  overwrite)
 
     def _mainline_missing_revisions(self, other_repo, stop_revision):
         """Find the revisions missing on the mainline.
-        
+
         :param other: Other branch to retrieve revisions from.
         :param stop_revision: Revision to stop fetching at.
         """
@@ -403,13 +403,13 @@ class SvnBranch(ForeignBranch):
             missing.append(revid)
         return None
 
-    def _otherline_missing_revisions(self, other_repo, stop_revision, 
+    def _otherline_missing_revisions(self, other_repo, stop_revision,
                                      overwrite=False):
         """Find the revisions missing on the mainline.
-        
+
         :param other: Other branch to retrieve revisions from.
         :param stop_revision: Revision to stop fetching at.
-        :param overwrite: Whether or not the existing data should be 
+        :param overwrite: Whether or not the existing data should be
             overwritten
         """
         missing = []
@@ -423,7 +423,7 @@ class SvnBranch(ForeignBranch):
         else:
             missing.reverse()
             return missing
- 
+
     def last_revision_info(self):
         """See Branch.last_revision_info()."""
         last_revid = self.last_revision()
@@ -434,7 +434,7 @@ class SvnBranch(ForeignBranch):
         if is_null(revision_id):
             return 0
         revmeta_history = self._revision_meta_history()
-        # FIXME: Maybe we can parse revision_id as a bzr-svn roundtripped 
+        # FIXME: Maybe we can parse revision_id as a bzr-svn roundtripped
         # revision?
         for revmeta, mapping in revmeta_history:
             if revmeta.get_revision_id(mapping) == revision_id:
@@ -456,7 +456,7 @@ class SvnBranch(ForeignBranch):
 
     def _iter_revision_meta_ancestry(self, pb=None):
         return self.repository._iter_reverse_revmeta_mapping_ancestry(
-            self.get_branch_path(), 
+            self.get_branch_path(),
             self._revnum or self.repository.get_latest_revnum(), self.mapping,
             lhs_history=self._revision_meta_history(), pb=pb)
 
@@ -464,8 +464,8 @@ class SvnBranch(ForeignBranch):
         if self._revmeta_cache is None:
             self._revmeta_cache = util.lazy_readonly_list(
                 self.repository._iter_reverse_revmeta_mapping_history(
-                    self.get_branch_path(), 
-                    self._revnum or self.repository.get_latest_revnum(), 
+                    self.get_branch_path(),
+                    self._revnum or self.repository.get_latest_revnum(),
                     to_revnum=0, mapping=self.mapping))
         return self._revmeta_cache
 
@@ -483,7 +483,7 @@ class SvnBranch(ForeignBranch):
         return last_revmeta.get_revision_id(mapping)
 
     def get_push_merged_revisions(self):
-        return (self.layout.push_merged_revisions(self.project) and 
+        return (self.layout.push_merged_revisions(self.project) and
                 self.get_config().get_push_merged_revisions())
 
     def import_last_revision_info(self, source_repo, revno, revid):
@@ -492,14 +492,14 @@ class SvnBranch(ForeignBranch):
         if todo is None:
             raise DivergedBranches(self, None)
         assert todo != []
-        interrepo.push_branch(todo, self.layout, self.project, 
+        interrepo.push_branch(todo, self.layout, self.project,
             self.get_branch_path(), self.get_config(),
             self.get_push_merged_revisions(), overwrite=False)
 
-    def generate_revision_history(self, revision_id, last_rev=None, 
+    def generate_revision_history(self, revision_id, last_rev=None,
         other_branch=None):
         """Create a new revision history that will finish with revision_id.
-        
+
         :param revision_id: the new tip to use.
         :param last_rev: The previous last_revision. If not None, then this
             must be a ancestory of revision_id, or DivergedBranches is raised.
@@ -541,7 +541,7 @@ class SvnBranch(ForeignBranch):
             self._lock_mode = 'w'
             self._lock_count = 1
         self.repository.lock_write()
-        
+
     def lock_read(self):
         """See Branch.lock_read()."""
         if self._lock_mode:
@@ -632,13 +632,13 @@ class SvnBranchFormat(BranchFormat):
 
 
 class InterSvnOtherBranch(GenericInterBranch):
-    """InterBranch implementation that is optimized for copying from 
+    """InterBranch implementation that is optimized for copying from
     Subversion.
 
     The two main differences with the generic implementation are:
      * No revision numbers are calculated for the Subversion branch
        (since this requires browsing the entire history)
-     * Only recent tags are fetched, since that saves a lot of 
+     * Only recent tags are fetched, since that saves a lot of
        history browsing operations
     """
 
@@ -653,12 +653,12 @@ class InterSvnOtherBranch(GenericInterBranch):
                     # if there are no commits, we're done.
                     return
 
-            # what's the current last revision, before we fetch [and 
+            # what's the current last revision, before we fetch [and
             # change it possibly]
             last_rev = ensure_null(self.target.last_revision())
-            # we fetch here so that we don't process data twice in the 
-            # common case of having something to pull, and so that the 
-            # check for already merged can operate on the just fetched 
+            # we fetch here so that we don't process data twice in the
+            # common case of having something to pull, and so that the
+            # check for already merged can operate on the just fetched
             # graph, which will be cached in memory.
             interrepo = InterFromSvnRepository(self.source.repository,
                                                self.target.repository)
@@ -670,7 +670,7 @@ class InterSvnOtherBranch(GenericInterBranch):
                     graph = self.target.repository.get_graph()
                 if self.target._check_if_descendant_or_diverged(
                         stop_revision, last_rev, graph, self.source):
-                    # stop_revision is a descendant of last_rev, but we 
+                    # stop_revision is a descendant of last_rev, but we
                     # aren't overwriting, so we're done.
                     return
             self.target.generate_revision_history(stop_revision)
@@ -688,7 +688,7 @@ class InterSvnOtherBranch(GenericInterBranch):
         result.new_revno, result.new_revid = self.target.last_revision_info()
         return result
 
-    def pull(self, overwrite=False, stop_revision=None, 
+    def pull(self, overwrite=False, stop_revision=None,
              _hook_master=None, run_hooks=True, possible_transports=None,
              _override_hook_target=None, local=False):
         """See InterBranch.pull()."""
@@ -733,7 +733,7 @@ class InterSvnOtherBranch(GenericInterBranch):
                 self.target.last_revision_info()
             if self.source.supports_tags():
                 if result.old_revid == result.new_revid:
-                    # Upstream branch wasn't added but perhaps new tags were 
+                    # Upstream branch wasn't added but perhaps new tags were
                     # added since.
                     tags_since_revnum = self.source.get_revnum()
                 result.tag_conflicts = self.source.tags.merge_to(
@@ -754,7 +754,7 @@ class InterSvnOtherBranch(GenericInterBranch):
 
     @classmethod
     def is_compatible(self, source, target):
-        return (isinstance(source, SvnBranch) and 
+        return (isinstance(source, SvnBranch) and
                 not isinstance(target, SvnBranch))
 
 InterBranch.register_optimiser(InterSvnOtherBranch)
@@ -799,11 +799,11 @@ class InterOtherSvnBranch(InterBranch):
         return todo
 
     def _get_interrepo(self, graph):
-        interrepo = InterToSvnRepository(self.source.repository, 
+        interrepo = InterToSvnRepository(self.source.repository,
                 self.target.repository, graph)
-        # Add the current branch path as a hint, since it's very likely we'll 
-        # need it as base for new revisions that will be pushed, and 
-        # push should preferably use it over other paths in the 
+        # Add the current branch path as a hint, since it's very likely we'll
+        # need it as base for new revisions that will be pushed, and
+        # push should preferably use it over other paths in the
         # repository that contain the same data.
         last_branch_path = self.target.get_branch_path()
         last_revnum = self.target.repository._log.find_latest_change(
@@ -827,10 +827,10 @@ class InterOtherSvnBranch(InterBranch):
         if todo == []:
             return old_last_revid, old_last_revid, None
         if push_merged is None:
-            push_merged = self.target.get_push_merged_revisions() 
-        if (self.target.mapping.supports_hidden and 
+            push_merged = self.target.get_push_merged_revisions()
+        if (self.target.mapping.supports_hidden and
             self.target.repository.has_revision(stop_revision)):
-            # Revision is already present in the repository, so just 
+            # Revision is already present in the repository, so just
             # copy from there.
             new_last_revid, new_foreign_info = create_branch_with_hidden_commit(
                 self.target.repository, self.target.get_branch_path(),
@@ -839,8 +839,8 @@ class InterOtherSvnBranch(InterBranch):
             interrepo = self._get_interrepo(graph)
             assert todo != []
             (count, (new_last_revid, new_foreign_info)) = interrepo.push_branch(
-                todo, self.target.layout, self.target.project, 
-                self.target.get_branch_path(), self.target.get_config(), 
+                todo, self.target.layout, self.target.project,
+                self.target.get_branch_path(), self.target.get_config(),
                 push_merged, overwrite=overwrite)
         self.target._clear_cached_state()
         assert isinstance(new_last_revid, str)
@@ -848,7 +848,7 @@ class InterOtherSvnBranch(InterBranch):
         return (old_last_revid, new_last_revid, new_foreign_info)
 
     def _update_revisions_lossy(self, stop_revision=None):
-        """Push derivatives of the revisions missing from target from source 
+        """Push derivatives of the revisions missing from target from source
         into target.
 
         :param target: Branch to push into
@@ -872,10 +872,10 @@ class InterOtherSvnBranch(InterBranch):
             interrepo = self._get_interrepo(graph)
             pb = ui.ui_factory.nested_progress_bar()
             try:
-                # FIXME: Call create_branch_with_hidden_commit if the revision 
+                # FIXME: Call create_branch_with_hidden_commit if the revision
                 # is already present in the target repository ?
                 for rev in self.source.repository.get_revisions(todo):
-                    pb.update("pushing revisions", todo.index(rev.revision_id), 
+                    pb.update("pushing revisions", todo.index(rev.revision_id),
                               len(todo))
                     if len(rev.parent_ids) == 0:
                         base_revid = NULL_REVISION
@@ -884,11 +884,11 @@ class InterOtherSvnBranch(InterBranch):
                     else:
                         base_revid = rev.parent_ids[0]
                     revid_map[rev.revision_id], _ = interrepo.push(
-                        target_branch_path, target_config, rev, 
+                        target_branch_path, target_config, rev,
                         push_metadata=False, base_revid=base_revid)
             finally:
                 pb.finished()
-            interrepo = InterFromSvnRepository(self.target.repository, 
+            interrepo = InterFromSvnRepository(self.target.repository,
                                                self.source.repository)
             interrepo.fetch(revision_id=revid_map[rev.revision_id],
                             mapping=self.target.mapping,
@@ -919,7 +919,7 @@ class InterOtherSvnBranch(InterBranch):
     def update_tags(self, overwrite=False):
         return self.source.tags.merge_to(self.target.tags, overwrite)
 
-    def push(self, overwrite=False, stop_revision=None, 
+    def push(self, overwrite=False, stop_revision=None,
             _push_merged=None, _override_svn_revprops=None):
         """See InterBranch.push()."""
         result = SubversionTargetBranchPushResult()
@@ -929,15 +929,15 @@ class InterOtherSvnBranch(InterBranch):
         self.source.lock_read()
         try:
             (result.old_revid, result.new_revid, result.new_foreign_info) = \
-                self._update_revisions(stop_revision, overwrite, 
-                    push_merged=_push_merged, 
+                self._update_revisions(stop_revision, overwrite,
+                    push_merged=_push_merged,
                     override_svn_revprops=_override_svn_revprops)
             result.tag_conflicts = self.update_tags(overwrite)
             return result
         finally:
             self.source.unlock()
 
-    def pull(self, overwrite=False, stop_revision=None, 
+    def pull(self, overwrite=False, stop_revision=None,
              _hook_master=None, run_hooks=True, possible_transports=None,
              _push_merged=None, _override_svn_revprops=None, local=False):
         """See InterBranch.pull()."""
@@ -950,8 +950,8 @@ class InterOtherSvnBranch(InterBranch):
         self.source.lock_read()
         try:
             (result.old_revid, result.new_revid, result.new_foreign_info) = \
-                self._update_revisions(stop_revision, overwrite, 
-                    push_merged=_push_merged, 
+                self._update_revisions(stop_revision, overwrite,
+                    push_merged=_push_merged,
                     override_svn_revprops=_override_svn_revprops)
             result.tag_conflicts = self.update_tags(overwrite)
             return result

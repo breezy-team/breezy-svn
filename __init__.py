@@ -18,7 +18,7 @@
 
 Bazaar can be used with Subversion branches through the bzr-svn plugin.
 
-Most Bazaar commands should work fine with Subversion branches. 
+Most Bazaar commands should work fine with Subversion branches.
 
 bzr-svn also adds new commands to Bazaar:
 
@@ -95,7 +95,7 @@ def check_subversion_version():
     # Installed ?
     from subvertpy import ra, __version__ as subvertpy_version
     ra_version = ra.version()
-    if (ra_version[0] >= 5 and getattr(ra, 'SVN_REVISION', None) and 
+    if (ra_version[0] >= 5 and getattr(ra, 'SVN_REVISION', None) and
         27729 <= ra.SVN_REVISION < 31470):
         raise DependencyNotPresent("subvertpy",
                 'bzr-svn: Installed Subversion has buggy svn.ra.get_log() '
@@ -114,7 +114,7 @@ def get_client_string():
 
 def init_subvertpy():
     try:
-        import subvertpy 
+        import subvertpy
     except ImportError, e:
         raise DependencyNotPresent("subvertpy", "bzr-svn: %s" % e.message)
 
@@ -127,7 +127,7 @@ def init_subvertpy():
 _versions_checked = False
 def lazy_check_versions():
     """Check whether all dependencies have the right versions.
-    
+
     :note: Only checks once, caches the result."""
     global _versions_checked
     if _versions_checked:
@@ -137,24 +137,24 @@ def lazy_check_versions():
 
 from bzrlib.plugins.svn import format
 
-register_transport_proto('svn+ssh://', 
+register_transport_proto('svn+ssh://',
     help="Access using the Subversion smart server tunneled over SSH.")
 register_transport_proto('svn+http://',
     help="Access of Subversion smart servers over HTTP.")
 register_transport_proto('svn+https://',
     help="Access of Subversion smart servers over secure HTTP.")
-register_transport_proto('svn://', 
+register_transport_proto('svn://',
     help="Access using the Subversion smart server.")
-register_lazy_transport('svn://', 'bzrlib.plugins.svn.transport', 
+register_lazy_transport('svn://', 'bzrlib.plugins.svn.transport',
                         'SvnRaTransport')
-register_lazy_transport('svn+', 'bzrlib.plugins.svn.transport', 
+register_lazy_transport('svn+', 'bzrlib.plugins.svn.transport',
                         'SvnRaTransport')
-topic_registry.register_lazy('svn-layout', 
+topic_registry.register_lazy('svn-layout',
                              'bzrlib.plugins.svn.layout',
                              'help_layout', 'Subversion repository layouts')
 #BzrDirFormat.register_control_server_format(format.SvnRemoteFormat)
 # Register as the first control server format, since the default smart
-# server implementation tries to do a POST request against .bzr/smart and 
+# server implementation tries to do a POST request against .bzr/smart and
 # this causes some Subversion servers to reply with 401 Authentication required
 # even though they are accessible without authentication.
 BzrDirFormat._control_server_formats.insert(0, format.SvnRemoteFormat)
@@ -164,35 +164,35 @@ branch_network_format_registry.register_lazy("subversion",
 repository_network_format_registry.register_lazy("subversion",
         'bzrlib.plugins.svn.repository', 'SvnRepositoryFormat')
 
-format_registry.register_lazy("subversion", "bzrlib.plugins.svn.format", 
-                         "SvnRemoteFormat", 
-                         "Subversion repository. ", 
+format_registry.register_lazy("subversion", "bzrlib.plugins.svn.format",
+                         "SvnRemoteFormat",
+                         "Subversion repository. ",
                          native=False)
-format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.format", 
-                         "SvnWorkingTreeDirFormat", 
-                         "Subversion working copy. ", 
+format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.format",
+                         "SvnWorkingTreeDirFormat",
+                         "Subversion working copy. ",
                          native=False, hidden=True)
-revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec", 
+revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec",
     "RevisionSpec_svn")
 
 config.credential_store_registry.register_lazy(
-    "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore", 
+    "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore",
     help=__doc__, fallback=True)
 
 foreign_vcs_registry.register_lazy("svn", "bzrlib.plugins.svn.mapping",
                                    "foreign_vcs_svn")
 
 from bzrlib.transport import transport_server_registry
-transport_server_registry.register_lazy('svn', 
-    'bzrlib.plugins.svn.server', 'serve_svn', 
+transport_server_registry.register_lazy('svn',
+    'bzrlib.plugins.svn.server', 'serve_svn',
     "Subversion svn_ra protocol. (default port: 3690)")
 
 
 _optimizers_registered = False
 def lazy_register_optimizers():
-    """Register optimizers for fetching between Subversion and Bazaar 
+    """Register optimizers for fetching between Subversion and Bazaar
     repositories.
-    
+
     :note: Only registers on the first call."""
     global _optimizers_registered
     if _optimizers_registered:
@@ -205,12 +205,12 @@ def lazy_register_optimizers():
 
 
 plugin_cmds.register_lazy('cmd_svn_import', [], 'bzrlib.plugins.svn.commands')
-plugin_cmds.register_lazy('cmd_svn_branching_scheme', [], 
+plugin_cmds.register_lazy('cmd_svn_branching_scheme', [],
                           'bzrlib.plugins.svn.mapping3.commands')
-plugin_cmds.register_lazy('cmd_svn_layout', [], 
+plugin_cmds.register_lazy('cmd_svn_layout', [],
                           'bzrlib.plugins.svn.commands')
 
-lazy_register_filter_stack_map("svn-keywords", 
+lazy_register_filter_stack_map("svn-keywords",
         "bzrlib.plugins.svn.keywords", "create_svn_keywords_filter")
 
 

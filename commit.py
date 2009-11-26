@@ -26,21 +26,21 @@ from cStringIO import (
     StringIO,
     )
 from subvertpy import (
-    delta, 
-    properties, 
-    SubversionException, 
+    delta,
+    properties,
+    SubversionException,
     ra,
     )
 
 from bzrlib import (
-    debug, 
+    debug,
     osutils,
-    urlutils, 
-    trace, 
+    urlutils,
+    trace,
     ui,
     )
 from bzrlib.errors import (
-    BzrError, 
+    BzrError,
     NoSuchRevision,
     )
 from bzrlib.inventory import (
@@ -48,7 +48,7 @@ from bzrlib.inventory import (
     entry_factory,
     )
 from bzrlib.repository import (
-    RootCommitBuilder, 
+    RootCommitBuilder,
     )
 from bzrlib.revision import (
     NULL_REVISION,
@@ -58,16 +58,16 @@ from bzrlib.plugins.svn import (
     mapping,
     )
 from bzrlib.plugins.svn.errors import (
-    convert_svn_error, 
+    convert_svn_error,
     AppendRevisionsOnlyViolation,
-    ChangesRootLHSHistory, 
-    MissingPrefix, 
-    RevpropChangeFailed, 
+    ChangesRootLHSHistory,
+    MissingPrefix,
+    RevpropChangeFailed,
     )
 from bzrlib.plugins.svn.svk import (
-    generate_svk_feature, 
-    parse_svk_features, 
-    serialize_svk_features, 
+    generate_svk_feature,
+    parse_svk_features,
+    serialize_svk_features,
     SVN_PROP_SVK_MERGE
     )
 from bzrlib.plugins.svn.transport import (
@@ -93,14 +93,14 @@ def _revision_id_to_svk_feature(revid, lookup_revid):
     """
     assert isinstance(revid, str)
     foreign_revid, _ = lookup_revid(revid)
-    # TODO: What about renamed revisions? Should use 
+    # TODO: What about renamed revisions? Should use
     # repository.lookup_bzr_revision_id here.
     return generate_svk_feature(foreign_revid)
 
 
 def update_svk_features(oldvalue, merges, lookup_revid=None):
     """Update a set of SVK features to include the specified set of merges."""
-    
+
     if lookup_revid is None:
         lookup_revid = mapping.mapping_registry.parse_revision_id
 
@@ -146,7 +146,7 @@ def update_mergeinfo(lookup_revid, graph, oldvalue, baserevid, merges):
 def find_suitable_base(parents, ie):
     """Find a suitable base inventory and path to copy from.
 
-    :param parents: List with (inventory, url, revnum) tuples. 
+    :param parents: List with (inventory, url, revnum) tuples.
     :param ie: Inventory entry to find a base for
     :return: Tuple with the most suitable (inventory, url, revnum) instance
         or None if none was found
@@ -207,8 +207,8 @@ def path_join(basepath, name):
         return name
 
 
-def dir_editor_send_changes((base_inv, base_url, base_revnum), parents, 
-    (iter_children, get_ie), path, file_id, dir_editor, branch_path, 
+def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
+    (iter_children, get_ie), path, file_id, dir_editor, branch_path,
     modified_files, visit_dirs):
     """Pass the changes to a directory to the commit editor.
 
@@ -238,7 +238,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
             # remove if...
             if (
                 # ... path no longer exists
-                new_child_ie is None or 
+                new_child_ie is None or
                 # ... parent changed
                 child_ie.parent_id != new_child_ie.parent_id or
                 # ... name changed
@@ -247,7 +247,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
                 child_ie.kind != new_child_ie.kind):
                 trace.mutter('removing %r(%r)', child_name, child_ie.file_id)
                 dir_editor.delete_entry(
-                    branch_relative_path(path, child_name.encode("utf-8")), 
+                    branch_relative_path(path, child_name.encode("utf-8")),
                     base_revnum)
                 changed = True
 
@@ -261,11 +261,11 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
         new_child_path = path_join(path, child_name.encode("utf-8"))
         full_new_child_path = branch_relative_path(new_child_path)
         # add them if they didn't exist in base_inv or changed kind
-        if (not child_ie.file_id in base_inv or 
+        if (not child_ie.file_id in base_inv or
             base_inv[child_ie.file_id].kind != child_ie.kind):
             trace.mutter('adding %s %r', child_ie.kind, new_child_path)
 
-            # Do a copy operation if at all possible, to make 
+            # Do a copy operation if at all possible, to make
             # the log a bit easier to read for Subversion people
             new_base = find_suitable_base(parents, child_ie)
             if new_base is not None:
@@ -283,10 +283,10 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
         # copy if they existed at different location
         elif (base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
                 base_inv[child_ie.file_id].parent_id != child_ie.parent_id):
-            trace.mutter('copy %s %r -> %r', child_ie.kind, 
-                              base_inv.id2path(child_ie.file_id), 
+            trace.mutter('copy %s %r -> %r', child_ie.kind,
+                              base_inv.id2path(child_ie.file_id),
                               new_child_path)
-            child_editor = dir_editor.add_file(full_new_child_path, 
+            child_editor = dir_editor.add_file(full_new_child_path,
                 url_join_unescaped_path(base_url, base_inv.id2path(child_ie.file_id).encode("utf-8")),
                 base_revnum)
             changed = True
@@ -327,7 +327,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
         # handle the file
         if child_ie.file_id in modified_files:
             changed = True
-            file_editor_send_changes(child_ie.file_id, 
+            file_editor_send_changes(child_ie.file_id,
                 modified_files[child_ie.file_id], child_editor)
 
         if child_editor is not None:
@@ -340,11 +340,11 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
 
         new_child_path = path_join(path, child_name.encode("utf-8"))
         # add them if they didn't exist in base_inv or changed kind
-        if (not child_ie.file_id in base_inv or 
+        if (not child_ie.file_id in base_inv or
             base_inv[child_ie.file_id].kind != child_ie.kind):
             trace.mutter('adding dir %r', child_ie.name)
-            
-            # Do a copy operation if at all possible, to make 
+
+            # Do a copy operation if at all possible, to make
             # the log a bit easier to read for Subversion people
             new_base = find_suitable_base(parents, child_ie)
             if new_base is not None:
@@ -374,22 +374,22 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
                 copyfrom_url, copyfrom_revnum)
             changed = True
             child_base = (base_inv, base_url, base_revnum)
-        # open if they existed at the same location and 
+        # open if they existed at the same location and
         # the directory was touched
         elif new_child_path in visit_dirs:
             trace.mutter('open dir %r', new_child_path)
 
             child_editor = dir_editor.open_directory(
-                    branch_relative_path(new_child_path), 
+                    branch_relative_path(new_child_path),
                     base_revnum)
-            
+
             child_base = (base_inv, base_url, base_revnum)
         else:
             continue
 
         # Handle this directory
         changed = dir_editor_send_changes(child_base, parents,
-            (iter_children, get_ie), new_child_path, child_ie.file_id, child_editor, 
+            (iter_children, get_ie), new_child_path, child_ie.file_id, child_editor,
             branch_path, modified_files, visit_dirs) or changed
 
         child_editor.close()
@@ -400,11 +400,11 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
 class SvnCommitBuilder(RootCommitBuilder):
     """Commit Builder implementation wrapped around svn_delta_editor. """
 
-    def __init__(self, repository, branch_path, parents, config, timestamp, 
+    def __init__(self, repository, branch_path, parents, config, timestamp,
                  timezone, committer, revprops, revision_id,
-                 base_foreign_revid, base_mapping, old_inv=None, 
+                 base_foreign_revid, base_mapping, old_inv=None,
                  push_metadata=True, graph=None, opt_signature=None,
-                 texts=None, append_revisions_only=True, 
+                 texts=None, append_revisions_only=True,
                  override_svn_revprops=None):
         """Instantiate a new SvnCommitBuilder.
 
@@ -417,14 +417,14 @@ class SvnCommitBuilder(RootCommitBuilder):
         :param committer: Optional committer to set for commit.
         :param revprops: Bazaar revision properties to set.
         :param revision_id: Revision id for the new revision.
-        :param old_inv: Optional revision on top of which 
+        :param old_inv: Optional revision on top of which
             the commit is happening
         :param push_metadata: Whether or not to push all bazaar metadata
                               (in svn file properties, etc).
         :param graph: Optional graph object
         :param opt_signature: Optional signature to write.
         """
-        super(SvnCommitBuilder, self).__init__(repository, parents, 
+        super(SvnCommitBuilder, self).__init__(repository, parents,
             config, timestamp, timezone, committer, revprops, revision_id)
         # revision ids are either specified or predictable
         self.random_revid = False
@@ -439,7 +439,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         else:
             self._override_svn_revprops = override_svn_revprops
 
-        # Gather information about revision on top of which the commit is 
+        # Gather information about revision on top of which the commit is
         # happening
         if parents:
             self.base_revid = parents[0]
@@ -467,7 +467,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             self._base_branch_props = self._base_revmeta.get_fileprops()
             self.base_url = urlutils.join(self.repository.transport.svn_url, self.base_path)
 
-        self.mapping = self.repository.get_mapping() 
+        self.mapping = self.repository.get_mapping()
         # FIXME: Check that self.mapping >= self.base_mapping
 
         self._parent_invs = None
@@ -484,8 +484,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.visit_dirs = set()
         self.modified_files = {}
         self.supports_custom_revprops = self.repository.transport.has_capability("commit-revprops")
-        if (self.supports_custom_revprops is None and 
-            self.mapping.can_use_revprops and 
+        if (self.supports_custom_revprops is None and
+            self.mapping.can_use_revprops and
             self.repository.seen_bzr_revprops()):
             raise BzrError("Please upgrade your Subversion client libraries to 1.5 or higher to be able to commit with Subversion mapping %s (current version is %r)" % (self.mapping.name, ra.version()))
 
@@ -496,37 +496,37 @@ class SvnCommitBuilder(RootCommitBuilder):
             # If possible, submit signature directly
             if opt_signature is not None:
                 self._svn_revprops[mapping.SVN_REVPROP_BZR_SIGNATURE] = opt_signature
-            # Set hint for potential clients that they have to check revision 
+            # Set hint for potential clients that they have to check revision
             # properties
-            if (not self.set_custom_fileprops and 
+            if (not self.set_custom_fileprops and
                 not self.repository.transport.has_capability("log-revprops")):
-                # Tell clients about first approximate use of revision 
+                # Tell clients about first approximate use of revision
                 # properties
                 self.mapping.export_revprop_redirect(
                     self.repository.get_latest_revnum()+1, self._svnprops)
         revno = self.base_revno + 1
         if self.set_custom_fileprops:
             self.mapping.export_revision_fileprops(
-                timestamp, timezone, committer, revprops, 
+                timestamp, timezone, committer, revprops,
                 revision_id, revno, parents, self._svnprops)
         if self.set_custom_revprops and self.push_metadata:
             self.mapping.export_revision_revprops(
                 self.repository.uuid,
-                self.branch_path, timestamp, timezone, committer, revprops, 
+                self.branch_path, timestamp, timezone, committer, revprops,
                 revision_id, revno, parents, self._svn_revprops)
 
         if len(merges) > 0:
             old_svk_merges = self._base_branch_props.get(SVN_PROP_SVK_MERGE, "")
             def lookup_revid(revid):
-                return repository.lookup_bzr_revision_id(revid, 
+                return repository.lookup_bzr_revision_id(revid,
                     foreign_sibling=self.base_foreign_revid)
-            new_svk_merges = update_svk_features(old_svk_merges, merges, 
+            new_svk_merges = update_svk_features(old_svk_merges, merges,
                                                  lookup_revid)
             if new_svk_merges is not None:
                 self._svnprops[SVN_PROP_SVK_MERGE] = new_svk_merges
 
             new_mergeinfo = update_mergeinfo(lookup_revid, graph,
-                self._base_branch_props.get(properties.PROP_MERGEINFO, ""), 
+                self._base_branch_props.get(properties.PROP_MERGEINFO, ""),
                 self.base_revid, merges)
             if new_mergeinfo is not None:
                 self._svnprops[properties.PROP_MERGEINFO] = new_mergeinfo
@@ -545,7 +545,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         if self.new_inventory is not None: # record_entry_contents style
             self.new_root_id = self.new_inventory.root.file_id
 
-    def open_branch_editors(self, root, elements, existing_elements, 
+    def open_branch_editors(self, root, elements, existing_elements,
                            base_url, base_rev, root_from, replace_existing):
         """Open a specified directory given an editor for the repository root.
 
@@ -554,13 +554,13 @@ class SvnCommitBuilder(RootCommitBuilder):
         :param existing_elements: List of directory names that exist
         :param base_url: URL to base top-level branch on
         :param base_rev: Revision of path to base top-level branch on
-        :param root_from: Path inside the branch to copy the root from, 
+        :param root_from: Path inside the branch to copy the root from,
             or None if it should be created from scratch.
         :param replace_existing: Whether the current branch should be replaced
         """
         ret = [root]
 
-        self.mutter('opening branch %r (base %r:%r)', elements, base_url, 
+        self.mutter('opening branch %r (base %r:%r)', elements, base_url,
                                                    base_rev)
 
         # Open paths leading up to branch
@@ -576,9 +576,9 @@ class SvnCommitBuilder(RootCommitBuilder):
         replace_existing |= (root_from is not None and root_from != "")
 
         # Branch already exists and stayed at the same location, open:
-        # TODO: What if the branch didn't change but the new revision 
+        # TODO: What if the branch didn't change but the new revision
         # was based on an older revision of the branch?
-        # This needs to also check that base_rev was the latest version of 
+        # This needs to also check that base_rev was the latest version of
         # branch_path.
         if len(existing_elements) == len(elements) and not replace_existing:
             ret.append(ret[-1].open_directory(
@@ -607,14 +607,14 @@ class SvnCommitBuilder(RootCommitBuilder):
             ret = []
             for child_name, child_ie in self._iter_new_children(file_id):
                 new_child_path = path_join(path, child_name)
-                if (not child_ie.file_id in self.old_inv or 
+                if (not child_ie.file_id in self.old_inv or
                     self.old_inv.id2path(child_ie.file_id) != new_child_path or
                     self.old_inv[child_ie.file_id].revision != child_ie.revision or
                     self.old_inv[child_ie.file_id].parent_id != child_ie.parent_id):
-                    ret.append((child_ie.file_id, new_child_path, child_ie.revision, 
+                    ret.append((child_ie.file_id, new_child_path, child_ie.revision,
                         self._text_parents[child_ie.file_id]))
 
-                if (child_ie.kind == 'directory' and 
+                if (child_ie.kind == 'directory' and
                     new_child_path in self.visit_dirs):
                     ret += _dir_process_file_id(new_child_path, child_ie.file_id)
             return ret
@@ -624,7 +624,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         text_revisions = {}
         changes = []
 
-        if (self.old_inv.root is None or 
+        if (self.old_inv.root is None or
             new_root_id != self.old_inv.root.file_id):
             changes.append((new_root_id, "", self._get_new_ie(new_root_id).revision, self._text_parents[new_root_id]))
 
@@ -635,7 +635,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             fileids[path] = id
             if revid is not None and revid != self.base_revid and revid != self._new_revision_id:
                 text_revisions[path] = revid
-            if ((id not in self.old_inv and parents != []) or 
+            if ((id not in self.old_inv and parents != []) or
                 (id in self.old_inv and parents != [self.base_revid])):
                 text_parents[path] = parents
         return (fileids, text_revisions, text_parents)
@@ -697,13 +697,13 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         """
         def done(*args):
-            """Callback that is called by the Subversion commit editor 
+            """Callback that is called by the Subversion commit editor
             once the commit finishes.
 
             :param revision_data: Revision metadata
             """
             self.revision_metadata = args
-        
+
         bp_parts = self.branch_path.split("/")
         repository_latest_revnum = self.repository.get_latest_revnum()
         lock = self.repository.transport.lock_write(".")
@@ -730,14 +730,14 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._svn_revprops[properties.PROP_REVISION_LOG] = message.encode("utf-8")
 
         try:
-            # Shortcut - no need to see if dir exists if our base 
-            # was the last revision in the repo. This situation 
+            # Shortcut - no need to see if dir exists if our base
+            # was the last revision in the repo. This situation
             # happens a lot when pushing multiple subsequent revisions.
-            if (self.base_revnum == self.repository.get_latest_revnum() and 
+            if (self.base_revnum == self.repository.get_latest_revnum() and
                 self.base_path == self.branch_path):
                 existing_bp_parts = bp_parts
             else:
-                existing_bp_parts = check_dirs_exist(self.repository.transport, 
+                existing_bp_parts = check_dirs_exist(self.repository.transport,
                                               bp_parts, -1)
             self.revision_metadata = None
             for prop in self._svn_revprops:
@@ -777,13 +777,13 @@ class SvnCommitBuilder(RootCommitBuilder):
                 root = self.editor.open_root(self.base_revnum)
 
                 branch_editors = self.open_branch_editors(root, bp_parts,
-                    existing_bp_parts, self.base_url, self.base_revnum, 
+                    existing_bp_parts, self.base_url, self.base_revnum,
                     root_from, replace_existing)
 
                 changed = dir_editor_send_changes(
-                        (self.old_inv, self.base_url, self.base_revnum), 
+                        (self.old_inv, self.base_url, self.base_revnum),
                         self._get_parents_tuples(),
-                        (self._iter_new_children, self._get_new_ie), "", 
+                        (self._iter_new_children, self._get_new_ie), "",
                         self.new_root_id, branch_editors[-1],
                         self.branch_path, self.modified_files, self.visit_dirs)
 
@@ -794,7 +794,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                         if oldvalue == newvalue:
                             continue
                         self._changed_fileprops[prop] = (oldvalue, newvalue)
-                if (not self.modified_files and not changed and 
+                if (not self.modified_files and not changed and
                     self._changed_fileprops == {} and self.push_metadata):
                     prop = mapping.SVN_REVPROP_BZR_POINTLESS
                     self._svnprops[prop] = "%d" % (int(self._svnprops.get(prop, "0"))+1)
@@ -821,7 +821,7 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         (result_revision, result_date, result_author) = self.revision_metadata
         self.result_foreign_revid = (self.repository.uuid, self.branch_path, result_revision)
-        
+
         if result_author is not None:
             self._svn_revprops[properties.PROP_REVISION_AUTHOR] = result_author
         self._svn_revprops[properties.PROP_REVISION_DATE] = result_date
@@ -829,12 +829,12 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.repository._clear_cached_state(result_revision)
 
         self.mutter('commit %d finished. author: %r, date: %r',
-               result_revision, result_author, 
+               result_revision, result_author,
                    result_date)
 
         if self._override_svn_revprops is not None:
             new_revprops = {}
-            if (("%s=committer" % properties.PROP_REVISION_AUTHOR) in self._override_svn_revprops or 
+            if (("%s=committer" % properties.PROP_REVISION_AUTHOR) in self._override_svn_revprops or
                 properties.PROP_REVISION_AUTHOR in self._override_svn_revprops):
                 new_revprops[properties.PROP_REVISION_AUTHOR] = self._committer.encode("utf-8")
             if "%s=author" % properties.PROP_REVISION_AUTHOR in self._override_svn_revprops:
@@ -847,7 +847,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         if logcache is not None:
             logcache.insert_revprops(result_revision, self._svn_revprops, True)
 
-        self.revmeta = self.repository._revmeta_provider.get_revision(self.branch_path, result_revision, 
+        self.revmeta = self.repository._revmeta_provider.get_revision(self.branch_path, result_revision,
                 None, # FIXME: Generate changes dictionary
                 revprops=self._svn_revprops,
                 changed_fileprops=self._changed_fileprops,
@@ -909,14 +909,14 @@ class SvnCommitBuilder(RootCommitBuilder):
         else:
             self.new_root_id = self.old_inv.root.file_id
         if self.base_revid != basis_revision_id:
-            raise AssertionError("Invalid basis revision %s != %s" % 
+            raise AssertionError("Invalid basis revision %s != %s" %
                 (self.base_revid, basis_revision_id))
         def dummy_get_file_with_stat(file_id):
             return tree.get_file(file_id), None
         get_file_with_stat = getattr(tree, "get_file_with_stat", dummy_get_file_with_stat)
-        for (file_id, (old_path, new_path), changed_content, 
-             (old_ver, new_ver), (old_parent_id, new_parent_id), 
-             (old_name, new_name), (old_kind, new_kind), 
+        for (file_id, (old_path, new_path), changed_content,
+             (old_ver, new_ver), (old_parent_id, new_parent_id),
+             (old_name, new_name), (old_kind, new_kind),
              (old_executable, new_executable)) in iter_changes:
             new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
             new_ie.executable = new_executable
@@ -978,23 +978,23 @@ class SvnCommitBuilder(RootCommitBuilder):
         :param parent_invs: The inventories of the parent revisions of the
             commit.
         :param path: The path the entry is at in the tree.
-        :param tree: The tree which contains this entry and should be used to 
+        :param tree: The tree which contains this entry and should be used to
             obtain content.
         :param content_summary: Summary data from the tree about the paths
                 content - stat, length, exec, sha/link target. This is only
-                accessed when the entry has a revision of None - that is when 
+                accessed when the entry has a revision of None - that is when
                 it is a candidate to commit.
         """
         assert self._parent_invs is None or self._parent_invs == parent_invs
         self._parent_invs = parent_invs
         self._text_parents[ie.file_id] = self._get_text_parents(ie, parent_invs)
         self.new_inventory.add(ie)
-        assert (ie.file_id not in self.old_inv or 
+        assert (ie.file_id not in self.old_inv or
                 self.old_inv[ie.file_id].revision is not None)
         version_recorded = (ie.revision is None)
         # If nothing changed since the lhs parent, return:
         new_path = self.new_inventory.id2path(ie.file_id)
-        if (ie.file_id in self.old_inv and ie == self.old_inv[ie.file_id] and 
+        if (ie.file_id in self.old_inv and ie == self.old_inv[ie.file_id] and
             (ie.kind != 'directory' or ie.children == self.old_inv[ie.file_id].children)):
             return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
         if ie.kind == 'file':

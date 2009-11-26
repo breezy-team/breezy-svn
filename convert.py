@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 by Jelmer Vernooij
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -40,7 +40,7 @@ from bzrlib.errors import (
     NoSuchFile,
     NoSuchRevision,
     NoRepositoryPresent,
-    ) 
+    )
 from bzrlib.transport import (
     get_transport,
     )
@@ -65,7 +65,7 @@ LATEST_IMPORT_REVISION_FILENAME = "svn-import-revision"
 
 def get_latest_svn_import_revision(repo, uuid):
     """Retrieve the latest revision checked by svn-import.
-    
+
     :param repo: A repository object.
     :param uuid: Subversion repository UUID.
     """
@@ -86,7 +86,7 @@ def put_latest_svn_import_revision(repo, uuid, revnum):
     :param uuid: Subversion repository UUID.
     :param revnum: A revision number.
     """
-    repo.bzrdir.transport.put_bytes(LATEST_IMPORT_REVISION_FILENAME, 
+    repo.bzrdir.transport.put_bytes(LATEST_IMPORT_REVISION_FILENAME,
                              "%s %d\n" % (uuid, revnum))
 
 
@@ -102,7 +102,7 @@ def load_dumpfile(dumpfile, outputdir):
     """Load a Subversion dump file.
 
     :param dumpfile: Path to dump file.
-    :param outputdir: Directory in which Subversion repository should be 
+    :param outputdir: Directory in which Subversion repository should be
         created.
     """
     from cStringIO import StringIO
@@ -137,20 +137,20 @@ def contains_parent_path(s, p):
 
 class RepositoryConverter(object):
 
-    def __init__(self, source_repos, output_url, layout=None, 
+    def __init__(self, source_repos, output_url, layout=None,
                  create_shared_repo=True, working_trees=False, all=False,
-                 format=None, filter_branch=None, keep=False, 
+                 format=None, filter_branch=None, keep=False,
                  incremental=False, to_revnum=None, prefix=None):
-        """Convert a Subversion repository and its' branches to a 
+        """Convert a Subversion repository and its' branches to a
         Bazaar repository.
 
         :param source_repos: Subversion repository
         :param output_url: URL to write Bazaar repository to.
         :param layout: Repository layout (object) to use
-        :param create_shared_repo: Whether to create a shared Bazaar 
+        :param create_shared_repo: Whether to create a shared Bazaar
             repository
         :param working_trees: Whether to create working trees
-        :param all: Whether old revisions, even those not part of any 
+        :param all: Whether old revisions, even those not part of any
             existing branches, should be imported.
         :param format: Format to use
         """
@@ -198,11 +198,11 @@ class RepositoryConverter(object):
             mapping = source_repos.get_mapping()
             existing_branches = {}
             deleted = set()
-            it = source_repos._revmeta_provider.iter_all_changes(layout, 
-                    mapping.is_branch_or_tag, to_revnum, from_revnum, 
+            it = source_repos._revmeta_provider.iter_all_changes(layout,
+                    mapping.is_branch_or_tag, to_revnum, from_revnum,
                     prefix=prefix)
             if create_shared_repo:
-                revfinder = FetchRevisionFinder(source_repos, target_repos, 
+                revfinder = FetchRevisionFinder(source_repos, target_repos,
                                                 target_repos_is_empty)
                 revmetas = []
             else:
@@ -215,13 +215,13 @@ class RepositoryConverter(object):
             try:
                 for kind, item in it:
                     if kind == "revision":
-                        pb.update("finding branches", to_revnum-item.revnum, 
+                        pb.update("finding branches", to_revnum-item.revnum,
                                   to_revnum-from_revnum)
-                        if (not item.branch_path in existing_branches and 
-                            layout.is_branch(item.branch_path) and 
+                        if (not item.branch_path in existing_branches and
+                            layout.is_branch(item.branch_path) and
                             not contains_parent_path(deleted, item.branch_path)):
                             existing_branches[item.branch_path] = SvnBranch(
-                                source_repos, item.branch_path, 
+                                source_repos, item.branch_path,
                                 revnum=item.revnum, _skip_check=True,
                                 mapping=mapping)
                             if heads is not None:
@@ -247,31 +247,31 @@ class RepositoryConverter(object):
             existing_branches = existing_branches.values()
             if filter_branch is not None:
                 existing_branches = filter(filter_branch, existing_branches)
-            self._create_branches(existing_branches, prefix, 
+            self._create_branches(existing_branches, prefix,
                                   create_shared_repo, working_trees)
         finally:
             source_repos.unlock()
 
         if target_repos is not None:
-            put_latest_svn_import_revision(target_repos, source_repos.uuid, 
+            put_latest_svn_import_revision(target_repos, source_repos.uuid,
                                            to_revnum)
-    
-    def _check_branch_exists(self, revmeta, existing_branches, 
+
+    def _check_branch_exists(self, revmeta, existing_branches,
                              deleted_branches):
-        if (not revmeta.branch_path in existing_branches and 
-            layout.is_branch(revmeta.branch_path) and 
+        if (not revmeta.branch_path in existing_branches and
+            layout.is_branch(revmeta.branch_path) and
             not contains_parent_path(deleted_branches, revmeta.branch_path)):
             existing_branches[revmeta.branch_path] = SvnBranch(
-                source_repos, revmeta.branch_path, 
+                source_repos, revmeta.branch_path,
                 revnum=revmeta.revnum, _skip_check=True,
                 mapping=mapping)
 
     def _fetch_to_shared_repo(self, inter, prefix, from_revnum, revmetas,
                               revfinder, mapping, heads):
         def needs_manual_check(revmeta):
-            if (prefix is not None and 
+            if (prefix is not None and
                 not changes.path_is_child(prefix, revmeta.branch_path)):
-                # Parent branch path is outside of prefix; we need to 
+                # Parent branch path is outside of prefix; we need to
                 # check manually
                 return True
             if revmeta.revnum < from_revnum:
@@ -289,14 +289,14 @@ class RepositoryConverter(object):
             pb.finished()
         inter.fetch(needed=revfinder.get_missing())
 
-    def _create_branches(self, existing_branches, prefix, shared, 
+    def _create_branches(self, existing_branches, prefix, shared,
                          working_trees):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for i, source_branch in enumerate(existing_branches):
                 try:
-                    pb.update("%s:%d" % (source_branch.get_branch_path(), 
-                        source_branch.get_revnum()), i, 
+                    pb.update("%s:%d" % (source_branch.get_branch_path(),
+                        source_branch.get_revnum()), i,
                         len(existing_branches))
                 except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                     continue

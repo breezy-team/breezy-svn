@@ -45,12 +45,12 @@ from bzrlib.versionedfile import (
     )
 
 from bzrlib.plugins.svn import (
-    changes, 
+    changes,
     errors,
     )
 
-# idmap: dictionary mapping unicode paths to tuples with file id, 
-#   revision id and the foreign_revid it was introduced in, if it 
+# idmap: dictionary mapping unicode paths to tuples with file id,
+#   revision id and the foreign_revid it was introduced in, if it
 #   can have implicit children (None otherwise)
 # idmap delta: dictionary mapping unicode paths to new file id assignments
 # text revision map: dictionary mapping unicode paths to text revisions (usually revision ids)
@@ -111,7 +111,7 @@ def idmap_reverse_lookup(idmap, mapping, fileid):
         (v, ck, child_create_foreign_revid) = idmap[k]
         if v == fileid:
             return k
-        if (child_create_foreign_revid is not None and 
+        if (child_create_foreign_revid is not None and
             child_create_foreign_revid[0] == uuid and
             child_create_foreign_revid[2] == revnum and
             path.startswith("%s/" % child_create_foreign_revid[1])):
@@ -134,7 +134,7 @@ def determine_text_revisions(changes, default_revid, specific_revids):
     ret.update(specific_revids)
     for p, (action, copy_from) in changes.iteritems():
         assert isinstance(p, unicode)
-        # The root changes often because of file properties, so we don't 
+        # The root changes often because of file properties, so we don't
         # consider it really changing.
         if action in ('A', 'R', 'M') and p not in ret and p != u"":
             ret[p] = default_revid
@@ -171,7 +171,7 @@ FILEID_MAP_SAVE_INTERVAL = 1000
 
 def simple_apply_changes(new_file_id, changes):
     """Simple function that generates a dictionary with file id changes.
-    
+
     Does not track renames. """
     delta = {}
     for p in sorted(changes.keys(), reverse=False):
@@ -180,7 +180,7 @@ def simple_apply_changes(new_file_id, changes):
         # Only generate new file ids for root if it's new
         if action in ('A', 'R') and (p != u"" or copy_from is None):
             delta[p] = new_file_id(p)
-    return delta 
+    return delta
 
 
 class FileIdMap(object):
@@ -197,7 +197,7 @@ class FileIdMap(object):
     def reverse_lookup(self, mapping, fileid):
         raise NotImplementedError(self.reverse_lookup)
 
-    def apply_delta(self, text_revisions, delta, changes, default_revid, 
+    def apply_delta(self, text_revisions, delta, changes, default_revid,
                       mapping, foreign_revid):
         raise NotImplementedError(self.apply_delta)
 
@@ -207,7 +207,7 @@ class DictFileIdMap(FileIdMap):
     def __init__(self, data):
         self.data = data
 
-    def apply_delta(self, text_revisions, delta, changes, default_revid, 
+    def apply_delta(self, text_revisions, delta, changes, default_revid,
                       mapping, foreign_revid):
         """Update a file id map.
 
@@ -226,7 +226,7 @@ class DictFileIdMap(FileIdMap):
             assert isinstance(x, unicode)
             if x in delta and (not x in self.data or self.data[x][0] != delta[x]):
                 if x in changes and changes[x][1] is not None:
-                    # if this was a copy from somewhere else there can be 
+                    # if this was a copy from somewhere else there can be
                     # implicit children
                     child_create_revid = foreign_revid
                 else:
@@ -259,7 +259,7 @@ class DictFileIdMap(FileIdMap):
 
 
 class FileIdMapStore(object):
-    """File id store. 
+    """File id store.
 
     Keeps a map
 
@@ -279,7 +279,7 @@ class FileIdMapStore(object):
         foreign_revid = revmeta.get_foreign_revid()
         def new_file_id(x):
             return mapping.generate_file_id(foreign_revid, x)
-         
+
         idmap = self.apply_changes_fn(new_file_id, changes)
         idmap.update(revmeta.get_fileid_overrides(mapping))
         return idmap
@@ -288,7 +288,7 @@ class FileIdMapStore(object):
         local_changes = get_local_changes(revmeta.get_paths(), revmeta.branch_path)
         idmap = self.get_idmap_delta(local_changes, revmeta, mapping)
         revid = revmeta.get_revision_id(mapping)
-        text_revisions = determine_text_revisions(local_changes, revid, 
+        text_revisions = determine_text_revisions(local_changes, revid,
                 revmeta.get_text_revisions(mapping))
         map.apply_delta(text_revisions, idmap, local_changes, revid,
                           mapping, revmeta.get_foreign_revid())
@@ -343,12 +343,12 @@ class FileIdMapCache(object):
                 optional_child_create_revid = ""
             else:
                 optional_child_create_revid = "\t%s:%d:%s" % (created_revid[0], created_revid[2], created_revid[1])
-            lines.append("%s\t%s\t%s%s\n" % (urllib.quote(path.encode("utf-8")), 
-                                           urllib.quote(id), 
+            lines.append("%s\t%s\t%s%s\n" % (urllib.quote(path.encode("utf-8")),
+                                           urllib.quote(id),
                                            urllib.quote(changed_revid),
                                            optional_child_create_revid))
 
-        self.idmap_knit.add_lines((revid,), [(r, ) for r in parent_revids], 
+        self.idmap_knit.add_lines((revid,), [(r, ) for r in parent_revids],
                                   lines)
 
     def load(self, revid):
@@ -401,7 +401,7 @@ class CachingFileIdMapStore(object):
                     todo.append((revmeta, mapping))
         finally:
             pb.finished()
-       
+
         # target revision was present
         if len(todo) == 0:
             return map

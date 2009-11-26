@@ -45,9 +45,9 @@ from bzrlib.errors import (
 
 
 def as_bool(str):
-    """Parse a string as a boolean. 
+    """Parse a string as a boolean.
 
-    FIXME: This must be duplicated somewhere. 
+    FIXME: This must be duplicated somewhere.
     """
     if str is None:
         return None
@@ -63,8 +63,8 @@ def as_bool(str):
         raise ValueError
 
 
-# Settings are stored by UUID. 
-# Data stored includes default branching scheme and locations the repository 
+# Settings are stored by UUID.
+# Data stored includes default branching scheme and locations the repository
 # was seen at.
 
 def subversion_config_filename():
@@ -147,11 +147,11 @@ class SvnRepositoryConfig(Config):
         :param guessed_scheme: Guessed scheme.
         """
         self.set_user_option('branching-scheme', str(scheme))
-        if (guessed_scheme != scheme or 
+        if (guessed_scheme != scheme or
             self.get_user_option('branching-scheme-guess') is not None):
-            self.set_user_option('branching-scheme-guess', 
+            self.set_user_option('branching-scheme-guess',
                                  guessed_scheme or scheme)
-        if (mandatory or 
+        if (mandatory or
             self.get_user_option('branching-scheme-mandatory') is not None):
             self.set_user_option('branching-scheme-mandatory', str(mandatory))
 
@@ -236,14 +236,14 @@ class SvnRepositoryConfig(Config):
         :return: BranchingScheme instance.
         """
         from bzrlib.plugins.svn.mapping3.scheme import BranchingScheme
-        schemename = self._get_user_option("branching-scheme-guess", 
+        schemename = self._get_user_option("branching-scheme-guess",
                                            use_global=False)
         if schemename is not None:
             return BranchingScheme.find_scheme(schemename.encode('ascii'))
         return None
 
     def get_supports_change_revprop(self):
-        """Check whether or not the repository supports changing existing 
+        """Check whether or not the repository supports changing existing
         revision properties."""
         try:
             return self.get_bool("supports-change-revprop")
@@ -268,7 +268,7 @@ class SvnRepositoryConfig(Config):
             return None
 
     def branching_scheme_is_mandatory(self):
-        """Check whether or not the branching scheme for this repository 
+        """Check whether or not the branching scheme for this repository
         is mandatory.
         """
         try:
@@ -307,7 +307,7 @@ class BranchConfig(Config):
         self._global_config = None
         self.url = url
         self.uuid = uuid
-        self.option_sources = (self._get_location_config, 
+        self.option_sources = (self._get_location_config,
                                self._get_uuid_config,
                                self._get_global_config)
 
@@ -327,7 +327,7 @@ class BranchConfig(Config):
         return self._global_config
 
     def get_log_strip_trailing_newline(self):
-        """Check whether or not trailing newlines should be stripped in the 
+        """Check whether or not trailing newlines should be stripped in the
         Subversion log message (where support by the bzr<->svn mapping used)."""
         try:
             return self.get_bool("log-strip-trailing-newline")
@@ -342,7 +342,7 @@ class BranchConfig(Config):
         return as_bool(ret)
 
     def get_override_svn_revprops(self):
-        """Check whether or not bzr-svn should attempt to override Subversion revision 
+        """Check whether or not bzr-svn should attempt to override Subversion revision
         properties after committing."""
         try:
             if self.get_bool("override-svn-revprops"):
@@ -442,7 +442,7 @@ class SubversionBuildPackageConfig(object):
     def __init__(self, tree):
         from bzrlib.plugins.svn.workingtree import SvnWorkingTree
         from bzrlib.plugins.svn.tree import SubversionTree
-        if (isinstance(tree, SvnWorkingTree) and 
+        if (isinstance(tree, SvnWorkingTree) and
             os.path.exists(os.path.join(tree.abspath("."), ".svn", "svn-layout"))):
             self.wt_layout_path = os.path.join(tree.abspath("."), ".svn", "svn-layout")
             self.option_source = ConfigObj(self.wt_layout_path, encoding="utf-8")

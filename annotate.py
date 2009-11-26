@@ -1,5 +1,5 @@
 # Copyright (C) 2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -45,7 +45,7 @@ class Annotater(object):
         (_, branch_path, revnum), mapping = self._repository.lookup_bzr_revision_id(
             revid)
         # FIXME: Cope with restarts
-        for (revmeta, mapping) in self._repository._iter_reverse_revmeta_mapping_history(branch_path, revnum, 
+        for (revmeta, mapping) in self._repository._iter_reverse_revmeta_mapping_history(branch_path, revnum,
                 to_revnum=0, mapping=mapping):
             self._related_revs[revmeta.revnum] = revmeta, mapping
 
@@ -54,7 +54,7 @@ class Annotater(object):
 
     def check_file_revs(self, path, revnum):
         self._text = ""
-        self._repository.transport.get_file_revs(path, -1, revnum, 
+        self._repository.transport.get_file_revs(path, -1, revnum,
             self._handler)
 
     def _get_ids(self, path, rev, revprops):
@@ -83,7 +83,7 @@ class Annotater(object):
                 self._text = "".join(lines)
                 if fileid == self.fileid:
                     # FIXME: Right hand side parents
-                    self._annotated = reannotate([self._annotated], 
+                    self._annotated = reannotate([self._annotated],
                         lines, revid)
                 return
             stream.write(apply_txdelta_window(self._text, window))

@@ -32,14 +32,14 @@ from bzrlib.option import (
 
 def get_layout(layoutname):
     """Parse layout name and return a layout.
-    
+
     :param layout: Name of the layout to retrieve.
     """
     if isinstance(layoutname, unicode):
         layoutname = layoutname.encode("ascii")
     from bzrlib.plugins.svn.layout import layout_registry
     from bzrlib.errors import BzrCommandError
-    
+
     try:
         ret = layout_registry.get(layoutname)()
     except KeyError:
@@ -49,12 +49,12 @@ def get_layout(layoutname):
 
 class cmd_svn_import(Command):
     """Convert a Subversion repository to a Bazaar repository.
-    
-    To save disk space, only branches will be created by default 
-    (no working trees). To create a tree for a branch, run "bzr co" in 
+
+    To save disk space, only branches will be created by default
+    (no working trees). To create a tree for a branch, run "bzr co" in
     it.
 
-    This command is resumable; any previously imported revisions will be 
+    This command is resumable; any previously imported revisions will be
     skipped.
     """
     _see_also = ['formats']
@@ -67,17 +67,17 @@ class cmd_svn_import(Command):
                             value_switches=False, title='Repository format'),
                      Option('trees', help='Create working trees.'),
                      Option('standalone', help='Create standalone branches.'),
-                     Option('all', 
+                     Option('all',
                          help='Convert all revisions, even those not in '
                               'current branch history.'),
                      Option('layout', type=get_layout,
                          help='Repository layout (none, trunk, etc). '
                               'Default: auto.'),
-                     Option('keep', 
+                     Option('keep',
                          help="Don't delete branches removed in Subversion."),
                      Option('incremental',
                          help="Import revisions incrementally."),
-                     Option('prefix', type=str, 
+                     Option('prefix', type=str,
                          hidden=True,
                          help='Only consider branches of which path starts '
                               'with prefix.'),
@@ -109,7 +109,7 @@ class cmd_svn_import(Command):
             to_location = os.path.basename(from_location.rstrip("/\\"))
 
         if all:
-            # All implies shared repository 
+            # All implies shared repository
             # (otherwise there is no repository to store revisions in)
             standalone = False
 
@@ -124,7 +124,7 @@ class cmd_svn_import(Command):
 
         from_dir = BzrDir.open(from_location)
 
-        if not (isinstance(from_dir, SvnRemoteAccess) or 
+        if not (isinstance(from_dir, SvnRemoteAccess) or
                 isinstance(from_dir, SvnCheckout)):
             raise BzrCommandError("Source repository is not a Subversion repository.")
 
@@ -158,29 +158,29 @@ class cmd_svn_import(Command):
                     overall_layout = layout
                 prefix = prefix.strip("/") + "/"
                 if overall_layout.is_branch(prefix):
-                    raise BzrCommandError("%s appears to contain a branch. " 
-                            "For individual branches, use 'bzr branch'." % 
+                    raise BzrCommandError("%s appears to contain a branch. "
+                            "For individual branches, use 'bzr branch'." %
                             from_location)
                 # FIXME: Hint about is_tag()
                 elif overall_layout.is_branch_parent(prefix):
-                    self.outf.write("Importing branches with prefix /%s\n" % 
+                    self.outf.write("Importing branches with prefix /%s\n" %
                         urlutils.unescape_for_display(prefix, self.outf.encoding))
                 else:
                     raise BzrCommandError("The specified path is inside a branch. "
                         "Specify a different URL or a different repository layout (see also 'bzr help svn-layout').")
 
-            if (prefix is not None and 
+            if (prefix is not None and
                 from_repos.transport.check_path(prefix, to_revnum) == NODE_NONE):
                 raise BzrCommandError("Prefix %s does not exist" % prefix)
 
             def filter_branch(branch):
-                if (prefix is not None and 
+                if (prefix is not None and
                     not branch.get_branch_path().startswith(prefix)):
                     return False
                 return True
 
             trace.note("Using repository layout: %s" % (layout or from_repos.get_layout(),))
-            convert_repository(from_repos, to_location, layout, 
+            convert_repository(from_repos, to_location, layout,
                                not standalone, trees, all,
                                format=format,
                                filter_branch=filter_branch,
@@ -198,8 +198,8 @@ class cmd_svn_import(Command):
 class cmd_svn_layout(Command):
     """Print the repository layout in use for a Subversion repository.
 
-    This will print the name of the repository layout. See 
-    "bzr help svn-layout" for more information about repository 
+    This will print the name of the repository layout. See
+    "bzr help svn-layout" for more information about repository
     layouts.
     """
     takes_args = ["path?"]
@@ -229,13 +229,13 @@ class cmd_svn_layout(Command):
                 self.outf.write("Project: %s\n" % branch.project)
             test_tag_path = layout.get_tag_path("test", branch.project)
             if test_tag_path:
-                self.outf.write("Tag container directory: %s\n" % 
+                self.outf.write("Tag container directory: %s\n" %
                         urlutils.dirname(test_tag_path))
             test_branch_path = layout.get_branch_path("test", branch.project)
             if test_branch_path:
-                self.outf.write("Branch container directory: %s\n" % 
+                self.outf.write("Branch container directory: %s\n" %
                         urlutils.dirname(test_branch_path))
-            self.outf.write("Push merged revisions: %s\n" % 
+            self.outf.write("Push merged revisions: %s\n" %
                     branch.get_push_merged_revisions())
 
 

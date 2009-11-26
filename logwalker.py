@@ -43,7 +43,7 @@ from bzrlib.plugins.svn.util import (
 # Maximum number of extra revisions to fetch in caching logwalker
 MAX_OVERHEAD_FETCH = 1000
 
-def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths, 
+def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths,
     revprop_list, limit=0):
     ascending = (to_revnum > from_revnum)
 
@@ -90,25 +90,25 @@ def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths,
 
 class LogCache(object):
     """Log browser cache. """
-    
+
     def find_latest_change(self, path, revnum):
         raise NotImplementedError(self.find_latest_change)
 
     def get_revision_paths(self, revnum):
         """Return all history information for a given revision number.
-        
+
         :param revnum: Revision number of revision.
         """
         raise NotImplementedError(self.get_revision_paths)
 
     def insert_paths(self, rev, orig_paths):
         """Insert new history information into the cache.
-        
+
         :param rev: Revision number of the revision
         :param orig_paths: SVN-style changes dictionary
         """
         raise NotImplementedError(self.insert_paths)
-    
+
     def drop_revprops(self, revnum):
         raise NotImplementedError(self.drop_revprops)
 
@@ -159,7 +159,7 @@ class CachingLogWalker(object):
             return self.actual.find_latest_change(path, revnum)
         if revnum is None and path == "":
             return 0
-        
+
         return revnum
 
     def iter_changes(self, prefixes, from_revnum, to_revnum=0, limit=0, pb=None):
@@ -169,14 +169,14 @@ class CachingLogWalker(object):
         :param from_revnum:  Start revision.
         :param to_revnum: End revision.
         :return: An iterator that yields tuples with (paths, revnum, revprops)
-            where paths is a dictionary with all changes that happened 
+            where paths is a dictionary with all changes that happened
             in revnum.
         """
         assert from_revnum >= 0 and to_revnum >= 0, "%r -> %r" % (from_revnum, to_revnum)
         self.mutter("iter changes %r->%r (%r)", from_revnum, to_revnum, prefixes)
         self._fetch_revisions(max(from_revnum, to_revnum), pb=pb)
 
-        return iter(iter_changes(prefixes, from_revnum, to_revnum, 
+        return iter(iter_changes(prefixes, from_revnum, to_revnum,
             self.get_revision_paths, self.revprop_list, limit))
 
     def get_revision_paths(self, revnum):

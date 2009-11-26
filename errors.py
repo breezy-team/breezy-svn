@@ -51,7 +51,7 @@ class InvalidBzrSvnRevision(NoSuchRevision):
 
 class NotSvnBranchPath(BzrError):
     """Error raised when a path was specified that did not exist."""
-    _fmt = """%(branch_path)s is not a valid Subversion branch path. 
+    _fmt = """%(branch_path)s is not a valid Subversion branch path.
 See 'bzr help svn-layout' for details."""
 
     def __init__(self, branch_path, mapping=None):
@@ -81,7 +81,7 @@ class MissingPrefix(BzrError):
 
 
 class RevpropChangeFailed(BzrError):
-    _fmt = """Unable to set revision property %(name)s. 
+    _fmt = """Unable to set revision property %(name)s.
 Does the repository pre-revprop-change hook allow property changes?"""
 
     def __init__(self, name):
@@ -132,7 +132,7 @@ def convert_error(err):
 
 
 def convert_svn_error(unbound):
-    """Decorator that catches particular Subversion exceptions and 
+    """Decorator that catches particular Subversion exceptions and
     converts them to Bazaar exceptions.
     """
     def convert(*args, **kwargs):
@@ -232,7 +232,7 @@ class UnknownMapping(BzrError):
 class AbsentPath(BzrError):
 
     _fmt = """Unable to access %(path)s: no permission?. """
-    
+
     def __init__(self, path):
         BzrError.__init__(self, path=path)
 
