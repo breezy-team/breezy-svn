@@ -65,7 +65,7 @@ class CacheTable(object):
 
 
 class RevisionIdMapCache(CacheTable):
-    """Revision id mapping store. 
+    """Revision id mapping store.
 
     Stores mapping from revid -> (path, revnum, mapping)
     """
@@ -80,7 +80,7 @@ class RevisionIdMapCache(CacheTable):
         self.db["revidmap-last/%s" % str(layout)] = str(revnum)
 
     def last_revnum_checked(self, layout):
-        """Retrieve the latest revision number that has been checked 
+        """Retrieve the latest revision number that has been checked
         for revision ids for a particular layout.
 
         :param layout: Repository layout.
@@ -90,13 +90,13 @@ class RevisionIdMapCache(CacheTable):
             return int(self.db["revidmap-last/%s" % str(layout)])
         except KeyError:
             return 0
-    
+
     def lookup_revid(self, revid):
         """Lookup the details for a particular revision id.
 
         :param revid: Revision id.
-        :return: Tuple with path inside repository, minimum revision number, maximum revision number and 
-            mapping.
+        :return: Tuple with path inside repository, minimum revision number,
+            maximum revision number and mapping.
         """
         self.mutter('lookup-revid %s', revid)
         try:
@@ -123,12 +123,11 @@ class RevisionIdMapCache(CacheTable):
 
         :param revid: Revision id for which to insert metadata.
         :param branch: Branch path at which the revision was seen
-        :param min_revnum: Minimum Subversion revision number in which the 
+        :param min_revnum: Minimum Subversion revision number in which the
                            revid was found
-        :param max_revnum: Maximum Subversion revision number in which the 
+        :param max_revnum: Maximum Subversion revision number in which the
                            revid was found
-        :param mapping: Name of the mapping with which the revision 
-                       was found
+        :param mapping: Name of the mapping with which the revision was found
         """
         mappingname = getattr(mapping, "name", mapping)
         self.db["native-revid/" + revid] = "%d %d %s %s" % (min_revnum, max_revnum, mappingname, branch)
@@ -145,7 +144,7 @@ class RevisionInfoCache(CacheTable):
             orig_mapping_name = ""
         self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])] = orig_mapping_name
 
-    def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden), 
+    def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden),
             stored_lhs_parent_revid):
         """Insert a revision to the cache.
 
@@ -208,13 +207,13 @@ class LogCache(CacheTable):
     """Log browser cache table manager. The methods of this class
     encapsulate the SQL commands used by CachingLogWalker to access
     the log cache tables."""
-    
+
     def find_latest_change(self, path, revnum):
         raise NotImplementedError(self.find_latest_change)
 
     def get_revision_paths(self, revnum):
         """Return all history information for a given revision number.
-        
+
         :param revnum: Revision number of revision.
         """
         self.mutter("get-revision-paths %d", revnum)
@@ -228,7 +227,7 @@ class LogCache(CacheTable):
 
     def insert_paths(self, rev, orig_paths):
         """Insert new history information into the cache.
-        
+
         :param rev: Revision number of the revision
         :param orig_paths: SVN-style changes dictionary
         """
@@ -245,7 +244,7 @@ class LogCache(CacheTable):
             new_paths[p.strip("/")] = (orig_paths[p][0], copyfrom_path, orig_paths[p][2])
         self.db["paths/%d" % rev] = bencode.bencode(new_paths)
         self.db["log-last"] = "%d" % max(self.last_revnum(), rev)
-    
+
     def drop_revprops(self, revnum):
         self.db["revprops/%d" % revnum] = bencode.bencode({})
 
@@ -262,7 +261,12 @@ class LogCache(CacheTable):
         if revprops is None:
             revprops = {}
         self.db["revprops/%d" % revision] = bencode.bencode((revprops, all_revprops))
-        self.db["log-min"] = "%d" % min(self.min_revnum(), revision)
+        min_revnum = self.min_revnum()
+        if min_revnum is not None:
+            min_revnum = min(min_revnum, revision)
+        else:
+            min_revnum = revision
+        self.db["log-min"] = str(min_revnum)
 
     def last_revnum(self):
         try:
@@ -274,7 +278,7 @@ class LogCache(CacheTable):
         try:
             return int(self.db["log-min"])
         except KeyError:
-            return 0
+            return None
 
 class ParentsCache(CacheTable):
 
@@ -299,7 +303,7 @@ class TdbRepositoryCache(RepositoryCache):
         cache_file = os.path.join(self.create_cache_dir(), 'cache.tdb')
         assert isinstance(cache_file, str)
         if not cachedbs().has_key(cache_file):
-            cachedbs()[cache_file] = tdb_open(cache_file, TDB_HASH_SIZE, 
+            cachedbs()[cache_file] = tdb_open(cache_file, TDB_HASH_SIZE,
                 tdb.DEFAULT, os.O_RDWR|os.O_CREAT)
         db = cachedbs()[cache_file]
         if not "version" in db:

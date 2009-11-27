@@ -97,7 +97,7 @@ CACHE_DB_VERSION = 5
 
 
 class RevisionIdMapCache(CacheTable):
-    """Revision id mapping store. 
+    """Revision id mapping store.
 
     Stores mapping from revid -> (path, revnum, mapping)
     """
@@ -374,12 +374,9 @@ class LogCache(CacheTable):
         if saved_revnum is None:
             return 0
         return saved_revnum
-    
+
     def min_revnum(self):
-        saved_revnum = self.cachedb.execute("SELECT MIN(rev) FROM revprop").fetchone()[0]
-        if saved_revnum is None:
-            return 0
-        return saved_revnum
+        return self.cachedb.execute("SELECT MIN(rev) FROM revprop").fetchone()[0]
 
 
 class ParentsCache(CacheTable):

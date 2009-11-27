@@ -214,7 +214,6 @@ class CachingLogWalker(object):
         :param to_revnum: End of range to fetch information for
         """
         assert isinstance(self.saved_revnum, int)
-        assert isinstance(self.saved_minrevnum, int)
 
         if to_revnum <= self.saved_revnum and self.saved_minrevnum == 0:
             return
@@ -237,7 +236,10 @@ class CachingLogWalker(object):
             self.cache.insert_revprops(revision, revprops,
                                        todo_revprops is None)
             self.saved_revnum = max(revision, self.saved_revnum)
-            self.saved_minrevnum = min(revision, self.saved_minrevnum)
+            if self.saved_minrevnum is None:
+                self.saved_minrevnum = revision
+            else:
+                self.saved_minrevnum = min(revision, self.saved_minrevnum)
 
         if pb is None:
             nested_pb = ui.ui_factory.nested_progress_bar()
@@ -247,13 +249,18 @@ class CachingLogWalker(object):
         try:
             nested_pb.update('fetching svn revision info', 0, to_revnum)
             try:
-                # Try to keep the cache consistent by closing any holes early in the history
-                if self.saved_minrevnum != 0:
+                # Try to keep the cache consistent by closing any holes early
+                # in the history
+                if self.saved_minrevnum is None:
+                    self.saved_minrevnum = 0
+                elif self.saved_minrevnum != 0:
                     self.mutter("get_log %d->%d", self.saved_minrevnum, 0)
-                    self.actual._transport.get_log(rcvr, [""], self.saved_minrevnum, 0, 0, True, True, False, todo_revprops)
-
+                    self.actual._transport.get_log(rcvr, [""],
+                        self.saved_minrevnum, 0, 0, True, True, False,
+                        todo_revprops)
                 self.mutter("get_log %d->%d", to_revnum, self.saved_revnum)
-                self.actual._transport.get_log(rcvr, [""], to_revnum, self.saved_revnum, 0, True, True, False, todo_revprops)
+                self.actual._transport.get_log(rcvr, [""], to_revnum,
+                    self.saved_revnum, 0, True, True, False, todo_revprops)
             except subvertpy.SubversionException, (_, num):
                 if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                     raise NoSuchRevision(branch=self,
