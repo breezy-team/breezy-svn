@@ -54,7 +54,7 @@ See http://bazaar-vcs.org/BzrForeignBranches/Subversion for details.
 
 def create_cache_dir():
     """Create the top-level bzr-svn cache directory.
-    
+
     :return: Path to cache directory.
     """
     ensure_config_dir_exists()
@@ -141,6 +141,7 @@ class RepositoryCache(object):
 
 try:
     from bzrlib.plugins.svn.cache.tdbcache import TdbRepositoryCache
+    raise ImportError
     cache_cls = TdbRepositoryCache
 except ImportError:
     from bzrlib.plugins.svn.cache.sqlitecache import SqliteRepositoryCache

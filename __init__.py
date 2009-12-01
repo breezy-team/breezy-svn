@@ -59,6 +59,7 @@ from bzrlib.commands import (
     )
 from bzrlib.errors import (
     DependencyNotPresent,
+    InvalidRevisionId,
     )
 from bzrlib.filters import (
     lazy_register_filter_stack_map,
@@ -227,10 +228,20 @@ info_hooks.install_named_hook('repository', info_svn_repository, None)
 
 def update_stanza(rev, stanza):
     revmeta = getattr(rev, "svn_meta", None)
-    if revmeta is None:
-        return
-    stanza.add("svn-revno", str(revmeta.revnum))
-    stanza.add("svn-uuid", revmeta.uuid)
+    if revmeta is not None:
+        stanza.add("svn-revno", str(revmeta.revnum))
+        stanza.add("svn-uuid", revmeta.uuid)
+    else:
+        from bzrlib.plugins.svn.mapping import mapping_registry
+        from bzrlib.plugins.svn import errors as svn_errors
+        try:
+            (uuid, branch_path, revno), mapping = \
+                mapping_registry.parse_revision_id(rev.revision_id)
+        except InvalidRevisionId:
+            pass
+        else:
+            stanza.add("svn-revno", str(revno))
+            stanza.add("svn-uuid", uuid)
 
 
 RioVersionInfoBuilder.hooks.install_named_hook('revision',

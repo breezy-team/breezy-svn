@@ -133,7 +133,7 @@ class SvnRepositoryFormatTests(TestCase):
         self.assertRaises(UninitializableFormat, self.format.initialize, None)
 
     def test_get_format_description(self):
-        self.assertEqual("Subversion Repository", 
+        self.assertEqual("Subversion Repository",
                          self.format.get_format_description())
 
     def test_conversion_target_self(self):

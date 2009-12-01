@@ -20,6 +20,9 @@ bzr-svn 1.0.2					  UNRELEASED
   * Support probing for Subversion repositories over existing HTTP transports
     using pycurl. (Jelmer Vernooij, #424626)
 
+  * Show Subversion revno and uuid in "bzr version-info". (Jelmer Vernooij,
+    #490771)
+
  PERFORMANCE
 
   * When updating the log cache, fetch from newest to oldest revision as 

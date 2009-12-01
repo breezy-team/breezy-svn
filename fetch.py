@@ -1121,6 +1121,7 @@ class InterFromSvnRepository(InterRepository):
                 self._inconsistent_lhs_parent(revmeta.get_revision_id(mapping),
                     revmeta.get_stored_lhs_parent_revid(mapping),
                     expected_lhs_parent_revid)
+            import pdb; pdb.set_trace()
             raise
 
     def _fetch_revision_switch(self, editor, revmeta, parent_revmeta):
