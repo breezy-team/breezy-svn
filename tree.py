@@ -382,7 +382,8 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             return ie
 
         def find_ids(entry):
-            relpath = urllib.unquote(entry.url[len(entry.repos):].strip("/"))
+            assert entry.url.startswith(self._repository.transport.svn_url)
+            relpath = urllib.unquote(entry.url[len(self._repository.transport.svn_url):].strip("/"))
             assert isinstance(relpath, str)
             if entry.schedule in (wc.SCHEDULE_NORMAL, 
                                   wc.SCHEDULE_DELETE, 
