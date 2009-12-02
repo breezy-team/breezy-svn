@@ -53,6 +53,7 @@ from bzrlib.bzrdir import (
     Converter,
     )
 from bzrlib.errors import (
+    BzrError,
     NotBranchError,
     NoSuchFile,
     NoSuchId,
@@ -114,6 +115,9 @@ from bzrlib.plugins.svn.tree import (
     SvnBasisTree,
     SubversionTree,
     )
+
+class RepositoryRootUnknown(BzrError):
+    _fmt = "The working tree does not store the root of the Subversion repository."
 
 def update_wc(adm, basedir, conn, revnum):
     # FIXME: honor SVN_CONFIG_SECTION_HELPERS:SVN_CONFIG_OPTION_DIFF3_CMD
@@ -201,7 +205,10 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
     def get_branch_path(self, revnum=None):
         if revnum is None:
-            return self.bzrdir.branch_path
+            try:
+                return self.bzrdir.get_branch_path()
+            except RepositoryRootUnknown:
+                pass
         return self.branch.get_branch_path(revnum)
 
     @property
@@ -1015,9 +1022,6 @@ class SvnCheckout(BzrDir):
         finally:
             wc.close()
 
-        assert self.entry.url.startswith(self.entry.repos)
-        self.branch_path = self.entry.url[len(self.entry.repos):].strip("/")
-
         self._remote_branch_transport = None
         self._remote_repo_transport = None
         self._remote_bzrdir = None
@@ -1041,7 +1045,7 @@ class SvnCheckout(BzrDir):
         if self._remote_branch_transport is None:
             self._remote_branch_transport = SvnRaTransport(self.entry.url, from_transport=self._remote_repo_transport)
         return self._remote_branch_transport
-        
+
     def clone(self, path, revision_id=None, force_new_repo=False):
         raise NotImplementedError(self.clone)
 
@@ -1074,10 +1078,18 @@ class SvnCheckout(BzrDir):
         raise NoRepositoryPresent(self)
 
     def _find_repository(self):
+        if self.entry.repos is None:
+            return self.get_remote_bzrdir().find_repository()
         if self._remote_repo_transport is None:
             self._remote_repo_transport = SvnRaTransport(self.entry.repos, from_transport=self._remote_branch_transport)
-        return SvnRepository(self, self._remote_repo_transport, 
-                self.branch_path)
+        return SvnRepository(self, self._remote_repo_transport,
+                self.get_branch_path())
+
+    def get_branch_path(self):
+        if self.entry.repos is None:
+            raise RepositoryRootUnknown()
+        assert self.entry.url.startswith(self.entry.repos)
+        return self.entry.url[len(self.entry.repos):].strip("/")
 
     def needs_format_conversion(self, format=None):
         if format is None:
@@ -1105,14 +1117,16 @@ class SvnCheckout(BzrDir):
         repos = self._find_repository()
 
         try:
-            branch = SvnBranch(repos, self.branch_path)
+            branch = SvnBranch(repos, self.get_branch_path())
+        except RepositoryRootUnknown:
+            return self.get_remote_bzrdir().open_branch()
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_WC_NOT_DIRECTORY:
                 raise NotBranchError(path=self.base)
             raise
 
         branch.bzrdir = self.get_remote_bzrdir()
- 
+
         return branch
 
 
