@@ -811,15 +811,15 @@ class SvnRepository(ForeignRepository):
                 else:
                     update_todo(todo, self._iter_reverse_revmeta_mapping_history(rhs_parent_bp, rhs_parent_revnum, to_revnum=0, mapping=mapping, pb=pb))
 
-    def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum, 
-        to_revnum, mapping, pb=None, limit=0): 
+    def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum,
+        to_revnum, mapping, pb=None, limit=0):
         """Iterate over the history of a RevisionMetadata object.
 
         This will skip hidden revisions.
         """
         assert mapping is not None
         expected_revid = None
-        iter = self._revmeta_provider.iter_reverse_branch_changes(branch_path, 
+        iter = self._revmeta_provider.iter_reverse_branch_changes(branch_path,
             revnum, to_revnum=to_revnum, pb=pb, limit=limit)
         for revmeta in iter:
             (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(mapping)
@@ -844,7 +844,7 @@ class SvnRepository(ForeignRepository):
             for (revmeta, mapping) in self._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=to_revnum, mapping=mapping, pb=pb, limit=limit):
                 yield (revmeta, mapping)
 
-    def iter_reverse_revision_history(self, revision_id, pb=None, limit=0, 
+    def iter_reverse_revision_history(self, revision_id, pb=None, limit=0,
                                       project=None):
         """Iterate backwards through revision ids in the lefthand history
 
@@ -856,7 +856,7 @@ class SvnRepository(ForeignRepository):
         (uuid, branch_path, revnum), mapping = self.lookup_bzr_revision_id(revision_id, project=project)
         assert uuid == self.uuid
         for revmeta, mapping in self._iter_reverse_revmeta_mapping_history(
-            branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb, 
+            branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb,
             limit=limit):
             if revmeta.is_hidden(mapping):
                 continue
