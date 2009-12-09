@@ -469,6 +469,23 @@ class SvnBranch(ForeignBranch):
                     to_revnum=0, mapping=self.mapping))
         return self._revmeta_cache
 
+    def get_rev_id(self, revno, history=None):
+        """Find the revision id of the specified revno."""
+        if revno == 0:
+            return NULL_REVISION
+        last_revno = self.revno()
+        if revno <= 0 or revno > last_revno:
+            raise NoSuchRevision(self, revno)
+        count = last_revno - revno
+        for (revmeta, mapping) in self._revision_meta_history():
+            if revmeta.is_hidden(mapping):
+                continue
+            count -= 1
+            if count == 0:
+                assert revmeta.get_revno(mapping) == revno
+                return revmeta.get_revision_id(mapping)
+        raise NoSuchRevision(self, revno)
+
     def _gen_revision_history(self):
         """Generate the revision history from last revision."""
         history = [revmeta.get_revision_id(mapping) for revmeta, mapping in self._revision_meta_history()]
