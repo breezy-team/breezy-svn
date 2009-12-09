@@ -187,19 +187,23 @@ class SvnRemoteAccess(BzrDir):
                 stop_revision = source.last_revision()
             target_branch_path = self.branch_path.strip("/")
             repos = self.find_repository()
-            inter = InterToSvnRepository(source.repository, repos)
-            layout = repos.get_layout()
+            repos.lock_write()
             try:
-                (type, project, _, ip) = layout.parse(target_branch_path)
-            except NotSvnBranchPath:
-                raise NotBranchError(target_branch_path)
-            if type not in ('branch', 'tag') or ip != '':
-                raise NotBranchError(target_branch_path)
-            inter.push_new_branch(layout, project, target_branch_path,
-                    stop_revision,
-                    override_svn_revprops=_override_svn_revprops,
-                    push_merged=_push_merged, overwrite=overwrite)
-            return self.open_branch()
+                inter = InterToSvnRepository(source.repository, repos)
+                layout = repos.get_layout()
+                try:
+                    (type, project, _, ip) = layout.parse(target_branch_path)
+                except NotSvnBranchPath:
+                    raise NotBranchError(target_branch_path)
+                if type not in ('branch', 'tag') or ip != '':
+                    raise NotBranchError(target_branch_path)
+                inter.push_new_branch(layout, project, target_branch_path,
+                        stop_revision,
+                        override_svn_revprops=_override_svn_revprops,
+                        push_merged=_push_merged, overwrite=overwrite)
+                return self.open_branch()
+            finally:
+                repos.unlock()
         finally:
             source.unlock()
 
