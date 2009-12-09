@@ -480,11 +480,11 @@ class SvnBranch(ForeignBranch):
         for (revmeta, mapping) in self._revision_meta_history():
             if revmeta.is_hidden(mapping):
                 continue
-            count -= 1
             if count == 0:
                 assert revmeta.get_revno(mapping) == revno
                 return revmeta.get_revision_id(mapping)
-        raise NoSuchRevision(self, revno)
+            count -= 1
+        raise AssertionError
 
     def _gen_revision_history(self):
         """Generate the revision history from last revision."""
