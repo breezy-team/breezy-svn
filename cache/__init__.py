@@ -141,7 +141,6 @@ class RepositoryCache(object):
 
 try:
     from bzrlib.plugins.svn.cache.tdbcache import TdbRepositoryCache
-    raise ImportError
     cache_cls = TdbRepositoryCache
 except ImportError:
     from bzrlib.plugins.svn.cache.sqlitecache import SqliteRepositoryCache
