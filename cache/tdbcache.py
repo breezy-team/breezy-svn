@@ -306,10 +306,10 @@ class TdbRepositoryCache(RepositoryCache):
             cachedbs()[cache_file] = tdb_open(cache_file, TDB_HASH_SIZE,
                 tdb.DEFAULT, os.O_RDWR|os.O_CREAT)
         db = cachedbs()[cache_file]
-        if not "version" in db:
-            db["version"] = str(CACHE_DB_VERSION)
-        else:
+        try:
             assert int(db["version"]) == CACHE_DB_VERSION
+        except KeyError:
+            db["version"] = str(CACHE_DB_VERSION)
         return db
 
     def open_revid_map(self):
