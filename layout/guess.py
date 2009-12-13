@@ -60,6 +60,10 @@ def guess_layout_from_branch_path(relpath):
         elif parts[i] in ("branches", "tags") and i == len(parts)-2:
             return TrunkLayout(level=i)
 
+    if len(parts) == 1 and parts[0] == "wiki":
+        # Google code keeps the wiki in Subversion
+        return TrunkLayout(level=0)
+
     if parts == [""]:
         return RootLayout()
     return CustomLayout([relpath])
@@ -78,6 +82,10 @@ def guess_layout_from_path(relpath):
             return TrunkLayout(level=i)
         elif parts[i] in ("branches", "tags"):
             return TrunkLayout(level=i)
+
+    if len(parts) > 0 and parts[0] == "wiki":
+        # Google code keeps the wiki in Subversion
+        return TrunkLayout(level=0)
 
     return RootLayout()
 
