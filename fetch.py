@@ -1217,7 +1217,10 @@ class InterFromSvnRepository(InterRepository):
                     raise
                 self._prev_inv = editor.inventory
                 assert self._prev_inv.revision_id == revid
-        finally:
+        except:
+            self.target.abort_write_group()
+            raise
+        else:
             pack_hint = self.target.commit_write_group()
         return pack_hint
 
@@ -1342,7 +1345,10 @@ class InterFromSvnRepository(InterRepository):
                 finally:
                     if not conn.busy:
                         self.source.transport.add_connection(conn)
-        finally:
+        except:
+            self.target.abort_write_group()
+            raise
+        else:
             pack_hint = self.target.commit_write_group()
         return pack_hint
 
