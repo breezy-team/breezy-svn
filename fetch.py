@@ -1173,7 +1173,7 @@ class InterFromSvnRepository(InterRepository):
             if not conn.busy:
                 self.source.transport.add_connection(conn)
 
-    def _fetch_revisions(self, revs, pb=None, use_replay=False):
+    def _fetch_revisions_nochunks(self, revs, pb=None, use_replay=False):
         """Copy a set of related revisions using svn.ra.switch.
 
         :param revids: List of revision ids of revisions to copy,
@@ -1223,6 +1223,13 @@ class InterFromSvnRepository(InterRepository):
         else:
             pack_hint = self.target.commit_write_group()
         return pack_hint
+
+    def _fetch_revisions(self, needed, pb):
+        if self._use_replay_range:
+            return self._fetch_revisions_chunks(needed, pb)
+        else:
+            return self._fetch_revisions_nochunks(needed, pb,
+                use_replay=self._use_replay)
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
               needed=None, mapping=None, project=None, fetch_spec=None):
@@ -1276,11 +1283,7 @@ class InterFromSvnRepository(InterRepository):
             else:
                 nested_pb = None
             try:
-                if self._use_replay_range:
-                    pack_hint = self._fetch_revision_chunks(needed, pb)
-                else:
-                    pack_hint = self._fetch_revisions(needed, pb,
-                        use_replay=self._use_replay)
+                pack_hint = self._fetch_revisions(needed, pb)
                 if pack_hint is not None and self.target._format.pack_compresses:
                     self.target.pack(hint=pack_hint)
             finally:
@@ -1296,7 +1299,7 @@ class InterFromSvnRepository(InterRepository):
         finally:
             self.target.unlock()
 
-    def _fetch_revision_chunks(self, revs, pb=None):
+    def _fetch_revisions_chunks(self, revs, pb=None):
         """Copy a set of related revisions using svn.ra.replay.
 
         :param revids: Revision ids to copy.
