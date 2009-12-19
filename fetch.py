@@ -928,7 +928,7 @@ class FetchRevisionFinder(object):
         self.source = source
         self.target = target
         self.target_is_empty = target_is_empty
-        self.needed = deque()
+        self.needed = list()
         self.checked = set()
         self.extra = list()
         self._check_present_interval = 1
@@ -1181,47 +1181,52 @@ class InterFromSvnRepository(InterRepository):
         """
         accidental_file_revs = set()
         self._prev_inv = None
+        batch_size = 100
+        total = len(revs)
+        pack_hints = []
+        for offset in range(0, total, batch_size):
+            self.target.start_write_group()
+            try:
+                for num, (revmeta, mapping) in enumerate(revs[offset:offset+batch_size]):
+                    try:
+                        revid = revmeta.get_revision_id(mapping)
+                    except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                        continue
+                    assert revid != NULL_REVISION
+                    if pb is not None:
+                        pb.update('copying revision', offset+num, total)
 
-        self.target.start_write_group()
-        try:
-            for num, (revmeta, mapping) in enumerate(revs):
-                try:
-                    revid = revmeta.get_revision_id(mapping)
-                except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                    continue
-                assert revid != NULL_REVISION
-                if pb is not None:
-                    pb.update('copying revision', num, len(revs))
+                    parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
+                    if parent_revmeta in accidental_file_revs:
+                        accidental_file_revs.add(revmeta)
+                        continue
 
-                parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
-                if parent_revmeta in accidental_file_revs:
-                    accidental_file_revs.add(revmeta)
-                    continue
-
-                editor = self._get_editor(revmeta, mapping)
-                try:
-                    if use_replay:
-                        self._fetch_revision_replay(editor, revmeta,
-                                                    parent_revmeta)
-                    else:
-                        try:
-                            self._fetch_revision_switch(editor, revmeta,
+                    editor = self._get_editor(revmeta, mapping)
+                    try:
+                        if use_replay:
+                            self._fetch_revision_replay(editor, revmeta,
                                                         parent_revmeta)
-                        except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                            accidental_file_revs.add(revmeta)
-                            editor.abort()
-                            continue
-                except:
-                    editor.abort()
-                    raise
-                self._prev_inv = editor.inventory
-                assert self._prev_inv.revision_id == revid
-        except:
-            self.target.abort_write_group()
-            raise
-        else:
-            pack_hint = self.target.commit_write_group()
-        return pack_hint
+                        else:
+                            try:
+                                self._fetch_revision_switch(editor, revmeta,
+                                                            parent_revmeta)
+                            except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
+                                accidental_file_revs.add(revmeta)
+                                editor.abort()
+                                continue
+                    except:
+                        editor.abort()
+                        raise
+                    self._prev_inv = editor.inventory
+                    assert self._prev_inv.revision_id == revid
+            except:
+                self.target.abort_write_group()
+                raise
+            else:
+                hint = self.target.commit_write_group()
+                if hint is not None:
+                    pack_hints.extend(hint)
+        return pack_hints
 
     def _fetch_revisions(self, needed, pb):
         if self._use_replay_range:
@@ -1319,11 +1324,12 @@ class InterFromSvnRepository(InterRepository):
         finally:
             pb.finished()
 
+        def cmprange((ak, av),(bk, bv)):
+            return cmp(av[0], bv[0])
+        ranges = sorted(activeranges.iteritems(), cmp=cmprange)
+
         self.target.start_write_group()
         try:
-            def cmprange((ak, av),(bk, bv)):
-                return cmp(av[0], bv[0])
-            ranges = sorted(activeranges.iteritems(), cmp=cmprange)
             for (head, mapping), revmetas in ranges:
                 def revstart(revnum, revprops):
                     if pb is not None:
@@ -1351,8 +1357,7 @@ class InterFromSvnRepository(InterRepository):
             self.target.abort_write_group()
             raise
         else:
-            pack_hint = self.target.commit_write_group()
-        return pack_hint
+            return self.target.commit_write_group()
 
     @staticmethod
     def is_compatible(source, target):
