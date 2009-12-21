@@ -46,7 +46,6 @@ from bzrlib import (
     )
 from bzrlib.errors import (
     NoSuchRevision,
-    RevisionNotPresent,
     VersionedFileInvalidChecksum,
     )
 from bzrlib.inventory import (
