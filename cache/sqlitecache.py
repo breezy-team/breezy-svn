@@ -39,8 +39,8 @@ def check_pysqlite_version(sqlite3):
     """Check that sqlite library is compatible.
 
     """
-    if (sqlite3.sqlite_version_info[0] < 3 or 
-            (sqlite3.sqlite_version_info[0] == 3 and 
+    if (sqlite3.sqlite_version_info[0] < 3 or
+            (sqlite3.sqlite_version_info[0] == 3 and
              sqlite3.sqlite_version_info[1] < 3)):
         trace.warning('Needs at least sqlite 3.3.x')
         raise errors.BzrError("incompatible sqlite library")
@@ -49,7 +49,7 @@ try:
     try:
         import sqlite3
         check_pysqlite_version(sqlite3)
-    except (ImportError, errors.BzrError), e: 
+    except (ImportError, errors.BzrError), e:
         from pysqlite2 import dbapi2 as sqlite3
         check_pysqlite_version(sqlite3)
 except:
@@ -126,7 +126,7 @@ class RevisionIdMapCache(CacheTable):
         self.commit_conditionally()
 
     def last_revnum_checked(self, layout):
-        """Retrieve the latest revision number that has been checked 
+        """Retrieve the latest revision number that has been checked
         for revision ids for a particular layout.
 
         :param layout: Repository layout.
@@ -138,12 +138,12 @@ class RevisionIdMapCache(CacheTable):
         if ret is None:
             return 0
         return int(ret[0])
-    
+
     def lookup_revid(self, revid):
         """Lookup the details for a particular revision id.
 
         :param revid: Revision id.
-        :return: Tuple with path inside repository, minimum revision number, maximum revision number and 
+        :return: Tuple with path inside repository, minimum revision number, maximum revision number and
             mapping.
         """
         assert isinstance(revid, str)
@@ -182,11 +182,11 @@ class RevisionIdMapCache(CacheTable):
 
         :param revid: Revision id for which to insert metadata.
         :param branch: Branch path at which the revision was seen
-        :param min_revnum: Minimum Subversion revision number in which the 
+        :param min_revnum: Minimum Subversion revision number in which the
                            revid was found
-        :param max_revnum: Maximum Subversion revision number in which the 
+        :param max_revnum: Maximum Subversion revision number in which the
                            revid was found
-        :param mapping: Name of the mapping with which the revision 
+        :param mapping: Name of the mapping with which the revision
                        was found
         """
         assert revid is not None and revid != ""
@@ -227,7 +227,7 @@ class RevisionInfoCache(CacheTable):
             orig_mapping_name = None
         self.cachedb.execute("insert into original_mapping (path, revnum, original_mapping) values (?, ?, ?)", (foreign_revid[1], foreign_revid[2], orig_mapping_name))
 
-    def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden), 
+    def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden),
             stored_lhs_parent_revid):
         """Insert a revision to the cache.
 
@@ -243,7 +243,7 @@ class RevisionInfoCache(CacheTable):
 
         :param foreign_revid: Foreign revision id
         :param mapping: Mapping
-        :return: Tuple with (stored revno, revid, hidden), 
+        :return: Tuple with (stored revno, revid, hidden),
             stored_lhs_parent_revid
         """
         # Will raise KeyError if not present
@@ -280,7 +280,7 @@ class LogCache(CacheTable):
     """Log browser cache table manager. The methods of this class
     encapsulate the SQL commands used by CachingLogWalker to access
     the log cache tables."""
-    
+
     def _create_table(self):
         self.cachedb.executescript("""
             create table if not exists changed_path(rev integer, action text, path text, copyfrom_path text, copyfrom_rev integer);
@@ -294,7 +294,7 @@ class LogCache(CacheTable):
             create unique index if not exists revprop_rev_name on revprop(rev, name);
             create unique index if not exists revinfo_rev on revinfo(rev);
         """)
-    
+
     def find_latest_change(self, path, revnum):
         if path == "":
             return self.cachedb.execute("select max(rev) from changed_path where rev <= ?", (revnum,)).fetchone()[0]
@@ -309,7 +309,7 @@ class LogCache(CacheTable):
 
     def get_revision_paths(self, revnum):
         """Return all history information for a given revision number.
-        
+
         :param revnum: Revision number of revision.
         """
         result = self.cachedb.execute("select path, action, copyfrom_path, copyfrom_rev from changed_path where rev=?", (revnum,))
@@ -322,7 +322,7 @@ class LogCache(CacheTable):
 
     def insert_paths(self, rev, orig_paths):
         """Insert new history information into the cache.
-        
+
         :param rev: Revision number of the revision
         :param orig_paths: SVN-style changes dictionary
         """
@@ -337,7 +337,7 @@ class LogCache(CacheTable):
             new_paths.append((rev, p.strip("/").decode("utf-8"), orig_paths[p][0], copyfrom_path, orig_paths[p][2]))
 
         self.cachedb.executemany("replace into changed_path (rev, path, action, copyfrom_path, copyfrom_rev) values (?, ?, ?, ?, ?)", new_paths)
-    
+
     def drop_revprops(self, revnum):
         self.cachedb.execute("update revinfo set all_revprops = 0 where rev = ?", (revnum,))
 
