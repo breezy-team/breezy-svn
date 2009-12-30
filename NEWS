@@ -35,6 +35,11 @@ bzr-svn 1.0.2					  UNRELEASED
   * Fetch history information newest revision to oldest revision because of 
     speed.  (John Szakmeister, #453789)
 
+ FEATURES
+
+  * New variant of the 'trunk' layout named 'trunk-variable' that accepts 
+    branches with any level of nesting, at some performance cost.
+
 
 bzr-svn	1.0.1					  2009-10-20
 

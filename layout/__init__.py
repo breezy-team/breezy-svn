@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -44,7 +44,7 @@ class RepositoryLayout(object):
     def get_tag_path(self, name, project=""):
         """Return the path at which the tag with specified name should be found.
 
-        :param name: Name of the tag. 
+        :param name: Name of the tag.
         :param project: Optional name of the project the tag is for. Can include slashes.
         :return: Path of the tag.
         """
@@ -61,7 +61,7 @@ class RepositoryLayout(object):
         """Determine whether or not right hand side (merged) revisions should be pushed.
 
         Defaults to False.
-        
+
         :param project: Name of the project.
         """
         return False
@@ -69,7 +69,7 @@ class RepositoryLayout(object):
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.
 
-        :param name: Name of the branch. 
+        :param name: Name of the branch.
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
@@ -78,7 +78,7 @@ class RepositoryLayout(object):
     def parse(self, path):
         """Parse a path.
 
-        :return: Tuple with type ('tag', 'branch'), project name, branch path and path 
+        :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
         raise NotImplementedError
@@ -98,7 +98,7 @@ class RepositoryLayout(object):
             (type, proj, bp, rp) = self.parse(path)
         except NotSvnBranchPath:
             return False
-        if (type == "branch" and rp == "" and 
+        if (type == "branch" and rp == "" and
             (project is None or proj == project)):
             return True
         return False
@@ -147,7 +147,7 @@ def wildcard_matches(path, pattern):
     if len(ar) != len(br):
         return False
     for a, b in zip(ar, br):
-        if b != a and not (a != "" and b == "*"): 
+        if b != a and not (a != "" and b == "*"):
             return False
     return True
 
@@ -162,8 +162,8 @@ def expand_branch_pattern(begin, todo, check_path, get_children, project=None):
     """
     mutter('expand branches: %r, %r', begin, todo)
     path = "/".join(begin)
-    if (project is not None and 
-        not project.startswith(path) and 
+    if (project is not None and
+        not project.startswith(path) and
         not path.startswith(project)):
         return []
     # If all elements have already been handled, just check the path exists
@@ -174,7 +174,7 @@ def expand_branch_pattern(begin, todo, check_path, get_children, project=None):
             return []
     # Not a wildcard? Just expand next bits
     if todo[0] != "*":
-        return expand_branch_pattern(begin+[todo[0]], todo[1:], check_path, 
+        return expand_branch_pattern(begin+[todo[0]], todo[1:], check_path,
                                      get_children, project)
     children = get_children(path)
     if children is None:
@@ -188,7 +188,7 @@ def expand_branch_pattern(begin, todo, check_path, get_children, project=None):
                 # Last path element, so return directly
                 ret.append(("/".join(begin+[c]), has_props))
             else:
-                ret += expand_branch_pattern(begin+[c], todo[1:], check_path, 
+                ret += expand_branch_pattern(begin+[c], todo[1:], check_path,
                                              get_children, project)
     finally:
         pb.finished()
@@ -213,8 +213,8 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None, pb=Non
             assert not path.startswith("/")
             dirents = repository.transport.get_dir(path, revnum, DIRENT_KIND|DIRENT_HAS_PROPS)[0]
         except subvertpy.SubversionException, (msg, num):
-            if num in (subvertpy.ERR_FS_NOT_DIRECTORY, 
-                       subvertpy.ERR_FS_NOT_FOUND, 
+            if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
+                       subvertpy.ERR_FS_NOT_FOUND,
                        subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
                        ERR_RA_DAV_FORBIDDEN):
                 return None
@@ -234,7 +234,7 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None, pb=Non
 help_layout = """Subversion repository layouts.
 
 Subversion is basically a versioned file system. It does not have any notion of
-branches and what is a branch in Subversion is therefor up to the user. 
+branches and what is a branch in Subversion is therefor up to the user.
 
 In order for Bazaar to access a Subversion repository it has to know what paths
 to consider branches. What it will and will not consider a branch or tag is
@@ -260,9 +260,9 @@ Multiple locations can be separated by a semicolon.  For example:
 [203ae883-c723-44c9-aabd-cb56e4f81c9a]
 branches = path/to/*/bla;path/to/trunk
 
-This would consider paths path/to/foo/bla, path/to/blie/bla and path/to/trunk 
+This would consider paths path/to/foo/bla, path/to/blie/bla and path/to/trunk
 branches, if they existed. The key used (203a...) is the UUID of the Subversion
-repository. The UUID for a repository can be found by running "svn info <url>" 
+repository. The UUID for a repository can be found by running "svn info <url>"
 or "bzr info <url>".
 
 """
@@ -276,12 +276,13 @@ layout_registry.register_lazy("trunk0", "bzrlib.plugins.svn.layout.standard", "T
 layout_registry.register_lazy("trunk1", "bzrlib.plugins.svn.layout.standard", "TrunkLayout1")
 layout_registry.register_lazy("trunk2", "bzrlib.plugins.svn.layout.standard", "TrunkLayout2")
 layout_registry.register_lazy("trunk3", "bzrlib.plugins.svn.layout.standard", "TrunkLayout3")
+layout_registry.register_lazy("trunk-variable", "bzrlib.plugins.svn.layout.standard", "TrunkLayoutVariable")
 
-layout_registry.register_lazy("itrunk1", "bzrlib.plugins.svn.layout.standard", 
+layout_registry.register_lazy("itrunk1", "bzrlib.plugins.svn.layout.standard",
     "InverseTrunkLayout1")
-layout_registry.register_lazy("itrunk2", "bzrlib.plugins.svn.layout.standard", 
+layout_registry.register_lazy("itrunk2", "bzrlib.plugins.svn.layout.standard",
     "InverseTrunkLayout2")
-layout_registry.register_lazy("itrunk3", "bzrlib.plugins.svn.layout.standard", 
+layout_registry.register_lazy("itrunk3", "bzrlib.plugins.svn.layout.standard",
     "InverseTrunkLayout3")
 
 class RepositoryRegistry(registry.Registry):
@@ -293,7 +294,7 @@ class RepositoryRegistry(registry.Registry):
             return None
 
 repository_registry = RepositoryRegistry()
-repository_registry.register_lazy("283d02a7-25f6-0310-bc7c-ecb5cbfe19da", 
+repository_registry.register_lazy("283d02a7-25f6-0310-bc7c-ecb5cbfe19da",
         "bzrlib.plugins.svn.layout.custom", "KDELayout")
 repository_registry.register_lazy("13f79535-47bb-0310-9956-ffa450edef68",
         "bzrlib.plugins.svn.layout.custom", "ApacheLayout")

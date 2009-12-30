@@ -113,6 +113,39 @@ class Trunk2LayoutTests(TestCase):
         self.assertEquals(False, self.layout.is_branch_parent("foo/bar/tags"))
 
 
+class TrunkVariableLayoutTests(TestCase):
+
+    def setUp(self):
+        TestCase.setUp(self)
+        self.layout = TrunkLayout(None)
+
+    def test_is_trunk_branch(self):
+        self.assertEquals(True, self.layout.is_branch("foo/bar/trunk"))
+        self.assertEquals(True, self.layout.is_branch("trunk"))
+
+    def test_is_foo_branch(self):
+        self.assertEquals(False, self.layout.is_branch("foo"))
+
+    def test_is_branch_parent_trunk(self):
+        self.assertEquals(True, self.layout.is_branch_parent("foo/bar/trunk"))
+
+    def test_is_branch_parent_lev2(self):
+        self.assertEquals(True, self.layout.is_branch_parent("foo/bar"))
+
+    def test_is_branch_parent_lev1(self):
+        self.assertEquals(True, self.layout.is_branch_parent("foo"))
+
+    def test_is_branch_parent_lev3(self):
+        self.assertEquals(True, self.layout.is_branch_parent("foo/bar/blie"))
+
+    def test_is_branch_parent_branches(self):
+        self.assertEquals(True, self.layout.is_branch_parent("foo/bar/branches"))
+
+    def test_is_branch_parent_tags(self):
+        self.assertEquals(True, self.layout.is_branch_parent("bar/tags"))
+        self.assertEquals(True, self.layout.is_branch_parent("foo/bar/tags"))
+
+
 class WildcardLayoutTests(TestCase):
 
     def test_is_branch_simple(self):

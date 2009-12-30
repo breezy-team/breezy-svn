@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -38,13 +38,13 @@ class TrunkLayout(RepositoryLayout):
     def __init__(self, level=None):
         assert level is None or isinstance(level, int)
         self.level = level
-    
+
     def get_tag_path(self, name, project=""):
         """Return the path at which the tag with specified name should be found.
 
-        :param name: Name of the tag. 
+        :param name: Name of the tag.
         :param project: Optional name of the project the tag is for. Can include slashes.
-        :return: Path of the tag."
+        :return: Path of the tag.
         """
         subpath = urlutils.join("tags", name.encode("utf-8")).strip("/")
         if project in (None, ""):
@@ -53,13 +53,13 @@ class TrunkLayout(RepositoryLayout):
 
     def is_branch_parent(self, path, project=""):
         parts = path.strip("/").split("/")
-        return (self.level is None or 
+        return (self.level is None or
                 len(parts) <= self.level or
                 (len(parts) == self.level+1 and parts[-1] == "branches"))
 
     def is_tag_parent(self, path, project=""):
         parts = path.strip("/").split("/")
-        return (self.level is None or 
+        return (self.level is None or
                 len(parts) <= self.level or
                 (len(parts) == self.level+1 and parts[-1] == "tags"))
 
@@ -74,7 +74,7 @@ class TrunkLayout(RepositoryLayout):
         """Determine whether or not right hand side (merged) revisions should be pushed.
 
         Defaults to False.
-        
+
         :param project: Name of the project.
         """
         return True
@@ -82,7 +82,7 @@ class TrunkLayout(RepositoryLayout):
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.
 
-        :param name: Name of the branch. 
+        :param name: Name of the branch.
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
@@ -91,7 +91,7 @@ class TrunkLayout(RepositoryLayout):
     def parse(self, path):
         """Parse a path.
 
-        :return: Tuple with type ('tag', 'branch'), project name, branch path and path 
+        :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
         assert isinstance(path, str)
@@ -109,9 +109,9 @@ class TrunkLayout(RepositoryLayout):
                     t = "branch"
                     j = i
                 if self.level in (j, None):
-                    return (t, 
-                        "/".join(parts[:j]).strip("/"), 
-                        "/".join(parts[:i+1]).strip("/"), 
+                    return (t,
+                        "/".join(parts[:j]).strip("/"),
+                        "/".join(parts[:i+1]).strip("/"),
                         "/".join(parts[i+1:]).strip("/"))
         raise svn_errors.NotSvnBranchPath(path, self)
 
@@ -125,8 +125,8 @@ class TrunkLayout(RepositoryLayout):
 
         :result: Iterator over tuples with (project, branch path, has_props)
         """
-        return get_root_paths(repository, 
-             [self._add_project(x, project) for x in "branches/*", "trunk"], 
+        return get_root_paths(repository,
+             [self._add_project(x, project) for x in "branches/*", "trunk"],
              revnum, self.is_branch, project)
 
     def get_tags(self, repository, revnum, project=None, pb=None):
@@ -144,11 +144,12 @@ class TrunkLayout(RepositoryLayout):
 
     def __str__(self):
         if self.level is None:
-            return "trunk"
+            return "trunk-variable"
         else:
             return "trunk%d" % self.level
 
 
+TrunkLayoutVariable = partial(TrunkLayout, None)
 TrunkLayout0 = partial(TrunkLayout, 0)
 TrunkLayout1 = partial(TrunkLayout, 1)
 TrunkLayout2 = partial(TrunkLayout, 2)
@@ -168,7 +169,7 @@ class RootLayout(RepositoryLayout):
     def get_tag_path(self, name, project=""):
         """Return the path at which the tag with specified name should be found.
 
-        :param name: Name of the tag. 
+        :param name: Name of the tag.
         :param project: Optional name of the project the tag is for. Can include slashes.
         :return: Path of the tag."
         """
@@ -185,7 +186,7 @@ class RootLayout(RepositoryLayout):
         """Determine whether or not right hand side (merged) revisions should be pushed.
 
         Defaults to False.
-        
+
         :param project: Name of the project.
         """
         return False
@@ -193,7 +194,7 @@ class RootLayout(RepositoryLayout):
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.
 
-        :param name: Name of the branch. 
+        :param name: Name of the branch.
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
@@ -202,7 +203,7 @@ class RootLayout(RepositoryLayout):
     def parse(self, path):
         """Parse a path.
 
-        :return: Tuple with type ('tag', 'branch'), project name, branch path and path 
+        :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
         return ('branch', '', '', path)
@@ -242,11 +243,11 @@ class CustomLayout(RepositoryLayout):
 
     def supports_tags(self):
         return (self.tags != [])
-    
+
     def get_tag_path(self, name, project=""):
         """Return the path at which the tag with specified name should be found.
 
-        :param name: Name of the tag. 
+        :param name: Name of the tag.
         :param project: Optional name of the project the tag is for. Can include slashes.
         :return: Path of the tag.
         """
@@ -263,7 +264,7 @@ class CustomLayout(RepositoryLayout):
         """Determine whether or not right hand side (merged) revisions should be pushed.
 
         Defaults to False.
-        
+
         :param project: Name of the project.
         """
         return False
@@ -271,7 +272,7 @@ class CustomLayout(RepositoryLayout):
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.
 
-        :param name: Name of the branch. 
+        :param name: Name of the branch.
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
@@ -280,7 +281,7 @@ class CustomLayout(RepositoryLayout):
     def parse(self, path):
         """Parse a path.
 
-        :return: Tuple with type ('tag', 'branch'), project name, branch path and path 
+        :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
         path = path.strip("/")
@@ -333,11 +334,11 @@ class WildcardLayout(RepositoryLayout):
 
     def supports_tags(self):
         return (self.tags != [])
-    
+
     def get_tag_path(self, name, project=""):
         """Return the path at which the tag with specified name should be found.
 
-        :param name: Name of the tag. 
+        :param name: Name of the tag.
         :param project: Optional name of the project the tag is for. Can include slashes.
         :return: Path of the tag."
         """
@@ -361,7 +362,7 @@ class WildcardLayout(RepositoryLayout):
         """Determine whether or not right hand side (merged) revisions should be pushed.
 
         Defaults to False.
-        
+
         :param project: Name of the project.
         """
         return False
@@ -369,7 +370,7 @@ class WildcardLayout(RepositoryLayout):
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.
 
-        :param name: Name of the branch. 
+        :param name: Name of the branch.
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
@@ -430,11 +431,11 @@ class InverseTrunkLayout(RepositoryLayout):
         assert isinstance(level, int)
         assert level > 0
         self.level = level
-    
+
     def get_tag_path(self, name, project=""):
         """Return the path at which the tag with specified name should be found.
 
-        :param name: Name of the tag. 
+        :param name: Name of the tag.
         :param project: Optional name of the project the tag is for. Can include slashes.
         :return: Path of the tag."
         """
@@ -451,7 +452,7 @@ class InverseTrunkLayout(RepositoryLayout):
         """Determine whether or not right hand side (merged) revisions should be pushed.
 
         Defaults to False.
-        
+
         :param project: Name of the project.
         """
         return False
@@ -459,7 +460,7 @@ class InverseTrunkLayout(RepositoryLayout):
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.
 
-        :param name: Name of the branch. 
+        :param name: Name of the branch.
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
@@ -468,7 +469,7 @@ class InverseTrunkLayout(RepositoryLayout):
     def parse(self, path):
         """Parse a path.
 
-        :return: Tuple with type ('tag', 'branch'), project name, branch path and path 
+        :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
         assert isinstance(path, str)
@@ -503,8 +504,8 @@ class InverseTrunkLayout(RepositoryLayout):
 
         :result: Iterator over tuples with (project, branch path)
         """
-        return get_root_paths(repository, 
-             [self._add_project(x, project) for x in "branches", "trunk"], 
+        return get_root_paths(repository,
+             [self._add_project(x, project) for x in "branches", "trunk"],
              revnum, self.is_branch, project)
 
     def get_tags(self, repository, revnum, project=None, pb=None):
