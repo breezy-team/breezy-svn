@@ -104,12 +104,21 @@ class RevisionIdMapCache(CacheTable):
 
     def _create_table(self):
         self.cachedb.executescript("""
-        create table if not exists revmap (revid text, path text, min_revnum integer, max_revnum integer, mapping text);
+        create table if not exists revmap (
+            revid text not null,
+            path text not null,
+            min_revnum integer,
+            max_revnum integer,
+            mapping text not null
+            );
         create index if not exists revid on revmap (revid);
         create unique index if not exists revid_path_mapping on revmap (revid, path, mapping);
         drop index if exists lookup_branch_revnum;
         create index if not exists lookup_branch_revnum_non_unique on revmap (max_revnum, min_revnum, path, mapping);
-        create table if not exists revids_seen (layout text, max_revnum int);
+        create table if not exists revids_seen (
+            layout text not null,
+            max_revnum int
+            );
         create unique index if not exists layout on revids_seen (layout);
         """)
         # Revisions ids are quite expensive
