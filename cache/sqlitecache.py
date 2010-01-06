@@ -222,9 +222,22 @@ class RevisionInfoCache(CacheTable):
 
     def _create_table(self):
         self.cachedb.executescript("""
-        create table if not exists revmetainfo (path text, revnum integer, mapping text, revid text, revno int, hidden int, original_mapping text, stored_lhs_parent_revid text);
+        create table if not exists revmetainfo (
+            path text not null,
+            revnum integer,
+            mapping text not null,
+            revid text,
+            revno int,
+            hidden int,
+            original_mapping text,
+            stored_lhs_parent_revid text
+        );
         create unique index if not exists revmeta_path_mapping on revmetainfo(revnum, path, mapping);
-        create table if not exists original_mapping (path text, revnum integer, original_mapping text);
+        create table if not exists original_mapping (
+            path text not null,
+            revnum integer,
+            original_mapping text
+            );
         create unique index if not exists original_mapping_path_revnum on original_mapping (path, revnum);
         """)
         self._commit_interval = 500
@@ -292,12 +305,21 @@ class LogCache(CacheTable):
 
     def _create_table(self):
         self.cachedb.executescript("""
-            create table if not exists changed_path(rev integer, action text, path text, copyfrom_path text, copyfrom_rev integer);
+            create table if not exists changed_path(
+                rev integer,
+                action text not null check(action in ('A', 'D', 'M', 'R')),
+                path text not null,
+                copyfrom_path text,
+                copyfrom_rev integer
+                );
             create index if not exists path_rev on changed_path(rev);
             create unique index if not exists path_rev_path on changed_path(rev, path);
             create unique index if not exists path_rev_path_action on changed_path(rev, path, action);
-
-            create table if not exists revprop(rev integer, name text, value text);
+            create table if not exists revprop(
+                rev integer,
+                name text not null,
+                value text not null
+                );
             create table if not exists revinfo(rev integer, all_revprops int);
             create index if not exists revprop_rev on revprop(rev);
             create unique index if not exists revprop_rev_name on revprop(rev, name);
@@ -392,7 +414,11 @@ class ParentsCache(CacheTable):
 
     def _create_table(self):
         self.cachedb.executescript("""
-        create table if not exists parent (rev text, parent text, idx int);
+        create table if not exists parent (
+            rev text not null,
+            parent text,
+            idx int
+            );
         create unique index if not exists rev_parent_idx on parent (rev, idx);
         create unique index if not exists rev_parent on parent (rev, parent);
         """)
