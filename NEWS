@@ -35,6 +35,8 @@ bzr-svn 1.0.2					  UNRELEASED
   * Fetch history information newest revision to oldest revision because of 
     speed.  (John Szakmeister, #453789)
 
+  * Add extra constraints in sqlite database.
+
  FEATURES
 
   * New variant of the 'trunk' layout named 'trunk-variable' that accepts 
