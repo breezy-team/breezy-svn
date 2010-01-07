@@ -256,16 +256,6 @@ class RepositoryConverter(object):
             put_latest_svn_import_revision(target_repos, source_repos.uuid,
                                            to_revnum)
 
-    def _check_branch_exists(self, revmeta, existing_branches,
-                             deleted_branches):
-        if (not revmeta.branch_path in existing_branches and
-            layout.is_branch(revmeta.branch_path) and
-            not contains_parent_path(deleted_branches, revmeta.branch_path)):
-            existing_branches[revmeta.branch_path] = SvnBranch(
-                source_repos, revmeta.branch_path,
-                revnum=revmeta.revnum, _skip_check=True,
-                mapping=mapping)
-
     def _fetch_to_shared_repo(self, inter, prefix, from_revnum, revmetas,
                               revfinder, mapping, heads):
         def needs_manual_check(revmeta):
