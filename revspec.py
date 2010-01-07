@@ -47,7 +47,10 @@ class RevisionSpec_svn(RevisionSpec):
 
     def _match_on_foreign(self, branch):
         ret = set()
-        revnum = self._get_revnum()
+        try:
+            revnum = self._get_revnum()
+        except ValueError:
+            raise InvalidRevisionSpec(self.user_spec, branch)
         branch.lock_read()
         try:
             graph = branch.repository.get_graph()

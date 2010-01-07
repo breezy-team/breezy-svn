@@ -26,6 +26,9 @@ bzr-svn 1.0.2					  UNRELEASED
   * Show Subversion revno and uuid in "bzr version-info". (Jelmer Vernooij,
     #490771)
 
+  * Properly handle invalid Subversion revision numbers. (Jelmer Vernooij,
+    #504376)
+
  PERFORMANCE
 
   * When updating the log cache, fetch from newest to oldest revision as 
