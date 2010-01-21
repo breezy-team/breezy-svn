@@ -122,7 +122,11 @@ def inventory_ancestors(inv, fileid, exceptions):
 
 
 def md5_strings(chunks):
-    """Return the MD5sum of a list of chunks."""
+    """Return the MD5sum of a list of chunks.
+    
+    :param chunks: Chunks as strings
+    :return: String with MD5 hex digest
+    """
     s = osutils.md5()
     map(s.update, chunks)
     return s.hexdigest()
@@ -131,7 +135,7 @@ def md5_strings(chunks):
 def md5_string(string):
     """Return the MD5sum of a string.
 
-    :param string: String to find the MD5sum of.
+    :param string: String to calculate the MD5sum of.
     :return: MD5sums hex digest
     """
     s = osutils.md5()
@@ -170,6 +174,7 @@ class PathStrippingDirectoryEditor(object):
         self.actual = actual
 
     def open_directory(self, path, base_revnum):
+        """See `DirectoryEditor`."""
         if path.strip("/") == self.editor.prefix:
             t = self.editor.actual.open_root(base_revnum)
         elif self.actual is not None:
@@ -180,6 +185,7 @@ class PathStrippingDirectoryEditor(object):
         return PathStrippingDirectoryEditor(self.editor, path, t)
 
     def add_directory(self, path, copyfrom_path=None, copyfrom_rev=-1):
+        """See `DirectoryEditor`."""
         if path.strip("/") == self.editor.prefix:
             t = self.editor.actual.open_root(copyfrom_rev)
         elif self.actual is not None:
@@ -190,26 +196,31 @@ class PathStrippingDirectoryEditor(object):
         return PathStrippingDirectoryEditor(self.editor, path, t)
 
     def close(self):
+        """See `DirectoryEditor`."""
         if self.actual is not None:
             self.actual.close()
 
     def change_prop(self, name, value):
+        """See `DirectoryEditor`."""
         if self.actual is not None:
             self.actual.change_prop(name, value)
 
     def delete_entry(self, path, revnum):
+        """See `DirectoryEditor`."""
         if self.actual is not None:
             self.actual.delete_entry(self.editor.strip_prefix(path), revnum)
         else:
             raise AssertionError("delete_entry should not be called")
 
     def add_file(self, path, copyfrom_path=None, copyfrom_rev=-1):
+        """See `DirectoryEditor`."""
         if self.actual is not None:
             return self.actual.add_file(self.editor.strip_prefix(path),
                 self.editor.strip_copy_prefix(copyfrom_path), copyfrom_rev)
         raise AssertionError("add_file should not be called")
 
     def open_file(self, path, base_revnum):
+        """See `DirectoryEditor`."""
         if self.actual is not None:
             return self.actual.open_file(self.editor.strip_prefix(path),
                    base_revnum)
