@@ -35,6 +35,7 @@ from bzrlib.errors import (
     TipChangeRejected,
     TransportError,
     UnexpectedEndOfContainerError,
+    VersionedFileInvalidChecksum,
     )
 
 
@@ -265,3 +266,15 @@ class PropertyChangeFailed(BzrError):
 
     def __init__(self, msg):
         BzrError.__init__(self, msg=msg)
+
+
+class TextChecksumMismatch(VersionedFileInvalidChecksum):
+
+    _fmt = """checksum mismatch: %(expected_checksum)r != %(actual_checksum)r in %(path)s:%(revnum)d"""
+
+    def __init__(self, expected_checksum, actual_checksum, path, revnum):
+        self.expected_checksum = expected_checksum
+        self.actual_checksum = actual_checksum
+        self.path = path
+        self.revnum = revnum
+

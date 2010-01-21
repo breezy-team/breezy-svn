@@ -46,7 +46,6 @@ from bzrlib import (
     )
 from bzrlib.errors import (
     NoSuchRevision,
-    VersionedFileInvalidChecksum,
     )
 from bzrlib.inventory import (
     Inventory,
@@ -69,6 +68,7 @@ from bzrlib.plugins.svn.errors import (
     AbsentPath,
     FileIdMapIncomplete,
     InvalidFileName,
+    TextChecksumMismatch,
     convert_svn_error,
     )
 from bzrlib.plugins.svn.fileids import (
@@ -574,7 +574,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
         if base_checksum is not None:
             actual_checksum = md5_strings(self.base_chunks)
             if base_checksum != actual_checksum:
-                raise VersionedFileInvalidChecksum("base checksum mismatch: %r != %r in %s (%s:%d)" % (base_checksum, actual_checksum, self.editor.revid, self.editor.revmeta.branch_path, self.editor.revmeta.revnum))
+                raise TextChecksumMismatch(base_checksum, actual_checksum, self.editor.revmeta.branch_path, self.editor.revmeta.revnum)
         self.chunks = []
         return apply_txdelta_handler_chunks(self.base_chunks, self.chunks)
 
@@ -594,7 +594,9 @@ class FileRevisionBuildEditor(FileBuildEditor):
         if checksum is not None:
             actual_checksum = md5sum.hexdigest()
             if checksum != actual_checksum:
-                raise VersionedFileInvalidChecksum("created checksum mismatch: %r != %r in %s (%s:%d)" % (checksum, actual_checksum, self.editor.revid, self.editor.revmeta.branch_path, self.editor.revmeta.revnum))
+                raise TextChecksumMismatch(checksum, actual_checksum,
+                        self.editor.revmeta.branch_path,
+                        self.editor.revmeta.revnum)
         text_revision = (self.editor._get_text_revision(self.path) or
                          self.editor.revid)
         text_parents = self.editor._get_text_parents(self.path)
