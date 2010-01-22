@@ -443,8 +443,10 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self.editor._get_text_revision(self.path) is not None):
             assert self.editor.revid is not None
 
-            self.new_ie.revision = self.editor._get_text_revision(self.path) or self.editor.revid
-            text_parents = self.editor._get_text_parents(self.path) or self.parent_revids
+            self.new_ie.revision = (self.editor._get_text_revision(self.path) 
+                                    or self.editor.revid)
+            text_parents = (self.editor._get_text_parents(self.path) or 
+                            self.parent_revids)
             self.editor.texts.insert_record_stream([
                 ChunkedContentFactory(
                 (self.new_id, self.new_ie.revision),
@@ -480,8 +482,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_path = None
             old_file_id = None
 
-        return DirectoryRevisionBuildEditor(self.editor, old_path, path, old_file_id, file_id,
-            self.new_id, [])
+        return DirectoryRevisionBuildEditor(self.editor, old_path, path,
+            old_file_id, file_id, self.new_id, [])
 
     def _open_directory(self, path, base_revnum):
         base_file_id = self.editor._get_old_id(self.old_id, path)
@@ -510,7 +512,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             if copyfrom_path is None:
                 old_path = self.editor.old_inventory.id2path(file_id)
             else:
-                assert copyfrom_path == self.editor.old_inventory.id2path(file_id)
+                if copyfrom_path != self.editor.old_inventory.id2path(file_id):
+                    raise AssertionError
                 # No need to rename if it's already in the right spot
                 old_path = copyfrom_path
         else:
@@ -574,7 +577,9 @@ class FileRevisionBuildEditor(FileBuildEditor):
         if base_checksum is not None:
             actual_checksum = md5_strings(self.base_chunks)
             if base_checksum != actual_checksum:
-                raise TextChecksumMismatch(base_checksum, actual_checksum, self.editor.revmeta.branch_path, self.editor.revmeta.revnum)
+                raise TextChecksumMismatch(base_checksum, actual_checksum,
+                    self.editor.revmeta.branch_path,
+                    self.editor.revmeta.revnum)
         self.chunks = []
         return apply_txdelta_handler_chunks(self.base_chunks, self.chunks)
 
@@ -608,8 +613,6 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
         if self.is_special is not None:
             self.is_symlink = (self.is_special and content_starts_with_link(cf))
-            cf = ChunkedContentFactory(file_key, parent_keys,
-                osutils.sha_string(""), [])
         elif content_starts_with_link(cf):
             # This file just might be a file that is svn:special but didn't
             # contain a symlink but does now
@@ -620,7 +623,6 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
         assert self.is_symlink in (True, False)
 
-        self.editor.texts.insert_record_stream([cf])
         self.editor._text_cache[file_key] = chunks
 
         if self.base_ie is not None and self.is_executable is None:
@@ -631,6 +633,8 @@ class FileRevisionBuildEditor(FileBuildEditor):
             ie.symlink_target = cf.get_bytes_as('fulltext')[len("link "):]
             if "\n" in ie.symlink_target:
                 raise AssertionError("bzr doesn't support newlines in symlink targets yet")
+            cf = ChunkedContentFactory(file_key, parent_keys,
+                osutils.sha_string(""), [])
             ie.text_sha1 = None
             ie.text_size = None
             ie.executable = False
@@ -641,9 +645,10 @@ class FileRevisionBuildEditor(FileBuildEditor):
             ie.text_size = text_size
             assert ie.text_size is not None
             ie.executable = self.is_executable
+        self.editor.texts.insert_record_stream([cf])
         ie.revision = text_revision
-        self.editor._inv_delta.append((self.old_path, self.path, self.file_id, ie))
-
+        self.editor._inv_delta.append((self.old_path, self.path, self.file_id,
+            ie))
         self.chunks = None
 
 
