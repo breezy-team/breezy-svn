@@ -263,7 +263,7 @@ branches = path/to/*/bla;path/to/trunk
 This would consider paths path/to/foo/bla, path/to/blie/bla and path/to/trunk
 branches, if they existed. The key used (203a...) is the UUID of the Subversion
 repository. The UUID for a repository can be found by running "svn info <url>"
-or "bzr info <url>".
+or "bzr info -v <url>".
 
 """
 

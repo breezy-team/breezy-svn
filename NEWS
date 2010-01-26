@@ -1,5 +1,10 @@
 bzr-svn	1.0.3					  UNRELEASED
 
+ BUG FIXES
+
+  * Mention correct command for obtaining repository UUID.
+    (Ralf Doering, #512876)
+
 bzr-svn 1.0.2					  2010-01-22
 
  BUG FIXES
