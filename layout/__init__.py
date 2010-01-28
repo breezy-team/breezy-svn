@@ -32,9 +32,6 @@ from bzrlib.plugins.svn.errors import NotSvnBranchPath, NoCustomBranchPaths
 class RepositoryLayout(object):
     """Describes a repository layout."""
 
-    def __init__(self):
-        pass
-
     def get_project_prefixes(self, project):
         return [project]
 
@@ -296,5 +293,7 @@ class RepositoryRegistry(registry.Registry):
 repository_registry = RepositoryRegistry()
 repository_registry.register_lazy("283d02a7-25f6-0310-bc7c-ecb5cbfe19da",
         "bzrlib.plugins.svn.layout.custom", "KDELayout")
+layout_registry.register_lazy("kde", "bzrlib.plugins.svn.layout.custom",
+        "KDELayout")
 repository_registry.register_lazy("13f79535-47bb-0310-9956-ffa450edef68",
         "bzrlib.plugins.svn.layout.custom", "ApacheLayout")
