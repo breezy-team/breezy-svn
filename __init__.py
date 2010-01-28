@@ -233,7 +233,6 @@ def update_stanza(rev, stanza):
         stanza.add("svn-uuid", revmeta.uuid)
     else:
         from bzrlib.plugins.svn.mapping import mapping_registry
-        from bzrlib.plugins.svn import errors as svn_errors
         try:
             (uuid, branch_path, revno), mapping = \
                 mapping_registry.parse_revision_id(rev.revision_id)
