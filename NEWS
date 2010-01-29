@@ -5,6 +5,9 @@ bzr-svn	1.0.3					  UNRELEASED
   * Mention correct command for obtaining repository UUID.
     (Ralf Doering, #512876)
 
+  * Support passwords specified in authentication.conf. 
+    (Jelmer Vernooij, #452121)
+
 bzr-svn 1.0.2					  2010-01-22
 
  BUG FIXES
