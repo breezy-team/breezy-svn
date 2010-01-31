@@ -97,7 +97,7 @@ class SvnRemoteAccess(BzrDir):
         self.svn_root_url = _transport.get_svn_repos_root()
         self.root_url = _transport.get_repos_root()
 
-        assert svn_url.startswith(self.svn_root_url)
+        assert svn_url.lower().startswith(self.svn_root_url.lower())
         self.branch_path = svn_url[len(self.svn_root_url):]
 
     def clone(self, url, revision_id=None, force_new_repo=False):

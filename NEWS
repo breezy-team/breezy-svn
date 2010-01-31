@@ -8,6 +8,9 @@ bzr-svn	1.0.3					  UNRELEASED
   * Support passwords specified in authentication.conf. 
     (Jelmer Vernooij, #452121)
 
+  * Cope with CodePlex.com lowercasing the hostname in returned
+    repository URLs. (Jelmer Vernooij)
+
 bzr-svn 1.0.2					  2010-01-22
 
  BUG FIXES
