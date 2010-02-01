@@ -76,7 +76,7 @@ def keyword_author(revid, rev, relpath, revmeta):
     """author of the last commit."""
     if revmeta is not None:
         return revmeta.get_revprops().get(properties.PROP_REVISION_AUTHOR, "")
-    return rev.committer
+    return rev.committer.encode("utf-8")
 
 
 def keyword_id(*args):
@@ -143,19 +143,21 @@ def expand_keywords(s, allowed_keywords, context=None, encoder=None):
             continue
         try:
             expansion = keywords[keyword](context.revision_id(),
-                context.revision(), context.relpath(),
+                context.revision(), context.relpath().encode("utf-8"),
                 getattr(context.revision(), "svn_meta", None))
         except AttributeError, err:
             if 'error' in debug.debug_flags:
                 trace.note("error evaluating %s for keyword %s: %s",
                     expansion, keyword, err)
             expansion = "(evaluation error)"
+        assert type(expansion) == str, "Expansion string not plain: %r" % expansion
         if '$' in expansion:
             # Expansion is not safe to be collapsed later
             expansion = "(value unsafe to expand)"
         if encoder is not None:
             expansion = encoder(expansion)
-        result += "$%s: %s $" % (keyword, expansion)
+        expanded = "$%s: %s $" % (keyword, expansion)
+        result += expanded
         rest = rest[match.end():]
     return result + rest
 

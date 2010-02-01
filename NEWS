@@ -11,6 +11,9 @@ bzr-svn	1.0.3					  UNRELEASED
   * Cope with CodePlex.com lowercasing the hostname in returned
     repository URLs. (Jelmer Vernooij)
 
+  * Cope with non-ascii characters in files with svn-keywords.
+    (Jelmer Vernooij, #515450)
+
 bzr-svn 1.0.2					  2010-01-22
 
  BUG FIXES
