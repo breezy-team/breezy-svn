@@ -110,7 +110,7 @@ def test_suite():
             'test_fetch',
             'test_fileids', 
             'test_keywords',
-            'test_layout',
+            'layout.test_layout',
             'test_logwalker',
             'test_mapping',
             'test_parents',
