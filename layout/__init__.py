@@ -192,6 +192,30 @@ def expand_branch_pattern(begin, todo, check_path, get_children, project=None):
     return ret
 
 
+class RootPathFinder(object):
+
+    def __init__(self, repository, revnum):
+        self.repository = repository
+        self.revnum = revnum
+
+    def check_path(self, path):
+        return self.repository.transport.check_path(path, self.revnum) == subvertpy.NODE_DIR
+
+    def find_children(self, path):
+        try:
+            assert not path.startswith("/")
+            dirents = self.repository.transport.get_dir(path, self.revnum, DIRENT_KIND|DIRENT_HAS_PROPS)[0]
+        except subvertpy.SubversionException, (msg, num):
+            if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
+                       subvertpy.ERR_FS_NOT_FOUND,
+                       subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
+                       ERR_RA_DAV_FORBIDDEN):
+                return None
+            raise
+        return [(d, dirents[d]['has_props']) for d in dirents if dirents[d]['kind'] == subvertpy.NODE_DIR]
+
+
+
 def get_root_paths(repository, itemlist, revnum, verify_fn, project=None, pb=None):
     """Find all the paths in the repository matching a list of items.
 
@@ -203,27 +227,15 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None, pb=Non
     :param pb: Optional progress bar.
     :return: Iterator over project, branch path, nick, has_props
     """
-    def check_path(path):
-        return repository.transport.check_path(path, revnum) == subvertpy.NODE_DIR
-    def find_children(path):
-        try:
-            assert not path.startswith("/")
-            dirents = repository.transport.get_dir(path, revnum, DIRENT_KIND|DIRENT_HAS_PROPS)[0]
-        except subvertpy.SubversionException, (msg, num):
-            if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
-                       subvertpy.ERR_FS_NOT_FOUND,
-                       subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
-                       ERR_RA_DAV_FORBIDDEN):
-                return None
-            raise
-        return [(d, dirents[d]['has_props']) for d in dirents if dirents[d]['kind'] == subvertpy.NODE_DIR]
+    rpf = RootPathFinder(repository, revnum)
 
     for idx, pattern in enumerate(itemlist):
         assert isinstance(pattern, str)
         if pb is not None:
             pb.update("finding branches", idx, len(itemlist))
-        for bp, has_props in expand_branch_pattern([], pattern.strip("/").split("/"), check_path,
-                find_children, project):
+        for bp, has_props in expand_branch_pattern([],
+                pattern.strip("/").split("/"), rpf.check_path,
+                rpf.find_children, project):
             if verify_fn(bp, project):
                 yield project, bp, bp.split("/")[-1], has_props
 
