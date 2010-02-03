@@ -17,6 +17,7 @@ from bzrlib import urlutils
 from bzrlib.plugins.svn import errors as svn_errors
 from bzrlib.plugins.svn.layout import (
     RepositoryLayout,
+    RootPathFinder,
     )
 from bzrlib.plugins.svn.layout.standard import (
     TrunkLayout,
@@ -110,6 +111,51 @@ class KDELayout(RepositoryLayout):
         ipath = "/".join(rest[cutoff:])
         return (kind, "/".join(projectpart), base+"/".join(projectpart[1:]), 
                 ipath)
+
+    def _children_helper(self, rpf, name, trunk=False):
+        if trunk:
+            return [("trunk", None)]
+        else:
+            return [(urlutils.join(name, subname), has_props) for (subname, has_props) in rpf.find_children(name)]
+
+    def _get_project_items(self, name, repository, revnum, project, pb, trunk=False):
+        ret = []
+        rpf = RootPathFinder(repository, revnum) 
+        children = self._children_helper(rpf, name, trunk)
+        for subpath, has_props in children:
+            cp = urlutils.join(subpath, project)
+            if rpf.check_path(cp):
+                ret.append((project, cp, urlutils.split(subpath)[-1], has_props))
+        return ret
+
+    def _get_all_items(self, name, repository, revnum, pb, trunk=False):
+        ret = []
+        rpf = RootPathFinder(repository, revnum) 
+        children = self._children_helper(rpf, name, trunk)
+        for subpath, _ in children:
+            for p, has_props in rpf.find_children(subpath):
+                pp = urlutils.join(subpath, p)
+                if p == "KDE":
+                    for kdep, has_props in rpf.find_children(pp):
+                        ret.append(("KDE/" + kdep, urlutils.join(pp, kdep), urlutils.split(subpath)[-1], has_props))
+                else:
+                    ret.append((p, pp, urlutils.split(subpath)[-1], has_props))
+        return ret
+
+    def _get_items(self, name, repository, revnum, project, pb, trunk=False):
+        if project is None:
+            return self._get_all_items(name, repository, revnum, pb, trunk)
+        else:
+            return self._get_project_items(name, repository, revnum, project, pb, trunk)
+
+    def get_branches(self, repository, revnum, project=None, pb=None):
+        return self._get_items("branches", repository, revnum,
+            project, pb, trunk=False) + self._get_items("trunk", repository,
+                revnum, project, pb, trunk=True)
+
+    def get_tags(self, repository, revnum, project=None, pb=None):
+        return self._get_items("tags", repository, revnum, project, pb,
+            trunk=False)
 
     def __str__(self):
         return "kde"
