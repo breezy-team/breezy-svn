@@ -28,7 +28,7 @@ class KDELayout(RepositoryLayout):
 
     def get_project_prefixes(self, project):
         sproject = project.strip("/").split("/")
-        return [urlutils.join("trunk", sproject[0]),
+        return [urlutils.join("trunk", project),
                 urlutils.join("branches", sproject[0]),
                 urlutils.join("tags", sproject[0])]
 
@@ -53,7 +53,11 @@ class KDELayout(RepositoryLayout):
                 return False
             candidate = spath[1:]
         elif spath[0] == kind:
-            candidate = [spath[1]] + spath[3:]
+            candidate = []
+            if len(spath) > 1:
+                candidate.append(spath[1])
+            if len(spath) > 2:
+                candidate += spath[3:]
         else:
             return False
         if len(candidate) == 0:
