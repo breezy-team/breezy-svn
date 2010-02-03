@@ -42,6 +42,8 @@ class KDELayout(RepositoryLayout):
 
     def _is_parent(self, path, project, kind):
         path = path.strip("/")
+        if path == "":
+            return True
         spath = path.strip("/").split("/")
         if len(spath) == 0:
             return True
