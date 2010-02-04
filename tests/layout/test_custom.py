@@ -17,6 +17,8 @@ from bzrlib.tests import (
     TestCase,
     )
 
+from bzrlib.plugins.svn import errors as svn_errors
+
 from bzrlib.plugins.svn.layout.custom import (
     KDELayout,
     )
@@ -56,3 +58,22 @@ class KDELayoutTests(TestCase):
         self.assertTrue(self.layout.is_branch_parent("branches/KDE"))
         self.assertFalse(self.layout.is_branch_parent("branches/some"))
 
+    def test_parse(self):
+        self.assertRaises(svn_errors.NotSvnBranchPath, 
+            self.layout.parse, "branches")
+        self.assertRaises(svn_errors.NotSvnBranchPath, 
+            self.layout.parse, "tags")
+        self.assertRaises(svn_errors.NotSvnBranchPath, 
+            self.layout.parse, "trunk")
+        self.assertRaises(svn_errors.NotSvnBranchPath, 
+            self.layout.parse, "branches/2.0")
+        self.assertRaises(svn_errors.NotSvnBranchPath, 
+            self.layout.parse, "branches/KDE/2.0")
+
+    def test_parse_kdebase(self):
+        self.assertEquals(("branch", "KDE/kdebase", "trunk/KDE/kdebase", ""),
+            self.layout.parse("trunk/KDE/kdebase"))
+        self.assertEquals(("branch", "KDE/kdebase", "branches/KDE/2.0/kdebase", ""),
+            self.layout.parse("branches/KDE/2.0/kdebase"))
+        self.assertEquals(("branch", "KDE/kdebase", "branches/KDE/2.0/kdebase", "foo"),
+            self.layout.parse("branches/KDE/2.0/kdebase/foo"))

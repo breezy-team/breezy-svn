@@ -91,29 +91,42 @@ class KDELayout(RepositoryLayout):
     def parse(self, path):
         pts = path.strip("/").split("/")
         if pts[0] == "trunk":
-            first = pts[1]
-            base = "trunk/%s" % (pts[1],)
+            try:
+                first = pts[1]
+            except IndexError:
+                raise svn_errors.NotSvnBranchPath(path, self)
+            name = "trunk"
             kind = "branch"
             rest = pts[2:]
         elif pts[0] == "branches":
-            first = pts[1]
-            base = "/".join(pts[:2])
+            # branches / FIRST / NAME / IPATH
+            try:
+                first = pts[1]
+                name = pts[2]
+                rest = pts[3:]
+            except IndexError:
+                raise svn_errors.NotSvnBranchPath(path, self)
             kind = "branch"
-            rest = pts[3:]
         elif pts[0] == "tags":
-            first = pts[1]
-            base = "/".join(pts[:2])
+            try:
+                first = pts[1]
+                name = pts[2]
+                rest = pts[3:]
+            except IndexError:
+                raise svn_errors.NotSvnBranchPath(path, self)
             kind = "tag"
-            rest = pts[3:]
         else:
             raise svn_errors.NotSvnBranchPath(path, self)
+        project = [first]
         if first == "KDE":
-            cutoff = 2
-        else:
-            cutoff = 1
-        projectpart = rest[:cutoff]
-        ipath = "/".join(rest[cutoff:])
-        return (kind, "/".join(projectpart), base+"/".join(projectpart[1:]), 
+            try:
+                project.append(rest[0])
+            except IndexError:        
+                raise svn_errors.NotSvnBranchPath(path, self)
+            else:
+                rest = rest[1:]
+        ipath = "/".join(rest)
+        return (kind, "/".join(project), path[:len(path)-len(ipath)].strip("/"), 
                 ipath)
 
     def _children_helper(self, rpf, name, trunk=False):
