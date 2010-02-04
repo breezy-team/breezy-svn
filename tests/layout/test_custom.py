@@ -77,3 +77,7 @@ class KDELayoutTests(TestCase):
             self.layout.parse("branches/KDE/2.0/kdebase"))
         self.assertEquals(("branch", "KDE/kdebase", "branches/KDE/2.0/kdebase", "foo"),
             self.layout.parse("branches/KDE/2.0/kdebase/foo"))
+
+    def test_get_tag_name(self):
+        self.assertEquals("mytag", self.layout.get_tag_name("tags/KDE/mytag/foo"))
+        self.assertEquals("bla", self.layout.get_tag_name("tags/k3b/bla"))

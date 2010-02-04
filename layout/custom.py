@@ -75,7 +75,7 @@ class KDELayout(RepositoryLayout):
     def get_tag_name(self, path, project=""):
         pts = path.strip("/").split("/")
         assert pts[0] == "tags"
-        return pts[1]
+        return pts[2]
 
     def push_merged_revisions(self, project=""):
         return False
