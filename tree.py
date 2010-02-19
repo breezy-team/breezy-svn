@@ -350,6 +350,9 @@ class FileTreeEditor(object):
 class SvnBasisTree(SubversionTree,RevisionTree):
     """Optimized version of SvnRevisionTree."""
 
+    def __repr__(self):
+        return "<%s for '%r'>" % (self.__class__.__name__, self.workingtree)
+
     def __init__(self, workingtree):
         mutter("opening basistree for %r at %d", 
                 workingtree, workingtree.base_revnum)
