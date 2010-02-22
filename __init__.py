@@ -117,7 +117,7 @@ def init_subvertpy():
     try:
         import subvertpy
     except ImportError, e:
-        raise DependencyNotPresent("subvertpy", "bzr-svn: %s" % e.message)
+        raise DependencyNotPresent("subvertpy", "bzr-svn: %s" % str(e))
 
     check_subversion_version()
 
