@@ -706,10 +706,11 @@ class RevisionBuildEditor(DeltaBuildEditor):
             basis_id = NULL_REVISION
             basis_inv = None
         present_parent_ids = self.target.has_revisions(rev.parent_ids)
-        rev.inventory_sha1, self.inventory = self.target.add_inventory_by_delta(basis_id,
-                  self._inv_delta, rev.revision_id,
-                  tuple([r for r in rev.parent_ids if r in present_parent_ids]),
-                  basis_inv)
+        rev.inventory_sha1, self.inventory = \
+            self.target.add_inventory_by_delta(basis_id, self._inv_delta,
+            rev.revision_id,
+            tuple([r for r in rev.parent_ids if r in present_parent_ids]),
+            basis_inv)
         self.target.add_revision(self.revid, rev)
 
         # Only fetch signature if it's cheap
@@ -1095,8 +1096,10 @@ class InterFromSvnRepository(InterRepository):
         self._text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE,
                                                   compute_size=chunks_to_size)
 
-        self._use_replay_range = self.source.transport.has_capability("partial-replay") and False
-        self._use_replay = self.source.transport.has_capability("partial-replay") and False
+        self._use_replay_range = self.source.transport.has_capability(
+            "partial-replay") and False
+        self._use_replay = self.source.transport.has_capability(
+            "partial-replay") and False
 
     def copy_content(self, revision_id=None, pb=None):
         """See InterRepository.copy_content."""
@@ -1113,6 +1116,8 @@ class InterFromSvnRepository(InterRepository):
         if self._prev_inv is not None and self._prev_inv.revision_id == revid:
             return self._prev_inv
         if "check" in debug.debug_flags:
+            # This uses 'assert' rather than raising AssertionError 
+            # intentionally, it's a fairly expensive check.
             assert self.target.has_revision(revid)
         return self.target.get_inventory(revid)
 
@@ -1133,8 +1138,10 @@ class InterFromSvnRepository(InterRepository):
                 revmeta, mapping, self._text_cache)
         except NoSuchRevision:
             lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
-            expected_lhs_parent_revid = revmeta.get_implicit_lhs_parent_revid(mapping)
-            if revmeta.get_stored_lhs_parent_revid(mapping) not in (None, expected_lhs_parent_revid):
+            expected_lhs_parent_revid = revmeta.get_implicit_lhs_parent_revid(
+                mapping)
+            if revmeta.get_stored_lhs_parent_revid(mapping) not in (
+                None, expected_lhs_parent_revid):
                 self._inconsistent_lhs_parent(revmeta.get_revision_id(mapping),
                     revmeta.get_stored_lhs_parent_revid(mapping),
                     expected_lhs_parent_revid)

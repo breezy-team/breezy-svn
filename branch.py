@@ -365,7 +365,8 @@ class SvnBranch(ForeignBranch):
     def set_revision_history(self, rev_history):
         """See Branch.set_revision_history()."""
         if (rev_history == [] or
-            not self.repository.has_revision(rev_history[-1], project=self.project)):
+            not self.repository.has_revision(rev_history[-1],
+                project=self.project)):
             raise NotImplementedError("set_revision_history can't add ghosts")
         rev = self.repository.get_revision(rev_history[-1])
         if rev.parent_ids:
@@ -789,8 +790,8 @@ class InterOtherSvnBranch(InterBranch):
 
     def update_revisions(self, stop_revision=None, overwrite=False, graph=None):
         """See Branch.update_revisions()."""
-        self._update_revisions(stop_revision=stop_revision, overwrite=overwrite,
-            graph=graph)
+        self._update_revisions(stop_revision=stop_revision,
+            overwrite=overwrite, graph=graph)
 
     def _target_is_empty(self, graph, revid):
         parent_revids = tuple(graph.get_parent_map([revid])[revid])
@@ -830,8 +831,8 @@ class InterOtherSvnBranch(InterBranch):
             ((self.target.repository.uuid, last_branch_path, last_revnum), self.target.mapping))
         return interrepo
 
-    def _update_revisions(self, stop_revision=None, overwrite=False, graph=None,
-        push_merged=False, override_svn_revprops=None):
+    def _update_revisions(self, stop_revision=None, overwrite=False,
+            graph=None, push_merged=False, override_svn_revprops=None):
         old_last_revid = self.target.last_revision()
         if stop_revision is None:
             stop_revision = ensure_null(self.source.last_revision())
@@ -849,9 +850,10 @@ class InterOtherSvnBranch(InterBranch):
             self.target.repository.has_revision(stop_revision)):
             # Revision is already present in the repository, so just
             # copy from there.
-            new_last_revid, new_foreign_info = create_branch_with_hidden_commit(
-                self.target.repository, self.target.get_branch_path(),
-                stop_revision, set_metadata=True, deletefirst=True)
+            new_last_revid, new_foreign_info = \
+                create_branch_with_hidden_commit(self.target.repository,
+                    self.target.get_branch_path(), stop_revision,
+                    set_metadata=True, deletefirst=True)
         else:
             interrepo = self._get_interrepo(graph)
             assert todo != []
@@ -908,8 +910,7 @@ class InterOtherSvnBranch(InterBranch):
             interrepo = InterFromSvnRepository(self.target.repository,
                                                self.source.repository)
             interrepo.fetch(revision_id=revid_map[rev.revision_id],
-                            mapping=self.target.mapping,
-                            project=self.target.project)
+                mapping=self.target.mapping, project=self.target.project)
             self.target._clear_cached_state()
             assert stop_revision in revid_map
             assert len(revid_map.keys()) > 0
