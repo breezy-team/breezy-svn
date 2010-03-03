@@ -19,6 +19,10 @@ bzr-svn	1.0.3					  UNRELEASED
 
   * Fix export in svn working copies. (Jelmer Vernooij, #524476)
 
+ FEATURES
+
+  * Support fetching a limited number of revisions. (Michael Hudson)
+
 bzr-svn 1.0.2					  2010-01-22
 
  BUG FIXES

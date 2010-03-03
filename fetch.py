@@ -1261,6 +1261,25 @@ class InterFromSvnRepository(InterRepository):
             return self._fetch_revisions_nochunks(needed, pb,
                 use_replay=self._use_replay)
 
+    def _get_needed(self, revision_id=None, fetch_spec=None, project=None,
+                    target_is_empty=False, pb=None, find_ghosts=False):
+        revisionfinder = FetchRevisionFinder(self.source, self.target,
+                                             target_is_empty)
+        if revision_id is not None:
+            foreign_revid, mapping = self.source.lookup_bzr_revision_id(
+                revision_id, project=project)
+            revisionfinder.find_until(foreign_revid, mapping,
+                                      find_ghosts=find_ghosts, pb=pb)
+        elif fetch_spec is not None:
+            for head in fetch_spec.heads:
+                foreign_revid, mapping = self.source.lookup_bzr_revision_id(
+                    head, project=project)
+                revisionfinder.find_until(foreign_revid, mapping,
+                    find_ghosts=find_ghosts, pb=pb)
+        else:
+            revisionfinder.find_all(self.source.get_mapping(), pb=pb)
+        return revisionfinder.get_missing()
+
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
               needed=None, mapping=None, project=None, fetch_spec=None):
         """Fetch revisions. """
@@ -1276,29 +1295,16 @@ class InterFromSvnRepository(InterRepository):
         # or self.target.add_inventory() each time
         self.target.lock_write()
         try:
-            nested_pb = ui.ui_factory.nested_progress_bar()
-            try:
-                # FIXME: Specify target_is_empt
-                target_is_empty = False
-                revisionfinder = FetchRevisionFinder(self.source, self.target,
-                                                     target_is_empty)
-                if needed is None:
-                    if revision_id is not None:
-                        foreign_revid, mapping = self.source.lookup_bzr_revision_id(revision_id, project=project)
-                        revisionfinder.find_until(foreign_revid,
-                            mapping, find_ghosts=find_ghosts,
-                            pb=nested_pb)
-                    elif fetch_spec is not None:
-                        for head in fetch_spec.heads:
-                            foreign_revid, mapping = self.source.lookup_bzr_revision_id(head, project=project)
-                            revisionfinder.find_until(foreign_revid,
-                                mapping, find_ghosts=find_ghosts,
-                                pb=nested_pb)
-                    else:
-                        revisionfinder.find_all(self.source.get_mapping(), pb=nested_pb)
-                    needed = revisionfinder.get_missing()
-            finally:
-                nested_pb.finished()
+            if needed is None:
+                nested_pb = ui.ui_factory.nested_progress_bar()
+                try:
+                    # FIXME: Specify target_is_empty
+                    needed = self._get_needed(target_is_empty=False,
+                        revision_id=revision_id, fetch_spec=fetch_spec,
+                        find_ghosts=find_ghosts, project=project,
+                        pb=nested_pb)
+                finally:
+                    nested_pb.finished()
 
             if len(needed) == 0:
                 # Nothing to fetch
@@ -1314,18 +1320,18 @@ class InterFromSvnRepository(InterRepository):
                 nested_pb = None
             try:
                 pack_hint = self._fetch_revisions(needed, pb)
-                if pack_hint is not None and self.target._format.pack_compresses:
+                if (pack_hint is not None and
+                    self.target._format.pack_compresses):
                     self.target.pack(hint=pack_hint)
             finally:
                 if nested_pb is not None:
                     nested_pb.finished()
-            if (revision_id is not None and
-                not self.target.has_revision(revision_id)):
-                # Apparently we could find the revision but it wasn't
-                # imported using the same mapping or perhaps
-                # revision_id was a mapped revision id and the revision
-                # itself was roundtripped.
-                raise NoSuchRevision(self.source, revision_id)
+            # Double check that we can actually find the revision that we 
+            # attempted to fetch.
+            # This uses 'assert' rather than raising AssertionError 
+            # intentionally, it's a fairly expensive check.
+            assert revision_id is None or self.target.has_revision(
+                revision_id)
         finally:
             self.target.unlock()
 
@@ -1336,7 +1342,6 @@ class InterFromSvnRepository(InterRepository):
         :param pb: Optional progress bar
         """
         self._prev_inv = None
-        currange = None
         activeranges = defaultdict(list)
         pb = ui.ui_factory.nested_progress_bar()
         try:

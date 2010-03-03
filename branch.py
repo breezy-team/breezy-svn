@@ -68,6 +68,7 @@ from bzrlib.plugins.svn import (
     util,
     )
 from bzrlib.plugins.svn.fetch import (
+    FetchRevisionFinder,
     InterFromSvnRepository,
     )
 from bzrlib.plugins.svn.push import (
@@ -683,24 +684,41 @@ class InterSvnOtherBranch(GenericInterBranch):
 
             # what's the current last revision, before we fetch [and
             # change it possibly]
-            last_rev = ensure_null(self.target.last_revision())
+            last_rev = self.target.last_revision()
             # we fetch here so that we don't process data twice in the
             # common case of having something to pull, and so that the
             # check for already merged can operate on the just fetched
             # graph, which will be cached in memory.
+            revisionfinder = FetchRevisionFinder(self.source.repository,
+                self.target.repository)
+            pb = ui.ui_factory.nested_progress_bar()
+            try:
+                revisionfinder.find_until(
+                    self.source.last_revmeta()[0].get_foreign_revid(),
+                    self.source.mapping,
+                    find_ghosts=False, pb=pb)
+            finally:
+                pb.finished()
             interrepo = InterFromSvnRepository(self.source.repository,
-                                               self.target.repository)
-            interrepo.fetch(stop_revision, project=self.source.project,
-                            mapping=self.source.mapping)
+                self.target.repository)
+            missing = revisionfinder.get_missing(limit=limit)
+            if limit is not None and len(missing) > 0:
+                stop_revision = missing[-1][0].get_revision_id(missing[-1][1])
+            interrepo.fetch(needed=missing,
+                project=self.source.project, mapping=self.source.mapping)
             # Check to see if one is an ancestor of the other
             if not overwrite:
                 if graph is None:
                     graph = self.target.repository.get_graph()
-                if self.target._check_if_descendant_or_diverged(
-                        stop_revision, last_rev, graph, self.source):
-                    # stop_revision is a descendant of last_rev, but we
-                    # aren't overwriting, so we're done.
-                    return self.target.last_revision_info()
+                self.target.lock_read()
+                try:
+                    if self.target._check_if_descendant_or_diverged(
+                            stop_revision, last_rev, graph, self.source):
+                        # stop_revision is a descendant of last_rev, but we
+                        # aren't overwriting, so we're done.
+                        return self.target.last_revision_info()
+                finally:
+                    self.target.unlock()
             self.target.generate_revision_history(stop_revision)
             return self.target.last_revision_info()
         finally:
