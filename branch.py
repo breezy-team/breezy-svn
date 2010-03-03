@@ -691,11 +691,15 @@ class InterSvnOtherBranch(GenericInterBranch):
             if not overwrite:
                 if graph is None:
                     graph = self.target.repository.get_graph()
-                if self.target._check_if_descendant_or_diverged(
-                        stop_revision, last_rev, graph, self.source):
-                    # stop_revision is a descendant of last_rev, but we
-                    # aren't overwriting, so we're done.
-                    return
+                self.target.lock_read()
+                try:
+                    if self.target._check_if_descendant_or_diverged(
+                            stop_revision, last_rev, graph, self.source):
+                        # stop_revision is a descendant of last_rev, but we
+                        # aren't overwriting, so we're done.
+                        return
+                finally:
+                    self.target.unlock()
             self.target.generate_revision_history(stop_revision)
         finally:
             self.source.unlock()
