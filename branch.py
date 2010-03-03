@@ -687,7 +687,8 @@ class InterSvnOtherBranch(GenericInterBranch):
             new_head = interrepo._fetch(
                 stop_revision, project=self.source.project,
                 mapping=self.source.mapping, limit=limit)
-            stop_revision = new_head[0].get_revision_id(new_head[1])
+            if new_head is not None:
+                stop_revision = new_head[0].get_revision_id(new_head[1])
             if not overwrite:
                 if graph is None:
                     graph = self.target.repository.get_graph()
