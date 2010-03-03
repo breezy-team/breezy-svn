@@ -1254,6 +1254,13 @@ class InterFromSvnRepository(InterRepository):
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
               needed=None, mapping=None, project=None, fetch_spec=None):
+        self._fetch(
+            revision_id, pb, find_ghosts, needed, mapping, project,
+            fetch_spec)
+
+    def _fetch(self, revision_id=None, pb=None, find_ghosts=False,
+              needed=None, mapping=None, project=None, fetch_spec=None,
+              limit=None):
         """Fetch revisions. """
         if revision_id == NULL_REVISION:
             return
@@ -1293,7 +1300,7 @@ class InterFromSvnRepository(InterRepository):
 
             if len(needed) == 0:
                 # Nothing to fetch
-                return
+                return None
 
             if pb:
                 pb.update("fetch phase", 1, 2)
@@ -1303,10 +1310,13 @@ class InterFromSvnRepository(InterRepository):
                 nested_pb = pb
             else:
                 nested_pb = None
+            if limit is not None:
+                needed = needed[:limit]
             try:
                 pack_hint = self._fetch_revisions(needed, pb)
                 if pack_hint is not None and self.target._format.pack_compresses:
                     self.target.pack(hint=pack_hint)
+                return needed[-1]
             finally:
                 if nested_pb is not None:
                     nested_pb.finished()
@@ -1327,7 +1337,6 @@ class InterFromSvnRepository(InterRepository):
         :param pb: Optional progress bar
         """
         self._prev_inv = None
-        currange = None
         activeranges = defaultdict(list)
         pb = ui.ui_factory.nested_progress_bar()
         try:

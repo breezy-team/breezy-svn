@@ -659,7 +659,12 @@ class InterSvnOtherBranch(GenericInterBranch):
        history browsing operations
     """
 
-    def update_revisions(self, stop_revision=None, overwrite=False, graph=None):
+    def update_revisions(self, stop_revision=None, overwrite=False,
+                         graph=None):
+        self._update_revisions(stop_revision, overwrite, graph)
+
+    def _update_revisions(self, stop_revision=None, overwrite=False,
+                         graph=None, limit=None):
         """See InterBranch.update_revisions()."""
         self.source.lock_read()
         try:
@@ -679,8 +684,11 @@ class InterSvnOtherBranch(GenericInterBranch):
             # graph, which will be cached in memory.
             interrepo = InterFromSvnRepository(self.source.repository,
                                                self.target.repository)
-            interrepo.fetch(stop_revision, project=self.source.project,
-                            mapping=self.source.mapping)
+            new_head = interrepo._fetch(
+                stop_revision, project=self.source.project,
+                mapping=self.source.mapping, limit=limit)
+            print new_head
+            #import pdb; pdb.set_trace()
             # Check to see if one is an ancestor of the other
             if not overwrite:
                 if graph is None:
@@ -707,7 +715,7 @@ class InterSvnOtherBranch(GenericInterBranch):
 
     def pull(self, overwrite=False, stop_revision=None,
              _hook_master=None, run_hooks=True, possible_transports=None,
-             _override_hook_target=None, local=False):
+             _override_hook_target=None, local=False, limit=None):
         """See InterBranch.pull()."""
         if local:
             raise LocalRequiresBoundBranch()
@@ -745,7 +753,7 @@ class InterSvnOtherBranch(GenericInterBranch):
             else:
                 result.new_revmeta = None
                 tags_until_revnum = self.source.repository.get_latest_revnum()
-            self.update_revisions(stop_revision, overwrite)
+            self._update_revisions(stop_revision, overwrite, limit=limit)
             (result.new_revno, result.new_revid) = \
                 self.target.last_revision_info()
             if self.source.supports_tags():
