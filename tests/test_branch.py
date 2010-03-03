@@ -317,20 +317,57 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.add_file('goo')
         dc.close()
 
-        return Branch.open(repos_url)
+        b = Branch.open(repos_url)
+        return b, b.repository.get_mapping()
 
     def test_interbranch_pull(self):
-        svn_branch = self.make_tworev_branch()
+        svn_branch, mapping = self.make_tworev_branch()
         bzrdir = self.make_bzrdir("b")
         new_branch = bzrdir._find_or_create_repository(True)
         new_branch = bzrdir.create_branch()
         uuid = svn_branch.repository.uuid
-        revid = svn_branch.repository.get_mapping().revision_id_foreign_to_bzr(
-            (uuid, '', 2))
-        interbranch = InterBranch.get(svn_branch, new_branch)
-        interbranch.pull()
-        self.assertEquals(revid, new_branch.last_revision())
+        revid2 = mapping.revision_id_foreign_to_bzr((uuid, '', 2))
+        inter_branch = InterBranch.get(svn_branch, new_branch)
+        inter_branch.pull()
+        self.assertEquals(revid2, new_branch.last_revision())
 
+    def test_interbranch_pull_noop(self):
+        svn_branch, mapping = self.make_tworev_branch()
+        bzrdir = self.make_bzrdir("b")
+        new_branch = bzrdir._find_or_create_repository(True)
+        new_branch = bzrdir.create_branch()
+        uuid = svn_branch.repository.uuid
+        revid2 = mapping.revision_id_foreign_to_bzr((uuid, '', 2))
+        inter_branch = InterBranch.get(svn_branch, new_branch)
+        inter_branch.pull()
+        # This is basically "assertNotRaises"
+        inter_branch.pull()
+        self.assertEquals(revid2, new_branch.last_revision())
+
+    def test_interbranch_pull_stop_revision(self):
+        svn_branch, mapping = self.make_tworev_branch()
+        bzrdir = self.make_bzrdir("b")
+        new_branch = bzrdir._find_or_create_repository(True)
+        new_branch = bzrdir.create_branch()
+        uuid = svn_branch.repository.uuid
+        revid1 = mapping.revision_id_foreign_to_bzr((uuid, '', 2))
+        inter_branch = InterBranch.get(svn_branch, new_branch)
+        inter_branch.pull(stop_revision=revid1)
+        self.assertEquals(revid1, new_branch.last_revision())
+
+    def test_interbranch_limited_pull(self):
+        svn_branch, mapping = self.make_tworev_branch()
+        bzrdir = self.make_bzrdir("b")
+        new_branch = bzrdir._find_or_create_repository(True)
+        new_branch = bzrdir.create_branch()
+        uuid = svn_branch.repository.uuid
+        revid1 = mapping.revision_id_foreign_to_bzr((uuid, '', 2))
+        revid2 = mapping.revision_id_foreign_to_bzr((uuid, '', 2))
+        inter_branch = InterBranch.get(svn_branch, new_branch)
+        inter_branch.pull(limit=1)
+        self.assertEquals(revid1, new_branch.last_revision())
+        inter_branch.pull(limit=1)
+        self.assertEquals(revid2, new_branch.last_revision())
 
     def test_get_branch_path_subdir(self):
         repos_url = self.make_repository("a")
