@@ -364,7 +364,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         revid1 = mapping.revision_id_foreign_to_bzr((uuid, '', 1))
         revid2 = mapping.revision_id_foreign_to_bzr((uuid, '', 2))
         inter_branch = InterBranch.get(svn_branch, new_branch)
-        inter_branch.pull(limit=1)
+        inter_branch.pull(limit=2)
         self.assertEquals(revid1, new_branch.last_revision())
         inter_branch.pull(limit=1)
         self.assertEquals(revid2, new_branch.last_revision())
