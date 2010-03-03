@@ -660,8 +660,18 @@ class InterSvnOtherBranch(GenericInterBranch):
        history browsing operations
     """
 
-    def update_revisions(self, stop_revision=None, overwrite=False, graph=None):
-        """See InterBranch.update_revisions()."""
+    def update_revisions(self, stop_revision=None, overwrite=False,
+                         graph=None):
+        self._update_revisions(stop_revision, overwrite, graph)
+
+    def _update_revisions(self, stop_revision=None, overwrite=False,
+            graph=None, limit=None):
+        """Like InterBranch.update_revisions, but with a few additional 
+            parameters.
+
+        :param limit: Optional maximum number of revisions to fetch
+        :return: Last revision
+        """
         self.source.lock_read()
         try:
             other_last_revision = self.source.last_revision()
@@ -669,7 +679,7 @@ class InterSvnOtherBranch(GenericInterBranch):
                 stop_revision = other_last_revision
                 if is_null(stop_revision):
                     # if there are no commits, we're done.
-                    return
+                    return self.target.last_revision_info()
 
             # what's the current last revision, before we fetch [and
             # change it possibly]
@@ -690,8 +700,9 @@ class InterSvnOtherBranch(GenericInterBranch):
                         stop_revision, last_rev, graph, self.source):
                     # stop_revision is a descendant of last_rev, but we
                     # aren't overwriting, so we're done.
-                    return
+                    return self.target.last_revision_info()
             self.target.generate_revision_history(stop_revision)
+            return self.target.last_revision_info()
         finally:
             self.source.unlock()
 
@@ -708,7 +719,7 @@ class InterSvnOtherBranch(GenericInterBranch):
 
     def pull(self, overwrite=False, stop_revision=None,
              _hook_master=None, run_hooks=True, possible_transports=None,
-             _override_hook_target=None, local=False):
+             _override_hook_target=None, local=False, limit=None):
         """See InterBranch.pull()."""
         if local:
             raise LocalRequiresBoundBranch()
@@ -746,9 +757,8 @@ class InterSvnOtherBranch(GenericInterBranch):
             else:
                 result.new_revmeta = None
                 tags_until_revnum = self.source.repository.get_latest_revnum()
-            self.update_revisions(stop_revision, overwrite)
-            (result.new_revno, result.new_revid) = \
-                self.target.last_revision_info()
+            (result.new_revno, result.new_revid) = self._update_revisions(
+                stop_revision, overwrite, limit=limit)
             if self.source.supports_tags():
                 if result.old_revid == result.new_revid:
                     # Upstream branch wasn't added but perhaps new tags were
