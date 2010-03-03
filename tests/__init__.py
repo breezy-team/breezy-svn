@@ -18,7 +18,7 @@
 
 import subvertpy.tests
 
-
+from bzrlib import osutils
 from bzrlib.bzrdir import (
     BzrDir,
     )
@@ -49,6 +49,8 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         subvertpy.tests.SubversionTestCase.setUp(self)
         subvertpy.tests.SubversionTestCase.tearDown(self)
         TestCaseInTempDir.setUp(self)
+        if type(self.test_dir) == unicode:
+            self.test_dir = self.test_dir.encode(osutils._fs_enc)
 
         try:
             from bzrlib.plugins.svn.cache import sqlitecache
