@@ -22,6 +22,7 @@ import subvertpy
 from bzrlib import urlutils
 from bzrlib.branch import (
     Branch,
+    InterBranch,
     )
 from bzrlib.bzrdir import (
     BzrDir,
@@ -304,6 +305,32 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals(result.master_branch, None)
         self.assertEquals(result.source_branch, otherbranch)
         self.assertEquals(result.target_branch, branch)
+
+
+    def make_tworev_branch(self):
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file('foo')
+        dc.close()
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file('goo')
+        dc.close()
+
+        return Branch.open(repos_url)
+
+    def test_interbranch_pull(self):
+        svn_branch = self.make_tworev_branch()
+        bzrdir = self.make_bzrdir("b")
+        new_branch = bzrdir._find_or_create_repository(True)
+        new_branch = bzrdir.create_branch()
+        uuid = svn_branch.repository.uuid
+        revid = svn_branch.repository.get_mapping().revision_id_foreign_to_bzr(
+            (uuid, '', 2))
+        interbranch = InterBranch.get(svn_branch, new_branch)
+        interbranch.pull()
+        self.assertEquals(revid, new_branch.last_revision())
+
 
     def test_get_branch_path_subdir(self):
         repos_url = self.make_repository("a")
