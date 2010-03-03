@@ -361,7 +361,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         new_branch = bzrdir._find_or_create_repository(True)
         new_branch = bzrdir.create_branch()
         uuid = svn_branch.repository.uuid
-        revid1 = mapping.revision_id_foreign_to_bzr((uuid, '', 2))
+        revid1 = mapping.revision_id_foreign_to_bzr((uuid, '', 1))
         revid2 = mapping.revision_id_foreign_to_bzr((uuid, '', 2))
         inter_branch = InterBranch.get(svn_branch, new_branch)
         inter_branch.pull(limit=1)
