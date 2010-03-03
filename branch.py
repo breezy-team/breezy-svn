@@ -967,7 +967,8 @@ class InterOtherSvnBranch(InterBranch):
 
     def pull(self, overwrite=False, stop_revision=None,
              _hook_master=None, run_hooks=True, possible_transports=None,
-             _push_merged=None, _override_svn_revprops=None, local=False):
+             _push_merged=None, _override_svn_revprops=None, local=False,
+             limit=None):
         """See InterBranch.pull()."""
         if local:
             raise LocalRequiresBoundBranch()

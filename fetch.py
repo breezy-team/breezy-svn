@@ -942,7 +942,7 @@ class FetchRevisionFinder(object):
     """Simple object that can gather a list of revmeta, mapping tuples
     to fetch."""
 
-    def __init__(self, source, target, target_is_empty):
+    def __init__(self, source, target, target_is_empty=False):
         self.source = source
         self.target = target
         self.target_is_empty = target_is_empty
@@ -951,9 +951,11 @@ class FetchRevisionFinder(object):
         self.extra = list()
         self._check_present_interval = 1
 
-    def get_missing(self):
+    def get_missing(self, limit=None):
         """Return the revisions that should be fetched, children before parents.
         """
+        if limit is not None:
+            return self.needed[:limit]
         return self.needed
 
     def check_revmetas(self, revmetas):
