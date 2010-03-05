@@ -19,6 +19,9 @@ bzr-svn	1.0.3					  UNRELEASED
 
   * Fix export in svn working copies. (Jelmer Vernooij, #524476)
 
+  * Fix use of authentication.conf for svn+http and svn+https. 
+    (Jelmer Vernooij, #532292)
+
  FEATURES
 
   * Support fetching a limited number of revisions. (Michael Hudson)

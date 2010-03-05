@@ -20,6 +20,7 @@ import stat
 import subvertpy
 from subvertpy import ra
 from unittest import TestCase
+import urlparse
 
 from bzrlib import urlutils
 from bzrlib.errors import (
@@ -230,3 +231,14 @@ class UrlConversionTest(TestCase):
     def test_url_join_unescaped_path(self):
         self.assertEquals("http://svn.gnome.org/svn/gtk%2B/trunk",
                 url_join_unescaped_path("http://svn.gnome.org/svn/", "gtk+/trunk"))
+
+
+class UrlSplitSvnPlus(TestCase):
+
+    def test_svn_plus_http(self):
+        self.assertEquals(
+            urlparse.SplitResult(scheme='svn+http',
+                netloc='foo.bar@host.com', path='/svn/trunk', query='',
+                fragment=''),
+            urlparse.urlsplit('svn+http://foo.bar@host.com/svn/trunk'))
+

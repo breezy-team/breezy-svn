@@ -23,6 +23,7 @@ from subvertpy import ERR_FS_NOT_DIRECTORY
 from subvertpy.client import get_config
 import sys
 import urlparse
+urlparse.uses_netloc.extend(['svn+http', 'svn+https'])
 import urllib
 
 import bzrlib
