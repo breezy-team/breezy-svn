@@ -741,7 +741,7 @@ class SvnRepository(ForeignRepository):
         assert revision_id != None
         return self.revision_tree(revision_id).inventory
 
-    def _iter_inventories(self, revision_ids):
+    def _iter_inventories(self, revision_ids, ordering):
         for revid in revision_ids:
             yield self.get_inventory(revid)
 
