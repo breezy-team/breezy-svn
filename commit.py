@@ -691,6 +691,15 @@ class SvnCommitBuilder(RootCommitBuilder):
                 return self.old_inv[file_id]
             return None
 
+    def _get_author(self):
+        try:
+            return ",".join(self._revprops["authors"].split("\n")).encode("utf-8")
+        except KeyError:
+            try:
+                return self._revprops["author"].encode("utf-8")
+            except KeyError:
+                return self._committer
+
     @convert_svn_error
     def commit(self, message):
         """Finish the commit.
@@ -838,7 +847,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 properties.PROP_REVISION_AUTHOR in self._override_svn_revprops):
                 new_revprops[properties.PROP_REVISION_AUTHOR] = self._committer.encode("utf-8")
             if "%s=author" % properties.PROP_REVISION_AUTHOR in self._override_svn_revprops:
-                new_revprops[properties.PROP_REVISION_AUTHOR] = ",".join(self.get_apparent_authors()).encode("utf-8")
+                new_revprops[properties.PROP_REVISION_AUTHOR] = self._get_author()
             if properties.PROP_REVISION_DATE in self._override_svn_revprops:
                 new_revprops[properties.PROP_REVISION_DATE] = properties.time_to_cstring(1000000*self._timestamp)
             set_svn_revprops(self.repository, result_revision, new_revprops)
