@@ -378,6 +378,9 @@ class BranchConfig(Config):
         """Get the user id from the 'email' key in the current section."""
         return self._get_user_option('email')
 
+    def _get_change_editor(self):
+        return self.get_user_option('change_editor')
+
     def set_user_option(self, name, value, store=STORE_LOCATION,
         warn_masked=False):
         if store == STORE_GLOBAL:

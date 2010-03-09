@@ -27,6 +27,9 @@ bzr-svn	1.0.3					  UNRELEASED
 
   * Fix use of svn:author=author. (Jelmer Vernooij, #527805)
 
+  * Provide BranchConfig._get_change_editor(). 
+    (Jelmer Vernooij, #530130)
+
  FEATURES
 
   * Support fetching a limited number of revisions. (Michael Hudson)
