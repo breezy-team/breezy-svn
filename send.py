@@ -31,6 +31,12 @@ from subvertpy import (
     )
 
 
+try:
+    BaseMergeDirective = merge_directive.BaseMergeDirective
+except AttributeError:
+    BaseMergeDirective = merge_directive._BaseMergeDirective
+
+
 class SvnDiffTree(_mod_diff.DiffTree):
     """Provides a text representation between two trees, formatted for svn."""
 
@@ -140,7 +146,7 @@ class SvnDiffTree(_mod_diff.DiffTree):
         return has_changes
 
 
-class SvnMergeDirective(merge_directive._BaseMergeDirective):
+class SvnMergeDirective(BaseMergeDirective):
 
     def to_lines(self):
         return self.patch.splitlines(True)
