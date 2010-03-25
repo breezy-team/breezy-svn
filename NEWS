@@ -2,6 +2,8 @@ bzr-svn	1.0.3					  UNRELEASED
 
  BUG FIXES
 
+  * Mark as compatible with Bazaar 2.2. (Jelmer Vernooij)
+
   * Mention correct command for obtaining repository UUID.
     (Ralf Doering, #512876)
 
