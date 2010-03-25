@@ -281,10 +281,8 @@ layout_registry = registry.Registry()
 layout_registry.register_lazy("root", "bzrlib.plugins.svn.layout.standard", "RootLayout")
 layout_registry.register_lazy("none", "bzrlib.plugins.svn.layout.standard", "RootLayout")
 layout_registry.register_lazy("trunk", "bzrlib.plugins.svn.layout.standard", "TrunkLayout0")
-layout_registry.register_lazy("trunk0", "bzrlib.plugins.svn.layout.standard", "TrunkLayout0")
-layout_registry.register_lazy("trunk1", "bzrlib.plugins.svn.layout.standard", "TrunkLayout1")
-layout_registry.register_lazy("trunk2", "bzrlib.plugins.svn.layout.standard", "TrunkLayout2")
-layout_registry.register_lazy("trunk3", "bzrlib.plugins.svn.layout.standard", "TrunkLayout3")
+for i in range(10):
+    layout_registry.register_lazy("trunk%d" % i, "bzrlib.plugins.svn.layout.standard", "TrunkLayout%d" % i)
 layout_registry.register_lazy("trunk-variable", "bzrlib.plugins.svn.layout.standard", "TrunkLayoutVariable")
 
 layout_registry.register_lazy("itrunk1", "bzrlib.plugins.svn.layout.standard",
