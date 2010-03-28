@@ -2,7 +2,7 @@ bzr-svn	1.0.3					  UNRELEASED
 
  BUG FIXES
 
-  * Mark as compatible with Bazaar 2.2. (Jelmer Vernooij)
+  * Mark as compatible with Bazaar 2.2. (Martin Pool)
 
   * Allow more levels of parent directories for trunk layouts.
     (Jelmer Vernooij, Debian #573988)
