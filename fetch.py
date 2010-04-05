@@ -851,12 +851,16 @@ class FileTreeDeltaBuildEditor(FileBuildEditor):
             entry_kind = 'file'
         if self.change_kind == 'add':
             if self.copyfrom_path is not None and self._get_map_id(self.path) is not None:
-                self.editor.delta.renamed.append((self.copyfrom_path, self.path, self.editor._get_new_id(self.path), entry_kind,
-                                                 text_changed, metadata_changed))
+                self.editor.delta.renamed.append((self.copyfrom_path, self.path,
+                    self.editor._get_new_id(self.path), entry_kind,
+                    text_changed, metadata_changed))
             else:
-                self.editor.delta.added.append((self.path, self.editor._get_new_id(self.path), entry_kind))
+                self.editor.delta.added.append((self.path,
+                    self.editor._get_new_id(self.path), entry_kind))
         else:
-            self.editor.delta.modified.append((self.path, self.editor._get_new_id(self.path), entry_kind, text_changed, metadata_changed))
+            self.editor.delta.modified.append((self.path,
+                self.editor._get_new_id(self.path), entry_kind, text_changed,
+                metadata_changed))
 
     def _apply_textdelta(self, base_checksum=None):
         self.base_checksum = None
@@ -1029,7 +1033,8 @@ class FetchRevisionFinder(object):
         # TODO: Do binary search to find first revision to fetch if
         # fetch_ghosts=False ?
         needs_checking = []
-        for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping=mapping):
+        for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(
+            branch_path, revnum, to_revnum=0, mapping=mapping):
             if pb:
                 pb.update("determining revisions to fetch",
                           revnum-revmeta.revnum, revnum)
@@ -1260,6 +1265,14 @@ class InterFromSvnRepository(InterRepository):
         return pack_hints
 
     def _fetch_revisions(self, needed, pb):
+        """Fetch a specified set of revisions.
+
+        ;param needed: Sequence of revision ids to fetch,
+            topo-sorted
+        :param pb: Progress bar to use for reporting 
+            progress
+        :return: Pack hint
+        """
         if self._use_replay_range:
             return self._fetch_revisions_chunks(needed, pb)
         else:
@@ -1268,6 +1281,19 @@ class InterFromSvnRepository(InterRepository):
 
     def _get_needed(self, revision_id=None, fetch_spec=None, project=None,
                     target_is_empty=False, pb=None, find_ghosts=False):
+        """Find the set of revisions that is missing. 
+
+        :note: revision_id and fetch_spec are mutually exclusive
+
+        :param revision_id: Optional target revision id
+        :param fetch_spec: Specifier describing the revisions to fetch
+        :param project: Project name as used by the repository layout, if applicable
+        :param target_is_empty: Whether the target is empty 
+            (aka: should has_revision be called)
+        :param pb: Optional progress bar to use.
+        :param find_ghosts: Whether to find ghosts
+        :return: Iterable over missing revision ids
+        """
         revisionfinder = FetchRevisionFinder(self.source, self.target,
                                              target_is_empty)
         if revision_id is not None:
