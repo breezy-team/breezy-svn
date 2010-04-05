@@ -669,6 +669,7 @@ def generate_text_revisions_property(text_revisions):
 
 
 class BzrSvnMappingFileProps(object):
+
     def __init__(self, name):
         self.name = name
 
@@ -747,11 +748,14 @@ class BzrSvnMappingFileProps(object):
         """
         # Bazaar Parents
         old = fileprops.get(SVN_PROP_BZR_ANCESTRY+self.name, "")
-        svnprops = { SVN_PROP_BZR_ANCESTRY+self.name: old + "\t".join(merges) + "\n" }
+        svnprops = {
+            SVN_PROP_BZR_ANCESTRY+self.name: old + "\t".join(merges) + "\n"
+            }
 
         return svnprops
 
-    def export_revision_fileprops(self, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_fileprops):
+    def export_revision_fileprops(self, timestamp, timezone, committer,
+        revprops, revision_id, revno, parent_ids, svn_fileprops):
 
         # Keep track of what Subversion properties to set later on
         svn_fileprops[SVN_PROP_BZR_REVISION_INFO] = generate_revision_metadata(
@@ -879,7 +883,8 @@ class BzrSvnMappingRevProps(object):
     def export_message_revprops(self, message, revprops):
         revprops[SVN_REVPROP_BZR_LOG] = message.encode("utf-8")
 
-    def export_revision_revprops(self, uuid, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
+    def export_revision_revprops(self, uuid, branch_root, timestamp, timezone,
+        committer, revprops, revision_id, revno, parent_ids, svn_revprops):
         svn_revprops[SVN_REVPROP_BZR_MAPPING_VERSION] = self.name
         if timestamp is not None:
             svn_revprops[SVN_REVPROP_BZR_TIMESTAMP] = format_highres_date(timestamp, timezone)
@@ -962,6 +967,11 @@ mapping_registry.set_default('v4')
 
 
 def find_mapping_revprops(revprops):
+    """Find a bzr<->svn mapping based on a set of revision properties.
+
+    :param revprops: Dictionary with revision properties
+    :return: BzrSvnMapping instance, or None if none found
+    """
     if SVN_REVPROP_BZR_MAPPING_VERSION in revprops:
         try:
             return mapping_registry.parse_mapping_name("svn-" + revprops[SVN_REVPROP_BZR_MAPPING_VERSION])
