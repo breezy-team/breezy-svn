@@ -40,6 +40,15 @@ except AttributeError:
 class SvnDiffTree(_mod_diff.DiffTree):
     """Provides a text representation between two trees, formatted for svn."""
 
+    def _get_repository(self):
+        try:
+            return self.old_tree.repository
+        except AttributeError:
+            try:
+                return self.new_tree.repository
+            except AttributeError:
+                return None
+
     def _get_svn_rev_info(self, tree, file_id):
         try:
             rev = tree.inventory[file_id].revision
@@ -47,11 +56,15 @@ class SvnDiffTree(_mod_diff.DiffTree):
             return '(revision 0)'
         if rev is None:
             return '(working copy)'
-        try:
-            info = self.repository.lookup_bzr_revision_id(rev)
-        except errors.NoSuchRevision:
-            return '(working copy)'
-        return '(revision %d)' % info[0][2]
+        repo = self._get_repository()
+        if repo is not None:
+            try:
+                info = repo.lookup_bzr_revision_id(rev)
+            except errors.NoSuchRevision:
+                pass
+            else:
+                return '(revision %d)' % info[0][2]
+        return '(working copy)'
 
     def _write_contents_diff(self, path, old_version, old_contents, new_version, new_contents):
         if path is None:
@@ -158,7 +171,6 @@ class SvnMergeDirective(BaseMergeDirective):
         s = StringIO()
         differ = SvnDiffTree.from_trees_options(tree_1, tree_2, s, 'utf8', None,
             '', '', None)
-        differ.repository = svn_repository
         differ.show_diff(None, None)
         return s.getvalue()
 

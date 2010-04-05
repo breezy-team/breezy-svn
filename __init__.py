@@ -252,6 +252,14 @@ from bzrlib.send import format_registry as send_format_registry
 send_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
                                    'send_svn', 'Subversion diff format')
 
+try:
+    from bzrlib.diff import format_registry as diff_format_registry
+except ImportError:
+    pass
+else:
+    diff_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
+            'SvnDiffTree', 'Subversion diff format')
+
 
 def test_suite():
     """Returns the testsuite for bzr-svn."""

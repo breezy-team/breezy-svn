@@ -41,6 +41,8 @@ bzr-svn	1.0.3					  UNRELEASED
 
   * Support fetching a limited number of revisions. (Michael Hudson)
 
+  * Support 'bzr diff --format=svn'. (Jelmer Vernooij, #555994)
+
 bzr-svn 1.0.2					  2010-01-22
 
  BUG FIXES
