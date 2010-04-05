@@ -544,7 +544,7 @@ class BzrSvnMapping(foreign.VcsMapping):
     def export_text_revisions_revprops(self, text_revisions, revprops):
         """Store a text revisions map.
 
-        :param text_parents: Text revision map
+        :param text_revisions: Text revision map
         :param revprops: Revision properties
         """
         raise NotImplementedError(self.export_text_revisions_revprops)
@@ -552,7 +552,7 @@ class BzrSvnMapping(foreign.VcsMapping):
     def export_text_revisions_fileprops(self, text_revisions, fileprops):
         """Store a text revisions map.
 
-        :param text_parents: Text revision map
+        :param text_revisions: Text revision map
         :param fileprops: File properties
         """
         raise NotImplementedError(self.export_text_revisions_fileprops)
