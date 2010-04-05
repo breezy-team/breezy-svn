@@ -417,13 +417,13 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         self._metadata_changed = False
         self._renew_fileids = renew_fileids
         self.new_ie = InventoryDirectory(self.new_id, urlutils.basename(self.path), parent_file_id)
-        if self.editor.old_inventory.has_id(self.new_id):
-            self.new_ie.revision = self.editor.old_inventory[self.new_id].revision
+        if self.editor.base_inventory.has_id(self.new_id):
+            self.new_ie.revision = self.editor.base_inventory[self.new_id].revision
 
     def _delete_entry(self, path, revnum):
         self.editor._explicitly_deleted.add(path)
         def rec_del(ie):
-            p = self.editor.old_inventory.id2path(ie.file_id)
+            p = self.editor.base_inventory.id2path(ie.file_id)
             if p in self.editor._deleted:
                 return
             self.editor._deleted.add(p)
@@ -433,12 +433,12 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                 return
             for c in ie.children.values():
                 rec_del(c)
-        rec_del(self.editor.old_inventory[self.editor._get_old_id(self.old_id, path)])
+        rec_del(self.editor.base_inventory[self.editor._get_old_id(self.old_id, path)])
 
     def _close(self):
-        if (not self.editor.old_inventory.has_id(self.new_id) or
+        if (not self.editor.base_inventory.has_id(self.new_id) or
             (self._metadata_changed and self.path != u"") or
-            self.new_ie != self.editor.old_inventory[self.new_id] or
+            self.new_ie != self.editor.base_inventory[self.new_id] or
             self.old_path != self.path or
             self.editor._get_text_revision(self.path) is not None):
             assert self.editor.revid is not None
@@ -458,7 +458,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # A bit expensive (O(d)), but this should be very rare
             delta_new_paths = set([e[1] for e in self.editor._inv_delta if e[1] is not None])
             exceptions = delta_new_paths.union(self.editor._explicitly_deleted)
-            for path in inventory_ancestors(self.editor.old_inventory, self._renew_fileids, exceptions):
+            for path in inventory_ancestors(self.editor.base_inventory, self._renew_fileids, exceptions):
                 if isinstance(path, str):
                     path = path.decode("utf-8")
                 self.editor._renew_fileid(path)
@@ -469,13 +469,13 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
     def _add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         file_id = self.editor._get_new_id(path)
 
-        if self.editor.old_inventory.has_id(file_id):
+        if self.editor.base_inventory.has_id(file_id):
             # This directory was moved here from somewhere else, but the
             # other location hasn't been removed yet.
             if copyfrom_path is None:
-                old_path = self.editor.old_inventory.id2path(file_id)
+                old_path = self.editor.base_inventory.id2path(file_id)
             else:
-                assert copyfrom_path == self.editor.old_inventory.id2path(file_id)
+                assert copyfrom_path == self.editor.base_inventory.id2path(file_id)
                 old_path = copyfrom_path
             old_file_id = file_id
         else:
@@ -487,7 +487,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _open_directory(self, path, base_revnum):
         base_file_id = self.editor._get_old_id(self.old_id, path)
-        base_revid = self.editor.old_inventory[base_file_id].revision
+        base_revid = self.editor.base_inventory[base_file_id].revision
         file_id = self.editor._get_existing_id(self.old_id, self.new_id, path)
         if file_id == base_file_id:
             file_parents = [base_revid]
@@ -506,13 +506,13 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         file_id = self.editor._get_new_id(path)
-        if self.editor.old_inventory.has_id(file_id):
+        if self.editor.base_inventory.has_id(file_id):
             # This file was moved here from somewhere else, but the
             # other location hasn't been removed yet.
             if copyfrom_path is None:
-                old_path = self.editor.old_inventory.id2path(file_id)
+                old_path = self.editor.base_inventory.id2path(file_id)
             else:
-                if copyfrom_path != self.editor.old_inventory.id2path(file_id):
+                if copyfrom_path != self.editor.base_inventory.id2path(file_id):
                     raise AssertionError
                 # No need to rename if it's already in the right spot
                 old_path = copyfrom_path
@@ -529,7 +529,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
     def _open_file(self, path, base_revnum):
         base_file_id = self.editor._get_old_id(self.old_id, path)
         file_id = self.editor._get_existing_id(self.old_id, self.new_id, path)
-        base_ie = self.editor.old_inventory[base_file_id]
+        base_ie = self.editor.base_inventory[base_file_id]
         is_symlink = (base_ie.kind == 'symlink')
         if file_id == base_file_id:
             file_parents = [base_ie.revision]
@@ -665,7 +665,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self._text_revids = None
         self._text_parents = None
         self._text_cache = text_cache
-        self.old_inventory = prev_inventory
+        self.base_inventory = prev_inventory
         self._inv_delta = []
         self._deleted = set()
         self._explicitly_deleted = set()
@@ -701,7 +701,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             rev.message, num_replaced = escape_invalid_chars(rev.message)
         try:
             basis_id = rev.parent_ids[0]
-            basis_inv = self.old_inventory
+            basis_inv = self.base_inventory
         except IndexError:
             basis_id = NULL_REVISION
             basis_inv = None
@@ -722,7 +722,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _open_root(self, base_revnum):
         assert self.revid is not None
 
-        if self.old_inventory.root is None:
+        if self.base_inventory.root is None:
             # First time the root is set
             base_file_id = None
             file_id = self._get_new_id(u"")
@@ -732,12 +732,12 @@ class RevisionBuildEditor(DeltaBuildEditor):
         else:
             # Just inherit file id from previous
             base_file_id = self._get_old_id(None, u"")
-            base_revid = self.old_inventory[base_file_id].revision
+            base_revid = self.base_inventory[base_file_id].revision
             file_id = self._get_existing_id(None, None, u"")
             if file_id == base_file_id:
                 file_parents = [base_revid]
                 renew_fileids = None
-                old_path = self.old_inventory.id2path(file_id)
+                old_path = self.base_inventory.id2path(file_id)
             else:
                 old_path = None
                 file_parents = []
@@ -751,8 +751,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _renew_fileid(self, path):
         """'renew' the fileid of a path."""
         assert isinstance(path, unicode)
-        old_file_id = self.old_inventory.path2id(path)
-        old_ie = self.old_inventory[old_file_id]
+        old_file_id = self.base_inventory.path2id(path)
+        old_ie = self.base_inventory[old_file_id]
         new_ie = old_ie.copy()
         new_ie.file_id = self._get_new_id(path)
         new_ie.parent_id = self._get_new_id(urlutils.split(path)[0])
@@ -787,20 +787,20 @@ class RevisionBuildEditor(DeltaBuildEditor):
         assert (isinstance(parent_id, str) or
                 (parent_id is None and old_path == ""))
         if old_path == "":
-            return self.old_inventory.root.file_id
+            return self.base_inventory.root.file_id
         basename = urlutils.basename(old_path)
-        parent_id_basename_index = getattr(self.old_inventory, "parent_id_basename_to_file_id", None)
+        parent_id_basename_index = getattr(self.base_inventory, "parent_id_basename_to_file_id", None)
         if parent_id_basename_index is None:
             try:
-                return self.old_inventory[parent_id].children[basename].file_id
+                return self.base_inventory[parent_id].children[basename].file_id
             except KeyError:
-                raise FileIdMapIncomplete(basename, self.old_inventory.id2path(parent_id), self.revmeta)
+                raise FileIdMapIncomplete(basename, self.base_inventory.id2path(parent_id), self.revmeta)
         else:
             ret = parent_id_basename_index.iteritems([(parent_id or '', basename.encode("utf-8"))])
             try:
                 return ret.next()[1]
             except IndexError:
-                raise FileIdMapIncomplete(basename, self.old_inventory.id2path(parent_id), self.revmeta)
+                raise FileIdMapIncomplete(basename, self.base_inventory.id2path(parent_id), self.revmeta)
 
     def _get_existing_id(self, old_parent_id, new_parent_id, path):
         assert isinstance(path, unicode)
