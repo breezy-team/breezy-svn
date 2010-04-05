@@ -647,17 +647,16 @@ class RevisionBuildEditor(DeltaBuildEditor):
     """Implementation of the Subversion commit editor interface that builds a
     Bazaar revision.
     """
-    def __init__(self, source, target, revid, base_inventory, revmeta, mapping,
+    def __init__(self, source, target, revid, parent_invs, revmeta, mapping,
                  text_cache):
         self.target = target
         self.source = source
         self.texts = target.texts
         self.revid = revid
         self._text_revids = None
-        self._text_parents = None
         self._text_cache = text_cache
-        self.base_inventory = base_inventory
-        self.parent_invs = [base_inventory] # FIXME: Other parent inventories
+        self.base_inventory = parent_invs[0]
+        self.parent_invs = parent_invs
         self._inv_delta = []
         self._deleted = set()
         self._explicitly_deleted = set()
@@ -1106,8 +1105,6 @@ class InterFromSvnRepository(InterRepository):
 
         :param revid: Revision id to use.
         """
-        if revid == NULL_REVISION:
-            return Inventory(root_id=None)
         if self._prev_inv is not None and self._prev_inv.revision_id == revid:
             return self._prev_inv
         if "check" in debug.debug_flags:
@@ -1124,12 +1121,25 @@ class InterFromSvnRepository(InterRepository):
             "%s.", revid, stored_lhs_parent_revid, found_lhs_parent_revid)
         self.fetch(found_lhs_parent_revid)
 
+    def _get_parent_inventories(self, revmeta, mapping):
+        parent_revids = revmeta.get_parent_ids(mapping)
+        if not parent_revids or tuple(parent_revids) == (NULL_REVISION,):
+            return [Inventory(root_id=None)]
+        # We always need the base inventory for the first parent
+        parent_invs = [self._get_inventory(parent_revids[0])]
+        for revid in parent_revids:
+            try:
+                parent_invs.append(self._get_inventory(revid))
+            except NoSuchRevision:
+                pass # Ghost
+        return parent_invs
+
     def _get_editor(self, revmeta, mapping):
         revid = revmeta.get_revision_id(mapping)
         assert revid is not None
         try:
             return RevisionBuildEditor(self.source, self.target, revid,
-                self._get_inventory(revmeta.get_lhs_parent_revid(mapping)),
+                self._get_parent_inventories(revmeta, mapping),
                 revmeta, mapping, self._text_cache)
         except NoSuchRevision:
             lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
