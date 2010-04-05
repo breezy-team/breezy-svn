@@ -45,6 +45,7 @@ from bzrlib import (
     urlutils,
     )
 from bzrlib.errors import (
+    NoSuchId,
     NoSuchRevision,
     )
 from bzrlib.inventory import (
@@ -407,13 +408,12 @@ class FileBuildEditor(object):
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def __init__(self, editor, old_path, path, old_id, new_id,
-            parent_file_id, parent_revids=[], renew_fileids=None):
+            parent_file_id, renew_fileids=None):
         super(DirectoryRevisionBuildEditor, self).__init__(editor, path)
         assert isinstance(new_id, str)
         self.old_id = old_id
         self.new_id = new_id
         self.old_path = old_path
-        self.parent_revids = parent_revids
         self._metadata_changed = False
         self._renew_fileids = renew_fileids
         self.new_ie = InventoryDirectory(self.new_id, urlutils.basename(self.path), parent_file_id)
@@ -445,8 +445,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
             self.new_ie.revision = (self.editor._get_text_revision(self.path) 
                                     or self.editor.revid)
-            text_parents = (self.editor._get_text_parents(self.path) or 
-                            self.parent_revids)
+            text_parents = self.editor._get_text_parents(self.new_id)
             self.editor.texts.insert_record_stream([
                 ChunkedContentFactory(
                 (self.new_id, self.new_ie.revision),
@@ -490,18 +489,16 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         base_revid = self.editor.base_inventory[base_file_id].revision
         file_id = self.editor._get_existing_id(self.old_id, self.new_id, path)
         if file_id == base_file_id:
-            file_parents = [base_revid]
             old_path = path
             renew_fileids = None
         else:
             old_path = None
-            file_parents = []
             self._delete_entry(path, base_revnum)
             # If a directory is replaced by a copy of itself, we need
             # to make sure all children get readded with a new file id
             renew_fileids = base_file_id
         return DirectoryRevisionBuildEditor(self.editor, old_path, path,
-            base_file_id, file_id, self.new_id, file_parents,
+            base_file_id, file_id, self.new_id, 
             renew_fileids=renew_fileids)
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
@@ -532,16 +529,13 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         base_ie = self.editor.base_inventory[base_file_id]
         is_symlink = (base_ie.kind == 'symlink')
         if file_id == base_file_id:
-            file_parents = [base_ie.revision]
             old_path = path
         else:
             # Replace with historical version
             old_path = None
-            file_parents = []
             self._delete_entry(path, base_revnum)
         return FileRevisionBuildEditor(self.editor, old_path, path, file_id,
-                                       self.new_id, base_ie, file_parents,
-                                       is_symlink=is_symlink)
+            self.new_id, base_ie, is_symlink=is_symlink)
 
 
 def content_starts_with_link(cf):
@@ -558,13 +552,12 @@ def content_starts_with_link(cf):
 class FileRevisionBuildEditor(FileBuildEditor):
 
     def __init__(self, editor, old_path, path, file_id, parent_file_id,
-                 base_ie, file_parents=[], is_symlink=False):
+                 base_ie, is_symlink=False):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
         self.old_path = old_path
         self.file_id = file_id
         # This should be the *chunks* of the file
         self.is_symlink = is_symlink
-        self.file_parents = file_parents
         self.base_ie = base_ie
         if self.base_ie is None:
             self.base_chunks = []
@@ -604,9 +597,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
                         self.editor.revmeta.revnum)
         text_revision = (self.editor._get_text_revision(self.path) or
                          self.editor.revid)
-        text_parents = self.editor._get_text_parents(self.path)
-        if text_parents is None:
-            text_parents = self.file_parents
+        text_parents = self.editor._get_text_parents(self.file_id)
         parent_keys = tuple([(self.file_id, revid) for revid in text_parents])
         file_key = (self.file_id, text_revision)
         cf = ChunkedContentFactory(file_key, parent_keys, text_sha1, chunks)
@@ -656,7 +647,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
     """Implementation of the Subversion commit editor interface that builds a
     Bazaar revision.
     """
-    def __init__(self, source, target, revid, prev_inventory, revmeta, mapping,
+    def __init__(self, source, target, revid, base_inventory, revmeta, mapping,
                  text_cache):
         self.target = target
         self.source = source
@@ -665,7 +656,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self._text_revids = None
         self._text_parents = None
         self._text_cache = text_cache
-        self.base_inventory = prev_inventory
+        self.base_inventory = base_inventory
+        self.parent_invs = [base_inventory] # FIXME: Other parent inventories
         self._inv_delta = []
         self._deleted = set()
         self._explicitly_deleted = set()
@@ -726,7 +718,6 @@ class RevisionBuildEditor(DeltaBuildEditor):
             # First time the root is set
             base_file_id = None
             file_id = self._get_new_id(u"")
-            file_parents = []
             renew_fileids = None
             old_path = None
         else:
@@ -735,18 +726,16 @@ class RevisionBuildEditor(DeltaBuildEditor):
             base_revid = self.base_inventory[base_file_id].revision
             file_id = self._get_existing_id(None, None, u"")
             if file_id == base_file_id:
-                file_parents = [base_revid]
                 renew_fileids = None
                 old_path = self.base_inventory.id2path(file_id)
             else:
                 old_path = None
-                file_parents = []
                 self._inv_delta.append((u"", None, base_file_id, None))
                 renew_fileids =  base_file_id
         assert isinstance(file_id, str)
 
         return DirectoryRevisionBuildEditor(self, old_path, u"", base_file_id,
-            file_id, None, file_parents, renew_fileids)
+            file_id, None, renew_fileids)
 
     def _renew_fileid(self, path):
         """'renew' the fileid of a path."""
@@ -830,11 +819,15 @@ class RevisionBuildEditor(DeltaBuildEditor):
             self._text_revids = self.revmeta.get_text_revisions(self.mapping)
         return self._text_revids.get(path)
 
-    def _get_text_parents(self, path):
-        assert isinstance(path, unicode)
-        if self._text_parents is None:
-            self._text_parents = self.revmeta.get_text_parents(self.mapping)
-        return self._text_parents.get(path)
+    def _get_text_parents(self, file_id):
+        assert isinstance(file_id, str)
+        ret = []
+        for inv in self.parent_invs:
+            try:
+                ret.append(inv[file_id].revision)
+            except NoSuchId:
+                pass
+        return ret
 
 
 class FileTreeDeltaBuildEditor(FileBuildEditor):
