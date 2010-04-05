@@ -77,9 +77,6 @@ from bzrlib.plugins.svn.transport import (
 from bzrlib.plugins.svn.util import (
     lazy_dict,
     )
-from bzrlib.plugins.svn.versionedfiles import (
-    SvnTexts,
-    )
 
 
 PROP_REVISION_ORIGINAL_DATE = getattr(properties, "PROP_REVISION_ORIGINAL_DATE", "svn:original-date")
@@ -431,7 +428,6 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.branch_path = branch_path
         self.push_metadata = push_metadata
         self._append_revisions_only = append_revisions_only
-        self._text_parents = {}
         self._texts = texts
 
         if override_svn_revprops is None:
@@ -611,8 +607,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                     self.old_inv.id2path(child_ie.file_id) != new_child_path or
                     self.old_inv[child_ie.file_id].revision != child_ie.revision or
                     self.old_inv[child_ie.file_id].parent_id != child_ie.parent_id):
-                    ret.append((child_ie.file_id, new_child_path, child_ie.revision,
-                        self._text_parents[child_ie.file_id]))
+                    ret.append((child_ie.file_id, new_child_path, child_ie.revision))
 
                 if (child_ie.kind == 'directory' and
                     new_child_path in self.visit_dirs):
@@ -620,25 +615,21 @@ class SvnCommitBuilder(RootCommitBuilder):
             return ret
 
         fileids = {}
-        text_parents = {}
         text_revisions = {}
         changes = []
 
         if (self.old_inv.root is None or
             new_root_id != self.old_inv.root.file_id):
-            changes.append((new_root_id, "", self._get_new_ie(new_root_id).revision, self._text_parents[new_root_id]))
+            changes.append((new_root_id, "", self._get_new_ie(new_root_id).revision))
 
         changes += _dir_process_file_id("", new_root_id)
 
-        # Find the "unusual" text revisions / parents
-        for id, path, revid, parents in changes:
+        # Find the "unusual" text revisions
+        for id, path, revid in changes:
             fileids[path] = id
             if revid is not None and revid != self.base_revid and revid != self._new_revision_id:
                 text_revisions[path] = revid
-            if ((id not in self.old_inv and parents != []) or
-                (id in self.old_inv and parents != [self.base_revid])):
-                text_parents[path] = parents
-        return (fileids, text_revisions, text_parents)
+        return (fileids, text_revisions)
 
     def _get_parents_tuples(self):
         """Retrieve (inventory, URL, base revnum) tuples for the parents of this commit.
@@ -720,14 +711,12 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._changed_fileprops = {}
 
         if self.push_metadata:
-            (fileids, text_revisions, text_parents) = self._determine_texts_identity(self.new_root_id)
+            (fileids, text_revisions) = self._determine_texts_identity(self.new_root_id)
             if self.set_custom_revprops:
                 self.mapping.export_text_revisions_revprops(text_revisions, self._svn_revprops)
-                self.mapping.export_text_parents_revprops(text_parents, self._svn_revprops)
                 self.mapping.export_fileid_map_revprops(fileids, self._svn_revprops)
             if self.set_custom_fileprops:
                 self.mapping.export_text_revisions_fileprops(text_revisions, self._svnprops)
-                self.mapping.export_text_parents_fileprops(text_parents, self._svnprops)
                 self.mapping.export_fileid_map_fileprops(fileids, self._svnprops)
         if self._config.get_log_strip_trailing_newline():
             if self.push_metadata:
@@ -951,31 +940,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             self._any_changes = True
             self._updated[file_id] = new_ie
             self._updated_children[new_parent_id].add(file_id)
-            self._text_parents[file_id] = self._get_text_parents(new_ie, parent_invs)
         self.new_inventory = None
-
-    def _get_text_parents(self, ie, parent_invs):
-        # TODO: This code is a bit hairy, it needs to be rewritten
-        if self._texts is None:
-            return [parent_inv[ie.file_id].revision for parent_inv in parent_invs if ie.file_id in parent_inv]
-        elif isinstance(self._texts, SvnTexts):
-            overridden_parents = self._texts._get_parent(ie.file_id, ie.revision)
-            if overridden_parents is None:
-                if ie.file_id in self.old_inv:
-                    return [self.old_inv[ie.file_id].revision]
-                else:
-                    return []
-            else:
-                return overridden_parents
-        else:
-            key = (ie.file_id, ie.revision)
-            parent_map = self._texts.get_parent_map([key])
-            if ie.parent_id is None and (not key in parent_map or parent_map[key] is None):
-                # non-rich-root repositories don't have a text for the root
-                return self.parents
-            else:
-                assert parent_map[key] is not None, "No parents found for %r" % (key,)
-                return [r[1] for r in parent_map[key]]
 
     def record_entry_contents(self, ie, parent_invs, path, tree,
                               content_summary):
@@ -996,7 +961,6 @@ class SvnCommitBuilder(RootCommitBuilder):
         """
         assert self._parent_invs is None or self._parent_invs == parent_invs
         self._parent_invs = parent_invs
-        self._text_parents[ie.file_id] = self._get_text_parents(ie, parent_invs)
         self.new_inventory.add(ie)
         assert (ie.file_id not in self.old_inv or
                 self.old_inv[ie.file_id].revision is not None)

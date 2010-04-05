@@ -714,13 +714,6 @@ class RevisionMetadata(object):
             mapping.import_text_revisions_revprops, {},
             self.consider_bzr_fileprops)
 
-    def get_text_parents(self, mapping):
-        """Return text revision override map for this revision."""
-        return self._import_from_props(mapping,
-            mapping.import_text_parents_fileprops,
-            mapping.import_text_parents_revprops, {},
-            self.consider_bzr_fileprops)
-
     def consider_bzr_revprops(self):
         """See if bzr revision properties should be checked at all.
 

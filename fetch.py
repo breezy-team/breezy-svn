@@ -649,17 +649,16 @@ class RevisionBuildEditor(DeltaBuildEditor):
     """Implementation of the Subversion commit editor interface that builds a
     Bazaar revision.
     """
-    def __init__(self, source, target, revid, base_tree, revmeta, mapping,
+    def __init__(self, source, target, revid, parent_trees, revmeta, mapping,
                  text_cache):
         self.target = target
         self.source = source
         self.texts = target.texts
         self.revid = revid
         self._text_revids = None
-        self._text_parents = None
         self._text_cache = text_cache
-        self.base_tree = base_tree
-        self.parent_invs = [base_tree.inventory] # FIXME: Other parent inventories
+        self.base_tree = parent_trees[0]
+        self.parent_trees = parent_trees
         self._inv_delta = []
         self._deleted = set()
         self._explicitly_deleted = set()
@@ -824,9 +823,9 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _get_text_parents(self, file_id):
         assert isinstance(file_id, str)
         ret = []
-        for inv in self.parent_invs:
+        for tree in self.parent_trees:
             try:
-                ret.append(inv[file_id].revision)
+                ret.append(tree.inventory[file_id].revision)
             except NoSuchId:
                 pass
         return ret
@@ -1124,12 +1123,25 @@ class InterFromSvnRepository(InterRepository):
             "%s.", revid, stored_lhs_parent_revid, found_lhs_parent_revid)
         self.fetch(found_lhs_parent_revid)
 
+    def _get_parent_trees(self, revmeta, mapping):
+        parent_revids = revmeta.get_parent_ids(mapping)
+        if not parent_revids:
+            parent_revids = (NULL_REVISION,)
+        # We always need the base inventory for the first parent
+        parent_trees = [self.target.revision_tree(parent_revids[0])]
+        for revid in parent_revids:
+            try:
+                parent_trees.append(self.target.revision_tree(revid))
+            except NoSuchRevision:
+                pass # Ghost
+        return parent_trees
+
     def _get_editor(self, revmeta, mapping):
         revid = revmeta.get_revision_id(mapping)
         assert revid is not None
         try:
             return RevisionBuildEditor(self.source, self.target, revid,
-                self._get_tree(revmeta.get_lhs_parent_revid(mapping)),
+                self._get_parent_trees(revmeta, mapping),
                 revmeta, mapping, self._text_cache)
         except NoSuchRevision:
             lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)

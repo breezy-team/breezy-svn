@@ -35,6 +35,8 @@ bzr-svn	1.0.3					  UNRELEASED
   * Provide BranchConfig._get_change_editor(). 
     (Jelmer Vernooij, #530130)
 
+  * Simplify handling of text parents. (Jelmer Vernooij)
+
  FEATURES
 
   * Support fetching a limited number of revisions. (Michael Hudson)
