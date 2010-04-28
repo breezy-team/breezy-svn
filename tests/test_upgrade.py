@@ -54,9 +54,9 @@ def import_upgrade():
     try:
         from bzrlib.plugins.rebase import upgrade
     except IncompatibleAPI, e:
-        raise TestSkipped(e)
+        raise TestSkipped(str(e))
     except ImportError, e:
-        raise TestSkipped(e)
+        raise TestSkipped(str(e))
     return upgrade
 
 
