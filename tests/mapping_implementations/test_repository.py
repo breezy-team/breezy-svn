@@ -15,14 +15,12 @@
 
 from bzrlib import urlutils
 from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir, format_registry
-from bzrlib.config import GlobalConfig
-from bzrlib.errors import NoSuchRevision, UninitializableFormat
+from bzrlib.bzrdir import BzrDir
+from bzrlib.errors import NoSuchRevision
 from bzrlib.inventory import Inventory
-from bzrlib.osutils import has_symlinks
 from bzrlib.repository import Repository
 from bzrlib.revision import NULL_REVISION
-from bzrlib.tests import TestCase, TestSkipped, TestNotApplicable
+from bzrlib.tests import TestSkipped, TestNotApplicable
 
 from bzrlib.plugins.svn import errors as svn_errors, format
 from subvertpy import ra

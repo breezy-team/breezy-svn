@@ -1032,7 +1032,7 @@ foohosts""")
         newdir = olddir.sprout('dc')
         newdir.find_repository().get_revision(
                 newdir.open_branch().last_revision())
-        newdir.find_repository().get_revision_inventory(
+        newdir.find_repository().get_inventory(
                 newdir.open_branch().last_revision())
 
 
@@ -1057,7 +1057,7 @@ class BranchFormatTests(TestCase):
 class ForeignTestsBranchFactory(object):
 
     def make_empty_branch(self, transport):
-        raise TestSkipped
+        raise TestSkipped()
 
     def make_branch(self, transport):
         subvertpy.repos.create(transport.local_abspath("."))

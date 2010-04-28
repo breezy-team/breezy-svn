@@ -933,7 +933,8 @@ def report_inventory_contents(reporter, revnum, start_empty):
     except:
         reporter.abort()
         raise
-    reporter.finish()
+    else:
+        reporter.finish()
 
 
 class FetchRevisionFinder(object):
