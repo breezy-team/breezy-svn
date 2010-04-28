@@ -204,10 +204,10 @@ class SubversionKeywordContentFilter(ContentFilter):
 def create_svn_keywords_filter(value):
     if not value:
         return
-    keywords = value.split(" ")
-    for k in keywords:
+    kws = value.split(" ")
+    for k in kws:
         if not k in keywords:
             raise BzrError("Unknown svn keyword %s" % k)
-    if keywords == []:
+    if kws == []:
         return []
-    return [SubversionKeywordContentFilter(keywords)]
+    return [SubversionKeywordContentFilter(kws)]
