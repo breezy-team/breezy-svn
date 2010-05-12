@@ -19,17 +19,12 @@
 
 
 from bzrlib import (
+    errors,
     trace,
     )
 from bzrlib.bzrdir import (
     BzrDirFormat,
     BzrDir,
-    )
-from bzrlib.errors import (
-    AlreadyBranchError,
-    NotBranchError,
-    NotLocalUrl,
-    NoWorkingTree,
     )
 from bzrlib.revision import (
     NULL_REVISION,
@@ -153,7 +148,7 @@ class SvnRemoteAccess(BzrDir):
         BzrDir can not be associated with working trees.
         """
         # Working trees never exist on remote Subversion repositories
-        raise NoWorkingTree(self.root_transport.base)
+        raise errors.NoWorkingTree(self.root_transport.base)
 
     def create_workingtree(self, revision_id=None, hardlink=None):
         """See BzrDir.create_workingtree().
@@ -161,7 +156,7 @@ class SvnRemoteAccess(BzrDir):
         Will always raise NotLocalUrl as this
         BzrDir can not be associated with working trees.
         """
-        raise NotLocalUrl(self.root_transport.base)
+        raise errors.NotLocalUrl(self.root_transport.base)
 
     def needs_format_conversion(self, format=None):
         """See BzrDir.needs_format_conversion()."""
@@ -194,9 +189,9 @@ class SvnRemoteAccess(BzrDir):
                 try:
                     (type, project, _, ip) = layout.parse(target_branch_path)
                 except NotSvnBranchPath:
-                    raise NotBranchError(target_branch_path)
+                    raise errors.NotBranchError(target_branch_path)
                 if type not in ('branch', 'tag') or ip != '':
-                    raise NotBranchError(target_branch_path)
+                    raise errors.NotBranchError(target_branch_path)
                 inter.push_new_branch(layout, project, target_branch_path,
                         stop_revision,
                         override_svn_revprops=_override_svn_revprops,
@@ -217,14 +212,16 @@ class SvnRemoteAccess(BzrDir):
             repos.transport.mkdir(self.branch_path.strip("/"))
         elif repos.get_latest_revnum() > 0:
             # Bail out if there are already revisions in this repository
-            raise AlreadyBranchError(self.root_transport.base)
+            raise errors.AlreadyBranchError(self.root_transport.base)
         branch = SvnBranch(repos, self.branch_path)
         branch.bzrdir = self
         return branch
 
-    def open_branch(self, unsupported=True, ignore_fallbacks=False):
+    def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
         """See BzrDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
+        if name is not None:
+            raise errors.NoColocatedBranchSupport(self)
         repos = self.find_repository()
         branch = SvnBranch(repos, self.branch_path)
         branch.bzrdir = self
@@ -253,7 +250,7 @@ class SvnRemoteAccess(BzrDir):
                     overwrite=overwrite)
             finally:
                 target_branch.unlock()
-        except NotBranchError:
+        except errors.NotBranchError:
             ret.target_branch_path = "/%s" % self.branch_path.lstrip("/")
             if create_prefix:
                 self.root_transport.create_prefix()
