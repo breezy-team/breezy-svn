@@ -118,6 +118,26 @@ class SubversionSourcePullResult(PullResult):
         self._show_tag_conficts(to_file)
 
 
+class SubversionWriteLock(object):
+    """A (dummy) write lock on a Subversion object."""
+
+    def __init__(self, unlock):
+        self.unlock = unlock
+
+    def __repr__(self):
+        return "<%s>" % self.__class__.__name__
+
+
+class SubversionReadLock(object):
+    """A (dummy) read lock on a Subversion object."""
+
+    def __init__(self, unlock):
+        self.unlock = unlock
+
+    def __repr__(self):
+        return "<%s>" % self.__class__.__name__
+
+
 class SubversionTargetBranchPushResult(BranchPushResult):
     """Subversion target branch push result."""
 
@@ -560,6 +580,7 @@ class SvnBranch(ForeignBranch):
             self._lock_mode = 'w'
             self._lock_count = 1
         self.repository.lock_write()
+        return SubversionWriteLock(self.unlock)
 
     def lock_read(self):
         """See Branch.lock_read()."""
@@ -570,6 +591,7 @@ class SvnBranch(ForeignBranch):
             self._lock_mode = 'r'
             self._lock_count = 1
         self.repository.lock_read()
+        return SubversionReadLock(self.unlock)
 
     def unlock(self):
         """See Branch.unlock()."""
