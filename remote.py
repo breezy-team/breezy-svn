@@ -217,7 +217,7 @@ class SvnRemoteAccess(BzrDir):
         branch.bzrdir = self
         return branch
 
-    def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
+    def open_branch(self, unsupported=True, name=None, ignore_fallbacks=False):
         """See BzrDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         if name is not None:
