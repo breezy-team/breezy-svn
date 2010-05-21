@@ -558,7 +558,6 @@ class FileRevisionBuildEditor(FileBuildEditor):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
         self.old_path = old_path
         self.file_id = file_id
-        # This should be the *chunks* of the file
         self.is_symlink = is_symlink
         self.base_ie = base_ie
         if self.base_ie is None:

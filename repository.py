@@ -210,7 +210,6 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         self.inconsistent_stored_lhs_parent = 0
         self.invalid_fileprop_cnt = 0
         self.text_revision_in_parents_cnt = 0
-        self.text_not_changed_cnt = 0
         self.paths_not_under_branch_root = 0
         self.different_uuid_cnt = 0
         self.multiple_mappings_cnt = 0
@@ -235,9 +234,6 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         if self.invalid_fileprop_cnt > 0:
             note('%6d invalid bzr-related file properties', 
                  self.invalid_fileprop_cnt)
-        if self.text_not_changed_cnt > 0:
-            note('%6d files were not changed but had their revision/fileid changed',
-                 self.text_not_changed_cnt)
         if self.paths_not_under_branch_root > 0:
             note('%6d files were modified that were not under the branch root',
                  self.paths_not_under_branch_root)
@@ -320,26 +316,12 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
     def check_texts(self, revmeta, mapping):
         # Check for inconsistencies in text file ids/revisions
         text_revisions = revmeta.get_text_revisions(mapping)
-        text_parents = revmeta.get_text_parents(mapping)
         text_ids = revmeta.get_fileid_overrides(mapping)
         fileid_map = self.repository.get_fileid_map(revmeta, mapping)
         path_changes = revmeta.get_paths()
-        for path in set(text_ids.keys() + text_revisions.keys() + text_parents.keys()):
-            if (path in text_revisions and
-                text_revisions[path] in text_parents.get(path, [])):
-                self.text_revision_in_parents_cnt += 1
+        for path in set(text_ids.keys() + text_revisions.keys()):
             full_path = urlutils.join(revmeta.branch_path, path)
-            if not full_path in path_changes:
-                mutter('in %s text %r/%r (%r) id changed but not changed', 
-                       revmeta.get_revision_id(mapping),
-                       text_ids.get(path), text_revisions.get(path),
-                       text_parents.get(path))
-                self.text_not_changed_cnt += 1
-                continue
             # TODO Check consistency against parent data 
-        for path, tps in text_parents.iteritems():
-            if len(tps) > len(revmeta.get_parent_ids(mapping)):
-                self.invalid_text_parents_len += 1
         ghost_parents = False
         parent_revmetas = []
         parent_mappings = []

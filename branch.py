@@ -192,6 +192,7 @@ class SvnBranch(ForeignBranch):
         :param _skip_check: If True, don't check if the branch actually exists.
         """
         self.repository = repository
+        self.bzrdir = repository.bzrdir
         self._format = SvnBranchFormat()
         self.layout = self.repository.get_layout()
         assert isinstance(self.repository, SvnRepository)
