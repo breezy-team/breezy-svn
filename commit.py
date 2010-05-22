@@ -853,7 +853,9 @@ class SvnCommitBuilder(RootCommitBuilder):
                 )
         revid = self.revmeta.get_revision_id(self.mapping)
 
-        assert not self.push_metadata or self._new_revision_id is None or self._new_revision_id == revid
+        if self.push_metadata and self._new_revision_id not in (revid, None):
+            raise AssertionError("Unexpected revision id %s != %s" % 
+                    (revid, self._new_revision_id))
         return revid
 
     def _visit_parent_dirs(self, path):
