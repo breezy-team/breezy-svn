@@ -52,7 +52,6 @@ from bzrlib.revision import (
     ensure_null,
     )
 from bzrlib.trace import (
-    mutter,
     note,
     )
 from bzrlib.transport import (
@@ -664,7 +663,7 @@ class SvnRepository(ForeignRepository):
         return self._layout, self._layout_source
 
     def _find_guessed_layout(self):
-        # TODO: Retrieve guessed-layout from config and see if it accepts self._hinted_branch_path
+        # Retrieve guessed-layout from config and see if it accepts self._hinted_branch_path
         layoutname = self.get_config().get_guessed_layout()
         if layoutname is not None:
             config_guessed_layout = layout.layout_registry.get(layoutname)()
@@ -675,6 +674,7 @@ class SvnRepository(ForeignRepository):
                 return
         else:
             config_guessed_layout = None
+        # No guessed layout stored yet or it doesn't accept self._hinted_branch_path
         revnum = self.get_latest_revnum()
         (self._guessed_layout, self._guessed_appropriate_layout) = repository_guess_layout(self, 
                     revnum, self._hinted_branch_path)
