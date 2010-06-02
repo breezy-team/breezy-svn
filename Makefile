@@ -24,7 +24,7 @@ PYDOCTOR ?= pydoctor
 CTAGS ?= ctags
 PYLINT ?= pylint
 RST2HTML ?= $(if $(shell which rst2html.py 2>/dev/null), rst2html.py, rst2html)
-TESTS ?= bzrlib.tests.per_foreign_vcs.*Subversion bzrlib.plugins.svn
+TESTS ?= -s bp.svn
 DESTDIR ?=
 
 REST_DOCS = README FAQ AUTHORS
