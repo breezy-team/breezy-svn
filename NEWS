@@ -42,6 +42,8 @@ bzr-svn	1.0.3					  UNRELEASED
   * Support fetching a limited number of revisions. (Michael Hudson)
 
   * Support 'bzr diff --format=svn'. (Jelmer Vernooij, #555994)
+  
+  * Warn about broken server when accessing codeplex. (Jelmer Vernooij)
 
  COMPATIBILITY
 

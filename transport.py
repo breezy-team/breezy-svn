@@ -44,6 +44,7 @@ from bzrlib.errors import (
     )
 from bzrlib.trace import (
     mutter,
+    warning,
     )
 from bzrlib.transport import (
     Transport,
@@ -83,6 +84,7 @@ def get_test_permutations():
 
 
 def dav_options(transport, url):
+    # FIXME: Integrate this into HttpTransport.options().
     from bzrlib.transport.http._urllib import HttpTransport_urllib, Request
     if isinstance(transport, HttpTransport_urllib):
         req = Request('OPTIONS', url, accepted_errors=[200, 403, 404, 405])
@@ -120,6 +122,15 @@ def dav_options(transport, url):
                 headers = transport._parse_headers(header)
                 return headers.getheaders('DAV')
     raise NotImplementedError
+
+
+_warned_codeplex = False
+def warn_codeplex(host):
+    global _warned_codeplex
+    if not _warned_codeplex:
+        warning("Please note %s is hosted on Codeplex which runs a broken "
+                "Subversion server." % host)
+        _warned_codeplex = True
 
 
 def get_svn_ra_transport(bzr_transport):
@@ -334,6 +345,9 @@ class SvnRaTransport(Transport):
         bzr_url = url
         self.svn_url = bzr_to_svn_url(url)
         Transport.__init__(self, bzr_url)
+        host = urlutils.parse_url(bzr_url)[3]
+        if host.endswith(".codeplex.com"):
+            warn_codeplex(host)
         if from_transport is None:
             self.connections = ConnectionPool(bzr_url)
             if credentials is not None:
