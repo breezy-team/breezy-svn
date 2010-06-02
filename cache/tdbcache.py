@@ -25,14 +25,11 @@ except AttributeError:
     raise ImportError("tdb is out of date: doesn't have a Tdb.get attribute")
 
 from bzrlib import (
+    bencode,
     debug,
     errors,
     trace,
     )
-try:
-    from bzrlib import bencode
-except ImportError:
-    from bzrlib.util import bencode
 
 from bzrlib.plugins.svn.cache import (
     RepositoryCache,

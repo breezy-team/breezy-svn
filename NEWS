@@ -43,6 +43,10 @@ bzr-svn	1.0.3					  UNRELEASED
 
   * Support 'bzr diff --format=svn'. (Jelmer Vernooij, #555994)
 
+ COMPATIBILITY
+
+  * Drop support for Bazaar < 2.2. (Jelmer Vernooij)
+
 bzr-svn 1.0.2					  2010-01-22
 
  BUG FIXES

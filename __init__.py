@@ -253,7 +253,7 @@ send_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
 try:
     from bzrlib.diff import format_registry as diff_format_registry
 except ImportError:
-    pass
+    pass # Not available prior to bzr 2.2b2
 else:
     diff_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
             'SvnDiffTree', 'Subversion diff format')
