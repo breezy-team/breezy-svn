@@ -532,6 +532,7 @@ class SvnRaTransport(Transport):
         finally:
             self.add_connection(conn)
 
+    @convert_svn_error
     def get_dir(self, path, revnum, fields=0):
         conn = self.get_connection()
         try:
