@@ -37,6 +37,8 @@ bzr-svn	1.0.3					  UNRELEASED
 
   * Simplify handling of text parents. (Jelmer Vernooij)
 
+  * Implement Repository.get_known_revision_graph(). (Jelmer Vernooij)
+
  FEATURES
 
   * Support fetching a limited number of revisions. (Michael Hudson)

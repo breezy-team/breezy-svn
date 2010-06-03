@@ -856,6 +856,20 @@ class SvnRepository(ForeignRepository):
         ancestry.reverse()
         return ancestry
 
+    def get_known_graph_ancestry(self, keys):
+        """Get a KnownGraph instance with the ancestry of keys."""
+        # most basic implementation is a loop around get_parent_map
+        pending = set(keys)
+        parent_map = {}
+        while pending:
+            this_parent_map = self.get_parent_map(pending)
+            parent_map.update(this_parent_map)
+            pending = set()
+            map(pending.update, this_parent_map.itervalues())
+            pending = pending.difference(parent_map)
+        kg = graph.KnownGraph(parent_map)
+        return kg
+
     def has_revisions(self, revision_ids):
         ret = set()
         for revision_id in revision_ids:
