@@ -824,9 +824,12 @@ class RevisionBuildEditor(DeltaBuildEditor):
         ret = []
         for tree in self.parent_trees:
             try:
-                ret.append(tree.inventory[file_id].revision)
+                revision = tree.inventory[file_id].revision
             except NoSuchId:
                 pass
+            else:
+                if not revision in ret:
+                    ret.append(revision)
         return ret
 
 
