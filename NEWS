@@ -39,6 +39,9 @@ bzr-svn	1.0.3					  UNRELEASED
 
   * Implement Repository.get_known_revision_graph(). (Jelmer Vernooij)
 
+  * Cope with local repository that can not be opened. (Jelmer Vernooij,
+      #463020)
+
  FEATURES
 
   * Support fetching a limited number of revisions. (Michael Hudson)

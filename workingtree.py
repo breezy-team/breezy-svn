@@ -119,6 +119,14 @@ from bzrlib.plugins.svn.tree import (
 class RepositoryRootUnknown(BzrError):
     _fmt = "The working tree does not store the root of the Subversion repository."
 
+class LocalRepositoryOpenFailed(BzrError):
+
+    _fmt = ("Unable to open local repository at %(url)s")
+
+    def __init__(self, url):
+        self.url = url
+
+
 def update_wc(adm, basedir, conn, revnum):
     # FIXME: honor SVN_CONFIG_SECTION_HELPERS:SVN_CONFIG_OPTION_DIFF3_CMD
     # FIXME: honor SVN_CONFIG_SECTION_MISCELLANY:SVN_CONFIG_OPTION_USE_COMMIT_TIMES
@@ -1015,8 +1023,11 @@ class SvnCheckout(BzrDir):
         # Open related remote repository + branch
         try:
             wc = WorkingCopy(None, self.local_path.encode("utf-8"))
-        except subvertpy.SubversionException, (msg, ERR_WC_UNSUPPORTED_FORMAT):
-            raise UnsupportedFormatError(msg, kind='workingtree')
+        except subvertpy.SubversionException, (msg, num):
+            if num == ERR_WC_UNSUPPORTED_FORMAT:
+                raise UnsupportedFormatError(msg, kind='workingtree')
+            else:
+                raise
         try:
             self.entry = wc.entry(self.local_path.encode("utf-8"), True)
         finally:
@@ -1081,7 +1092,13 @@ class SvnCheckout(BzrDir):
         if self.entry.repos is None:
             return self.get_remote_bzrdir().find_repository()
         if self._remote_repo_transport is None:
-            self._remote_repo_transport = SvnRaTransport(self.entry.repos, from_transport=self._remote_branch_transport)
+            try:
+                self._remote_repo_transport = SvnRaTransport(self.entry.repos, from_transport=self._remote_branch_transport)
+            except subvertpy.SubversionException, (msg, num):
+                if num == subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED:
+                    raise LocalRepositoryOpenFailed(self.entry.repos)
+                else:
+                    raise
         return SvnRepository(self, self._remote_repo_transport,
                 self.get_branch_path())
 
