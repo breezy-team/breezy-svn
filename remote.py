@@ -25,6 +25,7 @@ from bzrlib import (
 from bzrlib.bzrdir import (
     BzrDirFormat,
     BzrDir,
+    format_registry,
     )
 from bzrlib.revision import (
     NULL_REVISION,
@@ -39,7 +40,6 @@ from bzrlib.plugins.svn.errors import (
     )
 from bzrlib.plugins.svn.format import (
     SvnRemoteFormat,
-    get_rich_root_format,
     )
 from bzrlib.plugins.svn.repository import (
     SvnRepository,
@@ -138,7 +138,7 @@ class SvnRemoteAccess(BzrDir):
 
     def cloning_metadir(self, require_stacking=False):
         """Produce a metadir suitable for cloning with."""
-        return get_rich_root_format(require_stacking)
+        return format_registry.make_bzrdir('default')
 
     def open_workingtree(self, _unsupported=False,
             recommend_upgrade=True):

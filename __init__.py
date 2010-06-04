@@ -76,9 +76,6 @@ from bzrlib.repository import (
 from bzrlib.revisionspec import (
     revspec_registry,
     )
-from bzrlib.trace import (
-    mutter,
-    )
 from bzrlib.transport import (
     register_lazy_transport,
     register_transport_proto,
@@ -102,6 +99,7 @@ def check_subversion_version():
                 'bzr-svn: Installed Subversion has buggy svn.ra.get_log() '
                 'implementation, please install newer.')
 
+    from bzrlib.trace import mutter
     mutter("bzr-svn: using Subversion %d.%d.%d (%s)" % ra_version)
 
     if subvertpy_version < subvertpy_minimum_version:

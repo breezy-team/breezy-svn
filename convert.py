@@ -55,9 +55,6 @@ from bzrlib.plugins.svn.fetch import (
     FetchRevisionFinder,
     InterFromSvnRepository,
     )
-from bzrlib.plugins.svn.format import (
-    get_rich_root_format,
-    )
 
 
 LATEST_IMPORT_REVISION_FILENAME = "svn-import-revision"
@@ -156,7 +153,7 @@ class RepositoryConverter(object):
         """
         assert not all or create_shared_repo
         if format is None:
-            self._format = get_rich_root_format()
+            self._format = bzrdir.format_registry.make_bzrdir('default')
         else:
             self._format = format
         self.dirs = {}

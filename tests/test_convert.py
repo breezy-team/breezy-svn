@@ -50,9 +50,6 @@ from bzrlib.plugins.svn.convert import (
     convert_repository,
     load_dumpfile,
     )
-from bzrlib.plugins.svn.format import (
-    get_rich_root_format,
-    )
 from bzrlib.plugins.svn.tests import (
     SubversionTestCase,
     )
@@ -206,7 +203,7 @@ class TestConversion(SubversionTestCase):
         self.assertFalse(os.path.exists("e/branches/anotherbranch"))
 
     def test_shared_import_continue(self):
-        dir = BzrDir.create("e", format=get_rich_root_format())
+        dir = BzrDir.create("e")
         dir.create_repository(shared=True)
 
         convert_repository(Repository.open(self.repos_url), "e", 
@@ -252,14 +249,14 @@ class TestConversion(SubversionTestCase):
                 TrunkLayout(0), working_trees=True)
 
     def test_shared_import_rootlayout_empty(self):
-        dir = BzrDir.create("e", format=get_rich_root_format())
+        dir = BzrDir.create("e")
         dir.create_repository(shared=True)
 
         convert_repository(Repository.open(self.repos_url), "e", 
                 RootLayout(), create_shared_repo=True)
 
     def test_shared_import_with_wt(self):
-        dir = BzrDir.create("e", format=get_rich_root_format())
+        dir = BzrDir.create("e")
         dir.create_repository(shared=True)
 
         convert_repository(Repository.open(self.repos_url), "e", 
@@ -270,7 +267,7 @@ class TestConversion(SubversionTestCase):
                         self.test_dir, "e", "trunk", "file")))
 
     def test_shared_import_without_wt(self):
-        dir = BzrDir.create("e", format=get_rich_root_format())
+        dir = BzrDir.create("e")
         dir.create_repository(shared=True)
 
         convert_repository(Repository.open(self.repos_url), "e", 

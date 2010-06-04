@@ -30,9 +30,6 @@ from bzrlib.tests import (
     TestSkipped,
     )
 
-from bzrlib.plugins.svn.format import (
-    get_rich_root_format,
-    )
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     )
@@ -72,7 +69,7 @@ class UpgradeTests(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f", format=get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         dir.create_branch()
@@ -98,7 +95,7 @@ class UpgradeTests(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f", format=get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         dir.create_branch()
@@ -129,7 +126,7 @@ class UpgradeTests(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f", format=get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         dir.create_branch()
@@ -160,7 +157,7 @@ class UpgradeTests(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f", format=get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         dir.create_branch()
@@ -209,7 +206,7 @@ class UpgradeTests(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f", format=get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         dir.create_branch()
         wt = dir.create_workingtree()
@@ -250,7 +247,7 @@ class UpgradeTests(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f", format=get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         b = dir.create_branch()
         wt = dir.create_workingtree()
@@ -280,7 +277,7 @@ class UpgradeTests(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f", format=get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         b = dir.create_branch()
         wt = dir.create_workingtree()
@@ -311,7 +308,7 @@ class UpgradeTests(SubversionTestCase):
         dc.close()
 
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f", format=get_rich_root_format())
+        dir = BzrDir.create("f")
         dir.create_repository()
         b = dir.create_branch()
         wt = dir.create_workingtree()
@@ -337,7 +334,7 @@ class UpgradeTests(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f", format=get_rich_root_format())
+        dir = BzrDir.create("f")
         dir.create_repository()
         b = dir.create_branch()
         wt = dir.create_workingtree()

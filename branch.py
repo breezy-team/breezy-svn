@@ -44,6 +44,7 @@ from bzrlib.branch import (
     )
 from bzrlib.bzrdir import (
     BzrDir,
+    format_registry,
     )
 from bzrlib.errors import (
     DivergedBranches,
@@ -81,9 +82,6 @@ from bzrlib.plugins.svn.config import (
 from bzrlib.plugins.svn.errors import (
     NotSvnBranchPath,
     PushToEmptyBranch,
-    )
-from bzrlib.plugins.svn.format import (
-    get_rich_root_format,
     )
 from bzrlib.plugins.svn.repository import (
     SvnRepository,
@@ -308,7 +306,8 @@ class SvnBranch(ForeignBranch):
         :return: WorkingTree object of checkout.
         """
         checkout_branch = BzrDir.create_branch_convenience(
-            to_location, force_new_tree=False, format=get_rich_root_format())
+            to_location, force_new_tree=False,
+            format=format_registry.make_bzrdir('default'))
         checkout = checkout_branch.bzrdir
         checkout_branch.bind(self)
         # pull up to the specified revision_id to set the initial

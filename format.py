@@ -32,16 +32,6 @@ from bzrlib.lockable_files import (
     )
 
 
-def get_rich_root_format(stacked=False):
-    format = format_registry.make_bzrdir('default-rich-root')
-    # If the default format does not support stacking, fall back to
-    # 1.9-rr. This doesn't have performance issues, since all
-    # bzr versions that have 2a as default.
-    if stacked and not format.get_branch_format().supports_stacking():
-        return format_registry.make_bzrdir('1.9-rich-root')
-    return format
-
-
 class SvnControlFormat(BzrDirFormat):
     """Format for a Subversion control dir."""
     _lock_class = TransportLock
@@ -212,6 +202,6 @@ class SvnWorkingTreeDirFormat(SvnControlFormat):
         """See BzrDirFormat.get_converter()."""
         self._check_versions()
         if format is None:
-            format = get_rich_root_format()
+            format = format_registry.make_bzrdir('default')
         from bzrlib.plugins.svn.workingtree import SvnCheckoutConverter
         return SvnCheckoutConverter(format)

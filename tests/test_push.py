@@ -553,8 +553,7 @@ class TestPush(SubversionTestCase):
 class PushNewBranchTests(SubversionTestCase):
 
     def _create_single_rev_bzrwt(self):
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/test': "Tour"})
         bzrwt.add("test")
         revid = bzrwt.commit("Do a commit")
@@ -568,7 +567,7 @@ class PushNewBranchTests(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f", format.get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         newtree = newrepos.revision_tree(revid)
@@ -597,8 +596,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_single_revision_single_branch(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/test': "Tour"})
         bzrwt.add("test")
         revid = bzrwt.commit("Do a commit")
@@ -755,7 +753,7 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertEquals({"bar2.txt": "side1"}, revmeta.get_text_revisions(r.get_mapping()))
 
         os.mkdir("cpy")
-        cpy = BzrDir.create("cpy", format.get_rich_root_format())
+        cpy = BzrDir.create("cpy")
         cpyrepos = cpy.create_repository()
         r.copy_content_into(cpyrepos)
         check_tree(cpyrepos.revision_tree(mergingrevid))
@@ -765,8 +763,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_missing_prefix_error(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/test': "Tour"})
         bzrwt.add("test")
         revid = bzrwt.commit("Do a commit")
@@ -776,8 +773,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_repeat(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/test': "Tour"})
         bzrwt.add("test")
         revid = bzrwt.commit("Do a commit")
@@ -793,8 +789,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_multiple(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/test': "Tour"})
         bzrwt.add("test")
         revid1 = bzrwt.commit("Do a commit")
@@ -807,8 +802,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_dato(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/foo.txt': "foo"})
         bzrwt.add("foo.txt")
         revid1 = bzrwt.commit("Do a commit", 
@@ -820,8 +814,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_utf8_commit_msg(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/foo.txt': "foo"})
         bzrwt.add("foo.txt")
         revid1 = bzrwt.commit(u"Do á commït")
@@ -832,8 +825,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_kind_change_file_to_directory(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/foo.txt': "foo"})
         bzrwt.add("foo.txt")
         revid1 = bzrwt.commit(u"somecommit")
@@ -846,8 +838,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_kind_change_directory_to_file(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/foo.txt/bar': "foo"})
         bzrwt.add("foo.txt")
         revid1 = bzrwt.commit(u"somecommit")
@@ -929,8 +920,7 @@ class PushNewBranchTests(SubversionTestCase):
         bzrdir = BzrDir.open(repos_url+"/trunk").sprout("d1")
         bzrwt1 = bzrdir.open_workingtree()
 
-        bzrwt2 = BzrDir.create_standalone_workingtree("d2", 
-            format=format.get_rich_root_format())
+        bzrwt2 = BzrDir.create_standalone_workingtree("d2")
 
         self.build_tree({'d1/myfile': "Tour"})
         bzrwt1.add("myfile")
@@ -951,8 +941,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_complex_rename(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry")
         bzrwt.add("registry/generic.c")
@@ -981,8 +970,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_rename_dir_changing_contents(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c") 
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry", "dirid")
         bzrwt.add("registry/generic.c", "origid")
@@ -1008,9 +996,7 @@ class PushNewBranchTests(SubversionTestCase):
         check(copybranch)
 
     def _create_bzrwt_with_changed_root(self):
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
-
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({"c/foo": "bla"})
         bzrwt.add(["foo"])
         revid1 = bzrwt.commit("Initial")
@@ -1057,7 +1043,7 @@ class PushNewBranchTests(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f", format.get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
 
@@ -1076,8 +1062,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_rename_dir(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry", "dirid")
         bzrwt.add("registry/generic.c", "origid")
@@ -1102,8 +1087,7 @@ class PushNewBranchTests(SubversionTestCase):
         debug_flags.add("commit")
         debug_flags.add("fetch")
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry")
         bzrwt.add("registry/generic.c")
@@ -1151,8 +1135,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_complex_replace_dir(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add(["registry"], ["origdir"])
         bzrwt.add(["registry/generic.c"], ["file"])

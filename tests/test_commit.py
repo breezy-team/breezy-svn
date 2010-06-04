@@ -526,8 +526,7 @@ class JoinedCommitTests(SubversionTestCase):
         self.build_tree({"dc/lala": "data"})
         wt.add(["lala"])
         wt.commit(message="init")
-        joinedwt = BzrDir.create_standalone_workingtree("dc/newdir", 
-            format=format.get_rich_root_format())
+        joinedwt = BzrDir.create_standalone_workingtree("dc/newdir")
         joinedwt.pull(Branch.open(repos_url+"/branches/newbranch"))
         wt.subsume(joinedwt)
         wt.commit(message="doe")

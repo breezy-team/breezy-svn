@@ -350,7 +350,7 @@ class RepositoryTests(SubversionTestCase):
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
-        dir = BzrDir.create("f", format.get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
@@ -365,7 +365,7 @@ class RepositoryTests(SubversionTestCase):
 
         oldrepos = Repository.open(self.repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f", format.get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
@@ -380,7 +380,7 @@ class RepositoryTests(SubversionTestCase):
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
-        dir = BzrDir.create("f", format.get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         
@@ -406,7 +406,7 @@ class RepositoryTests(SubversionTestCase):
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
-        dir = BzrDir.create("f", format.get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
@@ -432,7 +432,7 @@ class RepositoryTests(SubversionTestCase):
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
-        dir = BzrDir.create("f", format.get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
@@ -530,8 +530,7 @@ class RepositoryTests(SubversionTestCase):
         debug_flags.add("commit")
         debug_flags.add("fetch")
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c", 
-            format=format.get_rich_root_format())
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry")
         bzrwt.add("registry/generic.c")

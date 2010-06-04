@@ -51,6 +51,7 @@ from bzrlib.bzrdir import (
     BzrDirFormat,
     BzrDir,
     Converter,
+    format_registry,
     )
 from bzrlib.errors import (
     BzrError,
@@ -95,7 +96,6 @@ from bzrlib.plugins.svn.errors import (
     )
 from bzrlib.plugins.svn.format import (
     SvnWorkingTreeDirFormat,
-    get_rich_root_format,
     )
 from bzrlib.plugins.svn.mapping import (
     escape_svn_path,
@@ -1071,7 +1071,7 @@ class SvnCheckout(BzrDir):
                hardlink=False):
         # FIXME: honor force_new_repo
         # FIXME: Use recurse
-        result = get_rich_root_format().initialize(url)
+        result = format_registry.make_bzrdir('default').initialize(url)
         repo = self._find_repository()
         repo.clone(result, revision_id)
         branch = self.open_branch()
