@@ -151,7 +151,13 @@ class SubversionTargetBranchPushResult(BranchPushResult):
 
     @property
     def old_revno(self):
-        return self._lookup_revno(self.old_revid)
+        try:
+            return self._lookup_revno(self.old_revid)
+        except NoSuchRevision:
+            # Last resort
+            return len(
+                self.target_branch.repository.iter_reverse_revision_history(
+                    self.old_revid))
 
     @property
     def new_revno(self):
@@ -170,7 +176,13 @@ class SubversionTargetPullResult(PullResult):
 
     @property
     def old_revno(self):
-        return self._lookup_revno(self.old_revid)
+        try:
+            return self._lookup_revno(self.old_revid)
+        except NoSuchRevision:
+            # Last resort
+            return len(
+                self.target_branch.repository.iter_reverse_revision_history(
+                    self.old_revid))
 
     @property
     def new_revno(self):
