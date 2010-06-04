@@ -123,7 +123,7 @@ class TrunkLayout(RepositoryLayout):
     def get_branches(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path, has_props)
+        :return: Iterator over tuples with (project, branch path, has_props)
         """
         return get_root_paths(repository,
              [self._add_project(x, project) for x in "branches/*", "trunk"],
@@ -132,7 +132,7 @@ class TrunkLayout(RepositoryLayout):
     def get_tags(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path)
         """
         return get_root_paths(repository, [self._add_project("tags/*", project)], revnum, self.is_tag, project)
 
@@ -217,14 +217,14 @@ class RootLayout(RepositoryLayout):
     def get_branches(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path)
         """
         return [("", "", "trunk", None)]
 
     def get_tags(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path)
         """
         return []
 
@@ -298,14 +298,14 @@ class CustomLayout(RepositoryLayout):
     def get_branches(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path)
         """
         return [(project, b, b.split("/")[-1], None) for b in self.branches if repository.transport.check_path(b, revnum) == NODE_DIR]
 
     def get_tags(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path)
         """
         return [(project, t, t.split("/")[-1], None) for t in self.tags if repository.transport.check_path(t, revnum) == NODE_DIR]
 
@@ -408,7 +408,7 @@ class WildcardLayout(RepositoryLayout):
     def get_branches(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path)
         """
         return get_root_paths(repository, self.branches,
              revnum, self.is_branch, project)
@@ -416,7 +416,7 @@ class WildcardLayout(RepositoryLayout):
     def get_tags(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path)
         """
         return get_root_paths(repository, self.tags,
              revnum, self.is_tag, project)
@@ -502,7 +502,7 @@ class InverseTrunkLayout(RepositoryLayout):
     def get_branches(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path)
         """
         return get_root_paths(repository,
              [self._add_project(x, project) for x in "branches", "trunk"],
@@ -511,7 +511,7 @@ class InverseTrunkLayout(RepositoryLayout):
     def get_tags(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path)
         """
         return get_root_paths(repository, [self._add_project("tags", project)], revnum, self.is_tag, project)
 

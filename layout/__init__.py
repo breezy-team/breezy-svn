@@ -126,14 +126,14 @@ class RepositoryLayout(object):
     def get_branches(self, repository, revnum, project="", pb=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path)
         """
         raise NotImplementedError(self.get_branches)
 
     def get_tags(self, repository, revnum, project="", pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
-        :result: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path)
         """
         raise NotImplementedError(self.get_tags)
 

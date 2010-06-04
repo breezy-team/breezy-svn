@@ -1266,10 +1266,8 @@ class InterFromSvnRepository(InterRepository):
     def _fetch_revisions(self, needed, pb):
         """Fetch a specified set of revisions.
 
-        ;param needed: Sequence of revision ids to fetch,
-            topo-sorted
-        :param pb: Progress bar to use for reporting 
-            progress
+        :param needed: Sequence of revision ids to fetch, topo-sorted
+        :param pb: Progress bar to use for reporting progress
         :return: Pack hint
         """
         if self._use_replay_range:
