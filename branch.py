@@ -257,6 +257,8 @@ class SvnBranch(ForeignBranch):
         if revnum is None:
             return self._branch_path
 
+        assert revnum >= 0
+
         last_revmeta, _ = self.last_revmeta()
         if revnum == last_revmeta.revnum:
             return last_revmeta.branch_path
