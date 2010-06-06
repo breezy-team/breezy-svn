@@ -43,7 +43,9 @@ bzr-svn	1.0.3					  UNRELEASED
       #463020)
 
   * Don't rely on old revision being on the mainline after push. 
-    (Jelmer Vernooij, 522836)
+    (Jelmer Vernooij, #522836)
+
+  * Support + signs in URLs. (Jelmer Vernooij, #552868)
 
  FEATURES
 

@@ -225,11 +225,11 @@ class UrlConversionTest(TestCase):
                 _url_unescape_uri("http://svn.gnome.org/svn/gtk%2B/trunk"))
 
     def test_url_escape_uri(self):
-        self.assertEquals("http://svn.gnome.org/svn/gtk%2B/trunk",
+        self.assertEquals("http://svn.gnome.org/svn/gtk+/trunk",
                 _url_escape_uri("http://svn.gnome.org/svn/gtk+/trunk"))
 
     def test_url_join_unescaped_path(self):
-        self.assertEquals("http://svn.gnome.org/svn/gtk%2B/trunk",
+        self.assertEquals("http://svn.gnome.org/svn/gtk+/trunk",
                 url_join_unescaped_path("http://svn.gnome.org/svn/", "gtk+/trunk"))
 
 
