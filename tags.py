@@ -42,11 +42,13 @@ from bzrlib.plugins.svn.transport import (
     create_branch_prefix,
     )
 
+
 def reverse_dict(orig):
     ret = {}
     for k, v in orig.iteritems():
         ret.setdefault(v, []).append(k)
     return ret
+
 
 def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
     """Determine the revids for tags that were not found in the branch 
@@ -65,6 +67,7 @@ def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
             assert isinstance(name, str)
             ret[name.decode("utf-8")] = revid
     return ret
+
 
 def _resolve_tags_svn_ancestry(branch, tag_revmetas):
     """Resolve a name -> revmeta dictionary to a name -> revid dict.
@@ -115,7 +118,8 @@ class ReverseTagDict(object):
             self._by_foreign_revid.setdefault(revmeta.get_foreign_revid(), []).append(name)
 
     def _lookup_revid(self, revid):
-        return self.repository.lookup_bzr_revision_id(revid, project=self.project)
+        return self.repository.lookup_bzr_revision_id(revid,
+            project=self.project)
 
     def has_key(self, revid):
         foreign_revid, mapping = self._lookup_revid(revid)
@@ -183,7 +187,8 @@ class SubversionTags(BasicTags):
         if current_from_foreign_revid == (from_uuid, from_bp, from_revnum):
             # Already present
             return
-        mutter("setting tag %s from %r (deletefirst: %r)", path, (from_uuid, from_bp, from_revnum), deletefirst)
+        mutter("setting tag %s from %r (deletefirst: %r)", path,
+               (from_uuid, from_bp, from_revnum), deletefirst)
         conn = self.repository.transport.get_connection(parent)
         try:
             ci = svn_errors.convert_svn_error(conn.get_commit_editor)(
@@ -193,7 +198,8 @@ class SubversionTags(BasicTags):
                 root = ci.open_root()
                 if deletefirst:
                     root.delete_entry(urlutils.basename(path))
-                tag_dir = root.add_directory(urlutils.basename(path), urlutils.join(self.repository.base, from_bp), from_revnum)
+                tag_dir = root.add_directory(urlutils.basename(path),
+                    urlutils.join(self.repository.base, from_bp), from_revnum)
                 tag_dir.close()
                 root.close()
             except:
@@ -206,7 +212,8 @@ class SubversionTags(BasicTags):
     def _revprops(self, message, tags_dict=None):
         """Create a revprops dictionary.
 
-        Optionally sets bzr:skip to slightly optimize fetching of this revision later.
+        Optionally sets bzr:skip to slightly optimize fetching of this
+        revision later.
         """
         revprops = {properties.PROP_REVISION_LOG: message, }
         if self.repository.transport.has_capability("commit-revprops"):
@@ -259,7 +266,8 @@ class SubversionTags(BasicTags):
                 # No more tag revmetas to resolve, just return immediately
                 return ret
             try:
-                foreign_revid, m = mapping.mapping_registry.parse_revision_id(revid)
+                foreign_revid, m = mapping.mapping_registry.parse_revision_id(
+                        revid)
             except InvalidRevisionId:
                 continue
             if not foreign_revid in foreign_revid_map:
@@ -269,7 +277,8 @@ class SubversionTags(BasicTags):
                 assert isinstance(name, str)
                 ret[name.decode("utf-8")] = revid
             del reverse_tag_revmetas[revmeta]
-        ret.update(_resolve_reverse_tags_fallback(self.branch, reverse_tag_revmetas))
+        ret.update(_resolve_reverse_tags_fallback(self.branch,
+                                                  reverse_tag_revmetas))
         return ret
 
     def get_tag_dict(self):
@@ -288,10 +297,12 @@ class SubversionTags(BasicTags):
         parent = urlutils.dirname(path)
         conn = self.repository.transport.get_connection(parent)
         try:
-            if conn.check_path(urlutils.basename(path), self.repository.get_latest_revnum()) != subvertpy.NODE_DIR:
+            if conn.check_path(urlutils.basename(path),
+                    self.repository.get_latest_revnum()) != subvertpy.NODE_DIR:
                 raise NoSuchTag(tag_name)
-            ci = svn_errors.convert_svn_error(conn.get_commit_editor)(self._revprops("Remove tag %s" % tag_name.encode("utf-8"),
-                                        {tag_name: ""}))
+            ci = svn_errors.convert_svn_error(conn.get_commit_editor)(
+                    self._revprops("Remove tag %s" % tag_name.encode("utf-8"),
+                    {tag_name: ""}))
             try:
                 root = ci.open_root()
                 root.delete_entry(urlutils.basename(path))
@@ -313,7 +324,8 @@ class SubversionTags(BasicTags):
             if k not in dest_dict:
                 self.delete_tag(k)
 
-    def merge_to(self, to_tags, overwrite=False, _from_revnum=None, _to_revnum=None):
+    def merge_to(self, to_tags, overwrite=False, _from_revnum=None,
+                 _to_revnum=None):
         """Copy tags between repositories if necessary and possible.
         
         This method has common command-line behaviour about handling 
