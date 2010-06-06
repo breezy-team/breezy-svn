@@ -28,8 +28,6 @@ from subvertpy import (
     )
 
 from bzrlib import (
-    debug,
-    trace,
     urlutils,
     )
 from bzrlib.errors import (
@@ -59,6 +57,9 @@ def keyword_rev(revid, rev, relpath, revmeta):
     # Revision comes directly from a foreign repository
     if revmeta is not None:
         return str(revmeta.revnum)
+
+    if revid is None:
+        return None
 
     # Revision was once imported from a foreign repository
     try:
@@ -135,28 +136,27 @@ def expand_keywords(s, allowed_keywords, context=None, encoder=None):
         if not match:
             break
         result += rest[:match.start()]
+        original_expansion = match.group(0)
         keyword = match.group(1)
         if not keyword in allowed_keywords:
             # Unknown expansion - leave as is
-            result += match.group(0)
+            result += original_expansion
             rest = rest[match.end():]
             continue
-        try:
-            expansion = keywords[keyword](context.revision_id(),
-                context.revision(), context.relpath().encode("utf-8"),
-                getattr(context.revision(), "svn_meta", None))
-        except AttributeError, err:
-            if 'error' in debug.debug_flags:
-                trace.note("error evaluating %s for keyword %s: %s",
-                    expansion, keyword, err)
-            expansion = "(evaluation error)"
-        assert type(expansion) == str, "Expansion string not plain: %r" % expansion
-        if '$' in expansion:
-            # Expansion is not safe to be collapsed later
-            expansion = "(value unsafe to expand)"
-        if encoder is not None:
-            expansion = encoder(expansion)
-        expanded = "$%s: %s $" % (keyword, expansion)
+        expansion = keywords[keyword](context.revision_id(),
+            context.revision(), context.relpath().encode("utf-8"),
+            getattr(context.revision(), "svn_meta", None))
+        if expansion is not None and type(expansion) is not str:
+            raise AssertionError("Expansion string not plain: %r" % expansion)
+        if expansion is not None:
+            if '$' in expansion:
+                # Expansion is not safe to be collapsed later
+                expansion = "(value unsafe to expand)"
+            if encoder is not None:
+                expansion = encoder(expansion)
+            expanded = "$%s: %s $" % (keyword, expansion)
+        else:
+            expanded = "$%s$" % keyword
         result += expanded
         rest = rest[match.end():]
     return result + rest
