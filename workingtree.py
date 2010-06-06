@@ -848,7 +848,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             return (kind, None, None, None)
 
     def _get_base_revmeta(self):
-        return self.branch.repository._revmeta_provider.lookup_revision(self.get_branch_path(self.base_revnum), self.base_revnum)
+        return self.branch.repository._revmeta_provider.lookup_revision(
+            self.get_branch_path(self.base_revnum), self.base_revnum)
 
     def _reset_data(self):
         pass
