@@ -61,6 +61,13 @@ bzr-svn	1.0.3					  UNRELEASED
 
   * Drop support for Bazaar < 2.2. (Jelmer Vernooij)
 
+ CHANGES
+
+  * "bzr svn-import --incremental" is now the default. 
+    "bzr svn-import --restore" provides the previous behaviour and will 
+	restore any branches that have been removed but have not been changed 
+    since the last import.  (Jelmer Vernooij, #395266)
+
 bzr-svn 1.0.2					  2010-01-22
 
  BUG FIXES

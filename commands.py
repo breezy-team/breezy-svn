@@ -75,8 +75,9 @@ class cmd_svn_import(Command):
                               'Default: auto.'),
                      Option('keep',
                          help="Don't delete branches removed in Subversion."),
-                     Option('incremental',
-                         help="Import revisions incrementally."),
+                     Option('restore',
+                         help="Restore branches that were removed but have "
+                              "not been changed since the last import."),
                      Option('prefix', type=str,
                          hidden=True,
                          help='Only consider branches of which path starts '
@@ -87,7 +88,7 @@ class cmd_svn_import(Command):
 
     def run(self, from_location, to_location=None, format=None, trees=False,
             standalone=False, layout=None, all=False, prefix=None, keep=False,
-            incremental=False, until=None):
+            restore=False, until=None):
         from bzrlib import (
             osutils,
             trace,
@@ -184,7 +185,7 @@ class cmd_svn_import(Command):
                                not standalone, trees, all,
                                format=format,
                                filter_branch=filter_branch,
-                               keep=keep, incremental=incremental,
+                               keep=keep, incremental=not restore,
                                to_revnum=to_revnum, prefix=prefix)
 
             if tmp_repos is not None:
