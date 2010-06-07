@@ -803,24 +803,18 @@ class InterSvnOtherBranch(GenericInterBranch):
             if stop_revision == NULL_REVISION:
                 result.new_revid = NULL_REVISION
                 result.new_revmeta = None
-                tags_until_revnum = 0
             elif stop_revision is not None:
                 result.new_revmeta, _ = \
                     self.source.repository._get_revmeta(stop_revision)
-                tags_until_revnum = result.new_revmeta.revnum
             else:
                 result.new_revmeta = None
-                tags_until_revnum = self.source.repository.get_latest_revnum()
             (result.new_revno, result.new_revid) = self._update_revisions(
                 stop_revision, overwrite, limit=limit)
             if self.source.supports_tags():
-                if result.old_revid == result.new_revid:
-                    # Upstream branch wasn't added but perhaps new tags were
-                    # added since.
-                    tags_since_revnum = self.source.get_revnum()
                 result.tag_conflicts = self.source.tags.merge_to(
-                    self.target.tags, overwrite, _from_revnum=tags_since_revnum,
-                    _to_revnum=tags_until_revnum)
+                    self.target.tags, overwrite,
+                    _from_revnum=tags_since_revnum,
+                    _to_revnum=self.source.repository.get_latest_revnum())
             if _hook_master:
                 result.master_branch = _hook_master
                 result.local_branch = result.target_branch

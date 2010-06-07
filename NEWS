@@ -47,6 +47,8 @@ bzr-svn	1.0.3					  UNRELEASED
 
   * Support + signs in URLs. (Jelmer Vernooij, #552868)
 
+  * Always detect newer tags. (Jelmer Vernooij, #504314)
+
  FEATURES
 
   * Support fetching a limited number of revisions. (Michael Hudson)

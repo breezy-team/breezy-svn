@@ -199,7 +199,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         b = Branch.open(repos_url + "/trunk")
         self.assertEquals([], b.tags.get_tag_dict().keys())
 
-    def test_tag_set_no_parent_Dir(self):
+    def test_tag_set_no_parent_dir(self):
         repos_url = self.make_repository('a')
 
         dc = self.get_commit_editor(repos_url)
@@ -213,7 +213,8 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         b = Branch.open(repos_url + "/trunk")
         b.tags.set_tag(u"mytag",
-            b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
+            b.repository.generate_revision_id(1, "trunk",
+                b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR, 
                 b.repository.transport.check_path("tags", 3))
@@ -232,8 +233,9 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         b = Branch.open(repos_url + "/trunk/gui")
         self.assertRaises(TagsNotSupported,
-                b.tags.set_tag, u"mytag", 
-                b.repository.generate_revision_id(1, "trunk/gui", b.repository.get_mapping()))
+            b.tags.set_tag, u"mytag", 
+            b.repository.generate_revision_id(1, "trunk/gui",
+                b.repository.get_mapping()))
 
     def test_tag_lookup(self):
         repos_url = self.make_repository("a")
@@ -246,7 +248,10 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         b = Branch.open(repos_url + "/trunk")
         self.assertEquals("", b.project)
-        self.assertEquals(b.repository.generate_revision_id(1, "tags/foo", b.repository.get_mapping()), b.tags.lookup_tag("foo"))
+        self.assertEquals(
+            b.repository.generate_revision_id(1, "tags/foo",
+                b.repository.get_mapping()),
+            b.tags.lookup_tag("foo"))
 
     def test_tag_lookup_nonexistant(self):
         repos_url = self.make_repository("a")
@@ -380,6 +385,29 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         branch = Branch.open(repos_url+"/trunk")
         self.assertEqual("trunk", branch.get_branch_path())
+
+    def test_tag_added_later(self):
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("trunk")
+        dc.close()
+
+        olddir = BzrDir.open(repos_url+"/trunk")
+        oldbranch = olddir.open_branch()
+        newdir = olddir.sprout("mycopy")
+        newbranch = newdir.open_branch()
+        self.assertEquals({}, newbranch.tags.get_tag_dict())
+
+        dc = self.get_commit_editor(repos_url)
+        tags = dc.add_dir("tags")
+        new_tag = tags.add_dir("tags/newtag", "trunk")
+        dc.close()
+
+        self.assertEquals(1, oldbranch.get_revnum())
+        newbranch.pull(oldbranch, stop_revision=oldbranch.last_revision())
+
+        self.assertEquals(["newtag"], newbranch.tags.get_tag_dict().keys())
 
     def test_open_nonexistant(self):
         repos_url = self.make_repository("a")
