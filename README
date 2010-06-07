@@ -117,12 +117,6 @@ Future Enhancements
 
 In the future, I also hope to support:
 
-- Renames. Initial work has been done to support this, 
-  but the number of corner cases is wide, so support for this 
-  has not been enabled by default yet.
-
-- Override implementation of get_revision_delta(). Will speed up 'bzr log -v'
-	
 - use svn_ra_replay() when using servers that have Subversion 1.4. Saves a 
   couple of roundtrips when fetching history.
 
