@@ -151,7 +151,6 @@ class cmd_svn_import(Command):
 
         from_repos.lock_read()
         try:
-
             if prefix is not None:
                 if layout is None:
                     overall_layout = from_repos.get_guessed_layout()
@@ -180,18 +179,18 @@ class cmd_svn_import(Command):
                     return False
                 return True
 
-            trace.note("Using repository layout: %s" % (layout or from_repos.get_layout(),))
+            trace.note("Using repository layout: %s",
+                       (layout or from_repos.get_layout(),))
             convert_repository(from_repos, to_location, layout,
-                               not standalone, trees, all,
-                               format=format,
-                               filter_branch=filter_branch,
-                               keep=keep, incremental=not restore,
-                               to_revnum=to_revnum, prefix=prefix)
+                not standalone, trees, all, format=format,
+                filter_branch=filter_branch, keep=keep,
+                incremental=not restore, to_revnum=to_revnum, prefix=prefix)
 
             if tmp_repos is not None:
                 osutils.rmtree(tmp_repos)
             if not trees:
-                trace.note("Use 'bzr checkout' to create a working tree in the newly created branches.")
+                trace.note("Use 'bzr checkout' to create a working tree in "
+                           "the newly created branches.")
         finally:
             from_repos.unlock()
 
