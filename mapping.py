@@ -192,11 +192,8 @@ def parse_svn_dateprop(date):
 
 def parse_svn_log(log):
     if log is None:
-        return ""
-    try:
-        return log.decode("utf-8")
-    except UnicodeDecodeError:
-        return log
+        return u""
+    return log.decode("utf-8", "replace")
 
 
 def parse_svn_revprops(svn_revprops, rev):
@@ -204,6 +201,7 @@ def parse_svn_revprops(svn_revprops, rev):
     if rev.committer is None:
         rev.committer = u""
     rev.message = parse_svn_log(svn_revprops.get(properties.PROP_REVISION_LOG))
+    assert type(rev.message) is unicode
 
     assert svn_revprops.has_key(properties.PROP_REVISION_DATE)
     (rev.timestamp, rev.timezone) = parse_svn_dateprop(svn_revprops[properties.PROP_REVISION_DATE])
@@ -304,6 +302,7 @@ def parse_bzr_svn_revprops(props, rev):
 
     if props.has_key(SVN_REVPROP_BZR_LOG):
         rev.message = props[SVN_REVPROP_BZR_LOG]
+        assert type(rev.message) is unicode
         changed = True
 
     for name, value in props.iteritems():
@@ -631,6 +630,7 @@ class BzrSvnMappingFileProps(object):
     def import_revision_fileprops(self, fileprops, rev):
         if SVN_PROP_BZR_LOG in fileprops:
             rev.message = fileprops[SVN_PROP_BZR_LOG][1]
+            assert type(rev.message) is unicode
         metadata = fileprops.get(SVN_PROP_BZR_REVISION_INFO)
         if metadata is not None:
             assert isinstance(metadata, tuple)
