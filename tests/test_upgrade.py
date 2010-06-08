@@ -49,7 +49,10 @@ from bzrlib.plugins.svn.tests import (
 
 def import_upgrade():
     try:
-        from bzrlib.plugins.rebase import upgrade
+        try:
+            from bzrlib.plugins.rewrite import upgrade
+        except ImportError:
+            from bzrlib.plugins.rebase import upgrade
     except IncompatibleAPI, e:
         raise TestSkipped(str(e))
     except ImportError, e:
