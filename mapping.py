@@ -301,7 +301,7 @@ def parse_bzr_svn_revprops(props, rev):
         changed = True
 
     if props.has_key(SVN_REVPROP_BZR_LOG):
-        rev.message = props[SVN_REVPROP_BZR_LOG]
+        rev.message = props[SVN_REVPROP_BZR_LOG].decode("utf-8")
         assert type(rev.message) is unicode
         changed = True
 
