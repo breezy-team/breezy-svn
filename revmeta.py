@@ -67,6 +67,9 @@ from bzrlib.plugins.svn.svk import (
     svk_features_merged_since,
     SVN_PROP_SVK_MERGE,
     )
+from bzrlib.plugins.svn.util import (
+    ListBuildingIterator,
+    )
 
 # Maximum number of revisions to browse for a cached copy of the branch
 # file properties
@@ -218,10 +221,13 @@ class RevisionMetadata(object):
             while (not lm.changes_branch_root() and lm._fileprops is None and
                    len(todo) < MAX_FILEPROP_SHARED):
                 todo.add(lm)
-                lm = lm.get_direct_lhs_parent_revmeta()
+                nlm = lm.get_direct_lhs_parent_revmeta()
+                assert (nlm is not None,
+                        "no lhs parent revmeta found for %r" % lm)
+                lm = nlm
             if lm._fileprops is None:
                 lm._fileprops = self._get_fileprops_fn(lm.branch_path,
-                                                       lm.revnum)
+                    lm.revnum)
             for r in todo:
                 r._fileprops = lm._fileprops
         return self._fileprops
@@ -230,7 +236,6 @@ class RevisionMetadata(object):
         """Get the revision properties set on the revision."""
         if self._revprops is None:
             self._revprops = self._log.revprop_list(self.revnum)
-
         return self._revprops
 
     def knows_changed_fileprops(self):
@@ -238,7 +243,8 @@ class RevisionMetadata(object):
         if self._changed_fileprops is None:
             return False
         changed_fileprops = self.get_changed_fileprops()
-        return isinstance(changed_fileprops, dict) or changed_fileprops.is_loaded
+        return (isinstance(changed_fileprops, dict) or
+                changed_fileprops.is_loaded)
 
     def knows_fileprops(self):
         """Check whether the file properties can be cheaply retrieved."""
@@ -462,7 +468,6 @@ class RevisionMetadata(object):
 
     def estimate_bzr_fileprop_ancestors(self):
         """Estimate how many ancestors with bzr fileprops this revision has.
-
         """
         return self._estimate_fileprop_ancestors("bzr:", estimate_bzr_ancestors)
 
@@ -519,6 +524,7 @@ class RevisionMetadata(object):
         """Determine the Bazaar revision number for this revision.
 
         :param mapping: Mapping to use
+        :return: Bazaar revision number
         """
         extra = 0
         total_hidden = None
@@ -544,6 +550,7 @@ class RevisionMetadata(object):
     def get_rhs_parents(self, mapping):
         """Determine the right hand side parent ids for this revision.
 
+        :param mapping: 
         """
         return self._get_rhs_parents(mapping)
 
@@ -828,7 +835,6 @@ class CachingRevisionMetadata(RevisionMetadata):
     def get_original_mapping(self):
         if self._original_mapping_set:
             return self._original_mapping
-
         try:
             self._original_mapping = self._revinfo_cache.get_original_mapping(
                 self.get_foreign_revid())
@@ -904,27 +910,6 @@ def svk_feature_to_revision_id(feature, mapping):
     if not mapping.is_branch_or_tag(bp):
         return None
     return mapping.revision_id_foreign_to_bzr((uuid, bp, revnum))
-
-
-class ListBuildingIterator(object):
-    """Simple iterator that iterates over a list, and calling an iterator
-    once all items in the list have been iterated.
-
-    The list may be updated while the iterator is running.
-    """
-
-    def __init__(self, base_list, it):
-        self.base_list = base_list
-        self.i = -1
-        self.it = it
-
-    def next(self):
-        """Return the next item."""
-        self.i+=1
-        try:
-            return self.base_list[self.i]
-        except IndexError:
-            return self.it()
 
 
 class RevisionMetadataBranch(object):

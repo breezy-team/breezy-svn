@@ -142,3 +142,27 @@ class lazy_readonly_list(object):
                 return self._next()
 
         return Iterator(self._list, self._next)
+
+
+class ListBuildingIterator(object):
+    """Simple iterator that iterates over a list, and calling an iterator
+    once all items in the list have been iterated.
+
+    The list may be updated while the iterator is running.
+    """
+
+    def __init__(self, base_list, it):
+        self.base_list = base_list
+        self.i = -1
+        self.it = it
+
+    def next(self):
+        """Return the next item."""
+        self.i+=1
+        try:
+            return self.base_list[self.i]
+        except IndexError:
+            return self.it()
+
+
+
