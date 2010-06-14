@@ -222,8 +222,8 @@ class RevisionMetadata(object):
                    len(todo) < MAX_FILEPROP_SHARED):
                 todo.add(lm)
                 nlm = lm.get_direct_lhs_parent_revmeta()
-                assert (nlm is not None,
-                        "no lhs parent revmeta found for %r" % lm)
+                assert nlm is not None, \
+                        "no lhs parent revmeta found for %r" % lm
                 lm = nlm
             if lm._fileprops is None:
                 lm._fileprops = self._get_fileprops_fn(lm.branch_path,
