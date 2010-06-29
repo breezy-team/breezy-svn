@@ -23,6 +23,7 @@ from subvertpy import (
     properties,
     )
 
+import bzrlib.config
 from bzrlib import (
     osutils,
     trace,
@@ -72,7 +73,10 @@ def subversion_config_filename():
     return osutils.pathjoin(config_dir(), 'subversion.conf')
 
 
-class SubversionUUIDConfig(IniBasedConfig):
+config_base_class = getattr(bzrlib.config, "LockableConfig", IniBasedConfig)
+
+
+class SubversionUUIDConfig(config_base_class):
     """UUID-based Subversion configuration."""
 
     def __init__(self, uuid):

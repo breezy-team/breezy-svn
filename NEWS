@@ -51,6 +51,9 @@ bzr-svn	1.0.3					  UNRELEASED
 
   * Non-unicode characters in existing commit messages are now squashed.
     (Jelmer vernooij, #586408, #509063)
+  
+  * Cope with concurrent access to ~/.bazaar/subversion.conf. 
+    (Vincent Ladeuil, Jelmer Vernooij, #525571)
 
  FEATURES
 
