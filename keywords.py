@@ -47,7 +47,9 @@ def keyword_date(revid, rev, relpath, revmeta):
     """last changed date"""
     if revmeta is not None:
         return revmeta.get_revprops().get(properties.PROP_REVISION_DATE, "")
-    return properties.time_to_cstring(1000000*rev.timestamp)
+    if rev is not None:
+        return properties.time_to_cstring(1000000*rev.timestamp)
+    return None
 
 
 def keyword_rev(revid, rev, relpath, revmeta):
@@ -77,7 +79,9 @@ def keyword_author(revid, rev, relpath, revmeta):
     """author of the last commit."""
     if revmeta is not None:
         return revmeta.get_revprops().get(properties.PROP_REVISION_AUTHOR, "")
-    return rev.committer.encode("utf-8")
+    if rev is not None:
+        return rev.committer.encode("utf-8")
+    return None
 
 
 def keyword_id(*args):
