@@ -230,8 +230,15 @@ class CachingLogWalker(object):
         else:
             todo_revprops = ["svn:author", "svn:log", "svn:date"]
 
+        # Define this variable in this scope, it will be filled in below
+        total_revs_to_fetch = None
+
+        # Container list allows mutability from the inner scope
+        number_of_fetched_revs = [0]
+
         def rcvr(orig_paths, revision, revprops, has_children=None):
-            nested_pb.update('fetching svn revision info', to_revnum - revision, to_revnum)
+            number_of_fetched_revs[0] += 1
+            nested_pb.update('fetching svn revision info', number_of_fetched_revs[0], total_revs_to_fetch)
             self.cache.insert_paths(revision, orig_paths)
             self.cache.insert_revprops(revision, revprops,
                                        todo_revprops is None)
@@ -246,18 +253,23 @@ class CachingLogWalker(object):
         else:
             nested_pb = pb
 
+        if self.saved_minrevnum is None:
+            self.saved_minrevnum = 0
+
         try:
-            nested_pb.update('fetching svn revision info', 0, to_revnum)
             try:
+                total_revs_to_fetch = to_revnum - self.saved_revnum
                 # Try to keep the cache consistent by closing any holes early
                 # in the history
-                if self.saved_minrevnum is None:
-                    self.saved_minrevnum = 0
-                elif self.saved_minrevnum != 0:
+                if self.saved_minrevnum != 0:
+                    total_revs_to_fetch += self.saved_minrevnum
+                    nested_pb.update('fetching svn revision info', 0, total_revs_to_fetch)
                     self.mutter("get_log %d->%d", self.saved_minrevnum, 0)
                     self.actual._transport.get_log(rcvr, [""],
                         self.saved_minrevnum, 0, 0, True, True, False,
                         todo_revprops)
+                else:
+                    nested_pb.update('fetching svn revision info', 0, total_revs_to_fetch)
                 self.mutter("get_log %d->%d", to_revnum, self.saved_revnum)
                 self.actual._transport.get_log(rcvr, [""], to_revnum,
                     self.saved_revnum, 0, True, True, False, todo_revprops)
