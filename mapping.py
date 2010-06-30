@@ -629,7 +629,7 @@ class BzrSvnMappingFileProps(object):
 
     def import_revision_fileprops(self, fileprops, rev):
         if SVN_PROP_BZR_LOG in fileprops:
-            rev.message = fileprops[SVN_PROP_BZR_LOG][1]
+            rev.message = fileprops[SVN_PROP_BZR_LOG][1].decode("utf-8")
             assert type(rev.message) is unicode
         metadata = fileprops.get(SVN_PROP_BZR_REVISION_INFO)
         if metadata is not None:
