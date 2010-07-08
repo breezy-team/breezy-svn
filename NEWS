@@ -52,6 +52,9 @@ bzr-svn	1.0.3					  UNRELEASED
   * Non-unicode characters in existing commit messages are now squashed.
     (Jelmer vernooij, #586408, #509063)
 
+  * Concurrent processes don't mix up writes in config files (interim
+    fix for lp).  (Vincent Ladeuil, #525571)
+
  FEATURES
 
   * Support fetching a limited number of revisions. (Michael Hudson)
