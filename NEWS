@@ -55,6 +55,9 @@ bzr-svn	1.0.3					  UNRELEASED
   * Cope with concurrent access to ~/.bazaar/subversion.conf. 
     (Vincent Ladeuil, Jelmer Vernooij, #525571)
 
+  * Concurrent processes don't mix up writes in config files (interim
+    fix for lp).  (Vincent Ladeuil, #525571)
+
  FEATURES
 
   * Support fetching a limited number of revisions. (Michael Hudson)
