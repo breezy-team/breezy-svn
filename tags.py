@@ -130,7 +130,7 @@ class ReverseTagDict(object):
         return self._by_foreign_revid.get(foreign_revid, default)
 
     def __getitem__(self, key):
-        foreign_revid, mapping = self._lookup_revid(revid)
+        foreign_revid, mapping = self._lookup_revid(key)
         return self._by_foreign_revid[foreign_revid]
 
     def items(self):
