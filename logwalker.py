@@ -258,11 +258,13 @@ class CachingLogWalker(object):
 
         try:
             try:
-                total_revs_to_fetch = to_revnum - self.saved_revnum
+                # The get_log bounds are inclusive at both ends, so the total
+                # number of revisions requested is A - B + 1:
+                total_revs_to_fetch = to_revnum - self.saved_revnum + 1
                 # Try to keep the cache consistent by closing any holes early
                 # in the history
                 if self.saved_minrevnum != 0:
-                    total_revs_to_fetch += self.saved_minrevnum
+                    total_revs_to_fetch += self.saved_minrevnum + 1
                     nested_pb.update('fetching svn revision info', 0, total_revs_to_fetch)
                     self.mutter("get_log %d->%d", self.saved_minrevnum, 0)
                     self.actual._transport.get_log(rcvr, [""],
