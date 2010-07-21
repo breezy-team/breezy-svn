@@ -25,6 +25,7 @@ from subvertpy import (
 
 import bzrlib.config
 from bzrlib import (
+    atomicfile,
     osutils,
     trace,
     )
