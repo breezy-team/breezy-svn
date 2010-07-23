@@ -844,7 +844,7 @@ class InterOtherSvnBranch(InterBranch):
 
     @staticmethod
     def _get_branch_formats_to_test():
-        return None, None
+        return []
 
     def update_revisions(self, stop_revision=None, overwrite=False, graph=None):
         """See Branch.update_revisions()."""
