@@ -171,6 +171,8 @@ def editor_strip_prefix(editor, path):
 class PathStrippingDirectoryEditor(object):
     """Directory editor that strips a base from the paths."""
 
+    __slots__ = ('editor', 'path', 'actual')
+
     def __init__(self, editor, path, actual=None):
         self.editor = editor
         self.path = path
@@ -233,6 +235,8 @@ class PathStrippingDirectoryEditor(object):
 class PathStrippingEditor(object):
     """Editor that strips a base from the paths."""
 
+    __slots__ = ('actual', 'prefix')
+
     def __init__(self, actual, path):
         self.actual = actual
         self.prefix = path.strip("/")
@@ -271,6 +275,9 @@ class DeltaBuildEditor(object):
     """Implementation of the Subversion commit editor interface that
     converts Subversion to Bazaar semantics.
     """
+
+    __slots__ = ('revmeta', '_id_map', 'mapping')
+
     def __init__(self, revmeta, mapping):
         self.revmeta = revmeta
         self._id_map = None
@@ -291,6 +298,8 @@ class DeltaBuildEditor(object):
 
 
 class DirectoryBuildEditor(object):
+
+    __slots__ = ('editor', 'path')
 
     def __init__(self, editor, path):
         self.editor = editor
@@ -368,6 +377,9 @@ class DirectoryBuildEditor(object):
 
 class FileBuildEditor(object):
 
+    __slots__ = ('path', 'editor', 'is_executable', 'is_special', 
+                 'last_file_rev')
+
     def __init__(self, editor, path):
         self.path = path
         self.editor = editor
@@ -408,6 +420,9 @@ class FileBuildEditor(object):
 
 
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
+
+    __slots__ = ('old_id', 'new_id', 'old_path', '_metadata_changed', 
+                 '_renew_fileids', 'new_ie')
 
     def __init__(self, editor, old_path, path, old_id, new_id,
             parent_file_id, renew_fileids=None):
@@ -553,6 +568,9 @@ def content_starts_with_link(cf):
 
 class FileRevisionBuildEditor(FileBuildEditor):
 
+    __slots__ = ('old_path', 'file_id', 'is_symlink', 'base_ie', 'base_chunks',
+                 'chunks', 'parent_file_id')
+
     def __init__(self, editor, old_path, path, file_id, parent_file_id,
                  base_ie, is_symlink=False):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
@@ -648,6 +666,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
     """Implementation of the Subversion commit editor interface that builds a
     Bazaar revision.
     """
+
     def __init__(self, source, target, revid, parent_trees, revmeta, mapping,
                  text_cache):
         self.target = target
@@ -831,6 +850,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
 class FileTreeDeltaBuildEditor(FileBuildEditor):
 
+    __slots__ = ('copyfrom_path', 'base_checksum', 'change_kind')
+
     def __init__(self, editor, path, copyfrom_path, kind):
         super(FileTreeDeltaBuildEditor, self).__init__(editor, path)
         self.copyfrom_path = copyfrom_path
@@ -867,6 +888,8 @@ class FileTreeDeltaBuildEditor(FileBuildEditor):
 
 class DirectoryTreeDeltaBuildEditor(DirectoryBuildEditor):
 
+    __slots__ = ()
+
     def _close(self):
         pass
 
@@ -895,6 +918,7 @@ class TreeDeltaBuildEditor(DeltaBuildEditor):
     """Implementation of the Subversion commit editor interface that builds a
     Bazaar TreeDelta.
     """
+
     def __init__(self, revmeta, mapping, newfileidmap, oldfileidmap):
         super(TreeDeltaBuildEditor, self).__init__(revmeta, mapping)
         self._parent_idmap = oldfileidmap

@@ -119,6 +119,8 @@ class SubversionSourcePullResult(PullResult):
 class SubversionWriteLock(object):
     """A (dummy) write lock on a Subversion object."""
 
+    __slots__ = ('unlock')
+
     def __init__(self, unlock):
         self.unlock = unlock
 
@@ -128,6 +130,8 @@ class SubversionWriteLock(object):
 
 class SubversionReadLock(object):
     """A (dummy) read lock on a Subversion object."""
+
+    __slots__ = ('unlock')
 
     def __init__(self, unlock):
         self.unlock = unlock
@@ -646,9 +650,6 @@ class SvnBranch(ForeignBranch):
 
 class SvnBranchFormat(BranchFormat):
     """Branch format for Subversion Branches."""
-
-    def __init__(self):
-        BranchFormat.__init__(self)
 
     def network_name(self):
         return "subversion"

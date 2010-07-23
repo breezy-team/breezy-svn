@@ -1,5 +1,7 @@
 class defaultdict(dict):
 
+    __slots__ = ('default_factory',)
+
     def __init__(self, default_factory):
         if not callable(default_factory):
             raise TypeError('first argument must be callable')

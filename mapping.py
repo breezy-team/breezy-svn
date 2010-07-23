@@ -773,7 +773,6 @@ class BzrSvnMappingFileProps(object):
             checkresult.invalid_fileprop_cnt += 1
 
 
-
 class BzrSvnMappingRevProps(object):
 
     def import_revision_revprops(self, svn_revprops, rev):

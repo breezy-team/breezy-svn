@@ -109,6 +109,14 @@ class RevisionMetadata(object):
     from other known data before contacting the Subversions server.
     """
 
+    __slots__ = ('repository', 'check_revprops', '_get_fileprops_fn',
+                 '_log', 'branch_path', '_paths', 'revnum', '_revprops',
+                 '_changed_fileprops', '_fileprops', 
+                 '_direct_lhs_parent_known', '_consider_bzr_fileprops',
+                 '_consider_bzr_revprops', '_estimated_fileprop_ancestors',
+                 'metaiterators', 'uuid', 'children',
+                 '_direct_lhs_parent_revmeta')
+
     def __init__(self, repository, check_revprops, get_fileprops_fn, logwalker,
                  uuid, branch_path, revnum, paths, revprops,
                  changed_fileprops=None, fileprops=None,
@@ -797,6 +805,10 @@ class RevisionMetadata(object):
 class CachingRevisionMetadata(RevisionMetadata):
     """Wrapper around RevisionMetadata that stores some results in a cache."""
 
+    __slots__ = ('base', '_revid_cache', '_revinfo_cache', '_revision_info',
+                 '_original_mapping', '_original_mapping_set',
+                 '_stored_lhs_parent_revid', '_parents_cache', 'paths')
+
     def __init__(self, repository, *args, **kwargs):
         self.base = super(CachingRevisionMetadata, self)
         self.base.__init__(repository, *args,
@@ -914,6 +926,9 @@ def svk_feature_to_revision_id(feature, mapping):
 
 class RevisionMetadataBranch(object):
     """Describes a Bazaar-like branch in a Subversion repository."""
+
+    __slots__ = ('_revs', '_revnums', '_history_limit', '_revmeta_provider',
+                 '_get_next')
 
     def __init__(self, revmeta_provider=None, history_limit=None):
         self._revs = []

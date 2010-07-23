@@ -40,13 +40,13 @@ from bzrlib.plugins.svn.mapping import (
     )
 
 class RevidMap(object):
-    
+
     def __init__(self, repos):
         self.repos = repos
 
     def get_branch_revnum(self, revid, layout, project=None):
         """Find the (branch, revnum) tuple for a revision id.
-        
+
         :return: Tuple with foreign revision id and mapping.
         """
         last_revnum = self.repos.get_latest_revnum()
