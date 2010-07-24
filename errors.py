@@ -17,7 +17,6 @@
 
 """Subversion-specific errors and conversion of Subversion-specific errors."""
 
-
 import subvertpy
 import urllib
 
@@ -40,7 +39,8 @@ from bzrlib.errors import (
 
 
 ERR_RA_DAV_PROPPATCH_FAILED = getattr(subvertpy, "ERR_RA_DAV_PROPPATCH_FAILED", 175008)
-ERR_EAI_NONAME = getattr(subvertpy, "ERR_EAI_NONAME", 670008)
+ERR_APR_OS_START_EAIERR = getattr(subvertpy, "ERR_APR_OS_START_EAIERR", 670000)
+ERR_APR_OS_ERRSPACE_SIZE = getattr(subvertpy, "ERR_APR_OS_ERRSPACE_SIZE", 50000)
 
 
 class InvalidBzrSvnRevision(NoSuchRevision):
@@ -120,14 +120,14 @@ def convert_error(err):
         return NotImplementedError("Function not implemented in remote server")
     elif num == subvertpy.ERR_UNKNOWN_HOSTNAME:
         return ConnectionError(msg=msg)
-    elif num == ERR_EAI_NONAME:
-        return ConnectionError(msg=msg)
     elif num == subvertpy.ERR_RA_DAV_REQUEST_FAILED:
         return DavRequestFailed(msg)
     elif num == subvertpy.ERR_REPOS_HOOK_FAILURE:
         return TipChangeRejected(msg)
     if num == ERR_RA_DAV_PROPPATCH_FAILED:
         return PropertyChangeFailed(msg)
+    if num > ERR_APR_OS_START_EAIERR and num < ERR_APR_OS_START_EAIERR + ERR_APR_OS_ERRSPACE_SIZE:
+        return ConnectionError(msg=msg)
     else:
         return err
 
