@@ -60,6 +60,8 @@ bzr-svn	1.0.3					  UNRELEASED
 
   * Cope with various getaddrinfo errors. (Jelmer Vernooij, #609497)
 
+  * Fix annotate after bzrlib changes. (Jelmer Vernooij, #609520)
+
  FEATURES
 
   * Support fetching a limited number of revisions. (Michael Hudson)

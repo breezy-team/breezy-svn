@@ -19,6 +19,7 @@ from cStringIO import StringIO
 import subvertpy
 
 from bzrlib import (
+    annotate,
     osutils,
     urlutils,
     )
@@ -48,6 +49,9 @@ class SvnTexts(VersionedFiles):
 
     def __init__(self, repository):
         self.repository = repository
+
+    def get_annotator(self):
+        return annotate.Annotator(self)
 
     def check(self, progressbar=None):
         return True
@@ -110,7 +114,8 @@ class SvnTexts(VersionedFiles):
             except KeyError:
                 pass
             else:
-                text_parent = fileidmap.lookup(mapping, path)[1]
+                text_parent = fileidmap.lookup(mapping, path)[:2]
+                assert len(text_parent) == 2
                 if text_parent not in ret:
                     ret.append(text_parent)
 
@@ -137,7 +142,4 @@ class SvnTexts(VersionedFiles):
         path, revnum, mapping = self._lookup_key(key)
         return self.repository._annotate(path, revnum, key[0], key[1], mapping)
 
-    # TODO: annotate, get_sha1s, iter_lines_added_or_present_in_keys, keys
-
-
-
+    # TODO: get_sha1s, iter_lines_added_or_present_in_keys, keys
