@@ -451,17 +451,34 @@ class SvnRaTransport(Transport):
         assert paths is None or isinstance(paths, list)
         assert isinstance(from_revnum, int) and isinstance(to_revnum, int)
         assert isinstance(limit, int)
+
+        if paths is None:
+            newpaths = None
+        else:
+            newpaths = [p.rstrip("/") for p in paths]
+
+        conn = self.get_connection()
+        try:
+            return conn.iter_log(newpaths, from_revnum, to_revnum, limit,
+                discover_changed_paths=discover_changed_paths,
+                strict_node_history=strict_node_history,
+                include_merged_revisions=include_merged_revisions,
+                revprops=revprops)
+        except AttributeError:
+            # Older subvertpy, fall back to iterator wrapper.
+            pass
+
         from threading import Thread, Semaphore
 
         class logfetcher(Thread):
-            def __init__(self, transport, *args, **kwargs):
+            def __init__(self, transport, conn, *args, **kwargs):
                 Thread.__init__(self)
                 self.setDaemon(True)
                 self.transport = transport
                 self.args = args
                 self.kwargs = kwargs
                 self.pending = []
-                self.conn = self.transport.get_connection()
+                self.conn = conn
                 self.semaphore = Semaphore(0)
                 self.busy = False
 
@@ -488,13 +505,11 @@ class SvnRaTransport(Transport):
                     self.pending.append(Exception("Some exception was not handled"))
                     self.semaphore.release()
                     self.transport.add_connection(self.conn)
-
-        if paths is None:
-            newpaths = None
-        else:
-            newpaths = [p.rstrip("/") for p in paths]
-
-        fetcher = logfetcher(self, newpaths, from_revnum, to_revnum, limit, discover_changed_paths=discover_changed_paths, strict_node_history=strict_node_history, include_merged_revisions=include_merged_revisions, revprops=revprops)
+        fetcher = logfetcher(self, conn, newpaths, from_revnum, to_revnum,
+                limit, discover_changed_paths=discover_changed_paths,
+                strict_node_history=strict_node_history,
+                include_merged_revisions=include_merged_revisions,
+                revprops=revprops)
         fetcher.start()
         return iter(fetcher.next, None)
 
@@ -507,7 +522,7 @@ class SvnRaTransport(Transport):
             if not item:
                 all_true = False
                 break
-        
+
         assert paths is None or all_true
 
         if paths is None:
@@ -718,6 +733,11 @@ class MutteringRemoteAccess(object):
     def get_log(self, callback, paths, from_revnum, to_revnum, limit, *args, **kwargs):
         mutter('svn log -r%d:%d %r (limit: %r)' % (from_revnum, to_revnum, paths, limit))
         return self.actual.get_log(callback, paths, 
+                    from_revnum, to_revnum, limit, *args, **kwargs)
+
+    def iter_log(self, paths, from_revnum, to_revnum, limit, *args, **kwargs):
+        mutter('svn iter-log -r%d:%d %r (limit: %r)' % (from_revnum, to_revnum, paths, limit))
+        return self.actual.iter_log(paths, 
                     from_revnum, to_revnum, limit, *args, **kwargs)
 
     def change_rev_prop(self, revnum, name, value):
