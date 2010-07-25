@@ -112,17 +112,14 @@ class SvnTexts(VersionedFiles):
             try:
                 path = fileidmap.reverse_lookup(mapping, fileid)
             except KeyError:
-                pass
+                pass # File didn't exist here
             else:
                 text_parent = fileidmap.lookup(mapping, path)[:2]
                 assert len(text_parent) == 2
                 if text_parent not in ret:
                     ret.append(text_parent)
 
-        if ret == []:
-            return ()
-        else:
-            return tuple(ret)
+        return tuple(ret)
 
     def get_parent_map(self, keys):
         invs = {}
