@@ -62,6 +62,9 @@ bzr-svn	1.0.3					  UNRELEASED
 
   * Fix annotate after bzrlib changes. (Jelmer Vernooij, #609520)
 
+  * Support _override_hook_source_branch argument to InterBranch.push(). 
+    (Jelmer Vernooij, #609178)
+
  FEATURES
 
   * Support fetching a limited number of revisions. (Michael Hudson)

@@ -997,7 +997,8 @@ class InterOtherSvnBranch(InterBranch):
         return self.source.tags.merge_to(self.target.tags, overwrite)
 
     def push(self, overwrite=False, stop_revision=None,
-            _push_merged=None, _override_svn_revprops=None):
+            _push_merged=None, _override_svn_revprops=None,
+            _override_hook_source_branch=None):
         """See InterBranch.push()."""
         result = SubversionTargetBranchPushResult()
         result.target_branch = self.target
