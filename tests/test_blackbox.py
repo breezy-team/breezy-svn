@@ -50,7 +50,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         repos_url = self.make_client('d', 'de')
         self.commit_something(repos_url)
         self.run_bzr("branch %s dc" % repos_url)
-        self.check_output("2\n", "revno de")
+        self.assertEquals("2\n", self.run_bzr("revno de")[0])
 
     def test_branch_onerev_stacked(self):
         repos_url = self.make_client('d', 'de')
@@ -96,7 +96,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.build_tree({"dc/foo": "blaaaa"})
         self.run_bzr("commit -m msg dc")
         self.run_bzr("push -d dc %s" % repos_url)
-        self.check_output("", "status dc")
+        self.assertEquals("", self.run_bzr("status dc")[0])
 
     def test_push_empty_existing(self):
         repos_url = self.make_repository('d')
@@ -174,7 +174,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("add dc/bar")
         self.run_bzr("commit -m msg dc")
         self.run_bzr("push --overwrite -d dc %s/trunk" % repos_url)
-        self.check_output("", "status dc")
+        self.assertEquals("", self.run_bzr("status dc")[0])
 
     def test_dpush_empty(self):
         repos_url = self.make_repository('dp')
@@ -193,7 +193,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.build_tree({"dc/foo": "blaaaa"})
         self.run_bzr("commit -m msg dc")
         self.run_bzr("dpush -d dc %s" % repos_url)
-        self.check_output("", "status dc")
+        self.assertEquals("", self.run_bzr("status dc")[0])
 
     def test_dpush_new(self):
         repos_url = self.make_repository('d')
@@ -207,8 +207,8 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("add dc/foofile")
         self.run_bzr("commit -m msg dc")
         self.run_bzr("dpush -d dc %s" % repos_url)
-        self.check_output("3\n", "revno dc")
-        self.check_output("", "status dc")
+        self.assertEquals("3\n", self.run_bzr("revno dc")[0])
+        self.assertEquals("", self.run_bzr("status dc")[0])
 
     def test_dpush_wt_diff(self):
         repos_url = self.make_repository('d')
@@ -223,7 +223,8 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("commit -m msg dc")
         self.build_tree({"dc/foofile": "blaaaal"})
         self.run_bzr("dpush -d dc %s" % repos_url)
-        self.check_output('modified:\n  foofile\n', "status dc")
+        self.assertEquals('modified:\n  foofile\n',
+                self.run_bzr("status dc")[0])
 
     def test_info_workingtree(self):
         repos_url = self.make_client('d', 'dc')
@@ -375,7 +376,8 @@ Node-copyfrom-path: x
 
 
 """)
-        self.check_output("", 'svn-import --layout=none %s dc' % filename)
+        self.assertEquals("",
+            self.run_bzr('svn-import --layout=none %s dc' % filename)[0])
         load_dumpfile(filename, "realrepo")
         svnrepo = Repository.open("realrepo")
         self.assertEquals(uuid, svnrepo.uuid)
@@ -409,7 +411,7 @@ Node-copyfrom-path: x
         dc.add_file("foo").modify("test")
         dc.add_file("bla").modify("ha")
         dc.close()
-        self.check_output("a/bla\na/foo\n", "ls a")
+        self.assertEquals("a/bla\na/foo\n", self.run_bzr("ls a")[0])
 
     def test_info_remote(self):
         repos_url = self.make_repository("a")
@@ -417,8 +419,9 @@ Node-copyfrom-path: x
         dc.add_file("foo").modify("test")
         dc.add_file("bla").modify("ha")
         dc.close()
-        self.check_output(
-                "Repository branch (format: subversion)\nLocation:\n  shared repository: a\n  repository branch: a\n", 'info a')
+        self.assertEquals(
+                "Repository branch (format: subversion)\nLocation:\n  shared repository: a\n  repository branch: a\n",
+                self.run_bzr('info a')[0])
 
     def test_lightweight_checkout_lightweight_checkout(self):
         repos_url = self.make_client("a", "dc")
@@ -433,7 +436,7 @@ Node-copyfrom-path: x
         self.build_tree({'de/foo': 'bla'})
         self.run_bzr("add de/foo")
         self.run_bzr("commit -m test de")
-        self.check_output("2\n", "revno de")
+        self.assertEquals("2\n", self.run_bzr("revno de")[0])
 
     # this method imported from bzrlib.tests.test_msgeditor:
     def make_fake_editor(self, message='test message from fed\\n'):
@@ -475,12 +478,13 @@ if len(sys.argv) == 2:
     def test_set_branching_scheme_local(self):
         self.make_fake_editor()
         repos_url = self.make_repository("a")
-        self.check_output("", 'svn-branching-scheme --set %s' % repos_url)
+        self.assertEquals("", self.run_bzr('svn-branching-scheme --set %s' % repos_url)[0])
 
     def test_set_branching_scheme_global(self):
         self.make_fake_editor()
         repos_url = self.make_repository("a")
-        self.check_output("", 'svn-branching-scheme --repository-wide --set %s' % repos_url)
+        self.assertEquals("", 
+            self.run_bzr('svn-branching-scheme --repository-wide --set %s' % repos_url)[0])
 
     def monkey_patch_gpg(self):
         """Monkey patch the gpg signing strategy to be a loopback.
@@ -573,7 +577,7 @@ if len(sys.argv) == 2:
         svn_url = self.make_repository('d')
         
         self.run_bzr('svn-import --format 1.9-rich-root %s dc' % svn_url)
-        self.check_output("Repository branch (format: 1.14-rich-root)\nLocation:\n  shared repository: dc\n  repository branch: dc\n\nRelated branches:\n  parent branch: d\n", 'info dc')
+        self.assertEquals("Repository branch (format: 1.14-rich-root)\nLocation:\n  shared repository: dc\n  repository branch: dc\n\nRelated branches:\n  parent branch: d\n", self.run_bzr('info dc')[0])
 
     def test_svn_layout(self):
         svn_url = self.make_repository('d')
@@ -581,5 +585,6 @@ if len(sys.argv) == 2:
         dc = self.get_commit_editor(svn_url)
         dc.add_dir("trunk")
         dc.close()
-        
-        self.check_output('Repository root: %s\nLayout: root\nBranch path: \nPush merged revisions: False\n' % svn_url, 'svn-layout %s' % svn_url)
+
+        self.assertEquals('Repository root: %s\nLayout: root\nBranch path: \nPush merged revisions: False\n' % svn_url,
+                self.run_bzr('svn-layout %s' % svn_url)[0])
