@@ -30,9 +30,8 @@ from bzrlib.plugins.svn.tests import SubversionTestCase
 class TestBranch(SubversionTestCase, ExternalBase):
 
     def setUp(self):
-        SubversionTestCase.setUp(self)
-        SubversionTestCase.tearDown(self)
         ExternalBase.setUp(self)
+        self._init_client()
 
     def tearDown(self):
         ExternalBase.tearDown(self)
