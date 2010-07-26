@@ -73,6 +73,9 @@ bzr-svn	1.0.3					  UNRELEASED
   * Use standard iterator for RemoteAccess log browsing, if 
     provided by subvertpy. (Jelmer Vernooij)
 
+  * Filter out ghost revisions in SvnRepository.gather_stats().
+    (Jelmer Vernooij, #610219)
+
  COMPATIBILITY
 
   * Drop support for Bazaar < 2.2. (Jelmer Vernooij)
