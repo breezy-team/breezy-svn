@@ -704,7 +704,7 @@ class InterSvnOtherBranch(GenericInterBranch):
 
     def _update_revisions(self, stop_revision=None, overwrite=False,
             graph=None, limit=None):
-        """Like InterBranch.update_revisions, but with a few additional 
+        """Like InterBranch.update_revisions, but with a few additional
             parameters.
 
         :param limit: Optional maximum number of revisions to fetch

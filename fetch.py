@@ -126,7 +126,7 @@ def inventory_ancestors(inv, fileid, exceptions):
 
 def md5_strings(chunks):
     """Return the MD5sum of a list of chunks.
-    
+
     :param chunks: Chunks as strings
     :return: String with MD5 hex digest
     """
@@ -377,7 +377,7 @@ class DirectoryBuildEditor(object):
 
 class FileBuildEditor(object):
 
-    __slots__ = ('path', 'editor', 'is_executable', 'is_special', 
+    __slots__ = ('path', 'editor', 'is_executable', 'is_special',
                  'last_file_rev')
 
     def __init__(self, editor, path):
@@ -421,7 +421,7 @@ class FileBuildEditor(object):
 
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
-    __slots__ = ('old_id', 'new_id', 'old_path', '_metadata_changed', 
+    __slots__ = ('old_id', 'new_id', 'old_path', '_metadata_changed',
                  '_renew_fileids', 'new_ie')
 
     def __init__(self, editor, old_path, path, old_id, new_id,
@@ -460,7 +460,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self.editor._get_text_revision(self.path) is not None):
             assert self.editor.revid is not None
 
-            self.new_ie.revision = (self.editor._get_text_revision(self.path) 
+            self.new_ie.revision = (self.editor._get_text_revision(self.path)
                                     or self.editor.revid)
             text_parents = self.editor._get_text_parents(self.new_id)
             self.editor.texts.insert_record_stream([
@@ -515,7 +515,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # to make sure all children get readded with a new file id
             renew_fileids = base_file_id
         return DirectoryRevisionBuildEditor(self.editor, old_path, path,
-            base_file_id, file_id, self.new_id, 
+            base_file_id, file_id, self.new_id,
             renew_fileids=renew_fileids)
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
@@ -1138,7 +1138,7 @@ class InterFromSvnRepository(InterRepository):
         if self._prev_tree is not None and self._prev_tree.get_revision_id() == revid:
             return self._prev_tree
         if "check" in debug.debug_flags:
-            # This uses 'assert' rather than raising AssertionError 
+            # This uses 'assert' rather than raising AssertionError
             # intentionally, it's a fairly expensive check.
             assert self.target.has_revision(revid)
         return self.target.revision_tree(revid)
@@ -1276,7 +1276,7 @@ class InterFromSvnRepository(InterRepository):
                     except:
                         editor.abort()
                         raise
-                    self._prev_tree = RevisionTree(self.target, 
+                    self._prev_tree = RevisionTree(self.target,
                         editor.inventory, revid)
             except:
                 self.target.abort_write_group()
@@ -1302,14 +1302,14 @@ class InterFromSvnRepository(InterRepository):
 
     def _get_needed(self, revision_id=None, fetch_spec=None, project=None,
                     target_is_empty=False, pb=None, find_ghosts=False):
-        """Find the set of revisions that is missing. 
+        """Find the set of revisions that is missing.
 
         :note: revision_id and fetch_spec are mutually exclusive
 
         :param revision_id: Optional target revision id
         :param fetch_spec: Specifier describing the revisions to fetch
         :param project: Project name as used by the repository layout, if applicable
-        :param target_is_empty: Whether the target is empty 
+        :param target_is_empty: Whether the target is empty
             (aka: should has_revision be called)
         :param pb: Optional progress bar to use.
         :param find_ghosts: Whether to find ghosts
@@ -1378,9 +1378,9 @@ class InterFromSvnRepository(InterRepository):
             finally:
                 if nested_pb is not None:
                     nested_pb.finished()
-            # Double check that we can actually find the revision that we 
+            # Double check that we can actually find the revision that we
             # attempted to fetch.
-            # This uses 'assert' rather than raising AssertionError 
+            # This uses 'assert' rather than raising AssertionError
             # intentionally, it's a fairly expensive check.
             assert revision_id is None or self.target.has_revision(
                 revision_id)

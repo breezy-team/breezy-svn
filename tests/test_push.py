@@ -103,14 +103,14 @@ class TestDPush(SubversionTestCase):
 
         c = ra.RemoteAccess(self.repos_url)
         (entries, fetch_rev, props) = c.get_dir("", c.get_latest_revnum())
-        self.assertEquals(set(['svn:entry:committed-rev', 
-            'svn:entry:last-author', 'svn:entry:uuid', 
+        self.assertEquals(set(['svn:entry:committed-rev',
+            'svn:entry:last-author', 'svn:entry:uuid',
             'svn:entry:committed-date']), set(props.keys()))
 
         r = self.svndir.find_repository()
         self.assertEquals([r.generate_revision_id(
                 c.get_latest_revnum(),
-                "", 
+                "",
                 r.get_mapping())], revid_map.values())
 
     def test_change_multiple(self):
@@ -132,15 +132,15 @@ class TestDPush(SubversionTestCase):
 
         c = ra.RemoteAccess(self.repos_url)
         (entries, fetch_rev, props) = c.get_dir("", c.get_latest_revnum())
-        self.assertEquals(set(['svn:entry:committed-rev', 
-            'svn:entry:last-author', 'svn:entry:uuid', 
+        self.assertEquals(set(['svn:entry:committed-rev',
+            'svn:entry:last-author', 'svn:entry:uuid',
             'svn:entry:committed-date']), set(props.keys()))
 
         r = self.svndir.find_repository()
         self.assertEquals(set([r.generate_revision_id(
                 rev,
-                "", 
-                r.get_mapping()) for rev in (c.get_latest_revnum()-1, c.get_latest_revnum())]), 
+                "",
+                r.get_mapping()) for rev in (c.get_latest_revnum()-1, c.get_latest_revnum())]),
                 set(revid_map.values()))
 
     def test_dpush_add(self):
@@ -163,7 +163,7 @@ class TestDPush(SubversionTestCase):
         repos = self.svndir.find_repository()
         revmeta = repos._revmeta_provider.get_revision("", 3)
         self.assertEquals(revmeta.get_paths(), {"foo/bliel": ('A', None, -1)})
- 
+
     def test_diverged(self):
         dc = self.commit_editor()
         foo = dc.open_dir("foo")
@@ -180,8 +180,8 @@ class TestDPush(SubversionTestCase):
         source_branch = self.bzrdir.open_branch()
         source_branch.lock_write()
         try:
-            self.assertRaises(DivergedBranches, 
-                              self.dpush, source_branch, 
+            self.assertRaises(DivergedBranches,
+                              self.dpush, source_branch,
                               svndir.open_branch())
         finally:
             source_branch.unlock()
@@ -237,7 +237,7 @@ class TestPush(SubversionTestCase):
         wt.add('file')
         wt.commit(message="Commit from Bzr")
 
-        self.assertRaises(DivergedBranches, 
+        self.assertRaises(DivergedBranches,
                           svndir.open_branch().pull,
                           self.bzrdir.open_branch())
 
@@ -258,8 +258,8 @@ class TestPush(SubversionTestCase):
           repos.generate_revision_id(2, "", mapping))
         self.assertEqual(repos.generate_revision_id(2, "", mapping),
                         self.svndir.open_branch().last_revision())
-        self.assertEqual("other data", 
-            repos.revision_tree(repos.generate_revision_id(2, "", 
+        self.assertEqual("other data",
+            repos.revision_tree(repos.generate_revision_id(2, "",
                                 mapping)).get_file_text(inv.path2id("foo/bla")))
 
     def test_simple(self):
@@ -288,7 +288,7 @@ class TestPush(SubversionTestCase):
 
         self.svndir.open_branch().pull(self.bzrdir.open_branch())
 
-        self.assertEquals(("Sombody famous", "2002-02-01T23:00:00.000000Z", "Commit from Bzr"), 
+        self.assertEquals(("Sombody famous", "2002-02-01T23:00:00.000000Z", "Commit from Bzr"),
             self.client_log(self.repos_url, 0, 2)[2][1:])
 
     def test_empty_file(self):
@@ -321,7 +321,7 @@ class TestPush(SubversionTestCase):
         self.svndir.open_branch().pull(self.bzrdir.open_branch())
 
         repos = self.svndir.find_repository()
-        mapping = repos.get_mapping() 
+        mapping = repos.get_mapping()
         inv = repos.get_inventory(repos.generate_revision_id(2, "", mapping))
         self.assertTrue(inv.has_filename('south'))
         self.assertEquals('symlink', inv[inv.path2id('south')].kind)
@@ -360,7 +360,7 @@ class TestPush(SubversionTestCase):
         os.mkdir("b")
         repos = self.svndir.sprout("b")
 
-        self.assertEqual(Branch.open("dc").revision_history(), 
+        self.assertEqual(Branch.open("dc").revision_history(),
                          Branch.open("b").revision_history())
 
     def test_fetch_preserves_file_revid(self):
@@ -413,7 +413,7 @@ class TestPush(SubversionTestCase):
 
         self.svndir.open_branch().pull(self.bzrdir.open_branch())
 
-        self.assertEquals((3, "some-rid"), 
+        self.assertEquals((3, "some-rid"),
                 self.svndir.open_branch().last_revision_info())
 
     def test_commit_check_rev_equal(self):
@@ -450,7 +450,7 @@ class TestPush(SubversionTestCase):
 
         mapping = repos.get_mapping()
 
-        self.assertEqual(repos.generate_revision_id(3, "", mapping), 
+        self.assertEqual(repos.generate_revision_id(3, "", mapping),
                         self.svndir.open_branch().last_revision())
 
         inv = repos.get_inventory(repos.generate_revision_id(2, "", mapping))
@@ -464,10 +464,10 @@ class TestPush(SubversionTestCase):
         self.assertEqual(self.svndir.open_branch().revision_history(),
                          self.bzrdir.open_branch().revision_history())
 
-        self.assertEqual(wt.branch.last_revision(), 
+        self.assertEqual(wt.branch.last_revision(),
                 repos.generate_revision_id(3, "", mapping))
         self.assertEqual(
-                wt.branch.repository.get_ancestry(wt.branch.last_revision()), 
+                wt.branch.repository.get_ancestry(wt.branch.last_revision()),
                 repos.get_ancestry(wt.branch.last_revision()))
 
     def test_multiple_diverged(self):
@@ -483,7 +483,7 @@ class TestPush(SubversionTestCase):
         oc.add_dir("adir")
         oc.close()
 
-        self.assertRaises(DivergedBranches, 
+        self.assertRaises(DivergedBranches,
                 lambda: Branch.open(oc_url).pull(self.bzrdir.open_branch()))
 
     def test_different_branch_path(self):
@@ -636,7 +636,7 @@ class PushNewBranchTests(SubversionTestCase):
 
         self.build_tree({"svnco/baz.txt": "baz"})
         self.client_add("svnco/baz.txt")
-        self.assertEquals(3, 
+        self.assertEquals(3,
                 self.client_commit("svnco", "add yet another file")[0])
         self.client_update("svnco")
 
@@ -661,7 +661,7 @@ class PushNewBranchTests(SubversionTestCase):
         finally:
             wt.unlock()
         self.assertTrue(os.path.exists("bzrco/baz.txt"))
-        self.assertRaises(BzrError, 
+        self.assertRaises(BzrError,
                 lambda: wt.branch.push(Branch.open(repos_url)))
 
     def test_push_replace_existing_branch(self):
@@ -681,7 +681,7 @@ class PushNewBranchTests(SubversionTestCase):
 
         self.build_tree({"svnco/trunk/baz.txt": "baz"})
         self.client_add("svnco/trunk/baz.txt")
-        self.assertEquals(3, 
+        self.assertEquals(3,
                 self.client_commit("svnco", "add yet another file")[0])
         self.client_update("svnco")
 
@@ -768,7 +768,7 @@ class PushNewBranchTests(SubversionTestCase):
         bzrwt.add("test")
         revid = bzrwt.commit("Do a commit")
         newdir = BzrDir.open(repos_url+"/foo/trunk")
-        self.assertRaises(MissingPrefix, 
+        self.assertRaises(MissingPrefix,
                           lambda: newdir.import_branch(bzrwt.branch))
 
     def test_repeat(self):
@@ -784,7 +784,7 @@ class PushNewBranchTests(SubversionTestCase):
         self.build_tree({'c/test': "Tour de France"})
         bzrwt.commit("Do a commit")
         newdir = BzrDir.open(repos_url+"/trunk")
-        self.assertRaises(AlreadyBranchError, newdir.import_branch, 
+        self.assertRaises(AlreadyBranchError, newdir.import_branch,
                           bzrwt.branch)
 
     def test_multiple(self):
@@ -805,11 +805,11 @@ class PushNewBranchTests(SubversionTestCase):
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/foo.txt': "foo"})
         bzrwt.add("foo.txt")
-        revid1 = bzrwt.commit("Do a commit", 
+        revid1 = bzrwt.commit("Do a commit",
                               committer=u"Adeodato Simó <dato@net.com.org.es>")
         newdir = BzrDir.open(repos_url+"/trunk")
         newdir.import_branch(bzrwt.branch)
-        self.assertEquals(u"Adeodato Simó <dato@net.com.org.es>", 
+        self.assertEquals(u"Adeodato Simó <dato@net.com.org.es>",
                 Repository.open(repos_url).get_revision(revid1).committer)
 
     def test_utf8_commit_msg(self):
@@ -872,7 +872,7 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertEquals(revid2, newbranch.last_revision())
         mapping = svnrepos.get_mapping()
         self.assertEquals([
-            svnrepos.generate_revision_id(1, "trunk", mapping) 
+            svnrepos.generate_revision_id(1, "trunk", mapping)
             , revid1, revid2], newbranch.revision_history())
 
     def test_push_overwrite(self):
@@ -970,7 +970,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_rename_dir_changing_contents(self):
         repos_url = self.make_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c") 
+        bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry", "dirid")
         bzrwt.add("registry/generic.c", "origid")
@@ -1021,7 +1021,7 @@ class PushNewBranchTests(SubversionTestCase):
         bzrwt, old_ie, new_ie, foo_ie, revid1, revid2 = self._create_bzrwt_with_changed_root()
         newdir = BzrDir.open(repos_url+"/trunk")
         newbranch = newdir.import_branch(bzrwt.branch)
-        self.assertEquals({"trunk": ("R", None, -1), 
+        self.assertEquals({"trunk": ("R", None, -1),
                            "trunk/foo": ("A", "trunk/foo", 1)},
             newbranch.repository._revmeta_provider.get_revision("trunk", 2).get_paths())
         tree1 = newbranch.repository.revision_tree(revid1)
@@ -1031,7 +1031,7 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertEquals(tree1.path2id("foo"), foo_ie.file_id)
         self.assertEquals(tree2.path2id("foo"), foo_ie.file_id)
 
-        self.assertEquals(bzrwt.branch.revision_history(), 
+        self.assertEquals(bzrwt.branch.revision_history(),
                           newbranch.revision_history())
 
     def test_change_root_fetch(self):
@@ -1048,9 +1048,9 @@ class PushNewBranchTests(SubversionTestCase):
         oldrepos.copy_content_into(newrepos)
 
         log = self.client_log(repos_url, 2, 0)
-        self.assertEquals({'/trunk': ('A', None, -1), 
+        self.assertEquals({'/trunk': ('A', None, -1),
                            '/trunk/foo': ('A', None, -1)}, log[1][0])
-        self.assertEquals({'/trunk': ('R', None, -1), 
+        self.assertEquals({'/trunk': ('R', None, -1),
                            '/trunk/foo': ('A', '/trunk/foo', 1)}, log[2][0])
 
         tree1 = newrepos.revision_tree(revid1)
@@ -1082,7 +1082,7 @@ class PushNewBranchTests(SubversionTestCase):
         copybranch = Branch.open("n")
         check(copybranch)
 
-    def test_push_non_lhs_parent(self):        
+    def test_push_non_lhs_parent(self):
         from bzrlib.debug import debug_flags
         debug_flags.add("commit")
         debug_flags.add("fetch")
@@ -1091,7 +1091,7 @@ class PushNewBranchTests(SubversionTestCase):
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry")
         bzrwt.add("registry/generic.c")
-        revid1 = bzrwt.commit("Add initial directory + file", 
+        revid1 = bzrwt.commit("Add initial directory + file",
                               rev_id="initialrevid")
 
         # Push first branch into Subversion
@@ -1120,13 +1120,13 @@ class PushNewBranchTests(SubversionTestCase):
         self.build_tree({'c/registry/generic.c': "de"})
         revid2 = bzrwt.commit("Change something", rev_id="changerevid")
 
-        # Merge 
+        # Merge
         self.build_tree({'c/registry/generic.c': "France"})
         bzrwt.add_pending_merge(merge_revid)
         revid3 = bzrwt.commit("Merge something", rev_id="mergerevid")
 
         trunk = Branch.open(repos_url + "/branches/foo")
-        self.assertRaises(AppendRevisionsOnlyViolation, trunk.pull, 
+        self.assertRaises(AppendRevisionsOnlyViolation, trunk.pull,
             bzrwt.branch)
         trunk.get_config().set_user_option('append_revisions_only', 'False')
         trunk.pull(bzrwt.branch)
@@ -1172,7 +1172,7 @@ class PushNewBranchTests(SubversionTestCase):
         try:
             wt.apply_inventory_delta([
                 ("", None, wt.inventory.root.file_id, None),
-                ("mysubdir", "", wt.inventory.path2id("mysubdir"), 
+                ("mysubdir", "", wt.inventory.path2id("mysubdir"),
                     InventoryDirectory(wt.inventory.path2id("mysubdir"), "", None))])
             os.rename("dc/mysubdir/myfile", "dc/myfile")
             osutils.rmtree("dc/mysubdir")
@@ -1199,14 +1199,14 @@ class PushNewBranchTests(SubversionTestCase):
 
         wt = bzrdir.open_workingtree()
         wt.lock_write()
-        try: 
+        try:
             wt.commit("This is pointless.")
             svnbranch = svndir.open_branch()
             svnbranch.pull(wt.branch)
             self.assertEquals(svnbranch.last_revision(), wt.branch.last_revision())
         finally:
             wt.unlock()
- 
+
 
 class TestPushTwice(SubversionTestCase):
     def test_push_twice(self):

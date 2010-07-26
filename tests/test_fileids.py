@@ -228,17 +228,17 @@ class TestFileMapping(TestCase):
         map = self.apply_mappings({(1, ""): {u"": ('A', None), u"foo": ('A', None)}})
         self.assertEqual({
             u'': ('1@uuid::', (1, "")),
-            u'foo': ("1@uuid::foo", (1, "")) 
+            u'foo': ("1@uuid::foo", (1, ""))
             }, map)
 
     def test_copy(self):
         map = self.apply_mappings({
                 (1, ""): {
-                                   u"foo": ('A', None), 
+                                   u"foo": ('A', None),
                                    u"foo/blie": ('A', None),
                                    u"foo/bla": ('A', None)},
                 (2, ""): {
-                                   u"foob": ('A', ('foo', 1)), 
+                                   u"foob": ('A', ('foo', 1)),
                                    u"foob/bla": ('M', None)}
                 })
         self.assertEquals(map,
@@ -250,35 +250,35 @@ class TestFileMapping(TestCase):
     def test_touchparent(self):
         map = self.apply_mappings(
                 {(1, ""): {
-                                   u"foo": ('A', None), 
+                                   u"foo": ('A', None),
                                    u"foo/bla": ('A', None)},
                  (2, ""): {
                                    u"foo/bla": ('M', None)}
                 })
-        self.assertEqual((1, ""), 
+        self.assertEqual((1, ""),
                          map[u"foo"][1])
-        self.assertEqual((1, ""), 
+        self.assertEqual((1, ""),
                          map[u"foo/bla"][1])
 
     def test_usemap(self):
         map = self.apply_mappings(
                 {(1, ""): {
-                                   u"foo": ('A', None), 
+                                   u"foo": ('A', None),
                                    u"foo/bla": ('A', None)},
                  (2, ""): {
                                    u"foo/bla": ('M', None)}
-                 }, 
+                 },
                 renames={(1, ""): {u"foo": "myid"}})
         self.assertEqual("myid", map[u"foo"][0])
 
     def test_usemap_later(self):
         map = self.apply_mappings(
                 {(1, ""): {
-                                   u"foo": ('A', None), 
+                                   u"foo": ('A', None),
                                    u"foo/bla": ('A', None)},
                  (2, ""): {
                                    u"foo/bla": ('M', None)}
-                 }, 
+                 },
                 renames={(2, ""): {u"foo": "myid"}})
         self.assertEqual("1@uuid::foo", map[u"foo"][0])
         self.assertEqual((1, ""), map[u"foo"][1])
@@ -309,13 +309,13 @@ class GetMapTests(SubversionTestCase):
         dc.add_dir("trunk")
         dc.close()
 
-        self.assertEqual({"": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), self.repos.generate_revision_id(1, "trunk", self.mapping), None)}, 
+        self.assertEqual({"": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), self.repos.generate_revision_id(1, "trunk", self.mapping), None)},
                 self.get_map("trunk", 1, self.mapping))
 
     def test_change_parent(self):
         self.repos.set_layout(TrunkLayout(0))
         self.mapping = self.repos.get_mapping()
-        
+
         dc = self.get_commit_editor(self.repos_url)
         dc.add_dir("trunk")
         dc.close()
@@ -325,12 +325,12 @@ class GetMapTests(SubversionTestCase):
         dc.close()
 
         self.assertEqual({
-            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), 
+            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""),
                  self.repos.generate_revision_id(1, "trunk", self.mapping),
-                 None), 
-            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"), 
+                 None),
+            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"),
                      self.repos.generate_revision_id(2, "trunk", self.mapping),
-                     None)}, 
+                     None)},
             self.get_map("trunk", 2, self.mapping))
 
     def test_change_updates(self):
@@ -350,12 +350,12 @@ class GetMapTests(SubversionTestCase):
         dc.close()
 
         self.assertEqual({
-            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), 
+            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""),
                  self.repos.generate_revision_id(1, "trunk", self.mapping),
-                 None), 
-            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"), 
+                 None),
+            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"),
                      self.repos.generate_revision_id(3, "trunk", self.mapping),
-                     None)}, 
+                     None)},
             self.get_map("trunk", 3, self.mapping))
 
     def test_sibling_unrelated(self):
@@ -378,15 +378,15 @@ class GetMapTests(SubversionTestCase):
         dc.close()
 
         self.assertEqual({
-            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), 
+            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""),
                  self.repos.generate_revision_id(1, "trunk", self.mapping),
-                 None), 
-            "bar": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"bar"), 
+                 None),
+            "bar": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"bar"),
                     self.repos.generate_revision_id(2, "trunk", self.mapping),
-                    None), 
-            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"), 
+                    None),
+            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"),
                      self.repos.generate_revision_id(3, "trunk", self.mapping),
-                     None)}, 
+                     None)},
             self.get_map("trunk", 3, self.mapping))
 
     def test_copy(self):
@@ -408,15 +408,15 @@ class GetMapTests(SubversionTestCase):
         dc.close()
 
         self.assertEqual({
-            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), 
+            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""),
                  self.repos.generate_revision_id(1, "trunk", self.mapping),
-                 None), 
-            "bar": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar"), 
+                 None),
+            "bar": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar"),
                     self.repos.generate_revision_id(3, "trunk", self.mapping),
-                    (self.repos.uuid, "trunk", 3)), 
-            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"), 
+                    (self.repos.uuid, "trunk", 3)),
+            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"),
                      self.repos.generate_revision_id(2, "trunk", self.mapping),
-                     None)}, 
+                     None)},
             self.get_map("trunk", 3, self.mapping))
 
     def test_copy_nested_modified(self):
@@ -440,19 +440,19 @@ class GetMapTests(SubversionTestCase):
         dc.close()
 
         self.assertEqual({
-          "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""), 
+          "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""),
             self.repos.generate_revision_id(1, "trunk", self.mapping),
-            None), 
-          "dir": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"dir"), 
+            None),
+          "dir": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"dir"),
                 self.repos.generate_revision_id(2, "trunk", self.mapping),
                 None),
-          "dir/file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"dir/file"), 
+          "dir/file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"dir/file"),
               self.repos.generate_revision_id(2, "trunk", self.mapping),
               None),
-          "bar": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar"), 
+          "bar": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar"),
               self.repos.generate_revision_id(3, "trunk", self.mapping),
               (self.repos.uuid, "trunk", 3)),
-          "bar/file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar/file"), 
+          "bar/file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar/file"),
               self.repos.generate_revision_id(3, "trunk", self.mapping),
               (self.repos.uuid, "trunk", 3))},
             self.get_map("trunk", 3, self.mapping))
@@ -460,7 +460,7 @@ class GetMapTests(SubversionTestCase):
     def test_304134(self):
         self.make_checkout(self.repos_url, 'svn-co')
         self.build_tree({
-            'svn-co/subdir1/file1': '', 
+            'svn-co/subdir1/file1': '',
             'svn-co/subdir1/file2': '',
             'svn-co/subdir2/file3': '',
             'svn-co/subdir2/file4': ''})
@@ -525,7 +525,7 @@ class FileIdMapCacheTests(TestCaseWithMemoryTransport):
         self.assertEquals(data2, self.cache.load("bla2"))
 
     def test_store_child_create_revid(self):
-        data = {u"bla": ("myfileid", "mynewrev", 
+        data = {u"bla": ("myfileid", "mynewrev",
                     ("myuuid", "mybp", 42))}
         self.cache.save("bla", [], data)
         self.assertEquals(data, self.cache.load("bla"))
@@ -571,14 +571,14 @@ class ReverseLookupTests(TestCase):
         idmap = {"parent": ("parentfileid", "parentrev", ("someuuid", "somebp", 42))}
         mapping = mapping_registry.get_default()()
         self.assertEquals(u"parent/foo",
-                          idmap_reverse_lookup(idmap, mapping, 
+                          idmap_reverse_lookup(idmap, mapping,
                           mapping.generate_file_id(("someuuid", "somebp", 42), u"parent/foo")))
 
     def test_not_implicit(self):
         idmap = {"parent": ("parentfileid", "parentrev", None)}
         mapping = mapping_registry.get_default()()
-        self.assertRaises(KeyError, 
-                          idmap_reverse_lookup, idmap, mapping, 
+        self.assertRaises(KeyError,
+                          idmap_reverse_lookup, idmap, mapping,
                           mapping.generate_file_id(("someuuid", "somebp", 42), u"parent/foo"))
 
 

@@ -29,13 +29,13 @@ from bzrlib.plugins.svn.format import SvnWorkingTreeDirFormat
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 class TestWorkingTreeFormat(TestCase):
-    
+
     def setUp(self):
         super(TestWorkingTreeFormat, self).setUp()
         self.format = SvnWorkingTreeFormat(4)
 
     def test_get_format_desc(self):
-        self.assertEqual("Subversion Working Copy Version 4", 
+        self.assertEqual("Subversion Working Copy Version 4",
                          self.format.get_format_description())
 
     def test_initialize(self):
@@ -55,7 +55,7 @@ class TestCheckoutFormat(TestCase):
         convert = self.format.get_converter()
 
     def test_initialize(self):
-        self.assertRaises(UninitializableFormat, 
+        self.assertRaises(UninitializableFormat,
                           self.format.initialize_on_transport, None)
 
 
@@ -95,7 +95,7 @@ class TestCheckout(SubversionTestCase):
         self.make_client("d", "dc")
         x = BzrDir.open("dc")
         self.assertFalse(x.needs_format_conversion(SvnWorkingTreeDirFormat()))
-        
+
     def test_checkout_checkout(self):
         """Test making a checkout of a checkout."""
         self.make_client("d", "dc")

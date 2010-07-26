@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -70,7 +70,7 @@ def guess_layout_from_branch_path(relpath):
 
 
 def guess_layout_from_path(relpath):
-    """Try to guess the branching layout from a path in the repository, 
+    """Try to guess the branching layout from a path in the repository,
     not necessarily a branch path.
 
     :param relpath: Relative path in repository
@@ -96,9 +96,9 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
     :param changed_paths: Iterator over (branch_path, changes, revnum, revprops)
         as returned from LogWalker.iter_changes().
     :param last_revnum: Number of entries in changed_paths.
-    :param relpath: Branch path that should be accepted by the branching 
+    :param relpath: Branch path that should be accepted by the branching
                     scheme as a branch.
-    :return: Tuple with layout that best matches history and 
+    :return: Tuple with layout that best matches history and
              layout instance that best matches but also considers
              relpath a valid branch path.
     """
@@ -108,7 +108,7 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
     try:
         for (revpaths, revnum, revprops) in changed_paths:
             assert isinstance(revpaths, dict)
-            pb.update("analyzing repository layout", last_revnum-revnum, 
+            pb.update("analyzing repository layout", last_revnum-revnum,
                       last_revnum)
             if revpaths == {}:
                 continue
@@ -120,7 +120,7 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
                 layout_cache[str(layout)] = layout
     finally:
         pb.finished()
-    
+
     entries = potentials.items()
     entries.sort(lambda (a, b), (c, d): d - b)
 
@@ -151,7 +151,7 @@ def repository_guess_layout(repository, revnum, branch_path=None):
             repository._log.iter_changes(None, revnum, max(0, revnum-GUESS_SAMPLE_SIZE)), revnum, branch_path)
     finally:
         pb.finished()
-    mutter("Guessed repository layout: %r, guess layout to use: %r" % 
+    mutter("Guessed repository layout: %r, guess layout to use: %r" %
             (guessed_layout, layout))
     return (guessed_layout, layout)
 

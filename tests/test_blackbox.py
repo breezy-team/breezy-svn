@@ -395,7 +395,7 @@ Node-copyfrom-path: x
 
     def test_svn_import_bzr_branch(self):
         self.run_bzr('init foo')
-        self.run_bzr_error(['bzr: ERROR: Source repository is not a Subversion repository.\n'], 
+        self.run_bzr_error(['bzr: ERROR: Source repository is not a Subversion repository.\n'],
                            ['svn-import', 'foo', 'dc'])
 
     def test_svn_import_bzr_repo(self):
@@ -482,7 +482,7 @@ if len(sys.argv) == 2:
     def test_set_branching_scheme_global(self):
         self.make_fake_editor()
         repos_url = self.make_repository("a")
-        self.assertEquals("", 
+        self.assertEquals("",
             self.run_bzr('svn-branching-scheme --repository-wide --set %s' % repos_url)[0])
 
     def monkey_patch_gpg(self):
@@ -574,7 +574,7 @@ if len(sys.argv) == 2:
 
     def test_svn_import_format(self):
         svn_url = self.make_repository('d')
-        
+
         self.run_bzr('svn-import --format 1.9-rich-root %s dc' % svn_url)
         self.assertEquals("Repository branch (format: 1.14-rich-root)\nLocation:\n  shared repository: dc\n  repository branch: dc\n\nRelated branches:\n  parent branch: d\n", self.run_bzr('info dc')[0])
 

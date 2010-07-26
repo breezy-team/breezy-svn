@@ -78,7 +78,7 @@ class TestBasisTree(SubversionTestCase):
 
         self.client_update("dc")
         tree = SvnBasisTree(WorkingTree.open("dc"))
-        self.assertEqual('symlink', 
+        self.assertEqual('symlink',
                          tree.inventory[tree.inventory.path2id("file")].kind)
         self.assertEqual("target",
                          tree.inventory[tree.inventory.path2id("file")].symlink_target)
@@ -94,7 +94,7 @@ class TestBasisTree(SubversionTestCase):
 
         self.client_update("dc")
         tree = SvnBasisTree(WorkingTree.open("dc"))
-        self.assertEqual('symlink', 
+        self.assertEqual('symlink',
                          tree.inventory[tree.inventory.path2id("file")].kind)
         self.assertEqual("target\nbar\nbla",
                          tree.inventory[tree.inventory.path2id("file")].symlink_target)
@@ -118,7 +118,7 @@ class TestBasisTree(SubversionTestCase):
                 raise TestSkipped("Unable to run test with svn 1.4")
             raise
         tree = SvnBasisTree(WorkingTree.open("dc"))
-        self.assertEqual('file', 
+        self.assertEqual('file',
                          tree.inventory[tree.inventory.path2id("file")].kind)
 
     def test_symlink_next(self):
@@ -138,7 +138,7 @@ class TestBasisTree(SubversionTestCase):
         self.client_update("dc")
 
         tree = SvnBasisTree(WorkingTree.open("dc"))
-        self.assertEqual('symlink', 
+        self.assertEqual('symlink',
                          tree.inventory[tree.inventory.path2id("file")].kind)
         self.assertEqual("target",
                          tree.inventory[tree.inventory.path2id("file")].symlink_target)
@@ -220,14 +220,14 @@ class TestInventoryExternals(SubversionTestCase):
         repos = Repository.open(repos_url)
         mapping = repos.get_mapping()
         inv = Inventory(root_id='blabloe')
-        inventory_add_external(inv, 'blabloe', 'blie/bla', 
-                mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)), 
+        inventory_add_external(inv, 'blabloe', 'blie/bla',
+                mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)),
                 None, repos_url)
         self.assertEqual(TreeReference(
             mapping.generate_file_id((repos.uuid, "", 0), u""),
-             'bla', inv.path2id('blie'), 
+             'bla', inv.path2id('blie'),
              reference_revision=CURRENT_REVISION,
-             revision=mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1))), 
+             revision=mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1))),
              inv[inv.path2id('blie/bla')])
 
     def test_add_simple_norev(self):
@@ -235,15 +235,15 @@ class TestInventoryExternals(SubversionTestCase):
         repos = Repository.open(repos_url)
         mapping = repos.get_mapping()
         inv = Inventory(root_id='blabloe')
-        inventory_add_external(inv, 'blabloe', 'bla', 
-            mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)), None, 
+        inventory_add_external(inv, 'blabloe', 'bla',
+            mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)), None,
             repos_url)
 
         self.assertEqual(TreeReference(
             mapping.generate_file_id((repos.uuid, "", 0), u""),
-             'bla', 'blabloe', 
+             'bla', 'blabloe',
              reference_revision=CURRENT_REVISION,
-             revision=mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1))), 
+             revision=mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1))),
              inv[inv.path2id('bla')])
 
     def test_add_simple_rev(self):
@@ -251,15 +251,15 @@ class TestInventoryExternals(SubversionTestCase):
         repos = Repository.open(repos_url)
         inv = Inventory(root_id='blabloe')
         mapping = repos.get_mapping()
-        inventory_add_external(inv, 'blabloe', 'bla', 
+        inventory_add_external(inv, 'blabloe', 'bla',
             mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)), 0, repos_url)
         expected_ie = TreeReference(mapping.generate_file_id((repos.uuid, "", 0), u""),
-            'bla', 'blabloe', 
+            'bla', 'blabloe',
             revision=mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)),
             reference_revision=NULL_REVISION)
         ie = inv[inv.path2id('bla')]
         self.assertEqual(NULL_REVISION, ie.reference_revision)
-        self.assertEqual(mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)), 
+        self.assertEqual(mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)),
                          ie.revision)
         self.assertEqual(expected_ie, inv[inv.path2id('bla')])
 
@@ -300,7 +300,7 @@ class TestSvnRevisionTree(SubversionTestCase):
                          self.tree.get_revision_id())
 
     def test_get_file_lines(self):
-        self.assertEqual(["data"], 
+        self.assertEqual(["data"],
                 self.tree.get_file_lines(self.inventory.path2id("foo/bla")))
 
     def test_executable(self):
@@ -308,7 +308,7 @@ class TestSvnRevisionTree(SubversionTestCase):
         self.client_commit("dc", "My Message")
 
         mapping = self.repos.get_mapping()
-        
+
         inventory = self.repos.get_inventory(
                 self.repos.generate_revision_id(2, "", mapping))
 
@@ -322,12 +322,12 @@ class TestSvnRevisionTree(SubversionTestCase):
         self.client_commit("dc", "My Message")
 
         mapping = self.repos.get_mapping()
-        
+
         inventory = self.repos.get_inventory(
                 self.repos.generate_revision_id(2, "", mapping))
 
         self.assertEqual('symlink', inventory[inventory.path2id("bar")].kind)
-        self.assertEqual('foo/bla', 
+        self.assertEqual('foo/bla',
                 inventory[inventory.path2id("bar")].symlink_target)
 
     def test_not_executable(self):

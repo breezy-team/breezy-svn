@@ -92,7 +92,7 @@ class TestWorkingTree(SubversionTestCase):
         self.client_update("dc")
         self.build_tree({"dc/trunk/dir": None})
         self.client_add("dc/trunk/dir")
-        config_set_scheme(Repository.open(repos_url), TrunkBranchingScheme(0), 
+        config_set_scheme(Repository.open(repos_url), TrunkBranchingScheme(0),
                           None, True)
         Repository.open(repos_url).store_layout(TrunkLayout(0))
         self.assertRaises(NotBranchError, WorkingTree.open, "dc")
@@ -324,12 +324,12 @@ class TestWorkingTree(SubversionTestCase):
         self.client_commit("dc", "Bla")
         tree = WorkingTree.open("dc")
         tree.rename_one("bl", "bloe")
-        
+
         basis_inv = tree.basis_tree().inventory
         inv = tree.read_working_inventory()
         self.assertFalse(inv.has_filename("bl"))
         self.assertTrue(inv.has_filename("bloe"))
-        self.assertEqual(basis_inv.path2id("bl"), 
+        self.assertEqual(basis_inv.path2id("bl"),
                          inv.path2id("bloe"))
         self.assertIs(None, inv.path2id("bl"))
         self.assertIs(None, basis_inv.path2id("bloe"))
@@ -337,13 +337,13 @@ class TestWorkingTree(SubversionTestCase):
     def test_empty_basis_tree(self):
         self.make_client('a', 'dc')
         wt = WorkingTree.open("dc")
-        self.assertEqual(wt.branch.generate_revision_id(0), 
+        self.assertEqual(wt.branch.generate_revision_id(0),
                          wt.basis_tree().inventory.revision_id)
         inv = Inventory()
         root_id = wt.branch.repository.get_mapping().generate_file_id((wt.branch.repository.uuid, "", 0), u"")
         inv.revision_id = wt.branch.generate_revision_id(0)
         inv.add_path('', 'directory', root_id).revision = inv.revision_id
-                              
+
         self.assertEqual(inv, wt.basis_tree().inventory)
 
     def test_basis_tree(self):
@@ -366,7 +366,7 @@ class TestWorkingTree(SubversionTestCase):
         self.client_commit("dc", "Bla")
         tree = WorkingTree.open("dc")
         tree.move(["bl", "a"], "dir")
-        
+
         basis_inv = tree.basis_tree().inventory
         inv = tree.read_working_inventory()
         self.assertFalse(inv.has_filename("bl"))
@@ -383,7 +383,7 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({"dc/bl": "data"})
         tree = WorkingTree.open("dc")
         self.assertEqual([Branch.open(repos_url).last_revision()], tree.get_parent_ids())
- 
+
     def test_delta(self):
         self.make_client('a', 'dc')
         self.build_tree({"dc/bl": "data"})
@@ -422,7 +422,7 @@ class TestWorkingTree(SubversionTestCase):
         self.assertEquals(None, result.master_branch)
         self.assertEquals(tree.branch, result.target_branch)
         self.assertEquals(br, result.source_branch)
- 
+
     def test_working_inventory(self):
         self.make_client('a', 'dc')
         self.build_tree({"dc/bl": "data", "dc/foo/bar": "bla", "dc/foo/bla": "aa"})
@@ -563,11 +563,11 @@ class TestWorkingTree(SubversionTestCase):
 
         self.build_tree({"dc/trunk/bl": None})
         self.client_add("dc/trunk")
-        
+
         tree = WorkingTree.open("dc")
         tree.set_pending_merges([
             tree.branch.repository.generate_revision_id(1, "branches/foo", tree.branch.mapping), "c"])
-        self.assertEqual("%s:/branches/foo:1\n" % tree.branch.repository.uuid,  
+        self.assertEqual("%s:/branches/foo:1\n" % tree.branch.repository.uuid,
                          self.client_get_prop("dc", "svk:merge"))
 
     def test_commit_callback(self):
@@ -794,15 +794,15 @@ class IgnoreListTests(TestCase):
         self.assertEquals([], generate_ignore_list({}))
 
     def test_simple(self):
-        self.assertEquals(["./twin/peaks"], 
+        self.assertEquals(["./twin/peaks"],
                 generate_ignore_list({"twin": "peaks"}))
 
     def test_toplevel(self):
-        self.assertEquals(["./twin*"], 
+        self.assertEquals(["./twin*"],
                 generate_ignore_list({"": "twin*"}))
 
     def test_multiple(self):
-        self.assertEquals(["./twin*", "./twin/peaks"], 
+        self.assertEquals(["./twin*", "./twin/peaks"],
                 generate_ignore_list({"twin": "peaks", "": "twin*"}))
 
 

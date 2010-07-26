@@ -16,7 +16,7 @@
 
 
 """Tests for svn-keywords."""
- 
+
 
 from bzrlib.revision import (
     Revision,
@@ -34,15 +34,15 @@ from bzrlib.plugins.svn.keywords import (
 class CompressKeywordsTests(TestCase):
 
     def test_simple(self):
-        self.assertEquals("foo $Id$ blie", 
+        self.assertEquals("foo $Id$ blie",
                 compress_keywords("foo $Id: bla$ blie", ["Id"]))
 
     def test_not_allowed(self):
-        self.assertEquals("foo $Id: bla$ blie", 
+        self.assertEquals("foo $Id: bla$ blie",
                 compress_keywords("foo $Id: bla$ blie", ["Bla"]))
 
     def test_already_compressed(self):
-        self.assertEquals("foo $Id$ blie", 
+        self.assertEquals("foo $Id$ blie",
                 compress_keywords("foo $Id$ blie", ["Bla"]))
 
 
@@ -53,7 +53,7 @@ class MockRevmeta(object):
         self.revnum = revnum
         self.branch_path = branch_path
         class MockRepo(object):
-            
+
             def __init__(self, url):
                 self.base = url
         self.repository = MockRepo(repo_url)
@@ -67,38 +67,38 @@ class TestKeywordExpansion(TestCase):
     def test_date_revmeta_not_native(self):
         rev = Revision("somerevid")
         rev.timestamp = 43842423
-        self.assertEquals('1971-05-23T10:27:03.000000Z', 
+        self.assertEquals('1971-05-23T10:27:03.000000Z',
                 keywords['Date']("somerevid", rev, "somepath", None))
 
     def test_date_revmeta_native(self):
         rev = Revision("somerevid")
-        revmeta = MockRevmeta({"svn:date": "somedateblabla"}, 42, "/trunk", 
+        revmeta = MockRevmeta({"svn:date": "somedateblabla"}, 42, "/trunk",
             "http://foo.host")
         self.assertEquals('somedateblabla',
                 keywords['Date']("somerevid", rev, "somepath", revmeta))
 
     def test_rev_not_native_not_svn(self):
         rev = Revision("somerevid")
-        self.assertEquals('somerevid', 
+        self.assertEquals('somerevid',
                 keywords['Rev']("somerevid", rev, "somepath", None))
 
     def test_rev_not_native_svn(self):
         revid = "svn-v4:612f8ebc-c883-4be0-9ee0-a4e9ef946e3a:trunk:36984"
         rev = Revision(revid)
-        self.assertEquals('36984', 
+        self.assertEquals('36984',
                 keywords['Rev'](revid, rev, "somepath", None))
 
     def test_rev_native(self):
         revmeta = MockRevmeta({}, 42, "/trunk", "http://foo.host")
         rev = Revision("somerevid")
-        self.assertEquals('42', 
+        self.assertEquals('42',
                 keywords['Rev']("somerevid", rev, "somepath", revmeta))
 
     def test_author_native(self):
-        revmeta = MockRevmeta({"svn:author": "someauthor"}, 42, 
+        revmeta = MockRevmeta({"svn:author": "someauthor"}, 42,
                 "/trunk", "http://foo.host")
         rev = Revision("somerevid")
-        self.assertEquals('someauthor', 
+        self.assertEquals('someauthor',
                 keywords['Author']("somerevid", rev, "somepath", revmeta))
 
     def test_author_non_native(self):

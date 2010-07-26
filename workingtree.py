@@ -134,14 +134,14 @@ def update_wc(adm, basedir, conn, revnum):
     editor = adm.get_update_editor(basedir, False, True)
     assert editor is not None
     reporter = conn.do_update(revnum, "", True, editor)
-    adm.crawl_revisions(basedir, reporter, restore_files=False, 
+    adm.crawl_revisions(basedir, reporter, restore_files=False,
                         recurse=True, use_commit_times=False)
     # FIXME: handle externals
 
 
 def apply_prop_changes(orig_props, prop_changes):
     """Apply a set of property changes to a properties dictionary.
-    
+
     :param orig_props: Dictionary with original properties (will be modified)
     :param prop_changes: Dictionary of new property values (None for deletion)
     :return: New dictionary
@@ -156,7 +156,7 @@ def apply_prop_changes(orig_props, prop_changes):
 
 def generate_ignore_list(ignore_map):
     """Create a list of ignores, ordered by directory.
-    
+
     :param ignore_map: Dictionary with paths as keys, patterns as values.
     :return: list of ignores
     """
@@ -231,7 +231,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
     def get_ignore_list(self):
         """Obtain the list of ignore patterns for this working tree.
 
-        :note: Will interpret the svn:ignore properties, rather than read 
+        :note: Will interpret the svn:ignore properties, rather than read
                .bzrignore
         """
         ignores = set([get_adm_dir()])
@@ -240,7 +240,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         def dir_add(wc, prefix, patprefix):
             assert isinstance(prefix, unicode)
             assert isinstance(patprefix, str)
-            ignorestr = wc.prop_get(properties.PROP_IGNORE, 
+            ignorestr = wc.prop_get(properties.PROP_IGNORE,
                 self.abspath(prefix).rstrip("/").encode("utf-8"))
             if ignorestr is not None:
                 for pat in ignorestr.splitlines():
@@ -295,16 +295,16 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             adm.close()
         return revnum
 
-    def update(self, change_reporter=None, possible_transports=None, 
+    def update(self, change_reporter=None, possible_transports=None,
                revnum=None):
         """Update the workingtree to a new Bazaar revision number.
-        
+
         """
         orig_revnum = self.base_revnum
         self._update_base_revnum(self._update(revnum))
         return self.base_revnum - orig_revnum
 
-    def remove(self, files, verbose=False, to_file=None, keep_files=True, 
+    def remove(self, files, verbose=False, to_file=None, keep_files=True,
                force=False):
         """Remove files from the working tree."""
         # FIXME: Use to_file argument
@@ -313,7 +313,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         wc = self._get_wc(write_lock=True)
         try:
             for file in files:
-                wc.delete(osutils.safe_utf8(self.abspath(file)), 
+                wc.delete(osutils.safe_utf8(self.abspath(file)),
                           keep_local=keep_files)
         finally:
             wc.close()
@@ -326,8 +326,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
     def _get_wc(self, relpath=u"", write_lock=False, depth=0, base=None):
         """Open a working copy handle."""
         assert isinstance(relpath, unicode)
-        return WorkingCopy(base, 
-            self.abspath(relpath).rstrip("/").encode("utf-8"), 
+        return WorkingCopy(base,
+            self.abspath(relpath).rstrip("/").encode("utf-8"),
             write_lock, depth)
 
     def _get_rel_wc(self, relpath, write_lock=False):
@@ -353,7 +353,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 from_wc.delete(from_abspath)
             finally:
                 from_wc.close()
-            new_name = osutils.pathjoin(osutils.safe_utf8(to_dir), 
+            new_name = osutils.pathjoin(osutils.safe_utf8(to_dir),
                                         osutils.safe_utf8(os.path.basename(entry)))
             self._change_fileid_mapping(self.inventory.path2id(entry), new_name)
             self._change_fileid_mapping(None, entry)
@@ -388,8 +388,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         self.read_working_inventory()
 
     def path_to_file_id(self, revnum, current_revnum, path):
-        """Generate a bzr file id from a Subversion file name. 
-        
+        """Generate a bzr file id from a Subversion file name.
+
         :param revnum: Revision number.
         :param path: Path of the file
         :return: Tuple with file id and revision id.
@@ -408,7 +408,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
         def add_file_to_inv(relpath, id, revid, parent_id):
             """Add a file to the inventory.
-            
+
             :param relpath: Path relative to working tree root
             :param id: File id of current directory
             :param revid: Revision id
@@ -451,11 +451,11 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 for entry in entries.values():
                     subrelpath = osutils.pathjoin(relpath, entry.name.decode("utf-8"))
                     if entry.name == "" or entry.kind != 'directory':
-                        if ((entry.copyfrom_url == url or entry.url == url) and 
+                        if ((entry.copyfrom_url == url or entry.url == url) and
                             not (entry.schedule in (SCHEDULE_DELETE,
                                                     SCHEDULE_REPLACE))):
                             ret.append(osutils.pathjoin(
-                                    self.get_branch_path().strip("/").decode("utf-8"), 
+                                    self.get_branch_path().strip("/").decode("utf-8"),
                                     subrelpath))
                     else:
                         find_copies(url, subrelpath)
@@ -464,24 +464,24 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             return ret
 
         def find_ids(relpath, entry, rootwc):
-            assert entry.schedule in (SCHEDULE_NORMAL, 
+            assert entry.schedule in (SCHEDULE_NORMAL,
                                       SCHEDULE_DELETE,
                                       SCHEDULE_ADD,
                                       SCHEDULE_REPLACE)
             if entry.schedule == SCHEDULE_NORMAL:
                 assert entry.revision >= 0
                 # Keep old id
-                return self.path_to_file_id(entry.cmt_rev, entry.revision, 
+                return self.path_to_file_id(entry.cmt_rev, entry.revision,
                         relpath)
             elif entry.schedule == SCHEDULE_DELETE:
                 return (None, None)
-            elif (entry.schedule == SCHEDULE_ADD or 
+            elif (entry.schedule == SCHEDULE_ADD or
                   entry.schedule == SCHEDULE_REPLACE):
                 # See if the file this file was copied from disappeared
                 # and has no other copies -> in that case, take id of other file
-                if (entry.copyfrom_url and 
+                if (entry.copyfrom_url and
                     list(find_copies(entry.copyfrom_url)) == [relpath.encode("utf-8")]):
-                    return self.path_to_file_id(entry.copyfrom_rev, 
+                    return self.path_to_file_id(entry.copyfrom_rev,
                         entry.revision, self.unprefix(urllib.unquote(entry.copyfrom_url[len(entry.repos):])).decode("utf-8"))
                 ids = self._get_new_file_ids()
                 if ids.has_key(relpath):
@@ -515,7 +515,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
                 entry = entries[name]
                 assert entry
-                
+
                 if entry.kind == subvertpy.NODE_DIR:
                     try:
                         subwc = self._get_wc(subrelpath, base=wc)
@@ -536,7 +536,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                     else:
                         mutter('no id for %r', entry.url)
 
-        rootwc = self._get_wc() 
+        rootwc = self._get_wc()
         try:
             add_dir_to_inv(u"", rootwc, None)
         finally:
@@ -581,7 +581,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 except NoSuchRevision:
                     pass
 
-            adm.prop_set(svk.SVN_PROP_SVK_MERGE, 
+            adm.prop_set(svk.SVN_PROP_SVK_MERGE,
                          svk.serialize_svk_features(svk_merges), self.basedir.encode("utf-8"))
         finally:
             adm.close()
@@ -643,7 +643,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             kinds = [self._kind(file) for file in files]
         assert isinstance(files, list)
         for f, kind, file_id, copyfrom in zip(files, kinds, ids, _copyfrom):
-            wc = self._get_wc(os.path.dirname(osutils.safe_unicode(f)), 
+            wc = self._get_wc(os.path.dirname(osutils.safe_unicode(f)),
                               write_lock=True)
             try:
                 try:
@@ -685,13 +685,13 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         self._set_base(None, fetched)
         self.read_working_inventory()
 
-    def pull(self, source, overwrite=False, stop_revision=None, 
+    def pull(self, source, overwrite=False, stop_revision=None,
              delta_reporter=None, possible_transports=None, local=False):
         """Pull in changes from another branch into this working tree."""
         # FIXME: Use delta_reporter
         # FIXME: Use source
         # FIXME: Use overwrite
-        result = self.branch.pull(source, overwrite=overwrite, stop_revision=stop_revision, 
+        result = self.branch.pull(source, overwrite=overwrite, stop_revision=stop_revision,
                                   local=local)
         fetched = self._update(self.branch.get_revnum())
         self._update_base_revnum(fetched)
@@ -779,14 +779,14 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
     def _get_svk_merges(self, base_branch_props):
         return base_branch_props.get(svk.SVN_PROP_SVK_MERGE, "")
 
-    def _apply_inventory_delta_change(self, base_tree, old_path, new_path, 
+    def _apply_inventory_delta_change(self, base_tree, old_path, new_path,
                                       file_id, ie):
         already_there = (old_path == new_path and base_tree._inventory[file_id].kind == ie.kind)
         if old_path is not None:
             old_abspath = osutils.safe_utf8(self.abspath(old_path))
             if not already_there:
                 self.remove([old_path], keep_files=True)
-            copyfrom = (urlutils.join(self.entry.url, old_path), 
+            copyfrom = (urlutils.join(self.entry.url, old_path),
                         self.base_revnum)
         else:
             try:
@@ -836,7 +836,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         if kind == 'file':
             size = stat_result.st_size
             # try for a stat cache lookup
-            executable = self._is_executable_from_path_and_stat(path, 
+            executable = self._is_executable_from_path_and_stat(path,
                 stat_result)
             return (kind, size, executable, self._sha_from_stat(
                 path, stat_result))
@@ -921,7 +921,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             except KeyError:
                 revmeta, mapping = self.branch.repository._get_revmeta(revid)
                 revprops = revmeta.get_revprops()
-                ret = (revmeta.revnum, 
+                ret = (revmeta.revnum,
                        revprops[properties.PROP_REVISION_DATE],
                        revprops.get(properties.PROP_REVISION_AUTHOR, ""))
                 simple_revprops_cache[revid] = ret
@@ -946,7 +946,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 name = name.decode("utf-8")
                 if name == "":
                     fileprops = newrevtree.get_file_properties(id, path)
-                    process_committed(adm, path, fileprops, 
+                    process_committed(adm, path, fileprops,
                                   newrevtree.inventory[id].revision)
                     continue
 
@@ -974,7 +974,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                     target_f.write(source_f.read())
                     target_f.close()
                     source_f.close()
-                    fileprops = newrevtree.get_file_properties(child_id, 
+                    fileprops = newrevtree.get_file_properties(child_id,
                             child_path)
                     process_committed(adm, child_path, fileprops,
                                   newrevtree.inventory[child_id].revision)
@@ -1014,7 +1014,7 @@ class SvnWorkingTreeFormat(WorkingTreeFormat):
 
 
 class SvnCheckout(BzrDir):
-    """BzrDir implementation for Subversion checkouts (directories 
+    """BzrDir implementation for Subversion checkouts (directories
     containing a .svn subdirectory."""
 
     def __init__(self, transport, format):
@@ -1067,7 +1067,7 @@ class SvnCheckout(BzrDir):
         except bzrsvn_errors.NotSvnBranchPath, e:
             raise NoWorkingTree(self.local_path)
 
-    def sprout(self, url, revision_id=None, force_new_repo=False, 
+    def sprout(self, url, revision_id=None, force_new_repo=False,
                recurse='down', possible_transports=None, accelerator_tree=None,
                hardlink=False):
         # FIXME: honor force_new_repo

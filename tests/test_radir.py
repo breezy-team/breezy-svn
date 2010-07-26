@@ -95,7 +95,7 @@ class TestRemoteAccess(SubversionTestCase):
         b = x.create_branch()
         self.assertEquals(repos_url+"/trunk", b.base)
         transport = SvnRaTransport(repos_url)
-        self.assertEquals(subvertpy.NODE_DIR, 
+        self.assertEquals(subvertpy.NODE_DIR,
                 transport.check_path("trunk", 1))
 
     def test_bad_dir(self):
@@ -121,7 +121,7 @@ class TestRemoteAccess(SubversionTestCase):
         origb.commit("Message")
         b = x.import_branch(source=origb.branch)
         self.assertEquals(origb.branch.revision_history(), b.revision_history())
-        self.assertEquals(origb.branch.revision_history(), 
+        self.assertEquals(origb.branch.revision_history(),
                 Branch.open(repos_url+"/trunk").revision_history())
 
     def test_open_repos_root(self):
@@ -175,6 +175,6 @@ class TestRemoteAccess(SubversionTestCase):
     def test_find_repository_not_found(self):
         repos_url = self.make_client('d', 'dc')
         osutils.rmtree("d")
-        self.assertRaises(NoRepositoryPresent, 
+        self.assertRaises(NoRepositoryPresent,
                 lambda: BzrDir.open("dc").find_repository())
 

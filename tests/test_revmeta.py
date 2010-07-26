@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -113,10 +113,10 @@ class TestWithRepository(SubversionTestCase):
         self.assertEquals("newdata\n",
                           revmeta2.get_fileprops()["myprop"])
 
-        self.assertEquals(("data\n","newdata\n"), 
+        self.assertEquals(("data\n","newdata\n"),
                           revmeta2.get_changed_fileprops()["myprop"])
 
-        self.assertEquals((None, "newdata\n"), 
+        self.assertEquals((None, "newdata\n"),
                           revmeta3.get_changed_fileprops()["myp2"])
 
         self.assertEquals(("newdata\n", None),
@@ -158,7 +158,7 @@ class TestWithRepository(SubversionTestCase):
         revmeta2 = repos._revmeta_provider.get_revision("", 2)
 
         self.assertEquals({"": ("M", None, -1)}, revmeta1.get_paths())
-        self.assertEquals({"bar": ("A", None, -1)}, 
+        self.assertEquals({"bar": ("A", None, -1)},
                           revmeta2.get_paths())
 
     def test_foreign_revid(self):
@@ -172,7 +172,7 @@ class TestWithRepository(SubversionTestCase):
 
         revmeta1 = provider.get_revision("", 1)
 
-        self.assertEquals((provider.repository.uuid, "", 1), 
+        self.assertEquals((provider.repository.uuid, "", 1),
                 revmeta1.get_foreign_revid())
 
     def test_get_revprops(self):
@@ -207,7 +207,7 @@ class FilterRevisionsTests(TestCase):
         self.assertEquals([1, 5],
                 list(filter_revisions(iter([("revision", 1), ("branch", None), ("revision", 5)]))))
 
- 
+
 class RestrictPrefixesTests(TestCase):
 
     def test_root(self):
@@ -226,7 +226,7 @@ class FakeRevision(object):
         self.branch_path = path
         self.revnum = revnum
         self._parent_revmeta_set = False
-        self._direct_lhs_parent_incomplete = None 
+        self._direct_lhs_parent_incomplete = None
         self.parent_revmeta = None
         self.children = set()
 
@@ -242,8 +242,8 @@ class FakeRevision(object):
         return "FakeRevision(%r,%r)" % (self.branch_path, self.revnum)
 
     def __eq__(self, other):
-        return (type(self) == type(other) and 
-                self.branch_path == other.branch_path and 
+        return (type(self) == type(other) and
+                self.branch_path == other.branch_path and
                 self.revnum == other.revnum)
 
 
@@ -266,7 +266,7 @@ class MetadataBrowserTests(TestCase):
         return RevisionMetadataBrowser(prefixes, from_revnum, to_revnum, layout, self)
 
     def test_root_layout_simple(self):
-        browser = self.get_browser(None, 1, 0, RootLayout(), 
+        browser = self.get_browser(None, 1, 0, RootLayout(),
                 { 1: { "bla": ('A', None, -1)}})
         rev1 = browser.next()
         self.assertEquals(('revision', FakeRevision('',1)), rev1)
@@ -277,7 +277,7 @@ class MetadataBrowserTests(TestCase):
         self.assertRaises(StopIteration, browser.next)
 
     def test_trunk_layout_simple(self):
-        browser = self.get_browser(None, 2, 0, TrunkLayout(), 
+        browser = self.get_browser(None, 2, 0, TrunkLayout(),
                 { 1: { "trunk": ('A', None, -1)},
                   2: { "trunk": ('M', None, -1)}})
         rev1 = browser.next()
@@ -289,7 +289,7 @@ class MetadataBrowserTests(TestCase):
         self.assertRaises(StopIteration, browser.next)
 
     def test_trunk_layout_movefrom_non_branch(self):
-        browser = self.get_browser(None, 2, 0, TrunkLayout(), 
+        browser = self.get_browser(None, 2, 0, TrunkLayout(),
                 { 1: { "old-trunk": ('A', None, -1)},
                   2: { "trunk": ('A', "old-trunk", 1)}})
         rev1 = browser.next()
@@ -301,7 +301,7 @@ class MetadataBrowserTests(TestCase):
         self.assertRaises(StopIteration, browser.next)
 
     def test_trunk_layout_movefrom_oldbranch(self):
-        browser = self.get_browser(None, 3, 0, TrunkLayout(), 
+        browser = self.get_browser(None, 3, 0, TrunkLayout(),
                 { 1: { "old-trunk": ('A', None, -1)},
                   2: { "old-trunk": ('D', None, -1)},
                   3: { "trunk": ('A', "old-trunk", 1)}})
@@ -315,7 +315,7 @@ class MetadataBrowserTests(TestCase):
         self.assertRaises(StopIteration, browser.next)
 
     def test_trunk_layout_copiedbranch(self):
-        browser = self.get_browser(None, 2, 0, TrunkLayout(), 
+        browser = self.get_browser(None, 2, 0, TrunkLayout(),
                 { 1: { "trunk": ('A', None, -1)},
                   2: { "branches": ('A', None, -1),
                        "branches/foo": ('A', "trunk", 1)}})
@@ -328,7 +328,7 @@ class MetadataBrowserTests(TestCase):
         self.assertRaises(StopIteration, browser.next)
 
     def test_subdir_becomes_branch_root(self):
-        browser = self.get_browser(None, 2, 0, TrunkLayout(), 
+        browser = self.get_browser(None, 2, 0, TrunkLayout(),
                 { 1: { "trunk": ('A', None, -1),
                        "trunk/mysubdir": ('A', None, -1),
                        "trunk/mysubdir/myfile": ('A', None, -1)},
@@ -346,7 +346,7 @@ class MetadataBrowserTests(TestCase):
         self.assertRaises(StopIteration, browser.next)
 
     def test_copyfrom_revnum_skipped(self):
-        browser = self.get_browser(["python"], 4, 0, TrunkLayout(1), 
+        browser = self.get_browser(["python"], 4, 0, TrunkLayout(1),
                 { 1: { "python": ('A', None, -1),
                        "python/tags": ('A', None, -1),
                        "python/trunk": ('A', None, -1)},
@@ -367,10 +367,10 @@ class MetadataBrowserTests(TestCase):
               "packages/enthought-chaco2/trunk": ("D", None, -1)}
         rev5 = { "packages/enthought-chaco2/trunk": ("A", None, -1),
                 "packages/enthought-chaco2/trunk/debian": ("A", None, -1)}
-        browser = self.get_browser(["packages"], 5, 3, TrunkLayout(2), 
+        browser = self.get_browser(["packages"], 5, 3, TrunkLayout(2),
                 { 3: rev3, 4: rev4, 5: rev5 })
         rev1 = browser.next()
-        self.assertEquals(('revision', 
+        self.assertEquals(('revision',
             FakeRevision('packages/enthought-chaco2/trunk',5)), rev1)
         rev2 = browser.next()
         self.assertEquals(('delete', ('packages/enthought-chaco2/trunk', 4)), rev2)
@@ -386,7 +386,7 @@ class MetadataBrowserTests(TestCase):
         rev1 = { "foo": ('A', None, -1), "foo/trunk": ('A', None, -1) }
         rev2 = { "bar": ('A', 'foo', 1) }
         rev3 = { "bar/trunk": ('M', None, -1) }
-        browser = self.get_browser(["bar"], 4, 0, TrunkLayout(1), 
+        browser = self.get_browser(["bar"], 4, 0, TrunkLayout(1),
                 { 1: rev1, 2: rev2, 3: rev3 })
         rev1 = browser.next()
         self.assertEquals(('revision', FakeRevision('bar/trunk', 3)), rev1)
@@ -412,7 +412,7 @@ class MetadataBrowserTests(TestCase):
         self.assertEquals(("revision", FakeRevision("", 0)), rev4)
 
     def test_ignore_sideeffects(self):
-        browser = self.get_browser(["python"], 8, 0, TrunkLayout(1), 
+        browser = self.get_browser(["python"], 8, 0, TrunkLayout(1),
                 { 1: { "python": ('A', None, -1),
                        "python/tags": ('A', None, -1),
                        "python/trunk": ('A', None, -1)},

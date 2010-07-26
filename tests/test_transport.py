@@ -42,7 +42,7 @@ from bzrlib.plugins.svn.transport import (
 class SvnRaTest(SubversionTestCase):
 
     def test_open_nonexisting(self):
-        self.assertRaises(InvalidURL, SvnRaTransport, 
+        self.assertRaises(InvalidURL, SvnRaTransport,
                           "svn+nonexisting://foo/bar")
 
     def test_create(self):
@@ -140,10 +140,10 @@ class SvnRaTest(SubversionTestCase):
         t.mkdir("bla")
 
         c = ra.RemoteAccess(repos_url)
-        self.assertEquals(c.check_path("bla", c.get_latest_revnum()), 
+        self.assertEquals(c.check_path("bla", c.get_latest_revnum()),
                           subvertpy.NODE_DIR)
         t.mkdir("bla/subdir")
-        self.assertEquals(c.check_path("bla/subdir", c.get_latest_revnum()), 
+        self.assertEquals(c.check_path("bla/subdir", c.get_latest_revnum()),
                           subvertpy.NODE_DIR)
 
     def test_has_dot(self):
@@ -168,7 +168,7 @@ class SvnRaTest(SubversionTestCase):
         t = SvnRaTransport(repos_url)
         self.assertRaises(NoSuchFile, t.mkdir, "bla/subdir")
         c = ra.RemoteAccess(repos_url)
-        self.assertEquals(c.check_path("bla/subdir", c.get_latest_revnum()), 
+        self.assertEquals(c.check_path("bla/subdir", c.get_latest_revnum()),
                           subvertpy.NODE_NONE)
 
     def test_mkdir_twice(self):
@@ -187,7 +187,7 @@ class SvnRaTest(SubversionTestCase):
 
         t = SvnRaTransport(repos_url)
         self.assertEqual("%s/dir" % repos_url, t.clone('dir').base)
-        
+
     def test_get_root(self):
         repos_url = self.make_repository('d')
 
@@ -204,20 +204,20 @@ class SvnRaTest(SubversionTestCase):
         repos_url = self.make_repository('a')
         t = SvnRaTransport("%s" % repos_url)
         self.assertEquals(urlutils.join(self.test_dir, "a"), t.local_abspath('.'))
- 
+
 
 class UrlConversionTest(TestCase):
 
     def test_bzr_to_svn_url(self):
-        self.assertEqual("svn://host/location", 
+        self.assertEqual("svn://host/location",
                          bzr_to_svn_url("svn://host/location"))
-        self.assertEqual("svn+ssh://host/location", 
+        self.assertEqual("svn+ssh://host/location",
                          bzr_to_svn_url("svn+ssh://host/location"))
-        self.assertEqual("http://host/location", 
+        self.assertEqual("http://host/location",
                          bzr_to_svn_url("http://host/location"))
-        self.assertEqual("http://host/location", 
+        self.assertEqual("http://host/location",
                          bzr_to_svn_url("svn+http://host/location"))
-        self.assertEqual("http://host/gtk+/location", 
+        self.assertEqual("http://host/gtk+/location",
                          bzr_to_svn_url("svn+http://host/gtk%2B/location"))
 
     def test_url_unescape_uri(self):

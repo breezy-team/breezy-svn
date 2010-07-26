@@ -131,7 +131,7 @@ def apply_reverse_changes(branches, changes):
     :return: [(new_name, old_name, new_rev)]
     :note: new_name is the name before these changes,
            old_name is the name after the changes.
-           new_rev is the revision that the changes were copied from 
+           new_rev is the revision that the changes were copied from
            (new_name), or -1 if the previous revnum
     """
     branches = set(branches)

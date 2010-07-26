@@ -42,7 +42,7 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         :return: A bzr-friendly URL for the created repository.
         """
         return svn_to_bzr_url(
-            subvertpy.tests.SubversionTestCase.make_repository(self, 
+            subvertpy.tests.SubversionTestCase.make_repository(self,
                 relpath, allow_revprop_changes))
 
     def setUp(self):
@@ -100,8 +100,8 @@ def test_suite():
     suite = TestSuite()
 
     testmod_names = [
-            'test_branch', 
-            'test_branchprops', 
+            'test_branch',
+            'test_branchprops',
             'test_cache',
             'test_changes',
             'test_checkout',
@@ -110,7 +110,7 @@ def test_suite():
             'test_convert',
             'test_errors',
             'test_fetch',
-            'test_fileids', 
+            'test_fileids',
             'test_keywords',
             'layout.test_custom',
             'layout.test_standard',
@@ -119,7 +119,7 @@ def test_suite():
             'test_parents',
             'test_push',
             'test_radir',
-            'test_repository', 
+            'test_repository',
             'test_revmeta',
             'test_revspec',
             'test_svk',

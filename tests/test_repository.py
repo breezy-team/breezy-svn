@@ -54,7 +54,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         cfg.set_user_option("foo", "Still Life")
 
         repos = Repository.open(self.repos_url)
-        self.assertEquals("Still Life", 
+        self.assertEquals("Still Life",
                 repos.get_config().get_user_option("foo"))
 
     def test_get_config(self):
@@ -62,7 +62,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         repos.get_config().set_user_option("foo", "Van Der Graaf Generator")
 
         repos = Repository.open(self.repos_url)
-        self.assertEquals("Van Der Graaf Generator", 
+        self.assertEquals("Van Der Graaf Generator",
                 repos.get_config().get_user_option("foo"))
 
     def test_repr(self):

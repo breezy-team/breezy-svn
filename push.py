@@ -256,7 +256,7 @@ class InterToSvnRepository(InterRepository):
         :param target_repository: Repository to push to
         :param target_branch_path: Path to create new branch at
         :param source: Source repository
-        :return: Revision id of the pushed revision, foreign revision id that 
+        :return: Revision id of the pushed revision, foreign revision id that
             was pushed
         """
         start_revid = find_push_base_revision(self.source, self.target,

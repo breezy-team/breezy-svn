@@ -75,7 +75,7 @@ PROPS-END
 """)
         load_dumpfile(dumpfile, "d")
         fs = repos.Repository("d").fs()
-        self.assertEqual("6987ef2d-cd6b-461f-9991-6f1abef3bd59", 
+        self.assertEqual("6987ef2d-cd6b-461f-9991-6f1abef3bd59",
                 fs.get_uuid())
 
     def test_loaddumpfile_invalid(self):
@@ -123,12 +123,12 @@ class TestConversion(SubversionTestCase):
                            all=True, create_shared_repo=True, prefix="bar")
 
     def test_sets_parent_urls(self):
-        convert_repository(Repository.open(self.repos_url), "e", 
-                           TrunkLayout(0), 
+        convert_repository(Repository.open(self.repos_url), "e",
+                           TrunkLayout(0),
                            all=False, create_shared_repo=True)
-        self.assertEquals(self.repos_url+"/trunk", 
+        self.assertEquals(self.repos_url+"/trunk",
                 Branch.open("e/trunk").get_parent())
-        self.assertEquals(self.repos_url+"/branches/abranch", 
+        self.assertEquals(self.repos_url+"/branches/abranch",
                 Branch.open("e/branches/abranch").get_parent())
 
     def test_fetch_alive(self):
@@ -144,8 +144,8 @@ class TestConversion(SubversionTestCase):
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
-        convert_repository(oldrepos, "e", 
-                           TrunkLayout(0), 
+        convert_repository(oldrepos, "e",
+                           TrunkLayout(0),
                            all=False, create_shared_repo=True)
         newrepos = Repository.open("e")
         oldrepos.set_layout(TrunkLayout(0))
@@ -176,7 +176,7 @@ class TestConversion(SubversionTestCase):
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
-        convert_repository(oldrepos, "e", TrunkLayout(0), 
+        convert_repository(oldrepos, "e", TrunkLayout(0),
                            all=True, create_shared_repo=True)
         newrepos = Repository.open("e")
         self.assertTrue(newrepos.has_revision(
@@ -196,7 +196,7 @@ class TestConversion(SubversionTestCase):
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
-        convert_repository(oldrepos, "e", TrunkLayout(0), 
+        convert_repository(oldrepos, "e", TrunkLayout(0),
             create_shared_repo=True,
             filter_branch=lambda branch: branch.get_branch_path().endswith("somebranch"))
         self.assertTrue(os.path.exists("e/branches/somebranch"))
@@ -206,13 +206,13 @@ class TestConversion(SubversionTestCase):
         dir = BzrDir.create("e")
         dir.create_repository(shared=True)
 
-        convert_repository(Repository.open(self.repos_url), "e", 
+        convert_repository(Repository.open(self.repos_url), "e",
                 TrunkLayout(0), create_shared_repo=True)
 
         self.assertTrue(Repository.open("e").is_shared())
 
     def test_shared_import_continue_remove(self):
-        convert_repository(Repository.open(self.repos_url), "e", 
+        convert_repository(Repository.open(self.repos_url), "e",
                 TrunkLayout(0), create_shared_repo=True)
 
         dc = self.get_commit_editor()
@@ -224,11 +224,11 @@ class TestConversion(SubversionTestCase):
         trunk.add_file("trunk/file").modify()
         dc.close()
 
-        convert_repository(Repository.open(self.repos_url), "e", 
+        convert_repository(Repository.open(self.repos_url), "e",
                            TrunkLayout(0), create_shared_repo=True)
 
     def test_shared_import_remove_nokeep(self):
-        convert_repository(Repository.open(self.repos_url), "e", 
+        convert_repository(Repository.open(self.repos_url), "e",
                 TrunkLayout(0), create_shared_repo=True)
 
         dc = self.get_commit_editor()
@@ -237,30 +237,30 @@ class TestConversion(SubversionTestCase):
 
         self.assertTrue(os.path.exists("e/trunk"))
 
-        convert_repository(Repository.open(self.repos_url), "e", 
+        convert_repository(Repository.open(self.repos_url), "e",
                            TrunkLayout(0), create_shared_repo=True)
 
         self.assertFalse(os.path.exists("e/trunk"))
 
     def test_shared_import_continue_with_wt(self):
-        convert_repository(Repository.open(self.repos_url), "e", 
+        convert_repository(Repository.open(self.repos_url), "e",
                 TrunkLayout(0), working_trees=True)
-        convert_repository(Repository.open(self.repos_url), "e", 
+        convert_repository(Repository.open(self.repos_url), "e",
                 TrunkLayout(0), working_trees=True)
 
     def test_shared_import_rootlayout_empty(self):
         dir = BzrDir.create("e")
         dir.create_repository(shared=True)
 
-        convert_repository(Repository.open(self.repos_url), "e", 
+        convert_repository(Repository.open(self.repos_url), "e",
                 RootLayout(), create_shared_repo=True)
 
     def test_shared_import_with_wt(self):
         dir = BzrDir.create("e")
         dir.create_repository(shared=True)
 
-        convert_repository(Repository.open(self.repos_url), "e", 
-                TrunkLayout(0), create_shared_repo=True, 
+        convert_repository(Repository.open(self.repos_url), "e",
+                TrunkLayout(0), create_shared_repo=True,
                 working_trees=True)
 
         self.assertTrue(os.path.isfile(os.path.join(
@@ -270,8 +270,8 @@ class TestConversion(SubversionTestCase):
         dir = BzrDir.create("e")
         dir.create_repository(shared=True)
 
-        convert_repository(Repository.open(self.repos_url), "e", 
-                TrunkLayout(0), create_shared_repo=True, 
+        convert_repository(Repository.open(self.repos_url), "e",
+                TrunkLayout(0), create_shared_repo=True,
                 working_trees=False)
 
         self.assertFalse(os.path.isfile(os.path.join(
@@ -281,14 +281,14 @@ class TestConversion(SubversionTestCase):
         dir = BzrDir.create("e", format=format_registry.make_bzrdir('knit'))
         dir.create_repository(shared=True)
 
-        self.assertRaises(IncompatibleRepositories, 
-            lambda: convert_repository(Repository.open(self.repos_url), "e", 
-                TrunkLayout(0), create_shared_repo=True, 
+        self.assertRaises(IncompatibleRepositories,
+            lambda: convert_repository(Repository.open(self.repos_url), "e",
+                TrunkLayout(0), create_shared_repo=True,
                 working_trees=False))
 
     def test_shared_import_continue_branch(self):
         oldrepos = Repository.open(self.repos_url)
-        convert_repository(oldrepos, "e", 
+        convert_repository(oldrepos, "e",
                 TrunkLayout(0), create_shared_repo=True)
 
         mapping = oldrepos.get_mapping()
@@ -299,22 +299,22 @@ class TestConversion(SubversionTestCase):
         dc.close()
 
         self.assertEqual(
-                Repository.open(self.repos_url).generate_revision_id(2, "trunk", mapping), 
+                Repository.open(self.repos_url).generate_revision_id(2, "trunk", mapping),
                 Branch.open("e/trunk").last_revision())
 
-        convert_repository(Repository.open(self.repos_url), "e", 
+        convert_repository(Repository.open(self.repos_url), "e",
                 TrunkLayout(0), create_shared_repo=True)
 
-        self.assertEqual(Repository.open(self.repos_url).generate_revision_id(3, "trunk", mapping), 
+        self.assertEqual(Repository.open(self.repos_url).generate_revision_id(3, "trunk", mapping),
                         Branch.open("e/trunk").last_revision())
 
- 
+
     def test_shared_import(self):
-        convert_repository(Repository.open(self.repos_url), "e", 
+        convert_repository(Repository.open(self.repos_url), "e",
                 TrunkLayout(0), create_shared_repo=True)
 
         self.assertTrue(Repository.open("e").is_shared())
-    
+
     def test_simple(self):
         convert_repository(Repository.open(self.repos_url), os.path.join(self.test_dir, "e"), TrunkLayout(0))
         self.assertTrue(os.path.isdir(os.path.join(self.test_dir, "e", "trunk")))
@@ -324,7 +324,7 @@ class TestConversion(SubversionTestCase):
         self.assertRaises(NoSuchFile, convert_repository, Repository.open(self.repos_url), os.path.join(self.test_dir, "e", "foo", "bar"), TrunkLayout(0))
 
     def test_notshared_import(self):
-        convert_repository(Repository.open(self.repos_url), "e", 
+        convert_repository(Repository.open(self.repos_url), "e",
                            TrunkLayout(0), create_shared_repo=False)
 
         self.assertRaises(NotBranchError, Repository.open, "e")
@@ -441,7 +441,7 @@ data
 
 """)
         repos = self.load_dumpfile(filename, 'g')
-        convert_repository(repos, os.path.join(self.test_dir, "e"), 
+        convert_repository(repos, os.path.join(self.test_dir, "e"),
                            TrunkLayout(0))
         mapping = repos.get_mapping()
         abspath = self.test_dir
@@ -476,9 +476,9 @@ class TestPrefixed(SubversionTestCase):
     def get_commit_editor(self):
         return super(TestPrefixed, self).get_commit_editor(self.repos_url)
 
-    def test_convert_simple(self): 
+    def test_convert_simple(self):
         oldrepos = Repository.open(self.repos_url)
-        convert_repository(oldrepos, "e", TrunkLayout(1), 
+        convert_repository(oldrepos, "e", TrunkLayout(1),
                 prefix="base",
             create_shared_repo=True)
         self.assertTrue(os.path.exists("e/trunk"))

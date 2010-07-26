@@ -113,7 +113,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         b.tags.set_tag(u"mytag",
             b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
 
-        self.assertEquals(subvertpy.NODE_DIR, 
+        self.assertEquals(subvertpy.NODE_DIR,
                 b.repository.transport.check_path("tags/mytag", 3))
 
     def test_tag_set_dupe(self):
@@ -133,7 +133,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         target = b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping())
         b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
 
-        self.assertEquals(subvertpy.NODE_DIR, 
+        self.assertEquals(subvertpy.NODE_DIR,
                 b.repository.transport.check_path("tags/mytag", 3))
         self.assertEquals(3, b.repository.get_latest_revnum())
 
@@ -159,7 +159,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         b = Branch.open(repos_url + "/trunk")
         b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
 
-        self.assertEquals(subvertpy.NODE_DIR, 
+        self.assertEquals(subvertpy.NODE_DIR,
                 b.repository.transport.check_path("tags/mytag", 3))
         self.assertEquals(3, b.repository.get_latest_revnum())
 
@@ -170,13 +170,13 @@ class WorkingSubversionBranch(SubversionTestCase):
         newtagrevid = b.repository.generate_revision_id(2, "trunk", b.repository.get_mapping())
         b.tags.set_tag(u"mytag", newtagrevid)
 
-        self.assertEquals(subvertpy.NODE_DIR, 
+        self.assertEquals(subvertpy.NODE_DIR,
                 b.repository.transport.check_path("tags/mytag", 4))
         self.assertEquals(4, b.repository.get_latest_revnum())
         b = Branch.open(repos_url + "/trunk")
         log = self.client_log(repos_url, 4, 0)
         self.assertEquals(log[0][0], None)
-        self.assertEquals(log[1][0], {'/tags': ('A', None, -1), 
+        self.assertEquals(log[1][0], {'/tags': ('A', None, -1),
                                       '/trunk': ('A', None, -1)})
         self.assertEquals(log[2][0], {'/trunk/bla': ('A', None, -1)})
         self.assertEquals(log[3][0], {'/tags/mytag': ('A', '/trunk', 1)})
@@ -186,7 +186,7 @@ class WorkingSubversionBranch(SubversionTestCase):
 
     def test_tags_delete(self):
         repos_url = self.make_repository("a")
-       
+
         dc = self.get_commit_editor(repos_url)
         tags = dc.add_dir("tags")
         tags.add_dir("tags/foo")
@@ -216,10 +216,10 @@ class WorkingSubversionBranch(SubversionTestCase):
             b.repository.generate_revision_id(1, "trunk",
                 b.repository.get_mapping()))
 
-        self.assertEquals(subvertpy.NODE_DIR, 
+        self.assertEquals(subvertpy.NODE_DIR,
                 b.repository.transport.check_path("tags", 3))
 
-        self.assertEquals(subvertpy.NODE_DIR, 
+        self.assertEquals(subvertpy.NODE_DIR,
                 b.repository.transport.check_path("tags/mytag", 4))
         self.assertEquals(4, b.repository.get_latest_revnum())
 
@@ -233,13 +233,13 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         b = Branch.open(repos_url + "/trunk/gui")
         self.assertRaises(TagsNotSupported,
-            b.tags.set_tag, u"mytag", 
+            b.tags.set_tag, u"mytag",
             b.repository.generate_revision_id(1, "trunk/gui",
                 b.repository.get_mapping()))
 
     def test_tag_lookup(self):
         repos_url = self.make_repository("a")
-       
+
         dc = self.get_commit_editor(repos_url)
         tags = dc.add_dir("tags")
         tags.add_dir("tags/foo")
@@ -259,7 +259,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
         dc.close()
-       
+
         b = Branch.open(repos_url + "/trunk")
         self.assertRaises(NoSuchTag, b.tags.lookup_tag, "foo")
 
@@ -269,7 +269,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
         dc.close()
-       
+
         b = Branch.open(repos_url + "/trunk")
         self.assertRaises(NoSuchTag, b.tags.delete_tag, u"foo")
 
@@ -425,13 +425,13 @@ class WorkingSubversionBranch(SubversionTestCase):
     def test_lookup_revision_id_unknown(self):
         repos_url = self.make_repository("a")
         branch = Branch.open(repos_url)
-        self.assertRaises(NoSuchRevision, 
+        self.assertRaises(NoSuchRevision,
                 lambda: branch.lookup_bzr_revision_id("bla"))
 
     def test_lookup_revision_id(self):
         repos_url = self.make_repository("a")
         branch = Branch.open(repos_url)
-        self.assertEquals(0, 
+        self.assertEquals(0,
                 branch.lookup_bzr_revision_id(branch.last_revision()))
 
     def test_set_parent(self):
@@ -449,14 +449,14 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
         dc.close()
-        
+
         bzrdir = BzrDir.open(repos_url)
         branch = bzrdir.open_branch()
         repos = bzrdir.find_repository()
-        
+
         mapping = repos.get_mapping()
 
-        self.assertEqual(repos.generate_revision_id(1, "", mapping), 
+        self.assertEqual(repos.generate_revision_id(1, "", mapping),
                 branch.last_revision())
 
         dc = self.get_commit_editor(repos_url)
@@ -552,7 +552,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         repos_url = self.make_repository('a')
         branch = Branch.open(repos_url)
         self.assertRaises(NoSuchRevision, branch.revision_id_to_revno, "bla")
-    
+
     def test_get_nick_none(self):
         repos_url = self.make_repository('a')
 
@@ -580,7 +580,7 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
-        dc.change_prop("bzr:revision-info", 
+        dc.change_prop("bzr:revision-info",
                 "properties: \n\tbranch-nick: mybranch\n")
         dc.close()
 
@@ -828,12 +828,12 @@ foohosts""")
 
         host_fileid = tree.inventory.path2id("hosts")
 
-        self.assertVersionsPresentEquals(newbranch.repository.texts, 
+        self.assertVersionsPresentEquals(newbranch.repository.texts,
                                         host_fileid, [
             oldbranch.generate_revision_id(6),
             oldbranch.generate_revision_id(7)])
         newbranch.unlock()
- 
+
 
     def test_fetch_odd(self):
         repos_url = self.make_repository('d')
@@ -901,8 +901,8 @@ foohosts""")
         self.make_repository('d')
         branch = Branch.open('d')
         result = branch.check()
-        self.assertEqual(branch, result.branch) 
- 
+        self.assertEqual(branch, result.branch)
+
     def test_generate_revision_id(self):
         repos_url = self.make_repository('d')
 
@@ -981,7 +981,7 @@ foohosts""")
         olddir = BzrDir.open("sc")
 
         os.mkdir("dc")
-        
+
         newdir = olddir.sprout('dc')
 
         self.assertEqual(
@@ -1007,7 +1007,7 @@ foohosts""")
         olddir = BzrDir.open("sc/branches/abranch")
 
         os.mkdir("dc")
-        
+
         newdir = olddir.sprout('dc')
 
         self.assertEqual(
@@ -1033,7 +1033,7 @@ foohosts""")
         olddir = BzrDir.open("sc/trunk")
 
         os.mkdir("dc")
-        
+
         newdir = olddir.sprout('dc')
 
         self.assertEqual(
@@ -1043,7 +1043,7 @@ foohosts""")
 
 
     def test_ghost_workingtree(self):
-        # Looks like bazaar has trouble creating a working tree of a 
+        # Looks like bazaar has trouble creating a working tree of a
         # revision that has ghost parents
         repos_url = self.make_client('d', 'sc')
 
@@ -1056,7 +1056,7 @@ foohosts""")
         olddir = BzrDir.open("sc")
 
         os.mkdir("dc")
-        
+
         newdir = olddir.sprout('dc')
         newdir.find_repository().get_revision(
                 newdir.open_branch().last_revision())
@@ -1074,11 +1074,11 @@ class BranchFormatTests(TestCase):
         self.assertRaises(NotImplementedError, self.format.initialize, None)
 
     def test_get_format_string(self):
-        self.assertEqual("Subversion Smart Server", 
+        self.assertEqual("Subversion Smart Server",
                          self.format.get_format_string())
 
     def test_get_format_description(self):
-        self.assertEqual("Subversion Smart Server", 
+        self.assertEqual("Subversion Smart Server",
                          self.format.get_format_description())
 
 

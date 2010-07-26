@@ -89,7 +89,7 @@ from bzrlib.plugins.svn.mapping import (
     foreign_vcs_svn,
     find_mappings_fileprops,
     find_mapping_revprops,
-    is_bzr_revision_revprops, 
+    is_bzr_revision_revprops,
     mapping_registry,
     parse_svn_dateprop,
     )
@@ -229,10 +229,10 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         if self.hidden_rev_cnt > 0:
             note('%6d hidden bzr-created revisions', self.hidden_rev_cnt)
         if self.inconsistent_stored_lhs_parent > 0:
-            note('%6d inconsistent stored left-hand side parent revision ids', 
+            note('%6d inconsistent stored left-hand side parent revision ids',
                 self.inconsistent_stored_lhs_parent)
         if self.invalid_fileprop_cnt > 0:
-            note('%6d invalid bzr-related file properties', 
+            note('%6d invalid bzr-related file properties',
                  self.invalid_fileprop_cnt)
         if self.paths_not_under_branch_root > 0:
             note('%6d files were modified that were not under the branch root',
@@ -272,8 +272,8 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         mapping = revmeta.get_original_mapping()
         if mapping is None:
             return
-        if (len(fileprop_mappings) > 0 and 
-            find_mapping_revprops(revmeta.get_revprops()) not in 
+        if (len(fileprop_mappings) > 0 and
+            find_mapping_revprops(revmeta.get_revprops()) not in
                 (None, fileprop_mappings[0])):
             self.inconsistent_fileprop_revprop_cnt += 1
         self.checked_roundtripped_cnt += 1
@@ -321,7 +321,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         path_changes = revmeta.get_paths()
         for path in set(text_ids.keys() + text_revisions.keys()):
             full_path = urlutils.join(revmeta.branch_path, path)
-            # TODO Check consistency against parent data 
+            # TODO Check consistency against parent data
         ghost_parents = False
         parent_revmetas = []
         parent_mappings = []
@@ -337,21 +337,21 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
                 parent_fileid_map = self.repository.get_fileid_map(parent_revmeta, parent_mapping)
                 parent_fileid_maps.append(parent_fileid_map)
         for path, text_revision in text_revisions.iteritems():
-            # Every text revision either has to match the actual revision's 
-            # revision id (if it was last changed there) or the text revisions 
+            # Every text revision either has to match the actual revision's
+            # revision id (if it was last changed there) or the text revisions
             # in one of the parents.
             fileid = fileid_map.lookup(mapping, path)[0]
             parent_text_revisions = []
             for parent_fileid_map, parent_mapping in zip(parent_fileid_maps, parent_mappings):
                 parent_text_revisions.append(parent_fileid_map.reverse_lookup(parent_mapping, fileid))
-            if (text_revision != revmeta.get_revision_id(mapping) and 
+            if (text_revision != revmeta.get_revision_id(mapping) and
                     not ghost_parents and not text_revision in parent_text_revisions):
                 self.invalid_text_revisions += 1
 
 
 class SvnRepository(ForeignRepository):
     """
-    Provides a simplified interface to a Subversion repository 
+    Provides a simplified interface to a Subversion repository
     by using the RA (remote access) API from subversion
     """
     def __init__(self, bzrdir, transport, branch_path=None):
@@ -391,7 +391,7 @@ class SvnRepository(ForeignRepository):
         use_cache = self.get_config().get_use_cache()
 
         if use_cache is None:
-            # TODO: Don't enable log cache in some situations, e.g. 
+            # TODO: Don't enable log cache in some situations, e.g.
             # for large repositories ?
             if self.base.startswith("file://"):
                 # Default to no log caching for local connections
@@ -431,7 +431,7 @@ class SvnRepository(ForeignRepository):
 
         self.branchprop_list = PathPropertyProvider(self._log)
 
-        self._revmeta_provider = revmeta.RevisionMetadataProvider(self, 
+        self._revmeta_provider = revmeta.RevisionMetadataProvider(self,
                 use_cache,
                 self.transport.has_capability("commit-revprops") in (True, None))
 
@@ -505,7 +505,7 @@ class SvnRepository(ForeignRepository):
 
         for fileid, altered_versions in fileids.iteritems():
             yield ("file", fileid, altered_versions)
-        
+
         # We're done with the files_pb.  Note that it finished by the caller,
         # just as it was created by the caller.
         del _files_pb
@@ -550,10 +550,10 @@ class SvnRepository(ForeignRepository):
         return mapping_registry.get_default()
 
     def _properties_to_set(self, mapping):
-        """Determine what sort of custom properties to set when 
+        """Determine what sort of custom properties to set when
         committing a new round-tripped revision.
-        
-        :return: tuple with two booleans: whether to use revision properties 
+
+        :return: tuple with two booleans: whether to use revision properties
             and whether to use file properties.
         """
         supports_custom_revprops = self.transport.has_capability("commit-revprops")
@@ -596,8 +596,8 @@ class SvnRepository(ForeignRepository):
             parent_branch_path = parentrevmeta.branch_path
             parentrevnum = parentrevmeta.revnum
             start_empty = False
-        editor = TreeDeltaBuildEditor(revision.svn_meta, revision.mapping, 
-                                      self.get_fileid_map(revision.svn_meta, revision.mapping), 
+        editor = TreeDeltaBuildEditor(revision.svn_meta, revision.mapping,
+                                      self.get_fileid_map(revision.svn_meta, revision.mapping),
                                       parentfileidmap)
         conn = self.transport.get_connection(parent_branch_path)
         try:
@@ -632,8 +632,8 @@ class SvnRepository(ForeignRepository):
 
     def get_layout(self):
         """Determine layout to use for this repository.
-        
-        This will use whatever layout the user has specified, or 
+
+        This will use whatever layout the user has specified, or
         otherwise the layout that was guessed by bzr-svn.
         """
         return self.get_layout_source()[0]
@@ -668,7 +668,7 @@ class SvnRepository(ForeignRepository):
         layoutname = self.get_config().get_guessed_layout()
         if layoutname is not None:
             config_guessed_layout = layout.layout_registry.get(layoutname)()
-            if (self._hinted_branch_path is None or 
+            if (self._hinted_branch_path is None or
                 config_guessed_layout.is_branch(self._hinted_branch_path)):
                 self._guessed_layout = config_guessed_layout
                 self._guessed_appropriate_layout = config_guessed_layout
@@ -677,7 +677,7 @@ class SvnRepository(ForeignRepository):
             config_guessed_layout = None
         # No guessed layout stored yet or it doesn't accept self._hinted_branch_path
         revnum = self.get_latest_revnum()
-        (self._guessed_layout, self._guessed_appropriate_layout) = repository_guess_layout(self, 
+        (self._guessed_layout, self._guessed_appropriate_layout) = repository_guess_layout(self,
                     revnum, self._hinted_branch_path)
         if self._guessed_layout != config_guessed_layout and revnum > 200:
             self.get_config().set_guessed_layout(self._guessed_layout)
@@ -732,12 +732,12 @@ class SvnRepository(ForeignRepository):
         return self.fileid_map.get_map(revmeta.get_foreign_revid(), mapping)
 
     def all_revision_ids(self, layout=None, mapping=None):
-        """Find all revision ids in this repository, using the specified or 
+        """Find all revision ids in this repository, using the specified or
         default mapping.
-        
-        :note: This will use the standard layout to find the revisions, 
-               any revisions using non-standard branch locations (even 
-               if part of the ancestry of valid revisions) won't be 
+
+        :note: This will use the standard layout to find the revisions,
+               any revisions using non-standard branch locations (even
+               if part of the ancestry of valid revisions) won't be
                returned.
         """
         if mapping is None:
@@ -751,12 +751,12 @@ class SvnRepository(ForeignRepository):
 
     def set_make_working_trees(self, new_value):
         """See Repository.set_make_working_trees()."""
-        pass # ignored, nowhere to store it... 
+        pass # ignored, nowhere to store it...
 
     def make_working_trees(self):
         """See Repository.make_working_trees().
 
-        Always returns False, as working trees are never created inside 
+        Always returns False, as working trees are never created inside
         Subversion repositories.
         """
         return False
@@ -939,7 +939,7 @@ class SvnRepository(ForeignRepository):
             raise bzr_errors.InvalidRevisionId(revision_id=revision_id, branch=self)
 
         revmeta, mapping = self._get_revmeta(revision_id)
-        
+
         return revmeta.get_revision(mapping)
 
     def get_revisions(self, revision_ids):
@@ -969,8 +969,8 @@ class SvnRepository(ForeignRepository):
         return revmeta.get_revision_id(mapping)
 
     def generate_revision_id(self, revnum, path, mapping):
-        """Generate an unambiguous revision id. 
-        
+        """Generate an unambiguous revision id.
+
         :param revnum: Subversion revision number.
         :param path: Branch path.
         :param mapping: Mapping to use.
@@ -981,12 +981,12 @@ class SvnRepository(ForeignRepository):
         assert isinstance(revnum, int)
         return self.lookup_foreign_revision_id((self.uuid, path, revnum), mapping)
 
-    def lookup_bzr_revision_id(self, revid, layout=None, ancestry=None, 
+    def lookup_bzr_revision_id(self, revid, layout=None, ancestry=None,
                            project=None, foreign_sibling=None):
         """Parse an existing Subversion-based revision id.
 
         :param revid: The revision id.
-        :param layout: Optional repository layout to use when searching for 
+        :param layout: Optional repository layout to use when searching for
                        revisions
         :raises: NoSuchRevision
         :return: Tuple with foreign revision id and mapping.
@@ -1001,7 +1001,7 @@ class SvnRepository(ForeignRepository):
             if uuid == self.uuid:
                 return (self.uuid, branch_path, revnum), mapping
             # If the UUID doesn't match, this may still be a valid revision
-            # id; a revision from another SVN repository may be pushed into 
+            # id; a revision from another SVN repository may be pushed into
             # this one.
         except bzr_errors.InvalidRevisionId:
             pass
@@ -1016,7 +1016,7 @@ class SvnRepository(ForeignRepository):
         return self.revmap.get_branch_revnum(revid, layout, project)
 
     def seen_bzr_revprops(self):
-        """Check whether bzr-specific custom revision properties are present on this 
+        """Check whether bzr-specific custom revision properties are present on this
         repository.
 
         """
@@ -1036,7 +1036,7 @@ class SvnRepository(ForeignRepository):
         """Check whether a signature exists for a particular revision id.
 
         :param revision_id: Revision id for which the signatures should be looked up.
-        :return: False, as no signatures are stored for revisions in Subversion 
+        :return: False, as no signatures are stored for revisions in Subversion
             at the moment.
         """
         try:
@@ -1050,7 +1050,7 @@ class SvnRepository(ForeignRepository):
     def get_signature_text(self, revision_id):
         """Return the signature text for a particular revision.
 
-        :param revision_id: Id of the revision for which to return the 
+        :param revision_id: Id of the revision for which to return the
                             signature.
         :raises NoSuchRevision: Always
         """
@@ -1077,7 +1077,7 @@ class SvnRepository(ForeignRepository):
         This will include branches inside other branches.
         """
         from bzrlib.plugins.svn.branch import SvnBranch # avoid circular imports
-        # All branches use this repository, so the using argument can be 
+        # All branches use this repository, so the using argument can be
         # ignored.
         if layout is None:
             layout = self.get_layout()
@@ -1094,7 +1094,7 @@ class SvnRepository(ForeignRepository):
         return branches
 
     @needs_read_lock
-    def find_tags_between(self, project, layout, mapping, from_revnum, 
+    def find_tags_between(self, project, layout, mapping, from_revnum,
                           to_revnum, tags=None):
         if tags is None:
             tags = {}
@@ -1153,19 +1153,19 @@ class SvnRepository(ForeignRepository):
 
         if not layout in self._cached_tags:
             self._cached_tags[layout] = self.find_tags_between(project=project,
-                    layout=layout, mapping=mapping, from_revnum=0, 
+                    layout=layout, mapping=mapping, from_revnum=0,
                     to_revnum=revnum)
         return self._cached_tags[layout]
 
     def find_branchpaths(self, layout, from_revnum, to_revnum, project=None):
-        """Find all branch paths that were changed in the specified revision 
+        """Find all branch paths that were changed in the specified revision
         range.
 
         :note: This ignores forbidden paths.
 
         :param revnum: Revision to search for branches.
-        :return: iterator that returns tuples with (path, revision number, 
-            still exists). The revision number is the revision in which the 
+        :return: iterator that returns tuples with (path, revision number,
+            still exists). The revision number is the revision in which the
             branch last existed.
         """
         assert from_revnum >= to_revnum
@@ -1193,7 +1193,7 @@ class SvnRepository(ForeignRepository):
                             ret.append((p, created_branches[p], False))
                             del created_branches[p]
 
-                        if paths[p][0] in ('A', 'R', 'M'): 
+                        if paths[p][0] in ('A', 'R', 'M'):
                             created_branches[p] = i
                     elif layout.is_branch_or_tag_parent(p, project):
                         if paths[p][0] in ('R', 'D'):
@@ -1201,7 +1201,7 @@ class SvnRepository(ForeignRepository):
                             for c in k:
                                 if c.startswith(p+"/") and c in created_branches:
                                     ret.append((c, created_branches[c], False))
-                                    del created_branches[c] 
+                                    del created_branches[c]
                         if paths[p][0] in ('A', 'R') and paths[p][1] is not None:
                             parents = [p]
                             while parents:
@@ -1234,8 +1234,8 @@ class SvnRepository(ForeignRepository):
         """See Repository.get_physical_lock_status()."""
         return False
 
-    def get_commit_builder(self, branch, parents, config, timestamp=None, 
-                           timezone=None, committer=None, revprops=None, 
+    def get_commit_builder(self, branch, parents, config, timestamp=None,
+                           timezone=None, committer=None, revprops=None,
                            revision_id=None):
         """See Repository.get_commit_builder()."""
         from bzrlib.plugins.svn.commit import SvnCommitBuilder
@@ -1248,13 +1248,13 @@ class SvnRepository(ForeignRepository):
         else:
             base_foreign_revid, base_mapping = \
                 self.lookup_bzr_revision_id(parents[0], project=branch.project)
-        return SvnCommitBuilder(self, branch.get_branch_path(), parents, 
-                                config, timestamp, timezone, committer, 
-                                revprops, revision_id, 
+        return SvnCommitBuilder(self, branch.get_branch_path(), parents,
+                                config, timestamp, timezone, committer,
+                                revprops, revision_id,
                                 base_foreign_revid, base_mapping,
                                 append_revisions_only=append_revisions_only)
 
-    def find_fileprop_paths(self, layout, from_revnum, to_revnum, 
+    def find_fileprop_paths(self, layout, from_revnum, to_revnum,
                                project=None, check_removed=False):
         assert from_revnum >= to_revnum
         if not check_removed and to_revnum == 0:
@@ -1277,4 +1277,4 @@ class SvnRepository(ForeignRepository):
         """See Repository.commit_write_group()."""
         if not self.is_write_locked():
             raise bzr_errors.NotWriteLocked(self)
-        self._write_group = None 
+        self._write_group = None

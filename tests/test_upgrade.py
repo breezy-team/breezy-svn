@@ -146,7 +146,7 @@ class UpgradeTests(SubversionTestCase):
         upgrade.upgrade_repository(newrepos, oldrepos, new_mapping=mapping, allow_changes=True)
         tree = newrepos.revision_tree("customrev%s-upgrade" % mapping.upgrade_suffix)
         self.assertEqual("specificid", tree.inventory.path2id("a"))
-        self.assertEqual(mapping.generate_file_id((oldrepos.uuid, "", 1), u"a"), 
+        self.assertEqual(mapping.generate_file_id((oldrepos.uuid, "", 1), u"a"),
                          tree.inventory.path2id("b"))
 
     def test_single_custom_continue(self):
@@ -182,14 +182,14 @@ class UpgradeTests(SubversionTestCase):
         mapping = oldrepos.get_mapping()
         fileid = tree.inventory.path2id("a")
         revid = "customrev%s-upgrade" % mapping.upgrade_suffix
-        newrepos.texts.add_lines((fileid, revid), 
+        newrepos.texts.add_lines((fileid, revid),
                 [(fileid, "svn-v1:1@%s-" % oldrepos.uuid)],
                 tree.get_file(fileid).readlines())
 
         newrepos.commit_write_group()
         newrepos.unlock()
 
-        upgrade.upgrade_repository(newrepos, oldrepos, new_mapping=mapping, 
+        upgrade.upgrade_repository(newrepos, oldrepos, new_mapping=mapping,
                            allow_changes=True)
 
         self.assertTrue(newrepos.has_revision(oldrepos.generate_revision_id(1, "", mapping)))
@@ -293,7 +293,7 @@ class UpgradeTests(SubversionTestCase):
         wt.commit(message='fix it again', rev_id="anotherrev")
 
         mapping = oldrepos.get_mapping()
-        upgrade.upgrade_workingtree(wt, oldrepos, new_mapping=mapping, 
+        upgrade.upgrade_workingtree(wt, oldrepos, new_mapping=mapping,
                 allow_changes=True)
         self.assertEquals(wt.last_revision(), b.last_revision())
         self.assertEqual([oldrepos.generate_revision_id(0, "", mapping),

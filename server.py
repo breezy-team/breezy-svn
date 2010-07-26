@@ -106,7 +106,7 @@ class RepositoryBackend(ServerRepositoryBackend):
                         changes = determine_changed_paths(self.branch.repository, path, rev, revno)
                     else:
                         changes = None
-                    send_revision(revno, 
+                    send_revision(revno,
                             rev.committer, time.strftime("%Y-%m-%dT%H:%M:%S.00000Z", time.gmtime(rev.timestamp)),
                             rev.message, changed_paths=changes)
         finally:
@@ -116,7 +116,7 @@ class RepositoryBackend(ServerRepositoryBackend):
         path, revid = self._get_revid(revnum)
         rev = self.branch.repository.get_revision(revid)
         ret = {
-                properties.PROP_REVISION_AUTHOR: rev.committer, 
+                properties.PROP_REVISION_AUTHOR: rev.committer,
                 properties.PROP_REVISION_DATE: time.strftime("%Y-%m-%dT%H:%M:%S.00000Z", time.gmtime(rev.timestamp)),
                 properties.PROP_REVISION_LOG: rev.message
                 }
@@ -144,8 +144,8 @@ class RepositoryBackend(ServerRepositoryBackend):
                 elif ie.kind == 'symlink':
                     modified_files[ie.file_id] = "link %s" % ie.symlink_target
 
-            dir_editor_send_changes(old_inv, new_inv, "", new_inv.root.file_id, 
-                    root, "svn://localhost/", revnum-1, relpath, 
+            dir_editor_send_changes(old_inv, new_inv, "", new_inv.root.file_id,
+                    root, "svn://localhost/", revnum-1, relpath,
                                 modified_files, visit_dirs)
             root.close()
             editor.close()
@@ -159,7 +159,7 @@ class RepositoryBackend(ServerRepositoryBackend):
         if path.strip() in ("trunk", ""):
             return dict([(rev, path) for rev in revnums])
         raise NotImplementedError
-    
+
     def stat(self, path, revnum):
         if revnum is None:
             revnum = self.get_latest_revnum()

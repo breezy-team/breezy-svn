@@ -29,9 +29,9 @@ from bzrlib.tests import TestCase
 
 from bzrlib.plugins.svn.errors import (
     ERR_RA_DAV_PROPPATCH_FAILED,
-    convert_error, 
-    convert_svn_error, 
-    DavRequestFailed, 
+    convert_error,
+    convert_svn_error,
+    DavRequestFailed,
     InvalidPropertyValue,
     NotSvnBranchPath,
     PropertyChangeFailed,
@@ -97,7 +97,7 @@ class TestConvertError(TestCase):
         error = InvalidPropertyValue("svn:foobar", "corrupt")
 
         self.assertEqual(
-          "Invalid property value for Subversion property svn:foobar: corrupt", 
+          "Invalid property value for Subversion property svn:foobar: corrupt",
           str(error))
 
     def test_notsvnbranchpath_nonascii(self):

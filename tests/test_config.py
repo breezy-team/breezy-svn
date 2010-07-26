@@ -20,8 +20,8 @@ from bzrlib.branch import Branch
 from bzrlib.repository import Repository
 from bzrlib.workingtree import WorkingTree
 from bzrlib.plugins.svn.config import (
-    NoSubversionBuildPackageConfig, 
-    PropertyConfig, 
+    NoSubversionBuildPackageConfig,
+    PropertyConfig,
     SubversionBuildPackageConfig,
     )
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
@@ -51,22 +51,22 @@ class ReposConfigTests(SubversionTestCase):
         self.assertEquals(set(["foobar", "brainslug", self.repos.base.rstrip("/")]), c.get_locations())
 
     def test_get_branches(self):
-        c = self.config 
+        c = self.config
         c.set_user_option("branches", "bla;blie")
         self.assertEquals(["bla", "blie"], c.get_branches())
 
     def test_branches(self):
-        c = self.config 
+        c = self.config
         c.set_branches(["bla", "blie"])
         self.assertEquals(["bla", "blie"], c.get_branches())
 
     def test_get_tags(self):
-        c = self.config 
+        c = self.config
         c.set_user_option("tags", "bla;blie")
         self.assertEquals(["bla", "blie"], c.get_tags())
 
     def test_tags(self):
-        c = self.config 
+        c = self.config
         c.set_tags(["bla", "blie"])
         self.assertEquals(["bla", "blie"], c.get_tags())
 
@@ -178,12 +178,12 @@ class SvnBpConfigTests(SubversionTestCase):
 
     def test_no_debian_dir(self):
         repos_url = self.make_repository("d")
-        self.assertRaises(NoSubversionBuildPackageConfig, 
+        self.assertRaises(NoSubversionBuildPackageConfig,
                 SubversionBuildPackageConfig, Branch.open(repos_url).basis_tree())
 
     def test_mergeWithUpstream(self):
         repos_url = self.make_repository("d")
-        
+
         dc = self.get_commit_editor(repos_url)
         f = dc.add_dir("debian")
         f.change_prop("mergeWithUpstream", "1")
@@ -195,7 +195,7 @@ class SvnBpConfigTests(SubversionTestCase):
 
     def test_get_property_val(self):
         repos_url = self.make_repository("d")
-        
+
         dc = self.get_commit_editor(repos_url)
         f = dc.add_dir("debian")
         f.change_prop("svn-bp:origDir", "myorigdir")
@@ -207,7 +207,7 @@ class SvnBpConfigTests(SubversionTestCase):
 
     def test_get_intree_val(self):
         repos_url = self.make_repository("d")
-        
+
         dc = self.get_commit_editor(repos_url)
         d = dc.add_dir("debian")
         f = d.add_file("debian/svn-layout")
@@ -224,7 +224,7 @@ class SvnBpConfigTests(SubversionTestCase):
         f = open('dc/.svn/svn-layout', 'w')
         f.write("buildArea = build-gebied\n")
         f.close()
-        
+
         cfg = SubversionBuildPackageConfig(WorkingTree.open("dc"))
 
         self.assertEquals("build-gebied", cfg.get("buildArea"))

@@ -111,7 +111,7 @@ class RevisionMetadata(object):
 
     __slots__ = ('repository', 'check_revprops', '_get_fileprops_fn',
                  '_log', 'branch_path', '_paths', 'revnum', '_revprops',
-                 '_changed_fileprops', '_fileprops', 
+                 '_changed_fileprops', '_fileprops',
                  '_direct_lhs_parent_known', '_consider_bzr_fileprops',
                  '_consider_bzr_revprops', '_estimated_fileprop_ancestors',
                  'metaiterators', 'uuid', 'children',
@@ -558,7 +558,7 @@ class RevisionMetadata(object):
     def get_rhs_parents(self, mapping):
         """Determine the right hand side parent ids for this revision.
 
-        :param mapping: 
+        :param mapping:
         """
         return self._get_rhs_parents(mapping)
 

@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -70,10 +70,10 @@ class SvnTexts(VersionedFiles):
     @convert_svn_error
     def get_record_stream(self, keys, ordering, include_delta_closure):
         warn_stacking_experimental()
-        # TODO: there may be valid text revisions that only exist as 
-        # ghosts in the repository itself. This function will 
+        # TODO: there may be valid text revisions that only exist as
+        # ghosts in the repository itself. This function will
         # not be able to find them.
-        # TODO: Sort keys by file id and issue just one get_file_revs() call 
+        # TODO: Sort keys by file id and issue just one get_file_revs() call
         # per file-id ?
         for k in list(keys):
             if len(k) != 2:
@@ -90,7 +90,7 @@ class SvnTexts(VersionedFiles):
                         lines = []
                     else:
                         raise
-                yield FulltextContentFactory(k, None, 
+                yield FulltextContentFactory(k, None,
                             sha1=osutils.sha_strings(lines),
                             text=''.join(lines))
 
