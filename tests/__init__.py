@@ -125,7 +125,6 @@ def test_suite():
             'test_svk',
             'test_transport',
             'test_tree',
-            'test_upgrade',
             'test_versionedfiles',
             'test_workingtree',
             'test_blackbox',
