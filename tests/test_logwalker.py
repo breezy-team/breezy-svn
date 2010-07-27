@@ -521,6 +521,11 @@ class TestLogWalker(SubversionTestCase):
         self.assertEquals([({'trunk': (u'A', None, -1)}, 2),
                            ({}, 1),
                            ({'': ('A', None, -1)}, 0) ],
+                [l[:2] for l in walker.iter_changes(None, 2)])
+
+        self.assertEquals([({'trunk': (u'A', None, -1)}, 2),
+                           ({}, 1),
+                           ({'': ('A', None, -1)}, 0) ],
                 [l[:2] for l in walker.iter_changes([""], 2)])
 
 

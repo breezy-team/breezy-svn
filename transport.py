@@ -452,14 +452,12 @@ class SvnRaTransport(Transport):
         assert isinstance(from_revnum, int) and isinstance(to_revnum, int)
         assert isinstance(limit, int)
 
-        if paths is None:
-            newpaths = None
-        else:
-            newpaths = [p.rstrip("/") for p in paths]
+        if paths is not None:
+            paths = [p.strip("/") for p in paths]
 
         conn = self.get_connection()
         try:
-            return conn.iter_log(newpaths, from_revnum, to_revnum, limit,
+            return conn.iter_log(paths, from_revnum, to_revnum, limit,
                 discover_changed_paths=discover_changed_paths,
                 strict_node_history=strict_node_history,
                 include_merged_revisions=include_merged_revisions,
@@ -505,7 +503,7 @@ class SvnRaTransport(Transport):
                     self.pending.append(Exception("Some exception was not handled"))
                     self.semaphore.release()
                     self.transport.add_connection(self.conn)
-        fetcher = logfetcher(self, conn, newpaths, from_revnum, to_revnum,
+        fetcher = logfetcher(self, conn, paths, from_revnum, to_revnum,
                 limit, discover_changed_paths=discover_changed_paths,
                 strict_node_history=strict_node_history,
                 include_merged_revisions=include_merged_revisions,
@@ -515,24 +513,13 @@ class SvnRaTransport(Transport):
 
     def get_log(self, rcvr, paths, from_revnum, to_revnum, limit, discover_changed_paths,
                 strict_node_history, include_merged_revisions, revprops):
-        assert paths is None or isinstance(paths, list), "Invalid paths"
 
-        all_true = True
-        for item in [isinstance(x, str) for x in paths]:
-            if not item:
-                all_true = False
-                break
-
-        assert paths is None or all_true
-
-        if paths is None:
-            newpaths = None
-        else:
-            newpaths = [p.rstrip("/") for p in paths]
+        if paths is not None:
+            paths = [p.strip("/") for p in paths]
 
         conn = self.get_connection()
         try:
-            return conn.get_log(rcvr, newpaths,
+            return conn.get_log(rcvr, paths,
                     from_revnum, to_revnum,
                     limit, discover_changed_paths, strict_node_history,
                     include_merged_revisions,
