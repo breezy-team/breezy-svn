@@ -45,6 +45,18 @@ MAX_OVERHEAD_FETCH = 1000
 
 def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths,
     revprop_list, limit=0):
+    """Iter changes.
+
+    :param prefix: Sequence of paths
+    :param from_revnum: Start revision number
+    :param to_revnum: End revision number
+    :param get_revision_paths: Callback to retrieve the paths 
+        for a particular revision
+    :param revprop_list: Callback to retrieve the revision properties
+        for a particular revision
+    :param limit: Maximum number of revisions to yield, 0 for all
+    :return: Iterator over (revpaths, revnum, revprops)
+    """
     ascending = (to_revnum > from_revnum)
 
     revnum = from_revnum
@@ -59,7 +71,6 @@ def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths,
             "path: %s, %d >= %d" % (path, from_revnum, to_revnum)
 
     i = 0
-
     while ((not ascending and revnum >= to_revnum) or
            (ascending and revnum <= to_revnum)):
         if not (revnum > 0 or path == ""):
@@ -92,6 +103,12 @@ class LogCache(object):
     """Log browser cache. """
 
     def find_latest_change(self, path, revnum):
+        """Find the last revision in which a particular path 
+        was changed.
+        
+        :param path: Path to check
+        :param revnum: Revision in which to check
+        """
         raise NotImplementedError(self.find_latest_change)
 
     def get_revision_paths(self, revnum):
@@ -175,7 +192,6 @@ class CachingLogWalker(object):
         assert from_revnum >= 0 and to_revnum >= 0, "%r -> %r" % (from_revnum, to_revnum)
         self.mutter("iter changes %r->%r (%r)", from_revnum, to_revnum, prefixes)
         self._fetch_revisions(max(from_revnum, to_revnum), pb=pb)
-
         return iter(iter_changes(prefixes, from_revnum, to_revnum,
             self.get_revision_paths, self.revprop_list, limit))
 
