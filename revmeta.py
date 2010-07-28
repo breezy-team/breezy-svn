@@ -115,7 +115,7 @@ class RevisionMetadata(object):
                  '_direct_lhs_parent_known', '_consider_bzr_fileprops',
                  '_consider_bzr_revprops', '_estimated_fileprop_ancestors',
                  'metaiterators', 'uuid', 'children',
-                 '_direct_lhs_parent_revmeta')
+                 '_direct_lhs_parent_revmeta', '_revprop_redirect_revnum')
 
     def __init__(self, repository, check_revprops, get_fileprops_fn, logwalker,
                  uuid, branch_path, revnum, paths, revprops,
