@@ -39,6 +39,8 @@ from bzrlib.plugins.svn.util import (
     lazy_dict,
     )
 
+from subvertpy import NODE_UNKNOWN
+
 
 # Maximum number of extra revisions to fetch in caching logwalker
 MAX_OVERHEAD_FETCH = 1000
@@ -274,7 +276,8 @@ class CachingLogWalker(object):
             todo_revprops = ["svn:author", "svn:log", "svn:date"]
 
         def rcvr(orig_paths, revision, revprops, has_children=None):
-            nested_pb.update('fetching svn revision info', to_revnum - revision, to_revnum)
+            nested_pb.update('fetching svn revision info',
+                             to_revnum - revision, to_revnum)
             self.cache.insert_paths(revision, orig_paths)
             self.cache.insert_revprops(revision, revprops,
                                        todo_revprops is None)
@@ -316,16 +319,25 @@ class CachingLogWalker(object):
 
 
 def strip_slashes(changed_paths):
+    """Strip the leading and trailing slashes in paths.
+
+    :param changed_paths: Changed paths dictionary
+    :return: Update paths dictionary
+    """
     if changed_paths is None:
         return {}
-    assert isinstance(changed_paths, dict)
+    assert type(changed_paths) is dict
     revpaths = {}
-    for k, (action, copyfrom_path, copyfrom_rev) in changed_paths.iteritems():
-        if copyfrom_path is None:
+    for k, v in changed_paths.iteritems():
+        try:
+            kind = v[3]
+        except IndexError:
+            kind = NODE_UNKNOWN
+        if v[1] is None:
             copyfrom_path = None
         else:
-            copyfrom_path = copyfrom_path.strip("/")
-        revpaths[k.strip("/")] = (action, copyfrom_path, copyfrom_rev)
+            copyfrom_path = v[1].strip("/")
+        revpaths[k.strip("/")] = (v[0], copyfrom_path, v[2], kind)
     return revpaths
 
 
@@ -352,7 +364,8 @@ class LogWalker(object):
         assert isinstance(revnum, int) and revnum >= 0
 
         try:
-            return self._transport.iter_log([path], revnum, 0, 2, True, False, False, []).next()[1]
+            return self._transport.iter_log([path], revnum, 0, 2, True, False,
+                    False, []).next()[1]
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 raise NoSuchRevision(branch=self,
@@ -430,7 +443,8 @@ class DictBasedLogWalker(object):
         self.paths = paths
         self.revprops = revprops
 
-    def iter_changes(self, prefixes, from_revnum, to_revnum=0, limit=0, pb=None):
+    def iter_changes(self, prefixes, from_revnum, to_revnum=0, limit=0,
+            pb=None):
         return iter(iter_changes(prefixes, from_revnum, to_revnum,
             self.get_revision_paths, self.revprop_list, limit))
 

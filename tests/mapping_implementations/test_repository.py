@@ -24,9 +24,12 @@ from bzrlib.tests import TestSkipped, TestNotApplicable
 
 from bzrlib.plugins.svn import errors as svn_errors, format
 from subvertpy import ra
-from bzrlib.plugins.svn.layout.standard import TrunkLayout, RootLayout, CustomLayout
+from bzrlib.plugins.svn.layout.standard import (
+    TrunkLayout, RootLayout, CustomLayout,)
 from bzrlib.plugins.svn.mapping import mapping_registry
 from bzrlib.plugins.svn.tests import SubversionTestCase
+
+from subvertpy import NODE_DIR, NODE_FILE
 
 
 class TestSubversionMappingRepositoryWorks(SubversionTestCase):
@@ -50,10 +53,10 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
 
-        self.assertEqual([
-            ('', {'foo': ('A', None, -1)}, 1), 
-            ('', {'': ('A', None, -1)}, 0)],
-            [(l.branch_path, l.get_paths(), l.revnum) for l in repos._revmeta_provider.iter_reverse_branch_changes("", 1, 0)])
+        self.assertRevmetaLogEquals([
+            ('', {'foo': ('A', None, -1, NODE_FILE)}, 1),
+            ('', {'': ('A', None, -1, NODE_DIR)}, 0)],
+            repos._revmeta_provider.iter_reverse_branch_changes("", 1, 0))
 
     def test_iter_changes_parent_rename(self):
         repos_url = self.make_repository("a")
@@ -147,28 +150,29 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(1))
-        results = [(l.branch_path, l.get_paths(), l.revnum) for l in repos._revmeta_provider.iter_reverse_branch_changes("pygments/trunk", 3, 0)]
+        results = repos._revmeta_provider.iter_reverse_branch_changes("pygments/trunk", 3, 0)
 
         # Results differ per Subversion version, yay
         # For <= 1.4:
         if ra.version()[1] <= 4:
-            self.assertEquals([
-            ('pygments/trunk', {'pygments': (u'A', 'pykleur', 1),
-                                'pygments/trunk': (u'R', 'pykleur/trunk', 2),
-                                'pykleur': (u'D', None, -1)}, 3),
-            ('pykleur/trunk', {'pykleur/trunk/pykleur/afile': (u'A', None, -1)}, 2),
+            self.assertRevmetaLogEquals([
+            ('pygments/trunk', {
+                'pygments': (u'A', 'pykleur', 1, NODE_DIR),
+                'pygments/trunk': (u'R', 'pykleur/trunk', 2, NODE_DIR),
+                'pykleur': (u'D', None, -1, NODE_DIR)}, 3),
+            ('pykleur/trunk', {'pykleur/trunk/pykleur/afile': (u'A', None, -1, NODE_DIR)}, 2),
             ('pykleur/trunk',
-                    {'pykleur': (u'A', None, -1),
-                     'pykleur/trunk': (u'A', None, -1),
-                     'pykleur/trunk/pykleur': (u'A', None, -1)},
+                    {'pykleur': (u'A', None, -1, NODE_DIR),
+                     'pykleur/trunk': (u'A', None, -1, NODE_DIR),
+                     'pykleur/trunk/pykleur': (u'A', None, -1, NODE_DIR)},
              1)], results
             )
         else:
-            self.assertEquals(
-               [
-                ('pykleur/trunk', {'pykleur': (u'A', None, -1), 
-                                   'pykleur/trunk': (u'A', None, -1), 
-                                   'pykleur/trunk/pykleur': (u'A', None, -1)}, 
+            self.assertRevmetaLogEquals(
+               [ ('pykleur/trunk', {
+                   'pykleur': (u'A', None, -1, NODE_DIR),
+                   'pykleur/trunk': (u'A', None, -1, NODE_DIR),
+                   'pykleur/trunk/pykleur': (u'A', None, -1, NODE_DIR)},
                 1)], results
             )
 
@@ -191,14 +195,13 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
             raise TestNotApplicable
         changes = [c for c,m in repos._iter_reverse_revmeta_mapping_history("pygments", 2, 0, repos.get_mapping())]
         if repos.get_mapping().is_branch("pykleur"):
-            self.assertEquals([('pygments',
-                  {'pygments': ('A', 'pykleur', 1)},
+            self.assertRevmetaLogEquals([('pygments',
+                  {'pygments': ('A', 'pykleur', 1, NODE_DIR)},
                     2),
-                    ('pykleur', {'pykleur': ('A', None, -1), 'pykleur/bla': ('A', None, -1)}, 1)],
-                    [(l.branch_path, l.get_paths(), l.revnum) for l in changes])
+                    ('pykleur', {'pykleur': ('A', None, -1, NODE_DIR), 'pykleur/bla': ('A', None, -1, NODE_DIR)}, 1)], changes)
         else:
-            self.assertEquals([('pygments', {'pygments': ('A', 'pykleur', 1)}, 2), ],
-                [(l.branch_path, l.get_paths(), l.revnum) for l in changes])
+            self.assertRevmetaLogEquals([('pygments', {'pygments': ('A', 'pykleur', 1, NODE_DIR)}, 2), ], changes)
+
 
     def test_history_all(self):
         repos_url = self.make_repository("a")
@@ -844,6 +847,15 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertTrue(repository.has_revision(
             repository.generate_revision_id(1, "", mapping)))
 
+    def assertRevmetaLogEquals(self, expected, got, msg=None):
+        got = list(got)
+        if len(expected) != len(got):
+            self.assertEquals(expected, got, msg)
+        for (branch_path, changes, revnum), g in zip(expected, got):
+            self.assertEquals(revnum, g.revnum)
+            self.assertEquals(branch_path, g.branch_path)
+            self.assertChangedPathsEquals(changes, g.get_paths())
+
     def test_fetch_property_change_only_trunk(self):
         repos_url = self.make_client('d', 'dc')
         self.build_tree({'dc/trunk/bla': "data"})
@@ -857,10 +869,10 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.client_commit("dc", "My 4")
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        self.assertEquals([('trunk', {'trunk': (u'M', None, -1)}, 3), 
-                           ('trunk', {'trunk': (u'M', None, -1)}, 2), 
-                           ('trunk', {'trunk/bla': (u'A', None, -1), 'trunk': (u'A', None, -1)}, 1)], 
-                   [(l.branch_path, l.get_paths(), l.revnum) for l in oldrepos._revmeta_provider.iter_reverse_branch_changes("trunk", 3, 0)])
+        self.assertRevmetaLogEquals([('trunk', {'trunk': (u'M', None, -1, NODE_DIR)}, 3),
+                           ('trunk', {'trunk': (u'M', None, -1, NODE_DIR)}, 2),
+                           ('trunk', {'trunk/bla': (u'A', None, -1, NODE_DIR), 'trunk': (u'A', None, -1, NODE_DIR)}, 1)],
+                   oldrepos._revmeta_provider.iter_reverse_branch_changes("trunk", 3, 0))
 
     def test_control_code_msg(self):
         if ra.version()[1] >= 5:

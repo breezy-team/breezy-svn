@@ -16,8 +16,9 @@
 
 """Utility functions for dealing with changes dictionaries as return by Subversions' log functions."""
 
+from subvertpy import NODE_DIR
 
-REV0_CHANGES = {"": ('A', None, -1)}
+REV0_CHANGES = {"": ('A', None, -1, NODE_DIR)}
 
 
 def path_is_child(branch_path, path):
@@ -128,7 +129,7 @@ def apply_reverse_changes(branches, changes):
     """Apply the specified changes on a set of branch names in reverse.
     (E.g. as if we were applying the reverse of a delta)
 
-    :return: [(new_name, old_name, new_rev)]
+    :return: [(new_name, old_name, new_rev, kind)]
     :note: new_name is the name before these changes,
            old_name is the name after the changes.
            new_rev is the revision that the changes were copied from
@@ -136,17 +137,17 @@ def apply_reverse_changes(branches, changes):
     """
     branches = set(branches)
     for p in sorted(changes):
-        (action, cf, cr) = changes[p]
+        (action, cf, cr, kind) = changes[p]
         if action == 'D':
             for b in list(branches):
                 if path_is_child(p, b):
                     branches.remove(b)
-                    yield b, None, -1
+                    yield b, None, -1, kind
         elif cf is not None:
             for b in list(branches):
                 if path_is_child(p, b):
                     old_b = rebase_path(b, p, cf)
-                    yield b, old_b, cr
+                    yield b, old_b, cr, kind
                     branches.remove(b)
                     branches.add(old_b)
 

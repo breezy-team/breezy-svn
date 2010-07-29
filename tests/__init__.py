@@ -16,6 +16,7 @@
 
 """Tests for the bzr-svn plugin."""
 
+from subvertpy import NODE_UNKNOWN
 import subvertpy.tests
 
 from bzrlib import osutils
@@ -89,6 +90,31 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         repos_url = self.make_client(repospath, clientpath)
 
         return BzrDir.open(repos_url)
+
+    def assertChangedPathEquals(self, expected, got, msg=None):
+        if expected[:3] == got[:3] and got[3] in (expected[3], NODE_UNKNOWN):
+            return
+        self.assertEquals(expected, got, msg)
+
+    def assertChangedPathsEquals(self, expected, got, msg=None):
+        self.assertIsInstance(expected, dict)
+        self.assertIsInstance(got, dict)
+        if len(expected) != len(got):
+            self.assertEquals(expected, got, msg)
+        for p, v1 in expected.iteritems():
+            try:
+                v2 = got[p]
+            except KeyError:
+                self.assertEquals(expected, got, msg)
+            self.assertChangedPathEquals(v1, v2, msg)
+
+    def assertBranchLogEquals(self, expected, got, msg=None):
+        if len(expected) != len(got):
+            self.assertEquals(expected, got, msg)
+        for (root1, changes1, revnum1), (root2, changes2, revnum2) in zip(expected, got):
+            self.assertEquals(revnum1, revnum2)
+            self.assertEquals(root1, root2)
+            self.assertChangedPathsEquals(changes1, changes2, msg)
 
 
 def test_suite():

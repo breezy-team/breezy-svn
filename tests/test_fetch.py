@@ -23,6 +23,8 @@ import os
 import shutil
 import sys
 
+from subvertpy import NODE_DIR, NODE_FILE
+
 from bzrlib.branch import (
     Branch,
     )
@@ -2085,8 +2087,10 @@ Node-copyfrom-path: x
         dc.close()
 
         oldrepos = Repository.open(repos_url)
-        self.assertEquals({'trunk/adir': (u'R', 'trunk/adir', 2), 'trunk/adir/foofile': (u'A', None, -1)},
-                          oldrepos._revmeta_provider.get_revision("trunk", 3).get_paths())
+        self.assertChangedPathsEquals({
+            'trunk/adir': (u'R', 'trunk/adir', 2, NODE_DIR),
+            'trunk/adir/foofile': (u'A', None, -1, NODE_FILE)},
+              oldrepos._revmeta_provider.get_revision("trunk", 3).get_paths())
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f")
         newrepos = dir.create_repository()
@@ -2120,8 +2124,10 @@ Node-copyfrom-path: x
         dc.close()
 
         oldrepos = Repository.open(repos_url)
-        self.assertEquals({'trunk/adir': (u'R', 'trunk/adir', 1), 'trunk/adir/foofile': (u'A', None, -1)},
-                          oldrepos._revmeta_provider.get_revision("trunk", 3).get_paths())
+        self.assertChangedPathsEquals({
+            'trunk/adir': (u'R', 'trunk/adir', 1, NODE_DIR),
+            'trunk/adir/foofile': (u'A', None, -1, NODE_FILE)},
+              oldrepos._revmeta_provider.get_revision("trunk", 3).get_paths())
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f")
         newrepos = dir.create_repository()
