@@ -183,8 +183,8 @@ class SubversionTargetPullResult(PullResult):
         except NoSuchRevision:
             # Last resort
             return len(
-                self.target_branch.repository.iter_reverse_revision_history(
-                    self.old_revid))
+                list(self.target_branch.repository.iter_reverse_revision_history(
+                    self.old_revid)))
 
     @property
     def new_revno(self):

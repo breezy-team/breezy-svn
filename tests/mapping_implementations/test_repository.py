@@ -877,22 +877,29 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
     def test_control_code_msg(self):
         if ra.version()[1] >= 5:
             raise TestSkipped("Test not runnable with Subversion >= 1.5")
-        repos_url = self.make_client('d', 'dc')
 
-        self.build_tree({'dc/trunk': None})
-        self.client_add("dc/trunk")
-        self.client_commit("dc", "\x24")
+        repos_url = self.make_repository('d')
 
-        self.build_tree({'dc/trunk/hosts': 'hej2'})
-        self.client_add("dc/trunk/hosts")
-        self.client_commit("dc", "bla\xfcbla") #2
+        cb = self.get_commit_editor(repos_url)
+        cb.add_dir("trunk")
+        cb.close("\x24")
 
-        self.build_tree({'dc/trunk/hosts': 'hej3'})
-        self.client_commit("dc", "a\x0cb") #3
+        cb = self.get_commit_editor(repos_url)
+        trunk = cb.open_dir("trunk")
+        hosts = trunk.add_file("trunk/hosts")
+        hosts.modify("hej2")
+        cb.close("bla\xfcbla") #2
 
-        self.build_tree({'dc/branches/foobranch/file': 'foohosts'})
-        self.client_add("dc/branches")
-        self.client_commit("dc", "foohosts") #4
+        cb = self.get_commit_editor(repos_url)
+        trunk = cb.open_dir("trunk")
+        trunk.open_file("trunk/hosts").modify("hej3")
+        cb.close("a\x0cb") #3
+
+        cb = self.get_commit_editor(repos_url)
+        branches = cb.add_dir("branches")
+        foobranch = branches.add_dir("branches/foobranch")
+        foobranch.add_file("branches/foobranch/file").modify()
+        cb.close("foohosts") #4
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
@@ -926,12 +933,12 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertEqual(u"a\\x0cb", rev.message)
 
     def test_set_layout(self):
-        repos_url = self.make_client('d', 'dc')
+        repos_url = self.make_repository('d')
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
 
     def testlhs_revision_parent_none(self):
-        repos_url = self.make_client('d', 'dc')
+        repos_url = self.make_repository('d')
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
         self.assertEquals(NULL_REVISION, repos._revmeta_provider.get_revision("", 0).get_lhs_parent_revid(repos.get_mapping()))
