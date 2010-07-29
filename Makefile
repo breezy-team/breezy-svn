@@ -79,7 +79,7 @@ strace-check::
 	$(MAKE) check DEBUGGER="strace $(STRACE_OPTIONS)"
 
 show-plugins::
-	BZR_PLUGINS_AT=svn@. $(BZR) plugins
+	BZR_PLUGINS_AT=svn@. $(BZR) plugins -v
 
 lint::
 	PYTHONPATH=$(PYTHONPATH):subvertpy $(PYLINT) -f parseable *.py */*.py
