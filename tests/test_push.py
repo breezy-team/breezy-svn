@@ -17,7 +17,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import os
-from subvertpy import ra
+from subvertpy import NODE_DIR, NODE_FILE, ra
 
 from bzrlib import osutils
 from bzrlib.branch import Branch
@@ -40,7 +40,6 @@ from bzrlib.trace import mutter
 from bzrlib.tests import TestCase
 
 from bzrlib.plugins.svn import (
-    format,
     transport,
     )
 from bzrlib.plugins.svn.branch import (
@@ -59,6 +58,7 @@ from bzrlib.plugins.svn.push import (
 from bzrlib.plugins.svn.tests import (
     SubversionTestCase,
     )
+
 
 
 class TestDPush(SubversionTestCase):
@@ -137,9 +137,7 @@ class TestDPush(SubversionTestCase):
             'svn:entry:committed-date']), set(props.keys()))
 
         r = self.svndir.find_repository()
-        self.assertEquals(set([r.generate_revision_id(
-                rev,
-                "",
+        self.assertEquals(set([r.generate_revision_id(rev, "",
                 r.get_mapping()) for rev in (c.get_latest_revnum()-1, c.get_latest_revnum())]),
                 set(revid_map.values()))
 
@@ -162,7 +160,8 @@ class TestDPush(SubversionTestCase):
         self.assertEquals(set([newid1, newid2]), set(revid_map.keys()))
         repos = self.svndir.find_repository()
         revmeta = repos._revmeta_provider.get_revision("", 3)
-        self.assertEquals(revmeta.get_paths(), {"foo/bliel": ('A', None, -1)})
+        self.assertChangedPathsEquals(
+                {"foo/bliel": ('A', None, -1, NODE_FILE)}, revmeta.get_paths())
 
     def test_diverged(self):
         dc = self.commit_editor()
@@ -543,11 +542,11 @@ class TestPush(SubversionTestCase):
         self.svndir.open_branch().pull(wt.branch)
 
         paths = self.svndir.find_repository()._revmeta_provider.get_revision("", 3).get_paths()
-        self.assertEquals({
-            'trunk/comics': (u'R', None, -1),
-            'trunk/comics/bin': (u'A', 'trunk/comics/bin', 2),
-            'trunk/comics/core': (u'A', 'trunk/comics', 2),
-            'trunk/comics/core/bin': (u'D', None, -1)}, paths)
+        self.assertChangedPathsEquals({
+            'trunk/comics': (u'R', None, -1, NODE_DIR),
+            'trunk/comics/bin': (u'A', 'trunk/comics/bin', 2, NODE_DIR),
+            'trunk/comics/core': (u'A', 'trunk/comics', 2, NODE_DIR),
+            'trunk/comics/core/bin': (u'D', None, -1, NODE_DIR)}, paths)
 
 
 class PushNewBranchTests(SubversionTestCase):
@@ -1021,8 +1020,8 @@ class PushNewBranchTests(SubversionTestCase):
         bzrwt, old_ie, new_ie, foo_ie, revid1, revid2 = self._create_bzrwt_with_changed_root()
         newdir = BzrDir.open(repos_url+"/trunk")
         newbranch = newdir.import_branch(bzrwt.branch)
-        self.assertEquals({"trunk": ("R", None, -1),
-                           "trunk/foo": ("A", "trunk/foo", 1)},
+        self.assertChangedPathsEquals({"trunk": ("R", None, -1, NODE_DIR),
+                           "trunk/foo": ("A", "trunk/foo", 1, NODE_FILE)},
             newbranch.repository._revmeta_provider.get_revision("trunk", 2).get_paths())
         tree1 = newbranch.repository.revision_tree(revid1)
         tree2 = newbranch.repository.revision_tree(revid2)
@@ -1049,7 +1048,8 @@ class PushNewBranchTests(SubversionTestCase):
 
         log = self.client_log(repos_url, 2, 0)
         self.assertEquals({'/trunk': ('A', None, -1),
-                           '/trunk/foo': ('A', None, -1)}, log[1][0])
+                           '/trunk/foo': ('A', None, -1)},
+                           log[1][0])
         self.assertEquals({'/trunk': ('R', None, -1),
                            '/trunk/foo': ('A', '/trunk/foo', 1)}, log[2][0])
 
@@ -1173,7 +1173,8 @@ class PushNewBranchTests(SubversionTestCase):
             wt.apply_inventory_delta([
                 ("", None, wt.inventory.root.file_id, None),
                 ("mysubdir", "", wt.inventory.path2id("mysubdir"),
-                    InventoryDirectory(wt.inventory.path2id("mysubdir"), "", None))])
+                    InventoryDirectory(wt.inventory.path2id("mysubdir"), "",
+                        None))])
             os.rename("dc/mysubdir/myfile", "dc/myfile")
             osutils.rmtree("dc/mysubdir")
         finally:
@@ -1184,7 +1185,8 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertEquals(svnbranch.last_revision(), wt.branch.last_revision())
         self.assertEquals(["myfile"], svndir.root_transport.list_dir("."))
         paths = svnbranch.repository._revmeta_provider._log.get_revision_paths(2)
-        self.assertEquals(('R', "trunk/mysubdir", 1), paths['trunk'])
+        self.assertChangedPathEquals(('R', "trunk/mysubdir", 1, NODE_DIR),
+                paths['trunk'])
 
     def test_push_pointless(self):
         repos_url = self.make_repository("a")
@@ -1203,7 +1205,8 @@ class PushNewBranchTests(SubversionTestCase):
             wt.commit("This is pointless.")
             svnbranch = svndir.open_branch()
             svnbranch.pull(wt.branch)
-            self.assertEquals(svnbranch.last_revision(), wt.branch.last_revision())
+            self.assertEquals(svnbranch.last_revision(),
+                wt.branch.last_revision())
         finally:
             wt.unlock()
 

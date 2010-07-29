@@ -52,7 +52,7 @@ clean::
 	rm -f *.so
 
 check:: build-inplace
-	BZR_PLUGIN_AT=svn@. $(DEBUGGER) $(PYTHON) $(PYTHON_OPTIONS) $(BZR) $(BZR_OPTIONS) selftest $(TEST_OPTIONS) $(TESTS)
+	BZR_PLUGINS_AT=svn@$(shell pwd) $(DEBUGGER) $(PYTHON) $(PYTHON_OPTIONS) $(BZR) $(BZR_OPTIONS) selftest $(TEST_OPTIONS) $(TESTS)
 
 coverage::
 	$(MAKE) check BZR_OPTIONS="--coverage coverage"
@@ -79,7 +79,7 @@ strace-check::
 	$(MAKE) check DEBUGGER="strace $(STRACE_OPTIONS)"
 
 show-plugins::
-	BZR_PLUGINS_AT=svn@. $(BZR) plugins -v
+	BZR_PLUGINS_AT=svn@$(shell pwd) $(BZR) plugins -v
 
 lint::
 	PYTHONPATH=$(PYTHONPATH):subvertpy $(PYLINT) -f parseable *.py */*.py

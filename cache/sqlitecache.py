@@ -34,6 +34,7 @@ from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     )
 
+from subvertpy import NODE_UNKNOWN
 
 def check_pysqlite_version(sqlite3):
     """Check that sqlite library is compatible.
@@ -324,7 +325,8 @@ class LogCache(CacheTable):
             create index if not exists revprop_rev on revprop(rev);
             create unique index if not exists revprop_rev_name on revprop(rev, name);
             create unique index if not exists revinfo_rev on revinfo(rev);
-        """)
+            alter table changed_path ADD kind INT DEFAULT %d;
+        """ % NODE_UNKNOWN)
 
     def find_latest_change(self, path, revnum):
         if path == "":
@@ -343,12 +345,12 @@ class LogCache(CacheTable):
 
         :param revnum: Revision number of revision.
         """
-        result = self.cachedb.execute("select path, action, copyfrom_path, copyfrom_rev from changed_path where rev=?", (revnum,))
+        result = self.cachedb.execute("select path, action, copyfrom_path, copyfrom_rev, kind from changed_path where rev=?", (revnum,))
         paths = {}
-        for p, act, cf, cr in result:
+        for p, act, cf, cr, kind in result:
             if cf is not None:
                 cf = cf.encode("utf-8")
-            paths[p.encode("utf-8")] = (act, cf, cr)
+            paths[p.encode("utf-8")] = (act, cf, cr, kind)
         return paths
 
     def insert_paths(self, rev, orig_paths):
@@ -360,14 +362,18 @@ class LogCache(CacheTable):
         if orig_paths is None or orig_paths == {}:
             return
         new_paths = []
-        for p in orig_paths:
-            copyfrom_path = orig_paths[p][1]
+        for p, v in orig_paths.iteritems():
+            copyfrom_path = v[1]
             if copyfrom_path is not None:
                 copyfrom_path = copyfrom_path.strip("/").decode("utf-8")
 
-            new_paths.append((rev, p.strip("/").decode("utf-8"), orig_paths[p][0], copyfrom_path, orig_paths[p][2]))
+            try:
+                kind = v[3]
+            except IndexError:
+                kind = NODE_UNKNOWN
+            new_paths.append((rev, p.strip("/").decode("utf-8"), v[0], copyfrom_path, v[2], kind))
 
-        self.cachedb.executemany("replace into changed_path (rev, path, action, copyfrom_path, copyfrom_rev) values (?, ?, ?, ?, ?)", new_paths)
+        self.cachedb.executemany("replace into changed_path (rev, path, action, copyfrom_path, copyfrom_rev, kind) values (?, ?, ?, ?, ?, ?)", new_paths)
 
     def drop_revprops(self, revnum):
         self.cachedb.execute("update revinfo set all_revprops = 0 where rev = ?", (revnum,))

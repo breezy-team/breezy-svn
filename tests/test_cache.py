@@ -30,16 +30,18 @@ from bzrlib.plugins.svn.mapping4 import (
     BzrSvnMappingv4,
     )
 
+from subvertpy import NODE_DIR, NODE_FILE
+
 
 class LogCacheTests(object):
 
     def test_last_revnum(self):
-        self.cache.insert_paths(42, {"foo": ("A", None, -1)})
+        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_FILE)})
         self.assertEquals(42, self.cache.last_revnum())
 
     def test_insert_paths(self):
-        self.cache.insert_paths(42, {"foo": ("A", None, -1)})
-        self.assertEquals({"foo": ("A", None, -1)},
+        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_DIR)})
+        self.assertEquals({"foo": ("A", None, -1, NODE_DIR)},
                 self.cache.get_revision_paths(42))
 
     def test_insert_revprops(self):
@@ -54,7 +56,7 @@ class LogCacheTests(object):
         self.assertEquals(({"some": "data"}, False), self.cache.get_revprops(42))
 
     def test_find_latest_change(self):
-        self.cache.insert_paths(42, {"foo": ("A", None, -1)})
+        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_DIR)})
         try:
             self.assertEquals(42, self.cache.find_latest_change("foo", 42))
             self.assertEquals(42, self.cache.find_latest_change("foo", 45))

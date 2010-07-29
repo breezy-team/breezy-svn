@@ -446,8 +446,9 @@ class SvnRaTransport(Transport):
         finally:
             self.add_connection(conn)
 
-    def iter_log(self, paths, from_revnum, to_revnum, limit, discover_changed_paths,
-                 strict_node_history, include_merged_revisions, revprops):
+    def iter_log(self, paths, from_revnum, to_revnum, limit,
+                 discover_changed_paths, strict_node_history,
+                 include_merged_revisions, revprops):
         assert paths is None or isinstance(paths, list)
         assert isinstance(from_revnum, int) and isinstance(to_revnum, int)
         assert isinstance(limit, int)
