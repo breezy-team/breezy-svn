@@ -311,7 +311,8 @@ class LogCache(CacheTable):
                 action text not null check(action in ('A', 'D', 'M', 'R')),
                 path text not null,
                 copyfrom_path text,
-                copyfrom_rev integer
+                copyfrom_rev integer,
+                kind int default %d
                 );
             create index if not exists path_rev on changed_path(rev);
             create unique index if not exists path_rev_path on changed_path(rev, path);
@@ -325,8 +326,12 @@ class LogCache(CacheTable):
             create index if not exists revprop_rev on revprop(rev);
             create unique index if not exists revprop_rev_name on revprop(rev, name);
             create unique index if not exists revinfo_rev on revinfo(rev);
-            alter table changed_path ADD kind INT DEFAULT %d;
         """ % NODE_UNKNOWN)
+        try:
+            self.cachedb.executescript(
+                "alter table changed_path ADD kind INT DEFAULT %d;" % NODE_UNKNOWN)
+        except sqlite3.OperationalError:
+            pass # Column already exists.
 
     def find_latest_change(self, path, revnum):
         if path == "":
