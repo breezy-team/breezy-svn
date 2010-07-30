@@ -33,7 +33,6 @@ from bzrlib.merge import (
     Merger,
     Merge3Merger,
     )
-from bzrlib.progress import DummyProgress
 from bzrlib.repository import Repository
 from bzrlib.revision import Revision
 from bzrlib.trace import mutter
@@ -650,7 +649,7 @@ class PushNewBranchTests(SubversionTestCase):
         other_rev = repos.generate_revision_id(3, "", mapping)
         wt.lock_write()
         try:
-            merge = Merger.from_revision_ids(DummyProgress(), wt, other=other_rev)
+            merge = Merger.from_revision_ids(None, wt, other=other_rev)
             merge.merge_type = Merge3Merger
             merge.do_merge()
             self.assertEquals(base_revid, merge.base_rev_id)
@@ -694,7 +693,7 @@ class PushNewBranchTests(SubversionTestCase):
         other_rev = repos.generate_revision_id(3, "trunk", mapping)
         wt.lock_write()
         try:
-            merge = Merger.from_revision_ids(DummyProgress(), wt, other=other_rev)
+            merge = Merger.from_revision_ids(None, wt, other=other_rev)
             merge.merge_type = Merge3Merger
             merge.do_merge()
             self.assertEquals(base_revid, merge.base_rev_id)
