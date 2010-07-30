@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
+
  
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1041,20 +1041,31 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 repos._revmeta_provider.get_revision("de/trunk", 2).get_lhs_parent_revid(mapping))
 
     def test_mainline_revision_nested_deleted(self):
-        repos_url = self.make_client('d', 'dc')
-        self.build_tree({'dc/py/trunk/adir/afile': "data", 
-                         'dc/py/trunk/adir/stationary': None})
-        self.client_add("dc/py")
-        self.client_commit("dc", "Initial commit")
-        self.client_copy("dc/py", "dc/de")
-        self.client_commit("dc", "Incremental commit")
-        self.client_delete("dc/de/trunk/adir")
-        self.client_commit("dc", "Another incremental commit")
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        py = dc.add_dir("py")
+        trunk = py.add_dir("py/trunk")
+        adir = trunk.add_dir("py/trunk/adir")
+        afile = adir.add_file("py/trunk/adir/file").modify("data")
+        adir.add_dir("py/trunk/adir/stationary")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("de", "py")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        de = dc.open_dir("de")
+        trunk = de.open_dir("de/trunk")
+        trunk.delete("de/trunk/adir")
+        dc.close()
+
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(1))
         mapping = repos.get_mapping()
-        self.assertEquals(repos.generate_revision_id(1, "py/trunk", mapping), \
-                repos._revmeta_provider.get_revision("de/trunk", 3).get_lhs_parent_revid(mapping))
+        self.assertEquals(repos.generate_revision_id(1, "py/trunk", mapping),
+            repos._revmeta_provider.get_revision("de/trunk", 3).get_lhs_parent_revid(mapping))
 
     def test_item_keys_introduced_by(self):
         repos_url = self.make_repository('d')
