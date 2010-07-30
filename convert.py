@@ -90,6 +90,7 @@ def put_latest_svn_import_revision(repo, uuid, revnum):
 class NotDumpFile(BzrError):
     """A file specified was not a dump file."""
     _fmt = """%(dumpfile)s is not a dump file."""
+
     def __init__(self, dumpfile):
         BzrError.__init__(self)
         self.dumpfile = dumpfile

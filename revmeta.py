@@ -30,6 +30,7 @@ from itertools import (
     imap,
     )
 from subvertpy import (
+    NODE_DIR,
     properties,
     )
 
@@ -108,6 +109,14 @@ class RevisionMetadata(object):
     Tries to be as lazy as possible - data is not retrieved or calculated
     from other known data before contacting the Subversions server.
     """
+
+    __slots__ = ('repository', 'check_revprops', '_get_fileprops_fn',
+                 '_log', 'branch_path', '_paths', 'revnum', '_revprops',
+                 '_changed_fileprops', '_fileprops',
+                 '_direct_lhs_parent_known', '_consider_bzr_fileprops',
+                 '_consider_bzr_revprops', '_estimated_fileprop_ancestors',
+                 'metaiterators', 'uuid', 'children',
+                 '_direct_lhs_parent_revmeta', '_revprop_redirect_revnum')
 
     def __init__(self, repository, check_revprops, get_fileprops_fn, logwalker,
                  uuid, branch_path, revnum, paths, revprops,
@@ -311,8 +320,8 @@ class RevisionMetadata(object):
                 return self._direct_lhs_parent_revmeta
             except MetaHistoryIncomplete:
                 pass
-        iterator = self.repository._revmeta_provider.iter_reverse_branch_changes(self.branch_path,
-            self.revnum, to_revnum=0, limit=0)
+        iterator = self.repository._revmeta_provider.iter_reverse_branch_changes(
+                self.branch_path, self.revnum, to_revnum=0, limit=0)
         firstrevmeta = iterator.next()
         assert self == firstrevmeta, "Expected %r got %r" % (self, firstrevmeta)
         try:
@@ -550,7 +559,7 @@ class RevisionMetadata(object):
     def get_rhs_parents(self, mapping):
         """Determine the right hand side parent ids for this revision.
 
-        :param mapping: 
+        :param mapping:
         """
         return self._get_rhs_parents(mapping)
 
@@ -797,6 +806,10 @@ class RevisionMetadata(object):
 class CachingRevisionMetadata(RevisionMetadata):
     """Wrapper around RevisionMetadata that stores some results in a cache."""
 
+    __slots__ = ('base', '_revid_cache', '_revinfo_cache', '_revision_info',
+                 '_original_mapping', '_original_mapping_set',
+                 '_stored_lhs_parent_revid', '_parents_cache', 'paths')
+
     def __init__(self, repository, *args, **kwargs):
         self.base = super(CachingRevisionMetadata, self)
         self.base.__init__(repository, *args,
@@ -914,6 +927,9 @@ def svk_feature_to_revision_id(feature, mapping):
 
 class RevisionMetadataBranch(object):
     """Describes a Bazaar-like branch in a Subversion repository."""
+
+    __slots__ = ('_revs', '_revnums', '_history_limit', '_revmeta_provider',
+                 '_get_next')
 
     def __init__(self, revmeta_provider=None, history_limit=None):
         self._revs = []
@@ -1138,7 +1154,7 @@ class RevisionMetadataBrowser(object):
             deletes = []
 
             if paths == {}:
-                paths = {"": ("M", None, -1)}
+                paths = {"": ("M", None, -1, NODE_DIR)}
 
             # Find out what branches have changed
             for p in sorted(paths):
@@ -1183,7 +1199,7 @@ class RevisionMetadataBrowser(object):
                 yield "revision", revmeta
 
             # Apply reverse renames and the like for the next round
-            for new_name, old_name, old_rev in changes.apply_reverse_changes(
+            for new_name, old_name, old_rev, kind in changes.apply_reverse_changes(
                 self._ancestors.keys(), paths):
                 self._unusual.discard(new_name)
                 if old_name is None:
@@ -1203,7 +1219,7 @@ class RevisionMetadataBrowser(object):
 
             # Update the prefixes, if necessary
             if self._prefixes:
-                for new_name, old_name, old_rev in changes.apply_reverse_changes(
+                for new_name, old_name, old_rev, kind in changes.apply_reverse_changes(
                     self._prefixes, paths):
                     if old_name is None:
                         # Didn't exist previously, terminate prefix
@@ -1298,7 +1314,7 @@ class RevisionMetadataProvider(object):
         if self.in_cache(path, revnum):
             cached = self._revmeta_cache[path,revnum]
             if changes is not None:
-                cached.paths = changes
+                cached._paths = changes
             if cached._changed_fileprops is None:
                 cached._changed_fileprops = changed_fileprops
             if cached._fileprops is None:

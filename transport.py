@@ -205,7 +205,7 @@ def bzr_to_svn_url(url):
     if url.startswith("readonly+"):
         url = url[len("readonly+"):]
 
-    if (url.startswith("svn+http://") or 
+    if (url.startswith("svn+http://") or
         url.startswith("svn+https://")):
         url = url[len("svn+"):] # Skip svn+
 
@@ -234,7 +234,7 @@ class SubversionProgressReporter(object):
     def __init__(self, url):
         self._scheme = urlparse.urlsplit(url)[0]
         self._last_progress = 0
-        # This variable isn't used yet as of bzr 1.12, and finding 
+        # This variable isn't used yet as of bzr 1.12, and finding
         # the right Transport object will be tricky in bzr-svn's case
         # so just setting it to None for now.
 
@@ -250,7 +250,7 @@ class SubversionProgressReporter(object):
 
 
 def Connection(url, auth=None):
-    # Subvertpy <= 0.6.3 has a bug in the reference counting of the 
+    # Subvertpy <= 0.6.3 has a bug in the reference counting of the
     # progress update function
     if subvertpy.__version__ >= (0, 6, 3):
         progress_cb = SubversionProgressReporter(url).update
@@ -332,12 +332,12 @@ class ConnectionPool(object):
     def add(self, connection):
         assert not connection.busy, "adding busy connection in pool"
         self.connections.add(connection)
-    
+
 
 class SvnRaTransport(Transport):
     """Fake transport for Subversion-related namespaces.
-    
-    This implements just as much of Transport as is necessary 
+
+    This implements just as much of Transport as is necessary
     to fool Bazaar. """
 
     @convert_svn_error
@@ -368,7 +368,7 @@ class SvnRaTransport(Transport):
 
     def get_connection(self, repos_path=None):
         if repos_path is not None:
-            return self.connections.get(urlutils.join(self.get_svn_repos_root(), 
+            return self.connections.get(urlutils.join(self.get_svn_repos_root(),
                                         repos_path))
         else:
             return self.connections.get(self.svn_url)
@@ -385,7 +385,7 @@ class SvnRaTransport(Transport):
 
     def get(self, relpath):
         """See Transport.get()."""
-        # TODO: Raise TransportNotPossible here instead and 
+        # TODO: Raise TransportNotPossible here instead and
         # catch it in bzrdir.py
         raise NoSuchFile(path=relpath)
 
@@ -425,7 +425,7 @@ class SvnRaTransport(Transport):
 
     def get_repos_root(self):
         root = self.get_svn_repos_root()
-        if (self.base.startswith("svn+http:") or 
+        if (self.base.startswith("svn+http:") or
             self.base.startswith("svn+https:")):
             return "svn+%s" % root
         return root
@@ -446,22 +446,38 @@ class SvnRaTransport(Transport):
         finally:
             self.add_connection(conn)
 
-    def iter_log(self, paths, from_revnum, to_revnum, limit, discover_changed_paths, 
-                 strict_node_history, include_merged_revisions, revprops):
+    def iter_log(self, paths, from_revnum, to_revnum, limit,
+                 discover_changed_paths, strict_node_history,
+                 include_merged_revisions, revprops):
         assert paths is None or isinstance(paths, list)
         assert isinstance(from_revnum, int) and isinstance(to_revnum, int)
         assert isinstance(limit, int)
+
+        if paths is not None:
+            paths = [p.strip("/") for p in paths]
+
+        conn = self.get_connection()
+        try:
+            return conn.iter_log(paths, from_revnum, to_revnum, limit,
+                discover_changed_paths=discover_changed_paths,
+                strict_node_history=strict_node_history,
+                include_merged_revisions=include_merged_revisions,
+                revprops=revprops)
+        except AttributeError:
+            # Older subvertpy, fall back to iterator wrapper.
+            pass
+
         from threading import Thread, Semaphore
 
         class logfetcher(Thread):
-            def __init__(self, transport, *args, **kwargs):
+            def __init__(self, transport, conn, *args, **kwargs):
                 Thread.__init__(self)
                 self.setDaemon(True)
                 self.transport = transport
                 self.args = args
                 self.kwargs = kwargs
                 self.pending = []
-                self.conn = self.transport.get_connection()
+                self.conn = conn
                 self.semaphore = Semaphore(0)
                 self.busy = False
 
@@ -488,38 +504,25 @@ class SvnRaTransport(Transport):
                     self.pending.append(Exception("Some exception was not handled"))
                     self.semaphore.release()
                     self.transport.add_connection(self.conn)
-
-        if paths is None:
-            newpaths = None
-        else:
-            newpaths = [p.rstrip("/") for p in paths]
-
-        fetcher = logfetcher(self, newpaths, from_revnum, to_revnum, limit, discover_changed_paths=discover_changed_paths, strict_node_history=strict_node_history, include_merged_revisions=include_merged_revisions, revprops=revprops)
+        fetcher = logfetcher(self, conn, paths, from_revnum, to_revnum,
+                limit, discover_changed_paths=discover_changed_paths,
+                strict_node_history=strict_node_history,
+                include_merged_revisions=include_merged_revisions,
+                revprops=revprops)
         fetcher.start()
         return iter(fetcher.next, None)
 
-    def get_log(self, rcvr, paths, from_revnum, to_revnum, limit, discover_changed_paths, 
+    def get_log(self, rcvr, paths, from_revnum, to_revnum, limit, discover_changed_paths,
                 strict_node_history, include_merged_revisions, revprops):
-        assert paths is None or isinstance(paths, list), "Invalid paths"
 
-        all_true = True
-        for item in [isinstance(x, str) for x in paths]:
-            if not item:
-                all_true = False
-                break
-        
-        assert paths is None or all_true
-
-        if paths is None:
-            newpaths = None
-        else:
-            newpaths = [p.rstrip("/") for p in paths]
+        if paths is not None:
+            paths = [p.strip("/") for p in paths]
 
         conn = self.get_connection()
         try:
-            return conn.get_log(rcvr, newpaths, 
+            return conn.get_log(rcvr, paths,
                     from_revnum, to_revnum,
-                    limit, discover_changed_paths, strict_node_history, 
+                    limit, discover_changed_paths, strict_node_history,
                     include_merged_revisions,
                     revprops)
         finally:
@@ -643,8 +646,8 @@ class SvnRaTransport(Transport):
         """
         return True
 
-    # There is no real way to do locking directly on the transport 
-    # nor is there a need to as the remote server will take care of 
+    # There is no real way to do locking directly on the transport
+    # nor is there a need to as the remote server will take care of
     # locking
     class PhonyLock(object):
         def unlock(self):
@@ -717,7 +720,12 @@ class MutteringRemoteAccess(object):
 
     def get_log(self, callback, paths, from_revnum, to_revnum, limit, *args, **kwargs):
         mutter('svn log -r%d:%d %r (limit: %r)' % (from_revnum, to_revnum, paths, limit))
-        return self.actual.get_log(callback, paths, 
+        return self.actual.get_log(callback, paths,
+                    from_revnum, to_revnum, limit, *args, **kwargs)
+
+    def iter_log(self, paths, from_revnum, to_revnum, limit, *args, **kwargs):
+        mutter('svn iter-log -r%d:%d %r (limit: %r)' % (from_revnum, to_revnum, paths, limit))
+        return self.actual.iter_log(paths,
                     from_revnum, to_revnum, limit, *args, **kwargs)
 
     def change_rev_prop(self, revnum, name, value):
@@ -734,7 +742,7 @@ class MutteringRemoteAccess(object):
 
     def get_file_revs(self, path, start_revnum, end_revnum, handler):
         mutter('svn get-file-revs -r%d:%d %s' % (start_revnum, end_revnum, path))
-        return self.actual.get_file_revs(path, start_revnum, end_revnum, 
+        return self.actual.get_file_revs(path, start_revnum, end_revnum,
             handler)
 
     def revprop_list(self, revnum):
@@ -749,8 +757,8 @@ class MutteringRemoteAccess(object):
         mutter("svn update -r%d %s" % (revnum, path))
         return self.actual.do_update(revnum, path, start_empty, editor)
 
-    def do_diff(self, revision_to_update, diff_target, versus_url, 
-                diff_editor, recurse=True, ignore_ancestry=False, text_deltas=False, 
+    def do_diff(self, revision_to_update, diff_target, versus_url,
+                diff_editor, recurse=True, ignore_ancestry=False, text_deltas=False,
                 depth=None):
         mutter("svn diff -r%d %s -> %s" % (revision_to_update, diff_target, versus_url))
         return self.actual.do_diff(revision_to_update, diff_target, versus_url,
@@ -772,10 +780,10 @@ class MutteringRemoteAccess(object):
         mutter("svn rev-proplist -r%d" % revnum)
         return self.actual.rev_proplist(revnum)
 
-    def replay_range(self, start_revision, end_revision, low_water_mark, cbs, 
+    def replay_range(self, start_revision, end_revision, low_water_mark, cbs,
                      send_deltas=True):
         mutter("svn replay-range %d -> %d (low water mark: %d)" % (start_revision, end_revision, low_water_mark))
-        return self.actual.replay_range(start_revision, end_revision, low_water_mark, cbs, 
+        return self.actual.replay_range(start_revision, end_revision, low_water_mark, cbs,
                    send_deltas)
 
     def replay(self, revision, low_water_mark, editor, send_deltas=True):
@@ -788,7 +796,7 @@ def create_branch_prefix(transport, revprops, bp_parts, existing_bp_parts=None):
 
     :param transport: Subversion transport
     :param revprops: Revision properties to set
-    :param bp_parts: Branch path elements that should be created (list of names, 
+    :param bp_parts: Branch path elements that should be created (list of names,
         ["branches", "foo"] for "branches/foo")
     :param existing_bp_parts: Branch path elements that already exist.
     """
@@ -827,7 +835,7 @@ def check_dirs_exist(transport, bp_parts, base_rev):
     """Make sure that the specified directories exist.
 
     :param transport: SvnRaTransport to use.
-    :param bp_parts: List of directory names in the format returned by 
+    :param bp_parts: List of directory names in the format returned by
         os.path.split()
     :param base_rev: Base revision to check.
     :return: List of the directories that exists in base_rev.

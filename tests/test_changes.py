@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Tests for the changes module."""
+
+from subvertpy import NODE_DIR
 
 from bzrlib.tests import TestCase
 
@@ -90,39 +92,39 @@ class ChangesRootTests(TestCase):
 class ApplyReverseChangesTests(TestCase):
 
     def test_parent_rename(self):
-        self.assertEquals([('tags/2.5-M2', 'geotools/tags/2.5-M2', 5617)],
-            list(apply_reverse_changes(['trunk/geotools2', 'tags/2.5-M2', 'trunk'], 
-                {'tags': (u'A', 'geotools/tags', 5617), 'geotools/tags': (u'D', None, -1)}))
+        self.assertEquals([('tags/2.5-M2', 'geotools/tags/2.5-M2', 5617, NODE_DIR)],
+            list(apply_reverse_changes(['trunk/geotools2', 'tags/2.5-M2', 'trunk'],
+                {'tags': (u'A', 'geotools/tags', 5617, NODE_DIR), 'geotools/tags': (u'D', None, -1, NODE_DIR)}))
             )
 
     def test_simple_rename(self):
-        self.assertEquals([("newname", "oldname", 2)],
-            list(apply_reverse_changes(["newname"], 
-                {"newname": (u"A", "oldname", 2)})))
+        self.assertEquals([("newname", "oldname", 2, NODE_DIR)],
+            list(apply_reverse_changes(["newname"],
+                {"newname": (u"A", "oldname", 2, NODE_DIR)})))
 
     def test_simple_rename_nonexistant(self):
         self.assertEquals([],
-            list(apply_reverse_changes([], 
-                {"newname": (u"A", "oldname", 2)})))
+            list(apply_reverse_changes([],
+                {"newname": (u"A", "oldname", 2, NODE_DIR)})))
 
     def test_modify(self):
         self.assertEquals([],
-            list(apply_reverse_changes(["somename"], 
-                {"somename": (u"M", None, -1)})))
+            list(apply_reverse_changes(["somename"],
+                {"somename": (u"M", None, -1, NODE_DIR)})))
 
     def test_delete(self):
-        self.assertEquals([("somename/bloe", None, -1)],
-            list(apply_reverse_changes(["somename/bloe"], 
-                {"somename": (u"D", None, -1)})))
+        self.assertEquals([("somename/bloe", None, -1, NODE_DIR)],
+            list(apply_reverse_changes(["somename/bloe"],
+                {"somename": (u"D", None, -1, NODE_DIR)})))
 
     def test_add(self):
         self.assertEquals([],
-            list(apply_reverse_changes(["somename"], 
-                {"somename": (u"A", None, -1)})))
+            list(apply_reverse_changes(["somename"],
+                {"somename": (u"A", None, -1, NODE_DIR)})))
 
     def test_chaco(self):
-        self.assertEquals([('packages/enthought-chaco2/trunk', 'packages/chaco2/trunk', 3)],
+        self.assertEquals([('packages/enthought-chaco2/trunk', 'packages/chaco2/trunk', 3, NODE_DIR)],
             list(apply_reverse_changes(['packages/enthought-chaco2/trunk'],
-                { "packages/chaco2": ("D", None, -1),
-                    "packages/enthought-chaco2": ("A", "packages/chaco2", 3),
-                    "packages/enthought-chaco2/trunk": ("D", None, -1)})))
+                { "packages/chaco2": ("D", None, -1, NODE_DIR),
+                    "packages/enthought-chaco2": ("A", "packages/chaco2", 3, NODE_DIR),
+                    "packages/enthought-chaco2/trunk": ("D", None, -1, NODE_DIR)})))

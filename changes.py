@@ -16,8 +16,9 @@
 
 """Utility functions for dealing with changes dictionaries as return by Subversions' log functions."""
 
+from subvertpy import NODE_DIR
 
-REV0_CHANGES = {"": ('A', None, -1)}
+REV0_CHANGES = {"": ('A', None, -1, NODE_DIR)}
 
 
 def path_is_child(branch_path, path):
@@ -33,8 +34,8 @@ def find_prev_location(paths, branch_path, revnum):
     :note: If branch_path wasn't copied, this will return revnum-1 as the
         previous revision.
     """
-    assert isinstance(branch_path, str)
-    assert isinstance(revnum, int)
+    assert type(branch_path) is str
+    assert type(revnum) is int
     if revnum == 0:
         assert branch_path == ""
         return None
@@ -52,7 +53,7 @@ def find_prev_location(paths, branch_path, revnum):
         if paths[branch_path][1] is None:
             return None # Was added here
         revnum = paths[branch_path][2]
-        assert isinstance(paths[branch_path][1], str)
+        assert type(paths[branch_path][1]) is str
         branch_path = paths[branch_path][1]
         return (branch_path, revnum)
 
@@ -83,7 +84,7 @@ def changes_path(changes, path, parents=False):
     :param parents: Whether to consider a parent moving a change.
     """
     for p in changes:
-        assert isinstance(p, str)
+        assert type(p) is str
         if path_is_child(path, p):
             return True
         if parents and path.startswith(p+"/") and changes[p][0] in ('R', 'A'):
@@ -98,7 +99,7 @@ def changes_children(changes, path):
     :note: Does not consider changes to path itself.
     """
     for p in changes:
-        assert isinstance(p, str)
+        assert type(p) is str
         if path_is_child(path, p) and path != p:
             return True
     return False
@@ -128,25 +129,25 @@ def apply_reverse_changes(branches, changes):
     """Apply the specified changes on a set of branch names in reverse.
     (E.g. as if we were applying the reverse of a delta)
 
-    :return: [(new_name, old_name, new_rev)]
+    :return: [(new_name, old_name, new_rev, kind)]
     :note: new_name is the name before these changes,
            old_name is the name after the changes.
-           new_rev is the revision that the changes were copied from 
+           new_rev is the revision that the changes were copied from
            (new_name), or -1 if the previous revnum
     """
     branches = set(branches)
     for p in sorted(changes):
-        (action, cf, cr) = changes[p]
+        (action, cf, cr, kind) = changes[p]
         if action == 'D':
             for b in list(branches):
                 if path_is_child(p, b):
                     branches.remove(b)
-                    yield b, None, -1
+                    yield b, None, -1, kind
         elif cf is not None:
             for b in list(branches):
                 if path_is_child(p, b):
                     old_b = rebase_path(b, p, cf)
-                    yield b, old_b, cr
+                    yield b, old_b, cr, kind
                     branches.remove(b)
                     branches.add(old_b)
 

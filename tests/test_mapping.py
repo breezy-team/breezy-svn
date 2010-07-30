@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -38,13 +38,13 @@ from bzrlib.plugins.svn.layout.standard import (
 from bzrlib.plugins.svn.mapping import (
     estimate_bzr_ancestors,
     escape_svn_path,
-    generate_revision_metadata, 
+    generate_revision_metadata,
     get_roundtrip_ancestor_revids,
     is_bzr_revision_fileprops,
     is_bzr_revision_revprops,
     mapping_registry,
     parse_merge_property,
-    parse_revision_metadata, 
+    parse_revision_metadata,
     parse_revid_property,
     unescape_svn_path,
     )
@@ -64,28 +64,29 @@ from bzrlib.plugins.svn.mapping4 import (
 
 
 class MetadataMarshallerTests(TestCase):
+
     def test_generate_revision_metadata_none(self):
-        self.assertEquals("", 
+        self.assertEquals("",
                 generate_revision_metadata(None, None, None, None))
 
     def test_generate_revision_metadata_committer(self):
-        self.assertEquals("committer: bla\n", 
+        self.assertEquals("committer: bla\n",
                 generate_revision_metadata(None, None, "bla", None))
 
     def test_generate_revision_metadata_timestamp(self):
-        self.assertEquals("timestamp: 2005-06-30 17:38:52.350850105 +0000\n", 
-                generate_revision_metadata(1120153132.350850105, 0, 
+        self.assertEquals("timestamp: 2005-06-30 17:38:52.350850105 +0000\n",
+                generate_revision_metadata(1120153132.350850105, 0,
                     None, None))
-            
+
     def test_generate_revision_metadata_properties(self):
-        self.assertEquals("properties: \n" + 
+        self.assertEquals("properties: \n" +
                 "\tpropbla: bloe\n" +
                 "\tpropfoo: bla\n",
                 generate_revision_metadata(None, None,
                     None, {"propbla": "bloe", "propfoo": "bla"}))
 
     def test_generate_revision_metadata_properties_newline(self):
-        self.assertEquals("properties: \n" + 
+        self.assertEquals("properties: \n" +
                 "\tpropbla: bloe\n" +
                 "\tpropbla: bla\n",
                 generate_revision_metadata(None, None,
@@ -118,22 +119,22 @@ class MetadataMarshallerTests(TestCase):
 
     def test_parse_revision_metadata_properties(self):
         rev = Revision('someid')
-        parse_revision_metadata("properties: \n" + 
-                                "\tfoo: bar\n" + 
+        parse_revision_metadata("properties: \n" +
+                                "\tfoo: bar\n" +
                                 "\tha: ha\n", rev)
         self.assertEquals({"foo": "bar", "ha": "ha"}, rev.properties)
 
     def test_parse_revision_metadata_properties_newline(self):
         rev = Revision('someid')
-        parse_revision_metadata("properties: \n" + 
-                                "\tfoo: bar\n" + 
+        parse_revision_metadata("properties: \n" +
+                                "\tfoo: bar\n" +
                                 "\tfoo: bar2\n" +
                                 "\tha: ha\n", rev)
         self.assertEquals({"foo": "bar\nbar2", "ha": "ha"}, rev.properties)
 
     def test_parse_revision_metadata_no_colon(self):
         rev = Revision('someid')
-        self.assertRaises(InvalidPropertyValue, 
+        self.assertRaises(InvalidPropertyValue,
                 lambda: parse_revision_metadata("bla", rev))
 
     def test_parse_revision_metadata_specialchar(self):
@@ -143,7 +144,7 @@ class MetadataMarshallerTests(TestCase):
 
     def test_parse_revision_metadata_invalid_name(self):
         rev = Revision('someid')
-        self.assertRaises(InvalidPropertyValue, 
+        self.assertRaises(InvalidPropertyValue,
                 lambda: parse_revision_metadata("bla: b", rev))
 
     def test_parse_revid_property(self):
@@ -153,15 +154,15 @@ class MetadataMarshallerTests(TestCase):
         self.assertEquals((42, "bloe bla"), parse_revid_property("42 bloe bla"))
 
     def test_parse_revid_property_invalid(self):
-        self.assertRaises(InvalidPropertyValue, 
+        self.assertRaises(InvalidPropertyValue,
                 lambda: parse_revid_property("blabla"))
 
     def test_parse_revid_property_empty_revid(self):
-        self.assertRaises(InvalidPropertyValue, 
+        self.assertRaises(InvalidPropertyValue,
                 lambda: parse_revid_property("2 "))
 
     def test_parse_revid_property_newline(self):
-        self.assertRaises(InvalidPropertyValue, 
+        self.assertRaises(InvalidPropertyValue,
                 lambda: parse_revid_property("foo\nbar"))
 
 
@@ -199,36 +200,37 @@ class GenerateRevisionIdTests(TestCase):
 class ParseRevisionIdTests(TestCase):
 
     def test_v4(self):
-        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv4()), 
+        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv4()),
                 mapping_registry.parse_revision_id("svn-v4:uuid:trunk:1"))
 
     def test_v3(self):
-        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv3(TrunkBranchingScheme())), 
+        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv3(TrunkBranchingScheme())),
                 mapping_registry.parse_revision_id("svn-v3-trunk0:uuid:trunk:1"))
 
     def test_v3_undefined(self):
-        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv3(TrunkBranchingScheme())), 
+        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv3(TrunkBranchingScheme())),
                 mapping_registry.parse_revision_id("svn-v3-undefined:uuid:trunk:1"))
 
     def test_v2(self):
-        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv2(TrunkLayout())), 
+        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv2(TrunkLayout())),
                          mapping_registry.parse_revision_id("svn-v2:1@uuid-trunk"))
 
     def test_v1(self):
-        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv1(TrunkLayout())), 
+        self.assertEqual((("uuid", "trunk", 1), BzrSvnMappingv1(TrunkLayout())),
                          mapping_registry.parse_revision_id("svn-v1:1@uuid-trunk"))
 
     def test_except(self):
-        self.assertRaises(KeyError, 
+        self.assertRaises(KeyError,
                          mapping_registry.parse_revision_id, "svn-v0:1@uuid-trunk")
 
     def test_except_nonsvn(self):
-        self.assertRaises(InvalidRevisionId, 
+        self.assertRaises(InvalidRevisionId,
                          mapping_registry.parse_revision_id, "blah")
 
 
 class EscapeTest(TestCase):
-    def test_escape_svn_path_none(self):      
+
+    def test_escape_svn_path_none(self):
         self.assertEqual("", escape_svn_path(""))
 
     def test_escape_svn_path_simple(self):
@@ -268,7 +270,7 @@ class EstimateBzrAncestorsTests(TestCase):
         self.assertEquals(2, estimate_bzr_ancestors({"bzr:revision-id:v42": "bla\nblie\n"}))
 
     def test_multiple(self):
-        self.assertEquals(2, estimate_bzr_ancestors({"bzr:revision-id:v42": "bla\n", 
+        self.assertEquals(2, estimate_bzr_ancestors({"bzr:revision-id:v42": "bla\n",
             "bzr:revision-id:v50": "blie\nblie\n"}))
 
 
@@ -291,16 +293,16 @@ class IsBzrRevisionTests(TestCase):
 
 
 class RoundTripAncestorRevids(TestCase):
-    
+
     def test_none(self):
         self.assertEquals([], list(get_roundtrip_ancestor_revids({})))
 
     def test_simple(self):
-        self.assertEquals([("arevid", 42, "v42-scheme")], 
+        self.assertEquals([("arevid", 42, "v42-scheme")],
                 list(get_roundtrip_ancestor_revids({mapping.SVN_PROP_BZR_REVISION_ID+"v42-scheme": "42 arevid\n"})))
 
     def test_multiple(self):
-        self.assertEquals(set([("arevid", 42, "v42-scheme"), ("brevid", 50, "v90-ll")]), 
+        self.assertEquals(set([("arevid", 42, "v42-scheme"), ("brevid", 50, "v90-ll")]),
                 set(get_roundtrip_ancestor_revids({
                     mapping.SVN_PROP_BZR_REVISION_ID+"v42-scheme": "42 arevid\n",
                     mapping.SVN_PROP_BZR_REVISION_ID+"v90-ll": "50 brevid\n",
@@ -312,12 +314,13 @@ class TestParseSvnProps(TestCase):
 
     def test_import_revision_svnprops(self):
         rev = Revision(None)
-        mapping.parse_svn_revprops({"svn:log": "A log msg",
-                                      "svn:author": "Somebody",
-                                      "svn:date": "2008-11-03T09:33:00.716938Z"},  rev)
+        revprops = {"svn:log": "A log msg", "svn:author": "Somebody",
+                "svn:date": "2008-11-03T09:33:00.716938Z"}
+        mapping.parse_svn_revprops(revprops,  rev)
         self.assertEquals("Somebody", rev.committer)
         self.assertEquals("A log msg", rev.message)
         self.assertEquals({}, rev.properties)
-        self.assertEquals(1225701180.716938, rev.timestamp)
         self.assertEquals(0.0, rev.timezone)
+        self.assertEquals(1225704780.716938, rev.timestamp,
+                "parsing %s" % revprops["svn:date"])
 

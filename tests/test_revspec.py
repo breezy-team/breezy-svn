@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -33,7 +33,7 @@ from bzrlib.plugins.svn.tests import SubversionTestCase
 
 
 class TestRevSpec(TestCase):
-    
+
     def test_present(self):
         self.assertIsNot(None, RevisionSpec.from_string("svn:foo"))
 

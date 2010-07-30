@@ -1,4 +1,4 @@
-# Copyright (C) 2007-2009 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2007-2010 Jelmer Vernooij <jelmer@samba.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ from subvertpy import (
 
 import bzrlib.config
 from bzrlib import (
+    atomicfile,
     osutils,
     trace,
     )
@@ -107,12 +108,13 @@ class SubversionUUIDConfig(config_base_class):
         :param name: Name of the option.
         :param value: Value of the option.
         """
-        conf_dir = os.path.dirname(self._get_filename())
-        ensure_config_dir_exists(conf_dir)
+        file_name = self._get_filename()
+        ensure_config_dir_exists(os.path.dirname(file_name))
+        atomic_file = atomicfile.AtomicFile(file_name)
         self[name] = value
-        f = open(self._get_filename(), 'wb')
-        self._get_parser().write(f)
-        f.close()
+        self._get_parser().write(atomic_file)
+        atomic_file.commit()
+        atomic_file.close()
 
 
 class SvnRepositoryConfig(Config):

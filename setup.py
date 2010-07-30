@@ -33,15 +33,15 @@ if __name__ == '__main__':
           author='Jelmer Vernooij',
           author_email='jelmer@samba.org',
           long_description="""
-          This plugin adds support for branching off and 
-          committing to Subversion repositories from 
+          This plugin adds support for branching off and
+          committing to Subversion repositories from
           Bazaar.
           """,
           package_dir={'bzrlib.plugins.svn':'.' },
-          packages=['bzrlib.plugins.svn', 
-                    'bzrlib.plugins.svn.cache', 
-                    'bzrlib.plugins.svn.layout', 
-                    'bzrlib.plugins.svn.mapping3', 
+          packages=['bzrlib.plugins.svn',
+                    'bzrlib.plugins.svn.cache',
+                    'bzrlib.plugins.svn.layout',
+                    'bzrlib.plugins.svn.mapping3',
                     'bzrlib.plugins.svn.tests',
                     'bzrlib.plugins.svn.tests.mapping3',
                     'bzrlib.plugins.svn.tests.mapping_implementations'],

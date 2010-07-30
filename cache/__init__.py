@@ -41,7 +41,7 @@ def write_cache_readme(path):
         f.write(
 """This directory contains information cached by the bzr-svn plugin.
 
-It is used for performance reasons only and can be removed 
+It is used for performance reasons only and can be removed
 without losing data.
 
 See http://bazaar-vcs.org/BzrForeignBranches/Subversion for details.
@@ -66,7 +66,7 @@ def create_cache_dir():
         from bzrlib.win32utils import get_local_appdata_location
         s = get_local_appdata_location()
         assert s is not None
-        # This can return a unicode string or a plain string in 
+        # This can return a unicode string or a plain string in
         # user encoding
         if type(s) == str:
             s = s.decode(bzrlib.user_encoding)

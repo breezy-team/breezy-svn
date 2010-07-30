@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -51,11 +51,11 @@ def reverse_dict(orig):
 
 
 def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
-    """Determine the revids for tags that were not found in the branch 
+    """Determine the revids for tags that were not found in the branch
     ancestry.
     """
     ret = {}
-    # For anything that's not in the branches' ancestry, just use 
+    # For anything that's not in the branches' ancestry, just use
     # the latest mapping
     for (revmeta, names) in reverse_tag_revmetas.iteritems():
         mapping = revmeta.get_original_mapping() or branch.mapping
@@ -72,13 +72,13 @@ def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
 def _resolve_tags_svn_ancestry(branch, tag_revmetas):
     """Resolve a name -> revmeta dictionary to a name -> revid dict.
 
-    The tricky bit here is figuring out what mapping to use. Preferably, 
-    we should be using whatever mapping makes the tag useful to the user, 
-    which generally means using the revid that is in the ancestry of the 
+    The tricky bit here is figuring out what mapping to use. Preferably,
+    we should be using whatever mapping makes the tag useful to the user,
+    which generally means using the revid that is in the ancestry of the
     branch.
 
-    As fallback, we will use the mapping used by the branch. That will 
-    however cause question marks to show up rather than revno's in 
+    As fallback, we will use the mapping used by the branch. That will
+    however cause question marks to show up rather than revno's in
     "bzr tags".
     """
     if len(tag_revmetas) == 0:
@@ -129,6 +129,10 @@ class ReverseTagDict(object):
         foreign_revid, mapping = self._lookup_revid(revid)
         return self._by_foreign_revid.get(foreign_revid, default)
 
+    def __getitem__(self, key):
+        foreign_revid, mapping = self._lookup_revid(key)
+        return self._by_foreign_revid[foreign_revid]
+
     def items(self):
         return _resolve_tags_svn_ancestry(self.branch, self._tags).items()
 
@@ -148,7 +152,7 @@ class SubversionTags(BasicTags):
         """Make sure that the container of these tags exists.
 
         :param parent: Parent path
-        :return: True if the container already existed, False if it had to 
+        :return: True if the container already existed, False if it had to
             be created.
         """
         if parent in self._parent_exists:
@@ -156,12 +160,12 @@ class SubversionTags(BasicTags):
         assert isinstance(parent, str)
         bp_parts = parent.split("/")
         existing_bp_parts = check_dirs_exist(
-                self.repository.transport, 
+                self.repository.transport,
                 bp_parts, self.repository.get_latest_revnum())
         if existing_bp_parts == bp_parts:
             self._parent_exists.add(parent)
             return True
-        create_branch_prefix(self.repository.transport, 
+        create_branch_prefix(self.repository.transport,
                 self._revprops("Add tags base directory."),
                 bp_parts, existing_bp_parts)
         self._parent_exists.add(parent)
@@ -239,7 +243,7 @@ class SubversionTags(BasicTags):
     def _get_tag_dict_revmeta(self, from_revnum=None, to_revnum=None):
         """Get a name -> revmeta dictionary."""
         if from_revnum is None or from_revnum == 0:
-            return self.repository.find_tags(project=self.branch.project, 
+            return self.repository.find_tags(project=self.branch.project,
                     layout=self.branch.layout,
                     mapping=self.branch.mapping,
                     revnum=self.branch._revnum)
@@ -288,7 +292,7 @@ class SubversionTags(BasicTags):
     def get_reverse_tag_dict(self):
         """Returns a dict with revisions as keys
            and a list of tags for that revision as value"""
-        return ReverseTagDict(self.branch, self.repository, 
+        return ReverseTagDict(self.branch, self.repository,
                               self._get_tag_dict_revmeta(),
                               self.branch.project)
 
@@ -327,8 +331,8 @@ class SubversionTags(BasicTags):
     def merge_to(self, to_tags, overwrite=False, _from_revnum=None,
                  _to_revnum=None):
         """Copy tags between repositories if necessary and possible.
-        
-        This method has common command-line behaviour about handling 
+
+        This method has common command-line behaviour about handling
         error cases.
 
         All new definitions are copied across, except that tags that already
@@ -337,7 +341,7 @@ class SubversionTags(BasicTags):
         :param to_tags: Branch to receive these tags
         :param overwrite: Overwrite conflicting tags in the target branch
 
-        :returns: A list of tags that conflicted, each of which is 
+        :returns: A list of tags that conflicted, each of which is
             (tagname, source_target, dest_target), or None if no copying was
             done.
         """
@@ -354,7 +358,7 @@ class SubversionTags(BasicTags):
         to_tags.branch.lock_write()
         try:
             graph = to_tags.branch.repository.get_graph()
-            source_dict = self._resolve_tags_ancestry(tag_revmetas, 
+            source_dict = self._resolve_tags_ancestry(tag_revmetas,
                 graph, to_tags.branch.last_revision())
             dest_dict = to_tags.get_tag_dict()
             result, conflicts = self._reconcile_tags(source_dict, dest_dict,

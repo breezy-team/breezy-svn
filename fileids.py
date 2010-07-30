@@ -185,6 +185,8 @@ def simple_apply_changes(new_file_id, changes):
 
 class FileIdMap(object):
 
+    __slots__ = ()
+
     def has_fileid(self, fileid):
         raise NotImplementedError(self.has_fileid)
 
@@ -203,6 +205,8 @@ class FileIdMap(object):
 
 
 class DictFileIdMap(FileIdMap):
+
+    __slots__ = ('data')
 
     def __init__(self, data):
         self.data = data
@@ -265,6 +269,7 @@ class FileIdMapStore(object):
 
     revnum -> branch -> path -> fileid
     """
+
     def __init__(self, apply_changes_fn, repos):
         self.apply_changes_fn = apply_changes_fn
         self.repos = repos
@@ -321,8 +326,9 @@ class FileIdMapStore(object):
         return map
 
 
-
 class FileIdMapCache(object):
+
+    __slots__ = ('idmap_knit')
 
     def __init__(self, cache_transport):
         mapper = ConstantMapper("fileidmap-v%d" % FILEIDMAP_VERSION)

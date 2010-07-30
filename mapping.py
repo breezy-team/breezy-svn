@@ -204,7 +204,8 @@ def parse_svn_revprops(svn_revprops, rev):
     assert type(rev.message) is unicode
 
     assert svn_revprops.has_key(properties.PROP_REVISION_DATE)
-    (rev.timestamp, rev.timezone) = parse_svn_dateprop(svn_revprops[properties.PROP_REVISION_DATE])
+    (rev.timestamp, rev.timezone) = parse_svn_dateprop(
+            svn_revprops[properties.PROP_REVISION_DATE])
     rev.properties = {}
 
 
@@ -629,7 +630,7 @@ class BzrSvnMappingFileProps(object):
 
     def import_revision_fileprops(self, fileprops, rev):
         if SVN_PROP_BZR_LOG in fileprops:
-            rev.message = fileprops[SVN_PROP_BZR_LOG][1]
+            rev.message = fileprops[SVN_PROP_BZR_LOG][1].decode("utf-8")
             assert type(rev.message) is unicode
         metadata = fileprops.get(SVN_PROP_BZR_REVISION_INFO)
         if metadata is not None:
@@ -771,7 +772,6 @@ class BzrSvnMappingFileProps(object):
             parse_revision_metadata(text[1], Revision(revid))
         except errors.InvalidPropertyValue:
             checkresult.invalid_fileprop_cnt += 1
-
 
 
 class BzrSvnMappingRevProps(object):

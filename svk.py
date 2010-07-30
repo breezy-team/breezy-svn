@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -40,7 +40,7 @@ def parse_svk_feature(feature):
     try:
         (uuid, branch, revnum) = feature.split(":", 3)
     except ValueError:
-        raise errors.InvalidPropertyValue(SVN_PROP_SVK_MERGE, 
+        raise errors.InvalidPropertyValue(SVN_PROP_SVK_MERGE,
                 "not enough colons")
     return (uuid, branch.strip("/"), int(revnum))
 

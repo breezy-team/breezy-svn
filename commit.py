@@ -854,7 +854,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         revid = self.revmeta.get_revision_id(self.mapping)
 
         if self.push_metadata and self._new_revision_id not in (revid, None):
-            raise AssertionError("Unexpected revision id %s != %s" % 
+            raise AssertionError("Unexpected revision id %s != %s" %
                     (revid, self._new_revision_id))
         return revid
 

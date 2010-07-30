@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -34,7 +34,7 @@ class TestCachingParentsProvider(TestCase):
         dict_pp = _mod_graph.DictParentsProvider({'a':('b',)})
         self.inst_pp = InstrumentedParentsProvider(dict_pp)
         from bzrlib.plugins.svn.cache.sqlitecache import ParentsCache
-        self.caching_pp = DiskCachingParentsProvider(self.inst_pp, 
+        self.caching_pp = DiskCachingParentsProvider(self.inst_pp,
                 ParentsCache())
 
     def test_get_parent_map(self):

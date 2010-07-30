@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -121,12 +121,12 @@ class KDELayout(RepositoryLayout):
         if first == "KDE":
             try:
                 project.append(rest[0])
-            except IndexError:        
+            except IndexError:
                 raise svn_errors.NotSvnBranchPath(path, self)
             else:
                 rest = rest[1:]
         ipath = "/".join(rest)
-        return (kind, "/".join(project), path[:len(path)-len(ipath)].strip("/"), 
+        return (kind, "/".join(project), path[:len(path)-len(ipath)].strip("/"),
                 ipath)
 
     def _children_helper(self, rpf, name, trunk=False):
@@ -137,7 +137,7 @@ class KDELayout(RepositoryLayout):
 
     def _get_project_items(self, name, repository, revnum, project, pb, trunk=False):
         ret = []
-        rpf = RootPathFinder(repository, revnum) 
+        rpf = RootPathFinder(repository, revnum)
         children = self._children_helper(rpf, name, trunk)
         for subpath, has_props in children:
             cp = urlutils.join(subpath, project)
@@ -147,7 +147,7 @@ class KDELayout(RepositoryLayout):
 
     def _get_all_items(self, name, repository, revnum, pb, trunk=False):
         ret = []
-        rpf = RootPathFinder(repository, revnum) 
+        rpf = RootPathFinder(repository, revnum)
         children = self._children_helper(rpf, name, trunk)
         for subpath, _ in children:
             for p, has_props in rpf.find_children(subpath):

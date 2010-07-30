@@ -119,6 +119,8 @@ class SubversionSourcePullResult(PullResult):
 class SubversionWriteLock(object):
     """A (dummy) write lock on a Subversion object."""
 
+    __slots__ = ('unlock')
+
     def __init__(self, unlock):
         self.unlock = unlock
 
@@ -128,6 +130,8 @@ class SubversionWriteLock(object):
 
 class SubversionReadLock(object):
     """A (dummy) read lock on a Subversion object."""
+
+    __slots__ = ('unlock')
 
     def __init__(self, unlock):
         self.unlock = unlock
@@ -179,8 +183,8 @@ class SubversionTargetPullResult(PullResult):
         except NoSuchRevision:
             # Last resort
             return len(
-                self.target_branch.repository.iter_reverse_revision_history(
-                    self.old_revid))
+                list(self.target_branch.repository.iter_reverse_revision_history(
+                    self.old_revid)))
 
     @property
     def new_revno(self):
@@ -647,9 +651,6 @@ class SvnBranch(ForeignBranch):
 class SvnBranchFormat(BranchFormat):
     """Branch format for Subversion Branches."""
 
-    def __init__(self):
-        BranchFormat.__init__(self)
-
     def network_name(self):
         return "subversion"
 
@@ -703,7 +704,7 @@ class InterSvnOtherBranch(GenericInterBranch):
 
     def _update_revisions(self, stop_revision=None, overwrite=False,
             graph=None, limit=None):
-        """Like InterBranch.update_revisions, but with a few additional 
+        """Like InterBranch.update_revisions, but with a few additional
             parameters.
 
         :param limit: Optional maximum number of revisions to fetch
@@ -844,7 +845,7 @@ class InterOtherSvnBranch(InterBranch):
 
     @staticmethod
     def _get_branch_formats_to_test():
-        return None, None
+        return []
 
     def update_revisions(self, stop_revision=None, overwrite=False, graph=None):
         """See Branch.update_revisions()."""
@@ -996,7 +997,8 @@ class InterOtherSvnBranch(InterBranch):
         return self.source.tags.merge_to(self.target.tags, overwrite)
 
     def push(self, overwrite=False, stop_revision=None,
-            _push_merged=None, _override_svn_revprops=None):
+            _push_merged=None, _override_svn_revprops=None,
+            _override_hook_source_branch=None):
         """See InterBranch.push()."""
         result = SubversionTargetBranchPushResult()
         result.target_branch = self.target

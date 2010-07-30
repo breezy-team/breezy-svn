@@ -46,22 +46,13 @@ ifneq ($(DESTDIR),)
 else
 	$(SETUP) install
 endif
- 
 
 clean::
 	$(SETUP) clean
 	rm -f *.so
 
-TMP_PLUGINS_DIR = $(shell pwd)/.plugins
-
-$(TMP_PLUGINS_DIR):
-	mkdir -p $@
-
-$(TMP_PLUGINS_DIR)/svn: $(TMP_PLUGINS_DIR)
-	ln -sf .. $@
-
-check:: build-inplace $(TMP_PLUGINS_DIR)/svn 
-	BZR_PLUGIN_PATH=$(TMP_PLUGINS_DIR):$(BZR_PLUGIN_PATH) $(DEBUGGER) $(PYTHON) $(PYTHON_OPTIONS) $(BZR) $(BZR_OPTIONS) selftest $(TEST_OPTIONS) $(TESTS)
+check:: build-inplace
+	BZR_PLUGINS_AT=svn@$(shell pwd) $(DEBUGGER) $(PYTHON) $(PYTHON_OPTIONS) $(BZR) $(BZR_OPTIONS) selftest $(TEST_OPTIONS) $(TESTS)
 
 coverage::
 	$(MAKE) check BZR_OPTIONS="--coverage coverage"
@@ -88,7 +79,7 @@ strace-check::
 	$(MAKE) check DEBUGGER="strace $(STRACE_OPTIONS)"
 
 show-plugins::
-	BZR_PLUGIN_PATH=$(TMP_PLUGINS_DIR):$(BZR_PLUGIN_PATH) $(BZR) plugins
+	BZR_PLUGINS_AT=svn@$(shell pwd) $(BZR) plugins -v
 
 lint::
 	PYTHONPATH=$(PYTHONPATH):subvertpy $(PYLINT) -f parseable *.py */*.py

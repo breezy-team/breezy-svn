@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -21,8 +21,9 @@ from bzrlib.plugins.svn.svk import (
     )
 
 class SvkTests(TestCase):
+
     def test_parse_svk_feature_root(self):
-        self.assertEqual(("auuid", "", 6), 
+        self.assertEqual(("auuid", "", 6),
                  parse_svk_feature("auuid:/:6"))
 
     def test_svk_revid_map_nested(self):

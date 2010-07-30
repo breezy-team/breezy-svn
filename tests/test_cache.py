@@ -30,21 +30,23 @@ from bzrlib.plugins.svn.mapping4 import (
     BzrSvnMappingv4,
     )
 
+from subvertpy import NODE_DIR, NODE_FILE
+
 
 class LogCacheTests(object):
 
     def test_last_revnum(self):
-        self.cache.insert_paths(42, {"foo": ("A", None, -1)})
+        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_FILE)})
         self.assertEquals(42, self.cache.last_revnum())
 
     def test_insert_paths(self):
-        self.cache.insert_paths(42, {"foo": ("A", None, -1)})
-        self.assertEquals({"foo": ("A", None, -1)}, 
+        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_DIR)})
+        self.assertEquals({"foo": ("A", None, -1, NODE_DIR)},
                 self.cache.get_revision_paths(42))
 
     def test_insert_revprops(self):
         self.cache.insert_revprops(100, {"some": "data"}, True)
-        self.assertEquals(({"some": "data"}, True), 
+        self.assertEquals(({"some": "data"}, True),
                            self.cache.get_revprops(100))
 
     def test_insert_revinfo(self):
@@ -54,7 +56,7 @@ class LogCacheTests(object):
         self.assertEquals(({"some": "data"}, False), self.cache.get_revprops(42))
 
     def test_find_latest_change(self):
-        self.cache.insert_paths(42, {"foo": ("A", None, -1)})
+        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_DIR)})
         try:
             self.assertEquals(42, self.cache.find_latest_change("foo", 42))
             self.assertEquals(42, self.cache.find_latest_change("foo", 45))
@@ -94,17 +96,17 @@ class RevidMapCacheTests(object):
 
     def test_lookup_revid(self):
         self.cache.insert_revid("bla", "mypath", 42, 42, "brainslug")
-        self.assertEquals(("mypath", 42, 42, "brainslug"), 
+        self.assertEquals(("mypath", 42, 42, "brainslug"),
                 self.cache.lookup_revid("bla"))
 
     def test_lookup_revid_space(self):
         self.cache.insert_revid("bla", "my path", 42, 42, "brainslug")
-        self.assertEquals(("my path", 42, 42, "brainslug"), 
+        self.assertEquals(("my path", 42, 42, "brainslug"),
                 self.cache.lookup_revid("bla"))
 
     def test_lookup_branch(self):
         self.cache.insert_revid("bla", "mypath", 42, 42, "brainslug")
-        self.assertEquals("bla", 
+        self.assertEquals("bla",
                 self.cache.lookup_branch_revnum(42, "mypath", "brainslug"))
 
     def test_lookup_branch_nonexistant(self):
@@ -113,7 +115,7 @@ class RevidMapCacheTests(object):
 
     def test_lookup_branch_incomplete(self):
         self.cache.insert_revid("bla", "mypath", 42, 200, "brainslug")
-        self.assertEquals(None, 
+        self.assertEquals(None,
                 self.cache.lookup_branch_revnum(42, "mypath", "brainslug"))
 
 
@@ -140,28 +142,28 @@ class TdbRevidMapCacheTests(TestCaseInTempDir,RevidMapCacheTests):
 class RevInfoCacheTests(object):
 
     def test_get_unknown_revision(self):
-        self.assertRaises(KeyError, 
-            self.cache.get_revision, ("bfdshfksdjh", "mypath", 1), 
+        self.assertRaises(KeyError,
+            self.cache.get_revision, ("bfdshfksdjh", "mypath", 1),
             BzrSvnMappingv4())
 
     def test_get_revision(self):
-        self.cache.insert_revision(("fsdkjhfsdkjhfsd", "mypath", 1), 
+        self.cache.insert_revision(("fsdkjhfsdkjhfsd", "mypath", 1),
             BzrSvnMappingv4(), (42, "somerevid", False), "oldlhs")
         self.assertEquals(((42, "somerevid", False), "oldlhs"),
-            self.cache.get_revision(("bfdshfksdjh", "mypath", 1), 
+            self.cache.get_revision(("bfdshfksdjh", "mypath", 1),
             BzrSvnMappingv4()))
 
     def test_get_revision_null_revid(self):
         mapping = BzrSvnMappingv4()
         foreign_revid = ("fsdkjhfsdkjhfsd", "mypath", 1)
-        self.cache.insert_revision(foreign_revid, 
+        self.cache.insert_revision(foreign_revid,
             mapping, (None, None, False), "oldlhs")
         self.assertEquals(
             ((None, mapping.revision_id_foreign_to_bzr(foreign_revid), False), "oldlhs"),
             self.cache.get_revision(foreign_revid, mapping))
 
     def test_get_original_mapping_none(self):
-        self.cache.set_original_mapping(("fsdkjhfsdkjhfsd", "mypath", 1), 
+        self.cache.set_original_mapping(("fsdkjhfsdkjhfsd", "mypath", 1),
             None)
         self.assertEquals(None, self.cache.get_original_mapping(("fkjhfsdkjh", "mypath", 1)))
 
@@ -169,7 +171,7 @@ class RevInfoCacheTests(object):
         self.assertRaises(KeyError, self.cache.get_original_mapping, ("fkjhfsdkjh", "mypath", 1))
 
     def test_get_original_mapping_v4(self):
-        self.cache.set_original_mapping(("fsdkjhfsdkjhfsd", "mypath", 1), 
+        self.cache.set_original_mapping(("fsdkjhfsdkjhfsd", "mypath", 1),
             BzrSvnMappingv4())
         self.assertEquals(BzrSvnMappingv4(), self.cache.get_original_mapping(("fkjhfsdkjh", "mypath", 1)))
 
@@ -215,7 +217,7 @@ class ParentsCacheTests:
         self.cache.insert_parents("myrevid", ("single",))
         self.cache.insert_parents("myrevid", ("second",))
         self.assertEquals(("second",), self.cache.lookup_parents("myrevid"))
-        
+
 
 class SqliteParentsCacheTests(TestCase,ParentsCacheTests):
 

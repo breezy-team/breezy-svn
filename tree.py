@@ -61,7 +61,7 @@ class SubversionTree(object):
 
     def supports_content_filtering(self):
         return True
-    
+
     def lookup_id(self, path):
         """Lookup the idmap data for a path.
 
@@ -114,12 +114,12 @@ class SvnRulesSearcher(object):
 
 def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     """Add an svn:externals entry to an inventory as a tree-reference.
-    
+
     :param inv: Inventory to add to.
     :param parent_id: File id of directory the entry was set on.
     :param path: Path of the entry, relative to entry with parent_id.
     :param revid: Revision to store in newly created inventory entries.
-    :param ref_revnum: Referenced revision of tree that's being referenced, or 
+    :param ref_revnum: Referenced revision of tree that's being referenced, or
         None if no specific revision is being referenced.
     :param url: URL of referenced tree.
     """
@@ -134,7 +134,7 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
             else:
                 # Implicitly add directory if it doesn't exist yet
                 # TODO: Generate a file id
-                parent = inv.add(InventoryDirectory('someid', part, 
+                parent = inv.add(InventoryDirectory('someid', part,
                                  parent_id=parent.file_id))
                 parent.revision = revid
 
@@ -166,7 +166,7 @@ class SvnRevisionTree(SubversionTree,RevisionTree):
         conn = repository.transport.get_connection()
         try:
             reporter = conn.do_switch(
-                self._revmeta.revnum, "", True, 
+                self._revmeta.revnum, "", True,
                 urlutils.join(root_repos, self._revmeta.branch_path).rstrip("/"), editor)
             try:
                 reporter.set_path("", 0, True, None)
@@ -354,7 +354,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
         return "<%s for '%r'>" % (self.__class__.__name__, self.workingtree)
 
     def __init__(self, workingtree):
-        mutter("opening basistree for %r at %d", 
+        mutter("opening basistree for %r at %d",
                 workingtree, workingtree.base_revnum)
         self.workingtree = workingtree
         self._inventory = Inventory(root_id=None)
@@ -388,8 +388,8 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             assert entry.url.startswith(self._repository.transport.svn_url)
             relpath = urllib.unquote(entry.url[len(self._repository.transport.svn_url):].strip("/"))
             assert isinstance(relpath, str)
-            if entry.schedule in (wc.SCHEDULE_NORMAL, 
-                                  wc.SCHEDULE_DELETE, 
+            if entry.schedule in (wc.SCHEDULE_NORMAL,
+                                  wc.SCHEDULE_DELETE,
                                   wc.SCHEDULE_REPLACE):
                 return self.lookup_id(workingtree.unprefix(relpath.decode("utf-8")))
             return (None, None)
@@ -418,7 +418,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
                 subrelpath = os.path.join(relpath, name.decode("utf-8"))
 
                 assert entry
-                
+
                 if entry.kind == subvertpy.NODE_DIR:
                     try:
                         subwc = self.workingtree._get_wc(subrelpath)
@@ -435,7 +435,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
                     if subid is not None:
                         add_file_to_inv(subrelpath, subid, subrevid, adm)
 
-        adm = workingtree._get_wc() 
+        adm = workingtree._get_wc()
         try:
             add_dir_to_inv(u"", adm, None)
         finally:

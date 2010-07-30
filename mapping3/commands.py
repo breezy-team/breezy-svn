@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -27,7 +27,7 @@ class cmd_svn_branching_scheme(Command):
     takes_args = ['location?']
     takes_options = [
         Option('set', help="Change the branching scheme. "),
-        Option('repository-wide', 
+        Option('repository-wide',
             help="Act on repository-wide setting rather than local.")
         ]
     hidden = True
@@ -41,7 +41,7 @@ class cmd_svn_branching_scheme(Command):
         from bzrlib.plugins.svn.repository import SvnRepository
         from bzrlib.plugins.svn.mapping3.base import (
             BzrSvnMappingv3,
-            config_set_scheme, 
+            config_set_scheme,
             get_property_scheme,
             set_property_scheme,
             )
@@ -61,7 +61,7 @@ class cmd_svn_branching_scheme(Command):
         else:
             scheme = BzrSvnMappingv3.from_repository(repos).scheme
         if set:
-            schemestr = edit_commit_message("", 
+            schemestr = edit_commit_message("",
                                             start_message=scheme_str(scheme))
             scheme = scheme_from_branch_list(
                 map(lambda x:x.strip("\n"), schemestr.splitlines()))

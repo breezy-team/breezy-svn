@@ -68,7 +68,7 @@ class SvnDiffTree(_mod_diff.DiffTree):
 
     def _write_contents_diff(self, path, old_version, old_contents, new_version, new_contents):
         if path is None:
-            return 
+            return
         self.to_file.write("Index: %s\n" % path)
         self.to_file.write("=" * 67 + "\n")
         old_label = '%s\t%s' % (path, old_version)

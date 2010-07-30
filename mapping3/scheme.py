@@ -42,7 +42,7 @@ from bzrlib.plugins.svn.errors import LayoutUnusable
 class InvalidSvnBranchPath(BzrError):
     """Error raised when a path was specified that is not a child of or itself
     a valid branch path in the current branching scheme."""
-    _fmt = """%(path)s is not a valid Subversion branch path in the current 
+    _fmt = """%(path)s is not a valid Subversion branch path in the current
 repository layout. See 'bzr help svn-repository-layout' for details."""
 
     def __init__(self, path, layout):
@@ -59,7 +59,7 @@ class BranchingScheme(object):
     """
     def is_branch(self, path, project=None):
         """Check whether a location refers to a branch.
-        
+
         :param path: Path to check.
         """
         raise NotImplementedError
@@ -119,7 +119,7 @@ class BranchingScheme(object):
     def is_branch_parent(self, path, project=None):
         """Check whether the specified path is the parent directory of branches.
         The path may not be a branch itself.
-        
+
         :param path: path to check
         :returns: boolean
         """
@@ -128,14 +128,14 @@ class BranchingScheme(object):
     def is_tag_parent(self, path, project=None):
         """Check whether the specified path is the parent directory of tags.
         The path may not be a tag itself.
-        
+
         :param path: path to check
         :returns: boolean
         """
         raise NotImplementedError
 
     def is_tag(self, path, project=None):
-        """Check whether the specified path is a tag 
+        """Check whether the specified path is a tag
         according to this branching scheme.
 
         :param path: path to check
@@ -146,7 +146,7 @@ class BranchingScheme(object):
     def to_lines(self):
         """Generate a list of lines for this branching scheme.
 
-        :return: List of lines representing the data in this branching 
+        :return: List of lines representing the data in this branching
             scheme.
         """
         raise NotImplementedError(self.to_lines)
@@ -175,7 +175,7 @@ def prop_name_quote(text):
 
 
 class ListBranchingScheme(BranchingScheme):
-    """Branching scheme that keeps a list of branch paths, including 
+    """Branching scheme that keeps a list of branch paths, including
     wildcards."""
     def __init__(self, branch_list, tag_list=[]):
         """Create new ListBranchingScheme instance.
@@ -191,7 +191,7 @@ class ListBranchingScheme(BranchingScheme):
 
     def __str__(self):
         return "list-%s" % prop_name_quote(bz2.compress("".join(map(lambda x:x+"\n", self.branch_list))))
-            
+
     def is_tag(self, path, project=None):
         """See BranchingScheme.is_tag()."""
         return False
@@ -219,8 +219,8 @@ class ListBranchingScheme(BranchingScheme):
         parts = path.strip("/").split("/")
         for pattern in self.split_branch_list:
             if self._pattern_cmp(parts[:len(pattern)], pattern):
-                return ("/".join(parts[:len(pattern)]), 
-                        "/".join(parts[:len(pattern)]), 
+                return ("/".join(parts[:len(pattern)]),
+                        "/".join(parts[:len(pattern)]),
                         "/".join(parts[len(pattern):]))
         raise InvalidSvnBranchPath(path, self)
 
@@ -249,7 +249,7 @@ class ListBranchingScheme(BranchingScheme):
 
 
 class NoBranchingScheme(ListBranchingScheme):
-    """Describes a scheme where there is just one branch, the 
+    """Describes a scheme where there is just one branch, the
     root of the repository."""
     def __init__(self):
         ListBranchingScheme.__init__(self, [""])
@@ -282,9 +282,9 @@ class NoBranchingScheme(ListBranchingScheme):
 
 
 class TrunkBranchingScheme(ListBranchingScheme):
-    """Standard Subversion repository layout. 
-    
-    Each project contains three directories `trunk`, `tags` and `branches`. 
+    """Standard Subversion repository layout.
+
+    Each project contains three directories `trunk`, `tags` and `branches`.
     """
     def __init__(self, level=0):
         self.level = level
@@ -349,12 +349,12 @@ class TrunkBranchingScheme(ListBranchingScheme):
 
         if parts[self.level] == "trunk" or parts[self.level] == "hooks":
             return ("/".join(parts[0:self.level]).strip("/"),
-                    "/".join(parts[0:self.level+1]).strip("/"), 
+                    "/".join(parts[0:self.level+1]).strip("/"),
                     "/".join(parts[self.level+1:]).strip("/"))
-        elif ((parts[self.level] == "tags" or parts[self.level] == "branches") and 
+        elif ((parts[self.level] == "tags" or parts[self.level] == "branches") and
               len(parts) >= self.level+2):
             return ("/".join(parts[0:self.level]).strip("/"),
-                    "/".join(parts[0:self.level+2]).strip("/"), 
+                    "/".join(parts[0:self.level+2]).strip("/"),
                     "/".join(parts[self.level+2:]).strip("/"))
         else:
             raise InvalidSvnBranchPath(path, self)
@@ -410,8 +410,8 @@ class SingleBranchingScheme(ListBranchingScheme):
         if not path.startswith(self.path):
             raise InvalidSvnBranchPath(path, self)
 
-        return (self.path, 
-                path[0:len(self.path)].strip("/"), 
+        return (self.path,
+                path[0:len(self.path)].strip("/"),
                 path[len(self.path):].strip("/"))
 
     def __str__(self):
@@ -461,7 +461,7 @@ def guess_scheme_from_branch_path(relpath):
 
 
 def guess_scheme_from_path(relpath):
-    """Try to guess the branching scheme from a path in the repository, 
+    """Try to guess the branching scheme from a path in the repository,
     not necessarily a branch path.
 
     :param relpath: Relative path in repository
@@ -477,16 +477,16 @@ def guess_scheme_from_path(relpath):
     return NoBranchingScheme()
 
 
-def guess_scheme_from_history(changed_paths, last_revnum, 
+def guess_scheme_from_history(changed_paths, last_revnum,
                               relpath=None):
     """Try to determine the best fitting branching scheme.
 
     :param changed_paths: Iterator over (branch_path, changes, revnum, revprops)
         as returned from LogWalker.iter_changes().
     :param last_revnum: Number of entries in changed_paths.
-    :param relpath: Branch path that should be accepted by the branching 
+    :param relpath: Branch path that should be accepted by the branching
                     scheme as a branch.
-    :return: Tuple with branching scheme that best matches history and 
+    :return: Tuple with branching scheme that best matches history and
              branching scheme instance that best matches but also considers
              relpath a valid branch path.
     """
@@ -496,7 +496,7 @@ def guess_scheme_from_history(changed_paths, last_revnum,
     try:
         for (revpaths, revnum, revprops) in changed_paths:
             assert isinstance(revpaths, dict)
-            pb.update("analyzing repository layout", last_revnum-revnum, 
+            pb.update("analyzing repository layout", last_revnum-revnum,
                       last_revnum)
             if revpaths == {}:
                 continue
@@ -508,7 +508,7 @@ def guess_scheme_from_history(changed_paths, last_revnum,
                 scheme_cache[str(scheme)] = scheme
     finally:
         pb.finished()
-    
+
     entries = potentials.items()
     entries.sort(lambda (a, b), (c, d): d - b)
 
@@ -542,7 +542,7 @@ def scheme_from_branch_list(branch_list):
         return NoBranchingScheme()
     if branch_list == TrunkBranchingScheme(0).branch_list:
         return TrunkBranchingScheme(0)
-    return ListBranchingScheme(branch_list) 
+    return ListBranchingScheme(branch_list)
 
 
 def scheme_from_layout(layout):
@@ -564,7 +564,7 @@ def repository_guess_scheme(repository, last_revnum, branch_path=None):
             repository._log.iter_changes(None, last_revnum, max(0, last_revnum-GUESS_SAMPLE_SIZE)), last_revnum, branch_path)
     finally:
         pb.finished()
-    mutter("Guessed branching scheme: %r, guess scheme to use: %r" % 
+    mutter("Guessed branching scheme: %r, guess scheme to use: %r" %
             (guessed_scheme, scheme))
     return (guessed_scheme, scheme)
 

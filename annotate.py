@@ -67,7 +67,7 @@ class Annotater(object):
         idmap = self._repository.get_fileid_map(revmeta, mapping)
         return idmap.lookup(mapping, ip)
 
-    def _handler(self, path, rev, revprops):
+    def _handler(self, path, rev, revprops, result_of_merge=None):
         try:
             fileid, revid, _ = self._get_ids(path, rev, revprops)
             assert revid is not None

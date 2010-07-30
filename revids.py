@@ -40,13 +40,13 @@ from bzrlib.plugins.svn.mapping import (
     )
 
 class RevidMap(object):
-    
+
     def __init__(self, repos):
         self.repos = repos
 
     def get_branch_revnum(self, revid, layout, project=None):
         """Find the (branch, revnum) tuple for a revision id.
-        
+
         :return: Tuple with foreign revision id and mapping.
         """
         last_revnum = self.repos.get_latest_revnum()
@@ -90,7 +90,7 @@ class RevidMap(object):
         assert from_revnum >= to_revnum
         # TODO: Use RevisionMetadataBrowser to find the tip revmetas all at once
         reuse_policy = self.repos.get_config().get_reuse_revisions()
-        assert reuse_policy in ("other-branches", "removed-branches", "none") 
+        assert reuse_policy in ("other-branches", "removed-branches", "none")
         check_removed = (reuse_policy == "removed-branches")
         for (branch, revno, exists) in self.repos.find_fileprop_paths(layout, from_revnum, to_revnum, project, check_removed=check_removed):
             assert isinstance(branch, str)
@@ -103,7 +103,7 @@ class RevidMap(object):
         for revmeta in self.find_branch_tips(layout, from_revnum, to_revnum,
                                              project):
             if pb is not None:
-                pb.update("finding fileprop revids", 
+                pb.update("finding fileprop revids",
                     from_revnum-revmeta.revnum, from_revnum-to_revnum)
             # Look at their bzr:revision-id-vX
             revids = set()
@@ -117,7 +117,7 @@ class RevidMap(object):
                     continue
                 raise
 
-            # If there are any new entries that are not yet in the cache, 
+            # If there are any new entries that are not yet in the cache,
             # add them
             for ((entry_revno, entry_revid), mapping_name) in revids:
                 try:
@@ -138,7 +138,7 @@ class RevidMap(object):
         :return: Tuple with foreign revision id and mapping
         """
         assert min_revnum <= max_revnum
-        # Find the branch property between min_revnum and max_revnum that 
+        # Find the branch property between min_revnum and max_revnum that
         # added revid
         for revmeta in self.repos._revmeta_provider.iter_reverse_branch_changes(branch_path, max_revnum, min_revnum):
             for propname, (oldpropvalue, propvalue) in revmeta.get_changed_fileprops().iteritems():
@@ -149,14 +149,14 @@ class RevidMap(object):
                     if len(new_lines) != 1:
                         continue
                 except ValueError:
-                    # Don't warn about encountering an invalid property, 
+                    # Don't warn about encountering an invalid property,
                     # that will already have happened earlier
                     continue
                 try:
                     (entry_revno, entry_revid) = parse_revid_property(
                         new_lines[0])
                 except InvalidPropertyValue:
-                    # Don't warn about encountering an invalid property, 
+                    # Don't warn about encountering an invalid property,
                     # that will already have happened earlier
                     continue
                 if entry_revid == revid:
@@ -206,7 +206,7 @@ class DiskCachingRevidMap(object):
         self.actual = actual
         self.revid_seen = set()
 
-    def remember_entry(self, entry_revid, branch, min_revnum, max_revnum, 
+    def remember_entry(self, entry_revid, branch, min_revnum, max_revnum,
                        mappingname):
         if entry_revid not in self.revid_seen:
             self.cache.insert_revid(entry_revid, branch, min_revnum, max_revnum,
@@ -228,8 +228,8 @@ class DiskCachingRevidMap(object):
             last_revnum = self.actual.repos.get_latest_revnum()
             last_checked = self.cache.last_revnum_checked(repr((layout, project)))
             if (last_revnum <= last_checked):
-                # All revision ids in this repository for the current 
-                # layout have already been discovered. No need to 
+                # All revision ids in this repository for the current
+                # layout have already been discovered. No need to
                 # check again.
                 raise e
             found = None
@@ -240,19 +240,19 @@ class DiskCachingRevidMap(object):
                     fileprops_to_revnum = min(fileprops_to_revnum, revnum)
                     if entry_revid == revid:
                         found = (branch, revnum, revnum, mapping)
-                    self.remember_entry(entry_revid, branch, revnum, 
+                    self.remember_entry(entry_revid, branch, revnum,
                                             revnum, mapping.name)
                 if fileprops_to_revnum > last_checked:
                     for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_fileprop_revids(layout, fileprops_to_revnum, last_checked, project, pb):
                         min_revno = max(last_checked, min_revno)
                         if entry_revid == revid:
                             found = (branch, min_revno, max_revno, mapping)
-                        self.remember_entry(entry_revid, branch, min_revno, 
+                        self.remember_entry(entry_revid, branch, min_revno,
                                             max_revno, mapping.name)
             finally:
                 pb.finished()
             # We've added all the revision ids for this layout in the
-            # repository, so no need to check again unless new revisions got 
+            # repository, so no need to check again unless new revisions got
             # added
             self.cache.set_last_revnum_checked(repr((layout, project)), last_revnum)
             if found is None:
@@ -261,14 +261,14 @@ class DiskCachingRevidMap(object):
             assert min_revnum <= max_revnum
             assert isinstance(branch_path, str)
 
-        ((uuid, branch_path, revnum), mapping) = self.actual.bisect_revid_revnum(revid, 
+        ((uuid, branch_path, revnum), mapping) = self.actual.bisect_revid_revnum(revid,
             branch_path, min_revnum, max_revnum)
         self.remember_entry(revid, branch_path, revnum, revnum, mapping.name)
         return (uuid, branch_path, revnum), mapping
 
 
 class RevisionIdMapCache(object):
-    """Revision id mapping store. 
+    """Revision id mapping store.
 
     Stores mapping from revid -> (path, revnum, mapping)
     """
@@ -282,7 +282,7 @@ class RevisionIdMapCache(object):
         raise NotImplementedError(self.set_last_revnum_checked)
 
     def last_revnum_checked(self, layout):
-        """Retrieve the latest revision number that has been checked 
+        """Retrieve the latest revision number that has been checked
         for revision ids for a particular layout.
 
         :param layout: Repository layout.
@@ -294,7 +294,7 @@ class RevisionIdMapCache(object):
         """Lookup the details for a particular revision id.
 
         :param revid: Revision id.
-        :return: Tuple with path inside repository, minimum revision number, maximum revision number and 
+        :return: Tuple with path inside repository, minimum revision number, maximum revision number and
             mapping.
         """
         raise NotImplementedError(self.lookup_revid)
@@ -313,11 +313,11 @@ class RevisionIdMapCache(object):
 
         :param revid: Revision id for which to insert metadata.
         :param branch: Branch path at which the revision was seen
-        :param min_revnum: Minimum Subversion revision number in which the 
+        :param min_revnum: Minimum Subversion revision number in which the
                            revid was found
-        :param max_revnum: Maximum Subversion revision number in which the 
+        :param max_revnum: Maximum Subversion revision number in which the
                            revid was found
-        :param mapping: Name of the mapping with which the revision 
+        :param mapping: Name of the mapping with which the revision
                        was found
         """
         raise NotImplementedError(self.insert_revid)
@@ -328,7 +328,7 @@ class RevisionInfoCache(object):
     def set_original_mapping(self, foreign_revid, original_mapping):
         raise NotImplementedError(self.set_original_mapping)
 
-    def insert_revision(self, foreign_revid, mapping, revinfo, 
+    def insert_revision(self, foreign_revid, mapping, revinfo,
             stored_lhs_parent_revid):
         """Insert a revision to the cache.
 
@@ -345,7 +345,7 @@ class RevisionInfoCache(object):
 
         :param foreign_revid: Foreign reviasion id
         :param mapping: Mapping
-        :return: Tuple with (stored revno, revid, hidden), original_mapping, 
+        :return: Tuple with (stored revno, revid, hidden), original_mapping,
             stored_lhs_parent_revid
         """
         raise NotImplementedError(self.get_revision)

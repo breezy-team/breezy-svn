@@ -39,6 +39,8 @@ from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     )
 
+from subvertpy import NODE_UNKNOWN
+
 from tdb import Tdb as tdb_open
 
 
@@ -216,10 +218,15 @@ class LogCache(CacheTable):
         self.mutter("get-revision-paths %d", revnum)
         ret = {}
         db = bencode.bdecode(self.db["paths/%d" % revnum])
-        for key, (action, cp, cr) in db.iteritems():
+        for key, v in db.iteritems():
+            try:
+                (action, cp, cr, kind) = v
+            except ValueError:
+                (action, cp, cr) = v
+                kind = NODE_UNKNOWN
             if cp == "" and cr == -1:
                 cp = None
-            ret[key] = (action, cp, cr)
+            ret[key] = (action, cp, cr, kind)
         return ret
 
     def insert_paths(self, rev, orig_paths):
@@ -232,13 +239,18 @@ class LogCache(CacheTable):
             orig_paths = {}
         new_paths = {}
         for p in orig_paths:
-            copyfrom_path = orig_paths[p][1]
+            v = orig_paths[p]
+            copyfrom_path = v[1]
             if copyfrom_path is not None:
                 copyfrom_path = copyfrom_path.strip("/")
             else:
                 copyfrom_path = ""
                 assert orig_paths[p][2] == -1
-            new_paths[p.strip("/")] = (orig_paths[p][0], copyfrom_path, orig_paths[p][2])
+            try:
+                kind = v[3]
+            except IndexError:
+                kind = NODE_UNKNOWN
+            new_paths[p.strip("/")] = (v[0], copyfrom_path, v[2], kind)
         self.db["paths/%d" % rev] = bencode.bencode(new_paths)
         self.db["log-last"] = "%d" % max(self.last_revnum(), rev)
 
