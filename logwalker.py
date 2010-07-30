@@ -45,55 +45,104 @@ from subvertpy import NODE_UNKNOWN
 # Maximum number of extra revisions to fetch in caching logwalker
 MAX_OVERHEAD_FETCH = 1000
 
-def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths,
+def iter_all_changes(from_revnum, to_revnum, get_revision_paths, 
     revprop_list, limit=0):
-    ascending = (to_revnum > from_revnum)
-
     revnum = from_revnum
-
-    if prefixes is None:
-        path = ""
-    else:
-        assert len(prefixes) == 1
-        path = prefixes[0].strip("/")
-
-    assert from_revnum >= to_revnum or path == "", \
-            "path: %s, %d >= %d" % (path, from_revnum, to_revnum)
-
+    ascending = (to_revnum > from_revnum)
     i = 0
-
     while ((not ascending and revnum >= to_revnum) or
            (ascending and revnum <= to_revnum)):
-        if not (revnum > 0 or path == ""):
-            raise AssertionError("Inconsistent path,revnum: %r,%r" % (revnum, path))
         revpaths = get_revision_paths(revnum)
 
-        if ascending:
-            next = (path, revnum+1)
-        else:
-            next = changes.find_prev_location(revpaths, path, revnum)
+        # Report this revision if any affected paths are changed
+        yield (revpaths, revnum, revprop_list(revnum))
+        i += 1
+        if limit != 0 and i == limit:
+            break
 
-        if path == "" or changes.changes_path(revpaths, path, True):
-            assert isinstance(revnum, int)
+        if ascending:
+            revnum += 1
+        else:
+            revnum -= 1
+
+
+def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths,
+    revprop_list, limit=0):
+    """Iter changes.
+
+    :param prefix: Sequence of paths
+    :param from_revnum: Start revision number
+    :param to_revnum: End revision number
+    :param get_revision_paths: Callback to retrieve the paths
+        for a particular revision
+    :param revprop_list: Callback to retrieve the revision properties
+        for a particular revision
+    :param limit: Maximum number of revisions to yield, 0 for all
+    :return: Iterator over (revpaths, revnum, revprops)
+    """
+    revnum = from_revnum
+
+    if prefixes in (None, [""], []):
+        return iter_all_changes(from_revnum, to_revnum, get_revision_paths,
+                revprop_list, limit)
+    else:
+        return iter_prefixes_changes(prefixes, from_revnum, to_revnum,
+            get_revision_paths, revprop_list, limit)
+
+
+def iter_prefixes_changes(prefixes, from_revnum, to_revnum, 
+    get_revision_paths, revprop_list, limit=0):
+    prefixes = [p.strip("/") for p in prefixes]
+
+    assert from_revnum >= to_revnum, "path: %r, %d >= %d" % (
+            prefixes, from_revnum, to_revnum)
+
+    revnum = from_revnum
+    todo_prefixes = { revnum: set(prefixes) }
+
+    i = 0
+    while revnum >= to_revnum:
+        prefixes = todo_prefixes.pop(revnum)
+        if not (revnum > 0):
+            raise AssertionError("Inconsistent revnum, prefixes: %r,%r" % (revnum, prefixes))
+        revpaths = get_revision_paths(revnum)
+
+        # Report this revision if any affected paths are changed
+        if any(changes.changes_path(revpaths, prefix, True) for prefix in prefixes):
+            assert type(revnum) is int
             yield (revpaths, revnum, revprop_list(revnum))
             i += 1
             if limit != 0 and i == limit:
                 break
 
-        if next is None:
-            break
+        next = {}
+        # Find the location of each prefix for the next iteration
+        for prefix in prefixes:
+            assert type(prefix) is str, "%r" % prefix
+            try:
+                (p, r) = changes.find_prev_location(revpaths, prefix,
+                        revnum)
+            except TypeError:
+                pass # didn't exist here
+            else:
+                assert r < revnum
+                todo_prefixes.setdefault(r, set()).add(p)
 
-        assert (ascending and next[1] > revnum) or \
-               (not ascending and next[1] < revnum)
-        (path, revnum) = next
-        assert isinstance(path, str)
-        assert isinstance(revnum, int)
+        if todo_prefixes == {}:
+            break
+        revnum = max(todo_prefixes)
 
 
 class LogCache(object):
     """Log browser cache. """
 
     def find_latest_change(self, path, revnum):
+        """Find the last revision in which a particular path
+        was changed.
+
+        :param path: Path to check
+        :param revnum: Revision in which to check
+        """
         raise NotImplementedError(self.find_latest_change)
 
     def get_revision_paths(self, revnum):
@@ -177,7 +226,6 @@ class CachingLogWalker(object):
         assert from_revnum >= 0 and to_revnum >= 0, "%r -> %r" % (from_revnum, to_revnum)
         self.mutter("iter changes %r->%r (%r)", from_revnum, to_revnum, prefixes)
         self._fetch_revisions(max(from_revnum, to_revnum), pb=pb)
-
         return iter(iter_changes(prefixes, from_revnum, to_revnum,
             self.get_revision_paths, self.revprop_list, limit))
 
@@ -345,13 +393,13 @@ class LogWalker(object):
         """
         assert from_revnum >= 0 and to_revnum >= 0
 
-        try:
-            # Subversion 1.4 clients and servers can only deliver a limited set of revprops
-            if self._transport.has_capability("log-revprops"):
-                todo_revprops = None
-            else:
-                todo_revprops = ["svn:author", "svn:log", "svn:date"]
+        # Subversion 1.4 clients and servers can only deliver a limited set of revprops
+        if self._transport.has_capability("log-revprops"):
+            todo_revprops = None
+        else:
+            todo_revprops = ["svn:author", "svn:log", "svn:date"]
 
+        try:
             iterator = self._transport.iter_log(prefixes, from_revnum,
                 to_revnum, limit, True, False, False, revprops=todo_revprops)
 

@@ -31,6 +31,7 @@ from bzrlib.plugins.svn.transport import SvnRaTransport
 class TestLogWalker(SubversionTestCase):
 
     def assertLogEquals(self, expected, got, msg=None):
+        got = list(got)
         if len(expected) != len(got):
             self.assertEquals(expected, got, msg)
         for (changes1, revnum1), ( changes2, revnum2) in zip(expected, got):
@@ -75,6 +76,26 @@ class TestLogWalker(SubversionTestCase):
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
         self.assertEqual(2, len(list(walker.iter_changes(["branches/foo"], 3))))
+
+    def test_get_branch_follow_multiple(self):
+        repos_url = self.make_repository("a")
+        cb = self.get_commit_editor(repos_url)
+        cb.add_dir("trunk").close()
+        cb.close()
+
+        cb = self.get_commit_editor(repos_url)
+        cb.add_dir("branches").close()
+        cb.close()
+
+        cb = self.get_commit_editor(repos_url)
+        cb.add_dir("branches/foo", "trunk").close()
+        cb.close()
+
+        walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
+
+        self.assertLogEquals( [({'branches/foo': ('A', 'trunk', 2, 2)}, 3),
+             ({'trunk': ('A', None, -1, 2)}, 1)],
+                (l[:2] for l in walker.iter_changes(["branches/foo", "trunk"], 3, 0)))
 
     def test_get_branch_follow_branch_changing_parent(self):
         repos_url = self.make_repository("a")
@@ -530,6 +551,11 @@ class TestLogWalker(SubversionTestCase):
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
         self.assertLogEquals([({'trunk': (u'A', None, -1, NODE_DIR)}, 2)],
                 [l[:2] for l in walker.iter_changes(["trunk"], 2)])
+
+        self.assertLogEquals([({'trunk': (u'A', None, -1, NODE_DIR)}, 2),
+                           ({}, 1),
+                           ({'': ('A', None, -1, NODE_DIR)}, 0) ],
+                [l[:2] for l in walker.iter_changes(None, 2)])
 
         self.assertLogEquals([({'trunk': (u'A', None, -1, NODE_DIR)}, 2),
                            ({}, 1),

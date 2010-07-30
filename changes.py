@@ -34,8 +34,8 @@ def find_prev_location(paths, branch_path, revnum):
     :note: If branch_path wasn't copied, this will return revnum-1 as the
         previous revision.
     """
-    assert isinstance(branch_path, str)
-    assert isinstance(revnum, int)
+    assert type(branch_path) is str
+    assert type(revnum) is int
     if revnum == 0:
         assert branch_path == ""
         return None
@@ -53,7 +53,7 @@ def find_prev_location(paths, branch_path, revnum):
         if paths[branch_path][1] is None:
             return None # Was added here
         revnum = paths[branch_path][2]
-        assert isinstance(paths[branch_path][1], str)
+        assert type(paths[branch_path][1]) is str
         branch_path = paths[branch_path][1]
         return (branch_path, revnum)
 
@@ -84,7 +84,7 @@ def changes_path(changes, path, parents=False):
     :param parents: Whether to consider a parent moving a change.
     """
     for p in changes:
-        assert isinstance(p, str)
+        assert type(p) is str
         if path_is_child(path, p):
             return True
         if parents and path.startswith(p+"/") and changes[p][0] in ('R', 'A'):
@@ -99,7 +99,7 @@ def changes_children(changes, path):
     :note: Does not consider changes to path itself.
     """
     for p in changes:
-        assert isinstance(p, str)
+        assert type(p) is str
         if path_is_child(path, p) and path != p:
             return True
     return False
