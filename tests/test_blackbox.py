@@ -375,8 +375,12 @@ Node-copyfrom-path: x
 
 
 """)
-        self.assertEquals("",
-            self.run_bzr('svn-import --layout=none %s dc' % filename)[0])
+        self.record_directory_isolation()
+        try:
+            self.assertEquals("",
+                self.run_bzr('svn-import --layout=none %s dc' % filename)[0])
+        finally:
+            self.enable_directory_isolation()
         load_dumpfile(filename, "realrepo")
         svnrepo = Repository.open("realrepo")
         self.assertEquals(uuid, svnrepo.uuid)

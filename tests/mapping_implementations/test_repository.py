@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
+
  
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -150,7 +150,8 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(1))
-        results = repos._revmeta_provider.iter_reverse_branch_changes("pygments/trunk", 3, 0)
+        results = repos._revmeta_provider.iter_reverse_branch_changes(
+                "pygments/trunk", 3, 0)
 
         # Results differ per Subversion version, yay
         # For <= 1.4:
@@ -677,19 +678,23 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertEqual(0, rev.timezone)
 
     def test_get_ancestry(self):
-        repos_url = self.make_client('d', 'dc')
+        repos_url = self.make_repository('d')
         repository = Repository.open(repos_url)
-        self.assertRaises(NoSuchRevision, repository.get_revision, "nonexisting")
-        self.build_tree({'dc/foo': "data"})
-        self.client_add("dc/foo")
-        self.client_commit("dc", "My Message") #1
-        self.client_update("dc")
-        self.build_tree({'dc/foo': "data2"})
-        self.client_commit("dc", "Second Message") #2
-        self.client_update("dc")
-        self.build_tree({'dc/foo': "data3"})
-        self.client_commit("dc", "Third Message") #3
-        self.client_update("dc")
+        self.assertRaises(NoSuchRevision, repository.get_revision,
+                "nonexisting")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("foo").modify("data")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.open_file("foo").modify("data2")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.open_file("foo").modify("data3")
+        dc.close()
+
         repository = Repository.open(repos_url)
         mapping = repository.get_mapping()
         self.assertEqual([None, 
@@ -739,22 +744,26 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                     repository.generate_revision_id(2, "", mapping)))
 
     def test_get_inventory(self):
-        repos_url = self.make_client('d', 'dc')
+        repos_url = self.make_repository('d')
         repository = Repository.open(repos_url)
         self.assertRaises(NoSuchRevision, repository.get_inventory, 
                 "nonexisting")
-        self.build_tree({'dc/foo': "data", 'dc/blah': "other data"})
-        self.client_add("dc/foo")
-        self.client_add("dc/blah")
-        self.client_commit("dc", "My Message") #1
-        self.client_update("dc")
-        self.build_tree({'dc/foo': "data2", "dc/bar/foo": "data3"})
-        self.client_add("dc/bar")
-        self.client_commit("dc", "Second Message") #2
-        self.client_update("dc")
-        self.build_tree({'dc/foo': "data3"})
-        self.client_commit("dc", "Third Message") #3
-        self.client_update("dc")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_file("foo").modify("data")
+        dc.add_file("blah").modify("other data")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.open_file("foo").modify("data2")
+        bar = dc.add_dir("bar")
+        bar.add_file("bar/foo").modify("data3")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.open_file("foo").modify("data3")
+        dc.close()
+
         repository = Repository.open(repos_url)
         repository.set_layout(RootLayout())
         mapping = repository.get_mapping()
@@ -857,42 +866,61 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
             self.assertChangedPathsEquals(changes, g.get_paths())
 
     def test_fetch_property_change_only_trunk(self):
-        repos_url = self.make_client('d', 'dc')
-        self.build_tree({'dc/trunk/bla': "data"})
-        self.client_add("dc/trunk")
-        self.client_commit("dc", "My Message")
-        self.client_set_prop("dc/trunk", "some:property", "some data\n")
-        self.client_commit("dc", "My 3")
-        self.client_set_prop("dc/trunk", "some2:property", "some data\n")
-        self.client_commit("dc", "My 2")
-        self.client_set_prop("dc/trunk", "some:property", "some other data\n")
-        self.client_commit("dc", "My 4")
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.add_dir("trunk")
+        trunk.add_file("trunk/bla").modify("data")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        trunk.change_prop("some:property", "some data\n")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        trunk.change_prop("some:property2", "some data\n")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        trunk.change_prop("some:property", "some other data\n")
+        dc.close()
+
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
         self.assertRevmetaLogEquals([('trunk', {'trunk': (u'M', None, -1, NODE_DIR)}, 3),
                            ('trunk', {'trunk': (u'M', None, -1, NODE_DIR)}, 2),
-                           ('trunk', {'trunk/bla': (u'A', None, -1, NODE_DIR), 'trunk': (u'A', None, -1, NODE_DIR)}, 1)],
+                           ('trunk', {'trunk/bla': (u'A', None, -1, NODE_FILE), 'trunk': (u'A', None, -1, NODE_DIR)}, 1)],
                    oldrepos._revmeta_provider.iter_reverse_branch_changes("trunk", 3, 0))
 
     def test_control_code_msg(self):
         if ra.version()[1] >= 5:
             raise TestSkipped("Test not runnable with Subversion >= 1.5")
-        repos_url = self.make_client('d', 'dc')
 
-        self.build_tree({'dc/trunk': None})
-        self.client_add("dc/trunk")
-        self.client_commit("dc", "\x24")
+        repos_url = self.make_repository('d')
 
-        self.build_tree({'dc/trunk/hosts': 'hej2'})
-        self.client_add("dc/trunk/hosts")
-        self.client_commit("dc", "bla\xfcbla") #2
+        cb = self.get_commit_editor(repos_url)
+        cb.add_dir("trunk")
+        cb.close("\x24")
 
-        self.build_tree({'dc/trunk/hosts': 'hej3'})
-        self.client_commit("dc", "a\x0cb") #3
+        cb = self.get_commit_editor(repos_url)
+        trunk = cb.open_dir("trunk")
+        hosts = trunk.add_file("trunk/hosts")
+        hosts.modify("hej2")
+        cb.close("bla\xfcbla") #2
 
-        self.build_tree({'dc/branches/foobranch/file': 'foohosts'})
-        self.client_add("dc/branches")
-        self.client_commit("dc", "foohosts") #4
+        cb = self.get_commit_editor(repos_url)
+        trunk = cb.open_dir("trunk")
+        trunk.open_file("trunk/hosts").modify("hej3")
+        cb.close("a\x0cb") #3
+
+        cb = self.get_commit_editor(repos_url)
+        branches = cb.add_dir("branches")
+        foobranch = branches.add_dir("branches/foobranch")
+        foobranch.add_file("branches/foobranch/file").modify()
+        cb.close("foohosts") #4
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
@@ -926,12 +954,12 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertEqual(u"a\\x0cb", rev.message)
 
     def test_set_layout(self):
-        repos_url = self.make_client('d', 'dc')
+        repos_url = self.make_repository('d')
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
 
     def testlhs_revision_parent_none(self):
-        repos_url = self.make_client('d', 'dc')
+        repos_url = self.make_repository('d')
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
         self.assertEquals(NULL_REVISION, repos._revmeta_provider.get_revision("", 0).get_lhs_parent_revid(repos.get_mapping()))
@@ -964,15 +992,26 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 repos._revmeta_provider.get_revision("trunk", 2).get_lhs_parent_revid(mapping))
 
     def testlhs_revision_parent_copied(self):
-        repos_url = self.make_client('d', 'dc')
-        self.build_tree({'dc/py/trunk/adir/afile': "data", 
-                         'dc/py/trunk/adir/stationary': None})
-        self.client_add("dc/py")
-        self.client_commit("dc", "Initial commit")
-        self.client_copy("dc/py", "dc/de")
-        self.client_commit("dc", "Incremental commit")
-        self.build_tree({'dc/de/trunk/adir/afile': "bla"})
-        self.client_commit("dc", "Change de")
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        py = dc.add_dir("py")
+        trunk = py.add_dir("py/trunk")
+        adir = trunk.add_dir("py/trunk/adir")
+        adir.add_file("py/trunk/adir/afile").modify("data")
+        adir.add_dir("py/trunk/adir/stationary")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("de", "py")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        de = dc.open_dir("de")
+        trunk = de.open_dir("de/trunk")
+        adir = trunk.open_dir("de/trunk/adir")
+        adir.open_file("de/trunk/adir/afile").modify("bla")
+        dc.close()
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(1))
         mapping = repos.get_mapping()
@@ -980,15 +1019,21 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 repos._revmeta_provider.get_revision("de/trunk", 3).get_lhs_parent_revid(mapping))
 
     def test_mainline_revision_copied(self):
-        repos_url = self.make_client('d', 'dc')
-        self.build_tree({'dc/py/trunk/adir/afile': "data", 
-                         'dc/py/trunk/adir/stationary': None})
-        self.client_add("dc/py")
-        self.client_commit("dc", "Initial commit")
-        self.build_tree({'dc/de':None})
-        self.client_add("dc/de")
-        self.client_copy("dc/py/trunk", "dc/de/trunk")
-        self.client_commit("dc", "Copy trunk")
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        py = dc.add_dir("py")
+        trunk = py.add_dir("py/trunk")
+        adir = trunk.add_dir("py/trunk/adir")
+        afile = adir.add_file("py/trunk/adir/afile").modify("data")
+        stationary = adir.add_dir("py/trunk/adir/stationary")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        de = dc.add_dir("de")
+        de.add_dir("de/trunk", "py/trunk")
+        dc.close()
+
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(1))
         mapping = repos.get_mapping()
@@ -996,20 +1041,31 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 repos._revmeta_provider.get_revision("de/trunk", 2).get_lhs_parent_revid(mapping))
 
     def test_mainline_revision_nested_deleted(self):
-        repos_url = self.make_client('d', 'dc')
-        self.build_tree({'dc/py/trunk/adir/afile': "data", 
-                         'dc/py/trunk/adir/stationary': None})
-        self.client_add("dc/py")
-        self.client_commit("dc", "Initial commit")
-        self.client_copy("dc/py", "dc/de")
-        self.client_commit("dc", "Incremental commit")
-        self.client_delete("dc/de/trunk/adir")
-        self.client_commit("dc", "Another incremental commit")
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        py = dc.add_dir("py")
+        trunk = py.add_dir("py/trunk")
+        adir = trunk.add_dir("py/trunk/adir")
+        afile = adir.add_file("py/trunk/adir/file").modify("data")
+        adir.add_dir("py/trunk/adir/stationary")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("de", "py")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        de = dc.open_dir("de")
+        trunk = de.open_dir("de/trunk")
+        trunk.delete("de/trunk/adir")
+        dc.close()
+
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(1))
         mapping = repos.get_mapping()
-        self.assertEquals(repos.generate_revision_id(1, "py/trunk", mapping), \
-                repos._revmeta_provider.get_revision("de/trunk", 3).get_lhs_parent_revid(mapping))
+        self.assertEquals(repos.generate_revision_id(1, "py/trunk", mapping),
+            repos._revmeta_provider.get_revision("de/trunk", 3).get_lhs_parent_revid(mapping))
 
     def test_item_keys_introduced_by(self):
         repos_url = self.make_repository('d')

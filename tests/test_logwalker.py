@@ -96,7 +96,7 @@ class TestLogWalker(SubversionTestCase):
 
         self.assertLogEquals([
             ({"branches/abranch": ('A', 'trunk', 2, NODE_DIR)}, 3),
-            ({"trunk/foo": ('A', None, -1, NODE_DIR),
+            ({"trunk/foo": ('A', None, -1, NODE_FILE),
               "trunk": ('A', None, -1, NODE_DIR)}, 1)
             ], [l[:2] for l in walker.iter_changes(["branches/abranch/foo"], 3)])
 
