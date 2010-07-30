@@ -45,6 +45,27 @@ from subvertpy import NODE_UNKNOWN
 # Maximum number of extra revisions to fetch in caching logwalker
 MAX_OVERHEAD_FETCH = 1000
 
+def iter_all_changes(from_revnum, to_revnum, get_revision_paths, 
+    revprop_list, limit=0):
+    revnum = from_revnum
+    ascending = (to_revnum > from_revnum)
+    i = 0
+    while ((not ascending and revnum >= to_revnum) or
+           (ascending and revnum <= to_revnum)):
+        revpaths = get_revision_paths(revnum)
+
+        # Report this revision if any affected paths are changed
+        yield (revpaths, revnum, revprop_list(revnum))
+        i += 1
+        if limit != 0 and i == limit:
+            break
+
+        if ascending:
+            revnum += 1
+        else:
+            revnum -= 1
+
+
 def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths,
     revprop_list, limit=0):
     """Iter changes.
@@ -59,73 +80,57 @@ def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths,
     :param limit: Maximum number of revisions to yield, 0 for all
     :return: Iterator over (revpaths, revnum, revprops)
     """
-    ascending = (to_revnum > from_revnum)
-
     revnum = from_revnum
 
     if prefixes in (None, [""], []):
-        prefixes = None
+        return iter_all_changes(from_revnum, to_revnum, get_revision_paths,
+                revprop_list, limit)
     else:
-        prefixes = [p.strip("/") for p in prefixes]
+        return iter_prefixes_changes(prefixes, from_revnum, to_revnum,
+            get_revision_paths, revprop_list, limit)
 
-    assert from_revnum >= to_revnum or prefixes in (None, [""]), \
-            "path: %r, %d >= %d" % (prefixes, from_revnum, to_revnum)
+
+def iter_prefixes_changes(prefixes, from_revnum, to_revnum, 
+    get_revision_paths, revprop_list, limit=0):
+    prefixes = [p.strip("/") for p in prefixes]
+
+    assert from_revnum >= to_revnum, "path: %r, %d >= %d" % (
+            prefixes, from_revnum, to_revnum)
+
+    revnum = from_revnum
+    todo_prefixes = { revnum: set(prefixes) }
 
     i = 0
-    while ((not ascending and revnum >= to_revnum) or
-           (ascending and revnum <= to_revnum)):
-        assert prefixes is None or len(prefixes) == 1
-
-        if not (revnum > 0 or prefixes in (None, [""])):
+    while revnum >= to_revnum:
+        prefixes = todo_prefixes.pop(revnum)
+        if not (revnum > 0):
             raise AssertionError("Inconsistent revnum, prefixes: %r,%r" % (revnum, prefixes))
         revpaths = get_revision_paths(revnum)
 
         # Report this revision if any affected paths are changed
-        if prefixes is None or any(changes.changes_path(revpaths, prefix, True) for prefix in prefixes):
+        if any(changes.changes_path(revpaths, prefix, True) for prefix in prefixes):
             assert type(revnum) is int
             yield (revpaths, revnum, revprop_list(revnum))
             i += 1
             if limit != 0 and i == limit:
                 break
 
-        if prefixes is None:
-            if ascending:
-                next_revnum = revnum + 1
+        next = {}
+        # Find the location of each prefix for the next iteration
+        for prefix in prefixes:
+            assert type(prefix) is str, "%r" % prefix
+            try:
+                (p, r) = changes.find_prev_location(revpaths, prefix,
+                        revnum)
+            except TypeError:
+                pass # didn't exist here
             else:
-                next_revnum = revnum - 1
-        else:
-            next = {}
-            # Find the location of each prefix for the next iteration
-            if ascending:
-                for prefix in prefixes:
-                    next[prefix] = revnum+1
-            else:
-                for prefix in prefixes:
-                    assert type(prefix) is str, "%r" % prefix
-                    try:
-                        (p, r) = changes.find_prev_location(revpaths, prefix, revnum)
-                    except TypeError:
-                        pass
-                    else:
-                        next[p] = r
+                assert r < revnum
+                todo_prefixes.setdefault(r, set()).add(p)
 
-            if next == {}:
-                break
-
-            next_revnum = None
-            for prefix, path_revnum in next.iteritems():
-                assert type(prefix) is str
-                assert type(path_revnum) is int
-                if ascending:
-                    assert path_revnum > revnum
-                    next_revnum = min(next_revnum, path_revnum)
-                else:
-                    assert path_revnum < revnum
-                    next_revnum = max(next_revnum, path_revnum)
-            prefixes = next.keys()
-
-        assert type(next_revnum) is int
-        revnum = next_revnum
+        if todo_prefixes == {}:
+            break
+        revnum = max(todo_prefixes)
 
 
 class LogCache(object):

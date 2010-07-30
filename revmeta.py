@@ -1314,7 +1314,7 @@ class RevisionMetadataProvider(object):
         if self.in_cache(path, revnum):
             cached = self._revmeta_cache[path,revnum]
             if changes is not None:
-                cached.paths = changes
+                cached._paths = changes
             if cached._changed_fileprops is None:
                 cached._changed_fileprops = changed_fileprops
             if cached._fileprops is None:

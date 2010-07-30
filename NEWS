@@ -65,6 +65,9 @@ bzr-svn	1.0.3					  UNRELEASED
   * Support _override_hook_source_branch argument to InterBranch.push(). 
     (Jelmer Vernooij, #609178)
 
+  * Support iterating over multiple prefixes in the caching logwalker
+    (Jelmer Vernooij, #579491)
+
  FEATURES
 
   * Support fetching a limited number of revisions. (Michael Hudson)
