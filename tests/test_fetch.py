@@ -1552,7 +1552,8 @@ Node-copyfrom-path: x
         branches.add_dir("branches/foobranch", "trunk")
         dc.close()
 
-        repos = remote.SvnRemoteAccess(SvnRaTransport(repos_url), format.SvnRemoteFormat()).find_repository()
+        repos = remote.SvnRemoteAccess(SvnRaTransport(repos_url),
+                format.SvnRemoteFormat()).find_repository()
         repos.set_layout(TrunkLayout(0))
 
         mapping = repos.get_mapping()
@@ -1560,7 +1561,9 @@ Node-copyfrom-path: x
         tree = repos.revision_tree(
              repos.generate_revision_id(3, "branches/foobranch", mapping))
 
-        self.assertEqual(mapping.generate_file_id((repos.uuid, "trunk", 1), u""), tree.inventory.root.file_id)
+        self.assertEqual(
+            mapping.generate_file_id((repos.uuid, "trunk", 1), u""),
+            tree.inventory.root.file_id)
 
     def test_fetch_odd(self):
         repos_url = self.make_repository('d')
