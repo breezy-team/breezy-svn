@@ -31,7 +31,15 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def setUp(self):
         ExternalBase.setUp(self)
-        self._init_client()
+        if getattr(self, "_init_client", None) is not None:
+            self._init_client()
+        else:
+            # Subvertpy < 0.7.4 doesn't provide _init_client.
+            from subvertpy import client, ra
+            self.client_ctx = client.Client()
+            self.client_ctx.auth = ra.Auth([ra.get_simple_provider(),
+                                            ra.get_username_provider(), ])
+            self.client_ctx.log_msg_func = self.log_message_func
 
     def tearDown(self):
         ExternalBase.tearDown(self)
