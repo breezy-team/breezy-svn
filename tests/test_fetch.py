@@ -149,10 +149,10 @@ class TestFetchWorks(FetchTestCase):
         self.client_copy("dc/trunk", "dc/tags/R_0_9_2", revnum=2)
         self.client_delete("dc/tags/R_0_9_2/check/debian")
         shutil.rmtree("dc/tags/R_0_9_2/check/debian")
-        self.client_copy("dc/trunk/check/debian", "dc/tags/R_0_9_2/check",
+        self.client_copy("dc/trunk/check/debian", "dc/tags/R_0_9_2/check/debian",
                          revnum=5)
         self.client_delete("dc/tags/R_0_9_2/check/stamp-h.in")
-        self.client_copy("dc/trunk/check/stamp-h.in", "dc/tags/R_0_9_2/check",
+        self.client_copy("dc/trunk/check/stamp-h.in", "dc/tags/R_0_9_2/check/stamp-h.in",
                          revnum=4)
         self.build_tree({"dc/tags/R_0_9_2/check/debian/blie": "oehha"})
         self.client_update("dc")
@@ -1461,11 +1461,13 @@ Node-copyfrom-path: x
 
         branch = Branch.open("%s/trunk" % repos_url)
         if oldrepos.get_mapping().is_branch("old-trunk"):
-            self.assertEqual([oldrepos.generate_revision_id(1, "old-trunk", oldrepos.get_mapping()),
-                              oldrepos.generate_revision_id(2, "trunk", oldrepos.get_mapping())],
+            self.assertEqual([
+                oldrepos.generate_revision_id(1, "old-trunk", oldrepos.get_mapping()),
+                oldrepos.generate_revision_id(2, "trunk", oldrepos.get_mapping())],
                          branch.revision_history())
         else:
-            self.assertEqual([oldrepos.generate_revision_id(2, "trunk", oldrepos.get_mapping())],
+            self.assertEqual([
+                oldrepos.generate_revision_id(2, "trunk", oldrepos.get_mapping())],
                          branch.revision_history())
 
 

@@ -314,12 +314,13 @@ class TestParseSvnProps(TestCase):
 
     def test_import_revision_svnprops(self):
         rev = Revision(None)
-        mapping.parse_svn_revprops({"svn:log": "A log msg",
-                                      "svn:author": "Somebody",
-                                      "svn:date": "2008-11-03T09:33:00.716938Z"},  rev)
+        revprops = {"svn:log": "A log msg", "svn:author": "Somebody",
+                "svn:date": "2008-11-03T09:33:00.716938Z"}
+        mapping.parse_svn_revprops(revprops,  rev)
         self.assertEquals("Somebody", rev.committer)
         self.assertEquals("A log msg", rev.message)
         self.assertEquals({}, rev.properties)
-        self.assertEquals(1225701180.716938, rev.timestamp)
         self.assertEquals(0.0, rev.timezone)
+        self.assertEquals(1225704780.716938, rev.timestamp,
+                "parsing %s" % revprops["svn:date"])
 

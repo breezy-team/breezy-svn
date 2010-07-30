@@ -477,7 +477,7 @@ class GetMapTests(SubversionTestCase):
             'svn-co/subdir2/file7': ''})
         self.client_add('svn-co/subdir2/file7')
         self.client_set_prop("svn-co/subdir2/file4", "svn:executable", "true")
-        self.client_copy("svn-co/subdir2", "svn-co/subdir1")
+        self.client_copy("svn-co/subdir2", "svn-co/subdir1/subdir2")
         self.client_delete("svn-co/subdir2")
         self.client_commit("svn-co", "Directory move with modifications.")
         self.client_update("svn-co")
