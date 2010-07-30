@@ -321,6 +321,6 @@ class TestParseSvnProps(TestCase):
         self.assertEquals("A log msg", rev.message)
         self.assertEquals({}, rev.properties)
         self.assertEquals(0.0, rev.timezone)
-        self.assertEquals(1225701180.716938, rev.timestamp,
+        self.assertEquals(1225704780.716938, rev.timestamp,
                 "parsing %s" % revprops["svn:date"])
 

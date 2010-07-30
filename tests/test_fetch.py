@@ -152,7 +152,7 @@ class TestFetchWorks(FetchTestCase):
         self.client_copy("dc/trunk/check/debian", "dc/tags/R_0_9_2/check/debian",
                          revnum=5)
         self.client_delete("dc/tags/R_0_9_2/check/stamp-h.in")
-        self.client_copy("dc/trunk/check/stamp-h.in", "dc/tags/R_0_9_2/chec/stamp-h.ink",
+        self.client_copy("dc/trunk/check/stamp-h.in", "dc/tags/R_0_9_2/check/stamp-h.in",
                          revnum=4)
         self.build_tree({"dc/tags/R_0_9_2/check/debian/blie": "oehha"})
         self.client_update("dc")
