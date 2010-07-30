@@ -67,7 +67,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_dir("bla", "foo")
+        dc.add_dir("bla", "foo", 1)
         dc.close()
 
         repos = Repository.open(repos_url)

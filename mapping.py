@@ -204,7 +204,8 @@ def parse_svn_revprops(svn_revprops, rev):
     assert type(rev.message) is unicode
 
     assert svn_revprops.has_key(properties.PROP_REVISION_DATE)
-    (rev.timestamp, rev.timezone) = parse_svn_dateprop(svn_revprops[properties.PROP_REVISION_DATE])
+    (rev.timestamp, rev.timezone) = parse_svn_dateprop(
+            svn_revprops[properties.PROP_REVISION_DATE])
     rev.properties = {}
 
 

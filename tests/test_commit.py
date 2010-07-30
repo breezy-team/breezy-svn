@@ -244,7 +244,7 @@ class TestNativeCommit(SubversionTestCase):
         self.client_update('sc')
         os.mkdir('sc/de/trunk')
         self.client_add('sc/de/trunk')
-        mv(('sc/de/foo', 'sc/de/trunk'), ('sc/de/bar', 'sc/de/trunk')) #2
+        mv(('sc/de/foo', 'sc/de/trunk/foo'), ('sc/de/bar', 'sc/de/trunk/bar')) #2
         mv(('sc/de', 'sc/pyd'))  #3
         self.client_delete('sc/pyd/trunk/foo')
         self.client_commit('sc', '.') #4
