@@ -698,6 +698,10 @@ class InterSvnOtherBranch(GenericInterBranch):
        history browsing operations
     """
 
+    @staticmethod
+    def _get_branch_formats_to_test():
+        return []
+
     def update_revisions(self, stop_revision=None, overwrite=False,
                          graph=None):
         self._update_revisions(stop_revision, overwrite, graph)
