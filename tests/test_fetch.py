@@ -60,6 +60,7 @@ from bzrlib.plugins.svn.errors import (
     InvalidFileName,
     )
 from bzrlib.plugins.svn.fetch import (
+   FetchRevisionFinder,
    InterFromSvnRepository,
    )
 from bzrlib.plugins.svn.layout.standard import (
@@ -238,6 +239,36 @@ class TestFetchWorks(FetchTestCase):
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         self.assertEquals("SIGNATURE", newrepos.get_signature_text(oldrepos.generate_revision_id(1, "trunk", oldrepos.get_mapping())))
+
+    def test_fetch_invalid_svk_rev(self):
+        repos_url = self.make_repository('d')
+
+        uuid = SvnRaTransport(repos_url).get_uuid()
+
+        dc = self.get_commit_editor(repos_url)
+        branches = dc.add_dir("branches")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.add_dir("trunk")
+        trunk.add_file("trunk/bar").modify("data")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.open_dir("trunk")
+        trunk.change_prop("svk:merge", "%s:/branches/trunk:1\n" % uuid)
+        dc.close()
+
+        oldrepos = Repository.open(repos_url)
+        oldrepos.set_layout(TrunkLayout(0))
+        dir = BzrDir.create("f")
+        newrepos = dir.create_repository()
+        rf = FetchRevisionFinder(oldrepos, newrepos)
+        rm = oldrepos._revmeta_provider.get_revision("trunk", 3)
+        mapping = oldrepos.get_mapping()
+        self.assertEquals((uuid, "trunk", 3), rm.get_foreign_revid())
+        self.assertEquals((mapping.revision_id_foreign_to_bzr((uuid, "branches/trunk", 1)), ), rm.get_rhs_parents(mapping))
+        self.assertEquals([], list(rf.find_rhs_parents([(rm, mapping)])))
 
     def test_fetch_file_branch(self):
         repos_url = self.make_repository('d')

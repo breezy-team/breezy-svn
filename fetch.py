@@ -1079,6 +1079,10 @@ class FetchRevisionFinder(object):
         for r in self.check_revmetas(needs_checking):
             revmetas.appendleft(r)
         # Determine if there are any RHS parents to fetch
+        self.extra.extend(self.find_rhs_parents(revmetas))
+        return revmetas
+
+    def find_rhs_parents(self, revmetas):
         for revmeta, mapping in revmetas:
             for p in revmeta.get_rhs_parents(mapping):
                 try:
@@ -1086,8 +1090,8 @@ class FetchRevisionFinder(object):
                 except NoSuchRevision:
                     pass # Ghost
                 else:
-                    self.extra.append((foreign_revid, rhs_mapping))
-        return revmetas
+                    if self.source.has_foreign_revision(foreign_revid):
+                        yield (foreign_revid, rhs_mapping)
 
     def find_until(self, foreign_revid, mapping, find_ghosts=False,
                    pb=None):

@@ -1,5 +1,10 @@
 bzr-svn 1.0.4					  UNRELEASED
 
+ BUG FIXES
+
+  * Cope with invalid svk:merge properties during fetch. 
+    (Jelmer Vernooij, #504458)
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES

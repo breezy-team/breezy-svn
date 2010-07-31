@@ -271,8 +271,8 @@ class RepositoryConverter(object):
         try:
             pb.update("checking revisions to fetch", 0,
                       len(revmetas))
-            revfinder.find_iter_revisions(revmetas, mapping, needs_manual_check,
-                                          pb=pb, heads=heads)
+            revfinder.find_iter_revisions(revmetas, mapping,
+                needs_manual_check, pb=pb, heads=heads)
         finally:
             pb.finished()
         inter.fetch(needed=revfinder.get_missing())
