@@ -891,6 +891,8 @@ class SvnRepository(ForeignRepository):
         return self.has_foreign_revision(foreign_revid)
 
     def has_foreign_revision(self, (uuid, path, revnum)):
+        if uuid != self.uuid:
+            return False
         try:
             return (subvertpy.NODE_DIR == self.transport.check_path(path, revnum))
         except subvertpy.SubversionException, (_, num):
