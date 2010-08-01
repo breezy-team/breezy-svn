@@ -5,6 +5,8 @@ bzr-svn 1.0.4					  UNRELEASED
   * Cope with invalid svk:merge properties during fetch. 
     (Jelmer Vernooij, #504458)
 
+  * Avoid backtrace when getting 175200 error during log fetch.
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES

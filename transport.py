@@ -58,6 +58,7 @@ from bzrlib.plugins.svn.auth import (
     )
 from bzrlib.plugins.svn.errors import (
     convert_svn_error,
+    DavRequestFailed,
     NoSvnRepositoryPresent,
     convert_error,
     )
@@ -520,11 +521,18 @@ class SvnRaTransport(Transport):
 
         conn = self.get_connection()
         try:
-            return conn.get_log(rcvr, paths,
-                    from_revnum, to_revnum,
-                    limit, discover_changed_paths, strict_node_history,
-                    include_merged_revisions,
-                    revprops)
+            try:
+                return conn.get_log(rcvr, paths,
+                        from_revnum, to_revnum,
+                        limit, discover_changed_paths, strict_node_history,
+                        include_merged_revisions,
+                        revprops)
+            except subvertpy.SubversionException, e:
+                msg, num = e.args
+                if num == subvertpy.ERR_RA_DAV_REQUEST_FAILED:
+                    return DavRequestFailed(msg)
+                else:
+                    raise e
         finally:
             self.add_connection(conn)
 
