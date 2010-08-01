@@ -17,6 +17,8 @@
 
 """Subversion BzrDir formats."""
 
+import urllib
+
 
 from bzrlib import (
     errors,
@@ -93,7 +95,7 @@ class SvnRemoteAccess(BzrDir):
         self.root_url = _transport.get_repos_root()
 
         assert svn_url.lower().startswith(self.svn_root_url.lower())
-        self.branch_path = svn_url[len(self.svn_root_url):]
+        self.branch_path = urllib.unquote(svn_url[len(self.svn_root_url):])
 
     def clone(self, url, revision_id=None, force_new_repo=False):
         """See BzrDir.clone().

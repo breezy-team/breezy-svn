@@ -10,6 +10,9 @@ bzr-svn 1.0.4					  UNRELEASED
   * Warn when inconsistencies between cache and repository are 
     detected. (Jelmer Vernooij, #594872)
 
+  * Cope with non-ascii characters in branch names properly.
+    (Jelmer Vernooij, #500519)
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES

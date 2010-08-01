@@ -409,6 +409,16 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         self.assertEquals(["newtag"], newbranch.tags.get_tag_dict().keys())
 
+    def test_open_non_ascii_url(self):
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir('\xd0\xb4\xd0\xbe\xd0\xbc')
+        dc.close()
+
+        branch = Branch.open(repos_url + "/%D0%B4%D0%BE%D0%BC")
+        #branch = Branch.open(repos_url + "/\xd0\xb4\xd0\xbe\xd0\xbc")
+
     def test_open_nonexistant(self):
         repos_url = self.make_repository("a")
         self.assertRaises(NotBranchError, Branch.open, repos_url + "/trunk")

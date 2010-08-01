@@ -180,7 +180,7 @@ def _url_unescape_uri(url):
     (scheme, netloc, path, query, fragment) = urlparse.urlsplit(url)
     if scheme in ("http", "https"):
         # Without this, URLs with + in them break
-        path = urllib.unquote(path)
+        path = urllib.quote(urllib.unquote(path), safe="/+%")
     while "//" in path:
         path = path.replace("//", "/")
     return urlparse.urlunsplit((scheme, netloc, path, query, fragment))
@@ -190,7 +190,7 @@ def _url_escape_uri(url):
     (scheme, netloc, path, query, fragment) = urlparse.urlsplit(url)
     if scheme in ("http", "https"):
         # Without this, URLs with + in them break
-        path = urllib.quote(path, safe="/+")
+        path = urllib.quote(path, safe="/+%")
     return urlparse.urlunsplit((scheme, netloc, path, query, fragment))
 
 
