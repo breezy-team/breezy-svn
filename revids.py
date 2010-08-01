@@ -20,7 +20,10 @@ import subvertpy
 
 ERR_RA_DAV_FORBIDDEN = getattr(subvertpy, "ERR_RA_DAV_FORBIDDEN", 175013)
 
-from bzrlib import ui
+from bzrlib import (
+    trace,
+    ui,
+    )
 from bzrlib.errors import (
     NoSuchRevision,
     )
@@ -29,6 +32,7 @@ from bzrlib.lru_cache import LRUCache
 from bzrlib.plugins.svn.errors import (
     InvalidBzrSvnRevision,
     InvalidPropertyValue,
+    warn_uuid_reuse,
     )
 from bzrlib.plugins.svn.mapping import (
     SVN_PROP_BZR_REVISION_ID,
@@ -38,6 +42,7 @@ from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     parse_revid_property,
     )
+
 
 class RevidMap(object):
 
@@ -213,21 +218,29 @@ class DiskCachingRevidMap(object):
                                     mappingname)
             self.revid_seen.add(entry_revid)
 
+    def _get_last_checked(self, layout, project):
+        return self.cache.last_revnum_checked(repr((layout, project)))
+
+    def _get_last_revnum(self):
+        return self.actual.repos.get_latest_revnum()
+
     def get_branch_revnum(self, revid, layout, project=None):
         # Check the record out of the cache, if it exists
         try:
             (branch_path, min_revnum, max_revnum, \
                     mapping) = self.cache.lookup_revid(revid)
-            assert isinstance(branch_path, str)
-            assert isinstance(mapping, str)
+            assert type(branch_path) is str
+            assert type(mapping) is str
             # Entry already complete?
             assert min_revnum <= max_revnum
             if min_revnum == max_revnum:
                 return (self.actual.repos.uuid, branch_path, min_revnum), mapping_registry.parse_mapping_name("svn-" + mapping)
         except NoSuchRevision, e:
-            last_revnum = self.actual.repos.get_latest_revnum()
-            last_checked = self.cache.last_revnum_checked(repr((layout, project)))
-            if (last_revnum <= last_checked):
+            last_revnum = self._get_last_revnum()
+            last_checked = self._get_last_checked(layout, project)
+            if last_checked > last_revnum:
+                warn_uuid_reuse(self.actual.repos.uuid, self.actual.repos.base)
+            if last_revnum == last_checked:
                 # All revision ids in this repository for the current
                 # layout have already been discovered. No need to
                 # check again.

@@ -20,6 +20,9 @@
 import subvertpy
 import urllib
 
+from bzrlib import (
+    trace,
+    )
 import bzrlib.errors
 from bzrlib.errors import (
     BzrError,
@@ -277,4 +280,21 @@ class TextChecksumMismatch(VersionedFileInvalidChecksum):
         self.actual_checksum = actual_checksum
         self.path = path
         self.revnum = revnum
+
+
+_reuse_uuids_warned = set()
+def warn_uuid_reuse(uuid, location):
+    """Warn that a UUID is being reused for different repositories."""
+    global _reuse_uuids_warned
+    if uuid in _reuse_uuids_warned:
+        return
+    trace.warning("Repository with UUID %s at %s contains fewer revisions "
+         "than cache. This either means that this repository contains an out "
+         "of date mirror of another repository (harmless), or that the UUID "
+         "is being used for two different Subversion repositories ("
+         "potential repository corruption).",
+         uuid, location)
+    _reuse_uuids_warned.add(uuid)
+
+
 

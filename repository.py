@@ -395,7 +395,7 @@ class SvnRepository(ForeignRepository):
             # for large repositories ?
             if self.base.startswith("file://"):
                 # Default to no log caching for local connections
-                use_cache = set(["fileids", "revinfo", "revids"])
+                use_cache = set(["fileids", "revids"])
             else:
                 use_cache = set(["fileids", "revids", "revinfo", "log"])
 
@@ -403,8 +403,11 @@ class SvnRepository(ForeignRepository):
             cache_obj = cache.cache_cls(self.uuid)
 
         if "log" in use_cache:
+            log_cache = cache_obj.open_logwalker()
+            if log_cache.last_revnum() > self.get_latest_revnum():
+                errors.warn_uuid_reuse(self.uuid, self.base)
             self._log = logwalker.CachingLogWalker(self._log,
-                cache_obj.open_logwalker())
+                log_cache)
 
         if "fileids" in use_cache:
             self.fileid_map = CachingFileIdMapStore(
@@ -432,7 +435,7 @@ class SvnRepository(ForeignRepository):
         self.branchprop_list = PathPropertyProvider(self._log)
 
         self._revmeta_provider = revmeta.RevisionMetadataProvider(self,
-                use_cache,
+                self.revinfo_cache is not None,
                 self.transport.has_capability("commit-revprops") in (True, None))
 
     def get_transaction(self):

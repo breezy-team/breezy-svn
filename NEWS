@@ -7,6 +7,9 @@ bzr-svn 1.0.4					  UNRELEASED
 
   * Avoid backtrace when getting 175200 error during log fetch.
 
+  * Warn when inconsistencies between cache and repository are 
+    detected. (Jelmer Vernooij, #594872)
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES
