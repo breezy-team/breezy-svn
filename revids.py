@@ -21,7 +21,6 @@ import subvertpy
 ERR_RA_DAV_FORBIDDEN = getattr(subvertpy, "ERR_RA_DAV_FORBIDDEN", 175013)
 
 from bzrlib import (
-    trace,
     ui,
     )
 from bzrlib.errors import (
@@ -98,8 +97,8 @@ class RevidMap(object):
         assert reuse_policy in ("other-branches", "removed-branches", "none")
         check_removed = (reuse_policy == "removed-branches")
         for (branch, revno, exists) in self.repos.find_fileprop_paths(layout, from_revnum, to_revnum, project, check_removed=check_removed):
-            assert isinstance(branch, str)
-            assert isinstance(revno, int)
+            assert type(branch) is str
+            assert type(revno) is int
             iterator = self.repos._revmeta_provider.iter_reverse_branch_changes(branch, revno, to_revnum=0, limit=0)
             yield iterator.next()
 
