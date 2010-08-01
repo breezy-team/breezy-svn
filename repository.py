@@ -1193,21 +1193,24 @@ class SvnRepository(ForeignRepository):
                     continue
                 pb.update("finding branches", i, to_revnum)
                 for p in sorted(paths.keys()):
+                    (action, copyfrom_path, copyfrom_rev, kind) = paths[p]
+                    if kind not in (subvertpy.NODE_DIR, subvertpy.NODE_UNKNOWN):
+                        continue
                     if layout.is_branch_or_tag(p, project):
-                        if paths[p][0] in ('R', 'D') and p in created_branches:
+                        if action in ('R', 'D') and p in created_branches:
                             ret.append((p, created_branches[p], False))
                             del created_branches[p]
 
-                        if paths[p][0] in ('A', 'R', 'M'):
+                        if action in ('A', 'R', 'M'):
                             created_branches[p] = i
                     elif layout.is_branch_or_tag_parent(p, project):
-                        if paths[p][0] in ('R', 'D'):
+                        if action in ('R', 'D'):
                             k = created_branches.keys()
                             for c in k:
                                 if c.startswith(p+"/") and c in created_branches:
                                     ret.append((c, created_branches[c], False))
                                     del created_branches[c]
-                        if paths[p][0] in ('A', 'R') and paths[p][1] is not None:
+                        if action in ('A', 'R') and copyfrom_path is not None:
                             parents = [p]
                             while parents:
                                 p = parents.pop()
