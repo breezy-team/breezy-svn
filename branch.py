@@ -847,7 +847,7 @@ class InterOtherSvnBranch(InterBranch):
 
     """
 
-    @classmethod
+    @staticmethod
     def _get_branch_formats_to_test():
         return []
 
