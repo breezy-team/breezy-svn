@@ -412,6 +412,8 @@ class LogWalker(object):
                     revpaths = {}
                 if todo_revprops is None:
                     revprops = known_revprops
+                    if revprops is None:
+                        revprops = {}
                 else:
                     revprops = lazy_dict(known_revprops, self._transport.revprop_list, revnum)
                 yield (revpaths, revnum, revprops)
