@@ -650,7 +650,6 @@ class FileRevisionBuildEditor(FileBuildEditor):
             ie.executable = False
         else:
             ie = InventoryFile(self.file_id, urlutils.basename(self.path), self.parent_file_id)
-            ie.symlink_target = None
             ie.text_sha1 = text_sha1
             ie.text_size = text_size
             assert ie.text_size is not None

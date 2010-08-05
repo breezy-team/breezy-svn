@@ -61,7 +61,8 @@ class LogCacheTests(object):
             self.assertEquals(42, self.cache.find_latest_change("foo", 42))
             self.assertEquals(42, self.cache.find_latest_change("foo", 45))
         except NotImplementedError:
-            raise TestSkipped()
+            raise TestSkipped("%s does not implement find_latest_change" % 
+                    self.cache.__class__.__name__)
 
 
 class SqliteLogCacheTests(TestCase,LogCacheTests):

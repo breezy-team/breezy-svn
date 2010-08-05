@@ -919,8 +919,8 @@ class SvnCommitBuilder(RootCommitBuilder):
              (old_name, new_name), (old_kind, new_kind),
              (old_executable, new_executable)) in iter_changes:
             new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
-            new_ie.executable = new_executable
             if new_kind == 'file':
+                new_ie.executable = new_executable
                 file_obj, stat_val = get_file_with_stat(file_id)
                 self.modified_files[file_id] = file_obj
                 new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
@@ -928,6 +928,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 file_obj.seek(0)
                 yield file_id, new_path, (new_ie.text_sha1, stat_val)
             elif new_kind == 'symlink':
+                new_ie.executable = new_executable
                 new_ie.symlink_target = tree.get_symlink_target(file_id)
                 self.modified_files[file_id] = StringIO("link %s" % new_ie.symlink_target.encode("utf-8"))
             elif new_kind == 'directory':
