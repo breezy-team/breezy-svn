@@ -274,37 +274,47 @@ class CachingLogWalker(object):
         assert isinstance(self._latest_revnum, int)
         to_revnum = max(min(self._latest_revnum, to_revnum+MAX_OVERHEAD_FETCH), to_revnum)
 
-        # Subversion 1.4 clients and servers can only deliver a limited set of revprops
+        # Subversion 1.4 clients and servers can only deliver a limited set of
+        # revprops
         if self._transport.has_capability("log-revprops"):
             todo_revprops = None
         else:
             todo_revprops = ["svn:author", "svn:log", "svn:date"]
 
-        def rcvr(orig_paths, revision, revprops, has_children=None):
-            nested_pb.update('fetching svn revision info',
-                             to_revnum - revision, to_revnum)
-            self.cache.insert_paths(revision, orig_paths)
-            self.cache.insert_revprops(revision, revprops,
-                                       todo_revprops is None)
-            self.saved_revnum = max(revision, self.saved_revnum)
-            if self.saved_minrevnum is None:
-                self.saved_minrevnum = revision
-            else:
-                self.saved_minrevnum = min(revision, self.saved_minrevnum)
+        class LogUpdater(object):
 
-        if pb is None:
-            nested_pb = ui.ui_factory.nested_progress_bar()
-        else:
-            nested_pb = pb
+            def __init__(self, logwalker):
+                self.count = 0
+                self.total = None
+                self.pb = ui.ui_factory.nested_progress_bar()
+                self.logwalker = logwalker
 
+            def __call__(self, orig_paths, revision, revprops,
+                         has_children=None):
+                self.count += 1
+                self.pb.update('fetching svn revision info',
+                                 self.count, self.total)
+                self.logwalker.cache.insert_paths(revision, orig_paths)
+                self.logwalker.cache.insert_revprops(revision, revprops,
+                                           todo_revprops is None)
+                self.logwalker.saved_revnum = max(revision,
+                    self.logwalker.saved_revnum)
+                self.logwalker.saved_minrevnum = min(revision,
+                    self.logwalker.saved_minrevnum)
+
+            def finished(self):
+                self.pb.finished()
+
+        rcvr = LogUpdater(self)
         try:
-            nested_pb.update('fetching svn revision info', 0, to_revnum)
             try:
+                # The get_log bounds are inclusive at both ends, so the total
+                # number of revisions requested is A - B + 1:
+                rcvr.total = to_revnum - self.saved_revnum + 1
                 # Try to keep the cache consistent by closing any holes early
                 # in the history
-                if self.saved_minrevnum is None:
-                    self.saved_minrevnum = 0
-                elif self.saved_minrevnum != 0:
+                if self.saved_minrevnum:
+                    rcvr.total += self.saved_minrevnum + 1
                     self.mutter("get_log %d->%d", self.saved_minrevnum, 0)
                     self.actual._transport.get_log(rcvr, [""],
                         self.saved_minrevnum, 0, 0, True, True, False,
@@ -318,9 +328,8 @@ class CachingLogWalker(object):
                         revision="Revision number %d" % to_revnum)
                 raise
         finally:
+            rcvr.finished()
             self.cache.commit()
-            if pb is None:
-                nested_pb.finished()
 
 
 def strip_slashes(changed_paths):

@@ -13,6 +13,9 @@ bzr-svn 1.0.4					  UNRELEASED
   * Cope with non-ascii characters in branch names properly.
     (Jelmer Vernooij, #500519)
 
+  * During incremental "fetching svn revision info", don't print progress info
+    is as if it had started afresh (Max Bowsher, #500991)
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES
