@@ -1130,7 +1130,7 @@ class SvnCheckout(BzrDir):
         """See BzrDir.create_branch()."""
         raise NotImplementedError(self.create_branch)
 
-    def open_branch(self, unsupported=True):
+    def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
         """See BzrDir.open_branch()."""
         repos = self._find_repository()
 
