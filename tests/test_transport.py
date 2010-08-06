@@ -236,6 +236,10 @@ class UrlConversionTest(TestCase):
         self.assertEquals("http://svn.gnome.org/svn/gtk+/trunk",
                 url_join_unescaped_path("http://svn.gnome.org/svn/", "gtk+/trunk"))
 
+    def test_url_join_unescaped_comment(self):
+        self.assertEquals("http://svn.gnome.org/svn/gtk+/trunk%23",
+                url_join_unescaped_path("http://svn.gnome.org/svn/", "gtk+/trunk#"))
+
 
 class UrlSplitSvnPlus(TestCase):
 

@@ -16,6 +16,8 @@ bzr-svn 1.0.4					  UNRELEASED
   * During incremental "fetching svn revision info", don't print progress info
     is as if it had started afresh (Max Bowsher, #500991)
 
+  * Cope with copying from paths with a # sign in them. (Jelmer Vernooij)
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES

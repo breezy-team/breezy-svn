@@ -195,7 +195,12 @@ def _url_escape_uri(url):
 
 
 def url_join_unescaped_path(url, path):
-    return _url_escape_uri(urlutils.join(url, path))
+    (scheme, netloc, basepath, query, fragment) = urlparse.urlsplit(url)
+    path = urlutils.join(urllib.unquote(basepath), path)
+    if scheme in ("http", "https"):
+        # Without this, URLs with + in them break
+        path = urllib.quote(path, safe="/+%")
+    return urlparse.urlunsplit((scheme, netloc, path, query, fragment))
 
 
 def bzr_to_svn_url(url):
