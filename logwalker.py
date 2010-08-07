@@ -310,19 +310,19 @@ class CachingLogWalker(object):
         try:
             try:
                 # The get_log bounds are inclusive at both ends, so the total
-                # number of revisions requested is A - B + 1:
-                rcvr.total = to_revnum - self.saved_revnum + 1
+                # number of revisions requested is A - B.
+                rcvr.total = to_revnum - self.saved_revnum
                 # Try to keep the cache consistent by closing any holes early
                 # in the history
                 if self.saved_minrevnum:
-                    rcvr.total += self.saved_minrevnum + 1
-                    self.mutter("get_log %d->%d", self.saved_minrevnum, 0)
+                    rcvr.total += self.saved_minrevnum
+                    self.mutter("get_log %d->%d", self.saved_minrevnum - 1, 0)
                     self.actual._transport.get_log(rcvr, [""],
-                        self.saved_minrevnum, 0, 0, True, True, False,
+                        self.saved_minrevnum - 1, 0, 0, True, True, False,
                         todo_revprops)
-                self.mutter("get_log %d->%d", to_revnum, self.saved_revnum)
+                self.mutter("get_log %d->%d", to_revnum, self.saved_revnum+1)
                 self.actual._transport.get_log(rcvr, [""], to_revnum,
-                    self.saved_revnum, 0, True, True, False, todo_revprops)
+                    self.saved_revnum+1, 0, True, True, False, todo_revprops)
             except subvertpy.SubversionException, (_, num):
                 if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                     raise NoSuchRevision(branch=self,

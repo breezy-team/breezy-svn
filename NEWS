@@ -18,6 +18,9 @@ bzr-svn 1.0.4					  UNRELEASED
 
   * Cope with copying from paths with a # sign in them. (Jelmer Vernooij)
 
+  * Avoid fetching revision info for single unnecessary revision.
+    (Jelmer Vernooij)
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES
