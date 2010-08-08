@@ -82,7 +82,10 @@ def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths,
     """
     revnum = from_revnum
 
-    if prefixes in (None, [""], []):
+    if prefixes is not None:
+        prefixes = set(prefixes)
+
+    if prefixes in (None, set([""]), set()):
         return iter_all_changes(from_revnum, to_revnum, get_revision_paths,
                 revprop_list, limit)
     else:
@@ -90,21 +93,20 @@ def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths,
             get_revision_paths, revprop_list, limit)
 
 
-def iter_prefixes_changes(prefixes, from_revnum, to_revnum, 
+def iter_prefixes_changes(from_prefixes, from_revnum, to_revnum,
     get_revision_paths, revprop_list, limit=0):
-    prefixes = [p.strip("/") for p in prefixes]
+    assert type(from_prefixes) is set
+    from_prefixes = set([p.strip("/") for p in from_prefixes])
 
     assert from_revnum >= to_revnum, "path: %r, %d >= %d" % (
-            prefixes, from_revnum, to_revnum)
+            from_prefixes, from_revnum, to_revnum)
 
     revnum = from_revnum
-    todo_prefixes = { revnum: set(prefixes) }
+    todo_prefixes = { revnum: from_prefixes }
 
     i = 0
     while revnum >= to_revnum:
         prefixes = todo_prefixes.pop(revnum)
-        if not (revnum > 0):
-            raise AssertionError("Inconsistent revnum, prefixes: %r,%r" % (revnum, prefixes))
         revpaths = get_revision_paths(revnum)
 
         # Report this revision if any affected paths are changed

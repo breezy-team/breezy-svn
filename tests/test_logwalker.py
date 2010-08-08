@@ -59,6 +59,24 @@ class TestLogWalker(SubversionTestCase):
 
         self.assertEqual(2, len(list(walker.iter_changes(None, 1))))
 
+    def test_get_branch_log_copy_from_root(self):
+        repos_url = self.make_repository("a")
+
+        cb = self.get_commit_editor(repos_url)
+        cb.add_file("bla").modify()
+        cb.close()
+
+        cb = self.get_commit_editor(repos_url)
+        cb.add_dir("trunk", "")
+        cb.close()
+
+        walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
+
+        self.assertLogEquals( [({'trunk': ('A', '', 1, NODE_DIR)}, 2),
+             ({'bla': ('A', None, -1, NODE_FILE)}, 1),
+             ({'': ('A', None, -1, NODE_DIR)}, 0)],
+            (l[:2] for l in walker.iter_changes(["trunk"], 2, 0)))
+
     def test_get_branch_follow_branch(self):
         repos_url = self.make_repository("a")
         cb = self.get_commit_editor(repos_url)
