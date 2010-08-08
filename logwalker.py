@@ -299,6 +299,9 @@ class CachingLogWalker(object):
         to_revnum = max(min(self._latest_revnum, to_revnum+MAX_OVERHEAD_FETCH),
                         to_revnum)
 
+        if to_revnum <= self.saved_revnum:
+            return
+
         # Subversion 1.4 clients and servers can only deliver a limited set of
         # revprops
         if self._transport.has_capability("log-revprops"):
