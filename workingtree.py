@@ -920,7 +920,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 return simple_revprops_cache[revid]
             except KeyError:
                 revmeta, mapping = self.branch.repository._get_revmeta(revid)
-                revprops = revmeta.get_revprops()
+                revprops = revmeta.revprops
                 ret = (revmeta.revnum,
                        revprops[properties.PROP_REVISION_DATE],
                        revprops.get(properties.PROP_REVISION_AUTHOR, ""))

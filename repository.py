@@ -273,7 +273,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         if mapping is None:
             return
         if (len(fileprop_mappings) > 0 and
-            find_mapping_revprops(revmeta.get_revprops()) not in
+            find_mapping_revprops(revmeta.revprops) not in
                 (None, fileprop_mappings[0])):
             self.inconsistent_fileprop_revprop_cnt += 1
         self.checked_roundtripped_cnt += 1
@@ -281,7 +281,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             self.hidden_rev_cnt += 1
 
         mapping.check_fileprops(revmeta.get_changed_fileprops(), self)
-        mapping.check_revprops(revmeta.get_revprops(), self)
+        mapping.check_revprops(revmeta.revprops, self)
 
         for parent_revid in revmeta.get_rhs_parents(mapping):
             if not self.repository.has_revision(parent_revid):
@@ -290,13 +290,13 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         # TODO: Check that stored revno matches actual revision number
 
         # Check all paths are under branch root
-        branch_root = mapping.get_branch_root(revmeta.get_revprops())
+        branch_root = mapping.get_branch_root(revmeta.revprops)
         if branch_root is not None:
-            for p in revmeta.get_paths():
+            for p in revmeta.paths:
                 if not changes.path_is_child(branch_root, p):
                     self.paths_not_under_branch_root += 1
 
-        original_uuid = mapping.get_repository_uuid(revmeta.get_revprops())
+        original_uuid = mapping.get_repository_uuid(revmeta.revprops)
         if original_uuid is not None and original_uuid != self.repository.uuid:
             self.different_uuid_cnt += 1
 
@@ -318,7 +318,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         text_revisions = revmeta.get_text_revisions(mapping)
         text_ids = revmeta.get_fileid_overrides(mapping)
         fileid_map = self.repository.get_fileid_map(revmeta, mapping)
-        path_changes = revmeta.get_paths()
+        path_changes = revmeta.paths
         for path in set(text_ids.keys() + text_revisions.keys()):
             full_path = urlutils.join(revmeta.branch_path, path)
             # TODO Check consistency against parent data
@@ -1028,7 +1028,7 @@ class SvnRepository(ForeignRepository):
         if self.transport.has_capability("commit-revprops") == False:
             return False
         for revmeta in self._revmeta_provider.iter_all_revisions(self.get_layout(), None, self.get_latest_revnum()):
-            if is_bzr_revision_revprops(revmeta.get_revprops()):
+            if is_bzr_revision_revprops(revmeta.revprops):
                 return True
         return False
 

@@ -775,7 +775,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         if self._id_map is not None:
             return self._id_map
 
-        local_changes = get_local_changes(self.revmeta.get_paths(),
+        local_changes = get_local_changes(self.revmeta.paths,
                     self.revmeta.branch_path)
         self._id_map = self.source.fileid_map.get_idmap_delta(local_changes, self.revmeta,
             self.mapping)

@@ -1,5 +1,7 @@
+# Tests for repository
 
- 
+# Copyright (C) 2010 Jelmer Vernooij <jelmer@samba.org>
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -863,7 +865,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         for (branch_path, changes, revnum), g in zip(expected, got):
             self.assertEquals(revnum, g.revnum)
             self.assertEquals(branch_path, g.branch_path)
-            self.assertChangedPathsEquals(changes, g.get_paths())
+            self.assertChangedPathsEquals(changes, g.paths)
 
     def test_fetch_property_change_only_trunk(self):
         repos_url = self.make_repository('d')

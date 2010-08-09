@@ -290,7 +290,7 @@ class FileIdMapStore(object):
         return idmap
 
     def update_idmap(self, map, revmeta, mapping):
-        local_changes = get_local_changes(revmeta.get_paths(), revmeta.branch_path)
+        local_changes = get_local_changes(revmeta.paths, revmeta.branch_path)
         idmap = self.get_idmap_delta(local_changes, revmeta, mapping)
         revid = revmeta.get_revision_id(mapping)
         text_revisions = determine_text_revisions(local_changes, revid,

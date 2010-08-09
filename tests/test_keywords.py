@@ -49,7 +49,7 @@ class CompressKeywordsTests(TestCase):
 class MockRevmeta(object):
 
     def __init__(self, revprops, revnum, branch_path, repo_url):
-        self._revprops = revprops
+        self.revprops = revprops
         self.revnum = revnum
         self.branch_path = branch_path
         class MockRepo(object):
@@ -57,9 +57,6 @@ class MockRevmeta(object):
             def __init__(self, url):
                 self.base = url
         self.repository = MockRepo(repo_url)
-
-    def get_revprops(self):
-        return self._revprops
 
 
 class TestKeywordExpansion(TestCase):

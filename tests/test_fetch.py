@@ -2126,7 +2126,7 @@ Node-copyfrom-path: x
         self.assertChangedPathsEquals({
             'trunk/adir': (u'R', 'trunk/adir', 2, NODE_DIR),
             'trunk/adir/foofile': (u'A', None, -1, NODE_FILE)},
-              oldrepos._revmeta_provider.get_revision("trunk", 3).get_paths())
+              oldrepos._revmeta_provider.get_revision("trunk", 3).paths)
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f")
         newrepos = dir.create_repository()
@@ -2163,7 +2163,7 @@ Node-copyfrom-path: x
         self.assertChangedPathsEquals({
             'trunk/adir': (u'R', 'trunk/adir', 1, NODE_DIR),
             'trunk/adir/foofile': (u'A', None, -1, NODE_FILE)},
-              oldrepos._revmeta_provider.get_revision("trunk", 3).get_paths())
+              oldrepos._revmeta_provider.get_revision("trunk", 3).paths)
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f")
         newrepos = dir.create_repository()

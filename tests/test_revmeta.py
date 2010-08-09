@@ -142,7 +142,7 @@ class TestWithRepository(SubversionTestCase):
         self.assertTrue(revmeta1.changes_branch_root())
         self.assertFalse(revmeta2.changes_branch_root())
 
-    def test_get_paths(self):
+    def test_paths(self):
         repos_url = self.make_repository('d')
 
         dc = self.get_commit_editor(repos_url)
@@ -159,9 +159,9 @@ class TestWithRepository(SubversionTestCase):
         revmeta2 = repos._revmeta_provider.get_revision("", 2)
 
         self.assertChangedPathsEquals({"": ("M", None, -1, NODE_DIR)}, 
-                          revmeta1.get_paths())
+                          revmeta1.paths)
         self.assertChangedPathsEquals({"bar": ("A", None, -1, NODE_FILE)},
-                          revmeta2.get_paths())
+                          revmeta2.paths)
 
     def test_foreign_revid(self):
         repos_url = self.make_repository('d')
@@ -177,7 +177,7 @@ class TestWithRepository(SubversionTestCase):
         self.assertEquals((provider.repository.uuid, "", 1),
                 revmeta1.get_foreign_revid())
 
-    def test_get_revprops(self):
+    def test_revprops(self):
         repos_url = self.make_repository('d')
 
         dc = self.get_commit_editor(repos_url)
@@ -187,7 +187,7 @@ class TestWithRepository(SubversionTestCase):
         provider = self.make_provider(repos_url)
         revmeta1 = provider.get_revision("", 1)
         self.assertEquals(set(["svn:date", "svn:author", "svn:log"]),
-                          set(revmeta1.get_revprops().keys()))
+                          set(revmeta1.revprops.keys()))
 
     def test_is_changes_root(self):
         repos_url = self.make_repository('d')
