@@ -109,13 +109,17 @@ class RevisionMetadata(object):
     from other known data before contacting the Subversions server.
     """
 
-    __slots__ = ('repository', 'branch_path', 'revnum', 'uuid')
+    __slots__ = ('repository', 'branch_path', 'revnum', 'uuid',
+                 '_paths', '_revprops', '_log')
 
-    def __init__(self, repository, branch_path, revnum):
-        self.repository = repository
+    def __init__(self, logwalker, uuid, branch_path, revnum, paths=None,
+            revprops=None):
         self.branch_path = branch_path
         self.revnum = revnum
-        self.uuid = repository.uuid
+        self.uuid = uuid
+        self._log = logwalker
+        self._paths = paths
+        self._revprops = revprops
 
     def __eq__(self, other):
         return (type(self) == type(other) and
@@ -134,6 +138,50 @@ class RevisionMetadata(object):
         return "<%s for revision %d, path %s in repository %r>" % (
             self.__class__.__name__, self.revnum, self.branch_path, self.uuid)
 
+    def get_paths(self):
+        """Fetch the changed paths dictionary for this revision.
+        """
+        if self._paths is None:
+            self._paths = self._log.get_revision_paths(self.revnum)
+        return self._paths
+
+    def get_revprops(self):
+        """Get the revision properties set on the revision."""
+        if self._revprops is None:
+            self._revprops = self._log.revprop_list(self.revnum)
+        return self._revprops
+
+    def knows_revprops(self):
+        """Check whether all revision properties can be cheaply retrieved."""
+        if self._revprops is None:
+            return False
+        revprops = self.get_revprops()
+        return isinstance(revprops, dict) or revprops.is_loaded
+
+    def changes_outside_root(self):
+        """Check if there are any changes in this svn revision not under
+        this revmeta's root."""
+        return changes.changes_outside_branch_path(self.branch_path,
+            self.get_paths().keys())
+
+    def is_changes_root(self):
+        """Check whether this revisions root is the root of the changes
+        in this svn revision.
+
+        This is a requirement for revisions pushed with bzr-svn using
+        file properties.
+        """
+        return changes.changes_root(self.get_paths().keys()) == self.branch_path
+
+    def __hash__(self):
+        return hash((self.__class__, self.get_foreign_revid()))
+
+    def get_foreign_revid(self):
+        """Return the foreign revision id for this revision.
+
+        :return: Tuple with uuid, branch path and revision number.
+        """
+        return (self.uuid, self.branch_path, self.revnum)
 
 
 class BzrRevisionMetadata(RevisionMetadata):
@@ -145,24 +193,22 @@ class BzrRevisionMetadata(RevisionMetadata):
     """
 
     __slots__ = ('check_revprops', '_get_fileprops_fn',
-                 '_log', '_paths', '_revprops',
                  '_changed_fileprops', '_fileprops',
                  '_direct_lhs_parent_known', '_consider_bzr_fileprops',
                  '_consider_bzr_revprops', '_estimated_fileprop_ancestors',
                  'metaiterators', 'children',
                  '_direct_lhs_parent_revmeta', '_revprop_redirect_revnum')
 
-    def __init__(self, repository, check_revprops, get_fileprops_fn, logwalker,
-                 branch_path, revnum, paths, revprops,
+    def __init__(self, repository, check_revprops, get_fileprops_fn,
+                 branch_path, logwalker, revnum, paths, revprops,
                  changed_fileprops=None, fileprops=None,
                  metaiterator=None):
-        super(BzrRevisionMetadata, self).__init__(repository, branch_path,
-            revnum)
+        super(BzrRevisionMetadata, self).__init__(logwalker,
+            repository.uuid, branch_path, revnum, paths=paths,
+            revprops=revprops)
+        self.repository = repository
         self.check_revprops = check_revprops
         self._get_fileprops_fn = get_fileprops_fn
-        self._log = logwalker
-        self._paths = paths
-        self._revprops = revprops
         self._changed_fileprops = changed_fileprops
         self._fileprops = fileprops
         self._direct_lhs_parent_known = False
@@ -180,20 +226,6 @@ class BzrRevisionMetadata(RevisionMetadata):
         if self.knows_changed_fileprops():
             return self.get_changed_fileprops() != {}
         return self.branch_path in self.get_paths()
-
-    def get_foreign_revid(self):
-        """Return the foreign revision id for this revision.
-
-        :return: Tuple with uuid, branch path and revision number.
-        """
-        return (self.uuid, self.branch_path, self.revnum)
-
-    def get_paths(self):
-        """Fetch the changed paths dictionary for this revision.
-        """
-        if self._paths is None:
-            self._paths = self._log.get_revision_paths(self.revnum)
-        return self._paths
 
     def get_revision_info(self, mapping):
         return self._import_from_props(mapping,
@@ -257,12 +289,6 @@ class BzrRevisionMetadata(RevisionMetadata):
                 r._fileprops = lm._fileprops
         return self._fileprops
 
-    def get_revprops(self):
-        """Get the revision properties set on the revision."""
-        if self._revprops is None:
-            self._revprops = self._log.revprop_list(self.revnum)
-        return self._revprops
-
     def knows_changed_fileprops(self):
         """Check whether the changed file properties can be cheaply retrieved."""
         if self._changed_fileprops is None:
@@ -277,13 +303,6 @@ class BzrRevisionMetadata(RevisionMetadata):
             return False
         fileprops = self.get_fileprops()
         return isinstance(fileprops, dict) or fileprops.is_loaded
-
-    def knows_revprops(self):
-        """Check whether all revision properties can be cheaply retrieved."""
-        if self._revprops is None:
-            return False
-        revprops = self.get_revprops()
-        return isinstance(revprops, dict) or revprops.is_loaded
 
     def get_previous_fileprops(self):
         """Return the file properties set on the branch root before this
@@ -505,21 +524,6 @@ class BzrRevisionMetadata(RevisionMetadata):
     def estimate_bzr_hidden_fileprop_ancestors(self):
         return self._estimate_fileprop_ancestors(SVN_PROP_BZR_HIDDEN,
             estimate_bzr_ancestors)
-
-    def is_changes_root(self):
-        """Check whether this revisions root is the root of the changes
-        in this svn revision.
-
-        This is a requirement for revisions pushed with bzr-svn using
-        file properties.
-        """
-        return changes.changes_root(self.get_paths().keys()) == self.branch_path
-
-    def changes_outside_root(self):
-        """Check if there are any changes in this svn revision not under
-        this revmeta's root."""
-        return changes.changes_outside_branch_path(self.branch_path,
-            self.get_paths().keys())
 
     def is_hidden(self, mapping):
         """Check whether this revision should be hidden from Bazaar history."""
@@ -816,11 +820,8 @@ class BzrRevisionMetadata(RevisionMetadata):
         """
         return iter(get_roundtrip_ancestor_revids(self.get_fileprops()))
 
-    def __hash__(self):
-        return hash((self.__class__, self.get_foreign_revid()))
 
-
-class CachingBzrRevisionMetadata(RevisionMetadata):
+class CachingBzrRevisionMetadata(BzrRevisionMetadata):
     """Wrapper around BzrRevisionMetadata that stores some results in a cache."""
 
     __slots__ = ('base', '_revid_cache', '_revinfo_cache', '_revision_info',
@@ -829,10 +830,9 @@ class CachingBzrRevisionMetadata(RevisionMetadata):
 
     def __init__(self, repository, *args, **kwargs):
         self.base = super(CachingBzrRevisionMetadata, self)
-        self.base.__init__(repository, *args,
-            **kwargs)
-        self._parents_cache = getattr(self.repository._real_parents_provider,
-                                      "_cache", None)
+        self.base.__init__(repository, *args, **kwargs)
+        self._parents_cache = getattr(
+            self.repository._real_parents_provider, "_cache", None)
         self._revid_cache = self.repository.revmap.cache
         self._revinfo_cache = self.repository.revinfo_cache
         self._revision_info = {}
@@ -1298,8 +1298,8 @@ class RevisionMetadataProvider(object):
         revision isn't cached yet.
         """
         return self._revmeta_cls(self.repository, self.check_revprops,
-                                 self._get_fileprops_fn, self._log,
-                                 path, revnum, changes, revprops,
+                                 self._get_fileprops_fn,
+                                 path, self._log, revnum, changes, revprops,
                                  changed_fileprops=changed_fileprops,
                                  fileprops=fileprops, metaiterator=metaiterator)
 
