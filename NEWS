@@ -21,6 +21,9 @@ bzr-svn 1.0.4					  UNRELEASED
   * Avoid fetching revision info for single unnecessary revision.
     (Jelmer Vernooij)
 
+  * Support revision tracking when copying from root. (Jelmer Vernooij,
+     #438928)
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES

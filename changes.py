@@ -172,6 +172,6 @@ def changes_outside_branch_path(branch_path, paths):
 
 def under_prefixes(path, prefixes):
     """Check if path is under one of prefixes."""
-    if prefixes is None:
+    if prefixes is None or "" in prefixes:
         return True
     return any([x for x in prefixes if path.startswith(x+"/") or x == path or x == ""])

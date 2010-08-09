@@ -24,6 +24,7 @@ from bzrlib.plugins.svn.changes import (
     changes_root,
     find_prev_location,
     path_is_child,
+    under_prefixes,
     )
 
 class PathIsChildTests(TestCase):
@@ -128,3 +129,22 @@ class ApplyReverseChangesTests(TestCase):
                 { "packages/chaco2": ("D", None, -1, NODE_DIR),
                     "packages/enthought-chaco2": ("A", "packages/chaco2", 3, NODE_DIR),
                     "packages/enthought-chaco2/trunk": ("D", None, -1, NODE_DIR)})))
+
+
+class UnderPrefixesTests(TestCase):
+
+    def test_direct_match(self):
+        self.assertTrue(under_prefixes("foo", ["foo"]))
+        self.assertTrue(under_prefixes("foo", ["la", "foo"]))
+        self.assertFalse(under_prefixes("foob", ["foo"]))
+        self.assertFalse(under_prefixes("foob", []))
+
+    def test_child(self):
+        self.assertTrue(under_prefixes("foo", [""]))
+        self.assertTrue(under_prefixes("foo/bar", ["foo"]))
+        self.assertTrue(under_prefixes("foo/bar", [""]))
+        self.assertFalse(under_prefixes("foo/bar", ["bar"]))
+        self.assertTrue(under_prefixes("foo/bar", ["bar", "foo"]))
+
+    def test_none(self):
+        self.assertTrue(under_prefixes("foo", None))
