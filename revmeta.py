@@ -103,44 +103,19 @@ class MetaHistoryIncomplete(Exception):
 
 
 class RevisionMetadata(object):
-    """Object describing a revision with bzr semantics in a Subversion
-    repository.
+    """Object describing a revision in a Subversion repository.
 
     Tries to be as lazy as possible - data is not retrieved or calculated
     from other known data before contacting the Subversions server.
     """
 
-    __slots__ = ('repository', 'check_revprops', '_get_fileprops_fn',
-                 '_log', 'branch_path', '_paths', 'revnum', '_revprops',
-                 '_changed_fileprops', '_fileprops',
-                 '_direct_lhs_parent_known', '_consider_bzr_fileprops',
-                 '_consider_bzr_revprops', '_estimated_fileprop_ancestors',
-                 'metaiterators', 'uuid', 'children',
-                 '_direct_lhs_parent_revmeta', '_revprop_redirect_revnum')
+    __slots__ = ('repository', 'branch_path', 'revnum', 'uuid')
 
-    def __init__(self, repository, check_revprops, get_fileprops_fn, logwalker,
-                 uuid, branch_path, revnum, paths, revprops,
-                 changed_fileprops=None, fileprops=None,
-                 metaiterator=None):
+    def __init__(self, repository, branch_path, revnum):
         self.repository = repository
-        self.check_revprops = check_revprops
-        self._get_fileprops_fn = get_fileprops_fn
-        self._log = logwalker
         self.branch_path = branch_path
-        self._paths = paths
         self.revnum = revnum
-        self._revprops = revprops
-        self._changed_fileprops = changed_fileprops
-        self._fileprops = fileprops
-        self._direct_lhs_parent_known = False
-        self._consider_bzr_fileprops = None
-        self._consider_bzr_revprops = None
-        self._estimated_fileprop_ancestors = {}
-        self.metaiterators = set()
-        if metaiterator is not None:
-            self.metaiterators.add(metaiterator)
-        self.uuid = uuid
-        self.children = set()
+        self.uuid = repository.uuid
 
     def __eq__(self, other):
         return (type(self) == type(other) and
@@ -156,7 +131,48 @@ class RevisionMetadata(object):
                    (other.uuid, other.revnum, other.branch_path))
 
     def __repr__(self):
-        return "<%s for revision %d, path %s in repository %r>" % (self.__class__.__name__, self.revnum, self.branch_path, self.uuid)
+        return "<%s for revision %d, path %s in repository %r>" % (
+            self.__class__.__name__, self.revnum, self.branch_path, self.uuid)
+
+
+
+class BzrRevisionMetadata(RevisionMetadata):
+    """Object describing a revision with bzr semantics in a Subversion
+    repository.
+
+    Tries to be as lazy as possible - data is not retrieved or calculated
+    from other known data before contacting the Subversions server.
+    """
+
+    __slots__ = ('check_revprops', '_get_fileprops_fn',
+                 '_log', '_paths', '_revprops',
+                 '_changed_fileprops', '_fileprops',
+                 '_direct_lhs_parent_known', '_consider_bzr_fileprops',
+                 '_consider_bzr_revprops', '_estimated_fileprop_ancestors',
+                 'metaiterators', 'children',
+                 '_direct_lhs_parent_revmeta', '_revprop_redirect_revnum')
+
+    def __init__(self, repository, check_revprops, get_fileprops_fn, logwalker,
+                 branch_path, revnum, paths, revprops,
+                 changed_fileprops=None, fileprops=None,
+                 metaiterator=None):
+        super(BzrRevisionMetadata, self).__init__(repository, branch_path,
+            revnum)
+        self.check_revprops = check_revprops
+        self._get_fileprops_fn = get_fileprops_fn
+        self._log = logwalker
+        self._paths = paths
+        self._revprops = revprops
+        self._changed_fileprops = changed_fileprops
+        self._fileprops = fileprops
+        self._direct_lhs_parent_known = False
+        self._consider_bzr_fileprops = None
+        self._consider_bzr_revprops = None
+        self._estimated_fileprop_ancestors = {}
+        self.metaiterators = set()
+        if metaiterator is not None:
+            self.metaiterators.add(metaiterator)
+        self.children = set()
 
     def changes_branch_root(self):
         """Check whether the branch root was modified in this revision.
@@ -295,7 +311,8 @@ class RevisionMetadata(object):
         """
         if (self._direct_lhs_parent_known and
             self._direct_lhs_parent_revmeta != parent_revmeta):
-            raise AssertionError("Tried registering %r as parent while %r already was parent for %r" % (parent_revmeta, self._direct_lhs_parent_revmeta, self))
+            raise AssertionError("Tried registering %r as parent while %r already was parent for %r" % (
+                parent_revmeta, self._direct_lhs_parent_revmeta, self))
         self._direct_lhs_parent_known = True
         self._direct_lhs_parent_revmeta = parent_revmeta
         if parent_revmeta is not None:
@@ -803,15 +820,15 @@ class RevisionMetadata(object):
         return hash((self.__class__, self.get_foreign_revid()))
 
 
-class CachingRevisionMetadata(RevisionMetadata):
-    """Wrapper around RevisionMetadata that stores some results in a cache."""
+class CachingBzrRevisionMetadata(RevisionMetadata):
+    """Wrapper around BzrRevisionMetadata that stores some results in a cache."""
 
     __slots__ = ('base', '_revid_cache', '_revinfo_cache', '_revision_info',
                  '_original_mapping', '_original_mapping_set',
                  '_stored_lhs_parent_revid', '_parents_cache', 'paths')
 
     def __init__(self, repository, *args, **kwargs):
-        self.base = super(CachingRevisionMetadata, self)
+        self.base = super(CachingBzrRevisionMetadata, self)
         self.base.__init__(repository, *args,
             **kwargs)
         self._parents_cache = getattr(self.repository._real_parents_provider,
@@ -1052,7 +1069,8 @@ class RevisionMetadataBrowser(object):
         self._unusual_history = defaultdict(set)
         self._provider = provider
         self._actions = []
-        self._iter_log = self._provider._log.iter_changes(self.from_prefixes, self.from_revnum, self.to_revnum, pb=pb)
+        self._iter_log = self._provider._log.iter_changes(self.from_prefixes,
+                self.from_revnum, self.to_revnum, pb=pb)
         self._project = project
         self._pb = pb
         self._iter = self.do()
@@ -1061,7 +1079,8 @@ class RevisionMetadataBrowser(object):
         return ListBuildingIterator(self._actions, self.next)
 
     def __repr__(self):
-        return "<RevisionMetadataBrowser from %d to %d, layout: %r>" % (self.from_revnum, self.to_revnum, self.layout)
+        return "<RevisionMetadataBrowser from %d to %d, layout: %r>" % (
+                self.from_revnum, self.to_revnum, self.layout)
 
     def __eq__(self, other):
         return (type(self) == type(other) and
@@ -1078,7 +1097,8 @@ class RevisionMetadataBrowser(object):
             prefixes = None
         else:
             prefixes = tuple(self.from_prefixes)
-        return hash((type(self), self.from_revnum, self.to_revnum, prefixes, hash(self.layout)))
+        return hash((type(self), self.from_revnum, self.to_revnum, prefixes,
+            hash(self.layout)))
 
     def under_prefixes(self, path, prefixes):
         if prefixes is None:
@@ -1267,9 +1287,9 @@ class RevisionMetadataProvider(object):
         self.check_revprops = check_revprops
         self._open_metaiterators = []
         if cache:
-            self._revmeta_cls = CachingRevisionMetadata
+            self._revmeta_cls = CachingBzrRevisionMetadata
         else:
-            self._revmeta_cls = RevisionMetadata
+            self._revmeta_cls = BzrRevisionMetadata
 
     def create_revision(self, path, revnum, changes=None, revprops=None,
                         changed_fileprops=None, fileprops=None,
@@ -1279,8 +1299,8 @@ class RevisionMetadataProvider(object):
         """
         return self._revmeta_cls(self.repository, self.check_revprops,
                                  self._get_fileprops_fn, self._log,
-                                 self.repository.uuid, path, revnum, changes,
-                                 revprops, changed_fileprops=changed_fileprops,
+                                 path, revnum, changes, revprops,
+                                 changed_fileprops=changed_fileprops,
                                  fileprops=fileprops, metaiterator=metaiterator)
 
     def add_metaiterator(self, iterator):
