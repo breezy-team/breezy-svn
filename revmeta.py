@@ -1051,8 +1051,12 @@ class RevisionMetadataBrowser(object):
         """
         if prefixes in ([""], None):
             self.from_prefixes = None
+            self._pending_prefixes = None
+            self._prefixes = None
         else:
             self.from_prefixes = [prefix.strip("/") for prefix in prefixes]
+            self._pending_prefixes = defaultdict(set)
+            self._prefixes = set(self.from_prefixes)
         self.from_revnum = from_revnum
         self.to_revnum = to_revnum
         self._last_revnum = None
@@ -1060,12 +1064,6 @@ class RevisionMetadataBrowser(object):
         # Two-dimensional dictionary for each set of revision meta
         # branches that exist *after* a revision
         self._pending_ancestors = defaultdict(lambda: defaultdict(set))
-        if self.from_prefixes is None:
-            self._pending_prefixes = None
-            self._prefixes = None
-        else:
-            self._pending_prefixes = defaultdict(set)
-            self._prefixes = set(self.from_prefixes)
         self._ancestors = defaultdict(set)
         self._unusual = set()
         self._unusual_history = defaultdict(set)
