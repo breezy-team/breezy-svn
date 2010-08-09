@@ -20,11 +20,6 @@ try:
 except ImportError:
     from bzrlib.plugins.svn.pycompat import defaultdict
 
-try:
-    any
-except NameError:
-    from bzrlib.plugins.svn.pycompat import any
-
 import bisect
 from itertools import (
     imap,
@@ -964,7 +959,8 @@ class RevisionMetadataBranch(object):
         return (type(self) == type(other) and
                 self._history_limit == other._history_limit and
                 ((self._revs == [] and other._revs == []) or
-                 (self._revs != [] and other._revs != [] and self._revs[0] == other._revs[0])))
+                 (self._revs != [] and other._revs != [] and
+                  self._revs[0] == other._revs[0])))
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -978,7 +974,8 @@ class RevisionMetadataBranch(object):
         if len(self._revs) == 0:
             return "<Empty RevisionMetadataBranch>"
         else:
-            return "<RevisionMetadataBranch starting at %s revision %d>" % (self._revs[0].branch_path, self._revs[0].revnum)
+            return "<RevisionMetadataBranch starting at %s revision %d>" % (
+                    self._revs[0].branch_path, self._revs[0].revnum)
 
     def __iter__(self):
         return ListBuildingIterator(self._revs, self.next)
@@ -1100,11 +1097,6 @@ class RevisionMetadataBrowser(object):
         return hash((type(self), self.from_revnum, self.to_revnum, prefixes,
             hash(self.layout)))
 
-    def under_prefixes(self, path, prefixes):
-        if prefixes is None:
-            return True
-        return any([x for x in prefixes if path.startswith(x+"/") or x == path or x == ""])
-
     def get_lhs_parent(self, revmeta):
         """Find the *direct* left hand side parent of a revision metadata object.
 
@@ -1167,7 +1159,7 @@ class RevisionMetadataBrowser(object):
             # Eliminate anything that's not under prefixes/
             if self._prefixes is not None:
                 for bp in self._ancestors.keys():
-                    if not self.under_prefixes(bp, self._prefixes):
+                    if not changes.under_prefixes(bp, self._prefixes):
                         del self._ancestors[bp]
                         self._unusual.discard(bp)
 
@@ -1180,7 +1172,7 @@ class RevisionMetadataBrowser(object):
             # Find out what branches have changed
             for p in sorted(paths):
                 if (self._prefixes is not None and
-                    not self.under_prefixes(p, self._prefixes)):
+                    not changes.under_prefixes(p, self._prefixes)):
                     continue
                 action = paths[p][0]
                 try:

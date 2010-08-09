@@ -18,6 +18,11 @@
 
 from subvertpy import NODE_DIR
 
+try:
+    any
+except NameError:
+    from bzrlib.plugins.svn.pycompat import any
+
 REV0_CHANGES = {"": ('A', None, -1, NODE_DIR)}
 
 
@@ -163,3 +168,10 @@ def changes_outside_branch_path(branch_path, paths):
         if not path_is_child(branch_path, p):
             return True
     return False
+
+
+def under_prefixes(path, prefixes):
+    """Check if path is under one of prefixes."""
+    if prefixes is None:
+        return True
+    return any([x for x in prefixes if path.startswith(x+"/") or x == path or x == ""])
