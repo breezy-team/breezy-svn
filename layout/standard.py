@@ -94,7 +94,7 @@ class TrunkLayout(RepositoryLayout):
         :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
-        assert isinstance(path, str)
+        assert type(path) is str
         path = path.strip("/")
         parts = path.split("/")
         for i, p in enumerate(parts):
@@ -330,7 +330,7 @@ class WildcardLayout(RepositoryLayout):
     def __init__(self, branches=[], tags=[]):
         self.branches = [b.strip("/") for b in branches]
         self.tags = [t.strip("/") for t in tags]
-        assert all([isinstance(b, str) for b in self.branches + self.tags])
+        assert all([type(b) is str for b in self.branches + self.tags])
 
     def supports_tags(self):
         return (self.tags != [])
@@ -472,7 +472,7 @@ class InverseTrunkLayout(RepositoryLayout):
         :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
-        assert isinstance(path, str)
+        assert type(path) is str
         path = path.strip("/")
         parts = path.split("/")
         if len(parts) == 0:
