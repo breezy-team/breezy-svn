@@ -64,7 +64,7 @@ class RevidMap(object):
 
             for entry_revid, branch, min_revno, max_revno, mapping in self.discover_fileprop_revids(layout, fileprops_to_revnum, 0, project, pb=pb):
                 if revid == entry_revid:
-                    (foreign_revid, mapping_name) = self.bisect_revid_revnum(revid, branch, min_revno, max_revno)
+                    (foreign_revid, mapping_name) = self.bisect_fileprop_revid_revnum(revid, branch, min_revno, max_revno)
                     return (foreign_revid, mapping_name)
         finally:
             pb.finished()
@@ -136,7 +136,7 @@ class RevidMap(object):
                     yield (entry_revid, revmeta.branch_path, 0,
                            revmeta.revnum, mapping)
 
-    def bisect_revid_revnum(self, revid, branch_path, min_revnum, max_revnum):
+    def bisect_fileprop_revid_revnum(self, revid, branch_path, min_revnum, max_revnum):
         """Find out what the actual revnum was that corresponds to a revid.
 
         :param revid: Revision id to search for
@@ -283,10 +283,12 @@ class DiskCachingRevidMap(object):
             if found is None:
                 raise e
             (branch_path, min_revnum, max_revnum, mapping) = found
+            if min_revnum == max_revnum:
+                return (self.actual.repos.uuid, branch_path, min_revnum), mapping
             assert min_revnum <= max_revnum
             assert isinstance(branch_path, str)
 
-        ((uuid, branch_path, revnum), mapping) = self.actual.bisect_revid_revnum(revid,
+        ((uuid, branch_path, revnum), mapping) = self.actual.bisect_fileprop_revid_revnum(revid,
             branch_path, min_revnum, max_revnum)
         self.remember_entry(revid, branch_path, revnum, revnum, mapping.name)
         return (uuid, branch_path, revnum), mapping
