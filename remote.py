@@ -23,6 +23,7 @@ import urllib
 from bzrlib import (
     errors,
     trace,
+    version_info as bzrlib_version,
     )
 from bzrlib.bzrdir import (
     BzrDirFormat,
@@ -219,7 +220,17 @@ class SvnRemoteAccess(BzrDir):
         branch.bzrdir = self
         return branch
 
-    def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
+    if bzrlib_version >= (2, 2):
+        def open_branch(self, name=None, unsupported=False, 
+            ignore_fallbacks=None):
+            return self._open_branch(name=name,
+                ignore_fallbacks=ignore_fallbacks, unsupported=unsupported)
+    else:
+        def open_branch(self, ignore_fallbacks=None, unsupported=False):
+            return self._open_branch(name=None,
+                ignore_fallbacks=ignore_fallbacks, unsupported=unsupported)
+
+    def _open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
         """See BzrDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         if name is not None:

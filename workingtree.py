@@ -43,6 +43,7 @@ import bzrlib.add
 from bzrlib import (
     osutils,
     urlutils,
+    version_info as bzrlib_version,
     )
 from bzrlib.branch import (
     BranchReferenceFormat,
@@ -1130,7 +1131,18 @@ class SvnCheckout(BzrDir):
         """See BzrDir.create_branch()."""
         raise NotImplementedError(self.create_branch)
 
-    def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
+    if bzrlib_version >= (2, 2):
+        def open_branch(self, name=None, unsupported=False, 
+            ignore_fallbacks=None):
+            return self._open_branch(name=name,
+                ignore_fallbacks=ignore_fallbacks, unsupported=unsupported)
+    else:
+        def open_branch(self, ignore_fallbacks=None, unsupported=False):
+            return self._open_branch(name=None,
+                ignore_fallbacks=ignore_fallbacks, unsupported=unsupported)
+
+
+    def _open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
         """See BzrDir.open_branch()."""
         repos = self._find_repository()
 
