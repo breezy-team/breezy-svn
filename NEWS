@@ -24,6 +24,8 @@ bzr-svn 1.0.4					  UNRELEASED
   * Support revision tracking when copying from root. (Jelmer Vernooij,
      #438928)
 
+  * Fix handling of revision metadata. (Jelmer Vernooij, #612611)
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES
