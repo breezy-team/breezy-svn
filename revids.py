@@ -96,13 +96,17 @@ class RevidMap(object):
         reuse_policy = self.repos.get_config().get_reuse_revisions()
         assert reuse_policy in ("other-branches", "removed-branches", "none")
         check_removed = (reuse_policy == "removed-branches")
-        for (branch, revno, exists) in self.repos.find_fileprop_paths(layout, from_revnum, to_revnum, project, check_removed=check_removed):
+        for (branch, revno, exists) in self.repos.find_fileprop_paths(
+                layout, from_revnum, to_revnum, project,
+                check_removed=check_removed):
             assert type(branch) is str
             assert type(revno) is int
-            iterator = self.repos._revmeta_provider.iter_reverse_branch_changes(branch, revno, to_revnum=0, limit=0)
+            iterator = self.repos._revmeta_provider.iter_reverse_branch_changes(
+                    branch, revno, to_revnum=0, limit=0)
             yield iterator.next()
 
-    def discover_fileprop_revids(self, layout, from_revnum, to_revnum, project=None, pb=None):
+    def discover_fileprop_revids(self, layout, from_revnum, to_revnum,
+            project=None, pb=None):
         assert from_revnum >= to_revnum
         for revmeta in self.find_branch_tips(layout, from_revnum, to_revnum,
                                              project):
@@ -256,7 +260,12 @@ class DiskCachingRevidMap(object):
                         found = (branch, revnum, revnum, mapping)
                     self.remember_entry(entry_revid, branch, revnum,
                                             revnum, mapping.name)
-                if fileprops_to_revnum > last_checked:
+            finally:
+                pb.finished()
+
+            if fileprops_to_revnum > last_checked:
+                pb = ui.ui_factory.nested_progress_bar()
+                try:
                     for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_fileprop_revids(
                             layout, fileprops_to_revnum, last_checked, project, pb):
                         min_revno = max(last_checked, min_revno)
@@ -264,8 +273,9 @@ class DiskCachingRevidMap(object):
                             found = (branch, min_revno, max_revno, mapping)
                         self.remember_entry(entry_revid, branch, min_revno,
                                             max_revno, mapping.name)
-            finally:
-                pb.finished()
+                finally:
+                    pb.finished()
+
             # We've added all the revision ids for this layout in the
             # repository, so no need to check again unless new revisions got
             # added
