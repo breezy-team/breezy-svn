@@ -255,7 +255,7 @@ class SubversionProgressReporter(object):
         ui.ui_factory.report_transport_activity(self, changed, None)
 
 
-def Connection(url, auth=None):
+def Connection(url, auth=None, config=None):
     # Subvertpy <= 0.6.3 has a bug in the reference counting of the
     # progress update function
     if subvertpy.__version__ >= (0, 6, 3):
@@ -266,7 +266,8 @@ def Connection(url, auth=None):
     try:
         ret = subvertpy.ra.RemoteAccess(url, auth=auth,
                 client_string_func=bzrlib.plugins.svn.get_client_string,
-                progress_cb=progress_cb)
+                progress_cb=progress_cb,
+                config=config)
         if 'transport' in debug.debug_flags:
             ret = MutteringRemoteAccess(ret)
     except subvertpy.SubversionException, e:
