@@ -64,7 +64,8 @@ class RevidMap(object):
 
             for entry_revid, branch, min_revno, max_revno, mapping in self.discover_fileprop_revids(layout, fileprops_to_revnum, 0, project, pb=pb):
                 if revid == entry_revid:
-                    return self.bisect_revid_revnum(revid, branch, min_revno, max_revno)
+                    (foreign_revid, mapping_name) = self.bisect_revid_revnum(revid, branch, min_revno, max_revno)
+                    return (foreign_revid, mapping_name)
         finally:
             pb.finished()
         raise NoSuchRevision(self, revid)
@@ -79,16 +80,15 @@ class RevidMap(object):
         for (paths, revnum, revprops) in self.repos._log.iter_changes(None, from_revnum, to_revnum):
             if pb is not None:
                 pb.update("discovering revprop revisions", from_revnum-revnum, from_revnum-to_revnum)
-            if not is_bzr_revision_revprops(revprops):
-                continue
-            mapping = find_mapping_revprops(revprops)
-            assert mapping is not None
-            branch_path = mapping.get_branch_root(revprops)
-            if branch_path is None:
-                continue
-            revno, revid, hidden = mapping.get_revision_id_revprops(revprops)
-            if revid is not None:
-                yield (revid, branch_path.strip("/"), revnum, mapping)
+            if is_bzr_revision_revprops(revprops):
+                mapping = find_mapping_revprops(revprops)
+                assert mapping is not None
+                branch_path = mapping.get_branch_root(revprops)
+                if branch_path is None:
+                    continue
+                revno, revid, hidden = mapping.get_revision_id_revprops(revprops)
+                if revid is not None:
+                    yield (revid, branch_path.strip("/"), revnum, mapping)
 
     def find_branch_tips(self, layout, from_revnum, to_revnum, project=None):
         assert from_revnum >= to_revnum
