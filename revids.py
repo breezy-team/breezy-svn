@@ -64,8 +64,7 @@ class RevidMap(object):
 
             for entry_revid, branch, min_revno, max_revno, mapping in self.discover_fileprop_revids(layout, fileprops_to_revnum, 0, project, pb=pb):
                 if revid == entry_revid:
-                    (foreign_revid, mapping_name) = self.bisect_revid_revnum(revid, branch, min_revno, max_revno)
-                    return (foreign_revid, mapping_name)
+                    return self.bisect_revid_revnum(revid, branch, min_revno, max_revno)
         finally:
             pb.finished()
         raise NoSuchRevision(self, revid)
@@ -80,15 +79,16 @@ class RevidMap(object):
         for (paths, revnum, revprops) in self.repos._log.iter_changes(None, from_revnum, to_revnum):
             if pb is not None:
                 pb.update("discovering revprop revisions", from_revnum-revnum, from_revnum-to_revnum)
-            if is_bzr_revision_revprops(revprops):
-                mapping = find_mapping_revprops(revprops)
-                assert mapping is not None
-                branch_path = mapping.get_branch_root(revprops)
-                if branch_path is None:
-                    continue
-                revno, revid, hidden = mapping.get_revision_id_revprops(revprops)
-                if revid is not None:
-                    yield (revid, branch_path.strip("/"), revnum, mapping)
+            if not is_bzr_revision_revprops(revprops):
+                continue
+            mapping = find_mapping_revprops(revprops)
+            assert mapping is not None
+            branch_path = mapping.get_branch_root(revprops)
+            if branch_path is None:
+                continue
+            revno, revid, hidden = mapping.get_revision_id_revprops(revprops)
+            if revid is not None:
+                yield (revid, branch_path.strip("/"), revnum, mapping)
 
     def find_branch_tips(self, layout, from_revnum, to_revnum, project=None):
         assert from_revnum >= to_revnum
@@ -144,7 +144,8 @@ class RevidMap(object):
         assert min_revnum <= max_revnum
         # Find the branch property between min_revnum and max_revnum that
         # added revid
-        for revmeta in self.repos._revmeta_provider.iter_reverse_branch_changes(branch_path, max_revnum, min_revnum):
+        for revmeta in self.repos._revmeta_provider.iter_reverse_branch_changes(
+                branch_path, max_revnum, min_revnum):
             for propname, (oldpropvalue, propvalue) in revmeta.get_changed_fileprops().iteritems():
                 if not propname.startswith(SVN_PROP_BZR_REVISION_ID):
                     continue
@@ -168,7 +169,6 @@ class RevidMap(object):
                     mapping = mapping_registry.parse_mapping_name("svn-" + mapping_name)
                     assert mapping.is_branch_or_tag(revmeta.branch_path)
                     return (revmeta.get_foreign_revid(), mapping)
-
         raise InvalidBzrSvnRevision(revid)
 
 
@@ -233,7 +233,8 @@ class DiskCachingRevidMap(object):
             # Entry already complete?
             assert min_revnum <= max_revnum
             if min_revnum == max_revnum:
-                return (self.actual.repos.uuid, branch_path, min_revnum), mapping_registry.parse_mapping_name("svn-" + mapping)
+                return ((self.actual.repos.uuid, branch_path, min_revnum),
+                        mapping_registry.parse_mapping_name("svn-" + mapping))
         except NoSuchRevision, e:
             last_revnum = self._get_last_revnum()
             last_checked = self._get_last_checked(layout, project)
@@ -248,14 +249,16 @@ class DiskCachingRevidMap(object):
             fileprops_to_revnum = last_revnum
             pb = ui.ui_factory.nested_progress_bar()
             try:
-                for entry_revid, branch, revnum, mapping in self.actual.discover_revprop_revids(last_revnum, last_checked, pb=pb):
+                for entry_revid, branch, revnum, mapping in self.actual.discover_revprop_revids(
+                        last_revnum, last_checked, pb=pb):
                     fileprops_to_revnum = min(fileprops_to_revnum, revnum)
                     if entry_revid == revid:
                         found = (branch, revnum, revnum, mapping)
                     self.remember_entry(entry_revid, branch, revnum,
                                             revnum, mapping.name)
                 if fileprops_to_revnum > last_checked:
-                    for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_fileprop_revids(layout, fileprops_to_revnum, last_checked, project, pb):
+                    for entry_revid, branch, min_revno, max_revno, mapping in self.actual.discover_fileprop_revids(
+                            layout, fileprops_to_revnum, last_checked, project, pb):
                         min_revno = max(last_checked, min_revno)
                         if entry_revid == revid:
                             found = (branch, min_revno, max_revno, mapping)
