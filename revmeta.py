@@ -823,7 +823,7 @@ class CachingBzrRevisionMetadata(BzrRevisionMetadata):
 
     __slots__ = ('base', '_revid_cache', '_revinfo_cache', '_revision_info',
                  '_original_mapping', '_original_mapping_set',
-                 '_stored_lhs_parent_revid', '_parents_cache', 'paths')
+                 '_stored_lhs_parent_revid', '_parents_cache')
 
     def __init__(self, repository, *args, **kwargs):
         self.base = super(CachingBzrRevisionMetadata, self)
