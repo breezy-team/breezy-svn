@@ -43,10 +43,16 @@ from bzrlib.revision import (
     )
 from bzrlib.tests import (
     KnownFailure,
+    TestCase,
     TestSkipped,
     )
 from bzrlib.trace import (
     mutter,
+    )
+from bzrlib.versionedfile import (
+    AbsentContentFactory,
+    ChunkedContentFactory,
+    FulltextContentFactory,
     )
 
 from bzrlib.plugins.svn import (
@@ -62,6 +68,7 @@ from bzrlib.plugins.svn.errors import (
 from bzrlib.plugins.svn.fetch import (
    FetchRevisionFinder,
    InterFromSvnRepository,
+   content_starts_with_link,
    )
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
@@ -2219,3 +2226,32 @@ Node-copyfrom-path: x
                          inventory[inventory.path2id("bdir/stationary")].revision)
 
 
+class ContentStartsWithLink(TestCase):
+
+    def test_absent(self):
+        vf = AbsentContentFactory("mykey")
+        self.assertRaises(ValueError, content_starts_with_link, vf)
+
+    def test_fulltext(self):
+        vf = FulltextContentFactory("mykey", None, None, "notalink")
+        self.assertFalse(content_starts_with_link(vf))
+        vf = FulltextContentFactory("mykey", None, None, "linkbla")
+        self.assertFalse(content_starts_with_link(vf))
+        vf = FulltextContentFactory("mykey", None, None, "link")
+        self.assertFalse(content_starts_with_link(vf))
+        vf = FulltextContentFactory("mykey", None, None, "link bla")
+        self.assertTrue(content_starts_with_link(vf))
+
+    def test_chunked(self):
+        vf = ChunkedContentFactory("mykey", None, None, [
+            "not", "a link"])
+        self.assertFalse(content_starts_with_link(vf))
+        vf = ChunkedContentFactory("mykey", None, None, [
+            "link a link"])
+        self.assertTrue(content_starts_with_link(vf))
+        vf = ChunkedContentFactory("mykey", None, None, [
+            "link", " a", " link"])
+        self.assertTrue(content_starts_with_link(vf))
+        vf = ChunkedContentFactory("mykey", None, None, [
+            "li", "nk", " a", " link"])
+        self.assertTrue(content_starts_with_link(vf))
