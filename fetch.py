@@ -250,7 +250,8 @@ class PathStrippingEditor(object):
     def strip_prefix(self, path):
         path = path.strip("/")
         if not path.startswith(self.prefix):
-            raise AssertionError("Invalid path %r doesn't start with %r" % (path, self.prefix))
+            raise AssertionError("Invalid path %r doesn't start with %r" % (
+                path, self.prefix))
         return path[len(self.prefix):].strip("/")
 
     def strip_copy_prefix(self, path):
@@ -285,7 +286,8 @@ class DeltaBuildEditor(object):
 
     def set_target_revision(self, revnum):
         if self.revmeta.revnum != revnum:
-            raise AssertionError("Expected %d, got %d" % (self.revmeta.revnum, revnum))
+            raise AssertionError("Expected %d, got %d" % (
+                self.revmeta.revnum, revnum))
 
     def open_root(self, base_revnum=None):
         return self._open_root(base_revnum)
@@ -433,7 +435,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         self.old_path = old_path
         self._metadata_changed = False
         self._renew_fileids = renew_fileids
-        self.new_ie = InventoryDirectory(self.new_id, urlutils.basename(self.path), parent_file_id)
+        self.new_ie = InventoryDirectory(self.new_id,
+                urlutils.basename(self.path), parent_file_id)
         if self.editor.base_tree.has_id(self.new_id):
             self.new_ie.revision = self.editor.base_tree.inventory[self.new_id].revision
 
@@ -474,7 +477,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # A bit expensive (O(d)), but this should be very rare
             delta_new_paths = set([e[1] for e in self.editor._inv_delta if e[1] is not None])
             exceptions = delta_new_paths.union(self.editor._explicitly_deleted)
-            for path in inventory_ancestors(self.editor.base_tree.inventory, self._renew_fileids, exceptions):
+            for path in inventory_ancestors(self.editor.base_tree.inventory,
+                    self._renew_fileids, exceptions):
                 if isinstance(path, str):
                     path = path.decode("utf-8")
                 self.editor._renew_fileid(path)
