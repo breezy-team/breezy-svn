@@ -645,9 +645,6 @@ class FileRevisionBuildEditor(FileBuildEditor):
                 raise AssertionError("bzr doesn't support newlines in symlink targets yet")
             cf = ChunkedContentFactory(file_key, parent_keys,
                 osutils.sha_string(""), [])
-            ie.text_sha1 = None
-            ie.text_size = None
-            ie.executable = False
         else:
             ie = InventoryFile(self.file_id, urlutils.basename(self.path), self.parent_file_id)
             ie.text_sha1 = text_sha1
