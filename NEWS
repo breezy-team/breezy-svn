@@ -26,6 +26,8 @@ bzr-svn 1.0.4					  UNRELEASED
 
   * Fix handling of revision metadata. (Jelmer Vernooij, #612611)
 
+  * Print proper errors on invalid working copies. (Jelmer Vernooij, #404598)
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES

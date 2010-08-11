@@ -24,7 +24,10 @@ import os
 import subvertpy
 ERR_WC_SCHEDULE_CONFLICT = getattr(subvertpy, "ERR_WC_SCHEDULE_CONFLICT", 155013)
 import subvertpy.wc
-from subvertpy import properties
+from subvertpy import (
+    ERR_WC_UNSUPPORTED_FORMAT,
+    properties,
+    )
 from subvertpy.wc import (
     SCHEDULE_ADD,
     SCHEDULE_DELETE,
@@ -126,6 +129,19 @@ class LocalRepositoryOpenFailed(BzrError):
 
     def __init__(self, url):
         self.url = url
+
+
+class CorruptWorkingTree(BzrError):
+
+    _fmt = ("Unable to open working tree at %(path)s: %(msg)s")
+
+    def __init__(self, path, msg):
+        self.path = path
+        self.msg = msg
+
+
+ERR_ENTRY_NOT_FOUND = getattr(subvertpy, "ERR_ENTRY_NOT_FOUND", 150000)
+ERR_NODE_UNKNOWN_KIND = getattr(subvertpy, "ERR_NODE_UNKNOWN_KIND", 145000)
 
 
 def update_wc(adm, basedir, conn, revnum):
@@ -1031,7 +1047,14 @@ class SvnCheckout(BzrDir):
             else:
                 raise
         try:
-            self.entry = wc.entry(self.local_path.encode("utf-8"), True)
+            try:
+                self.entry = wc.entry(self.local_path.encode("utf-8"), True)
+            except subvertpy.SubversionException, (msg, num):
+                if num in (ERR_ENTRY_NOT_FOUND, ERR_NODE_UNKNOWN_KIND):
+                    raise CorruptWorkingTree(self.local_path.encode("utf-8"),
+                        msg)
+                else:
+                    raise
         finally:
             wc.close()
 

@@ -19,6 +19,10 @@
 
 import os
 
+from subvertpy.wc import (
+    check_wc,
+    )
+
 from bzrlib import osutils
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
@@ -45,9 +49,24 @@ from bzrlib.plugins.svn.mapping3.base import config_set_scheme
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.transport import svn_config
 from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.workingtree import generate_ignore_list
+from bzrlib.plugins.svn.workingtree import (
+    CorruptWorkingTree,
+    generate_ignore_list,
+    )
 
 class TestWorkingTree(SubversionTestCase):
+
+    def test_invalid_entries(self):
+        self.make_client('a', 'dc')
+        entries_path = os.path.join(self.test_dir, 'dc/.svn/entries')
+        os.chmod(entries_path, 0755)
+        num = check_wc("dc")
+        f = open(entries_path, "w+")
+        try:
+            f.write("%d\n" % num)
+        finally:
+            f.close()
+        self.assertRaises(CorruptWorkingTree, WorkingTree.open, "dc")
 
     def test_add_duplicate(self):
         self.make_client('a', 'dc')
@@ -804,5 +823,3 @@ class IgnoreListTests(TestCase):
     def test_multiple(self):
         self.assertEquals(["./twin*", "./twin/peaks"],
                 generate_ignore_list({"twin": "peaks", "": "twin*"}))
-
-
