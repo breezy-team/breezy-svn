@@ -1184,7 +1184,7 @@ class RevisionMetadataBrowser(object):
                     if action != 'D' or ip != "":
                         changed_bps.add(bp)
                 for u in self._unusual:
-                    if (p == u and not action in ('D', 'R')) or p.startswith("%s/" % u):
+                    if (p == u and not action in ('D', 'R')) or changes.path_is_child(u, p):
                         changed_bps.add(u)
                 if action in ('R', 'D') and (
                     self.layout.is_branch_or_tag(p, self._project) or

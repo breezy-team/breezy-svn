@@ -174,4 +174,4 @@ def under_prefixes(path, prefixes):
     """Check if path is under one of prefixes."""
     if prefixes is None or "" in prefixes:
         return True
-    return any([x for x in prefixes if path.startswith(x+"/") or x == path or x == ""])
+    return any([x for x in prefixes if path_is_child(x, path)])

@@ -28,6 +28,9 @@ bzr-svn 1.0.4					  UNRELEASED
 
   * Print proper errors on invalid working copies. (Jelmer Vernooij, #404598)
 
+  * Cope with changes to root as a branch path during revision 
+    discovery. (Jelmer Vernooij, #616860)
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES
