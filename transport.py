@@ -301,6 +301,7 @@ class ConnectionPool(object):
     """Collection of connections to a Subversion repository."""
 
     def __init__(self, url):
+        self.start_url = url
         self.connections = set()
         self.auth_baton = create_auth_baton(url)
 
@@ -314,6 +315,15 @@ class ConnectionPool(object):
             self.auth_baton.set_parameter(AUTH_PARAM_DEFAULT_USERNAME, user)
         if password is not None:
             self.auth_baton.set_parameter(AUTH_PARAM_DEFAULT_PASSWORD, password)
+
+    def get_any(self):
+        try:
+            c = self.connections.pop()
+        except KeyError:
+            return Connection(self.start_url, self.auth_baton)
+        else:
+            assert not c.busy, "busy connection in pool"
+            return c
 
     def get(self, url):
         # Check if there is an existing connection we can use
@@ -373,6 +383,9 @@ class SvnRaTransport(Transport):
         from bzrlib.plugins.svn import lazy_check_versions
         lazy_check_versions()
 
+    def get_any_connection(self):
+        return self.connections.get_any()
+
     def get_connection(self, repos_path=None):
         if repos_path is not None:
             return self.connections.get(urlutils.join(self.get_svn_repos_root(),
@@ -423,7 +436,7 @@ class SvnRaTransport(Transport):
 
     def get_uuid(self):
         if self._uuid is None:
-            conn = self.get_connection()
+            conn = self.get_any_connection()
             try:
                 return conn.get_uuid()
             finally:
@@ -439,7 +452,7 @@ class SvnRaTransport(Transport):
 
     def get_svn_repos_root(self):
         if self._repos_root is None:
-            conn = self.get_connection()
+            conn = self.get_any_connection()
             try:
                 self._repos_root = conn.get_repos_root()
             finally:
@@ -447,7 +460,7 @@ class SvnRaTransport(Transport):
         return self._repos_root
 
     def get_latest_revnum(self):
-        conn = self.get_connection()
+        conn = self.get_any_connection()
         try:
             return conn.get_latest_revnum()
         finally:
@@ -543,7 +556,7 @@ class SvnRaTransport(Transport):
             self.add_connection(conn)
 
     def change_rev_prop(self, revnum, name, value):
-        conn = self.get_connection()
+        conn = self.get_any_connection()
         try:
             return conn.change_rev_prop(revnum, name, value)
         finally:
@@ -627,7 +640,7 @@ class SvnRaTransport(Transport):
             return False
         if cap in self.capabilities:
             return self.capabilities[cap]
-        conn = self.get_connection()
+        conn = self.get_any_connection()
         try:
             try:
                 self.capabilities[cap] = conn.has_capability(cap)
@@ -642,7 +655,7 @@ class SvnRaTransport(Transport):
             self.add_connection(conn)
 
     def revprop_list(self, revnum):
-        conn = self.get_connection()
+        conn = self.get_any_connection()
         try:
             return conn.rev_proplist(revnum)
         finally:

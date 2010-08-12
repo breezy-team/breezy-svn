@@ -31,6 +31,11 @@ bzr-svn 1.0.4					  UNRELEASED
   * Cope with changes to root as a branch path during revision 
     discovery. (Jelmer Vernooij, #616860)
 
+ PERFORMANCE
+
+  * Support using any connection when finding UUID, revision properties
+    or revision number. (Jelmer Vernooij)
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES
