@@ -325,13 +325,7 @@ class ConnectionPool(object):
             assert not c.busy, "busy connection in pool"
             return c
 
-    def get(self, url):
-        # Check if there is an existing connection we can use
-        for c in self.connections:
-            assert not c.busy, "busy connection in pool"
-            if c.url == url:
-                self.connections.remove(c)
-                return c
+    def new(self, url):
         # Nothing available? Just pick an existing one and reparent:
         if len(self.connections) == 0:
             return Connection(url, self.auth_baton)
@@ -345,6 +339,15 @@ class ConnectionPool(object):
         except:
             self.connections.add(c)
             raise
+
+    def get(self, url):
+        # Check if there is an existing connection we can use
+        for c in self.connections:
+            assert not c.busy, "busy connection in pool"
+            if c.url == url:
+                self.connections.remove(c)
+                return c
+        return self.new(url)
 
     def add(self, connection):
         assert not connection.busy, "adding busy connection in pool"
