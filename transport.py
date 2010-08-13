@@ -56,6 +56,9 @@ from bzrlib.plugins.svn.auth import (
     AUTH_PARAM_DEFAULT_PASSWORD,
     create_auth_baton,
     )
+from bzrlib.plugins.svn.changes import (
+    common_prefix,
+    )
 from bzrlib.plugins.svn.errors import (
     convert_svn_error,
     DavRequestFailed,
@@ -414,6 +417,17 @@ class SvnRaTransport(Transport):
         return self.connections.get_parent(
             urlutils.join(self.svn_url, path))
 
+    def get_paths_connection(self, paths):
+        paths = [p.strip("/") for p in paths]
+        prefix = common_prefix(paths)
+        subpaths = [urlutils.determine_relative_path(prefix, p) for p in paths]
+        conn, relprefix = self.get_path_connection(prefix)
+        if relprefix == "":
+            relsubpaths = subpaths
+        else:
+            relsubpaths = [urlutils.join(relprefix, p) for p in subpaths]
+        return (conn, relsubpaths)
+
     def external_url(self):
         return self.base
 
@@ -495,9 +509,9 @@ class SvnRaTransport(Transport):
         assert isinstance(limit, int)
 
         if paths is not None:
-            paths = [p.strip("/") for p in paths]
-
-        conn = self.get_connection()
+            conn, paths = self.get_paths_connection(paths)
+        else:
+            conn = self.get_connection()
         try:
             return conn.iter_log(paths, from_revnum, to_revnum, limit,
                 discover_changed_paths=discover_changed_paths,
@@ -557,9 +571,9 @@ class SvnRaTransport(Transport):
                 strict_node_history, include_merged_revisions, revprops):
 
         if paths is not None:
-            paths = [p.strip("/") for p in paths]
-
-        conn = self.get_connection()
+            conn, paths = self.get_paths_connection(paths)
+        else:
+            conn = self.get_connection()
         try:
             try:
                 return conn.get_log(rcvr, paths,

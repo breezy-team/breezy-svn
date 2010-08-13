@@ -31,6 +31,10 @@ bzr-svn 1.0.4					  UNRELEASED
   * Cope with changes to root as a branch path during revision 
     discovery. (Jelmer Vernooij, #616860)
 
+  * Support accessing branches without accessing the repository root.
+    Please note that this will only work when the log cache is disabled. 
+    (Jelmer Vernooij, #409668)
+
  PERFORMANCE
 
   * Support using any connection when finding UUID, revision properties
