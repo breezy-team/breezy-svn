@@ -340,6 +340,20 @@ class ConnectionPool(object):
             self.connections.add(c)
             raise
 
+    def get_parent(self, url):
+        # Check if there is an existing connection we can use
+        for c in self.connections:
+            assert not c.busy, "busy connection in pool"
+            assert not c.url.endswith("/")
+            if url == c.url or url.startswith(c.url+"/"):
+                self.connections.remove(c)
+                relpath = urlutils.relative_url(c.url, url)
+                mutter('LALA %s + %s -> %s', c.url, url, relpath)
+                if relpath == ".":
+                    relpath = ""
+                return c, relpath
+        return self.new(url), ""
+
     def get(self, url):
         # Check if there is an existing connection we can use
         for c in self.connections:
@@ -396,6 +410,10 @@ class SvnRaTransport(Transport):
         else:
             return self.connections.get(self.svn_url)
 
+    def get_path_connection(self, path):
+        return self.connections.get_parent(
+            urlutils.join(self.svn_url, path))
+
     def external_url(self):
         return self.base
 
@@ -412,7 +430,7 @@ class SvnRaTransport(Transport):
         # catch it in bzrdir.py
         raise NoSuchFile(path=relpath)
 
-    def stat(self, relpath):
+    def stat(self, path):
         """See Transport.stat()."""
         class StatResult(object):
             def __init__(self, svn_stat):
@@ -422,7 +440,7 @@ class SvnRaTransport(Transport):
                     self.st_mode = stat.S_IFREG
                 self.st_size = svn_stat['size']
                 self.st_mtime = svn_stat['time']
-        conn = self.get_connection()
+        conn, relpath = self.get_path_connection(path)
         try:
             stat_fn = getattr(conn, "stat", None)
             if stat_fn is None:
@@ -567,30 +585,28 @@ class SvnRaTransport(Transport):
 
     @convert_svn_error
     def get_dir(self, path, revnum, fields=0):
-        conn = self.get_connection()
+        conn, relpath = self.get_path_connection(path)
         try:
-            return conn.get_dir(path, revnum, fields)
+            return conn.get_dir(relpath, revnum, fields)
         finally:
             self.add_connection(conn)
 
     def get_file(self, path, stream, revnum):
-        conn = self.get_connection()
+        conn, relpath = self.get_path_connection(path)
         try:
-            return conn.get_file(path, stream, revnum)
+            return conn.get_file(relpath, stream, revnum)
         finally:
             self.add_connection(conn)
 
     def get_file_revs(self, path, start_revnum, end_revnum, handler):
-        conn = self.get_connection()
+        conn, relpath = self.get_path_connection(path)
         try:
-            return conn.get_file_revs(path, start_revnum, end_revnum, handler)
+            return conn.get_file_revs(relpath, start_revnum, end_revnum, handler)
         finally:
             self.add_connection(conn)
 
     def list_dir(self, relpath):
         assert len(relpath) == 0 or relpath[0] != "/"
-        if relpath == ".":
-            relpath = ""
         try:
             (dirents, _, _) = self.get_dir(relpath, self.get_latest_revnum())
         except subvertpy.SubversionException, (_, num):
@@ -600,9 +616,9 @@ class SvnRaTransport(Transport):
         return dirents.keys()
 
     def check_path(self, path, revnum):
-        conn = self.get_connection()
+        conn, relpath = self.get_path_connection(path)
         try:
-            return conn.check_path(path, revnum)
+            return conn.check_path(relpath, revnum)
         finally:
             self.add_connection(conn)
 
@@ -665,9 +681,9 @@ class SvnRaTransport(Transport):
             self.add_connection(conn)
 
     def get_locations(self, path, peg_revnum, revnums):
-        conn = self.get_connection()
+        conn, relpath = self.get_path_connection(path)
         try:
-            return conn.get_locations(path, peg_revnum, revnums)
+            return conn.get_locations(relpath, peg_revnum, revnums)
         finally:
             self.add_connection(conn)
 

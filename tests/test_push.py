@@ -1161,7 +1161,7 @@ class PushNewBranchTests(SubversionTestCase):
         trunk = dc.add_dir("trunk")
         subdir = trunk.add_dir("trunk/mysubdir")
         subdir.add_file("trunk/mysubdir/myfile").modify("blabla")
-        dc.close()
+        dc.close() #1
 
         os.mkdir("dc")
         svndir = BzrDir.open(repos_url+"/trunk")
@@ -1178,10 +1178,11 @@ class PushNewBranchTests(SubversionTestCase):
             osutils.rmtree("dc/mysubdir")
         finally:
             wt.unlock()
-        wt.commit("Change branch root")
+        wt.commit("Change branch root") #2
         svnbranch = svndir.open_branch()
         svnbranch.pull(wt.branch)
         self.assertEquals(svnbranch.last_revision(), wt.branch.last_revision())
+        self.assertEquals(2, svndir.root_transport.get_latest_revnum())
         self.assertEquals(["myfile"], svndir.root_transport.list_dir("."))
         paths = svnbranch.repository._revmeta_provider._log.get_revision_paths(2)
         self.assertChangedPathEquals(('R', "trunk/mysubdir", 1, NODE_DIR),
