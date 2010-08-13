@@ -16,11 +16,15 @@
 from bzrlib import ui
 from bzrlib.trace import mutter
 
+from bzrlib.plugins.svn.changes import (
+    common_prefix,
+    )
+
 from bzrlib.plugins.svn.layout.standard import (
-        CustomLayout,
-        RootLayout,
-        TrunkLayout,
-        )
+    CustomLayout,
+    RootLayout,
+    TrunkLayout,
+    )
 
 # Number of revisions to evaluate when guessing the repository layout
 GUESS_SAMPLE_SIZE = 300
@@ -32,19 +36,7 @@ def find_commit_paths(changed_paths):
     :return: List of potential commit paths.
     """
     for changes in changed_paths:
-        yield _find_common_prefix(changes.keys())
-
-
-def _find_common_prefix(paths):
-    prefix = ""
-    # Find a common prefix
-    parts = paths[0].split("/")
-    for i in range(len(parts)+1):
-        for j in paths:
-            if j.split("/")[:i] != parts[:i]:
-                return prefix
-        prefix = "/".join(parts[:i])
-    return prefix
+        yield common_prefix(changes.keys())
 
 
 def guess_layout_from_branch_path(relpath):

@@ -175,3 +175,15 @@ def under_prefixes(path, prefixes):
     if prefixes is None or "" in prefixes:
         return True
     return any([x for x in prefixes if path_is_child(x, path)])
+
+
+def common_prefix(paths):
+    prefix = ""
+    # Find a common prefix
+    parts = paths[0].split("/")
+    for i in range(len(parts)+1):
+        for j in paths:
+            if j.split("/")[:i] != parts[:i]:
+                return prefix
+        prefix = "/".join(parts[:i])
+    return prefix
