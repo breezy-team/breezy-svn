@@ -709,7 +709,9 @@ class RevisionBuildEditor(DeltaBuildEditor):
         assert rev.revision_id != NULL_REVISION
         try:
             assert rev.parent_ids[0] != NULL_REVISION
-            assert rev.parent_ids[0] == self.base_tree.get_revision_id()
+            assert(rev.parent_ids[0] == self.base_tree.get_revision_id(),
+                "revision lhs parent %s does not match base tree revid %s" % 
+                 (rev.parent_ids, self.base_tree.get_revision_id()))
             basis_id = rev.parent_ids[0]
             basis_inv = self.base_tree.inventory
         except IndexError:
