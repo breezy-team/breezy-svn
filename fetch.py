@@ -706,7 +706,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
     def _finish_commit(self):
         rev = self.revmeta.get_revision(self.mapping)
+        assert rev.revision_id != NULL_REVISION
         try:
+            assert rev.parent_ids[0] != NULL_REVISION
+            assert rev.parent_ids[0] == self.base_tree.get_revision_id()
             basis_id = rev.parent_ids[0]
             basis_inv = self.base_tree.inventory
         except IndexError:
