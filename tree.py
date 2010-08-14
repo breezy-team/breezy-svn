@@ -330,10 +330,6 @@ class FileTreeEditor(object):
 
         if self.is_symlink:
             ie.symlink_target = file_data[len("link "):]
-            ie.text_sha1 = None
-            ie.text_size = None
-            ie.text_id = None
-            ie.executable = False
         else:
             ie.text_sha1 = osutils.sha_string(file_data)
             ie.text_size = len(file_data)
@@ -371,10 +367,6 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             if is_symlink:
                 ie = self._inventory.add_path(relpath, 'symlink', id)
                 ie.symlink_target = self.get_file_byname(relpath).read()[len("link "):]
-                ie.text_sha1 = None
-                ie.text_size = None
-                ie.text_id = None
-                ie.executable = False
             else:
                 ie = self._inventory.add_path(relpath, 'file', id)
                 data = osutils.fingerprint_file(self.get_file_byname(relpath))

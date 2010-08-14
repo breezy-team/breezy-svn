@@ -437,9 +437,6 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 file = InventoryLink(id, os.path.basename(relpath), parent_id)
                 file.revision = revid
                 file.symlink_target = os.readlink(abspath.encode(osutils._fs_enc)).decode(osutils._fs_enc)
-                file.text_sha1 = None
-                file.text_size = None
-                file.executable = False
                 inv.add(file)
             else:
                 file = InventoryFile(id, os.path.basename(relpath), parent_id)
