@@ -443,8 +443,7 @@ class SvnRepository(ForeignRepository):
         self.branchprop_list = PathPropertyProvider(self._log)
 
         self._revmeta_provider = revmeta.RevisionMetadataProvider(self,
-                self.revinfo_cache is not None,
-                self.transport.has_capability("commit-revprops") in (True, None))
+                self.revinfo_cache is not None)
 
     def get_transaction(self):
         """See Repository.get_transaction()."""
