@@ -429,6 +429,10 @@ class BzrRevisionMetadata(RevisionMetadata):
         return parentrevmeta.get_revision_id(lhs_mapping)
 
     def get_stored_lhs_parent_revid(self, mapping):
+        """Retrieve the revision id of the base revision (lhs parent).
+
+        :note: Returns None if the base revision id was not explicitly stored.
+        """
         return self._get_stored_lhs_parent_revid(mapping)
 
     def _get_stored_lhs_parent_revid(self, mapping):
