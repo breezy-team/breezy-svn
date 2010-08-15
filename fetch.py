@@ -509,7 +509,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         # This directory was moved here from somewhere else, but the
         # other location hasn't been removed yet.
         if copyfrom_path is not None:
-            svn_base_ie = self.editor.get_svn_base_ie(copyfrom_path,
+            svn_base_ie = self.editor.get_svn_base_ie_copyfrom(copyfrom_path,
                                                       copyfrom_revnum)
         else:
             svn_base_ie = None
@@ -526,9 +526,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             [])
 
     def _open_directory(self, path, base_revnum):
-        svn_base_file_id = self.editor._get_svn_base_file_id(
+        (svn_base_file_id, svn_base_ie) = self.editor.get_svn_base_ie_open(
             self.svn_base_ie.file_id, path, base_revnum)
-        svn_base_ie = self.editor.svn_base_tree.inventory[svn_base_file_id]
         if self.bzr_base_ie:
             file_id = self.editor._get_existing_file_id(
                     self.bzr_base_ie.file_id, self.new_id, path)
@@ -563,7 +562,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             bzr_base_path = None
         if copyfrom_path is not None:
             # Delta's will be against this text
-            svn_base_ie = self.editor.get_svn_base_ie(copyfrom_path,
+            svn_base_ie = self.editor.get_svn_base_ie_copyfrom(copyfrom_path,
                     copyfrom_revnum)
         else:
             svn_base_ie = None
@@ -571,14 +570,13 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                 file_id, self.new_id, svn_base_ie)
 
     def _open_file(self, path, base_revnum):
-        svn_base_file_id = self.editor._get_svn_base_file_id(
+        (svn_base_file_id, svn_base_ie) = self.editor.get_svn_base_ie_open(
             self.svn_base_ie.file_id, path, base_revnum)
         if self.bzr_base_ie:
             file_id = self.editor._get_existing_file_id(
                 self.bzr_base_ie.file_id, self.new_id, path)
         else:
             file_id = self.editor._get_new_file_id(path)
-        svn_base_ie = self.editor.base_tree.inventory[svn_base_file_id]
         if file_id == svn_base_file_id:
             bzr_base_path = path
         else:
@@ -734,7 +732,16 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 rec_del(c)
         rec_del(self.bzr_base_tree.inventory[self._get_bzr_base_file_id(old_parent_id, path)])
 
-    def get_svn_base_ie(self, path, revnum):
+    def get_svn_base_ie_open(self, parent_id, path, revnum):
+        assert isinstance(path, unicode)
+        assert (isinstance(parent_id, str) or
+                (parent_id is None and path == ""))
+        basename = urlutils.basename(path)
+        file_id = inventory_parent_id_basename_to_file_id(
+            self.svn_base_tree.inventory, parent_id, basename)
+        return (file_id, self.svn_base_tree.inventory[file_id])
+
+    def get_svn_base_ie_copyfrom(self, path, revnum):
         """Look up the base ie for the svn path, revnum.
 
         :param path: Path to look up, relative to the current branch path
@@ -795,9 +802,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
             svn_base_ie = None
             svn_base_file_id = None
         else:
-            svn_base_file_id = self._get_svn_base_file_id(None, u"",
-                base_revnum)
-            svn_base_ie = self.svn_base_tree.inventory[svn_base_file_id]
+            (svn_base_file_id, svn_base_ie) = self.get_svn_base_ie_open(
+                None, u"", base_revnum)
 
         if self.bzr_base_tree.inventory.root is None:
             # First time the root is set
@@ -859,14 +865,6 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
     def _get_map_id(self, new_path):
         return self.id_map.get(new_path)
-
-    def _get_svn_base_file_id(self, parent_id, old_path, old_revnum):
-        assert isinstance(old_path, unicode)
-        assert (isinstance(parent_id, str) or
-                (parent_id is None and old_path == ""))
-        basename = urlutils.basename(old_path)
-        return inventory_parent_id_basename_to_file_id(
-            self.svn_base_tree.inventory, parent_id, basename)
 
     def _get_bzr_base_file_id(self, parent_id, path):
         assert isinstance(path, unicode)
