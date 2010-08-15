@@ -14,8 +14,17 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+"""Fetching revisions from Subversion repositories in batches.
 
-"""Fetching revisions from Subversion repositories in batches."""
+Everywhere in this file 'old_ie' refers to the entry with the 
+same file_id in the old revision (left hand side parent revision).
+
+'base_ie' refers to the inventory entry from the svn revision 
+that the copy happened.
+
+'new_ie' refers to the inventory entry that is newly created, as part 
+of the inventory delta.
+"""
 
 
 from collections import deque
