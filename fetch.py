@@ -16,10 +16,10 @@
 
 """Fetching revisions from Subversion repositories in batches.
 
-Everywhere in this file 'old_ie' refers to the entry with the 
+Everywhere in this file 'bzr_base_ie' refers to the entry with the 
 same file_id in the old revision (left hand side parent revision).
 
-'base_ie' refers to the inventory entry from the svn revision 
+'svn_base_ie' refers to the inventory entry from the svn revision 
 that the copy happened.
 
 'new_ie' refers to the inventory entry that is newly created, as part 
@@ -462,7 +462,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                 return
             for c in ie.children.values():
                 rec_del(c)
-        rec_del(self.editor.base_tree.inventory[self.editor._get_old_id(self.old_id, path)])
+        rec_del(self.editor.base_tree.inventory[self.editor._get_svn_base_file_id(self.old_id, path)])
 
     def _close(self):
         if (not self.editor.base_tree.has_id(self.new_id) or
@@ -515,9 +515,9 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_file_id, file_id, self.new_id, [])
 
     def _open_directory(self, path, base_revnum):
-        base_file_id = self.editor._get_old_id(self.old_id, path)
+        base_file_id = self.editor._get_svn_base_file_id(self.old_id, path)
         base_revid = self.editor.base_tree.inventory[base_file_id].revision
-        file_id = self.editor._get_existing_id(self.old_id, self.new_id, path)
+        file_id = self.editor._get_bzr_base_file_id(self.old_id, self.new_id, path)
         if file_id == base_file_id:
             old_path = path
             renew_fileids = None
@@ -547,25 +547,25 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_path = None
         if copyfrom_path is not None:
             # Delta's will be against this text
-            base_ie = self.editor.get_old_ie(copyfrom_path, copyfrom_revnum)
+            svn_base_ie = self.editor.get_svn_base_ie(copyfrom_path, copyfrom_revnum)
         else:
-            base_ie = None
+            svn_base_ie = None
         return FileRevisionBuildEditor(self.editor, old_path, path, file_id,
-                                       self.new_id, base_ie)
+                                       self.new_id, svn_base_ie)
 
     def _open_file(self, path, base_revnum):
-        base_file_id = self.editor._get_old_id(self.old_id, path)
-        file_id = self.editor._get_existing_id(self.old_id, self.new_id, path)
-        base_ie = self.editor.base_tree.inventory[base_file_id]
-        is_symlink = (base_ie.kind == 'symlink')
-        if file_id == base_file_id:
+        svn_base_file_id = self.editor._get_svn_base_file_id(self.old_id, path)
+        file_id = self.editor._get_bzr_base_file_id(self.old_id, self.new_id, path)
+        svn_base_ie = self.editor.base_tree.inventory[svn_base_file_id]
+        is_symlink = (svn_base_ie.kind == 'symlink')
+        if file_id == svn_base_file_id:
             old_path = path
         else:
             # Replace with historical version
             old_path = None
             self._delete_entry(path, base_revnum)
         return FileRevisionBuildEditor(self.editor, old_path, path, file_id,
-            self.new_id, base_ie, is_symlink=is_symlink)
+            self.new_id, svn_base_ie, is_symlink=is_symlink)
 
 
 def content_starts_with_link(cf):
@@ -581,20 +581,20 @@ def content_starts_with_link(cf):
 
 class FileRevisionBuildEditor(FileBuildEditor):
 
-    __slots__ = ('old_path', 'file_id', 'is_symlink', 'base_ie', 'base_chunks',
+    __slots__ = ('old_path', 'file_id', 'is_symlink', 'svn_base_ie', 'base_chunks',
                  'chunks', 'parent_file_id')
 
     def __init__(self, editor, old_path, path, file_id, parent_file_id,
-                 base_ie, is_symlink=False):
+                 svn_base_ie, is_symlink=False):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
         self.old_path = old_path
         self.file_id = file_id
         self.is_symlink = is_symlink
-        self.base_ie = base_ie
-        if self.base_ie is None:
+        self.svn_base_ie = svn_base_ie
+        if self.svn_base_ie is None:
             self.base_chunks = []
         else:
-            self.base_chunks = self.editor._get_chunked(self.base_ie)
+            self.base_chunks = self.editor._get_chunked(self.svn_base_ie)
         self.chunks = None
         self.parent_file_id = parent_file_id
 
@@ -649,8 +649,8 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
         self.editor._text_cache[file_key] = chunks
 
-        if self.base_ie is not None and self.is_executable is None:
-                self.is_executable = self.base_ie.executable
+        if self.svn_base_ie is not None and self.is_executable is None:
+            self.is_executable = self.svn_base_ie.executable
 
         if self.is_symlink:
             ie = InventoryLink(self.file_id, urlutils.basename(self.path), self.parent_file_id)
@@ -677,7 +677,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
     Bazaar revision.
     """
 
-    def __init__(self, source, target, revid, parent_trees, revmeta, mapping,
+    def __init__(self, source, target, revid, bzr_parent_trees, svn_base_tree, revmeta, mapping,
                  text_cache):
         self.target = target
         self.source = source
@@ -685,15 +685,22 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self.revid = revid
         self._text_revids = None
         self._text_cache = text_cache
-        self.base_tree = parent_trees[0]
-        self.parent_trees = parent_trees
+        self.bzr_base_tree = bzr_parent_trees[0]
+        self.bzr_parent_trees = bzr_parent_trees
+        self.base_tree = self.bzr_base_tree #FIXME
+        self.svn_base_tree = svn_base_tree
         self._inv_delta = []
         self._deleted = set()
         self._explicitly_deleted = set()
         self.inventory = None
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
 
-    def get_old_ie(self, path, revnum):
+    def get_svn_base_ie(self, path, revnum):
+        """Look up the base ie for the svn path, revnum.
+
+        :param path: Path to look up, relative to the current branch path
+        :param revnum: Revision number for which to lookup the path
+        """
         # Find the ancestor of self.revmeta with revnum revnum
         last_revmeta = None
         for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(
@@ -719,11 +726,11 @@ class RevisionBuildEditor(DeltaBuildEditor):
         assert rev.revision_id != NULL_REVISION
         try:
             assert rev.parent_ids[0] != NULL_REVISION
-            assert rev.parent_ids[0] == self.base_tree.get_revision_id(), \
+            assert rev.parent_ids[0] == self.bzr_base_tree.get_revision_id(), \
                 "revision lhs parent %s does not match base tree revid %s" % \
-                 (rev.parent_ids, self.base_tree.get_revision_id())
+                 (rev.parent_ids, self.bzr_base_tree.get_revision_id())
             basis_id = rev.parent_ids[0]
-            basis_inv = self.base_tree.inventory
+            basis_inv = self.bzr_base_tree.inventory
         except IndexError:
             basis_id = NULL_REVISION
             basis_inv = None
@@ -752,9 +759,9 @@ class RevisionBuildEditor(DeltaBuildEditor):
             old_path = None
         else:
             # Just inherit file id from previous
-            base_file_id = self._get_old_id(None, u"")
+            base_file_id = self._get_svn_base_file_id(None, u"")
             base_revid = self.base_tree.inventory[base_file_id].revision
-            file_id = self._get_existing_id(None, None, u"")
+            file_id = self._get_bzr_base_file_id(None, None, u"")
             if file_id == base_file_id:
                 renew_fileids = None
                 old_path = self.base_tree.id2path(file_id)
@@ -801,7 +808,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _get_map_id(self, new_path):
         return self._get_id_map().get(new_path)
 
-    def _get_old_id(self, parent_id, old_path):
+    def _get_svn_base_file_id(self, parent_id, old_path):
         assert isinstance(old_path, unicode)
         assert (isinstance(parent_id, str) or
                 (parent_id is None and old_path == ""))
@@ -821,7 +828,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             except IndexError:
                 raise FileIdMapIncomplete(basename, self.base_tree.inventory.id2path(parent_id), self.revmeta)
 
-    def _get_existing_id(self, old_parent_id, new_parent_id, path):
+    def _get_bzr_base_file_id(self, old_parent_id, new_parent_id, path):
         assert isinstance(path, unicode)
         assert isinstance(old_parent_id, str) or old_parent_id is None
         assert isinstance(new_parent_id, str) or new_parent_id is None
@@ -832,7 +839,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         # this file_id can only stay the same if the parent file id
         # didn't change
         if old_parent_id == new_parent_id:
-            return self._get_old_id(old_parent_id, path)
+            return self._get_svn_base_file_id(old_parent_id, path)
         else:
             return self._get_new_id(path)
 
@@ -852,7 +859,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _get_text_parents(self, file_id):
         assert isinstance(file_id, str)
         ret = []
-        for tree in self.parent_trees:
+        for tree in self.bzr_parent_trees:
             try:
                 revision = tree.inventory[file_id].revision
             except NoSuchId:
@@ -919,7 +926,7 @@ class DirectoryTreeDeltaBuildEditor(DirectoryBuildEditor):
 
     def _delete_entry(self, path, revnum):
         # FIXME: old kind
-        self.editor.delta.removed.append((path, self.editor._get_old_id(path), 'unknown'))
+        self.editor.delta.removed.append((path, self.editor._get_svn_base_file_id(path), 'unknown'))
 
     def _add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         if copyfrom_path is not None and self.editor._was_renamed(path) is not None:
@@ -950,7 +957,7 @@ class TreeDeltaBuildEditor(DeltaBuildEditor):
         fileid = self._get_new_id(path)
         return self._parent_idmap.has_fileid(fileid)
 
-    def _get_old_id(self, path):
+    def _get_svn_base_file_id(self, path):
         return self._parent_idmap.lookup(self.mapping, path)[0]
 
     def _get_new_id(self, path):
@@ -1186,19 +1193,23 @@ class InterFromSvnRepository(InterRepository):
     def _get_editor(self, revmeta, mapping):
         revid = revmeta.get_revision_id(mapping)
         assert revid is not None
+        svn_base_revid = revmeta.get_implicit_lhs_parent_revid(mapping)
         try:
+            bzr_parent_trees = self._get_parent_trees(revmeta, mapping)
+            if bzr_parent_trees[0].get_revision_id() != svn_base_revid:
+                svn_base_tree = self.target.revision_tree(svn_base_revid)
+            else:
+                svn_base_tree = bzr_parent_trees[0]
             return RevisionBuildEditor(self.source, self.target, revid,
-                self._get_parent_trees(revmeta, mapping),
+                bzr_parent_trees, svn_base_tree,
                 revmeta, mapping, self._text_cache)
         except NoSuchRevision:
             lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
-            expected_lhs_parent_revid = revmeta.get_implicit_lhs_parent_revid(
-                mapping)
             if revmeta.get_stored_lhs_parent_revid(mapping) not in (
-                None, expected_lhs_parent_revid):
+                None, svn_base_revid):
                 self._inconsistent_lhs_parent(revmeta.get_revision_id(mapping),
                     revmeta.get_stored_lhs_parent_revid(mapping),
-                    expected_lhs_parent_revid)
+                    svn_base_revid)
             raise
 
     def _fetch_revision_switch(self, editor, revmeta, parent_revmeta):
