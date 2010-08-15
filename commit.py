@@ -131,7 +131,8 @@ def update_mergeinfo(lookup_revid, graph, oldvalue, baserevid, merges):
                 except NoSuchRevision:
                     break
 
-                properties.mergeinfo_add_revision(mergeinfo, "/" + path, revnum)
+                properties.mergeinfo_add_revision(mergeinfo, "/" + path,
+                    revnum)
     finally:
         pb.finished()
     newvalue = properties.generate_mergeinfo_property(mergeinfo)
@@ -188,6 +189,8 @@ def file_editor_send_changes(file_id, reader, file_editor):
     """
     assert file_editor is not None
     txdelta = file_editor.apply_textdelta()
+    # FIXME: Send delta against base rather than sending the
+    # full contents.
     if 'check' in debug.debug_flags:
         contents = reader.read()
         digest = delta.send_stream(StringIO(contents), txdelta)
@@ -284,7 +287,8 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
                               base_inv.id2path(child_ie.file_id),
                               new_child_path)
             child_editor = dir_editor.add_file(full_new_child_path,
-                url_join_unescaped_path(base_url, base_inv.id2path(child_ie.file_id).encode("utf-8")),
+                url_join_unescaped_path(base_url,
+                    base_inv.id2path(child_ie.file_id).encode("utf-8")),
                 base_revnum)
             changed = True
         # open if they existed at the same location
@@ -632,7 +636,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         return (fileids, text_revisions)
 
     def _get_parents_tuples(self):
-        """Retrieve (inventory, URL, base revnum) tuples for the parents of this commit.
+        """Retrieve (inventory, URL, base revnum) tuples for the parents of
+        this commit.
         """
         ret = []
         for p in self.parents:
@@ -641,7 +646,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                 continue
             try:
                 (uuid, base_path, base_revnum), base_mapping = \
-                    self.repository.lookup_bzr_revision_id(p, foreign_sibling=self.base_foreign_revid)
+                    self.repository.lookup_bzr_revision_id(p,
+                            foreign_sibling=self.base_foreign_revid)
             except NoSuchRevision:
                 continue
             inv = None
@@ -711,19 +717,26 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._changed_fileprops = {}
 
         if self.push_metadata:
-            (fileids, text_revisions) = self._determine_texts_identity(self.new_root_id)
+            (fileids, text_revisions) = self._determine_texts_identity(
+                self.new_root_id)
             if self.set_custom_revprops:
-                self.mapping.export_text_revisions_revprops(text_revisions, self._svn_revprops)
-                self.mapping.export_fileid_map_revprops(fileids, self._svn_revprops)
+                self.mapping.export_text_revisions_revprops(text_revisions,
+                        self._svn_revprops)
+                self.mapping.export_fileid_map_revprops(fileids,
+                        self._svn_revprops)
             if self.set_custom_fileprops:
-                self.mapping.export_text_revisions_fileprops(text_revisions, self._svnprops)
-                self.mapping.export_fileid_map_fileprops(fileids, self._svnprops)
+                self.mapping.export_text_revisions_fileprops(text_revisions,
+                        self._svnprops)
+                self.mapping.export_fileid_map_fileprops(fileids,
+                        self._svnprops)
         if self._config.get_log_strip_trailing_newline():
             if self.push_metadata:
                 if self.set_custom_revprops:
-                    self.mapping.export_message_revprops(message, self._svn_revprops)
+                    self.mapping.export_message_revprops(message,
+                            self._svn_revprops)
                 if self.set_custom_fileprops:
-                    self.mapping.export_message_fileprops(message, self._svnprops)
+                    self.mapping.export_message_fileprops(message,
+                            self._svnprops)
             message = message.rstrip("\n")
         self._svn_revprops[properties.PROP_REVISION_LOG] = message.encode("utf-8")
 
@@ -818,7 +831,8 @@ class SvnCommitBuilder(RootCommitBuilder):
             lock.unlock()
 
         (result_revision, result_date, result_author) = self.revision_metadata
-        self.result_foreign_revid = (self.repository.uuid, self.branch_path, result_revision)
+        self.result_foreign_revid = (self.repository.uuid, self.branch_path,
+                result_revision)
 
         if result_author is not None:
             self._svn_revprops[properties.PROP_REVISION_AUTHOR] = result_author
@@ -845,7 +859,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         if logcache is not None:
             logcache.insert_revprops(result_revision, self._svn_revprops, True)
 
-        self.revmeta = self.repository._revmeta_provider.get_revision(self.branch_path, result_revision,
+        self.revmeta = self.repository._revmeta_provider.get_revision(
+                self.branch_path, result_revision,
                 None, # FIXME: Generate changes dictionary
                 revprops=self._svn_revprops,
                 changed_fileprops=self._changed_fileprops,
@@ -913,7 +928,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                 (self.base_revid, basis_revision_id))
         def dummy_get_file_with_stat(file_id):
             return tree.get_file(file_id), None
-        get_file_with_stat = getattr(tree, "get_file_with_stat", dummy_get_file_with_stat)
+        get_file_with_stat = getattr(tree, "get_file_with_stat",
+                dummy_get_file_with_stat)
         for (file_id, (old_path, new_path), changed_content,
              (old_ver, new_ver), (old_parent_id, new_parent_id),
              (old_name, new_name), (old_kind, new_kind),
