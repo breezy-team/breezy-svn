@@ -536,7 +536,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _open_directory(self, path, base_revnum):
         svn_base_file_id = self.editor._get_svn_base_file_id(self.old_id, path)
-        file_id = self.editor._get_bzr_base_file_id(self.old_id, self.new_id, path)
+        file_id = self.editor._get_existing_file_id(self.old_id, self.new_id, path)
         if file_id == svn_base_file_id:
             old_path = path
             renew_fileids = None
@@ -578,7 +578,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _open_file(self, path, base_revnum):
         svn_base_file_id = self.editor._get_svn_base_file_id(self.old_id, path)
-        file_id = self.editor._get_bzr_base_file_id(self.old_id, self.new_id, path)
+        file_id = self.editor._get_existing_file_id(self.old_id, self.new_id, path)
         svn_base_ie = self.editor.base_tree.inventory[svn_base_file_id]
         if file_id == svn_base_file_id:
             old_path = path
@@ -785,7 +785,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         else:
             # Just inherit file id from previous
             base_file_id = self._get_svn_base_file_id(None, u"")
-            file_id = self._get_bzr_base_file_id(None, None, u"")
+            file_id = self._get_existing_file_id(None, None, u"")
             if file_id == base_file_id:
                 renew_fileids = None
                 old_path = self.base_tree.id2path(file_id)
@@ -841,21 +841,24 @@ class RevisionBuildEditor(DeltaBuildEditor):
         assert (isinstance(parent_id, str) or
                 (parent_id is None and old_path == ""))
         basename = urlutils.basename(old_path)
+        # FIXME: Should use self.svn_base_tree here.
         return inventory_parent_id_basename_to_file_id(
-            self.base_tree.inventory, parent_id, basename)
+            self.bzr_base_tree.inventory, parent_id, basename)
 
-    def _get_bzr_base_file_id(self, old_parent_id, new_parent_id, path):
+    def _get_existing_file_id(self, old_parent_id, new_parent_id, path):
         assert isinstance(path, unicode)
         assert isinstance(old_parent_id, str) or old_parent_id is None
         assert isinstance(new_parent_id, str) or new_parent_id is None
-        ret = self._get_id_map().get(path)
+        ret = self._get_map_id(path)
         if ret is not None:
             return ret
         # If there was no explicit mention of this file id in the map, then
         # this file_id can only stay the same if the parent file id
         # didn't change
         if old_parent_id == new_parent_id:
-            return self._get_svn_base_file_id(old_parent_id, path)
+            basename = urlutils.basename(path)
+            return inventory_parent_id_basename_to_file_id(
+                self.bzr_base_tree.inventory, old_parent_id, basename)
         else:
             return self._get_new_file_id(path)
 
