@@ -548,25 +548,18 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         file_id = self.editor._get_new_file_id(path)
-        if self.editor.base_tree.has_id(file_id):
-            # This file was moved here from somewhere else, but the
-            # other location hasn't been removed yet.
-            if copyfrom_path is None:
-                bzr_base_path = self.editor.base_tree.inventory.id2path(file_id)
-            else:
-                if copyfrom_path != self.editor.base_tree.inventory.id2path(file_id):
-                    raise AssertionError
-                # No need to rename if it's already in the right spot
-                bzr_base_path = copyfrom_path
+        if self.editor.bzr_base_tree.has_id(file_id):
+            bzr_base_path = self.editor.base_tree.inventory.id2path(file_id)
         else:
             bzr_base_path = None
         if copyfrom_path is not None:
             # Delta's will be against this text
-            svn_base_ie = self.editor.get_svn_base_ie(copyfrom_path, copyfrom_revnum)
+            svn_base_ie = self.editor.get_svn_base_ie(copyfrom_path,
+                    copyfrom_revnum)
         else:
             svn_base_ie = None
-        return FileRevisionBuildEditor(self.editor, bzr_base_path, path, file_id,
-                                       self.new_id, svn_base_ie)
+        return FileRevisionBuildEditor(self.editor, bzr_base_path, path,
+                file_id, self.new_id, svn_base_ie)
 
     def _open_file(self, path, base_revnum):
         svn_base_file_id = self.editor._get_svn_base_file_id(self.bzr_base_file_id, path)
@@ -578,8 +571,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # Replace with historical version
             bzr_base_path = None
             self._delete_entry(path, base_revnum)
-        return FileRevisionBuildEditor(self.editor, bzr_base_path, path, file_id,
-                self.new_id, svn_base_ie)
+        return FileRevisionBuildEditor(self.editor, bzr_base_path, path,
+                file_id, self.new_id, svn_base_ie)
 
 
 def content_starts_with_link(cf):
