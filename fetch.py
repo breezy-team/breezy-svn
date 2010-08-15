@@ -78,7 +78,6 @@ from bzrlib.versionedfile import (
 
 from bzrlib.plugins.svn.errors import (
     AbsentPath,
-    FileIdMapIncomplete,
     InvalidFileName,
     TextChecksumMismatch,
     convert_svn_error,
@@ -123,7 +122,10 @@ except ImportError:
 
 def inventory_parent_id_basename_to_file_id(inv, parent_id, basename):
     if parent_id is None and basename == "":
-        return inv.root.file_id
+        if inv.root is None:
+            return None
+        else:
+            return inv.root.file_id
     parent_id_basename_index = getattr(inv, "parent_id_basename_to_file_id", None)
     if parent_id_basename_index is None:
         return inv[parent_id].children[basename].file_id
@@ -466,19 +468,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self.new_ie.revision = self.bzr_base_ie.revision
 
     def _delete_entry(self, path, revnum):
-        self.editor._explicitly_deleted.add(path)
-        def rec_del(ie):
-            p = self.editor.base_tree.inventory.id2path(ie.file_id)
-            if p in self.editor._deleted:
-                return
-            self.editor._deleted.add(p)
-            if ie.file_id not in self.editor._get_id_map().values():
-                self.editor._inv_delta.append((p, None, ie.file_id, None))
-            if ie.kind != 'directory':
-                return
-            for c in ie.children.values():
-                rec_del(c)
-        rec_del(self.editor.base_tree.inventory[self.editor._get_svn_base_file_id(self.old_id, path)])
+        self.editor._delete_entry(self.old_id, path, revnum)
 
     def _close(self):
         if (not self.editor.base_tree.has_id(self.new_id) or
@@ -719,6 +709,21 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self.inventory = None
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
 
+    def _delete_entry(self, old_parent_id, path, revnum):
+        self._explicitly_deleted.add(path)
+        def rec_del(ie):
+            p = self.bzr_base_tree.inventory.id2path(ie.file_id)
+            if p in self._deleted:
+                return
+            self._deleted.add(p)
+            if ie.file_id not in self._get_id_map().values():
+                self._inv_delta.append((p, None, ie.file_id, None))
+            if ie.kind != 'directory':
+                return
+            for c in ie.children.values():
+                rec_del(c)
+        rec_del(self.bzr_base_tree.inventory[self._get_bzr_base_file_id(old_parent_id, path)])
+
     def get_svn_base_ie(self, path, revnum):
         """Look up the base ie for the svn path, revnum.
 
@@ -759,6 +764,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             basis_id = NULL_REVISION
             basis_inv = None
         present_parent_ids = self.target.has_revisions(rev.parent_ids)
+        trace.mutter("Inventory delta: %r", self._inv_delta)
         rev.inventory_sha1, self.inventory = \
             self.target.add_inventory_by_delta(basis_id, self._inv_delta,
             rev.revision_id,
@@ -775,32 +781,38 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _open_root(self, base_revnum):
         assert self.revid is not None
 
-        if self.base_tree.inventory.root is None:
+        if self.svn_base_tree.inventory.root is None:
+            svn_base_ie = None
+            svn_base_file_id = None
+        else:
+            svn_base_file_id = self._get_svn_base_file_id(None, u"")
+            svn_base_ie = self.svn_base_tree.inventory[svn_base_file_id]
+
+        if self.bzr_base_tree.inventory.root is None:
             # First time the root is set
-            base_file_id = None
             bzr_base_ie = None
             file_id = self._get_new_file_id(u"")
             renew_fileids = None
             old_path = None
         else:
             # Just inherit file id from previous
-            base_file_id = self._get_svn_base_file_id(None, u"")
             file_id = self._get_existing_file_id(None, None, u"")
-            if file_id == base_file_id:
-                renew_fileids = None
-                old_path = self.base_tree.id2path(file_id)
-            else:
-                old_path = None
-                self._inv_delta.append((u"", None, base_file_id, None))
-                renew_fileids = base_file_id
             if self.bzr_base_tree.inventory.has_id(file_id):
                 bzr_base_ie = self.bzr_base_tree.inventory[file_id]
+                old_path = self.bzr_base_tree.id2path(file_id)
             else:
+                old_path = None
                 bzr_base_ie = None
+            if file_id == svn_base_file_id:
+                renew_fileids = None
+            else:
+                self._delete_entry(None, u"", base_revnum)
+                renew_fileids = svn_base_file_id
+                old_path = None
         assert isinstance(file_id, str)
 
-        return DirectoryRevisionBuildEditor(self, old_path, u"", base_file_id,
-            file_id, bzr_base_ie, None, renew_fileids)
+        return DirectoryRevisionBuildEditor(self, old_path, u"",
+                svn_base_file_id, file_id, bzr_base_ie, None, renew_fileids)
 
     def _renew_fileid(self, path):
         """'renew' the fileid of a path."""
@@ -841,7 +853,14 @@ class RevisionBuildEditor(DeltaBuildEditor):
         assert (isinstance(parent_id, str) or
                 (parent_id is None and old_path == ""))
         basename = urlutils.basename(old_path)
-        # FIXME: Should use self.svn_base_tree here.
+        return inventory_parent_id_basename_to_file_id(
+            self.svn_base_tree.inventory, parent_id, basename)
+
+    def _get_bzr_base_file_id(self, parent_id, old_path):
+        assert isinstance(old_path, unicode)
+        assert (isinstance(parent_id, str) or
+                (parent_id is None and old_path == ""))
+        basename = urlutils.basename(old_path)
         return inventory_parent_id_basename_to_file_id(
             self.bzr_base_tree.inventory, parent_id, basename)
 
@@ -856,9 +875,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         # this file_id can only stay the same if the parent file id
         # didn't change
         if old_parent_id == new_parent_id:
-            basename = urlutils.basename(path)
-            return inventory_parent_id_basename_to_file_id(
-                self.bzr_base_tree.inventory, old_parent_id, basename)
+            return self._get_bzr_base_file_id(old_parent_id, path)
         else:
             return self._get_new_file_id(path)
 
