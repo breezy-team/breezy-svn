@@ -2265,4 +2265,4 @@ class TestCheckFilename(TestCase):
         check_filename(u"foo/bar")
 
     def test_backspace(self):
-        self.assertRaises(InvalidFileName, check_filename(u"foo/bar"))
+        self.assertRaises(InvalidFileName, check_filename, u"foo\\bar")
