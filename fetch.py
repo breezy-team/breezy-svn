@@ -500,23 +500,25 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
     def _add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         file_id = self.editor._get_new_file_id(path)
 
-        if self.editor.base_tree.has_id(file_id):
-            # This directory was moved here from somewhere else, but the
-            # other location hasn't been removed yet.
-            if copyfrom_path is None:
-                old_path = self.editor.base_tree.id2path(file_id)
-            else:
-                assert copyfrom_path == self.editor.base_tree.id2path(file_id)
-                old_path = copyfrom_path
-            old_file_id = file_id
-            bzr_base_ie = self.editor.base_tree.inventory[file_id]
+        # This directory was moved here from somewhere else, but the
+        # other location hasn't been removed yet.
+        if copyfrom_path is not None:
+            svn_base_ie = self.editor.get_svn_base_ie(copyfrom_path,
+                                                      copyfrom_revnum)
+        else:
+            svn_base_ie = None
+
+        if self.editor.bzr_base_tree.has_id(file_id):
+            bzr_base_file_id = file_id
+            bzr_base_ie = self.editor.bzr_base_tree.inventory[bzr_base_file_id]
+            old_path = self.editor.bzr_base_tree.id2path(bzr_base_file_id)
         else:
             old_path = None
-            old_file_id = None
+            bzr_base_file_id = None
             bzr_base_ie = None
 
         return DirectoryRevisionBuildEditor(self.editor, old_path, path,
-            old_file_id, file_id, bzr_base_ie, self.new_id, [])
+            bzr_base_file_id, file_id, bzr_base_ie, self.new_id, [])
 
     def _open_directory(self, path, base_revnum):
         svn_base_file_id = self.editor._get_svn_base_file_id(self.old_id, path)
@@ -587,8 +589,8 @@ def content_starts_with_link(cf):
 
 class FileRevisionBuildEditor(FileBuildEditor):
 
-    __slots__ = ('old_path', 'file_id', 'is_symlink', 'svn_base_ie', 'base_chunks',
-                 'chunks', 'parent_file_id')
+    __slots__ = ('old_path', 'file_id', 'is_symlink', 'svn_base_ie',
+                 'base_chunks', 'chunks', 'parent_file_id')
 
     def __init__(self, editor, old_path, path, file_id, parent_file_id,
                  svn_base_ie):
@@ -660,14 +662,16 @@ class FileRevisionBuildEditor(FileBuildEditor):
             self.is_executable = self.svn_base_ie.executable
 
         if self.is_symlink:
-            ie = InventoryLink(self.file_id, urlutils.basename(self.path), self.parent_file_id)
+            ie = InventoryLink(self.file_id, urlutils.basename(self.path),
+                    self.parent_file_id)
             ie.symlink_target = cf.get_bytes_as('fulltext')[len("link "):]
             if "\n" in ie.symlink_target:
                 raise AssertionError("bzr doesn't support newlines in symlink targets yet")
             cf = ChunkedContentFactory(file_key, parent_keys,
                 osutils.sha_string(""), [])
         else:
-            ie = InventoryFile(self.file_id, urlutils.basename(self.path), self.parent_file_id)
+            ie = InventoryFile(self.file_id, urlutils.basename(self.path),
+                    self.parent_file_id)
             ie.text_sha1 = text_sha1
             ie.text_size = text_size
             assert ie.text_size is not None
@@ -676,7 +680,6 @@ class FileRevisionBuildEditor(FileBuildEditor):
         ie.revision = text_revision
         self.editor._inv_delta.append((self.old_path, self.path, self.file_id,
             ie))
-        self.chunks = None
 
 
 class RevisionBuildEditor(DeltaBuildEditor):
@@ -776,8 +779,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 old_path = None
                 self._inv_delta.append((u"", None, base_file_id, None))
                 renew_fileids = base_file_id
-            if self.base_tree.inventory.has_id(file_id):
-                bzr_base_ie = self.base_tree.inventory[file_id]
+            if self.bzr_base_tree.inventory.has_id(file_id):
+                bzr_base_ie = self.bzr_base_tree.inventory[file_id]
             else:
                 bzr_base_ie = None
         assert isinstance(file_id, str)
