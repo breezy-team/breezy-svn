@@ -121,6 +121,20 @@ except ImportError:
                                      ChunkWriteStream(target_chunks))
 
 
+def inventory_parent_id_basename_to_file_id(inv, parent_id, basename):
+    if parent_id is None and basename == "":
+        return inv.root.file_id
+    parent_id_basename_index = getattr(inv, "parent_id_basename_to_file_id", None)
+    if parent_id_basename_index is None:
+        return inv[parent_id].children[basename].file_id
+    else:
+        ret = parent_id_basename_index.iteritems([(parent_id or '', basename.encode("utf-8"))])
+        try:
+            return ret.next()[1]
+        except IndexError:
+            raise KeyError((parent_id, basename))
+
+
 def inventory_ancestors(inv, fileid, exceptions):
     ret = list()
     for ie in inv[fileid].children.values():
@@ -826,21 +840,9 @@ class RevisionBuildEditor(DeltaBuildEditor):
         assert isinstance(old_path, unicode)
         assert (isinstance(parent_id, str) or
                 (parent_id is None and old_path == ""))
-        if old_path == "":
-            return self.base_tree.inventory.root.file_id
         basename = urlutils.basename(old_path)
-        parent_id_basename_index = getattr(self.base_tree.inventory, "parent_id_basename_to_file_id", None)
-        if parent_id_basename_index is None:
-            try:
-                return self.base_tree.inventory[parent_id].children[basename].file_id
-            except KeyError:
-                raise FileIdMapIncomplete(basename, self.base_tree.inventory.id2path(parent_id), self.revmeta)
-        else:
-            ret = parent_id_basename_index.iteritems([(parent_id or '', basename.encode("utf-8"))])
-            try:
-                return ret.next()[1]
-            except IndexError:
-                raise FileIdMapIncomplete(basename, self.base_tree.inventory.id2path(parent_id), self.revmeta)
+        return inventory_parent_id_basename_to_file_id(
+            self.base_tree.inventory, parent_id, basename)
 
     def _get_bzr_base_file_id(self, old_parent_id, new_parent_id, path):
         assert isinstance(path, unicode)
