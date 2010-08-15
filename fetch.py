@@ -450,15 +450,14 @@ class FileBuildEditor(object):
 
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
-    __slots__ = ('bzr_base_file_id', 'new_id', 'bzr_base_path',
+    __slots__ = ('new_id', 'bzr_base_path',
                  '_metadata_changed', '_renew_fileids', 'new_ie',
                  'svn_base_ie', 'bzr_base_ie')
 
-    def __init__(self, editor, bzr_base_path, path, bzr_base_file_id, new_id,
+    def __init__(self, editor, bzr_base_path, path, new_id,
             bzr_base_ie, svn_base_ie, parent_file_id, renew_fileids=None):
         super(DirectoryRevisionBuildEditor, self).__init__(editor, path)
         assert isinstance(new_id, str)
-        self.bzr_base_file_id = bzr_base_file_id
         self.new_id = new_id
         self.bzr_base_path = bzr_base_path
         self._metadata_changed = False
@@ -516,30 +515,29 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             svn_base_ie = None
 
         if self.editor.bzr_base_tree.has_id(file_id):
-            bzr_base_file_id = file_id
-            bzr_base_ie = self.editor.bzr_base_tree.inventory[bzr_base_file_id]
-            bzr_base_path = self.editor.bzr_base_tree.id2path(bzr_base_file_id)
+            bzr_base_ie = self.editor.bzr_base_tree.inventory[file_id]
+            bzr_base_path = self.editor.bzr_base_tree.id2path(file_id)
         else:
             bzr_base_path = None
-            bzr_base_file_id = None
             bzr_base_ie = None
 
         return DirectoryRevisionBuildEditor(self.editor, bzr_base_path, path,
-            bzr_base_file_id, file_id, bzr_base_ie, svn_base_ie, self.new_id,
+            file_id, bzr_base_ie, svn_base_ie, self.new_id,
             [])
 
     def _open_directory(self, path, base_revnum):
         svn_base_file_id = self.editor._get_svn_base_file_id(
             self.svn_base_ie.file_id, path, base_revnum)
         svn_base_ie = self.editor.svn_base_tree.inventory[svn_base_file_id]
-        file_id = self.editor._get_existing_file_id(self.bzr_base_file_id,
-                self.new_id, path)
+        if self.bzr_base_ie:
+            file_id = self.editor._get_existing_file_id(
+                    self.bzr_base_ie.file_id, self.new_id, path)
+        else:
+            file_id = self.editor._get_new_file_id(path)
         if self.editor.base_tree.inventory.has_id(file_id):
             bzr_base_ie = self.editor.base_tree.inventory[file_id]
-            bzr_base_file_id = file_id
         else:
             bzr_base_ie = None
-            bzr_base_file_id = None
 
         if file_id == svn_base_file_id:
             bzr_base_path = path
@@ -554,7 +552,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             else:
                 renew_fileids = None
         return DirectoryRevisionBuildEditor(self.editor, bzr_base_path, path,
-            bzr_base_file_id, file_id, bzr_base_ie, svn_base_ie, self.new_id,
+            file_id, bzr_base_ie, svn_base_ie, self.new_id,
             renew_fileids=renew_fileids)
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
@@ -575,8 +573,11 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
     def _open_file(self, path, base_revnum):
         svn_base_file_id = self.editor._get_svn_base_file_id(
             self.svn_base_ie.file_id, path, base_revnum)
-        file_id = self.editor._get_existing_file_id(
-            self.bzr_base_file_id, self.new_id, path)
+        if self.bzr_base_ie:
+            file_id = self.editor._get_existing_file_id(
+                self.bzr_base_ie.file_id, self.new_id, path)
+        else:
+            file_id = self.editor._get_new_file_id(path)
         svn_base_ie = self.editor.base_tree.inventory[svn_base_file_id]
         if file_id == svn_base_file_id:
             bzr_base_path = path
@@ -822,8 +823,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         assert isinstance(file_id, str)
 
         return DirectoryRevisionBuildEditor(self, bzr_base_path, u"",
-                svn_base_file_id, file_id, bzr_base_ie, svn_base_ie,
-                None, renew_fileids)
+                file_id, bzr_base_ie, svn_base_ie, None, renew_fileids)
 
     def _renew_fileid(self, path):
         """'renew' the fileid of a path."""
