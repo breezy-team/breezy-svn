@@ -16,13 +16,13 @@
 
 """Fetching revisions from Subversion repositories in batches.
 
-Everywhere in this file 'bzr_base_ie' refers to the entry with the 
+Everywhere in this file 'bzr_base_ie' refers to the entry with the
 same file_id in the old revision (left hand side parent revision).
 
-'svn_base_ie' refers to the inventory entry from the svn revision 
+'svn_base_ie' refers to the inventory entry from the svn revision
 that the copy happened.
 
-'new_ie' refers to the inventory entry that is newly created, as part 
+'new_ie' refers to the inventory entry that is newly created, as part
 of the inventory delta.
 """
 
@@ -126,11 +126,13 @@ def inventory_parent_id_basename_to_file_id(inv, parent_id, basename):
             return None
         else:
             return inv.root.file_id
-    parent_id_basename_index = getattr(inv, "parent_id_basename_to_file_id", None)
+    parent_id_basename_index = getattr(inv, "parent_id_basename_to_file_id",
+        None)
     if parent_id_basename_index is None:
         return inv[parent_id].children[basename].file_id
     else:
-        ret = parent_id_basename_index.iteritems([(parent_id or '', basename.encode("utf-8"))])
+        ret = parent_id_basename_index.iteritems(
+            [(parent_id or '', basename.encode("utf-8"))])
         try:
             return ret.next()[1]
         except IndexError:
