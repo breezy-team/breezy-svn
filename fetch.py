@@ -448,17 +448,17 @@ class FileBuildEditor(object):
 
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
-    __slots__ = ('old_id', 'new_id', 'old_path', '_metadata_changed',
-                 '_renew_fileids', 'new_ie', 'svn_base_ie',
-                 'bzr_base_ie')
+    __slots__ = ('bzr_base_file_id', 'new_id', 'bzr_base_path',
+                 '_metadata_changed', '_renew_fileids', 'new_ie',
+                 'svn_base_ie', 'bzr_base_ie')
 
-    def __init__(self, editor, old_path, path, old_id, new_id,
+    def __init__(self, editor, bzr_base_path, path, bzr_base_file_id, new_id,
             bzr_base_ie, parent_file_id, renew_fileids=None):
         super(DirectoryRevisionBuildEditor, self).__init__(editor, path)
         assert isinstance(new_id, str)
-        self.old_id = old_id
+        self.bzr_base_file_id = bzr_base_file_id
         self.new_id = new_id
-        self.old_path = old_path
+        self.bzr_base_path = bzr_base_path
         self._metadata_changed = False
         self._renew_fileids = renew_fileids
         self.bzr_base_ie = bzr_base_ie
@@ -468,13 +468,13 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self.new_ie.revision = self.bzr_base_ie.revision
 
     def _delete_entry(self, path, revnum):
-        self.editor._delete_entry(self.old_id, path, revnum)
+        self.editor._delete_entry(self.bzr_base_file_id, path, revnum)
 
     def _close(self):
         if (not self.editor.base_tree.has_id(self.new_id) or
             (self._metadata_changed and self.path != u"") or
             self.new_ie != self.editor.base_tree.inventory[self.new_id] or
-            self.old_path != self.path or
+            self.bzr_base_path != self.path or
             self.editor._get_text_revision(self.path) is not None):
             assert self.editor.revid is not None
 
@@ -486,7 +486,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                 (self.new_id, self.new_ie.revision),
                 tuple([(self.new_id, revid) for revid in text_parents]), None,
                 [])])
-            self.editor._inv_delta.append((self.old_path, self.path, self.new_id, self.new_ie))
+            self.editor._inv_delta.append((self.bzr_base_path, self.path, self.new_id, self.new_ie))
         if self._renew_fileids:
             # Make sure files get re-added that weren't mentioned explicitly
             # A bit expensive (O(d)), but this should be very rare
@@ -515,23 +515,25 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         if self.editor.bzr_base_tree.has_id(file_id):
             bzr_base_file_id = file_id
             bzr_base_ie = self.editor.bzr_base_tree.inventory[bzr_base_file_id]
-            old_path = self.editor.bzr_base_tree.id2path(bzr_base_file_id)
+            bzr_base_path = self.editor.bzr_base_tree.id2path(bzr_base_file_id)
         else:
-            old_path = None
+            bzr_base_path = None
             bzr_base_file_id = None
             bzr_base_ie = None
 
-        return DirectoryRevisionBuildEditor(self.editor, old_path, path,
+        return DirectoryRevisionBuildEditor(self.editor, bzr_base_path, path,
             bzr_base_file_id, file_id, bzr_base_ie, self.new_id, [])
 
     def _open_directory(self, path, base_revnum):
-        svn_base_file_id = self.editor._get_svn_base_file_id(self.old_id, path)
-        file_id = self.editor._get_existing_file_id(self.old_id, self.new_id, path)
+        svn_base_file_id = self.editor._get_svn_base_file_id(
+            self.bzr_base_file_id, path)
+        file_id = self.editor._get_existing_file_id(self.bzr_base_file_id,
+                self.new_id, path)
         if file_id == svn_base_file_id:
-            old_path = path
+            bzr_base_path = path
             renew_fileids = None
         else:
-            old_path = None
+            bzr_base_path = None
             self._delete_entry(path, base_revnum)
             # If a directory is replaced by a copy of itself, we need
             # to make sure all children get readded with a new file id
@@ -540,7 +542,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             bzr_base_ie = self.editor.base_tree.inventory[file_id]
         else:
             bzr_base_ie = None
-        return DirectoryRevisionBuildEditor(self.editor, old_path, path,
+        return DirectoryRevisionBuildEditor(self.editor, bzr_base_path, path,
             svn_base_file_id, file_id, bzr_base_ie, self.new_id,
             renew_fileids=renew_fileids)
 
@@ -550,33 +552,33 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # This file was moved here from somewhere else, but the
             # other location hasn't been removed yet.
             if copyfrom_path is None:
-                old_path = self.editor.base_tree.inventory.id2path(file_id)
+                bzr_base_path = self.editor.base_tree.inventory.id2path(file_id)
             else:
                 if copyfrom_path != self.editor.base_tree.inventory.id2path(file_id):
                     raise AssertionError
                 # No need to rename if it's already in the right spot
-                old_path = copyfrom_path
+                bzr_base_path = copyfrom_path
         else:
-            old_path = None
+            bzr_base_path = None
         if copyfrom_path is not None:
             # Delta's will be against this text
             svn_base_ie = self.editor.get_svn_base_ie(copyfrom_path, copyfrom_revnum)
         else:
             svn_base_ie = None
-        return FileRevisionBuildEditor(self.editor, old_path, path, file_id,
+        return FileRevisionBuildEditor(self.editor, bzr_base_path, path, file_id,
                                        self.new_id, svn_base_ie)
 
     def _open_file(self, path, base_revnum):
-        svn_base_file_id = self.editor._get_svn_base_file_id(self.old_id, path)
-        file_id = self.editor._get_existing_file_id(self.old_id, self.new_id, path)
+        svn_base_file_id = self.editor._get_svn_base_file_id(self.bzr_base_file_id, path)
+        file_id = self.editor._get_existing_file_id(self.bzr_base_file_id, self.new_id, path)
         svn_base_ie = self.editor.base_tree.inventory[svn_base_file_id]
         if file_id == svn_base_file_id:
-            old_path = path
+            bzr_base_path = path
         else:
             # Replace with historical version
-            old_path = None
+            bzr_base_path = None
             self._delete_entry(path, base_revnum)
-        return FileRevisionBuildEditor(self.editor, old_path, path, file_id,
+        return FileRevisionBuildEditor(self.editor, bzr_base_path, path, file_id,
                 self.new_id, svn_base_ie)
 
 
@@ -593,13 +595,13 @@ def content_starts_with_link(cf):
 
 class FileRevisionBuildEditor(FileBuildEditor):
 
-    __slots__ = ('old_path', 'file_id', 'is_symlink', 'svn_base_ie',
+    __slots__ = ('bzr_base_path', 'file_id', 'is_symlink', 'svn_base_ie',
                  'base_chunks', 'chunks', 'parent_file_id')
 
-    def __init__(self, editor, old_path, path, file_id, parent_file_id,
+    def __init__(self, editor, bzr_base_path, path, file_id, parent_file_id,
                  svn_base_ie):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
-        self.old_path = old_path
+        self.bzr_base_path = bzr_base_path
         self.file_id = file_id
         self.svn_base_ie = svn_base_ie
         if self.svn_base_ie is None:
@@ -682,7 +684,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
             ie.executable = self.is_executable
         self.editor.texts.insert_record_stream([cf])
         ie.revision = text_revision
-        self.editor._inv_delta.append((self.old_path, self.path, self.file_id,
+        self.editor._inv_delta.append((self.bzr_base_path, self.path, self.file_id,
             ie))
 
 
@@ -793,25 +795,25 @@ class RevisionBuildEditor(DeltaBuildEditor):
             bzr_base_ie = None
             file_id = self._get_new_file_id(u"")
             renew_fileids = None
-            old_path = None
+            bzr_base_path = None
         else:
             # Just inherit file id from previous
             file_id = self._get_existing_file_id(None, None, u"")
             if self.bzr_base_tree.inventory.has_id(file_id):
                 bzr_base_ie = self.bzr_base_tree.inventory[file_id]
-                old_path = self.bzr_base_tree.id2path(file_id)
+                bzr_base_path = self.bzr_base_tree.id2path(file_id)
             else:
-                old_path = None
+                bzr_base_path = None
                 bzr_base_ie = None
             if file_id == svn_base_file_id:
                 renew_fileids = None
             else:
                 self._delete_entry(None, u"", base_revnum)
                 renew_fileids = svn_base_file_id
-                old_path = None
+                bzr_basen_path = None
         assert isinstance(file_id, str)
 
-        return DirectoryRevisionBuildEditor(self, old_path, u"",
+        return DirectoryRevisionBuildEditor(self, bzr_base_path, u"",
                 svn_base_file_id, file_id, bzr_base_ie, None, renew_fileids)
 
     def _renew_fileid(self, path):
@@ -856,11 +858,11 @@ class RevisionBuildEditor(DeltaBuildEditor):
         return inventory_parent_id_basename_to_file_id(
             self.svn_base_tree.inventory, parent_id, basename)
 
-    def _get_bzr_base_file_id(self, parent_id, old_path):
-        assert isinstance(old_path, unicode)
+    def _get_bzr_base_file_id(self, parent_id, path):
+        assert isinstance(path, unicode)
         assert (isinstance(parent_id, str) or
-                (parent_id is None and old_path == ""))
-        basename = urlutils.basename(old_path)
+                (parent_id is None and path == ""))
+        basename = urlutils.basename(path)
         return inventory_parent_id_basename_to_file_id(
             self.bzr_base_tree.inventory, parent_id, basename)
 
