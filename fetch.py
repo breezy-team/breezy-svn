@@ -495,7 +495,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             delta_new_paths = set([e[1] for e in self.editor._inv_delta if e[1] is not None])
             exceptions = delta_new_paths.union(self.editor._explicitly_deleted)
             for path in inventory_ancestors(self.editor.base_tree.inventory,
-                    self._renew_fileids, exceptions):
+                    self._renew_fileids.file_id, exceptions):
                 if isinstance(path, str):
                     path = path.decode("utf-8")
                 self.editor._renew_fileid(path)
@@ -544,7 +544,10 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self._delete_entry(path, base_revnum)
             # If a directory is replaced by a copy of itself, we need
             # to make sure all children get readded with a new file id
-            renew_fileids = svn_base_file_id
+            if svn_base_file_id is not None:
+                renew_fileids = self.editor.svn_base_tree.inventory[svn_base_file_id]
+            else:
+                renew_fileids = None
         return DirectoryRevisionBuildEditor(self.editor, bzr_base_path, path,
             svn_base_file_id, file_id, bzr_base_ie, self.new_id,
             renew_fileids=renew_fileids)
@@ -809,8 +812,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 renew_fileids = None
             else:
                 self._delete_entry(None, u"", base_revnum)
-                renew_fileids = svn_base_file_id
-                bzr_basen_path = None
+                renew_fileids = svn_base_ie
+                bzr_base_path = None
         assert isinstance(file_id, str)
 
         return DirectoryRevisionBuildEditor(self, bzr_base_path, u"",
