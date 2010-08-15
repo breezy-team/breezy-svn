@@ -448,8 +448,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         self.bzr_base_ie = bzr_base_ie
         self.new_ie = InventoryDirectory(self.new_id,
                 urlutils.basename(self.path), parent_file_id)
-        if self.editor.base_tree.has_id(self.new_id):
-            self.new_ie.revision = self.editor.base_tree.inventory[self.new_id].revision
+        if self.bzr_base_ie:
+            self.new_ie.revision = self.bzr_base_ie.revision
 
     def _delete_entry(self, path, revnum):
         self.editor._explicitly_deleted.add(path)
@@ -498,7 +498,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self.editor._finish_commit()
 
     def _add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
-        file_id = self.editor._get_new_id(path)
+        file_id = self.editor._get_new_file_id(path)
 
         if self.editor.base_tree.has_id(file_id):
             # This directory was moved here from somewhere else, but the
@@ -519,10 +519,9 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_file_id, file_id, bzr_base_ie, self.new_id, [])
 
     def _open_directory(self, path, base_revnum):
-        base_file_id = self.editor._get_svn_base_file_id(self.old_id, path)
-        base_revid = self.editor.base_tree.inventory[base_file_id].revision
+        svn_base_file_id = self.editor._get_svn_base_file_id(self.old_id, path)
         file_id = self.editor._get_bzr_base_file_id(self.old_id, self.new_id, path)
-        if file_id == base_file_id:
+        if file_id == svn_base_file_id:
             old_path = path
             renew_fileids = None
         else:
@@ -530,17 +529,17 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self._delete_entry(path, base_revnum)
             # If a directory is replaced by a copy of itself, we need
             # to make sure all children get readded with a new file id
-            renew_fileids = base_file_id
+            renew_fileids = svn_base_file_id
         if self.editor.base_tree.inventory.has_id(file_id):
             bzr_base_ie = self.editor.base_tree.inventory[file_id]
         else:
             bzr_base_ie = None
         return DirectoryRevisionBuildEditor(self.editor, old_path, path,
-            base_file_id, file_id, bzr_base_ie, self.new_id,
+            svn_base_file_id, file_id, bzr_base_ie, self.new_id,
             renew_fileids=renew_fileids)
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
-        file_id = self.editor._get_new_id(path)
+        file_id = self.editor._get_new_file_id(path)
         if self.editor.base_tree.has_id(file_id):
             # This file was moved here from somewhere else, but the
             # other location hasn't been removed yet.
@@ -565,7 +564,6 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         svn_base_file_id = self.editor._get_svn_base_file_id(self.old_id, path)
         file_id = self.editor._get_bzr_base_file_id(self.old_id, self.new_id, path)
         svn_base_ie = self.editor.base_tree.inventory[svn_base_file_id]
-        is_symlink = (svn_base_ie.kind == 'symlink')
         if file_id == svn_base_file_id:
             old_path = path
         else:
@@ -573,7 +571,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             old_path = None
             self._delete_entry(path, base_revnum)
         return FileRevisionBuildEditor(self.editor, old_path, path, file_id,
-            self.new_id, svn_base_ie, is_symlink=is_symlink)
+                self.new_id, svn_base_ie)
 
 
 def content_starts_with_link(cf):
@@ -593,15 +591,16 @@ class FileRevisionBuildEditor(FileBuildEditor):
                  'chunks', 'parent_file_id')
 
     def __init__(self, editor, old_path, path, file_id, parent_file_id,
-                 svn_base_ie, is_symlink=False):
+                 svn_base_ie):
         super(FileRevisionBuildEditor, self).__init__(editor, path)
         self.old_path = old_path
         self.file_id = file_id
-        self.is_symlink = is_symlink
         self.svn_base_ie = svn_base_ie
         if self.svn_base_ie is None:
             self.base_chunks = []
+            self.is_symlink = False
         else:
+            self.is_symlink = (svn_base_ie.kind == 'symlink')
             self.base_chunks = self.editor._get_chunked(self.svn_base_ie)
         self.chunks = None
         self.parent_file_id = parent_file_id
@@ -763,13 +762,12 @@ class RevisionBuildEditor(DeltaBuildEditor):
             # First time the root is set
             base_file_id = None
             bzr_base_ie = None
-            file_id = self._get_new_id(u"")
+            file_id = self._get_new_file_id(u"")
             renew_fileids = None
             old_path = None
         else:
             # Just inherit file id from previous
             base_file_id = self._get_svn_base_file_id(None, u"")
-            base_revid = self.base_tree.inventory[base_file_id].revision
             file_id = self._get_bzr_base_file_id(None, None, u"")
             if file_id == base_file_id:
                 renew_fileids = None
@@ -793,8 +791,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
         old_file_id = self.base_tree.path2id(path)
         old_ie = self.base_tree.inventory[old_file_id]
         new_ie = old_ie.copy()
-        new_ie.file_id = self._get_new_id(path)
-        new_ie.parent_id = self._get_new_id(urlutils.split(path)[0])
+        new_ie.file_id = self._get_new_file_id(path)
+        new_ie.parent_id = self._get_new_file_id(urlutils.split(path)[0])
         new_ie.revision = self._get_text_revision(path) or self.revid
         # FIXME: Use self._text_cache
         record = self.texts.get_record_stream([(old_ie.file_id, old_ie.revision)],
@@ -854,9 +852,9 @@ class RevisionBuildEditor(DeltaBuildEditor):
         if old_parent_id == new_parent_id:
             return self._get_svn_base_file_id(old_parent_id, path)
         else:
-            return self._get_new_id(path)
+            return self._get_new_file_id(path)
 
-    def _get_new_id(self, new_path):
+    def _get_new_file_id(self, new_path):
         assert isinstance(new_path, unicode)
         ret = self._get_map_id(new_path)
         if ret is not None:
@@ -906,14 +904,14 @@ class FileTreeDeltaBuildEditor(FileBuildEditor):
         if self.change_kind == 'add':
             if self.copyfrom_path is not None and self._get_map_id(self.path) is not None:
                 self.editor.delta.renamed.append((self.copyfrom_path, self.path,
-                    self.editor._get_new_id(self.path), entry_kind,
+                    self.editor._get_new_file_id(self.path), entry_kind,
                     text_changed, metadata_changed))
             else:
                 self.editor.delta.added.append((self.path,
-                    self.editor._get_new_id(self.path), entry_kind))
+                    self.editor._get_new_file_id(self.path), entry_kind))
         else:
             self.editor.delta.modified.append((self.path,
-                self.editor._get_new_id(self.path), entry_kind, text_changed,
+                self.editor._get_new_file_id(self.path), entry_kind, text_changed,
                 metadata_changed))
 
     def _apply_textdelta(self, base_checksum=None):
@@ -943,9 +941,9 @@ class DirectoryTreeDeltaBuildEditor(DirectoryBuildEditor):
 
     def _add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         if copyfrom_path is not None and self.editor._was_renamed(path) is not None:
-            self.editor.delta.renamed.append((copyfrom_path, path, self.editor._get_new_id(path), 'directory', False, False))
+            self.editor.delta.renamed.append((copyfrom_path, path, self.editor._get_new_file_id(path), 'directory', False, False))
         else:
-            self.editor.delta.added.append((path, self.editor._get_new_id(path), 'directory'))
+            self.editor.delta.added.append((path, self.editor._get_new_file_id(path), 'directory'))
         return DirectoryTreeDeltaBuildEditor(self.editor, path)
 
 
@@ -967,13 +965,13 @@ class TreeDeltaBuildEditor(DeltaBuildEditor):
         return DirectoryTreeDeltaBuildEditor(self, u"")
 
     def _was_renamed(self, path):
-        fileid = self._get_new_id(path)
+        fileid = self._get_new_file_id(path)
         return self._parent_idmap.has_fileid(fileid)
 
     def _get_svn_base_file_id(self, path):
         return self._parent_idmap.lookup(self.mapping, path)[0]
 
-    def _get_new_id(self, path):
+    def _get_new_file_id(self, path):
         return self._idmap.lookup(self.mapping, path)[0]
 
 
