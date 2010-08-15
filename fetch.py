@@ -433,10 +433,11 @@ class FileBuildEditor(object):
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     __slots__ = ('old_id', 'new_id', 'old_path', '_metadata_changed',
-                 '_renew_fileids', 'new_ie')
+                 '_renew_fileids', 'new_ie', 'svn_base_ie',
+                 'bzr_base_ie')
 
     def __init__(self, editor, old_path, path, old_id, new_id,
-            parent_file_id, renew_fileids=None):
+            bzr_base_ie, parent_file_id, renew_fileids=None):
         super(DirectoryRevisionBuildEditor, self).__init__(editor, path)
         assert isinstance(new_id, str)
         self.old_id = old_id
@@ -444,6 +445,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         self.old_path = old_path
         self._metadata_changed = False
         self._renew_fileids = renew_fileids
+        self.bzr_base_ie = bzr_base_ie
         self.new_ie = InventoryDirectory(self.new_id,
                 urlutils.basename(self.path), parent_file_id)
         if self.editor.base_tree.has_id(self.new_id):
@@ -507,12 +509,14 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                 assert copyfrom_path == self.editor.base_tree.id2path(file_id)
                 old_path = copyfrom_path
             old_file_id = file_id
+            bzr_base_ie = self.editor.base_tree.inventory[file_id]
         else:
             old_path = None
             old_file_id = None
+            bzr_base_ie = None
 
         return DirectoryRevisionBuildEditor(self.editor, old_path, path,
-            old_file_id, file_id, self.new_id, [])
+            old_file_id, file_id, bzr_base_ie, self.new_id, [])
 
     def _open_directory(self, path, base_revnum):
         base_file_id = self.editor._get_svn_base_file_id(self.old_id, path)
@@ -527,8 +531,12 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             # If a directory is replaced by a copy of itself, we need
             # to make sure all children get readded with a new file id
             renew_fileids = base_file_id
+        if self.editor.base_tree.inventory.has_id(file_id):
+            bzr_base_ie = self.editor.base_tree.inventory[file_id]
+        else:
+            bzr_base_ie = None
         return DirectoryRevisionBuildEditor(self.editor, old_path, path,
-            base_file_id, file_id, self.new_id,
+            base_file_id, file_id, bzr_base_ie, self.new_id,
             renew_fileids=renew_fileids)
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
@@ -754,6 +762,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         if self.base_tree.inventory.root is None:
             # First time the root is set
             base_file_id = None
+            bzr_base_ie = None
             file_id = self._get_new_id(u"")
             renew_fileids = None
             old_path = None
@@ -768,11 +777,15 @@ class RevisionBuildEditor(DeltaBuildEditor):
             else:
                 old_path = None
                 self._inv_delta.append((u"", None, base_file_id, None))
-                renew_fileids =  base_file_id
+                renew_fileids = base_file_id
+            if self.base_tree.inventory.has_id(file_id):
+                bzr_base_ie = self.base_tree.inventory[file_id]
+            else:
+                bzr_base_ie = None
         assert isinstance(file_id, str)
 
         return DirectoryRevisionBuildEditor(self, old_path, u"", base_file_id,
-            file_id, None, renew_fileids)
+            file_id, bzr_base_ie, None, renew_fileids)
 
     def _renew_fileid(self, path):
         """'renew' the fileid of a path."""
