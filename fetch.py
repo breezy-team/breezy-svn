@@ -471,7 +471,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self.new_ie.revision = self.bzr_base_ie.revision
 
     def _delete_entry(self, path, revnum):
-        self.editor._delete_entry(self.bzr_base_file_id, path, revnum)
+        self.editor._delete_entry(self.svn_base_ie.file_id, path, revnum)
 
     def _close(self):
         if (not self.editor.base_tree.has_id(self.new_id) or
@@ -530,14 +530,16 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _open_directory(self, path, base_revnum):
         svn_base_file_id = self.editor._get_svn_base_file_id(
-            self.bzr_base_file_id, path, base_revnum)
+            self.svn_base_ie.file_id, path, base_revnum)
         svn_base_ie = self.editor.svn_base_tree.inventory[svn_base_file_id]
         file_id = self.editor._get_existing_file_id(self.bzr_base_file_id,
                 self.new_id, path)
         if self.editor.base_tree.inventory.has_id(file_id):
             bzr_base_ie = self.editor.base_tree.inventory[file_id]
+            bzr_base_file_id = file_id
         else:
             bzr_base_ie = None
+            bzr_base_file_id = None
 
         if file_id == svn_base_file_id:
             bzr_base_path = path
@@ -552,7 +554,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             else:
                 renew_fileids = None
         return DirectoryRevisionBuildEditor(self.editor, bzr_base_path, path,
-            svn_base_file_id, file_id, bzr_base_ie, svn_base_ie, self.new_id,
+            bzr_base_file_id, file_id, bzr_base_ie, svn_base_ie, self.new_id,
             renew_fileids=renew_fileids)
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
@@ -572,7 +574,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _open_file(self, path, base_revnum):
         svn_base_file_id = self.editor._get_svn_base_file_id(
-            self.bzr_base_file_id, path, base_revnum)
+            self.svn_base_ie.file_id, path, base_revnum)
         file_id = self.editor._get_existing_file_id(
             self.bzr_base_file_id, self.new_id, path)
         svn_base_ie = self.editor.base_tree.inventory[svn_base_file_id]
