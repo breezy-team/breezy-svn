@@ -68,6 +68,7 @@ from bzrlib.plugins.svn.errors import (
 from bzrlib.plugins.svn.fetch import (
    FetchRevisionFinder,
    InterFromSvnRepository,
+   check_filename,
    content_starts_with_link,
    )
 from bzrlib.plugins.svn.layout.standard import (
@@ -2255,3 +2256,13 @@ class ContentStartsWithLink(TestCase):
         vf = ChunkedContentFactory("mykey", None, None, [
             "li", "nk", " a", " link"])
         self.assertTrue(content_starts_with_link(vf))
+
+
+
+class TestCheckFilename(TestCase):
+
+    def test_valid(self):
+        check_filename(u"foo/bar")
+
+    def test_backspace(self):
+        self.assertRaises(InvalidFileName, check_filename(u"foo/bar"))
