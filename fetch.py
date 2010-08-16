@@ -675,7 +675,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
         if self.is_symlink:
             ie = InventoryLink(self.file_id, urlutils.basename(self.path),
                     self.parent_file_id)
-            ie.symlink_target = cf.get_bytes_as('fulltext')[len("link "):]
+            ie.symlink_target = cf.get_bytes_as('fulltext')[len("link "):].decode("utf-8")
             if "\n" in ie.symlink_target:
                 raise AssertionError("bzr doesn't support newlines in symlink "
                                      "targets yet")

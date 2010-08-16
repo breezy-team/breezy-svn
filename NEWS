@@ -35,6 +35,9 @@ bzr-svn 1.0.4					  UNRELEASED
     Please note that this will only work when the log cache is disabled. 
     (Jelmer Vernooij, #409668)
 
+  * Cope with non-ascii characters in symlink targets.
+    (Jelmer Vernooij)
+
  PERFORMANCE
 
   * Support using any connection when finding UUID, revision properties
