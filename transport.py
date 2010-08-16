@@ -350,8 +350,7 @@ class ConnectionPool(object):
             assert not c.url.endswith("/")
             if url == c.url or url.startswith(c.url+"/"):
                 self.connections.remove(c)
-                relpath = urlutils.relative_url(c.url, url)
-                mutter('LALA %s + %s -> %s', c.url, url, relpath)
+                relpath = urlutils.relative_url(c.url+"/", url.rstrip("/")+"/")
                 if relpath == ".":
                     relpath = ""
                 return c, relpath
