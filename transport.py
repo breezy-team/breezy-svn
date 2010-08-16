@@ -353,7 +353,7 @@ class ConnectionPool(object):
                 relpath = urlutils.relative_url(c.url+"/", url.rstrip("/")+"/")
                 if relpath == ".":
                     relpath = ""
-                return c, relpath
+                return c, relpath.rstrip("/")
         return self.new(url), ""
 
     def get(self, url):
