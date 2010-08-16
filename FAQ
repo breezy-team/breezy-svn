@@ -5,18 +5,18 @@ bzr-svn frequently asked questions
 
 Cloning a large Subversion branch is very slow
 ----------------------------------------------
-There is no way around this at the moment, because Bazaar has to import all 
+There is no way around this at the moment, because Bazaar has to import all
 the history from the Subversion branch.
 
-bzr-svn will work significantly faster against a Subversion 1.5 server, so if 
+bzr-svn will work significantly faster against a Subversion 1.5 server, so if
 you have control over the server it may be worthwhile to upgrade it.
 
 In the future it should hopefully be possible to use stacked branches.
 
 The Bazaar revno's differ from the Subversion revno's
 -----------------------------------------------------
-That's right. Bazaar revision numbers are per-branch, whereas Subversion 
-revno's are per-repository. If you would like to use Subversion revision 
+That's right. Bazaar revision numbers are per-branch, whereas Subversion
+revno's are per-repository. If you would like to use Subversion revision
 numbers, use the "svn:" revision specifier. For example:
 
 ::
@@ -27,14 +27,14 @@ bzr log will also show the Subversion revision number.
 
 Is it possible to keep the author name when pushing changes into Subversion?
 ----------------------------------------------------------------------------
-Yes, but this requires the repository to allow revision property changes. 
+Yes, but this requires the repository to allow revision property changes.
 
-See hooks/pre-revprop-change in the Subversion repository for 
+See hooks/pre-revprop-change in the Subversion repository for
 more information about how to do this.
 
-You also need to enable support for this in bzr-svn by setting 
-``override-svn-revprops`` in ~/.bazaar/bazaar.conf to a comma-separated 
-list of Subversion revision properties you would like to override. 
+You also need to enable support for this in bzr-svn by setting
+``override-svn-revprops`` in ~/.bazaar/bazaar.conf to a comma-separated
+list of Subversion revision properties you would like to override.
 
 For example::
 
@@ -43,10 +43,10 @@ For example::
 bzr-svn did a replace operation on the branch I pushed to when I tried to push a merge commit to Subversion
 -----------------------------------------------------------------------------------------------------------
 Yes, this is because bzr-svn has to preserve the mainline history of your Bazaar
-branch in Subversion. 
+branch in Subversion.
 
-If you would like to avoid this, use a checkout and merge into that ("bzr co") 
-or rebase on trunk rather than merging it. 
+If you would like to avoid this, use a checkout and merge into that ("bzr co")
+or rebase on trunk rather than merging it.
 
 For example::
 
@@ -59,34 +59,34 @@ For example::
  All changes applied successfully.
  Pushed up to revision 1075.
 
-If you would like to forbid Bazaar from ever doing these replace operations, set the 
-``append_revisions_only`` setting to True for the repository you're 
+If you would like to forbid Bazaar from ever doing these replace operations, set the
+``append_revisions_only`` setting to True for the repository you're
 pushing to.
 
 bzr-svn sets all kinds of file properties when pushing revisions into Subversion. Is this really necessary?
 -----------------------------------------------------------------------------------------------------------
-Yes, this is because bzr-svn pushes to Subversion while retaining the exact 
-same history that is in the Bazaar branch you're pushing. 
+Yes, this is because bzr-svn pushes to Subversion while retaining the exact
+same history that is in the Bazaar branch you're pushing.
 
-These properties are used for storing Bazaar metadata that can not be 
-losslessly mapped to existing Subversion metadata. 
+These properties are used for storing Bazaar metadata that can not be
+losslessly mapped to existing Subversion metadata.
 
-bzr-svn can and will use revision properties rather than file properties 
-if the Subversion server is running Subversion 1.5 or higher. These custom 
+bzr-svn can and will use revision properties rather than file properties
+if the Subversion server is running Subversion 1.5 or higher. These custom
 revision properties don't show up in commit notifications or trac.
 
 Alternatively, it is possible to push changes to Subversion without
-setting that metadata by using the ``bzr dpush`` command. 
-Since revisions created in Subversion this way are actually (slightly) 
-different from the matching revisions in the local branch, it is necessary for 
+setting that metadata by using the ``bzr dpush`` command.
+Since revisions created in Subversion this way are actually (slightly)
+different from the matching revisions in the local branch, it is necessary for
 the dpush command to rebase your branch to the remote branch after pushing.
 
-You would get a DivergedBranches error when pulling from a svn branch you have 
-just pushed to. 
+You would get a DivergedBranches error when pulling from a svn branch you have
+just pushed to.
 
-If you are using trac, you can get it to ignore these file properties by 
-setting	the ``hide_properties`` setting in the browser section of your 
-configuration to a list of properties that should not be displayed by trac, 
+If you are using trac, you can get it to ignore these file properties by
+setting	the ``hide_properties`` setting in the browser section of your
+configuration to a list of properties that should not be displayed by trac,
 e.g.::
 
   [browser]
@@ -95,15 +95,15 @@ e.g.::
 Is it possible to not use the on-disk cache?
 --------------------------------------------
 
-Yes, simply set ``use-cache = False`` for the repository in question in 
-~/.bazaar/subversion.conf.  This will of course have some consequences for the 
+Yes, simply set ``use-cache = False`` for the repository in question in
+~/.bazaar/subversion.conf.  This will of course have some consequences for the
 performance of bzr-svn since it will have to re-fetch data.
 
 Is it possible to access/modify custom Subversion file properties?
 ------------------------------------------------------------------
 
-No, this is not possible. If you are in a native Subversion Working Copy, you 
-can of course use the "svn propset" and "svn propget" commands. 
+No, this is not possible. If you are in a native Subversion Working Copy, you
+can of course use the "svn propset" and "svn propget" commands.
 
 ..
 	vim: ft=rest
