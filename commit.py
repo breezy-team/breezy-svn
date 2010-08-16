@@ -78,6 +78,19 @@ from bzrlib.plugins.svn.util import (
     lazy_dict,
     )
 
+_fileprops_warned_repos = set()
+
+def warn_setting_fileprops(uuid):
+    """Warn the user about the fact that file properties are going to be set.
+    """
+    if uuid in _fileprops_warned_repos:
+        return
+    _fileprops_warned_repos.add(uuid)
+    trace.warning("Storing Bazaar metadata in file properties. "
+                  "Use `bzr dpush` for lossfull push without file properties."
+                  "Upgrade the server to Subversion 1.5 or later to use "
+                  "(less visible) revision properties.")
+
 
 PROP_REVISION_ORIGINAL_DATE = getattr(properties, "PROP_REVISION_ORIGINAL_DATE", "svn:original-date")
 
@@ -390,9 +403,8 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
 
         # Handle this directory
         changed = dir_editor_send_changes(child_base, parents,
-            (iter_children, get_ie), new_child_path, child_ie.file_id, child_editor,
-            branch_path, modified_files, visit_dirs) or changed
-
+            (iter_children, get_ie), new_child_path, child_ie.file_id,
+            child_editor, branch_path, modified_files, visit_dirs) or changed
         child_editor.close()
 
     return changed
@@ -465,7 +477,8 @@ class SvnCommitBuilder(RootCommitBuilder):
             self.base_mapping = base_mapping
             self._base_revmeta = self.repository._revmeta_provider.lookup_revision(self.base_path, self.base_revnum)
             self._base_branch_props = self._base_revmeta.get_fileprops()
-            self.base_url = urlutils.join(self.repository.transport.svn_url, self.base_path)
+            self.base_url = urlutils.join(self.repository.transport.svn_url,
+                                          self.base_path)
 
         self.mapping = self.repository.get_mapping()
         # FIXME: Check that self.mapping >= self.base_mapping
@@ -490,8 +503,11 @@ class SvnCommitBuilder(RootCommitBuilder):
             raise BzrError("Please upgrade your Subversion client libraries to 1.5 or higher to be able to commit with Subversion mapping %s (current version is %r)" % (self.mapping.name, ra.version()))
 
         self._svn_revprops = {}
-        self._svnprops = lazy_dict({}, dict, self._base_branch_props.iteritems())
+        self._svnprops = lazy_dict({}, dict,
+            self._base_branch_props.iteritems())
         (self.set_custom_revprops, self.set_custom_fileprops) = self.repository._properties_to_set(self.mapping)
+        if self.set_custom_fileprops:
+            warn_setting_fileprops(self.repository.uuid)
         if self.supports_custom_revprops:
             # If possible, submit signature directly
             if opt_signature is not None:
