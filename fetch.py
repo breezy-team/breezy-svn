@@ -733,12 +733,14 @@ class RevisionBuildEditor(DeltaBuildEditor):
         rec_del(self.bzr_base_tree.inventory[self._get_bzr_base_file_id(old_parent_id, path)])
 
     def get_svn_base_ie_open(self, parent_id, path, revnum):
-        assert isinstance(path, unicode)
-        assert (isinstance(parent_id, str) or
-                (parent_id is None and path == ""))
-        basename = urlutils.basename(path)
+        """Find the inventory entry against which svn is sending the
+        changes to generat ethe current one.
+
+        """
+        assert type(path) is unicode
+        assert (type(parent_id) is str or (parent_id is None and path == ""))
         file_id = inventory_parent_id_basename_to_file_id(
-            self.svn_base_tree.inventory, parent_id, basename)
+            self.svn_base_tree.inventory, parent_id, urlutils.basename(path))
         return (file_id, self.svn_base_tree.inventory[file_id])
 
     def get_svn_base_ie_copyfrom(self, path, revnum):
@@ -894,7 +896,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
         ret = self._get_map_id(new_path)
         if ret is not None:
             return ret
-        return self.mapping.generate_file_id(self.revmeta.get_foreign_revid(), new_path)
+        return self.mapping.generate_file_id(
+            self.revmeta.get_foreign_revid(), new_path)
 
     def _get_text_revision(self, path):
         assert isinstance(path, unicode)
