@@ -45,7 +45,7 @@ from subvertpy import NODE_UNKNOWN
 # Maximum number of extra revisions to fetch in caching logwalker
 MAX_OVERHEAD_FETCH = 1000
 
-def iter_all_changes(from_revnum, to_revnum, get_revision_paths, 
+def iter_all_changes(from_revnum, to_revnum, get_revision_paths,
     revprop_list, limit=0):
     revnum = from_revnum
     ascending = (to_revnum > from_revnum)
@@ -283,7 +283,7 @@ class CachingLogWalker(object):
         self.cache.commit()
         return revprops
 
-    def _fetch_revisions(self, to_revnum=None, pb=None):
+    def _fetch_revisions(self, to_revnum, pb=None):
         """Fetch information about all revisions in the remote repository
         until to_revnum.
 
@@ -398,7 +398,8 @@ class LogWalker(object):
         return lazy_dict({}, self._transport.revprop_list, revnum)
 
     def iter_changes(self, prefixes, from_revnum, to_revnum=0, limit=0, pb=None):
-        """Return iterator over all the revisions between revnum and 0 named path or inside path.
+        """Return iterator over all the revisions between revnum and 0 named
+        path or inside path.
 
         :param prefixes:    Prefixes to report about (in from_revnum)
         :param from_revnum:  Start revision.
