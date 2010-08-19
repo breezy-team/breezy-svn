@@ -38,6 +38,8 @@ bzr-svn 1.0.4					  UNRELEASED
   * Cope with non-ascii characters in symlink targets.
     (Jelmer Vernooij)
 
+  * Cope with spaces in URLs during connect. (Jelmer Vernooij)
+
  PERFORMANCE
 
   * Support using any connection when finding UUID, revision properties

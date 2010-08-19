@@ -267,7 +267,7 @@ def Connection(url, auth=None, config=None):
         progress_cb = None
     assert type(url) == str
     try:
-        ret = subvertpy.ra.RemoteAccess(url, auth=auth,
+        ret = subvertpy.ra.RemoteAccess(_url_escape_uri(url), auth=auth,
                 client_string_func=bzrlib.plugins.svn.get_client_string,
                 progress_cb=progress_cb,
                 config=config)
