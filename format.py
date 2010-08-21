@@ -15,7 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-"""Subversion BzrDir formats."""
+"""Subversion ControlDir formats."""
 
 
 from bzrlib import (
@@ -23,27 +23,42 @@ from bzrlib import (
     osutils,
     trace,
     )
-from bzrlib.bzrdir import (
-    BzrDirFormat,
-    format_registry,
-    )
 from bzrlib.lockable_files import (
     TransportLock,
     )
 
+try:
+    from bzrlib.controldir import (
+        ControlDirFormat,
+        Prober,
+        format_registry,
+        )
+except ImportError:
+    from bzrlib.bzrdir import (
+        BzrDirFormat,
+        format_registry,
+        )
+    # bzr < 2.3
+    Prober = object
+    ControlDirFormat = BzrDirFormat
 
-class SvnControlFormat(BzrDirFormat):
+
+
+class SvnProber(Prober):
+
+    @classmethod
+    def _check_versions(cls):
+        from bzrlib.plugins.svn import lazy_check_versions
+        lazy_check_versions()
+
+
+class SvnControlFormat(ControlDirFormat):
     """Format for a Subversion control dir."""
     _lock_class = TransportLock
 
     def __init__(self):
         super(SvnControlFormat, self).__init__()
         self.__repository_format = None
-
-    @classmethod
-    def _check_versions(cls):
-        from bzrlib.plugins.svn import lazy_check_versions
-        lazy_check_versions()
 
     @property
     def repository_format(self):
@@ -54,20 +69,14 @@ class SvnControlFormat(BzrDirFormat):
         return self.__repository_format
 
     def is_supported(self):
-        """See BzrDir.is_supported()."""
+        """See ControlDirFormat.is_supported()."""
         return True
 
 
-class SvnRemoteFormat(SvnControlFormat):
-    """Format for the Subversion smart server."""
+class SvnRemoteProber(SvnProber):
 
-    def __init__(self):
-        super(SvnRemoteFormat, self).__init__()
-
-    @classmethod
-    def probe_transport(klass, transport):
+    def probe_transport(self, transport):
         from bzrlib.transport.local import LocalTransport
-        format = klass()
 
         if isinstance(transport, LocalTransport):
             # Cheaper way to figure out if there is a svn repo
@@ -84,7 +93,7 @@ class SvnRemoteFormat(SvnControlFormat):
             if not maybe:
                 raise bzr_errors.NotBranchError(path=transport.base)
 
-        klass._check_versions()
+        self._check_versions()
         from bzrlib.plugins.svn.transport import get_svn_ra_transport
         from bzrlib.plugins.svn.errors import DavRequestFailed
         import subvertpy
@@ -114,10 +123,21 @@ class SvnRemoteFormat(SvnControlFormat):
             else:
                 raise
 
-        return format
+        return SvnRemoteFormat()
+
+
+class SvnRemoteFormat(SvnControlFormat):
+    """Format for the Subversion smart server."""
+
+    def __init__(self):
+        super(SvnRemoteFormat, self).__init__()
+
+    @classmethod
+    def probe_transport(klass, transport):
+        prober = SvnRemoteProber()
+        return prober.probe_transport(transport)
 
     def _open(self, transport):
-        self._check_versions()
         import subvertpy
         from bzrlib.plugins.svn import remote
         ERR_XML_MALFORMED = getattr(subvertpy, "ERR_XML_MALFORMED", 130003)
@@ -141,7 +161,7 @@ class SvnRemoteFormat(SvnControlFormat):
         return 'Subversion Smart Server'
 
     def initialize_on_transport(self, transport):
-        """See BzrDir.initialize_on_transport()."""
+        """See ControlDir.initialize_on_transport()."""
         self._check_versions()
         from bzrlib.plugins.svn.transport import get_svn_ra_transport
         from bzrlib.transport.local import LocalTransport
@@ -163,22 +183,28 @@ class SvnRemoteFormat(SvnControlFormat):
         return self.open(get_svn_ra_transport(transport), _found=True)
 
 
+class SvnWorkingTreeProber(SvnProber):
+
+    def probe_transport(self, transport):
+        from bzrlib.transport.local import LocalTransport
+
+        if (isinstance(transport, LocalTransport) and 
+            transport.has(".svn")):
+            self._check_versions()
+            return SvnWorkingTreeDirFormat()
+
+        raise bzr_errors.NotBranchError(path=transport.base)
+
+
 class SvnWorkingTreeDirFormat(SvnControlFormat):
     """Working Tree implementation that uses Subversion working copies."""
 
     @classmethod
     def probe_transport(klass, transport):
-        from bzrlib.transport.local import LocalTransport
-        format = klass()
-
-        if isinstance(transport, LocalTransport) and \
-            transport.has(".svn"):
-            return format
-
-        raise bzr_errors.NotBranchError(path=transport.base)
+        prober = SvnWorkingTreeProber()
+        return prober.probe_transport(transport)
 
     def _open(self, transport):
-        self._check_versions()
         from bzrlib.plugins.svn.workingtree import SvnCheckout
         from bzrlib.plugins.svn import errors
         import subvertpy
@@ -199,8 +225,7 @@ class SvnWorkingTreeDirFormat(SvnControlFormat):
         raise bzr_errors.UninitializableFormat(self)
 
     def get_converter(self, format=None):
-        """See BzrDirFormat.get_converter()."""
-        self._check_versions()
+        """See ControlDirFormat.get_converter()."""
         if format is None:
             format = format_registry.make_bzrdir('default')
         from bzrlib.plugins.svn.workingtree import SvnCheckoutConverter

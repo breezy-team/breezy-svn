@@ -15,7 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-"""Subversion BzrDir formats."""
+"""Subversion remote ControlDir formats."""
 
 import urllib
 
@@ -24,11 +24,6 @@ from bzrlib import (
     errors,
     trace,
     version_info as bzrlib_version,
-    )
-from bzrlib.bzrdir import (
-    BzrDirFormat,
-    BzrDir,
-    format_registry,
     )
 from bzrlib.revision import (
     NULL_REVISION,
@@ -53,6 +48,23 @@ from bzrlib.plugins.svn.transport import (
     )
 
 
+try:
+    from bzrlib.controldir import (
+        ControlDirFormat,
+        ControlDir,
+        format_registry,
+        )
+except ImportError:
+    # bzr < 2.3
+    from bzrlib.bzrdir import (
+        BzrDirFormat,
+        BzrDir,
+        format_registry,
+        )
+    ControlDirFormat = BzrDirFormat
+    ControlDir = BzrDir
+
+
 class SubversionPushResult(PushResult):
 
     def report(self, to_file):
@@ -75,15 +87,15 @@ class SubversionPushResult(PushResult):
         return self.branch_push_result.old_revid
 
 
-class SvnRemoteAccess(BzrDir):
-    """BzrDir implementation for Subversion connections.
+class SvnRemoteAccess(ControlDir):
+    """ControlDir implementation for Subversion connections.
 
     This is used for all non-checkout connections
     to Subversion repositories.
     """
 
     def __init__(self, _transport, _format=None):
-        """See BzrDir.__init__()."""
+        """See ControlDir.__init__()."""
         _transport = get_svn_ra_transport(_transport)
         if _format is None:
             _format = SvnRemoteFormat()
@@ -99,7 +111,7 @@ class SvnRemoteAccess(BzrDir):
         self.branch_path = urllib.unquote(svn_url[len(self.svn_root_url):])
 
     def clone(self, url, revision_id=None, force_new_repo=False):
-        """See BzrDir.clone().
+        """See ControlDir.clone().
 
         Not supported on Subversion connections.
         """
@@ -115,7 +127,7 @@ class SvnRemoteAccess(BzrDir):
         return super(SvnRemoteAccess, self).sprout(*args, **kwargs)
 
     def open_repository(self, _unsupported=False):
-        """Open the repository associated with this BzrDir.
+        """Open the repository associated with this ControlDir.
 
         :return: instance of SvnRepository.
         """
@@ -127,7 +139,7 @@ class SvnRemoteAccess(BzrDir):
         pass
 
     def find_repository(self, _ignore_branch_path=False):
-        """Open the repository associated with this BzrDir.
+        """Open the repository associated with this ControlDir.
 
         :return: instance of SvnRepository.
         """
@@ -145,28 +157,28 @@ class SvnRemoteAccess(BzrDir):
 
     def open_workingtree(self, _unsupported=False,
             recommend_upgrade=True):
-        """See BzrDir.open_workingtree().
+        """See ControlDir.open_workingtree().
 
         Will always raise NotLocalUrl as this
-        BzrDir can not be associated with working trees.
+        ControlDir can not be associated with working trees.
         """
         # Working trees never exist on remote Subversion repositories
         raise errors.NoWorkingTree(self.root_transport.base)
 
     def create_workingtree(self, revision_id=None, hardlink=None):
-        """See BzrDir.create_workingtree().
+        """See ControlDir.create_workingtree().
 
         Will always raise NotLocalUrl as this
-        BzrDir can not be associated with working trees.
+        ControlDir can not be associated with working trees.
         """
         raise errors.NotLocalUrl(self.root_transport.base)
 
     def needs_format_conversion(self, format=None):
-        """See BzrDir.needs_format_conversion()."""
+        """See ControlDir.needs_format_conversion()."""
         # if the format is not the same as the system default,
         # an upgrade is needed.
         if format is None:
-            format = BzrDirFormat.get_default_format()
+            format = ControlDirFormat.get_default_format()
         return not isinstance(self._format, format.__class__)
 
     def import_branch(self, source, stop_revision=None, overwrite=False,
@@ -206,7 +218,7 @@ class SvnRemoteAccess(BzrDir):
             source.unlock()
 
     def create_branch(self):
-        """See BzrDir.create_branch()."""
+        """See ControlDir.create_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         repos = self.find_repository()
 
@@ -231,7 +243,7 @@ class SvnRemoteAccess(BzrDir):
                 ignore_fallbacks=ignore_fallbacks, unsupported=unsupported)
 
     def _open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
-        """See BzrDir.open_branch()."""
+        """See ControlDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         if name is not None:
             raise errors.NoColocatedBranchSupport(self)
@@ -241,7 +253,7 @@ class SvnRemoteAccess(BzrDir):
         return branch
 
     def create_repository(self, shared=False, format=None):
-        """See BzrDir.create_repository."""
+        """See ControlDir.create_repository."""
         return self.open_repository()
 
     def push_branch(self, source, revision_id=None, overwrite=False,
