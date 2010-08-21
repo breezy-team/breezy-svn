@@ -94,6 +94,14 @@ class SvnRemoteAccess(ControlDir):
     to Subversion repositories.
     """
 
+    @property
+    def user_transport(self):
+        return self.root_transport
+
+    @property
+    def control_transport(self):
+        return None
+
     def __init__(self, _transport, _format=None):
         """See ControlDir.__init__()."""
         _transport = get_svn_ra_transport(_transport)

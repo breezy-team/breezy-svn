@@ -137,7 +137,7 @@ class SvnRemoteFormat(SvnControlFormat):
         prober = SvnRemoteProber()
         return prober.probe_transport(transport)
 
-    def _open(self, transport):
+    def open(self, transport, _found=False):
         import subvertpy
         from bzrlib.plugins.svn import remote
         ERR_XML_MALFORMED = getattr(subvertpy, "ERR_XML_MALFORMED", 130003)
@@ -188,8 +188,7 @@ class SvnWorkingTreeProber(SvnProber):
     def probe_transport(self, transport):
         from bzrlib.transport.local import LocalTransport
 
-        if (isinstance(transport, LocalTransport) and 
-            transport.has(".svn")):
+        if isinstance(transport, LocalTransport) and transport.has(".svn"):
             self._check_versions()
             return SvnWorkingTreeDirFormat()
 
@@ -204,7 +203,7 @@ class SvnWorkingTreeDirFormat(SvnControlFormat):
         prober = SvnWorkingTreeProber()
         return prober.probe_transport(transport)
 
-    def _open(self, transport):
+    def open(self, transport, _found=False):
         from bzrlib.plugins.svn.workingtree import SvnCheckout
         from bzrlib.plugins.svn import errors
         import subvertpy

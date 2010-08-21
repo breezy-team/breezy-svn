@@ -148,7 +148,7 @@ topic_registry.register_lazy('svn-layout',
 try:
     from bzrlib.controldir import (
         ControlDirFormat,
-        Prober,
+        format_registry,
         )
 except ImportError:
     # Bzr < 2.3
@@ -166,8 +166,8 @@ except ImportError:
 else:
     ControlDirFormat.register_prober(format.SvnWorkingTreeProber)
     ControlDirFormat.register_prober(format.SvnRemoteProber)
-    ControlDirFormat.register_control_format(format.SvnWorkingTreeDirFormat)
-    ControlDirFormat.register_control_format(format.SvnRemoteFormat)
+    ControlDirFormat.register_format(format.SvnWorkingTreeDirFormat)
+    ControlDirFormat.register_format(format.SvnRemoteFormat)
 branch_network_format_registry.register_lazy("subversion",
         'bzrlib.plugins.svn.branch', 'SvnBranchFormat')
 repository_network_format_registry.register_lazy("subversion",
