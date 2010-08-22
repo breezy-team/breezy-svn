@@ -130,7 +130,6 @@ except ImportError:
         Converter,
         format_registry,
         )
-else:
     ControlDir = BzrDir
     ControlDirFormat = BzrDirFormat
 
