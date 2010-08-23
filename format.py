@@ -63,7 +63,6 @@ class SvnControlFormat(ControlDirFormat):
     @property
     def repository_format(self):
         if self.__repository_format is None:
-            self._check_versions()
             from bzrlib.plugins.svn.repository import SvnRepositoryFormat
             self.__repository_format = SvnRepositoryFormat()
         return self.__repository_format
@@ -162,7 +161,8 @@ class SvnRemoteFormat(SvnControlFormat):
 
     def initialize_on_transport(self, transport):
         """See ControlDir.initialize_on_transport()."""
-        self._check_versions()
+        from bzrlib.plugins.svn import lazy_check_versions
+        lazy_check_versions()
         from bzrlib.plugins.svn.transport import get_svn_ra_transport
         from bzrlib.transport.local import LocalTransport
         import os
