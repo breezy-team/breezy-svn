@@ -166,8 +166,8 @@ except ImportError:
 else:
     ControlDirFormat.register_prober(format.SvnWorkingTreeProber)
     ControlDirFormat.register_prober(format.SvnRemoteProber)
-    ControlDirFormat.register_format(format.SvnWorkingTreeDirFormat)
-    ControlDirFormat.register_format(format.SvnRemoteFormat)
+    ControlDirFormat.register_format(format.SvnWorkingTreeDirFormat())
+    ControlDirFormat.register_format(format.SvnRemoteFormat())
 branch_network_format_registry.register_lazy("subversion",
         'bzrlib.plugins.svn.branch', 'SvnBranchFormat')
 repository_network_format_registry.register_lazy("subversion",
@@ -234,21 +234,24 @@ from bzrlib.info import hooks as info_hooks
 info_hooks.install_named_hook('repository', info_svn_repository, None)
 
 
-def update_stanza(rev, stanza):
-    revmeta = getattr(rev, "svn_meta", None)
-    if revmeta is not None:
-        stanza.add("svn-revno", str(revmeta.revnum))
-        stanza.add("svn-uuid", revmeta.uuid)
-    else:
+def extract_svn_foreign_revid(rev):
+    try:
+        return rev.foreign_revid
+    except AttributeError:
         from bzrlib.plugins.svn.mapping import mapping_registry
-        try:
-            (uuid, branch_path, revno), mapping = \
-                mapping_registry.parse_revision_id(rev.revision_id)
-        except InvalidRevisionId:
-            pass
-        else:
-            stanza.add("svn-revno", str(revno))
-            stanza.add("svn-uuid", uuid)
+        foreign_revid, mapping = \
+            mapping_registry.parse_revision_id(rev.revision_id)
+        return foreign_revid
+
+
+def update_stanza(rev, stanza):
+    try:
+        (uuid, branch_path, revno) = extract_svn_foreign_revid(rev)
+    except InvalidRevisionId:
+        pass
+    else:
+        stanza.add("svn-revno", str(revno))
+        stanza.add("svn-uuid", uuid)
 
 
 RioVersionInfoBuilder.hooks.install_named_hook('revision',
