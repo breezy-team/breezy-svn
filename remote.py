@@ -294,3 +294,14 @@ class SvnRemoteAccess(ControlDir):
             if source.get_push_location() is None or remember:
                 source.set_push_location(ret.target_branch.base)
         return ret
+
+    def destroy_branch(self, branch_name=None):
+        if branch_name is not None:
+            from bzrlib.errors import NoColocatedBranchSupport
+            raise NoColocatedBranchSupport(self)
+        if self.branch_path == "":
+            raise errors.BzrError("Branch at root not removable.")
+        raise NotImplementedError(self.destroy_branch)
+
+    def destroy_repository(self):
+        raise NotImplementedError(self.destroy_repository)
