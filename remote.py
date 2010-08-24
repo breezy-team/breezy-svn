@@ -102,6 +102,10 @@ class SvnRemoteAccess(ControlDir):
     def control_transport(self):
         return None
 
+    @property
+    def control_url(self):
+        return self.root_transport.base
+
     def __init__(self, _transport, _format=None):
         """See ControlDir.__init__()."""
         _transport = get_svn_ra_transport(_transport)
