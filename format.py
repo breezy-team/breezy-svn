@@ -153,6 +153,9 @@ class SvnRemoteFormat(SvnControlFormat):
                 raise bzr_errors.NotBranchError(transport.base)
             raise
 
+    def network_name(self):
+        return "subversion"
+
     def get_format_string(self):
         return 'Subversion Smart Server'
 
@@ -221,6 +224,12 @@ class SvnWorkingTreeDirFormat(SvnControlFormat):
         return 'Subversion Local Checkout'
 
     def initialize_on_transport(self, transport):
+        raise bzr_errors.UninitializableFormat(self)
+
+    def initialize_on_transport_ex(self, transport, use_existing_dir=False,
+        create_prefix=False, force_new_repo=False, stacked_on=None,
+        stack_on_pwd=None, repo_format_name=None, make_working_trees=None,
+        shared_repo=False, vfs_only=False):
         raise bzr_errors.UninitializableFormat(self)
 
     def get_converter(self, format=None):
