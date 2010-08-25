@@ -149,14 +149,12 @@ try:
     from bzrlib.controldir import (
         ControlDirFormat,
         format_registry,
-        network_format_registry,
         )
 except ImportError:
     # Bzr < 2.3
     from bzrlib.bzrdir import (
         BzrDirFormat,
         format_registry,
-        network_format_registry,
         )
     #BzrDirFormat.register_control_server_format(format.SvnRemoteFormat)
     # Register as the first control server format, since the default smart
@@ -170,6 +168,11 @@ else:
     ControlDirFormat.register_prober(format.SvnRemoteProber)
     ControlDirFormat.register_format(format.SvnWorkingTreeDirFormat())
     ControlDirFormat.register_format(format.SvnRemoteFormat())
+try:
+    from bzrlib.controldir import network_format_registry
+except ImportError:
+    from bzrlib.bzrdir import network_format_registry
+
 network_format_registry.register_lazy("svn-wc",
     'bzrlib.plugins.svn.format', 'SvnWorkingTreeDirFormat')
 network_format_registry.register_lazy("subversion",
