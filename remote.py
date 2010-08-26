@@ -229,8 +229,11 @@ class SvnRemoteAccess(ControlDir):
         finally:
             source.unlock()
 
-    def create_branch(self):
+    def create_branch(self, branch_name=None):
         """See ControlDir.create_branch()."""
+        if branch_name is not None:
+            from bzrlib.errors import NoColocatedBranchSupport
+            raise NoColocatedBranchSupport(self)
         from bzrlib.plugins.svn.branch import SvnBranch
         repos = self.find_repository()
 
@@ -309,3 +312,6 @@ class SvnRemoteAccess(ControlDir):
 
     def destroy_repository(self):
         raise NotImplementedError(self.destroy_repository)
+
+    def can_convert_format(self):
+        return False
