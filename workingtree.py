@@ -1251,6 +1251,10 @@ class SvnCheckout(ControlDir):
             self._find_creation_modes()
         return self._dir_mode
 
+    def get_config(self):
+        from bzrlib.plugins.svn.config import SubversionControlDirConfig
+        return SubversionControlDirConfig()
+
 
 class SvnCheckoutConverter(Converter):
     """Converts from a Subversion directory to a bzr dir."""

@@ -122,6 +122,9 @@ class SvnRemoteAccess(ControlDir):
         assert svn_url.lower().startswith(self.svn_root_url.lower())
         self.branch_path = urllib.unquote(svn_url[len(self.svn_root_url):])
 
+    def break_lock(self):
+        pass
+
     def clone(self, url, revision_id=None, force_new_repo=False):
         """See ControlDir.clone().
 
@@ -315,3 +318,7 @@ class SvnRemoteAccess(ControlDir):
 
     def can_convert_format(self):
         return False
+
+    def get_config(self):
+        from bzrlib.plugins.svn.config import SubversionControlDirConfig
+        return SubversionControlDirConfig()

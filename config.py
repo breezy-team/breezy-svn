@@ -485,3 +485,12 @@ class SubversionBuildPackageConfig(object):
 
     def __setitem__(self, option_name, value):
         self.option_source[option_name] = value
+
+
+class SubversionControlDirConfig(object):
+
+    def get_default_stack_on(self):
+        return None
+
+    def set_default_stack_on(self, value):
+        raise BzrError("Cannot set configuration")
