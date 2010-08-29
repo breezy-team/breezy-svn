@@ -133,7 +133,8 @@ def warn_codeplex(host):
     global _warned_codeplex
     if not _warned_codeplex:
         warning("Please note %s is hosted on Codeplex which runs a broken "
-                "Subversion server." % host)
+                "Subversion server. Please consider using the bzr-tfs plugin, "
+                "which provides support for CodePlex' native Team Foundation Server." % host)
         _warned_codeplex = True
 
 
