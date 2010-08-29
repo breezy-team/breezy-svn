@@ -717,6 +717,7 @@ class PushNewBranchTests(SubversionTestCase):
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         trunk.add_file("trunk/foo.txt").modify("add file")
+        dc.add_dir("branches")
         dc.close()
 
         os.mkdir('bzrco1')
@@ -735,6 +736,8 @@ class PushNewBranchTests(SubversionTestCase):
         self.build_tree({'bzrco2/bar2.txt': 'bar'})
         wt2.add("bar2.txt")
         other_revid = wt2.commit("add yet another file", rev_id="side1")
+        self.assertEquals("side1", other_revid)
+        wt2.branch.push(BzrDir.open(repos_url+"/branches/side1"))
 
         wt1.lock_write()
         try:
@@ -748,16 +751,17 @@ class PushNewBranchTests(SubversionTestCase):
         wt1.branch.push(Branch.open(repos_url+"/trunk"))
         r = Repository.open(repos_url)
         revmeta = r._revmeta_provider.get_revision("trunk", 3)
-        self.assertEquals({"bar2.txt": "side1"}, revmeta.get_text_revisions(r.get_mapping()))
+        self.assertEquals({"bar2.txt": "side1"},
+                revmeta.get_text_revisions(r.get_mapping()))
 
         os.mkdir("cpy")
         cpy = BzrDir.create("cpy")
         cpyrepos = cpy.create_repository()
-        r.copy_content_into(cpyrepos)
-        check_tree(cpyrepos.revision_tree(mergingrevid))
 
         t = r.revision_tree(mergingrevid)
         check_tree(t)
+        r.copy_content_into(cpyrepos)
+        check_tree(cpyrepos.revision_tree(mergingrevid))
 
     def test_missing_prefix_error(self):
         repos_url = self.make_repository("a")

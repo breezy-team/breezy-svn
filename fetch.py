@@ -473,32 +473,21 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         self.editor._delete_entry(self.svn_base_ie.file_id, path, revnum)
 
     def _close(self):
-        if (not self.editor.base_tree.has_id(self.new_id) or
+        if (not self.editor.bzr_base_tree.has_id(self.new_id) or
             (self._metadata_changed and self.path != u"") or
-            self.new_ie != self.editor.base_tree.inventory[self.new_id] or
-            self.bzr_base_path != self.path or
-            self.editor._get_text_revision(self.path) is not None):
-            assert self.editor.revid is not None
-
-            self.new_ie.revision = (self.editor._get_text_revision(self.path)
-                                    or self.editor.revid)
-            text_parents = self.editor._get_text_parents(self.new_id)
+            self.new_ie != self.editor.bzr_base_tree.inventory[self.new_id] or
+            self.bzr_base_path != self.path):
+            self.new_ie.revision = self.editor._get_directory_revision(self.new_id)
             self.editor.texts.insert_record_stream([
                 ChunkedContentFactory(
                 (self.new_id, self.new_ie.revision),
-                tuple([(self.new_id, revid) for revid in text_parents]), None,
+                self.editor._get_text_parents(self.new_id), None,
                 [])])
-            self.editor._inv_delta.append((self.bzr_base_path, self.path, self.new_id, self.new_ie))
+            self.editor._inv_delta_append(
+                self.bzr_base_path, self.path, self.new_id, self.new_ie)
         if self._renew_fileids:
             # Make sure files get re-added that weren't mentioned explicitly
-            # A bit expensive (O(d)), but this should be very rare
-            delta_new_paths = set([e[1] for e in self.editor._inv_delta if e[1] is not None])
-            exceptions = delta_new_paths.union(self.editor._explicitly_deleted)
-            for path in inventory_ancestors(self.editor.base_tree.inventory,
-                    self._renew_fileids.file_id, exceptions):
-                if isinstance(path, str):
-                    path = path.decode("utf-8")
-                self.editor._renew_fileid(path)
+            self.editor._renew_fileids(self._renew_fileids.file_id)
 
         if self.path == u"":
             self.editor._finish_commit()
@@ -533,8 +522,8 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                     self.bzr_base_ie.file_id, self.new_id, path)
         else:
             file_id = self.editor._get_new_file_id(path)
-        if self.editor.base_tree.inventory.has_id(file_id):
-            bzr_base_ie = self.editor.base_tree.inventory[file_id]
+        if self.editor.bzr_base_tree.inventory.has_id(file_id):
+            bzr_base_ie = self.editor.bzr_base_tree.inventory[file_id]
         else:
             bzr_base_ie = None
 
@@ -557,7 +546,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         file_id = self.editor._get_new_file_id(path)
         if self.editor.bzr_base_tree.has_id(file_id):
-            bzr_base_path = self.editor.base_tree.inventory.id2path(file_id)
+            bzr_base_path = self.editor.bzr_base_tree.inventory.id2path(file_id)
         else:
             bzr_base_path = None
         if copyfrom_path is not None:
@@ -587,15 +576,13 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                 file_id, self.new_id, svn_base_ie)
 
 
-def content_starts_with_link(cf):
+def chunks_start_with_link(chunks):
     # Shortcut for chunked:
-    if cf.storage_kind == "chunked":
-        chks = cf.get_bytes_as("chunked")
-        if not chks:
-            return False
-        if len(chks[0]) >= 5:
-            return chks[0].startswith("link ")
-    return cf.get_bytes_as('fulltext').startswith('link ')
+    if not chunks:
+        return False
+    if len(chunks[0]) >= 5:
+        return chunks[0].startswith("link ")
+    return "".join(chunks[:6]).startswith('link ')
 
 
 class FileRevisionBuildEditor(FileBuildEditor):
@@ -648,16 +635,10 @@ class FileRevisionBuildEditor(FileBuildEditor):
                 raise TextChecksumMismatch(checksum, actual_checksum,
                         self.editor.revmeta.branch_path,
                         self.editor.revmeta.revnum)
-        text_revision = (self.editor._get_text_revision(self.path) or
-                         self.editor.revid)
-        text_parents = self.editor._get_text_parents(self.file_id)
-        parent_keys = tuple([(self.file_id, revid) for revid in text_parents])
-        file_key = (self.file_id, text_revision)
-        cf = ChunkedContentFactory(file_key, parent_keys, text_sha1, chunks)
 
         if self.is_special is not None:
-            self.is_symlink = (self.is_special and content_starts_with_link(cf))
-        elif content_starts_with_link(cf):
+            self.is_symlink = (self.is_special and chunks_start_with_link(chunks))
+        elif chunks_start_with_link(chunks):
             # This file just might be a file that is svn:special but didn't
             # contain a symlink but does now
             if not self.is_symlink:
@@ -667,20 +648,21 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
         assert self.is_symlink in (True, False)
 
-        self.editor._text_cache[file_key] = chunks
-
         if self.svn_base_ie is not None and self.is_executable is None:
             self.is_executable = self.svn_base_ie.executable
 
+        parent_keys = self.editor._get_text_parents(self.file_id)
+
+        orig_chunks = chunks
         if self.is_symlink:
             ie = InventoryLink(self.file_id, urlutils.basename(self.path),
                     self.parent_file_id)
-            ie.symlink_target = cf.get_bytes_as('fulltext')[len("link "):].decode("utf-8")
+            ie.symlink_target = "".join(chunks)[len("link "):].decode("utf-8")
             if "\n" in ie.symlink_target:
                 raise AssertionError("bzr doesn't support newlines in symlink "
                                      "targets yet")
-            cf = ChunkedContentFactory(file_key, parent_keys,
-                osutils.sha_string(""), [])
+            chunks = []
+            text_sha1 = osutils.sha_string("")
         else:
             ie = InventoryFile(self.file_id, urlutils.basename(self.path),
                     self.parent_file_id)
@@ -688,10 +670,18 @@ class FileRevisionBuildEditor(FileBuildEditor):
             ie.text_size = text_size
             assert ie.text_size is not None
             ie.executable = self.is_executable
+
+        text_revision = self.editor._get_file_revision(ie)
+
+        file_key = (self.file_id, text_revision)
+        cf = ChunkedContentFactory(file_key, parent_keys, text_sha1, chunks)
+
+        self.editor._text_cache[file_key] = orig_chunks
+
         self.editor.texts.insert_record_stream([cf])
         ie.revision = text_revision
-        self.editor._inv_delta.append(
-            (self.bzr_base_path, self.path, self.file_id, ie))
+        self.editor._inv_delta_append(
+            self.bzr_base_path, self.path, self.file_id, ie)
 
 
 class RevisionBuildEditor(DeltaBuildEditor):
@@ -709,13 +699,17 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self._text_cache = text_cache
         self.bzr_base_tree = bzr_parent_trees[0]
         self.bzr_parent_trees = bzr_parent_trees
-        self.base_tree = self.bzr_base_tree #FIXME
         self.svn_base_tree = svn_base_tree
         self._inv_delta = []
+        self._new_file_paths = {}
         self._deleted = set()
         self._explicitly_deleted = set()
         self.inventory = None
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
+
+    def _inv_delta_append(self, old_path, new_path, file_id, ie):
+        self._new_file_paths[file_id] = new_path
+        self._inv_delta.append((old_path, new_path, file_id, ie))
 
     def _delete_entry(self, old_parent_id, path, revnum):
         self._explicitly_deleted.add(path)
@@ -725,7 +719,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 return
             self._deleted.add(p)
             if ie.file_id not in self.id_map.values():
-                self._inv_delta.append((p, None, ie.file_id, None))
+                self._inv_delta_append(p, None, ie.file_id, None)
             if ie.kind != 'directory':
                 return
             for c in ie.children.values():
@@ -769,7 +763,41 @@ class RevisionBuildEditor(DeltaBuildEditor):
             return file_data
         return self.target.iter_files_bytes([key + (None,)]).next()[1]
 
+    def _add_merge_texts(self):
+        def get_new_file_path(file_id):
+            try:
+                return self._new_file_paths[file_id]
+            except KeyError:
+                base_ie = self.bzr_base_tree.inventory[file_id]
+                if base_ie.parent_id is None:
+                    parent_path = ""
+                else:
+                    parent_path = get_new_file_path(base_ie.parent_id)
+                return urlutils.join(parent_path, base_ie.name)
+
+        # Add dummy merge text revisions
+        for file_id in self.bzr_base_tree:
+            if file_id in self._new_file_paths:
+                continue
+            base_ie = self.bzr_base_tree.inventory[file_id]
+            for tree in self.bzr_parent_trees[1:]:
+                if tree.inventory[file_id].revision != base_ie.revision:
+                    new_ie = base_ie.copy()
+                    new_ie.revision = self.revid
+                    record = self.texts.get_record_stream([(base_ie.file_id, base_ie.revision)],
+                                                            'unordered', True).next()
+                    self.texts.insert_record_stream(
+                            [FulltextContentFactory(
+                                (new_ie.file_id, new_ie.revision),
+                                self._get_text_parents(file_id),
+                                record.sha1,
+                                record.get_bytes_as('fulltext'))])
+                    self._inv_delta_append(self.bzr_base_tree.id2path(file_id), get_new_file_path(file_id), file_id, new_ie)
+                    break
+
     def _finish_commit(self):
+        if len(self.bzr_parent_trees) > 1:
+            self._add_merge_texts()
         rev = self.revmeta.get_revision(self.mapping)
         assert rev.revision_id != NULL_REVISION
         try:
@@ -833,15 +861,25 @@ class RevisionBuildEditor(DeltaBuildEditor):
         return DirectoryRevisionBuildEditor(self, bzr_base_path, u"",
                 file_id, bzr_base_ie, svn_base_ie, None, renew_fileids)
 
+    def _renew_fileids(self, file_id):
+        # A bit expensive (O(d)), but this should be very rare
+        delta_new_paths = set([e[1] for e in self._inv_delta if e[1] is not None])
+        exceptions = delta_new_paths.union(self._explicitly_deleted)
+        for path in inventory_ancestors(self.bzr_base_tree.inventory,
+                file_id, exceptions):
+            if isinstance(path, str):
+                path = path.decode("utf-8")
+            self._renew_fileid(path)
+
     def _renew_fileid(self, path):
         """'renew' the fileid of a path."""
         assert isinstance(path, unicode)
-        old_file_id = self.base_tree.path2id(path)
-        old_ie = self.base_tree.inventory[old_file_id]
+        old_file_id = self.bzr_base_tree.path2id(path)
+        old_ie = self.bzr_base_tree.inventory[old_file_id]
         new_ie = old_ie.copy()
         new_ie.file_id = self._get_new_file_id(path)
-        new_ie.parent_id = self._get_new_file_id(urlutils.split(path)[0])
-        new_ie.revision = self._get_text_revision(path) or self.revid
+        new_ie.parent_id = self._get_new_file_id(urlutils.dirname(path))
+        new_ie.revision = self.revid
         # FIXME: Use self._text_cache
         record = self.texts.get_record_stream([(old_ie.file_id, old_ie.revision)],
                                                 'unordered', True).next()
@@ -851,7 +889,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
                     [], # New file id, so no parents
                     record.sha1,
                     record.get_bytes_as('fulltext'))])
-        self._inv_delta.append((None, path, new_ie.file_id, new_ie))
+        self._inv_delta_append(None, path, new_ie.file_id, new_ie)
 
     @property
     def id_map(self):
@@ -899,11 +937,38 @@ class RevisionBuildEditor(DeltaBuildEditor):
         return self.mapping.generate_file_id(
             self.revmeta.get_foreign_revid(), new_path)
 
-    def _get_text_revision(self, path):
-        assert isinstance(path, unicode)
-        if self._text_revids is None:
-            self._text_revids = self.revmeta.get_text_revisions(self.mapping)
-        return self._text_revids.get(path)
+    def _get_directory_revision(self, file_id):
+        return self.revid # FIXME: For now
+
+    def _get_file_revision(self, ie):
+        if ie.name == "bar2.txt":
+            import pdb; pdb.set_trace()
+        if ie.file_id in self.bzr_base_tree.inventory or len(self.bzr_parent_trees) <= 1:
+            # File was touched but not newly introduced since base so it has changed
+            # somehow.
+            return self.revid
+
+        # See if the parent trees already have this exact
+        # inventory entry.
+        revision = None
+        for tree in self.bzr_parent_trees[1:]:
+            try:
+                parent_ie = tree.inventory[ie.file_id]
+            except NoSuchId:
+                continue
+            else:
+                if revision is not None and revision != parent_ie.revision:
+                    # Disagreement
+                    return self.revid
+                tmp_ie = ie.copy()
+                tmp_ie.revision = parent_ie.revision
+                if tmp_ie != parent_ie:
+                    return self.revid
+                revision = tmp_ie.revision
+        if revision is None:
+            return self.revid
+        else:
+            return revision
 
     def _get_text_parents(self, file_id):
         assert isinstance(file_id, str)
@@ -915,7 +980,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 pass
             else:
                 if not revision in ret:
-                    ret.append(revision)
+                    ret.append((file_id, revision))
         return ret
 
 
@@ -1232,11 +1297,13 @@ class InterFromSvnRepository(InterRepository):
             parent_revids = (NULL_REVISION,)
         # We always need the base inventory for the first parent
         parent_trees = [self.target.revision_tree(parent_revids[0])]
-        for revid in parent_revids:
+        for revid in parent_revids[1:]:
             try:
-                parent_trees.append(self.target.revision_tree(revid))
+                tree = self.target.revision_tree(revid)
             except NoSuchRevision:
-                pass # Ghost
+                trace.mutter("Parent tree %s is a ghost.", revid)
+            else:
+                parent_trees.append(tree)
         return parent_trees
 
     def _get_editor(self, revmeta, mapping):
