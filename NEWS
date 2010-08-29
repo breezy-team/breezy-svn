@@ -43,6 +43,9 @@ bzr-svn 1.0.4					  UNRELEASED
 
   * Cope with spaces in URLs during connect. (Jelmer Vernooij)
 
+  * Add note about virus scanners accessing temporary files.
+    (Jelmer Vernooij, #290110)
+
  PERFORMANCE
 
   * Support using any connection when finding UUID, revision properties

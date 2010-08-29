@@ -105,5 +105,15 @@ Is it possible to access/modify custom Subversion file properties?
 No, this is not possible. If you are in a native Subversion Working Copy, you
 can of course use the "svn propset" and "svn propget" commands.
 
+On Windows, why do I get a ``Access denied`` error for a file with a path ending in \Temp\subvertpy.tmp ?
+---------------------------------------------------------------------------------------------------------
+
+If you're getting an error similar to this one::
+
+   bzr: ERROR: [Errno 5] Can't open 'C:\DOCUME~1\MyUsername\LOCALS~1\Temp\subvertpy.tmp': Access is denied.
+
+This is caused by your virus scanner trying to open the temporary file that bzr-svn has created and
+accessing it before bzr-svn with an exclusive lock.
+
 ..
 	vim: ft=rest
