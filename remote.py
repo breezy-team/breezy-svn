@@ -100,11 +100,7 @@ class SvnRemoteAccess(ControlDir):
 
     @property
     def control_transport(self):
-        return None
-
-    @property
-    def control_url(self):
-        return self.root_transport.base
+        return self.root_transport
 
     def __init__(self, _transport, _format=None):
         """See ControlDir.__init__()."""
