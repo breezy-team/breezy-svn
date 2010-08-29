@@ -737,7 +737,8 @@ class PushNewBranchTests(SubversionTestCase):
         wt2.add("bar2.txt")
         other_revid = wt2.commit("add yet another file", rev_id="side1")
         self.assertEquals("side1", other_revid)
-        wt2.branch.push(BzrDir.open(repos_url+"/branches/side1"))
+        side1_dir = BzrDir.open(repos_url+"/branches/side1")
+        side1_dir.push_branch(wt2.branch)
 
         wt1.lock_write()
         try:
@@ -751,8 +752,6 @@ class PushNewBranchTests(SubversionTestCase):
         wt1.branch.push(Branch.open(repos_url+"/trunk"))
         r = Repository.open(repos_url)
         revmeta = r._revmeta_provider.get_revision("trunk", 3)
-        self.assertEquals({"bar2.txt": "side1"},
-                revmeta.get_text_revisions(r.get_mapping()))
 
         os.mkdir("cpy")
         cpy = BzrDir.create("cpy")

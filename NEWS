@@ -2,6 +2,9 @@ bzr-svn 1.0.4					  UNRELEASED
 
  BUG FIXES
 
+  * Set file revisions based on history rather than on magic file properties.
+    (Jelmer Vernooij, #480102)
+
   * Cope with invalid svk:merge properties during fetch. 
     (Jelmer Vernooij, #504458)
 

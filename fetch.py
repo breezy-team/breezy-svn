@@ -648,8 +648,11 @@ class FileRevisionBuildEditor(FileBuildEditor):
 
         assert self.is_symlink in (True, False)
 
-        if self.svn_base_ie is not None and self.is_executable is None:
-            self.is_executable = self.svn_base_ie.executable
+        if self.is_executable is None:
+            if self.svn_base_ie is not None:
+                self.is_executable = self.svn_base_ie.executable
+            else:
+                self.is_executable = False
 
         parent_keys = self.editor._get_text_parents(self.file_id)
 
@@ -781,7 +784,11 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 continue
             base_ie = self.bzr_base_tree.inventory[file_id]
             for tree in self.bzr_parent_trees[1:]:
-                if tree.inventory[file_id].revision != base_ie.revision:
+                try:
+                    parent_ie = tree.inventory[file_id]
+                except NoSuchId:
+                    continue
+                if parent_ie.revision != base_ie.revision:
                     new_ie = base_ie.copy()
                     new_ie.revision = self.revid
                     record = self.texts.get_record_stream([(base_ie.file_id, base_ie.revision)],
@@ -941,8 +948,6 @@ class RevisionBuildEditor(DeltaBuildEditor):
         return self.revid # FIXME: For now
 
     def _get_file_revision(self, ie):
-        if ie.name == "bar2.txt":
-            import pdb; pdb.set_trace()
         if ie.file_id in self.bzr_base_tree.inventory or len(self.bzr_parent_trees) <= 1:
             # File was touched but not newly introduced since base so it has changed
             # somehow.
