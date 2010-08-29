@@ -128,6 +128,8 @@ class SvnRemoteProber(SvnProber):
 class SvnRemoteFormat(SvnControlFormat):
     """Format for the Subversion smart server."""
 
+    supports_workingtrees = False
+
     def __init__(self):
         super(SvnRemoteFormat, self).__init__()
 
