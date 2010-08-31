@@ -225,7 +225,8 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
              self.repository._format)
         note('%6d revisions', self.checked_rev_cnt)
         if self.checked_roundtripped_cnt > 0:
-            note('%6d revisions originating in bzr', self.checked_roundtripped_cnt)
+            note('%6d revisions originating in bzr',
+                self.checked_roundtripped_cnt)
         if self.hidden_rev_cnt > 0:
             note('%6d hidden bzr-created revisions', self.hidden_rev_cnt)
         if self.inconsistent_stored_lhs_parent > 0:
@@ -262,7 +263,8 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         found_fileprops = 0
         # Check for multiple mappings
         try:
-            fileprop_mappings = find_mappings_fileprops(revmeta.get_changed_fileprops())
+            fileprop_mappings = find_mappings_fileprops(
+                revmeta.get_changed_fileprops())
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NOT_DIRECTORY:
                 return
@@ -297,7 +299,8 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
                     self.paths_not_under_branch_root += 1
 
         original_uuid = mapping.get_repository_uuid(revmeta.revprops)
-        if original_uuid is not None and original_uuid != self.repository.uuid:
+        if (original_uuid is not None and
+            original_uuid != self.repository.uuid):
             self.different_uuid_cnt += 1
 
         lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
@@ -308,7 +311,8 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             elif lhs_parent_mapping.newer_than(mapping):
                 self.newer_mapping_parents += 1
                 lhs_parent_mapping = mapping
-            expected_lhs_parent_revid = lhs_parent_revmeta.get_revision_id(lhs_parent_mapping)
+            expected_lhs_parent_revid = lhs_parent_revmeta.get_revision_id(
+                lhs_parent_mapping)
             if revmeta.get_stored_lhs_parent_revid(mapping) not in (None, expected_lhs_parent_revid):
                 self.inconsistent_stored_lhs_parent += 1
         self.check_texts(revmeta, mapping)
@@ -328,13 +332,15 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         parent_fileid_maps = []
         for revid in revmeta.get_parent_ids(mapping):
             try:
-                parent_revmeta, parent_mapping = self.repository._get_revmeta(revid)
+                parent_revmeta, parent_mapping = self.repository._get_revmeta(
+                    revid)
             except bzr_errors.NoSuchRevision:
                 ghost_parents = True
             else:
                 parent_revmetas.append(parent_revmeta)
                 parent_mappings.append(parent_mapping)
-                parent_fileid_map = self.repository.get_fileid_map(parent_revmeta, parent_mapping)
+                parent_fileid_map = self.repository.get_fileid_map(
+                    parent_revmeta, parent_mapping)
                 parent_fileid_maps.append(parent_fileid_map)
         for path, text_revision in text_revisions.iteritems():
             # Every text revision either has to match the actual revision's
@@ -345,7 +351,8 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             for parent_fileid_map, parent_mapping in zip(parent_fileid_maps, parent_mappings):
                 parent_text_revisions.append(parent_fileid_map.reverse_lookup(parent_mapping, fileid))
             if (text_revision != revmeta.get_revision_id(mapping) and
-                    not ghost_parents and not text_revision in parent_text_revisions):
+                    not ghost_parents and
+                    not text_revision in parent_text_revisions):
                 self.invalid_text_revisions += 1
 
 
@@ -354,6 +361,7 @@ class SvnRepository(ForeignRepository):
     Provides a simplified interface to a Subversion repository
     by using the RA (remote access) API from subversion
     """
+
     def __init__(self, bzrdir, transport, branch_path=None):
         from bzrlib.plugins.svn import lazy_register_optimizers
         lazy_register_optimizers()
@@ -587,7 +595,8 @@ class SvnRepository(ForeignRepository):
 
     def get_delta_for_revision(self, revision):
         """See Repository.get_delta_for_revision()."""
-        parentrevmeta = revision.svn_meta.get_lhs_parent_revmeta(revision.mapping)
+        parentrevmeta = revision.svn_meta.get_lhs_parent_revmeta(
+            revision.mapping)
         from bzrlib.plugins.svn.fetch import TreeDeltaBuildEditor
         if parentrevmeta is None:
             parentfileidmap = {}
@@ -595,7 +604,8 @@ class SvnRepository(ForeignRepository):
             parentrevnum = revision.svn_meta.revnum
             start_empty = True
         else:
-            parentfileidmap = self.get_fileid_map(parentrevmeta, revision.mapping)
+            parentfileidmap = self.get_fileid_map(parentrevmeta,
+                revision.mapping)
             parent_branch_path = parentrevmeta.branch_path
             parentrevnum = parentrevmeta.revnum
             start_empty = False
@@ -716,7 +726,8 @@ class SvnRepository(ForeignRepository):
             else:
                 last_revnum = self.get_latest_revnum()
                 for revmeta in self._revmeta_provider.iter_all_revisions(self.get_layout(), self.get_mapping().is_branch_or_tag, last_revnum):
-                    pb.update("checking revisions", last_revnum-revmeta.revnum, last_revnum)
+                    pb.update("checking revisions",
+                        last_revnum-revmeta.revnum, last_revnum)
                     ret.check_revmeta(revmeta)
         finally:
             pb.finished()
@@ -764,7 +775,8 @@ class SvnRepository(ForeignRepository):
         """
         return False
 
-    def _iter_reverse_revmeta_mapping_ancestry(self, branch_path, revnum, mapping, lhs_history=None, pb=None):
+    def _iter_reverse_revmeta_mapping_ancestry(self, branch_path, revnum,
+            mapping, lhs_history=None, pb=None):
         """Iterate over the (revmeta, mapping) entries for the ancestry
         of a specified path.
 
@@ -778,7 +790,8 @@ class SvnRepository(ForeignRepository):
                 todo.append(entry)
                 processed.add(entry)
         if lhs_history is None:
-            update_todo(todo, self._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb))
+            update_todo(todo, self._iter_reverse_revmeta_mapping_history(
+                branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb))
         else:
             update_todo(todo, lhs_history)
         i = 0

@@ -521,7 +521,7 @@ class SvnBranch(ForeignBranch):
             if revmeta.is_hidden(mapping):
                 continue
             if count == 0:
-                assert revmeta.get_revno(mapping) == revno
+                assert revmeta.get_revno(mapping) == revno, "Expected %d, was (%r,%r) %d" % (revno, revmeta, mapping, revmeta.get_revno(mapping))
                 return revmeta.get_revision_id(mapping)
             count -= 1
         raise AssertionError

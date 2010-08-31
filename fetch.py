@@ -948,9 +948,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
         return self.revid # FIXME: For now
 
     def _get_file_revision(self, ie):
-        if ie.file_id in self.bzr_base_tree.inventory or len(self.bzr_parent_trees) <= 1:
-            # File was touched but not newly introduced since base so it has changed
-            # somehow.
+        if (ie.file_id in self.bzr_base_tree.inventory or
+            len(self.bzr_parent_trees) <= 1):
+            # File was touched but not newly introduced since base so it has
+            # changed somehow.
             return self.revid
 
         # See if the parent trees already have this exact
@@ -1010,17 +1011,18 @@ class FileTreeDeltaBuildEditor(FileBuildEditor):
         else:
             entry_kind = 'file'
         if self.change_kind == 'add':
-            if self.copyfrom_path is not None and self._get_map_id(self.path) is not None:
-                self.editor.delta.renamed.append((self.copyfrom_path, self.path,
-                    self.editor._get_new_file_id(self.path), entry_kind,
-                    text_changed, metadata_changed))
+            if (self.copyfrom_path is not None and
+                self._get_map_id(self.path) is not None):
+                self.editor.delta.renamed.append((self.copyfrom_path,
+                    self.path, self.editor._get_new_file_id(self.path),
+                    entry_kind, text_changed, metadata_changed))
             else:
                 self.editor.delta.added.append((self.path,
                     self.editor._get_new_file_id(self.path), entry_kind))
         else:
             self.editor.delta.modified.append((self.path,
-                self.editor._get_new_file_id(self.path), entry_kind, text_changed,
-                metadata_changed))
+                self.editor._get_new_file_id(self.path), entry_kind,
+                text_changed, metadata_changed))
 
     def _apply_textdelta(self, base_checksum=None):
         self.base_checksum = None
@@ -1041,17 +1043,22 @@ class DirectoryTreeDeltaBuildEditor(DirectoryBuildEditor):
         return FileTreeDeltaBuildEditor(self.editor, path, None, 'open')
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
-        return FileTreeDeltaBuildEditor(self.editor, path, copyfrom_path, 'add')
+        return FileTreeDeltaBuildEditor(self.editor, path, copyfrom_path,
+            'add')
 
     def _delete_entry(self, path, revnum):
         # FIXME: old kind
-        self.editor.delta.removed.append((path, self.editor._get_bzr_base_file_id(path), 'unknown'))
+        self.editor.delta.removed.append((path,
+            self.editor._get_bzr_base_file_id(path), 'unknown'))
 
     def _add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
-        if copyfrom_path is not None and self.editor._was_renamed(path) is not None:
-            self.editor.delta.renamed.append((copyfrom_path, path, self.editor._get_new_file_id(path), 'directory', False, False))
+        if (copyfrom_path is not None and
+            self.editor._was_renamed(path) is not None):
+            self.editor.delta.renamed.append((copyfrom_path, path,
+                self.editor._get_new_file_id(path), 'directory', False, False))
         else:
-            self.editor.delta.added.append((path, self.editor._get_new_file_id(path), 'directory'))
+            self.editor.delta.added.append((path,
+                self.editor._get_new_file_id(path), 'directory'))
         return DirectoryTreeDeltaBuildEditor(self.editor, path)
 
 
@@ -1215,7 +1222,8 @@ class FetchRevisionFinder(object):
                 needs_checking = []
                 if done:
                     break
-                self._check_present_interval = min(self._check_present_interval*2, MAX_CHECK_PRESENT_INTERVAL)
+                self._check_present_interval = min(
+                    self._check_present_interval*2, MAX_CHECK_PRESENT_INTERVAL)
             self.checked.add((revmeta.get_foreign_revid(), mapping))
         for r in self.check_revmetas(needs_checking):
             revmetas.appendleft(r)
@@ -1574,7 +1582,8 @@ class InterFromSvnRepository(InterRepository):
                             revmeta = r
                             break
                     revmeta._revprops = revprops
-                    return editor_strip_prefix(self._get_editor(revmeta, mapping),
+                    return editor_strip_prefix(
+                        self._get_editor(revmeta, mapping),
                         revmeta.branch_path)
 
                 def revfinish(revision, revprops, editor):

@@ -585,10 +585,10 @@ class RepositoryTests(SubversionTestCase):
         dc.change_prop(SVN_PROP_BZR_REVISION_ID+"v3-none", 
                 "42 mycommit\n")
         dc.close()
-        
+
         branch = Branch.open(repos_url)
         repos = Repository.open(repos_url)
-        
+
         mapping = repos.get_mapping()
 
         self.assertEqual([repos.generate_revision_id(0, "", mapping), 

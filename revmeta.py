@@ -956,9 +956,6 @@ class RevisionMetadataBranch(object):
         self._revmeta_provider = revmeta_provider
         self._get_next = None
 
-    def __len__(self):
-        return len(self._revs)
-
     def __eq__(self, other):
         return (type(self) == type(other) and
                 self._history_limit == other._history_limit and
