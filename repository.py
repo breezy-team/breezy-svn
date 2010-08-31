@@ -52,6 +52,7 @@ from bzrlib.revision import (
     ensure_null,
     )
 from bzrlib.trace import (
+    mutter,
     note,
     )
 from bzrlib.transport import (
@@ -506,9 +507,11 @@ class SvnRepository(ForeignRepository):
         """See Repository.item_keys_introduced_by()."""
         fileids = defaultdict(set)
 
-        for count, (revid, d) in enumerate(zip(revision_ids, self.get_deltas_for_revisions(self.get_revisions(revision_ids)))):
+        for count, (revid, d) in enumerate(zip(revision_ids,
+            self.get_deltas_for_revisions(self.get_revisions(revision_ids)))):
             if _files_pb is not None:
-                _files_pb.update("fetch revisions for texts", count, len(revision_ids))
+                _files_pb.update("fetch revisions for texts", count,
+                    len(revision_ids))
             for c in d.added + d.modified:
                 fileids[c[1]].add(revid)
             for c in d.renamed:
@@ -816,32 +819,44 @@ class SvnRepository(ForeignRepository):
 
         This will skip hidden revisions.
         """
+        def get_iter(branch_path, revnum):
+            return self._revmeta_provider.iter_reverse_branch_changes(
+                branch_path, revnum, to_revnum=to_revnum, pb=pb, limit=limit)
         assert mapping is not None
         expected_revid = None
-        iter = self._revmeta_provider.iter_reverse_branch_changes(branch_path,
-            revnum, to_revnum=to_revnum, pb=pb, limit=limit)
-        for revmeta in iter:
-            (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(mapping)
-            assert not lhs_mapping.newer_than(mapping), "LHS mapping %r newer than %r" % (lhs_mapping, mapping)
-            if revmeta.is_hidden(mapping):
-                mapping = lhs_mapping
-                continue
-            revid = revmeta.get_revision_id(mapping)
-            if (expected_revid is not None and
-                not revid in (None, expected_revid)):
+        it = iter(get_iter(branch_path, revnum))
+        while it:
+            try:
+                revmeta = it.next()
+            except StopIteration:
+                revid = None
+                foreign_sibling = None
+            else:
+                (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(
+                    mapping)
+                if lhs_mapping.newer_than(mapping):
+                    raise AssertionError(
+                        "LHS mapping %r newer than %r" %
+                            (lhs_mapping, mapping))
+                if revmeta.is_hidden(mapping):
+                    mapping = lhs_mapping
+                    continue
+                revid = revmeta.get_revision_id(mapping)
+                foreign_sibling = revmeta.get_foreign_revid()
+            if expected_revid is not None and revid != expected_revid:
                 # Need to restart, branch root has changed
-                (_, branch_path, revnum), mapping = self.lookup_bzr_revision_id(revid, foreign_sibling=revmeta.get_foreign_revid())
-                iter = self._revmeta_provider.iter_reverse_branch_changes(branch_path, revnum, to_revnum=to_revnum, pb=pb, limit=limit)
-            if not mapping.is_branch_or_tag(revmeta.branch_path):
-                return
-            yield revmeta, mapping
-            expected_revid = revmeta._get_stored_lhs_parent_revid(mapping)
-            mapping = lhs_mapping
-        if expected_revid is not None and expected_revid != NULL_REVISION:
-            # Need to restart, branch root has changed
-            (_, branch_path, revnum), mapping = self.lookup_bzr_revision_id(expected_revid, foreign_sibling=revmeta.get_foreign_revid())
-            for (revmeta, mapping) in self._iter_reverse_revmeta_mapping_history(branch_path, revnum, to_revnum=to_revnum, mapping=mapping, pb=pb, limit=limit):
-                yield (revmeta, mapping)
+                if expected_revid == NULL_REVISION:
+                    break
+                (_, branch_path, revnum), mapping = self.lookup_bzr_revision_id(expected_revid, foreign_sibling=foreign_sibling)
+                it = get_iter(branch_path, revnum)
+            elif revid is not None:
+                if not mapping.is_branch_or_tag(revmeta.branch_path):
+                    return
+                yield revmeta, mapping
+                expected_revid = revmeta._get_stored_lhs_parent_revid(mapping)
+                mapping = lhs_mapping
+            else:
+                break
 
     def iter_reverse_revision_history(self, revision_id, pb=None, limit=0,
                                       project=None):
