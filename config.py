@@ -45,6 +45,14 @@ from bzrlib.errors import (
     BzrError,
     )
 
+try:
+    from bzrlib.config import LockableConfig
+except ImportError:
+    class LockableConfig(IniBasedConfig):
+
+        def __init__(self, filename):
+            super(LockableConfig, self).__init__(lambda: filename)
+
 
 def as_bool(str):
     """Parse a string as a boolean.
@@ -69,10 +77,9 @@ def as_bool(str):
 # Data stored includes default branching scheme and locations the repository
 # was seen at.
 
-config_base_class = getattr(bzrlib.config, "LockableConfig", IniBasedConfig)
 
 
-class SubversionUUIDConfig(config_base_class):
+class SubversionUUIDConfig(LockableConfig):
     """UUID-based Subversion configuration."""
 
     def __init__(self, uuid):
