@@ -862,7 +862,6 @@ class RevisionBuildEditor(DeltaBuildEditor):
             else:
                 self._delete_entry(None, u"", base_revnum)
                 renew_fileids = svn_base_ie
-                bzr_base_path = None
         assert isinstance(file_id, str)
 
         return DirectoryRevisionBuildEditor(self, bzr_base_path, u"",
