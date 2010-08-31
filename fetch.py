@@ -1325,10 +1325,7 @@ class InterFromSvnRepository(InterRepository):
         svn_base_revid = revmeta.get_implicit_lhs_parent_revid(mapping)
         try:
             bzr_parent_trees = self._get_parent_trees(revmeta, mapping)
-            if bzr_parent_trees[0].get_revision_id() != svn_base_revid:
-                svn_base_tree = self.target.revision_tree(svn_base_revid)
-            else:
-                svn_base_tree = bzr_parent_trees[0]
+            svn_base_tree = bzr_parent_trees[0]
             return RevisionBuildEditor(self.source, self.target, revid,
                 bzr_parent_trees, svn_base_tree,
                 revmeta, mapping, self._text_cache)
