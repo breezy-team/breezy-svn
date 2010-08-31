@@ -69,11 +69,6 @@ def as_bool(str):
 # Data stored includes default branching scheme and locations the repository
 # was seen at.
 
-def subversion_config_filename():
-    """Return per-user configuration ini file filename."""
-    return osutils.pathjoin(config_dir(), 'subversion.conf')
-
-
 config_base_class = getattr(bzrlib.config, "LockableConfig", IniBasedConfig)
 
 
@@ -81,11 +76,13 @@ class SubversionUUIDConfig(config_base_class):
     """UUID-based Subversion configuration."""
 
     def __init__(self, uuid):
-        name_generator = subversion_config_filename
-        super(SubversionUUIDConfig, self).__init__(name_generator)
+        super(SubversionUUIDConfig, self).__init__(self._get_filename())
         self.uuid = uuid
         if not self.uuid in self._get_parser():
             self._get_parser()[self.uuid] = {}
+
+    def _get_filename(self):
+        return osutils.pathjoin(config_dir(), 'subversion.conf')
 
     def __getitem__(self, name):
         return self._get_parser()[self.uuid][name]
