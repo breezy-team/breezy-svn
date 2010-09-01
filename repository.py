@@ -629,6 +629,7 @@ class SvnRepository(ForeignRepository):
         return editor.delta
 
     def _annotate(self, path, revnum, fileid, revid, mapping):
+        assert type(path) is str
         from bzrlib.plugins.svn.annotate import Annotater
         annotater = Annotater(self, mapping, fileid, revid)
         annotater.check_file_revs(path, revnum)

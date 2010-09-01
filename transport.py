@@ -266,7 +266,7 @@ def Connection(url, auth=None, config=None):
         progress_cb = SubversionProgressReporter(url).update
     else:
         progress_cb = None
-    assert type(url) == str
+    assert type(url) == str, "URL not string: %r" % url
     try:
         ret = subvertpy.ra.RemoteAccess(_url_escape_uri(url), auth=auth,
                 client_string_func=bzrlib.plugins.svn.get_client_string,
@@ -613,6 +613,7 @@ class SvnRaTransport(Transport):
             self.add_connection(conn)
 
     def get_file_revs(self, path, start_revnum, end_revnum, handler):
+        assert type(path) is str
         conn, relpath = self.get_path_connection(path)
         try:
             return conn.get_file_revs(relpath, start_revnum, end_revnum, handler)

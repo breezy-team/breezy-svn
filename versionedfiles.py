@@ -64,6 +64,7 @@ class SvnTexts(VersionedFiles):
         revmeta, mapping = self.repository._get_revmeta(revid)
         map = self.repository.get_fileid_map(revmeta, mapping)
         path = map.reverse_lookup(mapping, fileid)
+        assert type(path) is str
         return (urlutils.join(revmeta.branch_path, path).strip("/"),
                 revmeta.revnum, mapping)
 
