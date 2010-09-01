@@ -140,15 +140,23 @@ def inventory_parent_id_basename_to_file_id(inv, parent_id, basename):
 
 
 def inventory_ancestors(inv, fileid, exceptions):
-    ret = list()
-    for ie in inv[fileid].children.values():
-        p = inv.id2path(ie.file_id)
-        if p in exceptions:
-            continue
-        ret.append(p)
-        if ie.kind == "directory":
-            ret.extend(inventory_ancestors(inv, ie.file_id, exceptions))
-    return ret
+    """Find all ancestors of a particular file id in an inventory.
+
+    :param inv: Inventory
+    :param fileid: File id
+    :param exceptions: Sequence of paths to not report on
+    :return: Sequence of paths
+    """
+    todo = set([fileid])
+    while todo:
+        fileid = todo.pop()
+        for ie in inv[fileid].children.values():
+            p = inv.id2path(ie.file_id)
+            if p in exceptions:
+                continue
+            yield p
+            if ie.kind == "directory":
+                todo.add(ie.file_id)
 
 
 def md5_strings(chunks):
@@ -454,6 +462,9 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
                  '_metadata_changed', '_renew_fileids', 'new_ie',
                  'svn_base_ie', 'bzr_base_ie')
 
+    def __repr__(self):
+        return "<%s for %s>" % (self.__class__.__name__, self.new_id)
+
     def __init__(self, editor, bzr_base_path, path, new_id,
             bzr_base_ie, svn_base_ie, parent_file_id, renew_fileids=None):
         super(DirectoryRevisionBuildEditor, self).__init__(editor, path)
@@ -535,10 +546,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             self._delete_entry(path, base_revnum)
             # If a directory is replaced by a copy of itself, we need
             # to make sure all children get readded with a new file id
-            if svn_base_file_id is not None:
-                renew_fileids = self.editor.svn_base_tree.inventory[svn_base_file_id]
-            else:
-                renew_fileids = None
+            renew_fileids = svn_base_ie
         return DirectoryRevisionBuildEditor(self.editor, bzr_base_path, path,
             file_id, bzr_base_ie, svn_base_ie, self.new_id,
             renew_fileids=renew_fileids)
@@ -692,8 +700,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
     Bazaar revision.
     """
 
-    def __init__(self, source, target, revid, bzr_parent_trees, svn_base_tree, revmeta, mapping,
-                 text_cache):
+    def __init__(self, source, target, revid, bzr_parent_trees, svn_base_tree,
+            revmeta, mapping, text_cache):
         self.target = target
         self.source = source
         self.texts = target.texts
@@ -727,17 +735,42 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 return
             for c in ie.children.values():
                 rec_del(c)
-        rec_del(self.bzr_base_tree.inventory[self._get_bzr_base_file_id(old_parent_id, path)])
+        base_file_id = self._get_bzr_base_file_id(old_parent_id, path)
+        rec_del(self.bzr_base_tree.inventory[base_file_id])
 
     def get_svn_base_ie_open(self, parent_id, path, revnum):
         """Find the inventory entry against which svn is sending the
-        changes to generat ethe current one.
+        changes to generate the current one.
 
+        :param parent_id: File id of the parent
+        :param path: Path as it exists in the current revision
+        :param revnum: Revision number from which to open
+        :return: Tuple with file id and inventory entry
         """
         assert type(path) is unicode
         assert (type(parent_id) is str or (parent_id is None and path == ""))
-        file_id = inventory_parent_id_basename_to_file_id(
-            self.svn_base_tree.inventory, parent_id, urlutils.basename(path))
+        if path == u"":
+            lhs_parent_revmeta = self.revmeta.get_lhs_parent_revmeta(
+                self.mapping)
+            if lhs_parent_revmeta is not None:
+                lhs_parent_branch_path = lhs_parent_revmeta.branch_path
+                try:
+                    (action, copyfrom_path, copyfrom_revnum, kind) = self.revmeta.paths.get(self.revmeta.branch_path)
+                except TypeError:
+                    copyfrom_path = None
+                if copyfrom_path is None:
+                    copyfrom_path = lhs_parent_branch_path
+                svn_base_path = urlutils.determine_relative_path(
+                    lhs_parent_branch_path, copyfrom_path)
+                if svn_base_path == ".":
+                    svn_base_path = ""
+            else:
+                svn_base_path = ""
+            file_id = self.svn_base_tree.path2id(svn_base_path)
+        else:
+            file_id = inventory_parent_id_basename_to_file_id(
+                self.svn_base_tree.inventory, parent_id,
+                urlutils.basename(path))
         return (file_id, self.svn_base_tree.inventory[file_id])
 
     def get_svn_base_ie_copyfrom(self, path, revnum):
@@ -857,7 +890,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
             else:
                 bzr_base_path = None
                 bzr_base_ie = None
-            if file_id == svn_base_file_id:
+            if bzr_base_path != u"":
+                self._delete_entry(None, u"", base_revnum)
+                renew_fileids = None
+            elif file_id == svn_base_file_id:
                 renew_fileids = None
             else:
                 self._delete_entry(None, u"", base_revnum)
@@ -869,7 +905,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
     def _renew_fileids(self, file_id):
         # A bit expensive (O(d)), but this should be very rare
-        delta_new_paths = set([e[1] for e in self._inv_delta if e[1] is not None])
+        delta_new_paths = set(
+            [e[1] for e in self._inv_delta if e[1] is not None])
         exceptions = delta_new_paths.union(self._explicitly_deleted)
         for path in inventory_ancestors(self.bzr_base_tree.inventory,
                 file_id, exceptions):
@@ -895,7 +932,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
                     [], # New file id, so no parents
                     record.sha1,
                     record.get_bytes_as('fulltext'))])
-        self._inv_delta_append(None, path, new_ie.file_id, new_ie)
+        self._inv_delta_append(self.bzr_base_tree.path2id(new_ie.file_id),
+            path, new_ie.file_id, new_ie)
 
     @property
     def id_map(self):
