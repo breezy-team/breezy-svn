@@ -1422,7 +1422,8 @@ class RevisionMetadataProvider(object):
         if check_unusual_path is None:
             check_unusual_path = lambda x: True
         if project is not None:
-            prefixes = layout.get_project_prefixes(project)
+            prefixes = filter(self.repository.transport.has,
+                              layout.get_project_prefixes(project))
         else:
             prefixes = [""]
 

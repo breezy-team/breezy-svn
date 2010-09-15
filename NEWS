@@ -1,5 +1,10 @@
 bzr-svn 1.0.5					  UNRELEASED
 
+ BUG FIXES
+
+  * Cope with layouts returning project paths that don't exist.
+    (Max Bowsher, Jelmer Vernooij, #638492)
+
 bzr-svn 1.0.4					  2010-08-30
 
  BUG FIXES

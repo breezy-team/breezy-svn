@@ -52,7 +52,6 @@ from bzrlib.revision import (
     ensure_null,
     )
 from bzrlib.trace import (
-    mutter,
     note,
     )
 from bzrlib.transport import (
@@ -1211,7 +1210,8 @@ class SvnRepository(ForeignRepository):
         ret = []
 
         if project is not None:
-            prefixes = layout.get_project_prefixes(project)
+            prefixes = filter(self.transport.has,
+                              layout.get_project_prefixes(project))
         else:
             prefixes = [""]
 
