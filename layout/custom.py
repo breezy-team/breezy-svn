@@ -176,9 +176,3 @@ class KDELayout(RepositoryLayout):
 
     def __str__(self):
         return "kde"
-
-
-class ApacheLayout(TrunkLayout):
-    """Layout for the Apache repository."""
-
-
