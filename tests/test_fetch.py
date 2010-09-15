@@ -49,11 +49,6 @@ from bzrlib.tests import (
 from bzrlib.trace import (
     mutter,
     )
-from bzrlib.versionedfile import (
-    AbsentContentFactory,
-    ChunkedContentFactory,
-    FulltextContentFactory,
-    )
 
 from bzrlib.plugins.svn import (
     format,
