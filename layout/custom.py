@@ -77,9 +77,6 @@ class KDELayout(RepositoryLayout):
         assert pts[0] == "tags"
         return pts[2]
 
-    def push_merged_revisions(self, project=""):
-        return False
-
     def get_branch_path(self, name, project=None):
         if project is None:
             raise AssertionError

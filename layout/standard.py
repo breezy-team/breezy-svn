@@ -182,15 +182,6 @@ class RootLayout(RepositoryLayout):
         """
         raise AssertionError("should never be reached, there can't be any tag paths in this layout")
 
-    def push_merged_revisions(self, project=""):
-        """Determine whether or not right hand side (merged) revisions should be pushed.
-
-        Defaults to False.
-
-        :param project: Name of the project.
-        """
-        return False
-
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.
 
@@ -259,24 +250,6 @@ class CustomLayout(RepositoryLayout):
         :param path: Path inside the repository.
         """
         return None
-
-    def push_merged_revisions(self, project=""):
-        """Determine whether or not right hand side (merged) revisions should be pushed.
-
-        Defaults to False.
-
-        :param project: Name of the project.
-        """
-        return False
-
-    def get_branch_path(self, name, project=""):
-        """Return the path at which the branch with specified name should be found.
-
-        :param name: Name of the branch.
-        :param project: Optional name of the project the branch is for. Can include slashes.
-        :return: Path of the branch.
-        """
-        raise svn_errors.NoCustomBranchPaths(self)
 
     def parse(self, path):
         """Parse a path.
@@ -358,24 +331,6 @@ class WildcardLayout(RepositoryLayout):
                 return path.split("/")[-1]
         return None
 
-    def push_merged_revisions(self, project=""):
-        """Determine whether or not right hand side (merged) revisions should be pushed.
-
-        Defaults to False.
-
-        :param project: Name of the project.
-        """
-        return False
-
-    def get_branch_path(self, name, project=""):
-        """Return the path at which the branch with specified name should be found.
-
-        :param name: Name of the branch.
-        :param project: Optional name of the project the branch is for. Can include slashes.
-        :return: Path of the branch.
-        """
-        raise svn_errors.NoCustomBranchPaths(self)
-
     def is_branch(self, path, project=None):
         for bp in self.branches:
            if wildcard_matches(path, bp):
@@ -447,15 +402,6 @@ class InverseTrunkLayout(RepositoryLayout):
         :param path: Path inside the repository.
         """
         return urlutils.basename(path).strip("/")
-
-    def push_merged_revisions(self, project=""):
-        """Determine whether or not right hand side (merged) revisions should be pushed.
-
-        Defaults to False.
-
-        :param project: Name of the project.
-        """
-        return False
 
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.
