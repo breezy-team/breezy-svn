@@ -793,6 +793,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
         return inv[file_id]
 
     def _get_chunked(self, ie):
+        if ie.kind == 'symlink':
+            return ("link ", ie.symlink_target.encode("utf-8"))
         key = (ie.file_id, ie.revision)
         file_data = self._text_cache.get(key)
         if file_data is not None:

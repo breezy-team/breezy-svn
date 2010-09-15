@@ -5,6 +5,9 @@ bzr-svn 1.0.5					  UNRELEASED
   * Cope with layouts returning project paths that don't exist.
     (Max Bowsher, Jelmer Vernooij, #638492)
 
+  * Support symlinks being changed into files, when their contents
+    are no longer in the cache. (Max Bowsher, #638697)
+
 bzr-svn 1.0.4					  2010-08-30
 
  BUG FIXES

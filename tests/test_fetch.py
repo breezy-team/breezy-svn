@@ -1822,6 +1822,20 @@ Node-copyfrom-path: x
                 oldrepos.generate_revision_id(2, "", mapping))
         self.assertEqual('file', inv1[inv1.path2id("mylink")].kind)
 
+        # Now test the same thing again as two separate copy_content calls, to
+        # check it also works if the symlink's "text" is not in the fetch
+        # text_cache.
+        dir2 = BzrDir.create("f2")
+        newrepos2 = dir2.create_repository()
+        self.copy_content(oldrepos, newrepos2,
+              oldrepos.generate_revision_id(1, "", mapping))
+        self.copy_content(oldrepos, newrepos2)
+        self.assertTrue(newrepos2.has_revision(
+            oldrepos.generate_revision_id(2, "", mapping)))
+        inv2 = newrepos2.get_inventory(
+                oldrepos.generate_revision_id(2, "", mapping))
+        self.assertEqual('file', inv2[inv2.path2id("mylink")].kind)
+
     def test_fetch_special_becomes_symlink(self):
         repos_url = self.make_repository('d')
 
