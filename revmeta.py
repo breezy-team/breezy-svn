@@ -189,14 +189,14 @@ class BzrRevisionMetadata(RevisionMetadata):
     from other known data before contacting the Subversions server.
     """
 
-    __slots__ = ('check_revprops', '_get_fileprops_fn',
+    __slots__ = ('_get_fileprops_fn',
                  '_changed_fileprops', '_fileprops',
                  '_direct_lhs_parent_known', '_consider_bzr_fileprops',
                  '_consider_bzr_revprops', '_estimated_fileprop_ancestors',
                  'metaiterators', 'children',
                  '_direct_lhs_parent_revmeta', '_revprop_redirect_revnum')
 
-    def __init__(self, repository, check_revprops, get_fileprops_fn,
+    def __init__(self, repository, get_fileprops_fn,
                  branch_path, logwalker, revnum, paths, revprops,
                  changed_fileprops=None, fileprops=None,
                  metaiterator=None):
@@ -204,7 +204,6 @@ class BzrRevisionMetadata(RevisionMetadata):
             repository.uuid, branch_path, revnum, paths=paths,
             revprops=revprops)
         self.repository = repository
-        self.check_revprops = check_revprops
         self._get_fileprops_fn = get_fileprops_fn
         self._changed_fileprops = changed_fileprops
         self._fileprops = fileprops
@@ -1274,12 +1273,11 @@ def restrict_prefixes(prefixes, prefix):
 class RevisionMetadataProvider(object):
     """A RevisionMetadata provider."""
 
-    def __init__(self, repository, cache, check_revprops):
+    def __init__(self, repository, cache):
         self._revmeta_cache = {}
         self.repository = repository
         self._get_fileprops_fn = self.repository.branchprop_list.get_properties
         self._log = repository._log
-        self.check_revprops = check_revprops
         self._open_metaiterators = []
         if cache:
             self._revmeta_cls = CachingBzrRevisionMetadata
@@ -1292,7 +1290,7 @@ class RevisionMetadataProvider(object):
         """Create a new RevisionMetadata instance, assuming this
         revision isn't cached yet.
         """
-        return self._revmeta_cls(self.repository, self.check_revprops,
+        return self._revmeta_cls(self.repository,
                                  self._get_fileprops_fn,
                                  path, self._log, revnum, changes, revprops,
                                  changed_fileprops=changed_fileprops,

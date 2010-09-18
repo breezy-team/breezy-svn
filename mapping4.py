@@ -59,10 +59,7 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
 
     @classmethod
     def from_repository(cls, repository, _hinted_branch_path=None):
-        if _hinted_branch_path == "":
-            return cls()
-        else:
-            return cls()
+        return cls()
 
     @classmethod
     def from_revprops(cls, revprops):
