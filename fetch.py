@@ -391,10 +391,6 @@ class DirectoryBuildEditor(object):
         elif name.startswith(properties.PROP_PREFIX):
             trace.mutter('unsupported dir property %r', name)
 
-        if (not name.startswith(properties.PROP_ENTRY_PREFIX) and
-            not name.startswith(properties.PROP_WC_PREFIX)):
-            self._metadata_changed = True
-
     def add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         assert isinstance(path, str)
         path = path.decode("utf-8")
