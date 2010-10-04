@@ -386,7 +386,7 @@ class SvnRaTransport(Transport):
         if host.endswith(".codeplex.com"):
             warn_codeplex(host)
         if from_transport is None:
-            self.connections = ConnectionPool(bzr_url)
+            self.connections = ConnectionPool(self.svn_url)
             if credentials is not None:
                 assert isinstance(credentials, dict)
                 self.connections.set_credentials(credentials)
