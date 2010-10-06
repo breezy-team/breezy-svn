@@ -806,6 +806,21 @@ class TestWorkingTree(SubversionTestCase):
         wt = WorkingTree.open('dc')
         wt.apply_inventory_delta([("bla", None, wt.path2id("bla"), None)])
 
+    def test_keywords_commit(self):
+        repos_url = self.make_client('a', 'dc')
+        self.build_tree({'dc/file.txt': 'This is a file with a $Id$'})
+        self.client_add('dc/file.txt')
+        self.client_set_prop('dc/file.txt', 'svn:keywords', 'Id')
+        self.client_commit('dc', "Initial commit")
+        self.build_tree({'dc/file.txt': 'This is a file with a $Id$\n'
+                                        'New line added\n'})
+        wt = WorkingTree.open('dc')
+        wt.commit("Commit via bzr")
+        self.build_tree({'dc/file.txt': 'This is a file with a $Id$\n'
+                                        'New line added\n'
+                                        'Another change\n'})
+        self.client_commit('dc', "Commit via svn")
+
 
 class IgnoreListTests(TestCase):
 
