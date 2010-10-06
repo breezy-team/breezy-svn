@@ -248,7 +248,7 @@ class RevisionInfoCache(CacheTable):
             orig_mapping_name = original_mapping.name
         else:
             orig_mapping_name = None
-        self.cachedb.execute("insert into original_mapping (path, revnum, original_mapping) values (?, ?, ?)", (foreign_revid[1], foreign_revid[2], orig_mapping_name))
+        self.cachedb.execute("insert into original_mapping (path, revnum, original_mapping) values (?, ?, ?)", (foreign_revid[1].decode("utf-8"), foreign_revid[2], orig_mapping_name))
 
     def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden),
             stored_lhs_parent_revid):
@@ -290,7 +290,7 @@ class RevisionInfoCache(CacheTable):
         :param foreign_revid: Foreign revision id
         :return: Mapping object or None
         """
-        row = self.cachedb.execute("select original_mapping from original_mapping where path = ? and revnum = ?", (foreign_revid[1], foreign_revid[2])).fetchone()
+        row = self.cachedb.execute("select original_mapping from original_mapping where path = ? and revnum = ?", (foreign_revid[1].decode("utf-8"), foreign_revid[2])).fetchone()
         if row is None:
             raise KeyError(foreign_revid)
         if row[0] is None:

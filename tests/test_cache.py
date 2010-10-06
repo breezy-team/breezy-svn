@@ -168,6 +168,10 @@ class RevInfoCacheTests(object):
             None)
         self.assertEquals(None, self.cache.get_original_mapping(("fkjhfsdkjh", "mypath", 1)))
 
+    def test_get_original_mapping_unicode(self):
+        self.cache.set_original_mapping(("fsdkjhfsdkjhfsd", 'path\xc3\xad', 1), None)
+        self.assertEquals(None, self.cache.get_original_mapping(("fkjhfsdkjh", 'path\xc3\xad', 1)))
+
     def test_get_original_mapping_unknown(self):
         self.assertRaises(KeyError, self.cache.get_original_mapping, ("fkjhfsdkjh", "mypath", 1))
 

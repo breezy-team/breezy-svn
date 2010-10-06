@@ -10,6 +10,8 @@ bzr-svn 1.0.5					  UNRELEASED
 
   * Fix regression in 'bzr missing -v'. (#645360, Jelmer Vernooij)
 
+  * Support non-ascii paths in SqliteCache when retrieving mappings. (#643737, Jelmer Vernooij)
+
 bzr-svn 1.0.4					  2010-08-30
 
  BUG FIXES
