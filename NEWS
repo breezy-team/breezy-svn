@@ -12,6 +12,8 @@ bzr-svn 1.0.5					  UNRELEASED
 
   * Support non-ascii paths in SqliteCache when retrieving mappings. (#643737, Jelmer Vernooij)
 
+  * Mark as compatible with bzr 2.3. (Jelmer Vernooij)
+
 bzr-svn 1.0.4					  2010-08-30
 
  BUG FIXES
