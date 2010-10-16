@@ -164,8 +164,13 @@ except ImportError:
     BzrDirFormat._control_server_formats.insert(0, format.SvnRemoteFormat)
     BzrDirFormat.register_control_format(format.SvnWorkingTreeDirFormat)
 else:
+    #BzrDirFormat.register_control_server_format(format.SvnRemoteFormat)
+    # Register as the first control server format, since the default smart
+    # server implementation tries to do a POST request against .bzr/smart and
+    # this causes some Subversion servers to reply with 401 Authentication required
+    # even though they are accessible without authentication.
     ControlDirFormat.register_prober(format.SvnWorkingTreeProber)
-    ControlDirFormat.register_prober(format.SvnRemoteProber)
+    ControlDirFormat._server_probers.insert(0, format.SvnRemoteProber)
     ControlDirFormat.register_format(format.SvnWorkingTreeDirFormat())
     ControlDirFormat.register_format(format.SvnRemoteFormat())
 try:
