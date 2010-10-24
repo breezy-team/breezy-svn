@@ -14,6 +14,9 @@ bzr-svn 1.0.5					  UNRELEASED
 
   * Mark as compatible with bzr 2.3. (Jelmer Vernooij)
 
+  * Remove reference to edge.launchpad.net, which is going away. (Jelmer Vernooij,
+     #666021)
+
 bzr-svn 1.0.4					  2010-08-30
 
  BUG FIXES
