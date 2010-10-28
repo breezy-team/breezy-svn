@@ -191,12 +191,22 @@ def parse_svn_dateprop(date):
 
 
 def parse_svn_log(log):
+    """Parse a Subversion commit ("svn:log") message.
+
+    :param log: Log message as bytestring or None
+    :return: Unicode string with log message
+    """
     if log is None:
         return u""
     return log.decode("utf-8", "replace")
 
 
 def parse_svn_revprops(svn_revprops, rev):
+    """Fill in as much details as possible in a Revision object from a set of svn properties.
+
+    :param svn_revprops: Subversion revision properties
+    :param rev: Revision object
+    """
     rev.committer = svn_revprops.get(properties.PROP_REVISION_AUTHOR, "").decode("utf-8")
     if rev.committer is None:
         rev.committer = u""
