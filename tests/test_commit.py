@@ -40,7 +40,6 @@ from bzrlib.tests import (
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
-from bzrlib.plugins.svn import format
 from bzrlib.plugins.svn.commit import (
     set_svn_revprops,
     _revision_id_to_svk_feature,
