@@ -197,6 +197,37 @@ class GenerateRevisionIdTests(TestCase):
             BzrSvnMappingv4().revision_id_foreign_to_bzr(("uuid", "project/trunk", 1)))
 
 
+class TestamentTests(TestCase):
+    """Make sure that only v4 mappings set the testament revision property."""
+
+    def setUp(self):
+        super(TestamentTests, self).setUp()
+        class DummyTestament(object):
+            """Testament."""
+
+            def as_text(self):
+                return "testament 1\nfoo bar\n"
+
+        self.testament = DummyTestament()
+
+    def _generate_revprops(self, mapping):
+        revprops = {}
+        mapping.export_revision_revprops(revprops, "someuuid", "branchp",
+                432432432.0, 0, "somebody", {}, "arevid", 4, ["merge1"],
+                testament=self.testament)
+        return revprops
+
+    def test_v4(self):
+        revprops = self._generate_revprops(BzrSvnMappingv4())
+        self.assertEquals(self.testament.as_text(),
+            revprops[mapping.SVN_REVPROP_BZR_TESTAMENT])
+
+    def test_v3(self):
+        revprops = self._generate_revprops(BzrSvnMappingv3(TrunkBranchingScheme()))
+        self.assertEquals(self.testament.as_text(),
+            revprops[mapping.SVN_REVPROP_BZR_TESTAMENT])
+
+
 class ParseRevisionIdTests(TestCase):
 
     def test_v4(self):
