@@ -521,15 +521,16 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self.mapping.export_revprop_redirect(
                     self.repository.get_latest_revnum()+1, self._svnprops)
         revno = self.base_revno + 1
+        testament = None # FIXME: Actually specify a testament when pushing.
         if self.set_custom_fileprops:
-            self.mapping.export_revision_fileprops(
+            self.mapping.export_revision_fileprops(self._svnprops,
                 timestamp, timezone, committer, revprops,
-                revision_id, revno, parents, self._svnprops)
+                revision_id, revno, parents, testament=testament)
         if self.set_custom_revprops and self.push_metadata:
             self.mapping.export_revision_revprops(
-                self.repository.uuid,
+                self._svn_revprops, self.repository.uuid,
                 self.branch_path, timestamp, timezone, committer, revprops,
-                revision_id, revno, parents, self._svn_revprops)
+                revision_id, revno, parents, testament=testament)
 
         if len(merges) > 0:
             old_svk_merges = self._base_branch_props.get(SVN_PROP_SVK_MERGE, "")

@@ -73,6 +73,7 @@ SVN_REVPROP_BZR_SKIP = 'bzr:skip'
 SVN_REVPROP_BZR_HIDDEN = 'bzr:hidden'
 SVN_REVPROP_BZR_REPOS_UUID = 'bzr:repository-uuid'
 SVN_REVPROP_BZR_POINTLESS = 'bzr:pointless'
+SVN_REVPROP_BZR_TESTAMENT = 'bzr:testament'
 
 
 def find_new_lines((oldvalue, newvalue)):
@@ -541,12 +542,13 @@ class BzrSvnMapping(foreign.VcsMapping):
     def import_text_revisions_fileprops(self, fileprops):
         raise NotImplementedError(self.import_text_revisions_fileprops)
 
-    def export_revision_revprops(self, uuid, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_revprops):
+    def export_revision_revprops(self, svn_revprops, uuid, branch_root, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, testament):
         """Determines the revision properties.
         """
         raise NotImplementedError(self.export_revision_revprops)
 
-    def export_revision_fileprops(self, timestamp, timezone, committer, revprops, revision_id, revno, parent_ids, svn_fileprops):
+    def export_revision_fileprops(self, svn_fileprops, timestamp, timezone,
+            committer, revprops, revision_id, revno, parent_ids, testament):
         """Determines the branch root file properties.
         """
         raise NotImplementedError(self.export_revision_fileprops)
@@ -707,8 +709,8 @@ class BzrSvnMappingFileProps(object):
 
         return svnprops
 
-    def export_revision_fileprops(self, timestamp, timezone, committer,
-        revprops, revision_id, revno, parent_ids, svn_fileprops):
+    def export_revision_fileprops(self, svn_fileprops, timestamp, timezone, committer,
+        revprops, revision_id, revno, parent_ids, testament):
 
         # Keep track of what Subversion properties to set later on
         svn_fileprops[SVN_PROP_BZR_REVISION_INFO] = generate_revision_metadata(
@@ -826,8 +828,9 @@ class BzrSvnMappingRevProps(object):
     def export_message_revprops(self, message, revprops):
         revprops[SVN_REVPROP_BZR_LOG] = message.encode("utf-8")
 
-    def export_revision_revprops(self, uuid, branch_root, timestamp, timezone,
-        committer, revprops, revision_id, revno, parent_ids, svn_revprops):
+    def export_revision_revprops(self, svn_revprops, uuid, branch_root,
+            timestamp, timezone, committer, revprops, revision_id, revno,
+            parent_ids, testament):
         svn_revprops[SVN_REVPROP_BZR_MAPPING_VERSION] = self.name
         if timestamp is not None:
             svn_revprops[SVN_REVPROP_BZR_TIMESTAMP] = format_highres_date(timestamp, timezone)
@@ -854,6 +857,8 @@ class BzrSvnMappingRevProps(object):
 
         svn_revprops[SVN_REVPROP_BZR_REVNO] = str(revno)
         svn_revprops[SVN_REVPROP_BZR_USER_AGENT] = get_client_string()
+        if testament is not None:
+            svn_revprops[SVN_REVPROP_BZR_TESTAMENT] = testament.as_text()
 
     def export_fileid_map_revprops(self, fileids, revprops):
         if fileids != {}:

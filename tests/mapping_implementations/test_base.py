@@ -48,10 +48,11 @@ class RoundtripMappingTests(TestCase):
             raise TestNotApplicable
         fileids = {"": "some-id", "bla/blie": "other-id"}
         fileprops = {}
-        self.mapping.export_revision_fileprops(432432432.0, 0, "somebody", {}, "arevid", 4, ["merge1"], fileprops)
+        self.mapping.export_revision_fileprops(fileprops, 432432432.0, 0,
+            "somebody", {}, "arevid", 4, ["merge1"], testament=None)
         self.mapping.export_fileid_map_fileprops(fileids, fileprops)
-        self.assertEquals(fileids, 
-                self.mapping.import_fileid_map_fileprops(changed_props(fileprops)))
+        self.assertEquals(fileids,
+            self.mapping.import_fileid_map_fileprops(changed_props(fileprops)))
 
     def test_fileid_map_revprops(self):
         if not self.mapping.roundtripping:
@@ -61,9 +62,9 @@ class RoundtripMappingTests(TestCase):
         fileids = {"": "some-id", "bla/blie": "other-id"}
         revprops = {}
         revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
-        self.mapping.export_revision_revprops("someuuid", "branchp", 432432432.0, 0, "somebody", {}, "arevid", 4, ["merge1"], revprops)
+        self.mapping.export_revision_revprops(revprops, "someuuid", "branchp", 432432432.0, 0, "somebody", {}, "arevid", 4, ["merge1"], testament=None)
         self.mapping.export_fileid_map_revprops(fileids, revprops)
-        self.assertEquals(fileids, 
+        self.assertEquals(fileids,
                 self.mapping.import_fileid_map_revprops(revprops))
 
     def test_text_revisions_fileprops(self):
@@ -92,8 +93,8 @@ class RoundtripMappingTests(TestCase):
         if not self.mapping.roundtripping:
             raise TestNotApplicable
         fileprops = {}
-        self.mapping.export_revision_fileprops(432432432.0, 0, "somebody", 
-                                     {"arevprop": "val"}, "arevid", 4, ["merge1"], fileprops)
+        self.mapping.export_revision_fileprops(fileprops, 432432432.0, 0, "somebody", 
+             {"arevprop": "val"}, "arevid", 4, ["merge1"], testament=None)
         try:
             self.mapping.export_message_fileprops("My Commit message", fileprops)
         except NotImplementedError:
@@ -108,8 +109,8 @@ class RoundtripMappingTests(TestCase):
         if not self.mapping.can_use_revprops:
             raise TestNotApplicable
         revprops = {}
-        self.mapping.export_revision_revprops("someuuid", "branchp", 432432432.0, 0, "somebody", 
-                                     {"arevprop": "val"}, "arevid", 4, ["merge1"], revprops)
+        self.mapping.export_revision_revprops(revprops, "someuuid", "branchp", 432432432.0, 0, "somebody", 
+                                     {"arevprop": "val"}, "arevid", 4, ["merge1"], testament=None)
         revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
         try:
             self.mapping.export_message_revprops("My Commit message", revprops)
@@ -126,8 +127,8 @@ class RoundtripMappingTests(TestCase):
             raise TestNotApplicable
         revprops = {}
         fileprops = {}
-        self.mapping.export_revision_fileprops(432432432.0, 0, "somebody", 
-                                     {"arevprop": "val" }, "arevid", 4, ["parent", "merge1"], fileprops)
+        self.mapping.export_revision_fileprops(fileprops, 432432432.0, 0, "somebody", 
+             {"arevprop": "val" }, "arevid", 4, ["parent", "merge1"], testament=None)
         targetrev = Revision(None)
         self.mapping.import_revision_fileprops(changed_props(fileprops), targetrev)
         self.assertEquals(targetrev.committer, "somebody")
@@ -141,8 +142,8 @@ class RoundtripMappingTests(TestCase):
         if not self.mapping.can_use_revprops:
             raise TestNotApplicable
         revprops = {}
-        self.mapping.export_revision_revprops("someuuid", "branchp", 432432432.0, 0, "somebody", 
-                                     {"arevprop": "val" }, "arevid", 4, ["parent", "merge1"], revprops)
+        self.mapping.export_revision_revprops(revprops, "someuuid", "branchp", 432432432.0, 0, "somebody", 
+             {"arevprop": "val" }, "arevid", 4, ["parent", "merge1"], testament=None)
         targetrev = Revision(None)
         revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
         parse_svn_revprops(revprops, targetrev)
@@ -158,7 +159,8 @@ class RoundtripMappingTests(TestCase):
         if not self.mapping.can_use_fileprops:
             raise TestNotApplicable
         fileprops = {}
-        self.mapping.export_revision_fileprops(432432432.0, 0, "somebody", {}, "arevid", 4, ["parent", "merge1"], fileprops)
+        self.mapping.export_revision_fileprops(fileprops, 432432432.0, 0,
+            "somebody", {}, "arevid", 4, ["parent", "merge1"], testament=None)
         self.assertEquals((4, "arevid", False), self.mapping.get_revision_id_fileprops(changed_props(fileprops)))
 
     def test_revision_id_revprops(self):
@@ -167,9 +169,9 @@ class RoundtripMappingTests(TestCase):
         if not self.mapping.can_use_revprops:
             raise TestNotApplicable
         revprops = {}
-        self.mapping.export_revision_revprops("someuuid", "branchp", 432432432.0, 0, "somebody", {}, "arevid", 4, ["parent", "merge1"], revprops)
+        self.mapping.export_revision_revprops(revprops, "someuuid", "branchp", 432432432.0, 0, "somebody", {}, "arevid", 4, ["parent", "merge1"], testament=None)
         self.assertEquals((4, "arevid", False), self.mapping.get_revision_id_revprops(revprops))
-    
+
     def test_revision_id_none(self):
         if not self.mapping.roundtripping:
             raise TestNotApplicable
