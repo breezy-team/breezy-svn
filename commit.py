@@ -418,7 +418,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                  base_foreign_revid, base_mapping, old_inv=None,
                  push_metadata=True, graph=None, opt_signature=None,
                  texts=None, append_revisions_only=True,
-                 override_svn_revprops=None):
+                 override_svn_revprops=None, testament=None):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -436,6 +436,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                               (in svn file properties, etc).
         :param graph: Optional graph object
         :param opt_signature: Optional signature to write.
+        :param testament: A Testament object to store
         """
         super(SvnCommitBuilder, self).__init__(repository, parents,
             config, timestamp, timezone, committer, revprops, revision_id)
@@ -521,7 +522,6 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self.mapping.export_revprop_redirect(
                     self.repository.get_latest_revnum()+1, self._svnprops)
         revno = self.base_revno + 1
-        testament = None # FIXME: Actually specify a testament when pushing.
         if self.set_custom_fileprops:
             self.mapping.export_revision_fileprops(self._svnprops,
                 timestamp, timezone, committer, revprops,

@@ -43,6 +43,9 @@ from bzrlib.repository import (
 from bzrlib.revision import (
     NULL_REVISION,
     )
+from bzrlib.testament import (
+    StrictTestament,
+    )
 from bzrlib.trace import (
     mutter,
     )
@@ -131,6 +134,11 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
     except NoSuchRevision:
         opt_signature = None
 
+    if push_metadata:
+        testament = StrictTestament(rev, old_tree.inventory)
+    else:
+        testament = None
+
     builder = SvnCommitBuilder(target_repo, branch_path, base_revids,
                                config, rev.timestamp,
                                rev.timezone, rev.committer, rev.properties,
@@ -140,7 +148,8 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                                graph=graph, opt_signature=opt_signature,
                                texts=source_repo.texts,
                                append_revisions_only=append_revisions_only,
-                               override_svn_revprops=override_svn_revprops)
+                               override_svn_revprops=override_svn_revprops,
+                               testament=testament)
     parent_trees = [base_tree]
     for p in rev.parent_ids[1:]:
         try:
