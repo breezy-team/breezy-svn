@@ -17,6 +17,11 @@ bzr-svn 1.0.5					  UNRELEASED
   * Remove reference to edge.launchpad.net, which is going away. (Jelmer Vernooij,
      #666021)
 
+ FEATURES
+
+  * When roundtripping revisions a revision property with the Bazaar testament is
+    now set as a revision property. (Jelmer Vernooij)
+
 bzr-svn 1.0.4					  2010-08-30
 
  BUG FIXES
