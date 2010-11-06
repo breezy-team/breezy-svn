@@ -43,6 +43,7 @@ if __name__ == '__main__':
                     'bzrlib.plugins.svn.layout',
                     'bzrlib.plugins.svn.mapping3',
                     'bzrlib.plugins.svn.tests',
+                    'bzrlib.plugins.svn.tests.layout',
                     'bzrlib.plugins.svn.tests.mapping3',
                     'bzrlib.plugins.svn.tests.mapping_implementations'],
           )
