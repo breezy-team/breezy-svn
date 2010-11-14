@@ -148,6 +148,7 @@ def test_suite():
             'test_repository',
             'test_revmeta',
             'test_revspec',
+            'test_send',
             'test_svk',
             'test_transport',
             'test_tree',

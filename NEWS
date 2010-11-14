@@ -10,12 +10,16 @@ bzr-svn 1.0.5					  UNRELEASED
 
   * Fix regression in 'bzr missing -v'. (#645360, Jelmer Vernooij)
 
-  * Support non-ascii paths in SqliteCache when retrieving mappings. (#643737, Jelmer Vernooij)
+  * Support non-ascii paths in SqliteCache when retrieving mappings. (#643737,
+        Jelmer Vernooij)
 
   * Mark as compatible with bzr 2.3. (Jelmer Vernooij)
 
-  * Remove reference to edge.launchpad.net, which is going away. (Jelmer Vernooij,
-     #666021)
+  * Remove reference to edge.launchpad.net, which is going away. (Jelmer
+        Vernooij, #666021)
+
+  * Support binary files when sending svn-style diffs. (Jelmer Vernooij,
+        #665662)
 
   * Fix compatibility with Python 2.4. (Kristian Berge Ness)
 

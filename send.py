@@ -1,5 +1,5 @@
 # Copyright (C) 2009 Lukas Lalinsky <lalinsky@gmail.com>
-# Copyright (C) 2009 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2009-2010 Jelmer Vernooij <jelmer@samba.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,16 +66,20 @@ class SvnDiffTree(_mod_diff.DiffTree):
                 return '(revision %d)' % info[0][2]
         return '(working copy)'
 
-    def _write_contents_diff(self, path, old_version, old_contents, new_version, new_contents):
+    def _write_contents_diff(self, path, old_version, old_contents,
+            new_version, new_contents):
         if path is None:
             return
         self.to_file.write("Index: %s\n" % path)
         self.to_file.write("=" * 67 + "\n")
         old_label = '%s\t%s' % (path, old_version)
         new_label = '%s\t%s' % (path, new_version)
-        _mod_diff.internal_diff(old_label, old_contents,
-                                new_label, new_contents,
-                                self.to_file)
+        try:
+            _mod_diff.internal_diff(old_label, old_contents,
+                                    new_label, new_contents,
+                                    self.to_file)
+        except errors.BinaryFile:
+            self.to_file.write("Cannot display: file contains binary data.\n")
 
     def _write_properties_diff(self, path, old_properties, new_properties):
         if new_properties is None:
@@ -98,7 +102,8 @@ class SvnDiffTree(_mod_diff.DiffTree):
             elif new_value is None:
                 self.to_file.write("Removed: %s\n\t-%s\n" % (name, old_value))
             else:
-                self.to_file.write("Changed: %s\n\t-%s\n\t+%s\n" % (name, old_value, new_value))
+                self.to_file.write("Changed: %s\n\t-%s\n\t+%s\n" % (
+                    name, old_value, new_value))
 
     def _get_file_properties(self, tree, path, kind, executable):
         if kind in (None, "directory"):
