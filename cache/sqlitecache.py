@@ -59,7 +59,11 @@ except:
     raise errors.BzrError("missing sqlite library")
 
 
-connect_cachefile = sqlite3.connect
+def _connect_sqlite3_file(path):
+    return sqlite3.connect(path, timeout=20.0)
+
+
+connect_cachefile = _connect_sqlite3_file
 
 
 class CacheTable(object):
