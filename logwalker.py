@@ -41,6 +41,11 @@ from bzrlib.plugins.svn.util import (
 
 from subvertpy import NODE_UNKNOWN
 
+try:
+    any
+except NameError:
+    from bzrlib.plugins.svn.pycompat import any
+
 
 # Maximum number of extra revisions to fetch in caching logwalker
 MAX_OVERHEAD_FETCH = 1000

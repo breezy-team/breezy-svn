@@ -17,6 +17,8 @@ bzr-svn 1.0.5					  UNRELEASED
   * Remove reference to edge.launchpad.net, which is going away. (Jelmer Vernooij,
      #666021)
 
+  * Fix compatibility with Python 2.4. (Kristian Berge Ness)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
