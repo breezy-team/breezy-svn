@@ -89,14 +89,18 @@ def check_subversion_version():
     # Installed ?
     from subvertpy import ra, __version__ as subvertpy_version
     ra_version = ra.version()
-    if (ra_version[0] >= 5 and getattr(ra, 'SVN_REVISION', None) and
+    if (ra_version[1] >= 5 and getattr(ra, 'SVN_REVISION', None) and
         27729 <= ra.SVN_REVISION < 31470):
         raise DependencyNotPresent("subvertpy",
                 'bzr-svn: Installed Subversion has buggy svn.ra.get_log() '
                 'implementation, please install newer.')
 
     from bzrlib.trace import mutter
-    mutter("bzr-svn: using Subversion %d.%d.%d (%s)" % ra_version)
+    versions = ["Subversion %d.%d.%d (%s)" % ra_version]
+    if getattr(ra, "api_version", None) is not None and ra.api_version() != ra_version[:3]:
+        versions.append("Subversion API %d.%d.%d" % ra.api_version())
+    versions.append("subvertpy %d.%d.%d" % subvertpy_version)
+    mutter("bzr-svn: using " + ", ".join(versions))
 
     if subvertpy_version < subvertpy_minimum_version:
         raise DependencyNotPresent("subvertpy", "bzr-svn: at least subvertpy %d.%d.%d is required, %d.%d.%d is installed." % (subvertpy_minimum_version + subvertpy_version))
