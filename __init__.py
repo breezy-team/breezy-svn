@@ -97,8 +97,8 @@ def check_subversion_version():
 
     from bzrlib.trace import mutter
     versions = ["Subversion %d.%d.%d (%s)" % ra_version]
-    if getattr(ra, "api_version", None) is not None and ra.api_version() != ra_version[:3]:
-        versions.append("Subversion API %d.%d.%d" % ra.api_version())
+    if getattr(ra, "api_version", None) is not None and ra.api_version() != ra_version:
+        versions.append("Subversion API %d.%d.%d (%s)" % ra.api_version())
     versions.append("subvertpy %d.%d.%d" % subvertpy_version)
     mutter("bzr-svn: using " + ", ".join(versions))
 
