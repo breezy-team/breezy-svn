@@ -501,7 +501,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         if (self.supports_custom_revprops is None and
             self.mapping.can_use_revprops and
             self.repository.seen_bzr_revprops()):
-            raise BzrError("Please upgrade your Subversion client libraries to 1.5 or higher to be able to commit with Subversion mapping %s (current version is %r)" % (self.mapping.name, ra.version()))
+            raise BzrError("Please upgrade your Subversion client libraries to 1.5 or higher to be able to commit with Subversion mapping %s (current version is %r)" % (self.mapping.name, getattr(ra, "api_version", ra.version)()))
 
         self._svn_revprops = {}
         self._svnprops = lazy_dict({}, dict,
