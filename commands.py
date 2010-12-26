@@ -211,6 +211,7 @@ class cmd_svn_layout(Command):
             )
         from bzrlib.branch import Branch
         from bzrlib.repository import Repository
+        from bzrlib.plugins.svn import errors as bzrsvn_errors
 
         try:
             branch, _ = Branch.open_containing(path)
@@ -227,14 +228,22 @@ class cmd_svn_layout(Command):
             self.outf.write("Branch path: %s\n" % branch.get_branch_path())
             if branch.project:
                 self.outf.write("Project: %s\n" % branch.project)
-            test_tag_path = layout.get_tag_path("test", branch.project)
-            if test_tag_path:
-                self.outf.write("Tag container directory: %s\n" %
-                        urlutils.dirname(test_tag_path))
-            test_branch_path = layout.get_branch_path("test", branch.project)
-            if test_branch_path:
-                self.outf.write("Branch container directory: %s\n" %
-                        urlutils.dirname(test_branch_path))
+            try:
+                test_tag_path = layout.get_tag_path("test", branch.project)
+            except NotImplementedError:
+                self.outf.write("No tag support\n")
+            else:
+                if test_tag_path:
+                    self.outf.write("Tag container directory: %s\n" %
+                            urlutils.dirname(test_tag_path))
+            try:
+                test_branch_path = layout.get_branch_path("test", branch.project)
+            except bzrsvn_errors.NoCustomBranchPaths:
+                self.outf.write("No custom branch support\n")
+            else:
+                if test_branch_path:
+                    self.outf.write("Branch container directory: %s\n" %
+                            urlutils.dirname(test_branch_path))
             self.outf.write("Push merged revisions: %s\n" %
                     branch.get_push_merged_revisions())
 
