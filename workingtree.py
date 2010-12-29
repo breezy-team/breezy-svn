@@ -327,7 +327,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         return revnum
 
     def update(self, change_reporter=None, possible_transports=None,
-               revision=None, revnum=None):
+               revision=None, old_tip=None, show_base=False, revnum=None):
         """Update the workingtree to a new Bazaar revision number.
 
         """
