@@ -2,6 +2,8 @@ bzr-svn 1.0.5					  UNRELEASED
 
  BUG FIXES
 
+  * Support `old_tip` argument to WorkingTree.update(). (Jelmer Vernooij, #695460)
+
   * Cope with layouts returning project paths that don't exist.
     (Max Bowsher, Jelmer Vernooij, #638492)
 
@@ -22,6 +24,8 @@ bzr-svn 1.0.5					  UNRELEASED
         #665662)
 
   * Fix compatibility with Python 2.4. (Kristian Berge Ness)
+
+  * Support revision argument to update(). (Jelmer Vernooij, #537387)
 
  FEATURES
 
