@@ -327,11 +327,15 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         return revnum
 
     def update(self, change_reporter=None, possible_transports=None,
-               revnum=None):
+               revision=None, revnum=None):
         """Update the workingtree to a new Bazaar revision number.
 
         """
         orig_revnum = self.base_revnum
+        if revision is not None and revnum is not None:
+            raise AssertionError("revision and revnum are mutually exclusive")
+        if revision is not None:
+            revnum = self.branch.lookup_bzr_revision_id(revision)
         self._update_base_revnum(self._update(revnum))
         return self.base_revnum - orig_revnum
 

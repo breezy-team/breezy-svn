@@ -661,6 +661,19 @@ class TestWorkingTree(SubversionTestCase):
         self.assertTrue(os.path.exists(os.path.join("de", ".svn")))
         self.assertTrue(os.path.exists(os.path.join("de", "bla")))
 
+    def test_update_revision(self):
+        repos_url = self.make_client('a', 'dc')
+        self.make_checkout(repos_url, "de")
+        self.build_tree({'dc/bla': "data"})
+        self.client_add("dc/bla")
+        self.client_commit("dc", "msg")
+        self.build_tree({'dc/bla': "data2"})
+        self.client_commit("dc", "msg2")
+        tree = WorkingTree.open("de")
+        tree.update(revision=tree.branch.generate_revision_id(1))
+        self.assertTrue(os.path.exists(os.path.join("de", ".svn")))
+        self.assertFileEqual("data", "de/bla")
+
     def test_status_bzrdir(self):
         self.make_client('a', 'dc')
         bzrdir = BzrDir.open("dc")
