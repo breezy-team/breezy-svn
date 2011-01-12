@@ -1,4 +1,4 @@
-bzr-svn 1.0.5					  UNRELEASED
+bzr-svn 1.1.0					  UNRELEASED
 
  BUG FIXES
 
@@ -26,6 +26,8 @@ bzr-svn 1.0.5					  UNRELEASED
   * Fix compatibility with Python 2.4. (Kristian Berge Ness)
 
   * Support revision argument to update(). (Jelmer Vernooij, #537387)
+
+  * Fix corner case bugs with branch moves. (Jelmer Vernooij, #701752)
 
  FEATURES
 
