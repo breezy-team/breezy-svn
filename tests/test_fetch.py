@@ -2235,6 +2235,36 @@ Node-copyfrom-path: x
         self.assertEqual(copyrev,
                          inventory[inventory.path2id("bdir/stationary")].revision)
 
+    def test_fetch_different_parent_path(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        myproj = dc.add_dir("myproj")
+        trunk = myproj.add_dir("myproj/trunk")
+        trunk.add_file("myproj/trunk/afile").modify()
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("oldlayout")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        oldlayout = dc.open_dir("oldlayout")
+        oldlayout.add_dir("oldlayout/myproj", "myproj")
+        dc.delete("myproj")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.add_dir("trunk")
+        trunk.add_dir("trunk/myproj", "oldlayout/myproj/trunk")
+        oldlayout = dc.open_dir("oldlayout")
+        myproj = oldlayout.open_dir("oldlayout/myproj")
+        myproj.delete("oldlayout/myproj/trunk")
+        dc.close()
+
+        oldbranch = BzrDir.open(repos_url+"/trunk/myproj")
+        oldbranch.sprout("dc")
+
 
 class ChunksStartWithLinkTests(TestCase):
 

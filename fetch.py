@@ -755,7 +755,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
             if lhs_parent_revmeta is not None:
                 lhs_parent_branch_path = lhs_parent_revmeta.branch_path
                 try:
-                    (action, copyfrom_path, copyfrom_revnum, kind) = self.revmeta.paths.get(self.revmeta.branch_path)
+                    (action, copyfrom_path, copyfrom_revnum, kind) = self.revmeta.paths.get(
+                        self.revmeta.branch_path)
                 except TypeError:
                     copyfrom_path = None
                 if copyfrom_path is None:
