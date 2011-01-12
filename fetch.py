@@ -696,6 +696,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
     Bazaar revision.
     """
 
+    def __repr__(self):
+        return "<%s for %r in %r for %r>" % (self.__class__.__name__,
+            self.revid, self.target, self.source)
+
     def __init__(self, source, target, revid, bzr_parent_trees, svn_base_tree,
             revmeta, mapping, text_cache):
         self.target = target
