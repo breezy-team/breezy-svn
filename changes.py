@@ -179,6 +179,8 @@ def under_prefixes(path, prefixes):
 
 def common_prefix(paths):
     prefix = ""
+    if paths == []:
+        return ""
     # Find a common prefix
     parts = paths[0].split("/")
     for i in range(len(parts)+1):
