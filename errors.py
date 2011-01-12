@@ -143,7 +143,13 @@ def convert_svn_error(unbound):
         try:
             return unbound(*args, **kwargs)
         except subvertpy.SubversionException, e:
-            raise convert_error(e)
+            e2 = convert_error(e)
+            if e is e2:
+                # Bare 'raise' preserves the original traceback, whereas
+                # 'raise e' would not.
+                raise
+            else:
+                raise e2
 
     convert.__doc__ = unbound.__doc__
     convert.__name__ = unbound.__name__
