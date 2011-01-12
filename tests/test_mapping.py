@@ -205,7 +205,7 @@ class TestamentTests(TestCase):
         class DummyTestament(object):
             """Testament."""
 
-            def as_text(self):
+            def as_short_text(self):
                 return "testament 1\nfoo bar\n"
 
         self.testament = DummyTestament()
@@ -219,12 +219,12 @@ class TestamentTests(TestCase):
 
     def test_v4(self):
         revprops = self._generate_revprops(BzrSvnMappingv4())
-        self.assertEquals(self.testament.as_text(),
+        self.assertEquals(self.testament.as_short_text(),
             revprops[mapping.SVN_REVPROP_BZR_TESTAMENT])
 
     def test_v3(self):
         revprops = self._generate_revprops(BzrSvnMappingv3(TrunkBranchingScheme()))
-        self.assertEquals(self.testament.as_text(),
+        self.assertEquals(self.testament.as_short_text(),
             revprops[mapping.SVN_REVPROP_BZR_TESTAMENT])
 
 

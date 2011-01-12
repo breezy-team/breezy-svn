@@ -50,6 +50,7 @@ from bzrlib.plugins.svn.mapping import (
     SVN_PROP_BZR_REVPROP_REDIRECT,
     SVN_REVPROP_BZR_ROOT,
     SVN_REVPROP_BZR_SIGNATURE,
+    SVN_REVPROP_BZR_TESTAMENT,
     estimate_bzr_ancestors,
     find_mapping_fileprops,
     find_mapping_revprops,
@@ -631,6 +632,9 @@ class BzrRevisionMetadata(RevisionMetadata):
                may not necessarily be up to date.
         """
         return self.revprops.get(SVN_REVPROP_BZR_SIGNATURE)
+
+    def get_testament(self):
+        return self.revprops.get(SVN_REVPROP_BZR_TESTAMENT)
 
     def get_revision(self, mapping):
         """Create a revision object for this revision.

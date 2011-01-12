@@ -13,8 +13,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subvertpy import NODE_DIR, NODE_FILE
-from subvertpy.ra import RemoteAccess, Auth, get_username_provider
+from subvertpy import (
+    NODE_DIR,
+    NODE_FILE,
+    )
+from subvertpy.ra import (
+    Auth,
+    RemoteAccess,
+    get_username_provider,
+    )
 from subvertpy.tests import TestCommitEditor
 
 from bzrlib.repository import Repository
@@ -33,6 +40,9 @@ from bzrlib.plugins.svn.mapping import (
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
+    )
+from bzrlib.plugins.svn.mapping import (
+    SVN_REVPROP_BZR_TESTAMENT,
     )
 from bzrlib.plugins.svn.revmeta import (
     filter_revisions,
@@ -72,7 +82,48 @@ class TestWithRepository(SubversionTestCase):
 
         revmeta2 = repos._revmeta_provider.get_revision("bp", 2)
 
-        self.assertEquals(mapping.revision_id_foreign_to_bzr((repos.uuid, "bp", 1)), revmeta2.get_lhs_parent_revid(mapping))
+        self.assertEquals(mapping.revision_id_foreign_to_bzr(
+            (repos.uuid, "bp", 1)), revmeta2.get_lhs_parent_revid(mapping))
+
+    def test_get_testament(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("trunk")
+        dc.close()
+
+        self.client_set_revprop(repos_url, 1, SVN_REVPROP_BZR_TESTAMENT, "data\n")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.close()
+
+        repos = Repository.open(repos_url)
+
+        revmeta1 = repos._revmeta_provider.get_revision("", 1)
+        self.assertEquals("data\n", revmeta1.get_testament())
+
+        revmeta2 = repos._revmeta_provider.get_revision("", 2)
+        self.assertIs(None, revmeta2.get_testament())
+
+    def test_get_changed_properties(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        dc.change_prop("myprop", "data\n")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.change_prop("myprop", "newdata\n")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.change_prop("myp2", "newdata\n")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        dc.change_prop("myp2", None)
+        dc.close()
+
 
     def test_get_changed_properties(self):
         repos_url = self.make_repository('d')

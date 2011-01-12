@@ -759,18 +759,20 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 except TypeError:
                     copyfrom_path = None
                 if copyfrom_path is None:
-                    copyfrom_path = "."
+                    svn_base_path = "."
                 else:
                     # Map copyfrom_path to the path that's related to the lhs parent branch path.
                     prev_locations = self.source.transport.get_locations(
                         copyfrom_path, copyfrom_revnum, [lhs_parent_revmeta.revnum])
                     copyfrom_path = prev_locations[lhs_parent_revmeta.revnum].strip("/")
-                svn_base_path = urlutils.determine_relative_path(
-                    lhs_parent_revmeta.branch_path, copyfrom_path)
+                    svn_base_path = urlutils.determine_relative_path(
+                        lhs_parent_revmeta.branch_path, copyfrom_path)
                 if svn_base_path == ".":
                     svn_base_path = ""
             else:
                 svn_base_path = ""
+            if ".." in svn_base_path:
+                import pdb; pdb.set_trace()
             file_id = self.svn_base_tree.path2id(svn_base_path)
         else:
             file_id = inventory_parent_id_basename_to_file_id(

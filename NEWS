@@ -29,6 +29,9 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * Fix corner case bugs with branch moves. (Jelmer Vernooij, #701752)
 
+  * Store short testament rather than long testament in bzr:testament
+    revision property. (Jelmer Vernooij, #701380)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is

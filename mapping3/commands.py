@@ -36,7 +36,7 @@ class cmd_svn_branching_scheme(Command):
         from bzrlib import errors as bzr_errors
         from bzrlib.bzrdir import BzrDir
         from bzrlib.msgeditor import edit_commit_message
-        from bzrlib.trace import info
+        from bzrlib.trace import note
 
         from bzrlib.plugins.svn.repository import SvnRepository
         from bzrlib.plugins.svn.mapping3.base import (
@@ -70,4 +70,4 @@ class cmd_svn_branching_scheme(Command):
             else:
                 config_set_scheme(repos, scheme, None, mandatory=True)
         elif scheme is not None:
-            info(scheme_str(scheme))
+            note(scheme_str(scheme))

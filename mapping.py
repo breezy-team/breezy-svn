@@ -858,7 +858,7 @@ class BzrSvnMappingRevProps(object):
         svn_revprops[SVN_REVPROP_BZR_REVNO] = str(revno)
         svn_revprops[SVN_REVPROP_BZR_USER_AGENT] = get_client_string()
         if testament is not None:
-            svn_revprops[SVN_REVPROP_BZR_TESTAMENT] = testament.as_text()
+            svn_revprops[SVN_REVPROP_BZR_TESTAMENT] = testament.as_short_text()
 
     def export_fileid_map_revprops(self, fileids, revprops):
         if fileids != {}:
