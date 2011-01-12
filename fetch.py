@@ -753,16 +753,20 @@ class RevisionBuildEditor(DeltaBuildEditor):
             lhs_parent_revmeta = self.revmeta.get_lhs_parent_revmeta(
                 self.mapping)
             if lhs_parent_revmeta is not None:
-                lhs_parent_branch_path = lhs_parent_revmeta.branch_path
                 try:
                     (action, copyfrom_path, copyfrom_revnum, kind) = self.revmeta.paths.get(
                         self.revmeta.branch_path)
                 except TypeError:
                     copyfrom_path = None
                 if copyfrom_path is None:
-                    copyfrom_path = lhs_parent_branch_path
+                    copyfrom_path = "."
+                else:
+                    # Map copyfrom_path to the path that's related to the lhs parent branch path.
+                    prev_locations = self.source.transport.get_locations(
+                        copyfrom_path, copyfrom_revnum, [lhs_parent_revmeta.revnum])
+                    copyfrom_path = prev_locations[lhs_parent_revmeta.revnum].strip("/")
                 svn_base_path = urlutils.determine_relative_path(
-                    lhs_parent_branch_path, copyfrom_path)
+                    lhs_parent_revmeta.branch_path, copyfrom_path)
                 if svn_base_path == ".":
                     svn_base_path = ""
             else:
