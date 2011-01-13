@@ -771,8 +771,6 @@ class RevisionBuildEditor(DeltaBuildEditor):
                     svn_base_path = ""
             else:
                 svn_base_path = ""
-            if ".." in svn_base_path:
-                import pdb; pdb.set_trace()
             file_id = self.svn_base_tree.path2id(svn_base_path)
         else:
             file_id = inventory_parent_id_basename_to_file_id(
