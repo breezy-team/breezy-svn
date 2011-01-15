@@ -281,8 +281,9 @@ class TestPush(SubversionTestCase):
         self.newdir = self.olddir.sprout("dc")
 
     def test_empty(self):
-        self.assertEqual(0, int(self.olddir.open_branch().pull(
-                                self.newdir.open_branch())))
+        result = self.olddir.open_branch().pull(self.newdir.open_branch())
+        self.assertEquals(2, result.old_revno)
+        self.assertEquals(2, result.new_revno)
 
     def test_empty_result(self):
         result = self.olddir.open_branch().pull(self.newdir.open_branch())
@@ -297,8 +298,9 @@ class TestPush(SubversionTestCase):
         self.client_add("sc/foo/bar")
         self.client_commit("sc", "second message")
 
-        self.assertEqual(0, int(self.olddir.open_branch().pull(
-                                self.newdir.open_branch())))
+        result = self.olddir.open_branch().pull(self.newdir.open_branch())
+        self.assertEquals(3, result.old_revno)
+        self.assertEquals(3, result.new_revno)
 
     def test_diverged(self):
         self.build_tree({'sc/foo/bar': "data"})
@@ -324,8 +326,9 @@ class TestPush(SubversionTestCase):
         wt = self.newdir.open_workingtree()
         wt.add(u'I²C')
         wt.commit(message="Commit from Bzr")
-        self.assertEqual(1, int(self.olddir.open_branch().pull(
-                                self.newdir.open_branch())))
+        result = self.olddir.open_branch().pull(self.newdir.open_branch())
+        self.assertEqual(2, result.old_revno)
+        self.assertEquals(3, result.new_revno)
 
     def test_rename_from_unicode_filename(self):
         try:
@@ -337,8 +340,9 @@ class TestPush(SubversionTestCase):
         wt.commit(message="Commit from Bzr")
         wt.rename_one(u'I²C', u'I²C2')
         wt.commit(message="Commit from Bzr2")
-        self.assertEqual(2, int(self.olddir.open_branch().pull(
-                                self.newdir.open_branch())))
+        result = self.olddir.open_branch().pull(self.newdir.open_branch())
+        self.assertEquals(2, result.old_revno)
+        self.assertEquals(4, result.new_revno)
 
     def test_change(self):
         self.build_tree({'dc/foo/bla': 'other data'})
