@@ -411,12 +411,6 @@ class LogCache(CacheTable):
             replace into revinfo (rev, all_revprops) values (?, ?)
         """, (revision, all_revprops))
 
-    def has_all_revprops(self, revnum):
-        """Check whether all revprops for a revision have been cached.
-
-        :param revnum: Revision number of the revision.
-        """
-
     def last_revnum(self):
         saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM changed_path").fetchone()[0]
         if saved_revnum is None:
