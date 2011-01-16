@@ -136,6 +136,7 @@ class RevisionIdMapCache(CacheTable):
         :param layout: Repository layout.
         :param revnum: Revision number.
         """
+        self.mutter("set last revnum checked for %r to %r", layout, revnum)
         self.cachedb.execute("replace into revids_seen (layout, max_revnum) VALUES (?, ?)", (layout, revnum))
         self.commit()
 
@@ -146,12 +147,14 @@ class RevisionIdMapCache(CacheTable):
         :param layout: Repository layout.
         :return: Last revision number checked or 0.
         """
-        self.mutter("last revnum checked %r", layout)
         ret = self.cachedb.execute(
             "select max_revnum from revids_seen where layout = ?", (layout,)).fetchone()
         if ret is None:
-            return 0
-        return int(ret[0])
+            revnum = 0
+        else:
+            revnum = int(ret[0])
+        self.mutter("last revnum checked for %r is %r", layout, revnum)
+        return revnum
 
     def lookup_revid(self, revid):
         """Lookup the details for a particular revision id.
