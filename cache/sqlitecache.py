@@ -137,7 +137,7 @@ class RevisionIdMapCache(CacheTable):
         :param revnum: Revision number.
         """
         self.cachedb.execute("replace into revids_seen (layout, max_revnum) VALUES (?, ?)", (layout, revnum))
-        self._commit_conditionally()
+        self.commit()
 
     def last_revnum_checked(self, layout):
         """Retrieve the latest revision number that has been checked
