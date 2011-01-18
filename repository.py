@@ -395,6 +395,7 @@ class SvnRepository(ForeignRepository):
         self._hinted_branch_path = branch_path
         self._real_parents_provider = self
         self._cached_tags = {}
+        self._cache_obj = None
 
         use_cache = self.get_config().get_use_cache()
 
@@ -408,10 +409,10 @@ class SvnRepository(ForeignRepository):
                 use_cache = set(["fileids", "revids", "revinfo", "log"])
 
         if use_cache:
-            cache_obj = cache.cache_cls(self.uuid)
+            self._cache_obj = cache.cache_cls(self.uuid)
 
         if "log" in use_cache:
-            log_cache = cache_obj.open_logwalker()
+            log_cache = self._cache_obj.open_logwalker()
             if log_cache.last_revnum() > self.get_latest_revnum():
                 errors.warn_uuid_reuse(self.uuid, self.base)
             self._log = logwalker.CachingLogWalker(self._log,
@@ -419,17 +420,18 @@ class SvnRepository(ForeignRepository):
 
         if "fileids" in use_cache:
             self.fileid_map = CachingFileIdMapStore(
-                cache_obj.open_fileid_map(), self.fileid_map)
+                self._cache_obj.open_fileid_map(), self.fileid_map)
 
         if "revids" in use_cache:
-            self.revmap = DiskCachingRevidMap(self.revmap, cache_obj.open_revid_map())
+            self.revmap = DiskCachingRevidMap(self.revmap,
+                self._cache_obj.open_revid_map())
             self._real_parents_provider = DiskCachingParentsProvider(
-                self._real_parents_provider, cache_obj.open_parents())
+                self._real_parents_provider, self._cache_obj.open_parents())
         else:
             self.revmap = MemoryCachingRevidMap(self.revmap)
 
         if "revinfo" in use_cache:
-            self.revinfo_cache = cache_obj.open_revision_cache()
+            self.revinfo_cache = self._cache_obj.open_revision_cache()
         else:
             self.revinfo_cache = None
 
@@ -461,6 +463,8 @@ class SvnRepository(ForeignRepository):
         """See Branch.unlock()."""
         self._lock_count -= 1
         if self._lock_count == 0:
+            if self._cache_obj is not None:
+                self._cache_obj.commit()
             self._lock_mode = None
             self._clear_cached_state()
 

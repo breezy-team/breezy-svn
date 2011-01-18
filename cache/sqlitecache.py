@@ -479,3 +479,6 @@ class SqliteRepositoryCache(RepositoryCache):
 
     def open_parents(self):
         return ParentsCache(self.open_sqlite())
+
+    def commit(self):
+        self.open_sqlite().commit()
