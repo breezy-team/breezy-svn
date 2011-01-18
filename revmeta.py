@@ -849,11 +849,9 @@ class CachingBzrRevisionMetadata(BzrRevisionMetadata):
             self._revision_info[mapping][1] is not None):
             self._revid_cache.insert_revid(self._revision_info[mapping][1],
                 self.branch_path, self.revnum, self.revnum, mapping.name)
-            self._revid_cache.commit_conditionally()
         self._revinfo_cache.insert_revision(self.get_foreign_revid(), mapping,
             self._revision_info[mapping],
             self._stored_lhs_parent_revid[mapping])
-        self._revinfo_cache.commit_conditionally()
 
     def _determine(self, mapping):
         self._revision_info[mapping] = self.base.get_revision_info(mapping)
@@ -927,7 +925,6 @@ class CachingBzrRevisionMetadata(BzrRevisionMetadata):
                 return parent_ids
         parent_ids = self.base.get_parent_ids(mapping)
         self._parents_cache.insert_parents(myrevid, parent_ids)
-        self._parents_cache.commit_conditionally()
         return parent_ids
 
 

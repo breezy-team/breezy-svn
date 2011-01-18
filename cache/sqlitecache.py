@@ -84,7 +84,7 @@ class CacheTable(object):
         self.cachedb.commit()
         self._commit_countdown = self._commit_interval
 
-    def commit_conditionally(self):
+    def _commit_conditionally(self):
         self._commit_countdown -= 1
         if self._commit_countdown <= 0:
             self.commit()
@@ -137,7 +137,7 @@ class RevisionIdMapCache(CacheTable):
         :param revnum: Revision number.
         """
         self.cachedb.execute("replace into revids_seen (layout, max_revnum) VALUES (?, ?)", (layout, revnum))
-        self.commit_conditionally()
+        self._commit_conditionally()
 
     def last_revnum_checked(self, layout):
         """Retrieve the latest revision number that has been checked
@@ -221,6 +221,7 @@ class RevisionIdMapCache(CacheTable):
             self.cachedb.execute(
                 "insert into revmap (revid,path,min_revnum,max_revnum,mapping) VALUES (?,?,?,?,?)",
                 (revid, branch, min_revnum, max_revnum, mapping))
+        self._commit_conditionally()
 
 
 class RevisionInfoCache(CacheTable):
@@ -264,6 +265,7 @@ class RevisionInfoCache(CacheTable):
         :param stored_lhs_parent_revid: Stored lhs parent revision
         """
         self.cachedb.execute("insert into revmetainfo (path, revnum, mapping, revid, revno, hidden, stored_lhs_parent_revid) values (?, ?, ?, ?, ?, ?, ?)", (foreign_revid[1], foreign_revid[2], mapping.name, revid, revno, hidden, stored_lhs_parent_revid))
+        self._commit_conditionally()
 
     def get_revision(self, foreign_revid, mapping):
         """Get the revision metadata info for a (foreign_revid, mapping) tuple.
@@ -446,6 +448,7 @@ class ParentsCache(CacheTable):
         else:
             for i, p in enumerate(parents):
                 self.cachedb.execute("replace into parent (rev, parent, idx) values (?, ?, ?)", (revid, p, i))
+        self._commit_conditionally()
 
     def lookup_parents(self, revid):
         self.mutter('lookup parents: %r', revid)
