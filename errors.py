@@ -301,6 +301,3 @@ def warn_uuid_reuse(uuid, location):
          "potential repository corruption).",
          uuid, location)
     _reuse_uuids_warned.add(uuid)
-
-
-
