@@ -32,6 +32,9 @@ bzr-svn 1.1.0					  UNRELEASED
   * Store short testament rather than long testament in bzr:testament
     revision property. (Jelmer Vernooij, #701380)
 
+  * Provide ``BranchConfig.has_explicit_nickname()``. 
+    (Jelmer Vernooij, #704840)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is

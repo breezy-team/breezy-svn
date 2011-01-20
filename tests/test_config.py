@@ -122,6 +122,9 @@ class BranchConfigTests(SubversionTestCase):
         self.repos_url = self.make_repository("d")
         self.config = Branch.open(self.repos_url).get_config()
 
+    def test_has_explicit_nickname(self):
+        self.assertEquals(False, self.config.has_explicit_nickname())
+
     def test_set_option(self):
         self.config.set_user_option("append_revisions_only", "True")
         self.assertEquals("True", self.config.get_user_option("append_revisions_only"))

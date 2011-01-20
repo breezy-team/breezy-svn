@@ -421,6 +421,9 @@ class BranchConfig(Config):
         except KeyError:
             return None
 
+    def has_explicit_nickname(self):
+        return False
+
 
 class PropertyConfig(object):
     """ConfigObj-like class that looks at Subversion file ids."""
