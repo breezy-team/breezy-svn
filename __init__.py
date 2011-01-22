@@ -254,12 +254,18 @@ info_hooks.install_named_hook('repository', info_svn_repository, None)
 
 def extract_svn_foreign_revid(rev):
     try:
-        return rev.foreign_revid
+        foreign_revid = rev.foreign_revid
     except AttributeError:
         from bzrlib.plugins.svn.mapping import mapping_registry
         foreign_revid, mapping = \
             mapping_registry.parse_revision_id(rev.revision_id)
         return foreign_revid
+    else:
+        from bzrlib.plugins.svn.mapping import foreign_vcs_svn 
+        if rev.mapping.vcs == foreign_vcs_svn:
+            return foreign_revid
+        else:
+            raise InvalidRevisionId(rev.revision_id, None)
 
 
 def update_stanza(rev, stanza):
