@@ -141,7 +141,9 @@ def iter_prefixes_changes(from_prefixes, from_revnum, to_revnum,
 
 
 class LogCache(object):
-    """Log browser cache. """
+    """Log browser cache manager. The methods of this class
+    encapsulate the data access patterns used by CachingLogWalker to
+    access the log cache."""
 
     def find_latest_change(self, path, revnum):
         """Find the last revision in which a particular path

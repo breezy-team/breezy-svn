@@ -1452,7 +1452,6 @@ class RevisionInfoCache(object):
         :param foreign_revid: Foreign revision id
         :param mapping: Mapping used
         :param revinfo: Tuple with (revno, revid, hidden)
-        :param original_mapping: Original mapping used
         :param stored_lhs_parent_revid: Stored lhs parent revision
         """
         raise NotImplementedError(self.insert_revision)
@@ -1460,9 +1459,9 @@ class RevisionInfoCache(object):
     def get_revision(self, foreign_revid, mapping):
         """Get the revision metadata info for a (foreign_revid, mapping) tuple.
 
-        :param foreign_revid: Foreign reviasion id
+        :param foreign_revid: Foreign revision id
         :param mapping: Mapping
-        :return: Tuple with (stored revno, revid, hidden), original_mapping,
+        :return: Tuple with (stored revno, revid, hidden),
             stored_lhs_parent_revid
         """
         raise NotImplementedError(self.get_revision)
