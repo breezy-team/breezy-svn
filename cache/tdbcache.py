@@ -38,6 +38,18 @@ from bzrlib.plugins.svn.cache import (
 from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     )
+from bzrlib.plugins.svn.revids import (
+    RevisionIdMapCache,
+    )
+from bzrlib.plugins.svn.revmeta import (
+    RevisionInfoCache,
+    )
+from bzrlib.plugins.svn.logwalker import (
+    LogCache,
+    )
+from bzrlib.plugins.svn.parents import (
+    ParentsCache,
+    )
 
 from subvertpy import NODE_UNKNOWN
 
@@ -63,7 +75,7 @@ class CacheTable(object):
         pass
 
 
-class RevisionIdMapCache(CacheTable):
+class TdbRevisionIdMapCache(RevisionIdMapCache, CacheTable):
     """Revision id mapping store.
 
     Stores mapping from revid -> (path, revnum, mapping)
@@ -134,7 +146,7 @@ class RevisionIdMapCache(CacheTable):
             self.db["foreign-revid/%d %s %s" % (min_revnum, mappingname, branch)] = revid
 
 
-class RevisionInfoCache(CacheTable):
+class TdbRevisionInfoCache(RevisionInfoCache, CacheTable):
 
     def set_original_mapping(self, foreign_revid, original_mapping):
         if original_mapping is not None:
@@ -202,7 +214,7 @@ class RevisionInfoCache(CacheTable):
         return mapping_registry.parse_mapping_name("svn-" + ret)
 
 
-class LogCache(CacheTable):
+class TdbLogCache(LogCache, CacheTable):
     """Log browser cache table manager. The methods of this class
     encapsulate the SQL commands used by CachingLogWalker to access
     the log cache tables."""
@@ -289,7 +301,7 @@ class LogCache(CacheTable):
         except KeyError:
             return None
 
-class ParentsCache(CacheTable):
+class TdbParentsCache(ParentsCache, CacheTable):
 
     def insert_parents(self, revid, parents):
         self.db["parents/%s" % revid] = " ".join(parents)
@@ -322,13 +334,13 @@ class TdbRepositoryCache(RepositoryCache):
         return db
 
     def open_revid_map(self):
-        return RevisionIdMapCache(self.open_tdb())
+        return TdbRevisionIdMapCache(self.open_tdb())
 
     def open_logwalker(self):
-        return LogCache(self.open_tdb())
+        return TdbLogCache(self.open_tdb())
 
     def open_revision_cache(self):
-        return RevisionInfoCache(self.open_tdb())
+        return TdbRevisionInfoCache(self.open_tdb())
 
     def open_parents(self):
-        return ParentsCache(self.open_tdb())
+        return TdbParentsCache(self.open_tdb())

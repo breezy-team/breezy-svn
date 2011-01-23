@@ -33,6 +33,18 @@ from bzrlib.plugins.svn.cache import (
 from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     )
+from bzrlib.plugins.svn.revids import (
+    RevisionIdMapCache,
+    )
+from bzrlib.plugins.svn.revmeta import (
+    RevisionInfoCache,
+    )
+from bzrlib.plugins.svn.logwalker import (
+    LogCache,
+    )
+from bzrlib.plugins.svn.parents import (
+    ParentsCache,
+    )
 
 from subvertpy import NODE_UNKNOWN
 
@@ -101,7 +113,7 @@ class CacheTable(object):
 CACHE_DB_VERSION = 5
 
 
-class RevisionIdMapCache(CacheTable):
+class SqliteRevisionIdMapCache(RevisionIdMapCache, CacheTable):
     """Revision id mapping store.
 
     Stores mapping from revid -> (path, revnum, mapping)
@@ -223,7 +235,7 @@ class RevisionIdMapCache(CacheTable):
                 (revid, branch, min_revnum, max_revnum, mapping))
 
 
-class RevisionInfoCache(CacheTable):
+class SqliteRevisionInfoCache(RevisionInfoCache, CacheTable):
 
     def _create_table(self):
         self.cachedb.executescript("""
@@ -303,7 +315,7 @@ class RevisionInfoCache(CacheTable):
             return mapping_registry.parse_mapping_name("svn-" + row[0].encode("utf-8"))
 
 
-class LogCache(CacheTable):
+class SqliteLogCache(LogCache, CacheTable):
     """Log browser cache table manager. The methods of this class
     encapsulate the SQL commands used by CachingLogWalker to access
     the log cache tables."""
@@ -425,7 +437,7 @@ class LogCache(CacheTable):
         return self.cachedb.execute("SELECT MIN(rev) FROM revprop").fetchone()[0]
 
 
-class ParentsCache(CacheTable):
+class SqliteParentsCache(ParentsCache, CacheTable):
 
     def _create_table(self):
         self.cachedb.executescript("""
@@ -466,13 +478,13 @@ class SqliteRepositoryCache(RepositoryCache):
         return cachedbs()[cache_file]
 
     def open_revid_map(self):
-        return RevisionIdMapCache(self.open_sqlite())
+        return SqliteRevisionIdMapCache(self.open_sqlite())
 
     def open_logwalker(self):
-        return LogCache(self.open_sqlite())
+        return SqliteLogCache(self.open_sqlite())
 
     def open_revision_cache(self):
-        return RevisionInfoCache(self.open_sqlite())
+        return SqliteRevisionInfoCache(self.open_sqlite())
 
     def open_parents(self):
-        return ParentsCache(self.open_sqlite())
+        return SqliteParentsCache(self.open_sqlite())
