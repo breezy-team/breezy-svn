@@ -139,6 +139,9 @@ class RepositoryCache(object):
     def open_parents(self):
         raise NotImplementedError(self.open_parents)
 
+    def commit(self):
+        pass
+
 try:
     from bzrlib.plugins.svn.cache.tdbcache import TdbRepositoryCache
     cache_cls = TdbRepositoryCache

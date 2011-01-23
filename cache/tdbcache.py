@@ -71,9 +71,6 @@ class CacheTable(object):
         if "cache" in debug.debug_flags:
             trace.mutter(text, *args, **kwargs)
 
-    def commit_conditionally(self):
-        pass
-
 
 class TdbRevisionIdMapCache(RevisionIdMapCache, CacheTable):
 

@@ -96,7 +96,7 @@ class CacheTable(object):
         self.cachedb.commit()
         self._commit_countdown = self._commit_interval
 
-    def commit_conditionally(self):
+    def _commit_conditionally(self):
         self._commit_countdown -= 1
         if self._commit_countdown <= 0:
             self.commit()
@@ -138,16 +138,19 @@ class SqliteRevisionIdMapCache(RevisionIdMapCache, CacheTable):
         self._commit_interval = 500
 
     def set_last_revnum_checked(self, layout, revnum):
+        self.mutter("set last revnum checked for %r to %r", layout, revnum)
         self.cachedb.execute("replace into revids_seen (layout, max_revnum) VALUES (?, ?)", (layout, revnum))
-        self.commit_conditionally()
+        self.commit()
 
     def last_revnum_checked(self, layout):
-        self.mutter("last revnum checked %r", layout)
         ret = self.cachedb.execute(
             "select max_revnum from revids_seen where layout = ?", (layout,)).fetchone()
         if ret is None:
-            return 0
-        return int(ret[0])
+            revnum = 0
+        else:
+            revnum = int(ret[0])
+        self.mutter("last revnum checked for %r is %r", layout, revnum)
+        return revnum
 
     def lookup_revid(self, revid):
         assert isinstance(revid, str)
@@ -194,6 +197,7 @@ class SqliteRevisionIdMapCache(RevisionIdMapCache, CacheTable):
             self.cachedb.execute(
                 "insert into revmap (revid,path,min_revnum,max_revnum,mapping) VALUES (?,?,?,?,?)",
                 (revid, branch, min_revnum, max_revnum, mapping))
+        self._commit_conditionally()
 
 
 class SqliteRevisionInfoCache(RevisionInfoCache, CacheTable):
@@ -230,6 +234,7 @@ class SqliteRevisionInfoCache(RevisionInfoCache, CacheTable):
     def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden),
             stored_lhs_parent_revid):
         self.cachedb.execute("insert into revmetainfo (path, revnum, mapping, revid, revno, hidden, stored_lhs_parent_revid) values (?, ?, ?, ?, ?, ?, ?)", (foreign_revid[1], foreign_revid[2], mapping.name, revid, revno, hidden, stored_lhs_parent_revid))
+        self._commit_conditionally()
 
     def get_revision(self, foreign_revid, mapping):
         # Will raise KeyError if not present
@@ -347,12 +352,6 @@ class SqliteLogCache(LogCache, CacheTable):
             replace into revinfo (rev, all_revprops) values (?, ?)
         """, (revision, all_revprops))
 
-    def has_all_revprops(self, revnum):
-        """Check whether all revprops for a revision have been cached.
-
-        :param revnum: Revision number of the revision.
-        """
-
     def last_revnum(self):
         saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM changed_path").fetchone()[0]
         if saved_revnum is None:
@@ -384,6 +383,7 @@ class SqliteParentsCache(ParentsCache, CacheTable):
         else:
             for i, p in enumerate(parents):
                 self.cachedb.execute("replace into parent (rev, parent, idx) values (?, ?, ?)", (revid, p, i))
+        self._commit_conditionally()
 
     def lookup_parents(self, revid):
         self.mutter('lookup parents: %r', revid)
@@ -414,3 +414,6 @@ class SqliteRepositoryCache(RepositoryCache):
 
     def open_parents(self):
         return SqliteParentsCache(self.open_sqlite())
+
+    def commit(self):
+        self.open_sqlite().commit()

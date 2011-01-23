@@ -440,14 +440,15 @@ class SvnBasisTree(SubversionTree,RevisionTree):
         """See Tree.get_revision_id()."""
         return self.workingtree.last_revision()
 
-    def abspath(self, relpath):
-        assert isinstance(relpath, unicode)
-        return wc.get_pristine_copy_path(self.workingtree.abspath(relpath).encode("utf-8")).decode("utf-8")
-
     def get_file_byname(self, name):
         """See Tree.get_file_byname()."""
         assert isinstance(name, unicode)
-        return open(self.abspath(name).encode(osutils._fs_enc))
+        wt_path = self.workingtree.abspath(name).encode("utf-8")
+        if getattr(wc, "get_pristine_contents", None):
+            return wc.get_pristine_contents(wt_path)
+        else:
+            abspath = wc.get_pristine_copy_path(wt_path).decode("utf-8")
+            return open(abspath.encode(osutils._fs_enc))
 
     def get_file_text(self, file_id, path=None):
         """See Tree.get_file_text()."""
