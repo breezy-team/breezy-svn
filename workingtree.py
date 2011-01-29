@@ -23,6 +23,9 @@ except ImportError:
 import os
 import subvertpy
 ERR_WC_SCHEDULE_CONFLICT = getattr(subvertpy, "ERR_WC_SCHEDULE_CONFLICT", 155013)
+ERR_ENTRY_NOT_FOUND = getattr(subvertpy, "ERR_ENTRY_NOT_FOUND", 150000)
+ERR_NODE_UNKNOWN_KIND = getattr(subvertpy, "ERR_NODE_UNKNOWN_KIND", 145000)
+
 import subvertpy.wc
 from subvertpy import (
     ERR_WC_UNSUPPORTED_FORMAT,
@@ -137,6 +140,7 @@ except ImportError:
 class RepositoryRootUnknown(BzrError):
     _fmt = "The working tree does not store the root of the Subversion repository."
 
+
 class LocalRepositoryOpenFailed(BzrError):
 
     _fmt = ("Unable to open local repository at %(url)s")
@@ -152,10 +156,6 @@ class CorruptWorkingTree(BzrError):
     def __init__(self, path, msg):
         self.path = path
         self.msg = msg
-
-
-ERR_ENTRY_NOT_FOUND = getattr(subvertpy, "ERR_ENTRY_NOT_FOUND", 150000)
-ERR_NODE_UNKNOWN_KIND = getattr(subvertpy, "ERR_NODE_UNKNOWN_KIND", 145000)
 
 
 def update_wc(adm, basedir, conn, revnum):
@@ -1262,6 +1262,7 @@ class SvnCheckout(ControlDir):
 
 class SvnCheckoutConverter(Converter):
     """Converts from a Subversion directory to a bzr dir."""
+
     def __init__(self, target_format):
         """Create a SvnCheckoutConverter.
         :param target_format: The format the resulting repository should be.
