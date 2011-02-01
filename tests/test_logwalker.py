@@ -588,8 +588,8 @@ class TestCachingLogWalker(TestLogWalker):
         logwalker.cache_dir = os.path.join(self.test_dir, "cache-dir")
 
     def get_log_walker(self, transport):
-        from bzrlib.plugins.svn.cache.sqlitecache import LogCache
-        return logwalker.CachingLogWalker(super(TestCachingLogWalker, self).get_log_walker(transport), LogCache())
+        from bzrlib.plugins.svn.cache.sqlitecache import SqliteLogCache
+        return logwalker.CachingLogWalker(super(TestCachingLogWalker, self).get_log_walker(transport), SqliteLogCache())
 
 
 

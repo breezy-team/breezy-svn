@@ -38,6 +38,18 @@ from bzrlib.plugins.svn.cache import (
 from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     )
+from bzrlib.plugins.svn.revids import (
+    RevisionIdMapCache,
+    )
+from bzrlib.plugins.svn.revmeta import (
+    RevisionInfoCache,
+    )
+from bzrlib.plugins.svn.logwalker import (
+    LogCache,
+    )
+from bzrlib.plugins.svn.parents import (
+    ParentsCache,
+    )
 
 from subvertpy import NODE_UNKNOWN
 
@@ -60,40 +72,24 @@ class CacheTable(object):
             trace.mutter(text, *args, **kwargs)
 
 
-class RevisionIdMapCache(CacheTable):
-    """Revision id mapping store.
-
-    Stores mapping from revid -> (path, revnum, mapping)
-    """
+class TdbRevisionIdMapCache(RevisionIdMapCache, CacheTable):
 
     def set_last_revnum_checked(self, layout, revnum):
-        """Remember the latest revision number that has been checked
-        for a particular layout.
+        """See RevisionIdMapCache.set_last_revnum_checked."""
 
-        :param layout: Repository layout.
-        :param revnum: Revision number.
-        """
         self.db["revidmap-last/%s" % str(layout)] = str(revnum)
 
     def last_revnum_checked(self, layout):
-        """Retrieve the latest revision number that has been checked
-        for revision ids for a particular layout.
+        """See RevisionIdMapCache.last_revnum_checked."""
 
-        :param layout: Repository layout.
-        :return: Last revision number checked or 0.
-        """
         try:
             return int(self.db["revidmap-last/%s" % str(layout)])
         except KeyError:
             return 0
 
     def lookup_revid(self, revid):
-        """Lookup the details for a particular revision id.
+        """See RevisionIdMapCache.lookup_revid."""
 
-        :param revid: Revision id.
-        :return: Tuple with path inside repository, minimum revision number,
-            maximum revision number and mapping.
-        """
         self.mutter('lookup-revid %s', revid)
         try:
             (min_revnum, max_revnum, mapping_name, path) = self.db["native-revid/" + revid].split(" ", 3)
@@ -102,12 +98,8 @@ class RevisionIdMapCache(CacheTable):
         return (path, int(min_revnum), int(max_revnum), mapping_name)
 
     def lookup_branch_revnum(self, revnum, path, mapping):
-        """Lookup a revision by revision number, branch path and mapping.
+        """See RevisionIdMapCache.lookup_branch_revnum."""
 
-        :param revnum: Subversion revision number.
-        :param path: Subversion branch path.
-        :param mapping: Mapping
-        """
         self.mutter('lookup-branch-revnum %s:%d', path, revnum)
         try:
             return self.db["foreign-revid/%d %s %s" % (revnum, getattr(mapping, "name", mapping), path)]
@@ -115,25 +107,19 @@ class RevisionIdMapCache(CacheTable):
             return None
 
     def insert_revid(self, revid, branch, min_revnum, max_revnum, mapping):
-        """Insert a revision id into the revision id cache.
+        """See RevisionIdMapCache.insert_revid."""
 
-        :param revid: Revision id for which to insert metadata.
-        :param branch: Branch path at which the revision was seen
-        :param min_revnum: Minimum Subversion revision number in which the
-                           revid was found
-        :param max_revnum: Maximum Subversion revision number in which the
-                           revid was found
-        :param mapping: Name of the mapping with which the revision was found
-        """
         mappingname = getattr(mapping, "name", mapping)
         self.db["native-revid/" + revid] = "%d %d %s %s" % (min_revnum, max_revnum, mappingname, branch)
         if min_revnum == max_revnum:
             self.db["foreign-revid/%d %s %s" % (min_revnum, mappingname, branch)] = revid
 
 
-class RevisionInfoCache(CacheTable):
+class TdbRevisionInfoCache(RevisionInfoCache, CacheTable):
 
     def set_original_mapping(self, foreign_revid, original_mapping):
+        """See RevisionInfoCache.set_original_mapping."""
+
         if original_mapping is not None:
             orig_mapping_name = original_mapping.name
         else:
@@ -142,16 +128,8 @@ class RevisionInfoCache(CacheTable):
 
     def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden),
             stored_lhs_parent_revid):
-        """Insert a revision to the cache.
+        """See RevisionInfoCache.insert_revision."""
 
-        :param foreign_revid: Foreign revision id
-        :param mapping: Mapping used
-        :param revid: Revision id
-        :param revno: Revision number
-        :param hidden: Whether revision is hidden
-        :param original_mapping: Original mapping used
-        :param stored_lhs_parent_revid: Stored lhs parent revision
-        """
         if revid is None:
             revid = mapping.revision_id_foreign_to_bzr(foreign_revid)
         self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
@@ -165,12 +143,8 @@ class RevisionInfoCache(CacheTable):
             self.db["lhs-parent-revid/%s" % basekey] = stored_lhs_parent_revid
 
     def get_revision(self, foreign_revid, mapping):
-        """Get the revision metadata info for a (foreign_revid, mapping) tuple.
+        """See RevisionInfoCache.get_revision."""
 
-        :param foreign_revid: Foreign revision id
-        :param mapping: Mapping
-        :return: Tuple with (stored revno, revid, hidden), stored_lhs_parent_revid
-        """
         self.mutter("get-revision %r,%r", foreign_revid, mapping)
         basekey = "%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
         revid = self.db["foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])]
@@ -187,11 +161,8 @@ class RevisionInfoCache(CacheTable):
         return ((revno, revid, hidden), stored_lhs_parent_revid)
 
     def get_original_mapping(self, foreign_revid):
-        """Find the original mapping for a revision.
+        """See RevisionInfoCache.get_original_mapping."""
 
-        :param foreign_revid: Foreign revision id
-        :return: Mapping object or None
-        """
         self.mutter("get-original-mapping %r", foreign_revid)
         ret = self.db["original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])]
         if ret == "":
@@ -199,19 +170,16 @@ class RevisionInfoCache(CacheTable):
         return mapping_registry.parse_mapping_name("svn-" + ret)
 
 
-class LogCache(CacheTable):
-    """Log browser cache table manager. The methods of this class
-    encapsulate the SQL commands used by CachingLogWalker to access
-    the log cache tables."""
+class TdbLogCache(LogCache, CacheTable):
 
     def find_latest_change(self, path, revnum):
+        """See LogCache.find_latest_change."""
+
         raise NotImplementedError(self.find_latest_change)
 
     def get_revision_paths(self, revnum):
-        """Return all history information for a given revision number.
+        """See LogCache.get_revision_paths."""
 
-        :param revnum: Revision number of revision.
-        """
         self.mutter("get-revision-paths %d", revnum)
         ret = {}
         db = bencode.bdecode(self.db["paths/%d" % revnum])
@@ -227,11 +195,8 @@ class LogCache(CacheTable):
         return ret
 
     def insert_paths(self, rev, orig_paths):
-        """Insert new history information into the cache.
+        """See LogCache.insert_paths."""
 
-        :param rev: Revision number of the revision
-        :param orig_paths: SVN-style changes dictionary
-        """
         if orig_paths is None:
             orig_paths = {}
         new_paths = {}
@@ -252,18 +217,20 @@ class LogCache(CacheTable):
         self.db["log-last"] = "%d" % max(self.last_revnum(), rev)
 
     def drop_revprops(self, revnum):
+        """See LogCache.drop_revprops."""
+
         self.db["revprops/%d" % revnum] = bencode.bencode({})
 
     def get_revprops(self, revnum):
-        """Retrieve all the cached revision properties.
+        """See LogCache.get_revprops."""
 
-        :param revnum: Revision number of revision to retrieve revprops for.
-        """
         self.mutter("get-revision-properties %d", revnum)
         ret = bencode.bdecode(self.db["revprops/%d" % revnum])
         return (ret[0], bool(ret[1]))
 
     def insert_revprops(self, revision, revprops, all_revprops):
+        """See LogCache.insert_revprops."""
+
         if revprops is None:
             revprops = {}
         self.db["revprops/%d" % revision] = bencode.bencode((revprops, all_revprops))
@@ -275,23 +242,31 @@ class LogCache(CacheTable):
         self.db["log-min"] = str(min_revnum)
 
     def last_revnum(self):
+        """See LogCache.last_revnum."""
+
         try:
             return int(self.db["log-last"])
         except KeyError:
             return 0
 
     def min_revnum(self):
+        """See LogCache.min_revnum."""
+
         try:
             return int(self.db["log-min"])
         except KeyError:
             return None
 
-class ParentsCache(CacheTable):
+class TdbParentsCache(ParentsCache, CacheTable):
 
     def insert_parents(self, revid, parents):
+        """See ParentsCache.insert_parents."""
+
         self.db["parents/%s" % revid] = " ".join(parents)
 
     def lookup_parents(self, revid):
+        """See ParentsCache.lookup_parents."""
+
         self.mutter("lookup-parents %s", revid)
         try:
             return tuple([p for p in self.db["parents/%s" % revid].split(" ") if p != ""])
@@ -319,13 +294,13 @@ class TdbRepositoryCache(RepositoryCache):
         return db
 
     def open_revid_map(self):
-        return RevisionIdMapCache(self.open_tdb())
+        return TdbRevisionIdMapCache(self.open_tdb())
 
     def open_logwalker(self):
-        return LogCache(self.open_tdb())
+        return TdbLogCache(self.open_tdb())
 
     def open_revision_cache(self):
-        return RevisionInfoCache(self.open_tdb())
+        return TdbRevisionInfoCache(self.open_tdb())
 
     def open_parents(self):
-        return ParentsCache(self.open_tdb())
+        return TdbParentsCache(self.open_tdb())

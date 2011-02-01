@@ -33,6 +33,18 @@ from bzrlib.plugins.svn.cache import (
 from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     )
+from bzrlib.plugins.svn.revids import (
+    RevisionIdMapCache,
+    )
+from bzrlib.plugins.svn.revmeta import (
+    RevisionInfoCache,
+    )
+from bzrlib.plugins.svn.logwalker import (
+    LogCache,
+    )
+from bzrlib.plugins.svn.parents import (
+    ParentsCache,
+    )
 
 from subvertpy import NODE_UNKNOWN
 
@@ -101,11 +113,7 @@ class CacheTable(object):
 CACHE_DB_VERSION = 5
 
 
-class RevisionIdMapCache(CacheTable):
-    """Revision id mapping store.
-
-    Stores mapping from revid -> (path, revnum, mapping)
-    """
+class SqliteRevisionIdMapCache(RevisionIdMapCache, CacheTable):
 
     def _create_table(self):
         self.cachedb.executescript("""
@@ -130,23 +138,15 @@ class RevisionIdMapCache(CacheTable):
         self._commit_interval = 500
 
     def set_last_revnum_checked(self, layout, revnum):
-        """Remember the latest revision number that has been checked
-        for a particular layout.
+        """See RevisionIdMapCache.set_last_revnum_checked."""
 
-        :param layout: Repository layout.
-        :param revnum: Revision number.
-        """
         self.mutter("set last revnum checked for %r to %r", layout, revnum)
         self.cachedb.execute("replace into revids_seen (layout, max_revnum) VALUES (?, ?)", (layout, revnum))
         self.commit()
 
     def last_revnum_checked(self, layout):
-        """Retrieve the latest revision number that has been checked
-        for revision ids for a particular layout.
+        """See RevisionIdMapCache.last_revnum_checked."""
 
-        :param layout: Repository layout.
-        :return: Last revision number checked or 0.
-        """
         ret = self.cachedb.execute(
             "select max_revnum from revids_seen where layout = ?", (layout,)).fetchone()
         if ret is None:
@@ -157,12 +157,8 @@ class RevisionIdMapCache(CacheTable):
         return revnum
 
     def lookup_revid(self, revid):
-        """Lookup the details for a particular revision id.
+        """See RevisionIdMapCache.lookup_revid."""
 
-        :param revid: Revision id.
-        :return: Tuple with path inside repository, minimum revision number, maximum revision number and
-            mapping.
-        """
         assert isinstance(revid, str)
         self.mutter("lookup revid %r", revid)
         ret = self.cachedb.execute(
@@ -176,12 +172,8 @@ class RevisionIdMapCache(CacheTable):
             return (path, min_revnum, max_revnum, mapping)
 
     def lookup_branch_revnum(self, revnum, path, mapping):
-        """Lookup a revision by revision number, branch path and mapping.
+        """See RevisionIdMapCache.lookup_branch_revnum."""
 
-        :param revnum: Subversion revision number.
-        :param path: Subversion branch path.
-        :param mapping: Mapping
-        """
         assert isinstance(revnum, int)
         assert isinstance(path, str)
         assert isinstance(mapping, str)
@@ -195,17 +187,8 @@ class RevisionIdMapCache(CacheTable):
         return ret
 
     def insert_revid(self, revid, branch, min_revnum, max_revnum, mapping):
-        """Insert a revision id into the revision id cache.
+        """See RevisionIdMapCache.insert_revid."""
 
-        :param revid: Revision id for which to insert metadata.
-        :param branch: Branch path at which the revision was seen
-        :param min_revnum: Minimum Subversion revision number in which the
-                           revid was found
-        :param max_revnum: Maximum Subversion revision number in which the
-                           revid was found
-        :param mapping: Name of the mapping with which the revision
-                       was found
-        """
         assert revid is not None and revid != ""
         assert isinstance(mapping, str)
         assert isinstance(branch, str)
@@ -227,7 +210,7 @@ class RevisionIdMapCache(CacheTable):
         self._commit_conditionally()
 
 
-class RevisionInfoCache(CacheTable):
+class SqliteRevisionInfoCache(RevisionInfoCache, CacheTable):
 
     def _create_table(self):
         self.cachedb.executescript("""
@@ -252,6 +235,8 @@ class RevisionInfoCache(CacheTable):
         self._commit_interval = 500
 
     def set_original_mapping(self, foreign_revid, original_mapping):
+        """See RevisionInfoCache.set_original_mapping."""
+
         if original_mapping is not None:
             orig_mapping_name = original_mapping.name
         else:
@@ -260,24 +245,14 @@ class RevisionInfoCache(CacheTable):
 
     def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden),
             stored_lhs_parent_revid):
-        """Insert a revision to the cache.
+        """See RevisionInfoCache.insert_revision."""
 
-        :param foreign_revid: Foreign revision id
-        :param mapping: Mapping used
-        :param info: Tuple with (revno, revid, hidden)
-        :param stored_lhs_parent_revid: Stored lhs parent revision
-        """
         self.cachedb.execute("insert into revmetainfo (path, revnum, mapping, revid, revno, hidden, stored_lhs_parent_revid) values (?, ?, ?, ?, ?, ?, ?)", (foreign_revid[1], foreign_revid[2], mapping.name, revid, revno, hidden, stored_lhs_parent_revid))
         self._commit_conditionally()
 
     def get_revision(self, foreign_revid, mapping):
-        """Get the revision metadata info for a (foreign_revid, mapping) tuple.
+        """See RevisionInfoCache.get_revision."""
 
-        :param foreign_revid: Foreign revision id
-        :param mapping: Mapping
-        :return: Tuple with (stored revno, revid, hidden),
-            stored_lhs_parent_revid
-        """
         # Will raise KeyError if not present
         row = self.cachedb.execute("select revno, revid, hidden, stored_lhs_parent_revid from revmetainfo where path = ? and revnum = ? and mapping = ?", (foreign_revid[1], foreign_revid[2], mapping.name)).fetchone()
         if row is None:
@@ -294,11 +269,8 @@ class RevisionInfoCache(CacheTable):
             return ((row[0], stored_revid, row[2]), stored_lhs_parent_revid)
 
     def get_original_mapping(self, foreign_revid):
-        """Find the original mapping for a revision.
+        """See RevisionInfoCache.get_original_mapping."""
 
-        :param foreign_revid: Foreign revision id
-        :return: Mapping object or None
-        """
         row = self.cachedb.execute("select original_mapping from original_mapping where path = ? and revnum = ?", (foreign_revid[1].decode("utf-8"), foreign_revid[2])).fetchone()
         if row is None:
             raise KeyError(foreign_revid)
@@ -308,10 +280,7 @@ class RevisionInfoCache(CacheTable):
             return mapping_registry.parse_mapping_name("svn-" + row[0].encode("utf-8"))
 
 
-class LogCache(CacheTable):
-    """Log browser cache table manager. The methods of this class
-    encapsulate the SQL commands used by CachingLogWalker to access
-    the log cache tables."""
+class SqliteLogCache(LogCache, CacheTable):
 
     def _create_table(self):
         self.cachedb.executescript("""
@@ -343,6 +312,8 @@ class LogCache(CacheTable):
             pass # Column already exists.
 
     def find_latest_change(self, path, revnum):
+        """See LogCache.find_latest_change."""
+
         if path == "":
             return self.cachedb.execute("select max(rev) from changed_path where rev <= ?", (revnum,)).fetchone()[0]
         return self.cachedb.execute("""
@@ -355,10 +326,8 @@ class LogCache(CacheTable):
         """, (revnum, path, path + "/*", path)).fetchone()[0]
 
     def get_revision_paths(self, revnum):
-        """Return all history information for a given revision number.
+        """See LogCache.get_revision_paths."""
 
-        :param revnum: Revision number of revision.
-        """
         result = self.cachedb.execute("select path, action, copyfrom_path, copyfrom_rev, kind from changed_path where rev=?", (revnum,))
         paths = {}
         for p, act, cf, cr, kind in result:
@@ -368,11 +337,8 @@ class LogCache(CacheTable):
         return paths
 
     def insert_paths(self, rev, orig_paths):
-        """Insert new history information into the cache.
+        """See LogCache.insert_paths."""
 
-        :param rev: Revision number of the revision
-        :param orig_paths: SVN-style changes dictionary
-        """
         if orig_paths is None or orig_paths == {}:
             return
         new_paths = []
@@ -390,13 +356,13 @@ class LogCache(CacheTable):
         self.cachedb.executemany("replace into changed_path (rev, path, action, copyfrom_path, copyfrom_rev, kind) values (?, ?, ?, ?, ?, ?)", new_paths)
 
     def drop_revprops(self, revnum):
+        """See LogCache.drop_revprops."""
+
         self.cachedb.execute("update revinfo set all_revprops = 0 where rev = ?", (revnum,))
 
     def get_revprops(self, revnum):
-        """Retrieve all the cached revision properties.
+        """See LogCache.get_revprops."""
 
-        :param revnum: Revision number of revision to retrieve revprops for.
-        """
         result = self.cachedb.execute("select name, value from revprop where rev = ?", (revnum,))
         revprops = dict((k.encode("utf-8"), v.encode("utf-8")) for (k, v) in result)
         result = self.cachedb.execute("select all_revprops from revinfo where rev = ?", (revnum,)).fetchone()
@@ -407,6 +373,8 @@ class LogCache(CacheTable):
         return (revprops, all_revprops)
 
     def insert_revprops(self, revision, revprops, all_revprops):
+        """See LogCache.insert_revprops."""
+
         if revprops is None:
             return
         self.cachedb.executemany("replace into revprop (rev, name, value) values (?, ?, ?)", [(revision, name.decode("utf-8", "replace"), value.decode("utf-8", "replace")) for (name, value) in revprops.iteritems()])
@@ -415,16 +383,20 @@ class LogCache(CacheTable):
         """, (revision, all_revprops))
 
     def last_revnum(self):
+        """See LogCache.last_revnum."""
+
         saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM changed_path").fetchone()[0]
         if saved_revnum is None:
             return 0
         return saved_revnum
 
     def min_revnum(self):
+        """See LogCache.min_revnum."""
+
         return self.cachedb.execute("SELECT MIN(rev) FROM revprop").fetchone()[0]
 
 
-class ParentsCache(CacheTable):
+class SqliteParentsCache(ParentsCache, CacheTable):
 
     def _create_table(self):
         self.cachedb.executescript("""
@@ -439,6 +411,8 @@ class ParentsCache(CacheTable):
         self._commit_interval = 200
 
     def insert_parents(self, revid, parents):
+        """See ParentsCache.insert_parents."""
+
         self.mutter('insert parents: %r -> %r', revid, parents)
         if len(parents) == 0:
             self.cachedb.execute("replace into parent (rev, parent, idx) values (?, NULL, -1)", (revid,))
@@ -448,6 +422,8 @@ class ParentsCache(CacheTable):
         self._commit_conditionally()
 
     def lookup_parents(self, revid):
+        """See ParentsCache.lookup_parents."""
+
         self.mutter('lookup parents: %r', revid)
         rows = self.cachedb.execute("select parent from parent where rev = ? order by idx", (revid, )).fetchall()
         if len(rows) == 0:
@@ -466,16 +442,16 @@ class SqliteRepositoryCache(RepositoryCache):
         return cachedbs()[cache_file]
 
     def open_revid_map(self):
-        return RevisionIdMapCache(self.open_sqlite())
+        return SqliteRevisionIdMapCache(self.open_sqlite())
 
     def open_logwalker(self):
-        return LogCache(self.open_sqlite())
+        return SqliteLogCache(self.open_sqlite())
 
     def open_revision_cache(self):
-        return RevisionInfoCache(self.open_sqlite())
+        return SqliteRevisionInfoCache(self.open_sqlite())
 
     def open_parents(self):
-        return ParentsCache(self.open_sqlite())
+        return SqliteParentsCache(self.open_sqlite())
 
     def commit(self):
         self.open_sqlite().commit()

@@ -33,9 +33,9 @@ class TestCachingParentsProvider(TestCase):
         TestCase.setUp(self)
         dict_pp = _mod_graph.DictParentsProvider({'a':('b',)})
         self.inst_pp = InstrumentedParentsProvider(dict_pp)
-        from bzrlib.plugins.svn.cache.sqlitecache import ParentsCache
+        from bzrlib.plugins.svn.cache.sqlitecache import SqliteParentsCache
         self.caching_pp = DiskCachingParentsProvider(self.inst_pp,
-                ParentsCache())
+                SqliteParentsCache())
 
     def test_get_parent_map(self):
         """Requesting the same revision should be returned from cache"""

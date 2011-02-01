@@ -69,8 +69,8 @@ class SqliteLogCacheTests(TestCase,LogCacheTests):
 
     def setUp(self):
         super(SqliteLogCacheTests, self).setUp()
-        from bzrlib.plugins.svn.cache.sqlitecache import LogCache
-        self.cache = LogCache()
+        from bzrlib.plugins.svn.cache.sqlitecache import SqliteLogCache
+        self.cache = SqliteLogCache()
 
 
 class TdbLogCacheTests(TestCaseInTempDir,LogCacheTests):
@@ -78,11 +78,11 @@ class TdbLogCacheTests(TestCaseInTempDir,LogCacheTests):
     def setUp(self):
         super(TdbLogCacheTests, self).setUp()
         try:
-            from bzrlib.plugins.svn.cache.tdbcache import LogCache, tdb_open
+            from bzrlib.plugins.svn.cache.tdbcache import TdbLogCache, tdb_open
         except ImportError:
             raise UnavailableFeature("tdb")
         import tdb
-        self.cache = LogCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
+        self.cache = TdbLogCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
 
 class RevidMapCacheTests(object):
@@ -124,8 +124,8 @@ class SqliteRevidMapCacheTests(TestCase,RevidMapCacheTests):
 
     def setUp(self):
         super(SqliteRevidMapCacheTests, self).setUp()
-        from bzrlib.plugins.svn.cache.sqlitecache import RevisionIdMapCache
-        self.cache = RevisionIdMapCache()
+        from bzrlib.plugins.svn.cache.sqlitecache import SqliteRevisionIdMapCache
+        self.cache = SqliteRevisionIdMapCache()
 
 
 class TdbRevidMapCacheTests(TestCaseInTempDir,RevidMapCacheTests):
@@ -133,11 +133,11 @@ class TdbRevidMapCacheTests(TestCaseInTempDir,RevidMapCacheTests):
     def setUp(self):
         super(TdbRevidMapCacheTests, self).setUp()
         try:
-            from bzrlib.plugins.svn.cache.tdbcache import RevisionIdMapCache, tdb_open
+            from bzrlib.plugins.svn.cache.tdbcache import TdbRevisionIdMapCache, tdb_open
         except ImportError:
             raise UnavailableFeature("tdb")
         import tdb
-        self.cache = RevisionIdMapCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
+        self.cache = TdbRevisionIdMapCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
 
 class RevInfoCacheTests(object):
@@ -185,8 +185,8 @@ class SqliteRevInfoCacheTests(TestCase,RevInfoCacheTests):
 
     def setUp(self):
         super(SqliteRevInfoCacheTests, self).setUp()
-        from bzrlib.plugins.svn.cache.sqlitecache import RevisionInfoCache
-        self.cache = RevisionInfoCache()
+        from bzrlib.plugins.svn.cache.sqlitecache import SqliteRevisionInfoCache
+        self.cache = SqliteRevisionInfoCache()
 
 
 class TdbRevInfoCacheTests(TestCaseInTempDir,RevInfoCacheTests):
@@ -194,11 +194,11 @@ class TdbRevInfoCacheTests(TestCaseInTempDir,RevInfoCacheTests):
     def setUp(self):
         super(TdbRevInfoCacheTests, self).setUp()
         try:
-            from bzrlib.plugins.svn.cache.tdbcache import RevisionInfoCache, tdb_open
+            from bzrlib.plugins.svn.cache.tdbcache import TdbRevisionInfoCache, tdb_open
         except ImportError:
             raise UnavailableFeature("tdb")
         import tdb
-        self.cache = RevisionInfoCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
+        self.cache = TdbRevisionInfoCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
 
 class ParentsCacheTests:
@@ -228,8 +228,8 @@ class SqliteParentsCacheTests(TestCase,ParentsCacheTests):
 
     def setUp(self):
         super(SqliteParentsCacheTests, self).setUp()
-        from bzrlib.plugins.svn.cache.sqlitecache import ParentsCache
-        self.cache = ParentsCache()
+        from bzrlib.plugins.svn.cache.sqlitecache import SqliteParentsCache
+        self.cache = SqliteParentsCache()
 
 
 class TdbParentsCacheTests(TestCaseInTempDir,ParentsCacheTests):
@@ -237,8 +237,8 @@ class TdbParentsCacheTests(TestCaseInTempDir,ParentsCacheTests):
     def setUp(self):
         super(TdbParentsCacheTests, self).setUp()
         try:
-            from bzrlib.plugins.svn.cache.tdbcache import ParentsCache, tdb_open
+            from bzrlib.plugins.svn.cache.tdbcache import TdbParentsCache, tdb_open
         except ImportError:
             raise UnavailableFeature("tdb")
         import tdb
-        self.cache = ParentsCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
+        self.cache = TdbParentsCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))

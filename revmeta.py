@@ -1435,3 +1435,38 @@ class RevisionMetadataProvider(object):
         for kind, item in browser:
             if kind != "revision" or check_unusual_path(item.branch_path):
                 yield kind, item
+
+
+class RevisionInfoCache(object):
+
+    def set_original_mapping(self, foreign_revid, original_mapping):
+        raise NotImplementedError(self.set_original_mapping)
+
+    def insert_revision(self, foreign_revid, mapping, revinfo,
+            stored_lhs_parent_revid):
+        """Insert a revision to the cache.
+
+        :param foreign_revid: Foreign revision id
+        :param mapping: Mapping used
+        :param revinfo: Tuple with (revno, revid, hidden)
+        :param stored_lhs_parent_revid: Stored lhs parent revision
+        """
+        raise NotImplementedError(self.insert_revision)
+
+    def get_revision(self, foreign_revid, mapping):
+        """Get the revision metadata info for a (foreign_revid, mapping) tuple.
+
+        :param foreign_revid: Foreign revision id
+        :param mapping: Mapping
+        :return: Tuple with (stored revno, revid, hidden),
+            stored_lhs_parent_revid
+        """
+        raise NotImplementedError(self.get_revision)
+
+    def get_original_mapping(self, foreign_revid):
+        """Find the original mapping for a revision.
+
+        :param foreign_revid: Foreign revision id
+        :return: Mapping object or None
+        """
+        raise NotImplementedError(self.get_original_mapping)
