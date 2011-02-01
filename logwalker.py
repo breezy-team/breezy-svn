@@ -149,6 +149,9 @@ class LogCache(object):
         """Find the last revision in which a particular path
         was changed.
 
+        This is an optional operation: cache backends may choose not to
+        implement it if they cannot efficiently perform this kind of lookup.
+
         :param path: Path to check
         :param revnum: Revision in which to check
         """
