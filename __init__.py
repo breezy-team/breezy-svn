@@ -67,6 +67,7 @@ from bzrlib.help_topics import (
     topic_registry,
     )
 from bzrlib.repository import (
+    format_registry as repository_format_registry,
     network_format_registry as repository_network_format_registry,
     )
 from bzrlib.revisionspec import (
@@ -190,6 +191,14 @@ branch_network_format_registry.register_lazy("subversion",
     'bzrlib.plugins.svn.branch', 'SvnBranchFormat')
 repository_network_format_registry.register_lazy("subversion",
     'bzrlib.plugins.svn.repository', 'SvnRepositoryFormat')
+try:
+    register_extra_lazy_repository_format = getattr(repository_format_registry,
+        'register_extra_lazy')
+except AttributeError:
+    pass
+else:
+    register_extra_lazy_repository_format('bzrlib.plugins.svn.repository',
+        'SvnRepositoryFormat')
 
 format_registry.register_lazy("subversion", "bzrlib.plugins.svn.format",
                          "SvnRemoteFormat",
