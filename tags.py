@@ -139,6 +139,9 @@ class ReverseTagDict(object):
     def iteritems(self):
         return iter(self.items())
 
+    def __iter__(self):
+        return (k for (k, v) in self.iteritems())
+
 
 class SubversionTags(BasicTags):
     """Subversion tags object."""

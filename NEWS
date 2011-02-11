@@ -35,6 +35,8 @@ bzr-svn 1.1.0					  UNRELEASED
   * Provide ``BranchConfig.has_explicit_nickname()``.
     (Jelmer Vernooij, #704840)
 
+  * Implement ReverseTagDict.__iter__. (Jelmer Vernooij)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
