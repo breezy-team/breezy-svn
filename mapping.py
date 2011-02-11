@@ -889,6 +889,8 @@ class SubversionMappingRegistry(foreign.VcsMappingRegistry):
         :param revid: Revision id to parse
         :return: tuple with (uuid, branch_path, revno), mapping
         """
+        if type(revid) is not str:
+            raise TypeError("revision id is not a bytestring")
         if not revid.startswith("svn-"):
             raise InvalidRevisionId(revid, None)
         mapping_version = revid[len("svn-"):len("svn-vx")]
