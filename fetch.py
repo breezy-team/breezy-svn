@@ -1523,7 +1523,12 @@ class InterFromSvnRepository(InterRepository):
             revisionfinder.find_until(foreign_revid, mapping,
                                       find_ghosts=find_ghosts, pb=pb)
         elif fetch_spec is not None:
-            for head in fetch_spec.heads:
+            recipe = fetch_spec.get_recipe()
+            if recipe[0] in ("search", "proxy-search"):
+                heads = recipe[1]
+            else:
+                raise AssertionError("Unsupported search result type %s" % recipe[0])
+            for head in heads:
                 foreign_revid, mapping = self.source.lookup_bzr_revision_id(
                     head, project=project)
                 revisionfinder.find_until(foreign_revid, mapping,

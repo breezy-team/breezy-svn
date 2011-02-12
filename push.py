@@ -420,7 +420,12 @@ class InterToSvnRepository(InterRepository):
         fetch_spec=None):
         """Fetch revisions. """
         if fetch_spec is not None:
-            for revid in fetch_spec.heads:
+            recipe = fetch_spec.get_recipe()
+            if recipe[0] in ("search", "proxy-search"):
+                heads = recipe[1]
+            else:
+                raise AssertionError("Unknown search type %s" % recipe[0])
+            for revid in heads:
                 self.copy_content(revision_id=revid, pb=pb)
         else:
             self.copy_content(revision_id=revision_id, pb=pb)
