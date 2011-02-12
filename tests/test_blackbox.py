@@ -18,6 +18,7 @@
 import os
 import sys
 
+from bzrlib.branch import Branch
 import bzrlib.gpg
 from bzrlib.repository import Repository
 from bzrlib.tests.blackbox import ExternalBase
@@ -578,6 +579,12 @@ if len(sys.argv) == 2:
         os.chdir('bzr-trunk')
         self.run_bzr('merge %s/branches/my-branch' % svn_url)
         self.run_bzr('nick my-branch')
+        f = open('.bzr/branch/branch.conf', 'w')
+        try:
+            f.write("append_revisions_only = False\n")
+        finally:
+            f.close()
+
         self.run_bzr('ci -m "Merge my-branch"')
 
         os.chdir(cwd)
