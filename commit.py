@@ -307,9 +307,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
         # open if they existed at the same location
         elif child_ie.file_id in modified_files:
             trace.mutter('open %s %r', child_ie.kind, new_child_path)
-
-            child_editor = dir_editor.open_file(
-                    full_new_child_path, base_revnum)
+            child_editor = dir_editor.open_file(full_new_child_path, base_revnum)
         else:
             # Old copy of the file was retained. No need to send changes
             child_editor = None
@@ -377,7 +375,8 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
                 branch_relative_path(new_child_path), copyfrom_url, copyfrom_revnum)
             changed = True
         # copy if they existed at different location
-        elif base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or base_inv[child_ie.file_id].parent_id != child_ie.parent_id:
+        elif (base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
+              base_inv[child_ie.file_id].parent_id != child_ie.parent_id):
             old_child_path = base_inv.id2path(child_ie.file_id).encode("utf-8")
             trace.mutter('copy dir %r -> %r', old_child_path, new_child_path)
             copyfrom_url = url_join_unescaped_path(base_url, old_child_path)
@@ -476,7 +475,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         else:
             (uuid, self.base_path, self.base_revnum) = base_foreign_revid
             self.base_mapping = base_mapping
-            self._base_revmeta = self.repository._revmeta_provider.lookup_revision(self.base_path, self.base_revnum)
+            self._base_revmeta = self.repository._revmeta_provider.lookup_revision(
+                self.base_path, self.base_revnum)
             self._base_branch_props = self._base_revmeta.get_fileprops()
             self.base_url = urlutils.join(self.repository.transport.svn_url,
                                           self.base_path)
@@ -537,8 +537,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             def lookup_revid(revid):
                 return repository.lookup_bzr_revision_id(revid,
                     foreign_sibling=self.base_foreign_revid)
-            new_svk_merges = update_svk_features(old_svk_merges, merges,
-                                                 lookup_revid)
+            new_svk_merges = update_svk_features(old_svk_merges, merges, lookup_revid)
             if new_svk_merges is not None:
                 self._svnprops[SVN_PROP_SVK_MERGE] = new_svk_merges
 
@@ -547,7 +546,6 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self.base_revid, merges)
             if new_mergeinfo is not None:
                 self._svnprops[properties.PROP_MERGEINFO] = new_mergeinfo
-
 
     @staticmethod
     def mutter(text, *args):
@@ -577,8 +575,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         """
         ret = [root]
 
-        self.mutter('opening branch %r (base %r:%r)', elements, base_url,
-                                                   base_rev)
+        self.mutter('opening branch %r (base %r:%r)', elements, base_url, base_rev)
 
         # Open paths leading up to branch
         for i in range(0, len(elements)-1):
@@ -598,8 +595,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         # This needs to also check that base_rev was the latest version of
         # branch_path.
         if len(existing_elements) == len(elements) and not replace_existing:
-            ret.append(ret[-1].open_directory(
-                "/".join(elements), base_rev))
+            ret.append(ret[-1].open_directory("/".join(elements), base_rev))
         else: # Branch has to be created
             # Already exists, old copy needs to be removed
             name = "/".join(elements)
@@ -613,8 +609,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 copyfrom_url = None
             else:
                 copyfrom_url = urlutils.join(base_url, root_from)
-            ret.append(ret[-1].add_directory(
-                name, copyfrom_url, base_rev))
+            ret.append(ret[-1].add_directory(name, copyfrom_url, base_rev))
 
         return ret
 
@@ -630,8 +625,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                     self.old_inv[child_ie.file_id].parent_id != child_ie.parent_id):
                     ret.append((child_ie.file_id, new_child_path, child_ie.revision))
 
-                if (child_ie.kind == 'directory' and
-                    new_child_path in self.visit_dirs):
+                if (child_ie.kind == 'directory' and new_child_path in self.visit_dirs):
                     ret += _dir_process_file_id(new_child_path, child_ie.file_id)
             return ret
 
@@ -639,8 +633,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         text_revisions = {}
         changes = []
 
-        if (self.old_inv.root is None or
-            new_root_id != self.old_inv.root.file_id):
+        if (self.old_inv.root is None or new_root_id != self.old_inv.root.file_id):
             changes.append((new_root_id, "", self._get_new_ie(new_root_id).revision))
 
         changes += _dir_process_file_id("", new_root_id)
@@ -734,8 +727,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._changed_fileprops = {}
 
         if self.push_metadata:
-            (fileids, text_revisions) = self._determine_texts_identity(
-                self.new_root_id)
+            (fileids, text_revisions) = self._determine_texts_identity(self.new_root_id)
             if self.set_custom_revprops:
                 self.mapping.export_text_revisions_revprops(text_revisions,
                         self._svn_revprops)
@@ -744,16 +736,13 @@ class SvnCommitBuilder(RootCommitBuilder):
             if self.set_custom_fileprops:
                 self.mapping.export_text_revisions_fileprops(text_revisions,
                         self._svnprops)
-                self.mapping.export_fileid_map_fileprops(fileids,
-                        self._svnprops)
+                self.mapping.export_fileid_map_fileprops(fileids, self._svnprops)
         if self._config.get_log_strip_trailing_newline():
             if self.push_metadata:
                 if self.set_custom_revprops:
-                    self.mapping.export_message_revprops(message,
-                            self._svn_revprops)
+                    self.mapping.export_message_revprops(message, self._svn_revprops)
                 if self.set_custom_fileprops:
-                    self.mapping.export_message_fileprops(message,
-                            self._svnprops)
+                    self.mapping.export_message_fileprops(message, self._svnprops)
             message = message.rstrip("\n")
         self._svn_revprops[properties.PROP_REVISION_LOG] = message.encode("utf-8")
 
@@ -781,7 +770,8 @@ class SvnCommitBuilder(RootCommitBuilder):
             # See whether the base of the commit matches the lhs parent
             # if not, we need to replace the existing directory
             if len(bp_parts) == len(existing_bp_parts):
-                if self.base_path is None or self.base_path.strip("/") != "/".join(bp_parts).strip("/"):
+                if (self.base_path is None or
+                    self.base_path.strip("/") != "/".join(bp_parts).strip("/")):
                     replace_existing = True
                     if self._append_revisions_only:
                         raise AppendRevisionsOnlyViolation(
@@ -858,8 +848,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.repository._clear_cached_state(result_revision)
 
         self.mutter('commit %d finished. author: %r, date: %r',
-               result_revision, result_author,
-                   result_date)
+               result_revision, result_author, result_date)
 
         if self._override_svn_revprops is not None:
             new_revprops = {}
@@ -910,6 +899,8 @@ class SvnCommitBuilder(RootCommitBuilder):
     def record_delete(self, path, file_id):
         if not self._recording_deletes:
             raise AssertionError("recording deletes not activated.")
+        delta = (path, None, file_id, None)
+        self._basis_delta.append(delta)
         self._any_changes = True
         self._deleted_fileids.add(file_id)
 
