@@ -44,7 +44,10 @@ from bzrlib.plugins.svn.commit import (
     set_svn_revprops,
     _revision_id_to_svk_feature,
     )
-from bzrlib.plugins.svn.errors import RevpropChangeFailed
+from bzrlib.plugins.svn.errors import (
+    NeedsNewerSubvertpy,
+    RevpropChangeFailed,
+    )
 from bzrlib.plugins.svn.mapping import mapping_registry
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
@@ -55,7 +58,10 @@ class TestNativeCommit(SubversionTestCase):
         self.build_tree({'dc/foo/bla': "data"})
         self.client_add("dc/foo")
         wt = WorkingTree.open("dc")
-        revid = wt.commit(message="data")
+        try:
+            revid = wt.commit(message="data")
+        except NeedsNewerSubvertpy:
+            raise TestSkipped("Unable to commit with this version of subvertpy")
         self.assertEqual(wt.branch.generate_revision_id(1), revid)
         self.client_update("dc")
         self.assertEqual(wt.branch.generate_revision_id(1),
@@ -71,7 +77,10 @@ class TestNativeCommit(SubversionTestCase):
         self.build_tree({'dc/foo/bla': "data"})
         self.client_add("dc/foo")
         wt = WorkingTree.open("dc")
-        revid = wt.commit(message="data")
+        try:
+            revid = wt.commit(message="data")
+        except NeedsNewerSubvertpy:
+            raise TestSkipped("Unable to commit with this version of subvertpy")
         self.assertEqual(wt.branch.generate_revision_id(1), revid)
         self.assertEqual(
                 wt.branch.generate_revision_id(1), wt.branch.last_revision())
@@ -85,7 +94,10 @@ class TestNativeCommit(SubversionTestCase):
         self.build_tree({'dc/foo/bla': "data"})
         self.client_add("dc/foo")
         wt = WorkingTree.open("dc")
-        revid = wt.commit(message="data", rev_id="some-revid-bla")
+        try:
+            revid = wt.commit(message="data", rev_id="some-revid-bla")
+        except NeedsNewerSubvertpy:
+            raise TestSkipped("Unable to commit with this version of subvertpy")
         self.assertEqual("some-revid-bla", revid)
         self.assertEqual(wt.branch.generate_revision_id(1), revid)
         self.assertEqual(
@@ -102,8 +114,10 @@ class TestNativeCommit(SubversionTestCase):
             raise TestSkipped("This platform does not support unicode symlinks")
         self.client_add(u"dc/I²C".encode("utf-8"))
         wt = WorkingTree.open("dc")
-        wt.commit(message="data")
-
+        try:
+            wt.commit(message="data")
+        except NeedsNewerSubvertpy:
+            raise TestSkipped("Unable to commit with this version of subvertpy")
 
     def test_commit_local(self):
         self.make_client('d', 'dc')
@@ -118,7 +132,10 @@ class TestNativeCommit(SubversionTestCase):
         self.build_tree({'dc/foo/bla': "data"})
         self.client_add("dc/foo")
         wt = WorkingTree.open("dc")
-        revid = wt.commit(message="data", committer="john doe")
+        try:
+            revid = wt.commit(message="data", committer="john doe")
+        except NeedsNewerSubvertpy:
+            raise TestSkipped("Unable to commit with this version of subvertpy")
         rev = wt.branch.repository.get_revision(revid)
         self.assertEquals("john doe", rev.committer)
 
@@ -127,7 +144,10 @@ class TestNativeCommit(SubversionTestCase):
         self.build_tree({'dc/foo/bla': "data"})
         self.client_add("dc/foo")
         wt = WorkingTree.open("dc")
-        revid = wt.commit(message=u"føø")
+        try:
+            revid = wt.commit(message=u"føø")
+        except NeedsNewerSubvertpy:
+            raise TestSkipped("Unable to commit with this version of subvertpy")
         self.assertEqual(revid, wt.branch.generate_revision_id(1))
         self.assertEqual(
                 wt.branch.generate_revision_id(1), wt.branch.last_revision())
@@ -142,7 +162,10 @@ class TestNativeCommit(SubversionTestCase):
         self.client_add("dc/foo")
         wt = WorkingTree.open("dc")
         wt.set_pending_merges(["some-ghost-revision"])
-        wt.commit(message="data")
+        try:
+            wt.commit(message="data")
+        except NeedsNewerSubvertpy:
+            raise TestSkipped("Unable to commit with this version of subvertpy")
         self.assertEqual(
                 wt.branch.generate_revision_id(1),
                 wt.branch.last_revision())
@@ -154,7 +177,10 @@ class TestNativeCommit(SubversionTestCase):
         wt = WorkingTree.open("dc")
         wt.set_pending_merges(["some-ghost-revision"])
         oldid = wt.path2id("foo")
-        wt.commit(message="data") # 1
+        try:
+            wt.commit(message="data") # 1
+        except NeedsNewerSubvertpy:
+            raise TestSkipped("Unable to commit with this version of subvertpy")
         wt.rename_one("foo", "bar")
         self.assertEquals(oldid, wt.path2id("bar"))
         self.assertEquals(None, wt.path2id("foo"))
@@ -173,7 +199,10 @@ class TestNativeCommit(SubversionTestCase):
         self.build_tree({'dc/adir/foo': "data"})
         self.client_add("dc/adir")
         wt = WorkingTree.open("dc")
-        wt.commit(message="data")
+        try:
+            wt.commit(message="data")
+        except NeedsNewerSubvertpy:
+            raise TestSkipped("Unable to commit with this version of subvertpy")
         wt.rename_one("adir/foo", "bar")
         self.assertFalse(wt.has_filename("adir/foo"))
         self.assertTrue(wt.has_filename("bar"))

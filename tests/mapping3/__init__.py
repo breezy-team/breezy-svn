@@ -24,10 +24,10 @@ from bzrlib.errors import (
     NoSuchRevision,
     )
 from bzrlib.repository import Repository
-from bzrlib.tests import TestCase
+from bzrlib.tests import TestCase, TestSkipped
 from bzrlib.workingtree import WorkingTree
 
-from bzrlib.plugins.svn import format
+from bzrlib.plugins.svn.errors import NeedsNewerSubvertpy
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
@@ -466,8 +466,10 @@ class RepositoryTests(SubversionTestCase):
         wt = WorkingTree.open("dc")
         self.build_tree({'dc/foo/bla': "data", 'dc/bla': "otherdata"})
         wt.add('bla')
-        wt.commit(message="data")
-
+        try:
+            wt.commit(message="data")
+        except NeedsNewerSubvertpy:
+            raise TestSkipped("unable to commit with newer subvertpy")
         branch = Branch.open(self.repos_url)
         builder = branch.get_commit_builder([branch.last_revision()], 
                 revision_id="my-revision-id")
@@ -490,8 +492,10 @@ class RepositoryTests(SubversionTestCase):
         wt = WorkingTree.open("dc")
         self.build_tree({'dc/foo/bla': "data", 'dc/bla': "otherdata"})
         wt.add('bla')
-        wt.commit(message="data")
-
+        try:
+            wt.commit(message="data")
+        except NeedsNewerSubvertpy:
+            raise TestSkipped("unable to commit with newer subvertpy")
         branch = Branch.open(self.repos_url)
         builder = branch.get_commit_builder([branch.last_revision()], 
                 timestamp=4534.0, timezone=2, committer="fry",
@@ -518,7 +522,10 @@ class RepositoryTests(SubversionTestCase):
         wt = WorkingTree.open("dc")
         wt.set_pending_merges(["some-ghost-revision"])
         self.assertEqual(["some-ghost-revision"], wt.get_parent_ids()[1:])
-        wt.commit(message="data")
+        try:
+            wt.commit(message="data")
+        except NeedsNewerSubvertpy:
+            raise TestSkipped("unable to commit with newer subvertpy")
         self.assertEqual("some-ghost-revision\n", 
                 self.client_get_prop(self.repos_url, "bzr:ancestry:v3-none", 1))
         self.assertEqual((wt.branch.generate_revision_id(0), "some-ghost-revision"),

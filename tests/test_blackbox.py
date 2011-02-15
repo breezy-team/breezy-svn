@@ -18,10 +18,10 @@
 import os
 import sys
 
-from bzrlib.branch import Branch
 import bzrlib.gpg
 from bzrlib.repository import Repository
 from bzrlib.tests.blackbox import ExternalBase
+from bzrlib.tests import TestSkipped
 
 from bzrlib.plugins.svn.convert import load_dumpfile
 from bzrlib.plugins.svn.layout.standard import RootLayout
@@ -447,6 +447,10 @@ Node-copyfrom-path: x
         repos_url = self.make_client('d', 'de')
         self.build_tree({'de/foo': 'bla'})
         self.run_bzr("add de/foo")
+        try:
+            from subvertpy.wc import CommittedQueue
+        except ImportError:
+            raise TestSkipped("unable to commit with this version of subvertpy")
         self.run_bzr("commit -m test de")
         self.assertEquals("2\n", self.run_bzr("revno de")[0])
 

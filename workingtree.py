@@ -39,7 +39,6 @@ from subvertpy.wc import (
     WorkingCopy,
     check_wc,
     get_adm_dir,
-    get_pristine_copy_path,
     is_adm_dir,
     revision_status,
     )
@@ -939,86 +938,30 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         rev = self.branch.lookup_bzr_revision_id(new_revid)
         self._set_base(new_revid, rev)
 
-        # TODO: Implement more efficient version
         newrev = self.branch.repository.get_revision(new_revid)
-        newrevtree = self.branch.repository.revision_tree(new_revid)
         svn_revprops = self.branch.repository._log.revprop_list(rev)
 
-        simple_revprops_cache = {
-                new_revid: (rev, svn_revprops[properties.PROP_REVISION_DATE],
-                    svn_revprops.get(properties.PROP_REVISION_AUTHOR, ""))}
+        def update_entry(cq, path, root_adm):
+            mutter('updating entry for %s'% path)
+            cq.queue(path.rstrip("/").encode("utf-8"), root_adm)
 
-        def lookup_revid(revid):
-            try:
-                return simple_revprops_cache[revid]
-            except KeyError:
-                revmeta, mapping = self.branch.repository._get_revmeta(revid)
-                revprops = revmeta.revprops
-                ret = (revmeta.revnum,
-                       revprops[properties.PROP_REVISION_DATE],
-                       revprops.get(properties.PROP_REVISION_AUTHOR, ""))
-                simple_revprops_cache[revid] = ret
-                return ret
-
-        def process_committed(adm, relpath, fileprops, revid):
-            mutter("process %r -> %r", relpath, revid)
-            abspath = self.abspath(relpath).rstrip("/")
-            revnum = int(fileprops['svn:entry:committed-rev'])
-            date = fileprops['svn:entry:committed-date']
-            author = fileprops.get('svn:entry:last-author', '')
-            adm.process_committed(abspath.encode("utf-8"), False, revnum, date, author)
-            mutter("doneprocess %r -> %r", relpath, revid)
-
-        def update_settings(adm, path, id):
-            assert isinstance(path, unicode)
-            if newrevtree.inventory[id].kind != 'directory':
-                return
-
-            entries = adm.entries_read(False)
-            for name, entry in entries.iteritems():
-                name = name.decode("utf-8")
-                if name == "":
-                    fileprops = newrevtree.get_file_properties(id, path)
-                    process_committed(adm, path, fileprops,
-                                  newrevtree.inventory[id].revision)
-                    continue
-
-                child_path = os.path.join(path, name)
-                assert isinstance(child_path, unicode)
-                child_id = newrevtree.inventory.path2id(child_path)
-                child_abspath = self.abspath(child_path).rstrip("/")
-                assert isinstance(child_abspath, unicode)
-
-                if not child_id in newrevtree.inventory:
-                    pass
-                elif newrevtree.inventory[child_id].kind == 'directory':
-                    subwc = self._get_wc(child_path, write_lock=True, base=adm)
-                    try:
-                        update_settings(subwc, child_path, child_id)
-                    finally:
-                        subwc.close()
-                else:
-                    pristine_abspath = get_pristine_copy_path(
-                        child_abspath.encode("utf-8")).decode("utf-8")
-                    if os.path.exists(pristine_abspath.encode(osutils._fs_enc)):
-                        os.remove(pristine_abspath.encode(osutils._fs_enc))
-                    source_f = open(child_abspath.encode(osutils._fs_enc), "r")
-                    target_f = open(pristine_abspath.encode(osutils._fs_enc), "w")
-                    target_f.write(source_f.read())
-                    target_f.close()
-                    source_f.close()
-                    fileprops = newrevtree.get_file_properties(child_id,
-                            child_path)
-                    process_committed(adm, child_path, fileprops,
-                                  newrevtree.inventory[child_id].revision)
-
-        # Set proper version for all files in the wc
-        adm = self._get_wc(write_lock=True)
         try:
-            update_settings(adm, u"", newrevtree.inventory.root.file_id)
+            from subvertpy.wc import CommittedQueue
+        except ImportError:
+            raise NeedsNewerSubvertpy("subvertpy does not support CommittedQueue")
+        cq = CommittedQueue()
+        root_adm = self._get_wc(self.abspath("."), write_lock=True, depth=-1)
+        try:
+            for (old_path, new_path, file_id, ie) in delta:
+                if old_path is not None:
+                    update_entry(cq, old_path, root_adm)
+                if new_path is not None:
+                    update_entry(cq, new_path, root_adm)
+            root_adm.process_committed_queue(cq,
+                rev, svn_revprops[properties.PROP_REVISION_DATE],
+                svn_revprops[properties.PROP_REVISION_AUTHOR])
         finally:
-            adm.close()
-
+           root_adm.close()
         self.set_parent_ids([new_revid])
 
 
