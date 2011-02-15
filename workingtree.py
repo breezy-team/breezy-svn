@@ -84,7 +84,6 @@ from bzrlib.workingtree import (
     )
 
 from bzrlib.plugins.svn import (
-    errors as bzrsvn_errors,
     svk,
     )
 from bzrlib.plugins.svn.branch import (
@@ -95,6 +94,8 @@ from bzrlib.plugins.svn.commit import (
     )
 from bzrlib.plugins.svn.errors import (
     convert_svn_error,
+    NeedsNewerSubvertpy,
+    NotSvnBranchPath,
     )
 from bzrlib.plugins.svn.format import (
     SvnWorkingTreeDirFormat,
@@ -1117,7 +1118,7 @@ class SvnCheckout(ControlDir):
     def open_workingtree(self, _unsupported=False, recommend_upgrade=False):
         try:
             return SvnWorkingTree(self, self.local_path, self.entry)
-        except bzrsvn_errors.NotSvnBranchPath, e:
+        except NotSvnBranchPath, e:
             raise NoWorkingTree(self.local_path)
 
     def sprout(self, url, revision_id=None, force_new_repo=False,

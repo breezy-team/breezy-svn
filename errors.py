@@ -28,6 +28,7 @@ from bzrlib.errors import (
     BzrError,
     ConnectionError,
     ConnectionReset,
+    DependencyNotPresent,
     DivergedBranches,
     InvalidRevisionSpec,
     LockActive,
@@ -286,6 +287,14 @@ class TextChecksumMismatch(VersionedFileInvalidChecksum):
         self.actual_checksum = actual_checksum
         self.path = path
         self.revnum = revnum
+
+
+class NeedsNewerSubvertpy(DependencyNotPresent):
+
+    _fmt = """This operation requires a newer version of subvertpy: %(error)s."""
+
+    def __init__(self, error):
+        super(NeedsNewerSubvertpy, self).__init__("subvertpy", error)
 
 
 _reuse_uuids_warned = set()
