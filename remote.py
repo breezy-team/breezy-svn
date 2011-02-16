@@ -311,7 +311,7 @@ class SvnRemoteAccess(ControlDir):
         raise NotImplementedError(self.destroy_branch)
 
     def destroy_repository(self):
-        raise NotImplementedError(self.destroy_repository)
+        raise errors.UnsupportedOperation(self.destroy_repository, self)
 
     def can_convert_format(self):
         return False
