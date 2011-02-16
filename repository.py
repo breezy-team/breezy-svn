@@ -364,6 +364,8 @@ class SvnRepository(ForeignRepository):
     by using the RA (remote access) API from subversion
     """
 
+    chk_bytes = None
+
     def __init__(self, bzrdir, transport, branch_path=None):
         from bzrlib.plugins.svn import lazy_register_optimizers
         lazy_register_optimizers()
