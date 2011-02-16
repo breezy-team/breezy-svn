@@ -172,7 +172,7 @@ class SvnRepositoryFormat(RepositoryFormat):
 
     @property
     def _matchingbzrdir(self):
-        from remote import SvnRemoteFormat
+        from bzrlib.plugins.svn.remote import SvnRemoteFormat
         return SvnRemoteFormat()
 
     def __init__(self):
@@ -1319,4 +1319,6 @@ class SvnRepository(ForeignRepository):
         """See Repository.commit_write_group()."""
         if not self.is_write_locked():
             raise bzr_errors.NotWriteLocked(self)
-        self._write_group = None
+        if self._write_group is not None:
+            raise bzr_errors.BzrError("A write group is already active")
+        self._write_group = "active"
