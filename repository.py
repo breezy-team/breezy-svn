@@ -170,11 +170,10 @@ class SvnRepositoryFormat(RepositoryFormat):
     supports_tree_reference = False
     _serializer = None
 
-    def __get_matchingbzrdir(self):
+    @property
+    def _matchingbzrdir(self):
         from remote import SvnRemoteFormat
         return SvnRemoteFormat()
-
-    _matchingbzrdir = property(__get_matchingbzrdir)
 
     def __init__(self):
         super(SvnRepositoryFormat, self).__init__()
@@ -185,8 +184,11 @@ class SvnRepositoryFormat(RepositoryFormat):
     def network_name(self):
         return "subversion"
 
-    def initialize(self, url, shared=False, _internal=False):
-        raise bzr_errors.UninitializableFormat(self)
+    def initialize(self, controldir, shared=False, _internal=False):
+        from bzrlib.plugins.svn.remote import SvnRemoteAccess
+        if not isinstance(controldir, SvnRemoteAccess):
+            raise bzr_errors.UninitializableFormat(self)
+        return controldir.open_repository()
 
     def get_foreign_tests_repository_factory(self):
         from bzrlib.plugins.svn.tests.test_repository import ForeignTestsRepositoryFactory
