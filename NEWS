@@ -37,6 +37,8 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * Implement ReverseTagDict.__iter__. (Jelmer Vernooij)
 
+  * SvnRepositoryFormat.initialize() is now implemented. (Jelmer Vernooij)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
