@@ -137,6 +137,10 @@ class SvnRemoteAccess(ControlDir):
                         'use "bzr svn-import".')
         return super(SvnRemoteAccess, self).sprout(*args, **kwargs)
 
+    def is_control_filename(self, path):
+        # Bare, so anything is a control file
+        return True
+
     def open_repository(self, _unsupported=False):
         """Open the repository associated with this ControlDir.
 
