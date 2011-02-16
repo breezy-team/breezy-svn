@@ -918,7 +918,7 @@ class SvnRepository(ForeignRepository):
 
     def has_revision(self, revision_id, project=None):
         """See Repository.has_revision()."""
-        if revision_id is None:
+        if revision_id in (None, NULL_REVISION):
             return True
 
         try:
