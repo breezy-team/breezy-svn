@@ -884,7 +884,6 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({'dc/file.txt': 'This is a file with a $Id$\n'
                                         'New line added\n'
                                         'Another change\n'})
-        import pdb; pdb.set_trace()
         self.client_commit('dc', "Commit via svn")
 
 

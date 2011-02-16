@@ -967,6 +967,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             self._any_changes = True
             self._updated[file_id] = new_ie
             self._updated_children[new_parent_id].add(file_id)
+            self._basis_delta.append((old_path, new_path, file_id, new_ie))
         self.new_inventory = None
 
     def record_entry_contents(self, ie, parent_invs, path, tree,
