@@ -28,7 +28,6 @@ from bzrlib.errors import (
 from bzrlib.tests import TestCase
 
 from bzrlib.plugins.svn.errors import (
-    ERR_RA_DAV_PROPPATCH_FAILED,
     convert_error,
     convert_svn_error,
     DavRequestFailed,
@@ -82,7 +81,7 @@ class TestConvertError(TestCase):
         self.assertIsInstance(convert_error(subvertpy.SubversionException("Remote server doesn't support ...", subvertpy.ERR_RA_NOT_IMPLEMENTED)), NotImplementedError)
 
     def test_proppatch_failed(self):
-        self.assertIsInstance(convert_error(subvertpy.SubversionException("Proppatch failed", ERR_RA_DAV_PROPPATCH_FAILED)), PropertyChangeFailed)
+        self.assertIsInstance(convert_error(subvertpy.SubversionException("Proppatch failed", subvertpy.ERR_RA_DAV_PROPPATCH_FAILED)), PropertyChangeFailed)
 
     def test_hook_failed(self):
         self.assertIsInstance(convert_error(subvertpy.SubversionException("Hook failed", subvertpy.ERR_REPOS_HOOK_FAILURE)), TipChangeRejected)

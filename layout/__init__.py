@@ -18,8 +18,6 @@
 import subvertpy
 from subvertpy.ra import DIRENT_KIND, DIRENT_HAS_PROPS
 
-ERR_RA_DAV_FORBIDDEN = getattr(subvertpy, "ERR_RA_DAV_FORBIDDEN", 175013)
-
 from bzrlib import (
     registry,
     urlutils,
@@ -209,7 +207,7 @@ class RootPathFinder(object):
             if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
                        subvertpy.ERR_FS_NOT_FOUND,
                        subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
-                       ERR_RA_DAV_FORBIDDEN):
+                       subvertpy.ERR_RA_DAV_FORBIDDEN):
                 return None
             raise
         return [(d, dirents[d]['has_props']) for d in dirents if dirents[d]['kind'] == subvertpy.NODE_DIR]

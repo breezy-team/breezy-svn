@@ -35,17 +35,6 @@ from bzrlib.ui import (
     ui_factory,
     )
 
-AUTH_PARAM_DEFAULT_USERNAME = getattr(subvertpy, "AUTH_PARAM_DEFAULT_USERNAME",
-                                      'svn:auth:username')
-AUTH_PARAM_DEFAULT_PASSWORD = getattr(subvertpy, "AUTH_PARAM_DEFAULT_PASSWORD",
-                                      'svn:auth:password')
-
-SSL_NOTYETVALID = getattr(subvertpy, "SSL_NOTYETVALID", 0x00000001)
-SSL_EXPIRED     = getattr(subvertpy, "SSL_EXPIRED", 0x00000002)
-SSL_CNMISMATCH  = getattr(subvertpy, "SSL_CNMISMATCH", 0x00000004)
-SSL_UNKNOWNCA   = getattr(subvertpy, "SSL_UNKNOWNCA", 0x00000008)
-SSL_OTHER       = getattr(subvertpy, "SSL_OTHER", 0x40000000)
-
 
 class SubversionAuthenticationConfig(AuthenticationConfig):
     """Simple extended version of AuthenticationConfig that can provide
@@ -105,11 +94,11 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
             credentials.has_key("verify_certificates") and
             credentials["verify_certificates"] == False):
             accepted_failures = (
-                    SSL_NOTYETVALID +
-                    SSL_EXPIRED +
-                    SSL_CNMISMATCH +
-                    SSL_UNKNOWNCA +
-                    SSL_OTHER)
+                    subvertpy.SSL_NOTYETVALID +
+                    subvertpy.SSL_EXPIRED +
+                    subvertpy.SSL_CNMISMATCH +
+                    subvertpy.SSL_UNKNOWNCA +
+                    subvertpy.SSL_OTHER)
         else:
             accepted_failures = 0
         return (accepted_failures, False)
@@ -204,9 +193,9 @@ def create_auth_baton(url):
     if creds is not None:
         (user, password) = urllib.splitpasswd(creds)
         if user is not None:
-            auth_baton.set_parameter(AUTH_PARAM_DEFAULT_USERNAME, user)
+            auth_baton.set_parameter(subvertpy.AUTH_PARAM_DEFAULT_USERNAME, user)
         if password is not None:
-            auth_baton.set_parameter(AUTH_PARAM_DEFAULT_PASSWORD, password)
+            auth_baton.set_parameter(subvertpy.AUTH_PARAM_DEFAULT_PASSWORD, password)
     return auth_baton
 
 

@@ -17,7 +17,7 @@
 
 bzr_plugin_name = "svn"
 
-subvertpy_minimum_version = (0, 6, 1)
+subvertpy_minimum_version = (0, 8, 0)
 
 # versions ending in 'exp' mean experimental mappings
 # versions ending in 'dev' mean development version

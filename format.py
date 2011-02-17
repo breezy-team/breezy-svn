@@ -141,14 +141,13 @@ class SvnRemoteFormat(SvnControlFormat):
     def open(self, transport, _found=False):
         import subvertpy
         from bzrlib.plugins.svn import remote
-        ERR_XML_MALFORMED = getattr(subvertpy, "ERR_XML_MALFORMED", 130003)
         try:
             return remote.SvnRemoteAccess(transport, self)
         except subvertpy.SubversionException, (_, num):
             if num in (subvertpy.ERR_RA_DAV_REQUEST_FAILED,
                        subvertpy.ERR_RA_DAV_NOT_VCC):
                 raise bzr_errors.NotBranchError(transport.base)
-            if num == ERR_XML_MALFORMED:
+            if num == subvertpy.ERR_XML_MALFORMED:
                 # This *could* be an indication of an actual corrupt
                 # svn server, but usually it just means a broken
                 # xml page

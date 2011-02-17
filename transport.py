@@ -19,7 +19,11 @@
 import itertools
 import stat
 import subvertpy
-from subvertpy import ERR_FS_NOT_DIRECTORY
+from subvertpy import (
+    AUTH_PARAM_DEFAULT_USERNAME,
+    AUTH_PARAM_DEFAULT_PASSWORD,
+    ERR_FS_NOT_DIRECTORY,
+    )
 from subvertpy.client import get_config
 import sys
 import urlparse
@@ -52,8 +56,6 @@ from bzrlib.transport import (
 
 import bzrlib.plugins.svn
 from bzrlib.plugins.svn.auth import (
-    AUTH_PARAM_DEFAULT_USERNAME,
-    AUTH_PARAM_DEFAULT_PASSWORD,
     create_auth_baton,
     )
 from bzrlib.plugins.svn.changes import (
@@ -66,12 +68,11 @@ from bzrlib.plugins.svn.errors import (
     convert_error,
     )
 
-ERR_MALFORMED_FILE = getattr(subvertpy, "ERR_MALFORMED_FILE", 200002)
 
 try:
     svn_config = get_config()
 except subvertpy.SubversionException, (msg, num):
-    if num == ERR_MALFORMED_FILE:
+    if num == subvertpy.ERR_MALFORMED_FILE:
         raise BzrError(msg)
     raise
 
@@ -456,11 +457,8 @@ class SvnRaTransport(Transport):
                 self.st_mtime = svn_stat['time']
         conn, relpath = self.get_path_connection(path)
         try:
-            stat_fn = getattr(conn, "stat", None)
-            if stat_fn is None:
-                raise TransportNotPossible("stat not supported in this version")
             try:
-                return StatResult(stat_fn(relpath, -1))
+                return StatResult(conn.stat(relpath, -1))
             except NotImplementedError:
                 raise TransportNotPossible("stat not supported in this version")
         finally:
@@ -512,60 +510,12 @@ class SvnRaTransport(Transport):
             conn, paths = self.get_paths_connection(paths)
         else:
             conn = self.get_connection()
-        try:
-            return conn.iter_log(paths, from_revnum, to_revnum, limit,
-                discover_changed_paths=discover_changed_paths,
-                strict_node_history=strict_node_history,
-                include_merged_revisions=include_merged_revisions,
-                revprops=revprops)
-        except AttributeError:
-            # Older subvertpy, fall back to iterator wrapper.
-            pass
 
-        from threading import Thread, Semaphore
-
-        class logfetcher(Thread):
-            def __init__(self, transport, conn, *args, **kwargs):
-                Thread.__init__(self)
-                self.setDaemon(True)
-                self.transport = transport
-                self.args = args
-                self.kwargs = kwargs
-                self.pending = []
-                self.conn = conn
-                self.semaphore = Semaphore(0)
-                self.busy = False
-
-            def next(self):
-                self.semaphore.acquire()
-                ret = self.pending.pop(0)
-                if isinstance(ret, Exception):
-                    raise ret
-                return ret
-
-            def run(self):
-                assert not self.busy, "already running"
-                self.busy = True
-                def rcvr(orig_paths, revision, revprops, has_children=None):
-                    self.pending.append((orig_paths, revision, revprops, has_children))
-                    self.semaphore.release()
-                try:
-                    try:
-                        self.conn.get_log(rcvr, *self.args, **self.kwargs)
-                        self.pending.append(None)
-                    except Exception, e:
-                        self.pending.append(e)
-                finally:
-                    self.pending.append(Exception("Some exception was not handled"))
-                    self.semaphore.release()
-                    self.transport.add_connection(self.conn)
-        fetcher = logfetcher(self, conn, paths, from_revnum, to_revnum,
-                limit, discover_changed_paths=discover_changed_paths,
-                strict_node_history=strict_node_history,
-                include_merged_revisions=include_merged_revisions,
-                revprops=revprops)
-        fetcher.start()
-        return iter(fetcher.next, None)
+        return conn.iter_log(paths, from_revnum, to_revnum, limit,
+            discover_changed_paths=discover_changed_paths,
+            strict_node_history=strict_node_history,
+            include_merged_revisions=include_merged_revisions,
+            revprops=revprops)
 
     def get_log(self, rcvr, paths, from_revnum, to_revnum, limit, discover_changed_paths,
                 strict_node_history, include_merged_revisions, revprops):
@@ -759,10 +709,7 @@ class MutteringRemoteAccess(object):
 
     def stat(self, path, revnum):
         mutter('svn stat -r%d %s' % (revnum, path))
-        stat = getattr(self.actual, "stat", None)
-        if stat is None:
-            raise NotImplementedError(self.stat)
-        return stat(path, revnum)
+        return self.actual.stat(path, revnum)
 
     def has_capability(self, cap):
         return self.actual.has_capability(cap)

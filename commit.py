@@ -92,9 +92,6 @@ def warn_setting_fileprops(uuid):
                   "(less visible) revision properties.")
 
 
-PROP_REVISION_ORIGINAL_DATE = getattr(properties, "PROP_REVISION_ORIGINAL_DATE", "svn:original-date")
-
-
 def _revision_id_to_svk_feature(revid, lookup_revid):
     """Create a SVK feature identifier from a revision id.
 
@@ -736,7 +733,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 if not properties.is_valid_property_name(prop):
                     trace.warning("Setting property %r with invalid characters in name", prop)
             if self.supports_custom_revprops:
-                self._svn_revprops[PROP_REVISION_ORIGINAL_DATE] = properties.time_to_cstring(1000000*self._timestamp)
+                self._svn_revprops[properties.PROP_REVISION_ORIGINAL_DATE] = properties.time_to_cstring(1000000*self._timestamp)
             conn = self.repository.transport.get_connection()
             assert self.supports_custom_revprops or self._svn_revprops.keys() == [properties.PROP_REVISION_LOG], \
                     "revprops: %r" % self._svn_revprops.keys()

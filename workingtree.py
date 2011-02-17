@@ -22,9 +22,6 @@ except ImportError:
 
 import os
 import subvertpy
-ERR_WC_SCHEDULE_CONFLICT = getattr(subvertpy, "ERR_WC_SCHEDULE_CONFLICT", 155013)
-ERR_ENTRY_NOT_FOUND = getattr(subvertpy, "ERR_ENTRY_NOT_FOUND", 150000)
-ERR_NODE_UNKNOWN_KIND = getattr(subvertpy, "ERR_NODE_UNKNOWN_KIND", 145000)
 
 import subvertpy.wc
 from subvertpy import (
@@ -94,7 +91,6 @@ from bzrlib.plugins.svn.commit import (
     )
 from bzrlib.plugins.svn.errors import (
     convert_svn_error,
-    NeedsNewerSubvertpy,
     NotSvnBranchPath,
     )
 from bzrlib.plugins.svn.format import (
@@ -692,7 +688,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                     wc.add(utf8_abspath, copyfrom[0], copyfrom[1])
                 except subvertpy.SubversionException, (_, num):
                     if num in (subvertpy.ERR_ENTRY_EXISTS,
-                            ERR_WC_SCHEDULE_CONFLICT):
+                               subvertpy.ERR_WC_SCHEDULE_CONFLICT):
                         continue
                     elif num == subvertpy.ERR_WC_PATH_NOT_FOUND:
                         raise NoSuchFile(path=f)
@@ -897,8 +893,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
         This will probe the repository for its lock as well.
         """
-        if getattr(subvertpy.wc, "cleanup", None) is not None:
-            subvertpy.wc.cleanup(self.basedir.encode("utf-8"))
+        subvertpy.wc.cleanup(self.basedir.encode("utf-8"))
         self._control_files.break_lock()
 
     def unlock(self):
@@ -981,11 +976,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             cq.queue(self.abspath(path).rstrip("/").encode("utf-8"), adm,
                 True, None, False, False, md5sum)
 
-        try:
-            from subvertpy.wc import CommittedQueue
-        except ImportError:
-            raise NeedsNewerSubvertpy("subvertpy does not support CommittedQueue")
-        cq = CommittedQueue()
+        cq = subvertpy.wc.CommittedQueue()
         root_adm = self._get_wc(self.abspath("."), write_lock=True, depth=-1)
         try:
             for (old_path, new_path, file_id, ie) in delta:
@@ -1064,7 +1055,8 @@ class SvnCheckout(ControlDir):
             try:
                 self.entry = wc.entry(self.local_path.encode("utf-8"), True)
             except subvertpy.SubversionException, (msg, num):
-                if num in (ERR_ENTRY_NOT_FOUND, ERR_NODE_UNKNOWN_KIND):
+                if num in (subvertpy.ERR_ENTRY_NOT_FOUND,
+                           subvertpy.ERR_NODE_UNKNOWN_KIND):
                     raise CorruptWorkingTree(self.local_path.encode("utf-8"),
                         msg)
                 else:

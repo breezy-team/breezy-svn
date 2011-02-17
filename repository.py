@@ -23,8 +23,6 @@ except ImportError:
 from itertools import chain
 import subvertpy
 
-ERR_RA_DAV_FORBIDDEN = getattr(subvertpy, "ERR_RA_DAV_FORBIDDEN", 175013)
-
 from bzrlib import (
     branch,
     errors as bzr_errors,
@@ -1259,7 +1257,7 @@ class SvnRepository(ForeignRepository):
                                             parents.append(n)
                                 except subvertpy.SubversionException, (_, num):
                                     if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
-                                               ERR_RA_DAV_FORBIDDEN):
+                                               subvertpy.ERR_RA_DAV_FORBIDDEN):
                                         continue
                                     raise
         finally:

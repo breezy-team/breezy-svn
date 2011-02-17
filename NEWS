@@ -108,6 +108,11 @@ bzr-svn 1.0.4					  2010-08-30
   * Warn the user when they are about to push to a repository while setting
     file properties. (Jelmer Vernooij, #589440)
 
+ DEPENDENCIES
+
+  * bzr-svn now requires version 0.8.0 of subvertpy. This was necessary because of
+    various workingtree-related fixes in bzr-svn.
+
 bzr-svn	1.0.3					  2010-07-30
 
  BUG FIXES

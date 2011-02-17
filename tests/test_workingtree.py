@@ -44,7 +44,6 @@ from bzrlib.tests import (
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
-from bzrlib.plugins.svn.errors import NeedsNewerSubvertpy
 from bzrlib.plugins.svn.layout.standard import TrunkLayout
 from bzrlib.plugins.svn.mapping3.base import config_set_scheme
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
@@ -600,10 +599,7 @@ class TestWorkingTree(SubversionTestCase):
         self.client_add("dc/bl")
         tree = WorkingTree.open("dc")
         tree.basis_tree()
-        try:
-            tree.commit(message_callback=lambda x: "data")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("Unable to commit with this version of subvertpy")
+        tree.commit(message_callback=lambda x: "data")
 
     def test_commit_callback_unicode(self):
         self.make_client('a', 'dc')
@@ -611,10 +607,7 @@ class TestWorkingTree(SubversionTestCase):
         self.client_add("dc/bl")
         tree = WorkingTree.open("dc")
         tree.basis_tree()
-        try:
-            tree.commit(message_callback=lambda x: u"data")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("Unable to commit with this version of subvertpy")
+        tree.commit(message_callback=lambda x: u"data")
 
     def test_commit_message_unicode(self):
         self.make_client('a', 'dc')
@@ -622,10 +615,7 @@ class TestWorkingTree(SubversionTestCase):
         self.client_add("dc/bl")
         tree = WorkingTree.open("dc")
         orig_tree = tree.basis_tree()
-        try:
-            tree.commit(message=u"data")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("Unable to commit with this version of subvertpy")
+        tree.commit(message=u"data")
 
     def test_commit_nested(self):
         repos_url = self.make_client('a', 'dc')
@@ -636,10 +626,7 @@ class TestWorkingTree(SubversionTestCase):
         tree = WorkingTree.open("de")
         self.build_tree({'de/file': "foo"})
         tree.basis_tree()
-        try:
-            tree.commit(message="data")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("Unable to commit with this version of subvertpy")
+        tree.commit(message="data")
 
     def test_update_after_commit(self):
         self.make_client('a', 'dc')
@@ -648,10 +635,7 @@ class TestWorkingTree(SubversionTestCase):
         tree = WorkingTree.open("dc")
         orig_tree = tree.basis_tree()
         self.assertTrue(tree.changes_from(tree.basis_tree()).has_changed())
-        try:
-            tree.commit(message="data")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("Unable to commit with this version of subvertpy")
+        tree.commit(message="data")
         self.assertCleanTree(tree)
         self.assertEqual(
                 tree.branch.generate_revision_id(1),
@@ -741,10 +725,7 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({'dc/file': 'data'})
         tree = WorkingTree.open("dc")
         tree.add(["file"], ["fooid"])
-        try:
-            tree.commit("msg")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("Unable to commit with this version of subvertpy")
+        tree.commit("msg")
         tree.rename_one("file", "file2")
         delta = tree.branch.repository.get_revision_delta(tree.last_revision())
         self.assertEquals([("file", "fooid", "file")], delta.added)
@@ -766,10 +747,7 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({'dc/file': 'data'})
         tree = WorkingTree.open("dc")
         tree.add(["file"], ["fooid"])
-        try:
-            tree.commit("msg")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("Unable to commit with this version of subvertpy")
+        tree.commit("msg")
         tree.remove(["file"])
         self.assertEqual(None, tree.inventory.path2id("file"))
         tree = WorkingTree.open("dc")
@@ -780,10 +758,7 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({'dc/file': 'data', 'dc/dir': None})
         tree = WorkingTree.open("dc")
         tree.add(["file", "dir"], ["fooid", "blaid"])
-        try:
-            tree.commit("msg")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("Unable to commit with this version of subvertpy")
+        tree.commit("msg")
         tree.move(["file"], "dir")
         self.assertEqual(None, tree.inventory.path2id("file"))
         self.assertEqual("fooid", tree.inventory.path2id("dir/file"))
@@ -796,10 +771,7 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({'dc/file with spaces': 'data'})
         tree = WorkingTree.open("dc")
         tree.add(["file with spaces"], ["fooid"])
-        try:
-            tree.commit("msg")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("Unable to commit with this version of subvertpy")
+        tree.commit("msg")
         self.assertEqual("fooid", tree.inventory.path2id("file with spaces"))
 
     def test_get_branch_nick(self):
@@ -807,10 +779,7 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({'dc/some strange file': 'data'})
         tree = WorkingTree.open("dc")
         tree.add(["some strange file"])
-        try:
-            tree.commit("message")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("Unable to commit with this version of subvertpy")
+        tree.commit("message")
         self.assertEqual("a", tree.branch.nick)
 
     def test_out_of_date(self):
@@ -882,10 +851,7 @@ class TestWorkingTree(SubversionTestCase):
         # md5sum: 2936900e291f6c12d1c2ffc7b83f4da1
         self.build_tree({'dc/file.txt': 'This is a file with a $Id$\n'
                                         'New line added\n'})
-        try:
-            wt.commit("Commit via bzr")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("Unable to commit with this version of subvertpy")
+        wt.commit("Commit via bzr")
         self.assertCleanTree(wt)
         self.build_tree({'dc/file.txt': 'This is a file with a $Id$\n'
                                         'New line added\n'

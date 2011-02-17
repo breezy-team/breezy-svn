@@ -42,12 +42,6 @@ from bzrlib.errors import (
     )
 
 
-ERR_RA_DAV_PROPPATCH_FAILED = getattr(subvertpy, "ERR_RA_DAV_PROPPATCH_FAILED", 175008)
-ERR_APR_OS_START_EAIERR = getattr(subvertpy, "ERR_APR_OS_START_EAIERR", 670000)
-ERR_APR_OS_ERRSPACE_SIZE = getattr(subvertpy, "ERR_APR_OS_ERRSPACE_SIZE", 50000)
-ERR_CATEGORY_SIZE = getattr(subvertpy, "ERR_CATEGORY_SIZE", 5000)
-
-
 class InvalidBzrSvnRevision(NoSuchRevision):
     _fmt = """Revision id %(revid)s was added incorrectly"""
 
@@ -127,9 +121,10 @@ def convert_error(err):
         return DavRequestFailed(msg)
     elif num == subvertpy.ERR_REPOS_HOOK_FAILURE:
         return TipChangeRejected(msg)
-    if num == ERR_RA_DAV_PROPPATCH_FAILED:
+    if num == subvertpy.ERR_RA_DAV_PROPPATCH_FAILED:
         return PropertyChangeFailed(msg)
-    if num > ERR_APR_OS_START_EAIERR and num < ERR_APR_OS_START_EAIERR + ERR_CATEGORY_SIZE:
+    if (num > subvertpy.ERR_APR_OS_START_EAIERR and
+        num < subvertpy.ERR_APR_OS_START_EAIERR + subvertpy.ERR_CATEGORY_SIZE):
         # Newer versions of subvertpy (>= 0.7.6) do this for us.
         return ConnectionError(msg=msg)
     else:
@@ -287,14 +282,6 @@ class TextChecksumMismatch(VersionedFileInvalidChecksum):
         self.actual_checksum = actual_checksum
         self.path = path
         self.revnum = revnum
-
-
-class NeedsNewerSubvertpy(DependencyNotPresent):
-
-    _fmt = """This operation requires a newer version of subvertpy: %(error)s."""
-
-    def __init__(self, error):
-        super(NeedsNewerSubvertpy, self).__init__("subvertpy", error)
 
 
 _reuse_uuids_warned = set()

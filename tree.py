@@ -444,11 +444,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
         """See Tree.get_file_byname()."""
         assert isinstance(name, unicode)
         wt_path = self.workingtree.abspath(name).encode("utf-8")
-        if getattr(wc, "get_pristine_contents", None):
-            return wc.get_pristine_contents(wt_path)
-        else:
-            abspath = wc.get_pristine_copy_path(wt_path).decode("utf-8")
-            return open(abspath.encode(osutils._fs_enc))
+        return wc.get_pristine_contents(wt_path)
 
     def get_file_text(self, file_id, path=None):
         """See Tree.get_file_text()."""

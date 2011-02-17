@@ -18,8 +18,6 @@
 
 import subvertpy
 
-ERR_RA_DAV_FORBIDDEN = getattr(subvertpy, "ERR_RA_DAV_FORBIDDEN", 175013)
-
 from bzrlib import (
     ui,
     )
@@ -121,7 +119,7 @@ class RevidMap(object):
                         revids.add(((bzr_revno, revid), mapping_name))
             except subvertpy.SubversionException, (_, num):
                 if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
-                           ERR_RA_DAV_FORBIDDEN):
+                           subvertpy.ERR_RA_DAV_FORBIDDEN):
                     continue
                 raise
 

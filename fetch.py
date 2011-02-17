@@ -41,7 +41,7 @@ from subvertpy import (
     properties,
     )
 from subvertpy.delta import (
-    apply_txdelta_handler,
+    apply_txdelta_handler_chunks,
     )
 
 from bzrlib import (
@@ -101,24 +101,6 @@ from bzrlib.plugins.svn.transport import (
 MAX_CHECK_PRESENT_INTERVAL = 1000
 # Size of the text cache to keep
 TEXT_CACHE_SIZE = 1024 * 1024 * 50
-
-ERR_FS_PATH_SYNTAX = getattr(subvertpy, "ERR_FS_PATH_SYNTAX", 160005)
-
-
-try:
-    from subvertpy.delta import apply_txdelta_handler_chunks
-except ImportError:
-    def apply_txdelta_handler_chunks(source_chunks, target_chunks):
-        class ChunkWriteStream(object):
-
-            def __init__(self, l):
-                self.l = l
-
-            def write(self, s):
-                self.l.append(s)
-        return apply_txdelta_handler(''.join(source_chunks),
-                                     ChunkWriteStream(target_chunks))
-
 
 def inventory_parent_id_basename_to_file_id(inv, parent_id, basename):
     if parent_id is None and basename == "":
@@ -1411,7 +1393,9 @@ class InterFromSvnRepository(InterRepository):
 
             try:
                 report_inventory_contents(reporter, parent_revnum, start_empty)
-            except SubversionException, (_, ERR_FS_PATH_SYNTAX):
+            except SubversionException, (_, num):
+                if num != subvertpy.ERR_FS_PATH_SYNTAX:
+                    raise
                 # This seems to occur sometimes when we try to accidently
                 # import a file over HTTP
                 if conn.check_path("", revmeta.revnum) == NODE_FILE:

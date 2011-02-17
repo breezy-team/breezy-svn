@@ -27,7 +27,6 @@ from bzrlib.repository import Repository
 from bzrlib.tests import TestCase, TestSkipped
 from bzrlib.workingtree import WorkingTree
 
-from bzrlib.plugins.svn.errors import NeedsNewerSubvertpy
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
@@ -466,10 +465,7 @@ class RepositoryTests(SubversionTestCase):
         wt = WorkingTree.open("dc")
         self.build_tree({'dc/foo/bla': "data", 'dc/bla': "otherdata"})
         wt.add('bla')
-        try:
-            wt.commit(message="data")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("unable to commit with newer subvertpy")
+        wt.commit(message="data")
         branch = Branch.open(self.repos_url)
         builder = branch.get_commit_builder([branch.last_revision()], 
                 revision_id="my-revision-id")
@@ -492,10 +488,7 @@ class RepositoryTests(SubversionTestCase):
         wt = WorkingTree.open("dc")
         self.build_tree({'dc/foo/bla': "data", 'dc/bla': "otherdata"})
         wt.add('bla')
-        try:
-            wt.commit(message="data")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("unable to commit with newer subvertpy")
+        wt.commit(message="data")
         branch = Branch.open(self.repos_url)
         builder = branch.get_commit_builder([branch.last_revision()], 
                 timestamp=4534.0, timezone=2, committer="fry",
@@ -522,17 +515,14 @@ class RepositoryTests(SubversionTestCase):
         wt = WorkingTree.open("dc")
         wt.set_pending_merges(["some-ghost-revision"])
         self.assertEqual(["some-ghost-revision"], wt.get_parent_ids()[1:])
-        try:
-            wt.commit(message="data")
-        except NeedsNewerSubvertpy:
-            raise TestSkipped("unable to commit with newer subvertpy")
+        wt.commit(message="data")
         self.assertEqual("some-ghost-revision\n", 
                 self.client_get_prop(self.repos_url, "bzr:ancestry:v3-none", 1))
         self.assertEqual((wt.branch.generate_revision_id(0), "some-ghost-revision"),
                          wt.branch.repository.get_revision(
                              wt.branch.last_revision()).parent_ids)
 
-    def test_push_unnecessary_merge(self):        
+    def test_push_unnecessary_merge(self):
         from bzrlib.debug import debug_flags
         debug_flags.add("commit")
         debug_flags.add("fetch")
