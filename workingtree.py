@@ -602,7 +602,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             merges = parent_ids[1:]
         adm = self._get_wc(write_lock=True)
         try:
-            svk_merges = svk.parse_svk_features(self._get_svk_merges(self._get_base_branch_props()))
+            old_svk_merges = svk.parse_svk_features(self._get_svk_merges(self._get_base_branch_props()))
+            svk_merges = set(old_svk_merges)
 
             # Set svk:merge
             for merge in merges:
@@ -611,9 +612,10 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                         self.branch.repository.lookup_bzr_revision_id))
                 except NoSuchRevision:
                     pass
-
-            adm.prop_set(svk.SVN_PROP_SVK_MERGE,
-                         svk.serialize_svk_features(svk_merges), self.basedir.encode("utf-8"))
+            if old_svk_merges != svk_merges:
+                adm.prop_set(
+                    svk.SVN_PROP_SVK_MERGE, svk.serialize_svk_features(svk_merges),
+                    self.basedir.encode("utf-8"))
         finally:
             adm.close()
 
