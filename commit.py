@@ -193,10 +193,9 @@ def set_svn_revprops(repository, revnum, revprops):
             raise RevpropChangeFailed(name)
 
 
-def file_editor_send_changes(file_id, reader, file_editor):
+def file_editor_send_changes(reader, file_editor):
     """Pass the changes to a file to the Subversion commit editor.
 
-    :param file_id: Id of the file to modify.
     :param reader: A object that can read the file contents
     :param file_editor: Subversion FileEditor object.
     """
@@ -340,8 +339,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
         # handle the file
         if child_ie.file_id in modified_files:
             changed = True
-            file_editor_send_changes(child_ie.file_id,
-                modified_files[child_ie.file_id], child_editor)
+            modified_files[child_ie.file_id](child_editor)
         elif child_editor is not None:
             child_editor.close()
 
@@ -948,12 +946,12 @@ class SvnCommitBuilder(RootCommitBuilder):
                 file_obj, stat_val = get_file_with_stat(file_id)
                 new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
                 new_ie.revision = self._get_text_revision(file_id, new_ie.text_sha1, parent_invs)
-                self.modified_files[file_id] = get_svn_contents(tree, new_ie)
+                self.modified_files[file_id] = get_svn_delta_transmitter(tree, new_ie)
                 yield file_id, new_path, (new_ie.text_sha1, stat_val)
             elif new_kind == 'symlink':
                 new_ie.executable = new_executable
                 new_ie.symlink_target = tree.get_symlink_target(file_id)
-                self.modified_files[file_id] = get_svn_contents(tree, new_ie)
+                self.modified_files[file_id] = get_svn_delta_transmitter(tree, new_ie)
             elif new_kind == 'directory':
                 self.visit_dirs.add(new_path)
             self._visit_parent_dirs(new_path)
@@ -998,7 +996,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             (ie.kind != 'directory' or ie.children == self.old_inv[ie.file_id].children)):
             return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
         if ie.kind in ('file', 'symlink'):
-            self.modified_files[ie.file_id] = get_svn_contents(tree, ie)
+            self.modified_files[ie.file_id] = get_svn_delta_transmitter(tree, ie)
         elif ie.kind == 'directory':
             self.visit_dirs.add(new_path)
         self._visit_parent_dirs(new_path)
@@ -1006,10 +1004,15 @@ class SvnCommitBuilder(RootCommitBuilder):
         return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
 
 
-def get_svn_contents(tree, ie):
+def get_svn_file_contents(tree, ie):
     if ie.kind == "file":
         return tree.get_file(ie.file_id)
     elif ie.kind == "symlink":
         return StringIO("link %s" % ie.symlink_target.encode("utf-8"))
     else:
         raise AssertionError
+
+
+def get_svn_delta_transmitter(tree, ie):
+    contents = get_svn_file_contents(tree, ie)
+    return lambda editor: file_editor_send_changes(contents, editor)
