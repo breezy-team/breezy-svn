@@ -211,6 +211,7 @@ def file_editor_send_changes(file_id, reader, file_editor):
         assert digest == md5_string(contents)
     else:
         delta.send_stream(reader, txdelta)
+    file_editor.close()
 
 
 def path_join(basepath, name):
@@ -341,8 +342,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
             changed = True
             file_editor_send_changes(child_ie.file_id,
                 modified_files[child_ie.file_id], child_editor)
-
-        if child_editor is not None:
+        elif child_editor is not None:
             child_editor.close()
 
     # Loop over subdirectories of file_id in new_inv
