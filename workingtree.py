@@ -926,10 +926,12 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
     def transmit_svn_file_deltas(self, file_id, editor):
         path = self.id2path(file_id)
-        encoded_path = self.abspath(path).encoded("utf-8")
+        encoded_path = self.abspath(path).encode("utf-8")
         root_adm = self._get_wc(write_lock=True)
         try:
-            root_adm.transmit_prop_deltas(encoded_path, True, editor)
+            adm = root_adm.probe_try(encoded_path, True, 1)
+            entry = adm.entry(encoded_path)
+            root_adm.transmit_prop_deltas(encoded_path, entry, editor)
             root_adm.transmit_text_deltas(encoded_path, True, editor)
         finally:
             root_adm.close()

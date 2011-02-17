@@ -32,6 +32,10 @@ from bzrlib.errors import (
     DivergedBranches,
     BzrError,
     )
+from bzrlib.inventory import (
+    InventoryFile,
+    InventoryLink,
+    )
 from bzrlib.repository import Repository
 from bzrlib.tests import (
     TestCase,
@@ -41,6 +45,7 @@ from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn.commit import (
+    file_editor_send_prop_changes,
     set_svn_revprops,
     _revision_id_to_svk_feature,
     )
@@ -709,3 +714,45 @@ class SvkTestCase(TestCase):
                   mapping_registry.parse_revision_id))
 
 
+class SendPropChangesTests(TestCase):
+
+    class RecordingFileEditor(object):
+
+        def __init__(self):
+            self._props = {}
+
+        def change_prop(self, name, value):
+            self._props[name] = value
+
+    def test_become_symlink(self):
+        ie1 = InventoryFile("myfileid", "name", "theroot")
+        ie1.executable = True
+        ie2 = InventoryLink("myfileid", "name", "theroot")
+        editor = SendPropChangesTests.RecordingFileEditor()
+        file_editor_send_prop_changes(ie1, ie2, editor)
+        self.assertEquals(editor._props, {"svn:special": "*", "svn:executable": None})
+
+    def test_become_executable(self):
+        ie1 = InventoryFile("myfileid", "name", "theroot")
+        ie1.executable = False
+        ie2 = InventoryFile("myfileid", "name", "theroot")
+        ie2.executable = True
+        editor = SendPropChangesTests.RecordingFileEditor()
+        file_editor_send_prop_changes(ie1, ie2, editor)
+        self.assertEquals(editor._props, {"svn:executable": "*"})
+
+    def test_unbecome_executable(self):
+        ie1 = InventoryFile("myfileid", "name", "theroot")
+        ie1.executable = True
+        ie2 = InventoryFile("myfileid", "name", "theroot")
+        ie2.executable = False
+        editor = SendPropChangesTests.RecordingFileEditor()
+        file_editor_send_prop_changes(ie1, ie2, editor)
+        self.assertEquals(editor._props, {"svn:executable": None})
+
+    def test_nothing_changes(self):
+        ie1 = InventoryFile("myfileid", "name", "theroot")
+        ie2 = InventoryFile("myfileid", "name", "theroot")
+        editor = SendPropChangesTests.RecordingFileEditor()
+        file_editor_send_prop_changes(ie1, ie2, editor)
+        self.assertEquals(editor._props, {})

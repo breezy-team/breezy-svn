@@ -193,7 +193,7 @@ def set_svn_revprops(repository, revnum, revprops):
             raise RevpropChangeFailed(name)
 
 
-def file_editor_send_changes(reader, file_editor):
+def file_editor_send_content_changes(reader, file_editor):
     """Pass the changes to a file to the Subversion commit editor.
 
     :param reader: A object that can read the file contents
@@ -311,30 +311,6 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
         else:
             # Old copy of the file was retained. No need to send changes
             child_editor = None
-
-        if child_ie.file_id in base_inv:
-            old_executable = base_inv[child_ie.file_id].executable
-            old_special = (base_inv[child_ie.file_id].kind == 'symlink')
-        else:
-            old_special = False
-            old_executable = False
-
-        if child_editor is not None:
-            if old_executable != child_ie.executable:
-                if child_ie.executable:
-                    value = properties.PROP_EXECUTABLE_VALUE
-                else:
-                    value = None
-                child_editor.change_prop(properties.PROP_EXECUTABLE, value)
-                changed = True
-
-            if old_special != (child_ie.kind == 'symlink'):
-                if child_ie.kind == 'symlink':
-                    value = properties.PROP_SPECIAL_VALUE
-                else:
-                    value = None
-                child_editor.change_prop(properties.PROP_SPECIAL, value)
-                changed = True
 
         # handle the file
         if child_ie.file_id in modified_files:
@@ -940,18 +916,22 @@ class SvnCommitBuilder(RootCommitBuilder):
              (old_ver, new_ver), (old_parent_id, new_parent_id),
              (old_name, new_name), (old_kind, new_kind),
              (old_executable, new_executable)) in iter_changes:
+            if file_id in self.old_inv:
+                base_ie = self.old_inv[file_id]
+            else:
+                base_ie = None
             new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
             if new_kind == 'file':
                 new_ie.executable = new_executable
                 file_obj, stat_val = get_file_with_stat(file_id)
                 new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
                 new_ie.revision = self._get_text_revision(file_id, new_ie.text_sha1, parent_invs)
-                self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, new_ie)
+                self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, base_ie, new_ie)
                 yield file_id, new_path, (new_ie.text_sha1, stat_val)
             elif new_kind == 'symlink':
                 new_ie.executable = new_executable
                 new_ie.symlink_target = tree.get_symlink_target(file_id)
-                self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, new_ie)
+                self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, base_ie, new_ie)
             elif new_kind == 'directory':
                 self.visit_dirs.add(new_path)
             self._visit_parent_dirs(new_path)
@@ -992,11 +972,15 @@ class SvnCommitBuilder(RootCommitBuilder):
         version_recorded = (ie.revision is None)
         # If nothing changed since the lhs parent, return:
         new_path = self.new_inventory.id2path(ie.file_id)
-        if (ie.file_id in self.old_inv and ie == self.old_inv[ie.file_id] and
+        if ie.file_id in self.old_inv:
+            base_ie = self.old_inv[ie.file_id]
+        else:
+            base_ie = None
+        if (base_ie is not None and ie == base_ie and
             (ie.kind != 'directory' or ie.children == self.old_inv[ie.file_id].children)):
             return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
         if ie.kind in ('file', 'symlink'):
-            self.modified_files[ie.file_id] = get_svn_file_delta_transmitter(tree, ie)
+            self.modified_files[ie.file_id] = get_svn_file_delta_transmitter(tree, base_ie, ie)
         elif ie.kind == 'directory':
             self.visit_dirs.add(new_path)
         self._visit_parent_dirs(new_path)
@@ -1013,11 +997,37 @@ def get_svn_file_contents(tree, ie):
         raise AssertionError
 
 
-def get_svn_file_delta_transmitter(tree, ie):
+def get_svn_file_delta_transmitter(tree, base_ie, ie):
     try:
         transmit_svn_file_deltas = getattr(tree, "transmit_svn_file_deltas")
     except AttributeError:
         contents = get_svn_file_contents(tree, ie)
-        return lambda editor: file_editor_send_changes(contents, editor)
+        def send_changes(editor):
+            file_editor_send_content_changes(contents, editor)
+            file_editor_send_prop_changes(base_ie, ie, editor)
+        return send_changes
     else:
         return lambda editor: transmit_svn_file_deltas(ie.file_id, editor)
+
+
+def file_editor_send_prop_changes(base_ie, ie, editor):
+    if base_ie:
+        old_executable = base_ie.executable
+        old_special = (base_ie.kind == 'symlink')
+    else:
+        old_special = False
+        old_executable = False
+
+    if old_executable != ie.executable:
+        if ie.executable:
+            value = properties.PROP_EXECUTABLE_VALUE
+        else:
+            value = None
+        editor.change_prop(properties.PROP_EXECUTABLE, value)
+
+    if old_special != (ie.kind == 'symlink'):
+        if ie.kind == 'symlink':
+            value = properties.PROP_SPECIAL_VALUE
+        else:
+            value = None
+        editor.change_prop(properties.PROP_SPECIAL, value)
