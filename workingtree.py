@@ -102,6 +102,7 @@ from bzrlib.plugins.svn.format import (
     )
 from bzrlib.plugins.svn.mapping import (
     escape_svn_path,
+    get_svn_file_contents,
     )
 from bzrlib.plugins.svn.remote import (
     SvnRemoteAccess,
@@ -974,11 +975,11 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             def close(self):
                 pass
 
-        def update_entry(cq, path, root_adm):
+        def update_entry(cq, path, root_adm, md5sum=None):
             mutter('updating entry for %s'% path)
             adm = root_adm.probe_try(self.abspath(path).encode("utf-8"), True, 1)
             cq.queue(self.abspath(path).rstrip("/").encode("utf-8"), adm,
-                True, None, False, False)
+                True, None, False, False, md5sum)
 
         try:
             from subvertpy.wc import CommittedQueue
@@ -991,7 +992,12 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 if old_path is not None:
                     update_entry(cq, old_path, root_adm)
                 if new_path is not None:
-                    update_entry(cq, new_path, root_adm)
+                    if ie.kind in ("symlink", "file"):
+                        f = get_svn_file_contents(self, ie.kind, ie.file_id)
+                        md5sum = osutils.md5(self.get_file_text(file_id)).digest()
+                    else:
+                        md5sum = None
+                    update_entry(cq, new_path, root_adm, md5sum)
             root_adm.process_committed_queue(cq,
                 rev, svn_revprops[properties.PROP_REVISION_DATE],
                 svn_revprops[properties.PROP_REVISION_AUTHOR])

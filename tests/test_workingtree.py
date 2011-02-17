@@ -872,22 +872,24 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_keywords_commit(self):
         repos_url = self.make_client('a', 'dc')
+        # md5sum: a31b9ad28573e11e3e653a0c038c49b5
         self.build_tree({'dc/file.txt': 'This is a file with a $Id$'})
         self.client_add('dc/file.txt')
         self.client_set_prop('dc/file.txt', 'svn:keywords', 'Id')
         self.client_commit('dc', "Initial commit")
         wt = WorkingTree.open('dc')
         self.assertCleanTree(wt)
+        # md5sum: 2936900e291f6c12d1c2ffc7b83f4da1
         self.build_tree({'dc/file.txt': 'This is a file with a $Id$\n'
                                         'New line added\n'})
         try:
             wt.commit("Commit via bzr")
         except NeedsNewerSubvertpy:
             raise TestSkipped("Unable to commit with this version of subvertpy")
+        self.assertCleanTree(wt)
         self.build_tree({'dc/file.txt': 'This is a file with a $Id$\n'
                                         'New line added\n'
                                         'Another change\n'})
-        import pdb; pdb.set_trace()
         self.client_commit('dc', "Commit via svn")
 
 

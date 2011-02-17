@@ -18,6 +18,7 @@
 
 
 import calendar
+from cStringIO import StringIO
 from subvertpy import properties
 import time
 import urllib
@@ -1016,6 +1017,15 @@ def find_roundtripped_root(revprops, path_changes):
 def revprops_complete(revprops):
     return (SVN_REVPROP_BZR_MAPPING_VERSION in revprops or
             SVN_REVPROP_BZR_HIDDEN in revprops)
+
+
+def get_svn_file_contents(tree, kind, file_id):
+    if kind == "file":
+        return tree.get_file(file_id)
+    elif kind == "symlink":
+        return StringIO("link %s" % tree.get_symlink_target(file_id).encode("utf-8"))
+    else:
+        raise AssertionError
 
 
 class ForeignSubversion(foreign.ForeignVcs):

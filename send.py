@@ -118,9 +118,9 @@ class SvnDiffTree(_mod_diff.DiffTree):
     def _get_file_contents(self, tree, file_id, path, kind):
         if kind in (None, "directory"):
             return None
-        if kind == "symlink":
-            return ["link %s" % tree.get_symlink_target(file_id)]
-        return tree.get_file(file_id).readlines()
+        from bzrlib.plugins.svn.mapping import get_svn_file_contents
+        f = get_svn_file_contents(tree, kind, file_id)
+        return f.readlines()
 
     def _show_diff(self, specific_files, extra_trees):
         iterator = self.new_tree.iter_changes(self.old_tree,

@@ -39,6 +39,12 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * SvnRepositoryFormat.initialize() is now implemented. (Jelmer Vernooij)
 
+  * Use filters when generating sha1 sum for working tree files.
+    (Jelmer Vernooij, #597887)
+
+  * Support commit wiht svn:keywords use in working tree.
+    (Jelmer Vernooij, #654329)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is

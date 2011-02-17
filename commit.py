@@ -988,20 +988,11 @@ class SvnCommitBuilder(RootCommitBuilder):
         return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
 
 
-def get_svn_file_contents(tree, ie):
-    if ie.kind == "file":
-        return tree.get_file(ie.file_id)
-    elif ie.kind == "symlink":
-        return StringIO("link %s" % ie.symlink_target.encode("utf-8"))
-    else:
-        raise AssertionError
-
-
 def get_svn_file_delta_transmitter(tree, base_ie, ie):
     try:
         transmit_svn_file_deltas = getattr(tree, "transmit_svn_file_deltas")
     except AttributeError:
-        contents = get_svn_file_contents(tree, ie)
+        contents = mapping.get_svn_file_contents(tree, ie.kind, ie.file_id)
         def send_changes(editor):
             file_editor_send_content_changes(contents, editor)
             file_editor_send_prop_changes(base_ie, ie, editor)
