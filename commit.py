@@ -946,12 +946,12 @@ class SvnCommitBuilder(RootCommitBuilder):
                 file_obj, stat_val = get_file_with_stat(file_id)
                 new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
                 new_ie.revision = self._get_text_revision(file_id, new_ie.text_sha1, parent_invs)
-                self.modified_files[file_id] = get_svn_delta_transmitter(tree, new_ie)
+                self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, new_ie)
                 yield file_id, new_path, (new_ie.text_sha1, stat_val)
             elif new_kind == 'symlink':
                 new_ie.executable = new_executable
                 new_ie.symlink_target = tree.get_symlink_target(file_id)
-                self.modified_files[file_id] = get_svn_delta_transmitter(tree, new_ie)
+                self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, new_ie)
             elif new_kind == 'directory':
                 self.visit_dirs.add(new_path)
             self._visit_parent_dirs(new_path)
@@ -996,7 +996,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             (ie.kind != 'directory' or ie.children == self.old_inv[ie.file_id].children)):
             return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
         if ie.kind in ('file', 'symlink'):
-            self.modified_files[ie.file_id] = get_svn_delta_transmitter(tree, ie)
+            self.modified_files[ie.file_id] = get_svn_file_delta_transmitter(tree, ie)
         elif ie.kind == 'directory':
             self.visit_dirs.add(new_path)
         self._visit_parent_dirs(new_path)
@@ -1013,6 +1013,11 @@ def get_svn_file_contents(tree, ie):
         raise AssertionError
 
 
-def get_svn_delta_transmitter(tree, ie):
-    contents = get_svn_file_contents(tree, ie)
-    return lambda editor: file_editor_send_changes(contents, editor)
+def get_svn_file_delta_transmitter(tree, ie):
+    try:
+        transmit_svn_file_deltas = getattr(tree, "transmit_svn_file_deltas")
+    except AttributeError:
+        contents = get_svn_file_contents(tree, ie)
+        return lambda editor: file_editor_send_changes(contents, editor)
+    else:
+        return lambda editor: transmit_svn_file_deltas(ie.file_id, editor)

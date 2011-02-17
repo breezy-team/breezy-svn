@@ -915,6 +915,25 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             # Default to not executable
             return False
 
+    def transmit_svn_dir_deltas(self, file_id, editor):
+        path = self.id2path(file_id)
+        encoded_path = self.abspath(path).encoded("utf-8")
+        root_adm = self._get_wc(write_lock=True)
+        try:
+            root_adm.transmit_prop_deltas(encoded_path, True, editor)
+        finally:
+            root_adm.close()
+
+    def transmit_svn_file_deltas(self, file_id, editor):
+        path = self.id2path(file_id)
+        encoded_path = self.abspath(path).encoded("utf-8")
+        root_adm = self._get_wc(write_lock=True)
+        try:
+            root_adm.transmit_prop_deltas(encoded_path, True, editor)
+            root_adm.transmit_text_deltas(encoded_path, True, editor)
+        finally:
+            root_adm.close()
+
     def update_basis_by_delta(self, new_revid, delta):
         """Update the parents of this tree after a commit.
 
@@ -967,9 +986,6 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 if old_path is not None:
                     update_entry(cq, old_path, root_adm)
                 if new_path is not None:
-                    if ie.kind in ("file", "symlink"):
-                        root_adm.transmit_text_deltas(
-                            self.abspath(new_path).encode("utf-8"), True, DummyEditor())
                     update_entry(cq, new_path, root_adm)
             root_adm.process_committed_queue(cq,
                 rev, svn_revprops[properties.PROP_REVISION_DATE],
