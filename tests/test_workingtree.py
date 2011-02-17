@@ -57,6 +57,10 @@ from bzrlib.plugins.svn.workingtree import (
 
 class TestWorkingTree(SubversionTestCase):
 
+    def assertCleanTree(self, wt):
+        delta = wt.changes_from(wt.basis_tree())
+        self.assertFalse(delta.has_changed(), delta)
+
     def test_invalid_entries(self):
         self.make_client('a', 'dc')
         entries_path = os.path.join(self.test_dir, 'dc/.svn/entries')
@@ -334,7 +338,7 @@ class TestWorkingTree(SubversionTestCase):
         tree = WorkingTree.open("dc")
         os.remove("dc/bl")
         tree.revert(["bl"])
-        self.assertFalse(tree.changes_from(tree.basis_tree()).has_changed())
+        self.assertCleanTree(tree)
         self.assertEqual("data", open('dc/bl').read())
 
     def test_rename_one(self):
@@ -648,8 +652,7 @@ class TestWorkingTree(SubversionTestCase):
             tree.commit(message="data")
         except NeedsNewerSubvertpy:
             raise TestSkipped("Unable to commit with this version of subvertpy")
-        delta = tree.changes_from(tree.basis_tree())
-        self.assertFalse(delta.has_changed(), repr(delta))
+        self.assertCleanTree(tree)
         self.assertEqual(
                 tree.branch.generate_revision_id(1),
                 tree.basis_tree().get_revision_id())
@@ -657,11 +660,10 @@ class TestWorkingTree(SubversionTestCase):
         delta = tree.basis_tree().changes_from(rev0tree)
         self.assertTrue(delta.has_changed(), repr(delta))
         tree = WorkingTree.open("dc")
-        delta = tree.basis_tree().changes_from(tree)
         self.assertEqual(
              tree.branch.generate_revision_id(1),
              tree.basis_tree().get_revision_id())
-        self.assertFalse(delta.has_changed(), repr(delta))
+        self.assertCleanTree(tree)
 
     def test_status(self):
         self.make_client('a', 'dc')
@@ -874,9 +876,10 @@ class TestWorkingTree(SubversionTestCase):
         self.client_add('dc/file.txt')
         self.client_set_prop('dc/file.txt', 'svn:keywords', 'Id')
         self.client_commit('dc', "Initial commit")
+        wt = WorkingTree.open('dc')
+        self.assertCleanTree(wt)
         self.build_tree({'dc/file.txt': 'This is a file with a $Id$\n'
                                         'New line added\n'})
-        wt = WorkingTree.open('dc')
         try:
             wt.commit("Commit via bzr")
         except NeedsNewerSubvertpy:
@@ -884,6 +887,7 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({'dc/file.txt': 'This is a file with a $Id$\n'
                                         'New line added\n'
                                         'Another change\n'})
+        import pdb; pdb.set_trace()
         self.client_commit('dc', "Commit via svn")
 
 
