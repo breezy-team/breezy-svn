@@ -946,15 +946,14 @@ class SvnCommitBuilder(RootCommitBuilder):
             if new_kind == 'file':
                 new_ie.executable = new_executable
                 file_obj, stat_val = get_file_with_stat(file_id)
-                self.modified_files[file_id] = file_obj
                 new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
                 new_ie.revision = self._get_text_revision(file_id, new_ie.text_sha1, parent_invs)
-                file_obj.seek(0)
+                self.modified_files[file_id] = get_svn_contents(tree, new_ie)
                 yield file_id, new_path, (new_ie.text_sha1, stat_val)
             elif new_kind == 'symlink':
                 new_ie.executable = new_executable
                 new_ie.symlink_target = tree.get_symlink_target(file_id)
-                self.modified_files[file_id] = StringIO("link %s" % new_ie.symlink_target.encode("utf-8"))
+                self.modified_files[file_id] = get_svn_contents(tree, new_ie)
             elif new_kind == 'directory':
                 self.visit_dirs.add(new_path)
             self._visit_parent_dirs(new_path)
@@ -998,13 +997,19 @@ class SvnCommitBuilder(RootCommitBuilder):
         if (ie.file_id in self.old_inv and ie == self.old_inv[ie.file_id] and
             (ie.kind != 'directory' or ie.children == self.old_inv[ie.file_id].children)):
             return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
-        if ie.kind == 'file':
-            self.modified_files[ie.file_id] = tree.get_file(ie.file_id)
-        elif ie.kind == 'symlink':
-            self.modified_files[ie.file_id] = StringIO("link %s" % ie.symlink_target.encode("utf-8"))
+        if ie.kind in ('file', 'symlink'):
+            self.modified_files[ie.file_id] = get_svn_contents(tree, ie)
         elif ie.kind == 'directory':
             self.visit_dirs.add(new_path)
         self._visit_parent_dirs(new_path)
         self._any_changes = True
         return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
 
+
+def get_svn_contents(tree, ie):
+    if ie.kind == "file":
+        return tree.get_file(ie.file_id)
+    elif ie.kind == "symlink":
+        return StringIO("link %s" % ie.symlink_target.encode("utf-8"))
+    else:
+        raise AssertionError
