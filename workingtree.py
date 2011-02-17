@@ -46,6 +46,7 @@ import urllib
 
 import bzrlib.add
 from bzrlib import (
+    hashcache,
     osutils,
     urlutils,
     version_info as bzrlib_version,
@@ -227,6 +228,12 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             pass
         control_transport = bzrdir.transport.clone(urlutils.join(
                                                    get_adm_dir(), 'bzr'))
+        cache_filename = control_transport.local_abspath('stat-cache')
+        self._hashcache = hashcache.HashCache(self.basedir, cache_filename,
+            self.bzrdir._get_file_mode(),
+            self._content_filter_stack_provider())
+        hc = self._hashcache
+        hc.read()
         self._control_files = LockableFiles(control_transport, 'lock', LockDir)
         self.views = self._make_views()
 
@@ -745,12 +752,6 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         finally:
             wc.close()
         return apply_prop_changes(orig_props, prop_changes)
-
-    def get_file_sha1(self, file_id, path=None, stat_value=None):
-        """Determine the SHA1 for a file."""
-        if path is None:
-            path = self._inventory.id2path(file_id)
-        return osutils.fingerprint_file(open(self.abspath(path).encode(osutils._fs_enc)))['sha1']
 
     def _change_fileid_mapping(self, id, path, wc=None):
         """Change the file id mapping for a particular path."""
