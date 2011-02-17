@@ -45,6 +45,9 @@ bzr-svn 1.1.0					  UNRELEASED
   * Support commit wiht svn:keywords use in working tree.
     (Jelmer Vernooij, #654329)
 
+  * Preserve username when looking up credentials.
+    (Jelmer Vernooij, #710931)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
