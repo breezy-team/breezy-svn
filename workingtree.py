@@ -231,8 +231,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         self.views = self._make_views()
 
     def _setup_directory_is_tree_reference(self):
-        self._directory_is_tree_reference = \
-            self._directory_is_never_tree_reference
+        self._directory_is_tree_reference = self._directory_is_never_tree_reference
 
     @property
     def basis_idmap(self):
@@ -941,9 +940,21 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         newrev = self.branch.repository.get_revision(new_revid)
         svn_revprops = self.branch.repository._log.revprop_list(rev)
 
+        class DummyEditor(object):
+
+            def apply_textdelta(self, checksum):
+                def window_handler(window):
+                    pass
+                return window_handler
+
+            def close(self):
+                pass
+
         def update_entry(cq, path, root_adm):
             mutter('updating entry for %s'% path)
-            cq.queue(path.rstrip("/").encode("utf-8"), root_adm)
+            adm = root_adm.probe_try(self.abspath(path).encode("utf-8"), True, 1)
+            cq.queue(self.abspath(path).rstrip("/").encode("utf-8"), adm,
+                True, None, False, False)
 
         try:
             from subvertpy.wc import CommittedQueue
@@ -956,6 +967,9 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                 if old_path is not None:
                     update_entry(cq, old_path, root_adm)
                 if new_path is not None:
+                    if ie.kind in ("file", "symlink"):
+                        root_adm.transmit_text_deltas(
+                            self.abspath(new_path).encode("utf-8"), True, DummyEditor())
                     update_entry(cq, new_path, root_adm)
             root_adm.process_committed_queue(cq,
                 rev, svn_revprops[properties.PROP_REVISION_DATE],
