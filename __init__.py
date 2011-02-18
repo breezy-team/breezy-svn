@@ -77,9 +77,6 @@ from bzrlib.transport import (
     register_lazy_transport,
     register_transport_proto,
     )
-from bzrlib.version_info_formats.format_rio import (
-    RioVersionInfoBuilder,
-    )
 
 
 
@@ -286,13 +283,20 @@ def update_stanza(rev, stanza):
         stanza.add("svn-revno", str(revno))
         stanza.add("svn-uuid", uuid)
 
-
-RioVersionInfoBuilder.hooks.install_named_hook('revision',
-    update_stanza, None)
+try:
+    from bzrlib.hooks import install_lazy_named_hook
+except ImportError: # bzr < 2.4
+    from bzrlib.version_info_formats.format_rio import (
+        RioVersionInfoBuilder,
+        )
+    RioVersionInfoBuilder.hooks.install_named_hook('revision',
+        update_stanza, "svn metadata")
+else:
+    install_lazy_named_hook("bzrlib.version_info_formats.format_rio",
+        "RioVersionInfoBuilder.hooks", "revision", update_stanza, "svn metadata")
 
 
 from bzrlib.send import format_registry as send_format_registry
-
 send_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
                                    'send_svn', 'Subversion diff format')
 
