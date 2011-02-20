@@ -73,6 +73,8 @@ class SvnControlFormat(ControlDirFormat):
 
 class SvnRemoteProber(SvnProber):
 
+    _supported_schemes = ["http", "https", "file"]
+
     def probe_transport(self, transport):
         from bzrlib.transport.local import LocalTransport
 
@@ -90,6 +92,11 @@ class SvnRemoteProber(SvnProber):
                     break
             if not maybe:
                 raise bzr_errors.NotBranchError(path=transport.base)
+
+        scheme = transport.external_url().split(":")[0]
+        if (not scheme.startswith("svn+") and
+            not scheme in self._supported_schemes):
+            raise bzr_errors.NotBranchError(path=transport.base)
 
         self._check_versions()
         from bzrlib.plugins.svn.transport import get_svn_ra_transport
