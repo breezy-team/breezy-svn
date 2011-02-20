@@ -1000,7 +1000,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 class SvnWorkingTreeFormat(WorkingTreeFormat):
     """Subversion working copy format."""
 
-    def __init__(self, version):
+    def __init__(self, version=None):
         self.version = version
 
     def __get_matchingbzrdir(self):
@@ -1009,7 +1009,10 @@ class SvnWorkingTreeFormat(WorkingTreeFormat):
     _matchingbzrdir = property(__get_matchingbzrdir)
 
     def get_format_description(self):
-        return "Subversion Working Copy Version %d" % self.version
+        if self.version is not None:
+            return "Subversion Working Copy (version %d)" % self.version
+        else:
+            return "Subversion Working Copy"
 
     def get_format_string(self):
         raise NotImplementedError
