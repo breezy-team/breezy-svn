@@ -35,7 +35,7 @@ class TestWorkingTreeFormat(TestCase):
         self.format = SvnWorkingTreeFormat(4)
 
     def test_get_format_desc(self):
-        self.assertEqual("Subversion Working Copy Version 4",
+        self.assertEqual("Subversion Working Copy (version 4)",
                          self.format.get_format_description())
 
     def test_initialize(self):
