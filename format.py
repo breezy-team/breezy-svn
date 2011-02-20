@@ -43,7 +43,6 @@ except ImportError:
     ControlDirFormat = BzrDirFormat
 
 
-
 class SvnProber(Prober):
 
     @classmethod

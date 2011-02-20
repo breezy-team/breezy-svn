@@ -254,10 +254,6 @@ def info_svn_repository(repository, stats, outf):
         outf.write("Subversion Last Revision: %d\n" % stats["svn-last-revnum"])
 
 
-from bzrlib.info import hooks as info_hooks
-info_hooks.install_named_hook('repository', info_svn_repository, None)
-
-
 def extract_svn_foreign_revid(rev):
     try:
         foreign_revid = rev.foreign_revid
@@ -291,9 +287,13 @@ except ImportError: # bzr < 2.4
         )
     RioVersionInfoBuilder.hooks.install_named_hook('revision',
         update_stanza, "svn metadata")
+    from bzrlib.info import hooks as info_hooks
+    info_hooks.install_named_hook('repository', info_svn_repository, None)
 else:
     install_lazy_named_hook("bzrlib.version_info_formats.format_rio",
         "RioVersionInfoBuilder.hooks", "revision", update_stanza, "svn metadata")
+    install_lazy_named_hook("bzrlib.info", "hooks",
+            'repository', info_svn_repository, "svn repository info")
 
 
 from bzrlib.send import format_registry as send_format_registry
