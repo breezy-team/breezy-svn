@@ -73,7 +73,7 @@ class SvnControlFormat(ControlDirFormat):
 
 class SvnRemoteProber(SvnProber):
 
-    _supported_schemes = ["http", "https", "file"]
+    _supported_schemes = ["http", "https", "file", "svn"]
 
     def probe_transport(self, transport):
         from bzrlib.transport.local import LocalTransport
