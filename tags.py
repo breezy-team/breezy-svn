@@ -134,13 +134,26 @@ class ReverseTagDict(object):
         return self._by_foreign_revid[foreign_revid]
 
     def items(self):
-        return _resolve_tags_svn_ancestry(self.branch, self._tags).items()
+        d = _resolve_tags_svn_ancestry(self.branch, self._tags)
+        rev = {}
+        for key in d:
+            try:
+                rev[d[key]].append(key)
+            except KeyError:
+                rev[d[key]] = [key]
+        return rev.items()
 
     def iteritems(self):
         return iter(self.items())
 
     def __iter__(self):
+        return self.iterkeys()
+
+    def iterkeys(self):
         return (k for (k, v) in self.iteritems())
+
+    def keys(self):
+        return list(self.iterkeys())
 
 
 class SubversionTags(BasicTags):

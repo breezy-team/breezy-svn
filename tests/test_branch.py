@@ -78,6 +78,27 @@ class WorkingSubversionBranch(SubversionTestCase):
         b = Branch.open(repos_url + "/trunk")
         self.assertEquals(["foo"], b.tags.get_tag_dict().keys())
 
+    def test_reverse_tags_dict(self):
+        repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("trunk")
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+        tags = dc.add_dir("tags")
+        tags.add_dir("tags/foo", "trunk")
+        dc.close()
+
+        b = Branch.open(repos_url + "/trunk")
+        revid = b.repository.generate_revision_id(1, "trunk",
+            b.repository.get_mapping())
+
+        revtagdict = b.tags.get_reverse_tag_dict()
+        self.assertEquals([revid], revtagdict.keys())
+        self.assertEquals(["foo"], revtagdict[revid])
+        self.assertEquals([(revid, ["foo"])], revtagdict.items())
+
     def test_tags_other_project(self):
         repos_url = self.make_repository("a")
 
