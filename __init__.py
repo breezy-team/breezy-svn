@@ -184,6 +184,15 @@ network_format_registry.register_lazy("svn-wc",
     'bzrlib.plugins.svn.format', 'SvnWorkingTreeDirFormat')
 network_format_registry.register_lazy("subversion",
     'bzrlib.plugins.svn.format', 'SvnRemoteFormat')
+try:
+    from bzrlib.branch import (
+        format_registry as branch_format_registry,
+        )
+except ImportError:
+    pass
+else:
+    branch_format_registry.register_extra_lazy(
+        'bzrlib.plugins.svn.branch', 'SvnBranchFormat')
 branch_network_format_registry.register_lazy("subversion",
     'bzrlib.plugins.svn.branch', 'SvnBranchFormat')
 repository_network_format_registry.register_lazy("subversion",
