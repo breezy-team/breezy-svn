@@ -318,9 +318,10 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         if revnum is None:
             # FIXME: should be able to use -1 here
             revnum = self.branch.get_revnum()
+        bp = self.get_branch_path()
         adm = self._get_wc(write_lock=True, depth=-1)
         try:
-            conn = self.branch.repository.transport.get_connection(self.get_branch_path())
+            conn = self.branch.repository.transport.get_connection(bp)
             try:
                 update_wc(adm, self.basedir.encode("utf-8"), conn, revnum)
             finally:
@@ -606,7 +607,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             merges = parent_ids[1:]
         adm = self._get_wc(write_lock=True)
         try:
-            old_svk_merges = svk.parse_svk_features(self._get_svk_merges(self._get_base_branch_props()))
+            old_svk_merges = svk.parse_svk_features(self._get_svk_merges(
+                self._get_base_branch_props()))
             svk_merges = set(old_svk_merges)
 
             # Set svk:merge
@@ -646,7 +648,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
                         mutter('adding %r', file_path)
                         wc.add(file_path.encode("utf-8"))
                     added.append(file_path)
-                if recurse and osutils.file_kind(file_path.encode(osutils._fs_enc)) == 'directory':
+                if (recurse and
+                    osutils.file_kind(file_path.encode(osutils._fs_enc)) == 'directory'):
                     # Filter out ignored files and update ignored
                     for c in os.listdir(file_path.encode(osutils._fs_enc)):
                         if self.is_control_filename(c):
@@ -728,8 +731,8 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
         # FIXME: Use delta_reporter
         # FIXME: Use source
         # FIXME: Use overwrite
-        result = self.branch.pull(source, overwrite=overwrite, stop_revision=stop_revision,
-                                  local=local)
+        result = self.branch.pull(source, overwrite=overwrite,
+            stop_revision=stop_revision, local=local)
         fetched = self._update(self.branch.get_revnum())
         self._update_base_revnum(fetched)
         return result
@@ -812,13 +815,14 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
     def _apply_inventory_delta_change(self, base_tree, old_path, new_path,
                                       file_id, ie):
-        already_there = (old_path == new_path and base_tree._inventory[file_id].kind == ie.kind)
+        already_there = (
+            old_path == new_path and
+            base_tree._inventory[file_id].kind == ie.kind)
         if old_path is not None:
             old_abspath = osutils.safe_utf8(self.abspath(old_path))
             if not already_there:
                 self.remove([old_path], keep_files=True)
-            copyfrom = (urlutils.join(self.entry.url, old_path),
-                        self.base_revnum)
+            copyfrom = (urlutils.join(self.entry.url, old_path), self.base_revnum)
         else:
             try:
                 old_path = base_tree.id2path(file_id)
@@ -1127,7 +1131,8 @@ class SvnCheckout(ControlDir):
             return self.get_remote_bzrdir().find_repository()
         if self._remote_repo_transport is None:
             try:
-                self._remote_repo_transport = SvnRaTransport(self.entry.repos, from_transport=self._remote_branch_transport)
+                self._remote_repo_transport = SvnRaTransport(self.entry.repos,
+                    from_transport=self._remote_branch_transport)
             except subvertpy.SubversionException, (msg, num):
                 if num == subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED:
                     raise LocalRepositoryOpenFailed(self.entry.repos)
@@ -1172,7 +1177,6 @@ class SvnCheckout(ControlDir):
         def open_branch(self, ignore_fallbacks=None, unsupported=False):
             return self._open_branch(name=None,
                 ignore_fallbacks=ignore_fallbacks, unsupported=unsupported)
-
 
     def _open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
         """See ControlDir.open_branch()."""
