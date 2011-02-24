@@ -167,6 +167,8 @@ class SvnRepositoryFormat(RepositoryFormat):
     rich_root_data = True
     supports_tree_reference = False
     _serializer = None
+    supports_leaving_lock = False
+    fast_deltas = False
 
     @property
     def _matchingbzrdir(self):
