@@ -193,6 +193,15 @@ except ImportError:
 else:
     branch_format_registry.register_extra_lazy(
         'bzrlib.plugins.svn.branch', 'SvnBranchFormat')
+try:
+    from bzrlib.workingtree import (
+        format_registry as workingtree_format_registry,
+        )
+except ImportError:
+    pass
+else:
+    workingtree_format_registry.register_extra_lazy(
+        'bzrlib.plugins.svn.workingtree', 'SvnWorkingTreeFormat')
 branch_network_format_registry.register_lazy("subversion",
     'bzrlib.plugins.svn.branch', 'SvnBranchFormat')
 repository_network_format_registry.register_lazy("subversion",
