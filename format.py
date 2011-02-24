@@ -139,6 +139,10 @@ class SvnRemoteFormat(SvnControlFormat):
     def __init__(self):
         super(SvnRemoteFormat, self).__init__()
 
+    def get_branch_format(self):
+        from bzrlib.plugins.svn.branch import SvnBranchFormat
+        return SvnBranchFormat()
+
     @classmethod
     def probe_transport(klass, transport):
         prober = SvnRemoteProber()
