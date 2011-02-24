@@ -77,7 +77,7 @@ def find_prev_location(paths, branch_path, revnum):
 
             revnum = paths[p][2]
             branch_path = paths[p][1].encode("utf-8") + branch_path[len(p):]
-            return (branch_path, revnum)
+            return (branch_path.lstrip("/"), revnum)
 
     return (branch_path, revnum)
 

@@ -48,6 +48,9 @@ bzr-svn 1.1.0					  UNRELEASED
   * Preserve username when looking up credentials.
     (Jelmer Vernooij, #710931)
 
+  * Fix following of parent path copies from the root.
+    (Jelmer Vernooij, #665027)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is

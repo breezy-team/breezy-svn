@@ -68,6 +68,9 @@ class FindPrevLocationTests(TestCase):
     def test_parentcopy(self):
         self.assertEquals(("foo/bla", 3), find_prev_location({"bar": ("A", "foo", 3)}, "bar/bla", 5))
 
+    def test_from_root(self):
+        self.assertEquals(("tools", 3), find_prev_location({"trunk": ("A", "", 3)}, "trunk/tools", 5))
+
 
 class ChangesRootTests(TestCase):
 
