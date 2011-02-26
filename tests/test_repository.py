@@ -18,7 +18,6 @@
 
 """Subversion repository tests."""
 
-from bzrlib import urlutils
 from bzrlib.bzrdir import (
     BzrDir,
     format_registry,

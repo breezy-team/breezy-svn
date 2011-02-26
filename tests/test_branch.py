@@ -47,6 +47,7 @@ from bzrlib.plugins.svn.branch import (
 from bzrlib.plugins.svn.convert import load_dumpfile
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
+
 class WorkingSubversionBranch(SubversionTestCase):
 
     def test_last_rev_rev_hist(self):
@@ -438,7 +439,6 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.close()
 
         branch = Branch.open(repos_url + "/%D0%B4%D0%BE%D0%BC")
-        #branch = Branch.open(repos_url + "/\xd0\xb4\xd0\xbe\xd0\xbc")
 
     def test_open_nonexistant(self):
         repos_url = self.make_repository("a")
@@ -456,14 +456,12 @@ class WorkingSubversionBranch(SubversionTestCase):
     def test_lookup_revision_id_unknown(self):
         repos_url = self.make_repository("a")
         branch = Branch.open(repos_url)
-        self.assertRaises(NoSuchRevision,
-                lambda: branch.lookup_bzr_revision_id("bla"))
+        self.assertRaises(NoSuchRevision, lambda: branch.lookup_bzr_revision_id("bla"))
 
     def test_lookup_revision_id(self):
         repos_url = self.make_repository("a")
         branch = Branch.open(repos_url)
-        self.assertEquals(0,
-                branch.lookup_bzr_revision_id(branch.last_revision()))
+        self.assertEquals(0, branch.lookup_bzr_revision_id(branch.last_revision()))
 
     def test_set_parent(self):
         repos_url = self.make_repository('a')
@@ -474,8 +472,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         repos_url = self.make_repository('a')
         bzrdir = BzrDir.open(repos_url)
         branch = bzrdir.open_branch()
-        self.assertEqual(branch.generate_revision_id(0),
-                         branch.last_revision())
+        self.assertEqual(branch.generate_revision_id(0), branch.last_revision())
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
@@ -542,6 +539,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals(orig_history[:-1], branch.revision_history())
 
     def test_break_lock(self):
+        # duplicated by bzrlib.tests.per_branch.test_break_lock
         repos_url = self.make_repository('a')
         branch = Branch.open(repos_url)
         branch.break_lock()
@@ -557,6 +555,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertFalse(branch.get_physical_lock_status())
 
     def test_set_push_location(self):
+        # duplicated by bt.per_branch.TestBranchPushLocations.test_set_push_location
         repos_url = self.make_repository('a')
         branch = Branch.open(repos_url)
         branch.set_push_location("http://bar/bloe")
@@ -567,12 +566,14 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEqual(None, branch.get_parent())
 
     def test_get_push_location(self):
+        # duplicated by bt.per_branch.TestBranchPushLocations.test_get_push_location_unset
         repos_url = self.make_repository('a')
         branch = Branch.open(repos_url)
         self.assertIs(None, branch.get_push_location())
 
     def test_revision_id_to_revno_none(self):
         """The None revid should map to revno 0."""
+        # duplicated by bt.per_branch.test_revision_id_to_revno
         repos_url = self.make_repository('a')
         branch = Branch.open(repos_url)
         self.assertEquals(0, branch.revision_id_to_revno(NULL_REVISION))
@@ -580,6 +581,7 @@ class WorkingSubversionBranch(SubversionTestCase):
     def test_revision_id_to_revno_nonexistant(self):
         """revision_id_to_revno() should raise NoSuchRevision if
         the specified revision did not exist in the branch history."""
+        # duplicated by bt.per_branch.test_revision_id_to_revno
         repos_url = self.make_repository('a')
         branch = Branch.open(repos_url)
         self.assertRaises(NoSuchRevision, branch.revision_id_to_revno, "bla")
@@ -1070,8 +1072,6 @@ foohosts""")
         self.assertEqual(
                 olddir.open_branch().last_revision(),
                 newdir.open_branch().last_revision())
-
-
 
     def test_ghost_workingtree(self):
         # Looks like bazaar has trouble creating a working tree of a

@@ -278,7 +278,8 @@ class TestWorkingTree(SubversionTestCase):
     def test_get_ignore_list_empty(self):
         self.make_client('a', 'dc')
         tree = WorkingTree.open("dc")
-        self.assertEqual(set([".svn"] + svn_config.get_default_ignores()), tree.get_ignore_list())
+        self.assertEqual(set([".svn"] + svn_config.get_default_ignores()),
+            tree.get_ignore_list())
 
     def test_get_ignore_list_onelevel(self):
         self.make_client('a', 'dc')
