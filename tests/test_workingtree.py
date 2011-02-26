@@ -136,7 +136,7 @@ class TestWorkingTree(SubversionTestCase):
     def test_smart_add_unicode(self):
         try:
             self.make_client('a', u'dć'.encode(osutils._fs_enc))
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, UnicodeEncodeError):
             raise TestSkipped("This platform does not support unicode paths")
         self.build_tree({u"dć/bé".encode(osutils._fs_enc): "data"})
         tree = WorkingTree.open(u"dć")
