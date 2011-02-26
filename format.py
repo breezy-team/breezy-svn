@@ -83,9 +83,12 @@ class SvnRemoteProber(SvnProber):
             maybe = False
             subtransport = transport
             while subtransport:
-                if subtransport.has("format"):
-                    maybe = True
-                    break
+                try:
+                    if subtransport.has("format"):
+                        maybe = True
+                        break
+                except UnicodeEncodeError:
+                    pass
                 prevsubtransport = subtransport
                 subtransport = prevsubtransport.clone("..")
                 if subtransport.base == prevsubtransport.base:
