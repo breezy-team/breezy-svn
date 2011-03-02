@@ -31,7 +31,6 @@ from bzrlib import (
     )
 from bzrlib.config import (
     ConfigObj,
-    IniBasedConfig,
     config_dir,
     ensure_config_dir_exists,
     GlobalConfig,
@@ -45,13 +44,7 @@ from bzrlib.errors import (
     BzrError,
     )
 
-try:
-    from bzrlib.config import LockableConfig
-except ImportError:
-    class LockableConfig(IniBasedConfig):
-
-        def __init__(self, filename):
-            super(LockableConfig, self).__init__(lambda: filename)
+from bzrlib.config import LockableConfig
 
 
 def as_bool(str):

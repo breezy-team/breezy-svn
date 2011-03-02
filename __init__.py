@@ -147,38 +147,23 @@ register_lazy_transport('svn+', 'bzrlib.plugins.svn.transport',
 topic_registry.register_lazy('svn-layout',
                              'bzrlib.plugins.svn.layout',
                              'help_layout', 'Subversion repository layouts')
-try:
-    from bzrlib.controldir import (
-        ControlDirFormat,
-        format_registry,
-        )
-except ImportError:
-    # Bzr < 2.3
-    from bzrlib.bzrdir import (
-        BzrDirFormat,
-        format_registry,
-        )
-    #BzrDirFormat.register_control_server_format(format.SvnRemoteFormat)
-    # Register as the first control server format, since the default smart
-    # server implementation tries to do a POST request against .bzr/smart and
-    # this causes some Subversion servers to reply with 401 Authentication required
-    # even though they are accessible without authentication.
-    BzrDirFormat._control_server_formats.insert(0, format.SvnRemoteFormat)
-    BzrDirFormat.register_control_format(format.SvnWorkingTreeDirFormat)
-else:
-    #BzrDirFormat.register_control_server_format(format.SvnRemoteFormat)
-    # Register as the first control server format, since the default smart
-    # server implementation tries to do a POST request against .bzr/smart and
-    # this causes some Subversion servers to reply with 401 Authentication required
-    # even though they are accessible without authentication.
-    ControlDirFormat.register_prober(format.SvnWorkingTreeProber)
-    ControlDirFormat._server_probers.insert(0, format.SvnRemoteProber)
-    ControlDirFormat.register_format(format.SvnWorkingTreeDirFormat())
-    ControlDirFormat.register_format(format.SvnRemoteFormat())
-try:
-    from bzrlib.controldir import network_format_registry
-except ImportError:
-    from bzrlib.bzrdir import network_format_registry
+
+from bzrlib.controldir import (
+    ControlDirFormat,
+    format_registry,
+    network_format_registry,
+    )
+
+#BzrDirFormat.register_control_server_format(format.SvnRemoteFormat)
+# Register as the first control server format, since the default smart
+# server implementation tries to do a POST request against .bzr/smart and
+# this causes some Subversion servers to reply with 401 Authentication required
+# even though they are accessible without authentication.
+ControlDirFormat.register_prober(format.SvnWorkingTreeProber)
+ControlDirFormat._server_probers.insert(0, format.SvnRemoteProber)
+ControlDirFormat.register_format(format.SvnWorkingTreeDirFormat())
+ControlDirFormat.register_format(format.SvnRemoteFormat())
+
 
 network_format_registry.register_lazy("svn-wc",
     'bzrlib.plugins.svn.format', 'SvnWorkingTreeDirFormat')
@@ -188,7 +173,7 @@ try:
     from bzrlib.branch import (
         format_registry as branch_format_registry,
         )
-except ImportError:
+except ImportError: # bzr < 2.4
     pass
 else:
     branch_format_registry.register_extra_lazy(
@@ -197,7 +182,7 @@ try:
     from bzrlib.workingtree import (
         format_registry as workingtree_format_registry,
         )
-except ImportError:
+except ImportError: # bzr < 2.4
     pass
 else:
     workingtree_format_registry.register_extra_lazy(
@@ -209,7 +194,7 @@ repository_network_format_registry.register_lazy("subversion",
 try:
     register_extra_lazy_repository_format = getattr(repository_format_registry,
         'register_extra_lazy')
-except AttributeError:
+except AttributeError: # bzr < 2.4
     pass
 else:
     register_extra_lazy_repository_format('bzrlib.plugins.svn.repository',
@@ -318,13 +303,9 @@ from bzrlib.send import format_registry as send_format_registry
 send_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
                                    'send_svn', 'Subversion diff format')
 
-try:
-    from bzrlib.diff import format_registry as diff_format_registry
-except ImportError:
-    pass # Not available prior to bzr 2.2b2
-else:
-    diff_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
-            'SvnDiffTree', 'Subversion diff format')
+from bzrlib.diff import format_registry as diff_format_registry
+diff_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
+        'SvnDiffTree', 'Subversion diff format')
 
 
 def test_suite():

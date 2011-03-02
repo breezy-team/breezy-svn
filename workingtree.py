@@ -116,23 +116,14 @@ from bzrlib.plugins.svn.tree import (
     SubversionTree,
     )
 
-try:
-    from bzrlib.controldir import (
-        ControlDirFormat,
-        ControlDir,
-        Converter,
-        format_registry,
-        )
-except ImportError:
-    # Bzr < 2.3
-    from bzrlib.bzrdir import (
-        BzrDirFormat,
-        BzrDir,
-        Converter,
-        format_registry,
-        )
-    ControlDir = BzrDir
-    ControlDirFormat = BzrDirFormat
+from bzrlib.bzrdir import (
+    Converter,
+    )
+from bzrlib.controldir import (
+    ControlDirFormat,
+    ControlDir,
+    format_registry,
+    )
 
 
 class RepositoryRootUnknown(BzrError):

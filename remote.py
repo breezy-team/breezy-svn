@@ -48,21 +48,11 @@ from bzrlib.plugins.svn.transport import (
     )
 
 
-try:
-    from bzrlib.controldir import (
-        ControlDirFormat,
-        ControlDir,
-        format_registry,
-        )
-except ImportError:
-    # bzr < 2.3
-    from bzrlib.bzrdir import (
-        BzrDirFormat,
-        BzrDir,
-        format_registry,
-        )
-    ControlDirFormat = BzrDirFormat
-    ControlDir = BzrDir
+from bzrlib.controldir import (
+    ControlDirFormat,
+    ControlDir,
+    format_registry,
+    )
 
 
 class SubversionPushResult(PushResult):

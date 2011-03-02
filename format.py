@@ -27,20 +27,11 @@ from bzrlib.lockable_files import (
     TransportLock,
     )
 
-try:
-    from bzrlib.controldir import (
-        ControlDirFormat,
-        Prober,
-        format_registry,
-        )
-except ImportError:
-    from bzrlib.bzrdir import (
-        BzrDirFormat,
-        format_registry,
-        )
-    # bzr < 2.3
-    Prober = object
-    ControlDirFormat = BzrDirFormat
+from bzrlib.controldir import (
+    ControlDirFormat,
+    Prober,
+    format_registry,
+    )
 
 
 class SvnProber(Prober):
@@ -146,11 +137,6 @@ class SvnRemoteFormat(SvnControlFormat):
         from bzrlib.plugins.svn.branch import SvnBranchFormat
         return SvnBranchFormat()
 
-    @classmethod
-    def probe_transport(klass, transport):
-        prober = SvnRemoteProber()
-        return prober.probe_transport(transport)
-
     def open(self, transport, _found=False):
         import subvertpy
         from bzrlib.plugins.svn import remote
@@ -214,11 +200,6 @@ class SvnWorkingTreeProber(SvnProber):
 
 class SvnWorkingTreeDirFormat(SvnControlFormat):
     """Working Tree implementation that uses Subversion working copies."""
-
-    @classmethod
-    def probe_transport(klass, transport):
-        prober = SvnWorkingTreeProber()
-        return prober.probe_transport(transport)
 
     def open(self, transport, _found=False):
         from bzrlib.plugins.svn.workingtree import SvnCheckout

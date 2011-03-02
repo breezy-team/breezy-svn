@@ -56,6 +56,8 @@ bzr-svn 1.1.0					  UNRELEASED
   * When roundtripping revisions a revision property with the Bazaar testament is
     now set as a revision property. (Jelmer Vernooij)
 
+  * bzr-svn now requires Bazaar 2.3 or higher. (Jelmer Vernooij)
+
 bzr-svn 1.0.4					  2010-08-30
 
  BUG FIXES

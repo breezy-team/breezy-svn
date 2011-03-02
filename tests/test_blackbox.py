@@ -32,15 +32,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def setUp(self):
         ExternalBase.setUp(self)
-        if getattr(self, "_init_client", None) is not None:
-            self._init_client()
-        else:
-            # Subvertpy < 0.7.4 doesn't provide _init_client.
-            from subvertpy import client, ra
-            self.client_ctx = client.Client()
-            self.client_ctx.auth = ra.Auth([ra.get_simple_provider(),
-                                            ra.get_username_provider(), ])
-            self.client_ctx.log_msg_func = self.log_message_func
+        self._init_client()
 
     def tearDown(self):
         ExternalBase.tearDown(self)
@@ -447,10 +439,6 @@ Node-copyfrom-path: x
         repos_url = self.make_client('d', 'de')
         self.build_tree({'de/foo': 'bla'})
         self.run_bzr("add de/foo")
-        try:
-            from subvertpy.wc import CommittedQueue
-        except ImportError:
-            raise TestSkipped("unable to commit with this version of subvertpy")
         self.run_bzr("commit -m test de")
         self.assertEquals("2\n", self.run_bzr("revno de")[0])
 
