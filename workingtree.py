@@ -116,9 +116,10 @@ from bzrlib.plugins.svn.tree import (
     SubversionTree,
     )
 
-from bzrlib.bzrdir import (
-    Converter,
-    )
+try:
+    from bzrlib.controldir import Converter
+except ImportError:
+    from bzrlib.bzrdir import Converter
 from bzrlib.controldir import (
     ControlDirFormat,
     ControlDir,
