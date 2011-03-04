@@ -43,6 +43,7 @@ import urllib
 
 import bzrlib.add
 from bzrlib import (
+    conflicts as _mod_conflicts,
     hashcache,
     osutils,
     urlutils,
@@ -253,6 +254,10 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
     def __repr__(self):
         return "<%s of %s>" % (self.__class__.__name__, self.basedir.encode('utf-8'))
+
+    def conflicts(self):
+        # FIXME: Retrieve conflicts
+        return _mod_conflicts.ConflictList()
 
     def get_ignore_list(self):
         """Obtain the list of ignore patterns for this working tree.
