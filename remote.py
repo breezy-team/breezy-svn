@@ -25,6 +25,11 @@ from bzrlib import (
     trace,
     version_info as bzrlib_version,
     )
+from bzrlib.controldir import (
+    ControlDirFormat,
+    ControlDir,
+    format_registry,
+    )
 from bzrlib.revision import (
     NULL_REVISION,
     )
@@ -45,13 +50,6 @@ from bzrlib.plugins.svn.repository import (
 from bzrlib.plugins.svn.transport import (
     bzr_to_svn_url,
     get_svn_ra_transport,
-    )
-
-
-from bzrlib.controldir import (
-    ControlDirFormat,
-    ControlDir,
-    format_registry,
     )
 
 
@@ -222,8 +220,7 @@ class SvnRemoteAccess(ControlDir):
     def create_branch(self, branch_name=None):
         """See ControlDir.create_branch()."""
         if branch_name is not None:
-            from bzrlib.errors import NoColocatedBranchSupport
-            raise NoColocatedBranchSupport(self)
+            raise errors.NoColocatedBranchSupport(self)
         from bzrlib.plugins.svn.branch import SvnBranch
         repos = self.find_repository()
 
@@ -294,8 +291,7 @@ class SvnRemoteAccess(ControlDir):
 
     def destroy_branch(self, branch_name=None):
         if branch_name is not None:
-            from bzrlib.errors import NoColocatedBranchSupport
-            raise NoColocatedBranchSupport(self)
+            raise errors.NoColocatedBranchSupport(self)
         if self.branch_path == "":
             raise errors.BzrError("Branch at root not removable.")
         raise NotImplementedError(self.destroy_branch)
