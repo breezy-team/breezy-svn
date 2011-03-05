@@ -169,6 +169,7 @@ class SvnRepositoryFormat(RepositoryFormat):
     _serializer = None
     supports_leaving_lock = False
     fast_deltas = False
+    supports_full_versioned_files = False
 
     @property
     def _matchingbzrdir(self):
@@ -413,7 +414,7 @@ class SvnRepository(ForeignRepository):
                 use_cache = set(["fileids", "revids", "revinfo", "log"])
 
         if use_cache:
-            self._cache_obj = cache.cache_cls(self.uuid)
+            self._cache_obj = cache.get_cache(self.uuid)
 
         if "log" in use_cache:
             log_cache = self._cache_obj.open_logwalker()

@@ -53,28 +53,6 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         if type(self.test_dir) == unicode:
             self.test_dir = self.test_dir.encode(osutils._fs_enc)
 
-        try:
-            from bzrlib.plugins.svn.cache import sqlitecache
-        except ImportError:
-            pass
-        else:
-            self._old_connect_sqlite = sqlitecache.connect_cachefile
-            def restore_sqlite():
-                sqlitecache.connect_cachefile = self._old_connect_sqlite
-            self.addCleanup(restore_sqlite)
-            sqlitecache.connect_cachefile = lambda path: sqlitecache.sqlite3.connect(":memory:")
-
-        try:
-            from bzrlib.plugins.svn.cache import tdbcache
-        except ImportError:
-            pass
-        else:
-            self._old_open_tdb = tdbcache.tdb_open
-            def restore_tdb():
-                tdbcache.tdb_open = self._old_open_tdb
-            self.addCleanup(restore_tdb)
-            tdbcache.tdb_open = lambda *args: dict()
-
     def tearDown(self):
         TestCaseInTempDir.tearDown(self)
 

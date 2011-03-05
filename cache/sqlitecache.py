@@ -28,7 +28,6 @@ from bzrlib import (
 
 from bzrlib.plugins.svn.cache import (
     RepositoryCache,
-    cachedbs,
     )
 from bzrlib.plugins.svn.mapping import (
     mapping_registry,
@@ -434,24 +433,23 @@ class SqliteParentsCache(ParentsCache, CacheTable):
 class SqliteRepositoryCache(RepositoryCache):
     """Object that provides a cache related to a particular UUID."""
 
-    def open_sqlite(self):
+    def __init__(self, uuid):
+        super(SqliteRepositoryCache, self).__init__(uuid)
         cache_file = os.path.join(self.create_cache_dir(), 'cache-v%d' % CACHE_DB_VERSION)
         assert isinstance(cache_file, str)
-        if not cachedbs().has_key(cache_file):
-            cachedbs()[cache_file] = connect_cachefile(cache_file.decode(osutils._fs_enc).encode("utf-8"))
-        return cachedbs()[cache_file]
+        self._sqlite = connect_cachefile(cache_file.decode(osutils._fs_enc).encode("utf-8"))
 
     def open_revid_map(self):
-        return SqliteRevisionIdMapCache(self.open_sqlite())
+        return SqliteRevisionIdMapCache(self._sqlite)
 
     def open_logwalker(self):
-        return SqliteLogCache(self.open_sqlite())
+        return SqliteLogCache(self._sqlite)
 
     def open_revision_cache(self):
-        return SqliteRevisionInfoCache(self.open_sqlite())
+        return SqliteRevisionInfoCache(self._sqlite)
 
     def open_parents(self):
-        return SqliteParentsCache(self.open_sqlite())
+        return SqliteParentsCache(self._sqlite)
 
     def commit(self):
-        self.open_sqlite().commit()
+        self._sqlite.commit()

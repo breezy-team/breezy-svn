@@ -33,7 +33,6 @@ from bzrlib import (
 
 from bzrlib.plugins.svn.cache import (
     RepositoryCache,
-    cachedbs,
     )
 from bzrlib.plugins.svn.mapping import (
     mapping_registry,
@@ -280,27 +279,26 @@ TDB_HASH_SIZE = 10000
 class TdbRepositoryCache(RepositoryCache):
     """Object that provides a cache related to a particular UUID."""
 
-    def open_tdb(self):
+    def __init__(self, uuid):
+        super(TdbRepositoryCache, self).__init__(uuid)
         cache_file = os.path.join(self.create_cache_dir(), 'cache.tdb')
         assert isinstance(cache_file, str)
-        if not cachedbs().has_key(cache_file):
-            cachedbs()[cache_file] = tdb_open(cache_file, TDB_HASH_SIZE,
-                tdb.DEFAULT, os.O_RDWR|os.O_CREAT)
-        db = cachedbs()[cache_file]
+        db = tdb_open(cache_file, TDB_HASH_SIZE, tdb.DEFAULT,
+                os.O_RDWR|os.O_CREAT)
         try:
             assert int(db["version"]) == CACHE_DB_VERSION
         except KeyError:
             db["version"] = str(CACHE_DB_VERSION)
-        return db
+        self._db = db
 
     def open_revid_map(self):
-        return TdbRevisionIdMapCache(self.open_tdb())
+        return TdbRevisionIdMapCache(self._db)
 
     def open_logwalker(self):
-        return TdbLogCache(self.open_tdb())
+        return TdbLogCache(self._db)
 
     def open_revision_cache(self):
-        return TdbRevisionInfoCache(self.open_tdb())
+        return TdbRevisionInfoCache(self._db)
 
     def open_parents(self):
-        return TdbParentsCache(self.open_tdb())
+        return TdbParentsCache(self._db)

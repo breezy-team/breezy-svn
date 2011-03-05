@@ -18,6 +18,7 @@
 import os
 import sys
 import threading
+import weakref
 
 import bzrlib
 from bzrlib import (
@@ -100,9 +101,8 @@ def cachedbs():
     try:
         return _cachedbs.cache
     except AttributeError:
-        _cachedbs.cache = {}
+        _cachedbs.cache = weakref.WeakValueDictionary()
         return _cachedbs.cache
-
 
 class RepositoryCache(object):
     """Object that provides a cache related to a particular UUID."""
@@ -148,3 +148,11 @@ try:
 except ImportError:
     from bzrlib.plugins.svn.cache.sqlitecache import SqliteRepositoryCache
     cache_cls = SqliteRepositoryCache
+
+def get_cache(uuid):
+    try:
+        return cachedbs()[uuid]
+    except KeyError:
+        db = cache_cls(uuid)
+        cachedbs()[uuid] = db
+        return db
