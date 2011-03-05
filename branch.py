@@ -665,10 +665,6 @@ class SvnBranchFormat(BranchFormat):
         """See BranchFormat.get_format_description."""
         return 'Subversion Smart Server'
 
-    def get_format_string(self):
-        """See BranchFormat.get_format_string()."""
-        return 'Subversion Smart Server'
-
     def get_foreign_tests_branch_factory(self):
         from bzrlib.plugins.svn.tests.test_branch import ForeignTestsBranchFactory
         return ForeignTestsBranchFactory()

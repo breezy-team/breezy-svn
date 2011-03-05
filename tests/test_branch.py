@@ -1101,12 +1101,8 @@ class BranchFormatTests(TestCase):
         super(BranchFormatTests, self).setUp()
         self.format = SvnBranchFormat()
 
-    def test_initialize(self):
-        self.assertRaises(NotImplementedError, self.format.initialize, None)
-
     def test_get_format_string(self):
-        self.assertEqual("Subversion Smart Server",
-                         self.format.get_format_string())
+        self.assertRaises(NotImplementedError, self.format.get_format_string())
 
     def test_get_format_description(self):
         self.assertEqual("Subversion Smart Server",
