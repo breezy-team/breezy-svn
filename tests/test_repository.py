@@ -100,9 +100,9 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         """ Test repository format is correct """
         self.make_checkout(self.repos_url, 'ac')
         bzrdir = BzrDir.open("ac")
-        self.assertEqual(bzrdir._format.get_format_string(), \
-                "Subversion Local Checkout")
-        self.assertEqual(bzrdir._format.get_format_description(), \
+        self.assertRaises(NotImplementedError,
+                bzrdir._format.get_format_string)
+        self.assertEqual(bzrdir._format.get_format_description(),
                 "Subversion Local Checkout")
 
     def test_make_working_trees(self):
