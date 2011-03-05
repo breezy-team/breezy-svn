@@ -213,7 +213,7 @@ class SvnWorkingTreeDirFormat(SvnControlFormat):
             raise
 
     def get_format_string(self):
-        return 'Subversion Local Checkout'
+        raise NotImplementedError(self.get_format_string)
 
     def get_format_description(self):
         return 'Subversion Local Checkout'

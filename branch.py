@@ -20,6 +20,7 @@
 
 import os
 from subvertpy import (
+    ERR_FS_ALREADY_EXISTS,
     ERR_FS_NO_SUCH_REVISION,
     NODE_DIR,
     SubversionException,
@@ -47,6 +48,7 @@ from bzrlib.bzrdir import (
     format_registry,
     )
 from bzrlib.errors import (
+    AlreadyBranchError,
     DivergedBranches,
     LocalRequiresBoundBranch,
     NoSuchRevision,
@@ -671,7 +673,16 @@ class SvnBranchFormat(BranchFormat):
 
     def initialize(self, to_bzrdir):
         """See BranchFormat.initialize()."""
-        raise NotImplementedError(self.initialize)
+        repository = to_bzrdir.find_repository()
+        try:
+            create_branch_with_hidden_commit(repository,
+                to_bzrdir.branch_path, NULL_REVISION, set_metadata=True,
+                deletefirst=False)
+        except SubversionException, (_, num):
+            if num == ERR_FS_ALREADY_EXISTS:
+                raise AlreadyBranchError(to_bzrdir.user_url)
+            raise
+        return to_bzrdir.open_branch()
 
     def supports_tags(self):
         return True

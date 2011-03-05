@@ -463,8 +463,18 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
     :return: Revision id that was pushed and the related foreign revision id.
     """
     revprops = {properties.PROP_REVISION_LOG: "Create new branch."}
-    revmeta, mapping = repository._get_revmeta(revid)
-    fileprops = dict(revmeta.get_fileprops().iteritems())
+    if revid == NULL_REVISION:
+        old_fileprops = {}
+        fileprops = {}
+        mapping = repository.get_mapping()
+        from_url = None
+        from_revnum = -1
+    else:
+        revmeta, mapping = repository._get_revmeta(revid)
+        old_fileprops = revmeta.get_fileprops()
+        fileprops = dict(old_fileprops.iteritems())
+        from_url = url_join_unescaped_path(repository.base, revmeta.branch_path)
+        from_revnum = revmeta.revnum
     if set_metadata:
         assert mapping.supports_hidden
         (set_custom_revprops, set_custom_fileprops) = repository._properties_to_set(mapping)
@@ -500,8 +510,8 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
             root = ci.open_root()
             if deletefirst:
                 root.delete_entry(urlutils.basename(branch_path))
-            branch_dir = root.add_directory(urlutils.basename(branch_path),
-                    url_join_unescaped_path(repository.base, revmeta.branch_path), revmeta.revnum)
+            branch_dir = root.add_directory(
+                urlutils.basename(branch_path), from_url, from_revnum)
             for k, (ov, nv) in properties.diff(fileprops, revmeta.get_fileprops()).iteritems():
                 branch_dir.change_prop(k, nv)
             branch_dir.close()
