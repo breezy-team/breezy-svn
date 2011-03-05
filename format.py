@@ -87,7 +87,11 @@ class SvnRemoteProber(SvnProber):
             if not maybe:
                 raise bzr_errors.NotBranchError(path=transport.base)
 
-        scheme = transport.external_url().split(":")[0]
+        try:
+            scheme = transport.external_url().split(":")[0]
+        except bzr_errors.InProcessTransport:
+            # bzr-svn not supported on MemoryTransport
+            raise bzr_errors.NotBranchError(path=transport.base)
         if (not scheme.startswith("svn+") and
             not scheme in self._supported_schemes):
             raise bzr_errors.NotBranchError(path=transport.base)
