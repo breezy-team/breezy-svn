@@ -217,20 +217,21 @@ class SvnRemoteAccess(ControlDir):
         finally:
             source.unlock()
 
-    def create_branch(self, branch_name=None):
+    def create_branch(self, branch_name=None, repository=None):
         """See ControlDir.create_branch()."""
         if branch_name is not None:
             raise errors.NoColocatedBranchSupport(self)
         from bzrlib.plugins.svn.branch import SvnBranch
-        repos = self.find_repository()
+        if repository is None:
+            repository = self.find_repository()
 
         if self.branch_path != "":
             # TODO: Set NULL_REVISION in SVN_PROP_BZR_BRANCHING_SCHEME
-            repos.transport.mkdir(self.branch_path.strip("/"))
-        elif repos.get_latest_revnum() > 0:
+            repository.transport.mkdir(self.branch_path.strip("/"))
+        elif repository.get_latest_revnum() > 0:
             # Bail out if there are already revisions in this repository
             raise errors.AlreadyBranchError(self.root_transport.base)
-        branch = SvnBranch(repos, self.branch_path)
+        branch = SvnBranch(repository, self.branch_path)
         branch.bzrdir = self
         return branch
 
