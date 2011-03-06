@@ -32,6 +32,9 @@ from bzrlib.controldir import (
     Prober,
     format_registry,
     )
+from bzrlib.transport import (
+    do_catching_redirections,
+    )
 
 
 class SvnProber(Prober):
@@ -161,10 +164,37 @@ class SvnRemoteFormat(SvnControlFormat):
         return "subversion"
 
     def get_format_string(self):
-        return 'Subversion Smart Server'
+        raise NotImplementedError(self.get_format_string)
 
     def get_format_description(self):
         return 'Subversion Smart Server'
+
+    def initialize_on_transport_ex(self, transport, use_existing_dir=False,
+        create_prefix=False, force_new_repo=False, stacked_on=None,
+        stack_on_pwd=None, repo_format_name=None, make_working_trees=None,
+        shared_repo=False, vfs_only=False):
+        from bzrlib.bzrdir import CreateRepository
+        def make_directory(transport):
+            transport.mkdir('.')
+            return transport
+        def redirected(transport, e, redirection_notice):
+            trace.note(redirection_notice)
+            return transport._redirected_to(e.source, e.target)
+        try:
+            transport = do_catching_redirections(make_directory, transport,
+                redirected)
+        except bzr_errors.FileExists:
+            if not use_existing_dir:
+                raise
+        except bzr_errors.NoSuchFile:
+            if not create_prefix:
+                raise
+            transport.create_prefix()
+
+        controldir = self.initialize_on_transport(transport)
+        repository = controldir.open_repository()
+        repository.lock_write()
+        return (repository, controldir, None, CreateRepository(controldir))
 
     def initialize_on_transport(self, transport):
         """See ControlDir.initialize_on_transport()."""
