@@ -170,6 +170,7 @@ class SvnRepositoryFormat(RepositoryFormat):
     supports_leaving_lock = False
     fast_deltas = False
     supports_full_versioned_files = False
+    supports_funky_characters = True
 
     @property
     def _matchingbzrdir(self):
