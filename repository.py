@@ -1277,7 +1277,7 @@ class SvnRepository(ForeignRepository):
 
     def is_shared(self):
         """Return True if this repository is flagged as a shared repository."""
-        return True
+        return False
 
     def get_physical_lock_status(self):
         """See Repository.get_physical_lock_status()."""
