@@ -115,7 +115,7 @@ def format_highres_date(t, offset=0):
     :param offset:  The timezone offset in integer seconds
     :type offset: int
     """
-    assert isinstance(t, float)
+    assert isinstance(t, float) or isinstance(t, int)
 
     # This has to be formatted for "original" date, so that the
     # revision XML entry will be reproduced faithfully.
