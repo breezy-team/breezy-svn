@@ -171,6 +171,7 @@ class SvnRepositoryFormat(RepositoryFormat):
     fast_deltas = False
     supports_full_versioned_files = False
     supports_funky_characters = True
+    supports_external_lookups = False
 
     @property
     def _matchingbzrdir(self):
