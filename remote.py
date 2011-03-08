@@ -294,7 +294,8 @@ class SvnRemoteAccess(ControlDir):
         if branch_name is not None:
             raise errors.NoColocatedBranchSupport(self)
         if self.branch_path == "":
-            raise errors.BzrError("Branch at root not removable.")
+            raise errors.UnsupportedOperation(self.destroy_branch, self)
+        # FIXME: Remove branch
         raise NotImplementedError(self.destroy_branch)
 
     def destroy_repository(self):

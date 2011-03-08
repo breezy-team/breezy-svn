@@ -453,6 +453,9 @@ class SvnRepository(ForeignRepository):
         self._revmeta_provider = revmeta.RevisionMetadataProvider(self,
                 self.revinfo_cache is not None)
 
+    def revision_graph_can_have_wrong_parents(self):
+        return False
+
     def get_transaction(self):
         """See Repository.get_transaction()."""
         raise NotImplementedError(self.get_transaction)
