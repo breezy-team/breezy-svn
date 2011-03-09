@@ -917,6 +917,9 @@ class SvnCommitBuilder(RootCommitBuilder):
                 base_ie = self.old_inv[file_id]
             else:
                 base_ie = None
+            if new_path is None:
+                assert self._recording_deletes
+                continue
             new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
             if new_kind == 'file':
                 new_ie.executable = new_executable
