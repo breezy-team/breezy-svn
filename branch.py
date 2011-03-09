@@ -556,6 +556,10 @@ class SvnBranch(ForeignBranch):
             self.get_branch_path(), self.get_config(),
             self.get_push_merged_revisions(), overwrite=False)
 
+    def import_last_revision_info_and_tags(self, source, revno, revid):
+        self.import_last_revision_info(source.repository, revno, revid)
+        self.tags.merge_to(self.source.tags, overwrite=False)
+
     def generate_revision_history(self, revision_id, last_rev=None,
         other_branch=None):
         """Create a new revision history that will finish with revision_id.
