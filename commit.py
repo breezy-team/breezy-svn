@@ -966,15 +966,21 @@ class SvnCommitBuilder(RootCommitBuilder):
         raise NotImplementedError(self.record_entry_contents)
 
 
+
+def send_svn_file_text_delta(tree, base_ie, ie, editor):
+    contents = mapping.get_svn_file_contents(tree, ie.kind, ie.file_id)
+    try:
+        file_editor_send_content_changes(contents, editor)
+        file_editor_send_prop_changes(base_ie, ie, editor)
+    finally:
+        contents.close()
+
+
 def get_svn_file_delta_transmitter(tree, base_ie, ie):
     try:
         transmit_svn_file_deltas = getattr(tree, "transmit_svn_file_deltas")
     except AttributeError:
-        contents = mapping.get_svn_file_contents(tree, ie.kind, ie.file_id)
-        def send_changes(editor):
-            file_editor_send_content_changes(contents, editor)
-            file_editor_send_prop_changes(base_ie, ie, editor)
-        return send_changes
+        return lambda editor: send_svn_file_text_delta(tree, base_ie, ie, editor)
     else:
         return lambda editor: transmit_svn_file_deltas(ie.file_id, editor)
 
