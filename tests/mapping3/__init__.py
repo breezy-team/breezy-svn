@@ -470,11 +470,7 @@ class RepositoryTests(SubversionTestCase):
         builder = branch.get_commit_builder([branch.last_revision()], 
                 revision_id="my-revision-id")
         tree = branch.repository.revision_tree(branch.last_revision())
-        new_tree = copy(tree)
-        ie = new_tree.inventory.root
-        ie.revision = None
-        builder.record_entry_contents(ie, [tree.inventory], '', new_tree, 
-                                      None)
+        list(builder.record_iter_changes(tree, branch.last_revision(), []))
         builder.finish_inventory()
         builder.commit("foo")
 
@@ -494,10 +490,7 @@ class RepositoryTests(SubversionTestCase):
                 timestamp=4534.0, timezone=2, committer="fry",
                 revision_id="my-revision-id")
         tree = branch.repository.revision_tree(branch.last_revision())
-        new_tree = copy(tree)
-        ie = new_tree.inventory.root
-        ie.revision = None
-        builder.record_entry_contents(ie, [tree.inventory], '', new_tree, None)
+        list(builder.record_iter_changes(tree, branch.last_revision(), []))
         builder.finish_inventory()
         builder.commit("foo")
 
