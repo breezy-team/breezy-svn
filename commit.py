@@ -41,6 +41,7 @@ from bzrlib import (
     )
 from bzrlib.errors import (
     BzrError,
+    NoSuchId,
     NoSuchRevision,
     )
 from bzrlib.inventory import (
@@ -383,6 +384,8 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
 class SvnCommitBuilder(RootCommitBuilder):
     """Commit Builder implementation wrapped around svn_delta_editor. """
 
+    support_use_record_entry_contents = False
+
     def __init__(self, repository, branch_path, parents, config, timestamp,
                  timezone, committer, revprops, revision_id,
                  base_foreign_revid, base_mapping, old_inv=None,
@@ -410,6 +413,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         """
         super(SvnCommitBuilder, self).__init__(repository, parents,
             config, timestamp, timezone, committer, revprops, revision_id)
+        self.new_inventory = None
+
         # revision ids are either specified or predictable
         self.random_revid = False
         self.branch_path = branch_path
@@ -463,9 +468,19 @@ class SvnCommitBuilder(RootCommitBuilder):
         else:
             self.old_inv = old_inv
 
+        if self.old_inv.root is None:
+            self.new_root_id = None
+        else:
+            self.new_root_id = self.old_inv.root.file_id
+
+
+
         # Determine revisions merged in this one
         merges = filter(lambda x: x != self.base_revid, parents)
 
+        self._deleted_fileids = set()
+        self._updated_children = defaultdict(set)
+        self._updated = {}
         self.visit_dirs = set()
         self.modified_files = {}
         self.supports_custom_revprops = self.repository.transport.has_capability("commit-revprops")
@@ -528,8 +543,7 @@ class SvnCommitBuilder(RootCommitBuilder):
 
     def finish_inventory(self):
         """See CommitBuilder.finish_inventory()."""
-        if self.new_inventory is not None: # record_entry_contents style
-            self.new_root_id = self.new_inventory.root.file_id
+        pass
 
     def open_branch_editors(self, root, elements, existing_elements,
                            base_url, base_rev, root_from, replace_existing):
@@ -643,31 +657,28 @@ class SvnCommitBuilder(RootCommitBuilder):
         return ret
 
     def _iter_new_children(self, file_id):
-        if self.new_inventory is not None:
-            return self.new_inventory[file_id].children.iteritems()
+        ret = []
+        for child in self._updated_children[file_id]:
+            ret.append((self._updated[child].name, self._updated[child]))
+        try:
+            old_ie = self.old_inv[file_id]
+        except NoSuchId:
+            pass
         else:
-            ret = []
-            for child in self._updated_children[file_id]:
-                ret.append((self._updated[child].name, self._updated[child]))
-            if file_id in self.old_inv:
-                for name, child_ie in self.old_inv[file_id].children.iteritems():
+            if old_ie.kind != 'directory':
+                for name, child_ie in old_ie.children.iteritems():
                     if not child_ie.file_id in self._deleted_fileids and not child_ie.file_id in self._updated:
                         ret.append((name, child_ie))
-            return ret
+        return ret
 
     def _get_new_ie(self, file_id):
-        if self.new_inventory is not None:
-            if file_id in self.new_inventory:
-                return self.new_inventory[file_id]
+        if file_id in self._deleted_fileids:
             return None
-        else:
-            if file_id in self._deleted_fileids:
-                return None
-            if file_id in self._updated:
-                return self._updated[file_id]
-            if file_id in self.old_inv:
-                return self.old_inv[file_id]
-            return None
+        if file_id in self._updated:
+            return self._updated[file_id]
+        if file_id in self.old_inv:
+            return self.old_inv[file_id]
+        return None
 
     def _get_author(self):
         try:
@@ -868,12 +879,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         return None
 
     def record_delete(self, path, file_id):
-        if not self._recording_deletes:
-            raise AssertionError("recording deletes not activated.")
-        delta = (path, None, file_id, None)
-        self._basis_delta.append(delta)
-        self._any_changes = True
-        self._deleted_fileids.add(file_id)
+        raise NotImplementedError(self.record_delete)
 
     def record_iter_changes(self, tree, basis_revision_id, iter_changes):
         """Record a new tree via iter_changes.
@@ -895,13 +901,6 @@ class SvnCommitBuilder(RootCommitBuilder):
                 parent_invs.append(self.repository.get_inventory(p))
             except NoSuchRevision:
                 pass
-        self._deleted_fileids = set()
-        self._updated_children = defaultdict(set)
-        self._updated = {}
-        if self.old_inv.root is None:
-            self.new_root_id = None
-        else:
-            self.new_root_id = self.old_inv.root.file_id
         if self.base_revid != basis_revision_id:
             raise AssertionError("Invalid basis revision %s != %s" %
                 (self.base_revid, basis_revision_id))
@@ -918,34 +917,34 @@ class SvnCommitBuilder(RootCommitBuilder):
             else:
                 base_ie = None
             if new_path is None:
-                assert self._recording_deletes
-                continue
-            new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
-            if new_kind == 'file':
-                new_ie.executable = new_executable
-                file_obj, stat_val = get_file_with_stat(file_id)
-                new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
-                new_ie.revision = self._get_text_revision(file_id, new_ie.text_sha1, parent_invs)
-                self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, base_ie, new_ie)
-                yield file_id, new_path, (new_ie.text_sha1, stat_val)
-            elif new_kind == 'symlink':
-                new_ie.executable = new_executable
-                new_ie.symlink_target = tree.get_symlink_target(file_id)
-                self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, base_ie, new_ie)
-            elif new_kind == 'directory':
-                self.visit_dirs.add(new_path)
-            self._visit_parent_dirs(new_path)
+                self._basis_delta.append((old_path, None, file_id, None))
+                self._deleted_fileids.add(file_id)
+            else:
+                new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
+                if new_kind == 'file':
+                    new_ie.executable = new_executable
+                    file_obj, stat_val = get_file_with_stat(file_id)
+                    new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
+                    new_ie.revision = self._get_text_revision(file_id, new_ie.text_sha1, parent_invs)
+                    self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, base_ie, new_ie)
+                    yield file_id, new_path, (new_ie.text_sha1, stat_val)
+                elif new_kind == 'symlink':
+                    new_ie.executable = new_executable
+                    new_ie.symlink_target = tree.get_symlink_target(file_id)
+                    self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, base_ie, new_ie)
+                elif new_kind == 'directory':
+                    self.visit_dirs.add(new_path)
+                self._visit_parent_dirs(new_path)
+                self._updated[file_id] = new_ie
+                self._updated_children[new_parent_id].add(file_id)
+                self._basis_delta.append((old_path, new_path, file_id, new_ie))
+                if new_path == "":
+                    self.new_root_id = file_id
             # Old path parent needs to be visited in case file_id was removed
             # from it but there were no other changes there.
             if old_path not in (None, new_path):
                 self._visit_parent_dirs(old_path)
-            if new_path == "":
-                self.new_root_id = file_id
             self._any_changes = True
-            self._updated[file_id] = new_ie
-            self._updated_children[new_parent_id].add(file_id)
-            self._basis_delta.append((old_path, new_path, file_id, new_ie))
-        self.new_inventory = None
 
     def record_entry_contents(self, ie, parent_invs, path, tree,
                               content_summary):
@@ -964,28 +963,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 accessed when the entry has a revision of None - that is when
                 it is a candidate to commit.
         """
-        assert self._parent_invs is None or self._parent_invs == parent_invs
-        self._parent_invs = parent_invs
-        self.new_inventory.add(ie)
-        assert (ie.file_id not in self.old_inv or
-                self.old_inv[ie.file_id].revision is not None)
-        version_recorded = (ie.revision is None)
-        # If nothing changed since the lhs parent, return:
-        new_path = self.new_inventory.id2path(ie.file_id)
-        if ie.file_id in self.old_inv:
-            base_ie = self.old_inv[ie.file_id]
-        else:
-            base_ie = None
-        if (base_ie is not None and ie == base_ie and
-            (ie.kind != 'directory' or ie.children == self.old_inv[ie.file_id].children)):
-            return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
-        if ie.kind in ('file', 'symlink'):
-            self.modified_files[ie.file_id] = get_svn_file_delta_transmitter(tree, base_ie, ie)
-        elif ie.kind == 'directory':
-            self.visit_dirs.add(new_path)
-        self._visit_parent_dirs(new_path)
-        self._any_changes = True
-        return self._get_delta(ie, self.old_inv, new_path), version_recorded, None
+        raise NotImplementedError(self.record_entry_contents)
 
 
 def get_svn_file_delta_transmitter(tree, base_ie, ie):

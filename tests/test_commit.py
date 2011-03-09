@@ -18,7 +18,6 @@
 
 """Commit and push tests."""
 
-from copy import copy
 import os
 from subvertpy import ra
 from subvertpy.properties import time_to_cstring
@@ -215,12 +214,6 @@ class TestNativeCommit(SubversionTestCase):
         foobranch = Branch.open(repos_url+"/tags/foo")
         builder = branch.get_commit_builder([branch.last_revision(), foobranch.last_revision()],
                 revision_id="my-revision-id")
-        tree = branch.repository.revision_tree(branch.last_revision())
-        new_tree = copy(tree)
-        ie = new_tree.inventory.root
-        ie.revision = None
-        builder.record_entry_contents(ie, [tree.inventory], '', new_tree,
-                                      None)
         builder.finish_inventory()
         builder.commit("foo")
 
