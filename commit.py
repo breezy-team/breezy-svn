@@ -665,7 +665,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         except NoSuchId:
             pass
         else:
-            if old_ie.kind != 'directory':
+            if old_ie.kind == 'directory':
                 for name, child_ie in old_ie.children.iteritems():
                     if not child_ie.file_id in self._deleted_fileids and not child_ie.file_id in self._updated:
                         ret.append((name, child_ie))
@@ -929,7 +929,6 @@ class SvnCommitBuilder(RootCommitBuilder):
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, base_ie, new_ie)
                     yield file_id, new_path, (new_ie.text_sha1, stat_val)
                 elif new_kind == 'symlink':
-                    new_ie.executable = new_executable
                     new_ie.symlink_target = tree.get_symlink_target(file_id)
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, base_ie, new_ie)
                 elif new_kind == 'directory':
