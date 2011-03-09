@@ -83,17 +83,41 @@ def find_push_base_revision(source, target, stop_revision):
     return start_revid
 
 
-def replay_delta(builder, old_trees, new_tree):
+
+def _filter_iter_changes(iter_changes):
+    """Process iter_changes.
+
+    Converts 'missing' entries in the iter_changes iterator to 'deleted'
+    entries.
+
+    :param iter_changes: An iter_changes to process.
+    :return: A generator of changes.
+    """
+    for change in iter_changes:
+        kind = change[6][1]
+        versioned = change[3][1]
+        if kind is None and versioned:
+            # 'missing' path
+            # Reset the new path (None) and new versioned flag (False)
+            change = (change[0], (change[1][0], None), change[2],
+                (change[3][0], False)) + change[4:]
+        if change[3][0] or change[3][1]:
+            yield change
+
+
+def replay_delta(builder, base_tree, new_tree):
     """Replays a delta to a commit builder.
 
     :param builder: The commit builder.
-    :param old_tree: Original tree on top of which the delta should be applied
+    :param base_tree: Original tree on top of which the delta should be applied
     :param new_tree: New tree that should be committed
     """
-    for path, ie in new_tree.inventory.iter_entries():
-        builder.record_entry_contents(ie.copy(),
-            [old_tree.inventory for old_tree in old_trees],
-            path, new_tree, None)
+    builder.will_record_deletes()
+    iter_changes = new_tree.iter_changes(base_tree)
+    iter_changes = _filter_iter_changes(iter_changes)
+    for file_id, path, fs_hash in builder.record_iter_changes(
+        new_tree, base_tree.get_revision_id(), iter_changes):
+        pass
     builder.finish_inventory()
 
 
@@ -156,8 +180,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
             parent_trees.append(source_repo.revision_tree(p))
         except NoSuchRevision:
             pass # Ghost, ignore
-    # TODO: Use iter_changes() ?
-    replay_delta(builder, parent_trees, old_tree)
+    replay_delta(builder, base_tree, old_tree)
     try:
         revid = builder.commit(rev.message)
     except SubversionException, (msg, num):
