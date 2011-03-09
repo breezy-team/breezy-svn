@@ -51,6 +51,8 @@ bzr-svn 1.1.0					  UNRELEASED
   * Fix following of parent path copies from the root.
     (Jelmer Vernooij, #665027)
 
+  * Abort when branches diverge during push. (Jelmer Vernooij, #515850)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is

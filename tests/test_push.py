@@ -516,7 +516,9 @@ class TestPush(SubversionTestCase):
         b = Branch.open("%s/trunk" % self.repos_url)
         wt.branch.push(b)
         mutter('log %r' % self.client_log("%s/trunk" % self.repos_url, 0, 5)[5][0])
-        self.assertEquals({'/trunk/foo': ('M', None, -1)},
+        self.assertEquals({
+            '/trunk': ('M', None, -1),
+            '/trunk/foo': ('M', None, -1)},
             self.client_log("%s/trunk" % self.repos_url, 0, 5)[5][0])
 
     def test_comics(self):
@@ -542,6 +544,7 @@ class TestPush(SubversionTestCase):
 
         paths = self.svndir.find_repository()._revmeta_provider.get_revision("", 3).paths
         self.assertChangedPathsEquals({
+            'trunk': ('M', None, 2, NODE_DIR),
             'trunk/comics': (u'R', None, -1, NODE_DIR),
             'trunk/comics/bin': (u'A', 'trunk/comics/bin', 2, NODE_DIR),
             'trunk/comics/core': (u'A', 'trunk/comics', 2, NODE_DIR),

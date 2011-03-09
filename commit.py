@@ -79,6 +79,8 @@ from bzrlib.plugins.svn.util import (
     lazy_dict,
     )
 
+DUMMY_ROOT_PROPERTY_NAME = "bzr:svn:dummy"
+
 _fileprops_warned_repos = set()
 
 def warn_setting_fileprops(uuid):
@@ -415,6 +417,8 @@ class SvnCommitBuilder(RootCommitBuilder):
             config, timestamp, timezone, committer, revprops, revision_id)
         self.new_inventory = None
 
+        self.conn = self.repository.transport.get_connection()
+
         # revision ids are either specified or predictable
         self.random_revid = False
         self.branch_path = branch_path
@@ -564,7 +568,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         for i in range(0, len(elements)-1):
             # Does directory already exist?
             ret.append(ret[-1].open_directory(
-                "/".join(existing_elements[0:i+1]), -1))
+                "/".join(existing_elements[0:i+1]), base_rev))
 
         if (len(existing_elements) != len(elements) and
             len(existing_elements)+1 != len(elements)):
@@ -586,7 +590,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 if name == "":
                     raise ChangesRootLHSHistory()
                 self.mutter("removing branch dir %r", name)
-                ret[-1].delete_entry(name, -1)
+                ret[-1].delete_entry(name, base_rev)
             self.mutter("adding branch dir %r", name)
             if base_url is None or root_from is None:
                 copyfrom_url = None
@@ -692,16 +696,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         """Finish the commit.
 
         """
-        def done(*args):
-            """Callback that is called by the Subversion commit editor
-            once the commit finishes.
-
-            :param revision_data: Revision metadata
-            """
-            self.revision_metadata = args
-
         bp_parts = self.branch_path.split("/")
-        repository_latest_revnum = self.repository.get_latest_revnum()
         lock = self.repository.transport.lock_write(".")
 
         self._changed_fileprops = {}
@@ -726,6 +721,18 @@ class SvnCommitBuilder(RootCommitBuilder):
             message = message.rstrip("\n")
         self._svn_revprops[properties.PROP_REVISION_LOG] = message.encode("utf-8")
 
+        def done(*args):
+            """Callback that is called by the Subversion commit editor
+            once the commit finishes.
+
+            :param revision_data: Revision metadata
+            """
+            self.revision_metadata = args
+
+        conn = self.conn
+        repository_latest_revnum = conn.get_latest_revnum()
+        self.editor = convert_svn_error(conn.get_commit_editor)(
+                self._svn_revprops, done)
         try:
             # Shortcut - no need to see if dir exists if our base
             # was the last revision in the repo. This situation
@@ -743,7 +750,6 @@ class SvnCommitBuilder(RootCommitBuilder):
                     trace.warning("Setting property %r with invalid characters in name", prop)
             if self.supports_custom_revprops:
                 self._svn_revprops[properties.PROP_REVISION_ORIGINAL_DATE] = properties.time_to_cstring(1000000*self._timestamp)
-            conn = self.repository.transport.get_connection()
             assert self.supports_custom_revprops or self._svn_revprops.keys() == [properties.PROP_REVISION_LOG], \
                     "revprops: %r" % self._svn_revprops.keys()
             replace_existing = False
@@ -769,11 +775,8 @@ class SvnCommitBuilder(RootCommitBuilder):
             else:
                 root_from = None
 
-            self.editor = convert_svn_error(conn.get_commit_editor)(
-                    self._svn_revprops, done, None, False)
             try:
                 root = self.editor.open_root(self.base_revnum)
-
                 branch_editors = self.open_branch_editors(root, bp_parts,
                     existing_bp_parts, self.base_url, self.base_revnum,
                     root_from, replace_existing)
@@ -792,18 +795,18 @@ class SvnCommitBuilder(RootCommitBuilder):
                         if oldvalue == newvalue:
                             continue
                         self._changed_fileprops[prop] = (oldvalue, newvalue)
-                if (not self.modified_files and not changed and
-                    self._changed_fileprops == {} and self.push_metadata):
-                    prop = mapping.SVN_REVPROP_BZR_POINTLESS
-                    self._svnprops[prop] = "%d" % (int(self._svnprops.get(prop, "0"))+1)
-                    self._changed_fileprops[prop] = (None, self._svnprops[prop])
+
+                if self._changed_fileprops == {}:
+                    # Set dummy property, so Subversion will raise an error in case of
+                    # clashes.
+                    branch_editors[-1].change_prop(DUMMY_ROOT_PROPERTY_NAME, None)
 
                 for prop, (oldvalue, newvalue) in self._changed_fileprops.iteritems():
                         if not properties.is_valid_property_name(prop):
                             trace.warning("Setting property %r with invalid characters in name", prop)
                         assert isinstance(newvalue, str)
-                        branch_editors[-1].change_prop(prop, newvalue)
                         self.mutter("Setting root file property %r -> %r", prop, newvalue)
+                        branch_editors[-1].change_prop(prop, newvalue)
 
                 for dir_editor in reversed(branch_editors):
                     dir_editor.close()
