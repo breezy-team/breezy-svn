@@ -125,7 +125,8 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                        base_foreign_revid, base_mapping,
                        push_metadata=True,
                        append_revisions_only=True,
-                       override_svn_revprops=None):
+                       override_svn_revprops=None,
+                       overwrite_revnum=None):
     """Push a revision tree into a target repository.
 
     :param graph: Repository graph.
@@ -138,6 +139,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
     :param rev: Revision object of revision to push.
     :param push_metadata: Whether to push metadata.
     :param append_revisions_only: Append revisions only.
+    :param overwrite_revnum: Oldest svn revision that may be overwritten
     :return: Revision id of newly created revision.
     """
     assert rev.revision_id in (None, revision_id)
@@ -172,7 +174,8 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                                texts=source_repo.texts,
                                append_revisions_only=append_revisions_only,
                                override_svn_revprops=override_svn_revprops,
-                               testament=testament)
+                               testament=testament,
+                               overwrite_revnum=overwrite_revnum)
     replay_delta(builder, base_tree, old_tree)
     try:
         revid = builder.commit(rev.message)
@@ -255,13 +258,18 @@ class InterToSvnRepository(InterRepository):
         base_foreign_revid, base_mapping = self._get_base_revision(base_revid,
             target_path)
         mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
+        if overwrite:
+            overwrite_revnum = self.target.get_latest_revnum()
+        else:
+            overwrite_revnum = None
         revid, foreign_info = push_revision_tree(self.get_graph(), self.target,
             target_path, target_config, self.source, base_revid,
             rev.revision_id, rev,
             base_foreign_revid, base_mapping,
             push_metadata=push_metadata,
             append_revisions_only=self.get_append_revisions_only(target_config, overwrite),
-            override_svn_revprops=target_config.get_override_svn_revprops())
+            override_svn_revprops=target_config.get_override_svn_revprops(),
+            overwrite_revnum=overwrite_revnum)
         assert revid == rev.revision_id or not push_metadata
         self.add_path_info(target_path, revid, foreign_info)
         return (revid, foreign_info)

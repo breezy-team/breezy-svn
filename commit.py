@@ -393,7 +393,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                  base_foreign_revid, base_mapping, old_inv=None,
                  push_metadata=True, graph=None, opt_signature=None,
                  texts=None, append_revisions_only=True,
-                 override_svn_revprops=None, testament=None):
+                 override_svn_revprops=None, testament=None,
+                 overwrite_revnum=None):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -412,6 +413,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         :param graph: Optional graph object
         :param opt_signature: Optional signature to write.
         :param testament: A Testament object to store
+        :param overwrite_revnum: Oldest revision number allowed to overwrite
         """
         super(SvnCommitBuilder, self).__init__(repository, parents,
             config, timestamp, timezone, committer, revprops, revision_id)
@@ -423,6 +425,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.random_revid = False
         self.branch_path = branch_path
         self.push_metadata = push_metadata
+        self.overwrite_revnum = overwrite_revnum
         self._append_revisions_only = append_revisions_only
         self._texts = texts
 
@@ -568,7 +571,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         for i in range(0, len(elements)-1):
             # Does directory already exist?
             ret.append(ret[-1].open_directory(
-                "/".join(existing_elements[0:i+1]), base_rev))
+                "/".join(existing_elements[0:i+1]), -1))
 
         if (len(existing_elements) != len(elements) and
             len(existing_elements)+1 != len(elements)):
@@ -590,7 +593,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 if name == "":
                     raise ChangesRootLHSHistory()
                 self.mutter("removing branch dir %r", name)
-                ret[-1].delete_entry(name, base_rev)
+                ret[-1].delete_entry(name, max(base_rev, self.overwrite_revnum))
             self.mutter("adding branch dir %r", name)
             if base_url is None or root_from is None:
                 copyfrom_url = None
