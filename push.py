@@ -83,7 +83,6 @@ def find_push_base_revision(source, target, stop_revision):
     return start_revid
 
 
-
 def _filter_iter_changes(iter_changes):
     """Process iter_changes.
 
