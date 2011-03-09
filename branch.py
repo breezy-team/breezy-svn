@@ -558,7 +558,7 @@ class SvnBranch(ForeignBranch):
 
     def import_last_revision_info_and_tags(self, source, revno, revid):
         self.import_last_revision_info(source.repository, revno, revid)
-        self.tags.merge_to(self.source.tags, overwrite=False)
+        self.tags.merge_to(source.tags, overwrite=False)
 
     def generate_revision_history(self, revision_id, last_rev=None,
         other_branch=None):
