@@ -19,7 +19,11 @@
 """Commit and push tests."""
 
 import os
-from subvertpy import ra
+from subvertpy import (
+    ERR_FS_TXN_OUT_OF_DATE,
+    SubversionException,
+    ra,
+    )
 from subvertpy.properties import time_to_cstring
 
 from bzrlib.branch import (
@@ -53,6 +57,7 @@ from bzrlib.plugins.svn.errors import (
     )
 from bzrlib.plugins.svn.mapping import mapping_registry
 from bzrlib.plugins.svn.tests import SubversionTestCase
+
 
 class TestNativeCommit(SubversionTestCase):
 
@@ -140,6 +145,30 @@ class TestNativeCommit(SubversionTestCase):
                             wt.branch.last_revision())
         self.assertEqual(wt.branch.last_revision(), new_revision.revision_id)
         self.assertEqual(u"føø", new_revision.message)
+
+    def test_commit_out_of_date(self):
+        repos_url = self.make_repository('d')
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.add_dir("trunk")
+        somedir = trunk.add_dir("trunk/somedir")
+        somefile = somedir.add_file("trunk/somedir/somefile").modify()
+        dc.close()
+
+        dc = self.get_commit_editor(repos_url)
+
+        br = Branch.open(repos_url+"/trunk")
+        br.get_config().set_user_option("append_revisions_only", "False")
+        builder = br.get_commit_builder([br.last_revision()])
+        builder.finish_inventory()
+
+        trunk = dc.open_dir("trunk")
+        somedir = trunk.open_dir("trunk/somedir")
+        somefile = somedir.open_file("trunk/somedir/somefile").modify()
+        dc.close()
+
+        e = self.assertRaises(SubversionException, builder.commit, "foo")
+
+        self.assertEquals(ERR_FS_TXN_OUT_OF_DATE, e.args[1])
 
     def test_commit_update(self):
         self.make_client('d', 'dc')
