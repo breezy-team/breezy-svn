@@ -168,7 +168,7 @@ class SvnRepositoryFormat(RepositoryFormat):
     supports_tree_reference = False
     _serializer = None
     supports_leaving_lock = False
-    fast_deltas = False
+    fast_deltas = True
     supports_full_versioned_files = False
     supports_funky_characters = True
     supports_external_lookups = False
