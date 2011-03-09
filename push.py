@@ -174,12 +174,6 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                                append_revisions_only=append_revisions_only,
                                override_svn_revprops=override_svn_revprops,
                                testament=testament)
-    parent_trees = [base_tree]
-    for p in rev.parent_ids[1:]:
-        try:
-            parent_trees.append(source_repo.revision_tree(p))
-        except NoSuchRevision:
-            pass # Ghost, ignore
     replay_delta(builder, base_tree, old_tree)
     try:
         revid = builder.commit(rev.message)
