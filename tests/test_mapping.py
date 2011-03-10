@@ -38,6 +38,7 @@ from bzrlib.plugins.svn.layout.standard import (
 from bzrlib.plugins.svn.mapping import (
     estimate_bzr_ancestors,
     escape_svn_path,
+    foreign_vcs_svn,
     generate_revision_metadata,
     get_roundtrip_ancestor_revids,
     is_bzr_revision_fileprops,
@@ -355,3 +356,17 @@ class TestParseSvnProps(TestCase):
         self.assertEquals(1225704780.716938, rev.timestamp,
                 "parsing %s" % revprops["svn:date"])
 
+
+class ForeignSubversionTests(TestCase):
+
+    def test_serialize_foreign_revid(self):
+        self.assertEquals("myuuid:42:bp", foreign_vcs_svn.serialize_foreign_revid(
+            ("myuuid", "bp", 42)))
+
+    def test_show_foreign_revid(self):
+        self.assertEquals({"svn revno": "42 (on /bp)"},
+            foreign_vcs_svn.show_foreign_revid(("myuuid", "bp", 42)))
+
+    def test_show_foreign_revid_non_ascii_branch_path(self):
+        self.assertEquals({"svn revno": "42 (on /\xc7\x92)".decode("utf-8")},
+            foreign_vcs_svn.show_foreign_revid(("myuuid", '\xc7\x92', 42)))

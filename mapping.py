@@ -1044,7 +1044,7 @@ class ForeignSubversion(foreign.ForeignVcs):
         self.abbreviation = "svn"
 
     def show_foreign_revid(self, (uuid, bp, revnum)):
-        return { "svn revno": "%d (on /%s)" % (revnum, bp)}
+        return { u"svn revno": u"%d (on /%s)" % (revnum, bp.decode("utf-8"))}
 
     def serialize_foreign_revid(self, (uuid, bp, revnum)):
         return "%s:%d:%s" % (uuid, revnum, urllib.quote(bp))

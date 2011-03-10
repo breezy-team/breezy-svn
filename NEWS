@@ -53,6 +53,9 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * Abort when branches diverge during push. (Jelmer Vernooij, #515850)
 
+  * Support non-ascii characters in branch paths in foreign revision displayer
+    (used by e.g. "bzr log"). (Jelmer Vernooij, #728380)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
