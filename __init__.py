@@ -165,7 +165,8 @@ class SvnWorkingTreeProber(SvnProber):
 
         raise NotBranchError(path=transport.base)
 
-    def known_formats(self):
+    @classmethod
+    def known_formats(cls):
         from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
         return set([SvnWorkingTreeDirFormat()])
 
@@ -292,7 +293,8 @@ class SvnRemoteProber(SvnProber):
         from bzrlib.plugins.svn.remote import SvnRemoteFormat
         return SvnRemoteFormat()
 
-    def known_formats(self):
+    @classmethod
+    def known_formats(cls):
         from bzrlib.plugins.svn.remote import SvnRemoteFormat
         return set([SvnRemoteFormat()])
 

@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from copy import copy
 import subvertpy
 from subvertpy import ra
 
@@ -24,7 +23,7 @@ from bzrlib.errors import (
     NoSuchRevision,
     )
 from bzrlib.repository import Repository
-from bzrlib.tests import TestCase, TestSkipped
+from bzrlib.tests import TestCase
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn.layout.standard import (
