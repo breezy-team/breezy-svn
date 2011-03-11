@@ -23,7 +23,6 @@ except ImportError:
 import os
 import subvertpy
 
-import subvertpy.wc
 from subvertpy import (
     ERR_WC_UNSUPPORTED_FORMAT,
     properties,
@@ -33,8 +32,9 @@ from subvertpy.wc import (
     SCHEDULE_DELETE,
     SCHEDULE_NORMAL,
     SCHEDULE_REPLACE,
+    CommittedQueue,
     WorkingCopy,
-    check_wc,
+    cleanup,
     get_adm_dir,
     is_adm_dir,
     revision_status,
@@ -47,10 +47,6 @@ from bzrlib import (
     hashcache,
     osutils,
     urlutils,
-    version_info as bzrlib_version,
-    )
-from bzrlib.branch import (
-    BranchReferenceFormat,
     )
 from bzrlib.errors import (
     BzrError,
@@ -87,9 +83,6 @@ from bzrlib.workingtree import (
 from bzrlib.plugins.svn import (
     svk,
     )
-from bzrlib.plugins.svn.branch import (
-    SvnBranch,
-    )
 from bzrlib.plugins.svn.commit import (
     _revision_id_to_svk_feature,
     )
@@ -101,12 +94,6 @@ from bzrlib.plugins.svn.errors import (
 from bzrlib.plugins.svn.mapping import (
     escape_svn_path,
     get_svn_file_contents,
-    )
-from bzrlib.plugins.svn.remote import (
-    SvnRemoteAccess,
-    )
-from bzrlib.plugins.svn.repository import (
-    SvnRepository,
     )
 from bzrlib.plugins.svn.transport import (
     SvnRaTransport,
@@ -894,7 +881,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
 
         This will probe the repository for its lock as well.
         """
-        subvertpy.wc.cleanup(self.basedir.encode("utf-8"))
+        cleanup(self.basedir.encode("utf-8"))
         self._control_files.break_lock()
 
     def unlock(self):
@@ -977,7 +964,7 @@ class SvnWorkingTree(SubversionTree,WorkingTree):
             cq.queue(self.abspath(path).rstrip("/").encode("utf-8"), adm,
                 True, None, False, False, md5sum)
 
-        cq = subvertpy.wc.CommittedQueue()
+        cq = CommittedQueue()
         root_adm = self._get_wc(self.abspath("."), write_lock=True, depth=-1)
         try:
             for (old_path, new_path, file_id, ie) in delta:
@@ -1130,13 +1117,15 @@ class SvnCheckout(ControlDir):
         return filename == '.svn' or filename.startswith('.svn/')
 
     def get_remote_bzrdir(self):
+        from bzrlib.plugins.svn.remote import SvnRemoteAccess
         if self._remote_bzrdir is None:
             self._remote_bzrdir = SvnRemoteAccess(self.get_remote_transport())
         return self._remote_bzrdir
 
     def get_remote_transport(self):
         if self._remote_branch_transport is None:
-            self._remote_branch_transport = SvnRaTransport(self.entry.url, from_transport=self._remote_repo_transport)
+            self._remote_branch_transport = SvnRaTransport(self.entry.url,
+                from_transport=self._remote_repo_transport)
         return self._remote_branch_transport
 
     def clone(self, path, revision_id=None, force_new_repo=False):
@@ -1183,6 +1172,7 @@ class SvnCheckout(ControlDir):
                     raise LocalRepositoryOpenFailed(self.entry.repos)
                 else:
                     raise
+        from bzrlib.plugins.svn.repository import SvnRepository
         return SvnRepository(self, self._remote_repo_transport,
                 self.get_branch_path())
 
@@ -1211,18 +1201,9 @@ class SvnCheckout(ControlDir):
         """See ControlDir.create_branch()."""
         raise NotImplementedError(self.create_branch)
 
-    if bzrlib_version >= (2, 2):
-        def open_branch(self, name=None, unsupported=False, 
-            ignore_fallbacks=None):
-            return self._open_branch(name=name,
-                ignore_fallbacks=ignore_fallbacks, unsupported=unsupported)
-    else:
-        def open_branch(self, ignore_fallbacks=None, unsupported=False):
-            return self._open_branch(name=None,
-                ignore_fallbacks=ignore_fallbacks, unsupported=unsupported)
-
-    def _open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
+    def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
         """See ControlDir.open_branch()."""
+        from bzrlib.plugins.svn.branch import SvnBranch
         repos = self._find_repository()
 
         try:
@@ -1299,6 +1280,7 @@ class SvnCheckoutConverter(Converter):
 
     def convert(self, to_convert, pb):
         """See Converter.convert()."""
+        from bzrlib.branch import BranchReferenceFormat
         remote_branch = to_convert.open_branch()
         bzrdir = self.target_format.initialize(to_convert.root_transport.base)
         branch = BranchReferenceFormat().initialize(bzrdir, remote_branch)

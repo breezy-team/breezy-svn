@@ -54,7 +54,10 @@ from bzrlib.commands import (
     plugin_cmds,
     )
 from bzrlib.controldir import (
+    ControlDirFormat,
     Prober,
+    format_registry,
+    network_format_registry,
     )
 from bzrlib.errors import (
     DependencyNotPresent,
@@ -308,12 +311,6 @@ topic_registry.register_lazy('svn-layout',
                              'bzrlib.plugins.svn.layout',
                              'help_layout', 'Subversion repository layouts')
 
-from bzrlib.controldir import (
-    ControlDirFormat,
-    format_registry,
-    network_format_registry,
-    )
-
 #BzrDirFormat.register_control_server_format(format.SvnRemoteFormat)
 # Register as the first control server format, since the default smart
 # server implementation tries to do a POST request against .bzr/smart and
@@ -322,9 +319,7 @@ from bzrlib.controldir import (
 ControlDirFormat.register_prober(SvnWorkingTreeProber)
 ControlDirFormat._server_probers.insert(0, SvnRemoteProber)
 
-try:
-    register_controldir_format = ControlDirFormat.register_format
-except AttributeError: # bzr >= 2.4
+if not getattr(Prober, "known_formats", False): # bzr < 2.4
     from bzrlib.plugins.svn.remote import SvnRemoteFormat
     ControlDirFormat.register_format(SvnRemoteFormat())
     from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
