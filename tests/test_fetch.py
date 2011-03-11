@@ -51,7 +51,6 @@ from bzrlib.trace import (
     )
 
 from bzrlib.plugins.svn import (
-    format,
     remote,
     )
 from bzrlib.plugins.svn.convert import (
@@ -1589,7 +1588,7 @@ Node-copyfrom-path: x
         dc.close()
 
         repos = remote.SvnRemoteAccess(SvnRaTransport(repos_url),
-                format.SvnRemoteFormat()).find_repository()
+                remote.SvnRemoteFormat()).find_repository()
         repos.set_layout(TrunkLayout(0))
 
         mapping = repos.get_mapping()
@@ -1633,7 +1632,7 @@ Node-copyfrom-path: x
         foobranch.open_file("branches/foobranch/hosts").modify('foohosts')
         dc.close()
 
-        repos = remote.SvnRemoteAccess(SvnRaTransport(repos_url), format.SvnRemoteFormat()).find_repository()
+        repos = remote.SvnRemoteAccess(SvnRaTransport(repos_url), remote.SvnRemoteFormat()).find_repository()
         repos.set_layout(TrunkLayout(0))
 
         mapping = repos.get_mapping()

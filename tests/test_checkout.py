@@ -17,15 +17,20 @@
 """Checkout tests."""
 
 from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir
+from bzrlib.bzrdir import (
+    BzrDir,
+    format_registry,
+    )
 from bzrlib.errors import (
     NoRepositoryPresent,
     UninitializableFormat,
     )
 from bzrlib.tests import TestCase
 
-from bzrlib.plugins.svn.workingtree import SvnWorkingTreeFormat
-from bzrlib.plugins.svn.format import SvnWorkingTreeDirFormat
+from bzrlib.plugins.svn.workingtree import (
+    SvnWorkingTreeDirFormat,
+    SvnWorkingTreeFormat,
+    )
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 class TestWorkingTreeFormat(TestCase):
@@ -52,7 +57,8 @@ class TestCheckoutFormat(TestCase):
         self.format = SvnWorkingTreeDirFormat()
 
     def test_get_converter(self):
-        convert = self.format.get_converter()
+        convert = self.format.get_converter(
+            format_registry.make_bzrdir('default'))
 
     def test_initialize(self):
         self.assertRaises(UninitializableFormat,
@@ -94,7 +100,8 @@ class TestCheckout(SubversionTestCase):
     def test_needs_format_conversion_self(self):
         self.make_client("d", "dc")
         x = BzrDir.open("dc")
-        self.assertFalse(x.needs_format_conversion(SvnWorkingTreeDirFormat()))
+        self.assertFalse(x.needs_format_conversion(SvnWorkingTreeDirFormat()),
+                "%r vs %r" % (x._format.__class__, SvnWorkingTreeDirFormat))
 
     def test_checkout_checkout(self):
         """Test making a checkout of a checkout."""

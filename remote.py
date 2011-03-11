@@ -19,9 +19,9 @@
 
 import urllib
 
-
 from bzrlib import (
     errors,
+    osutils,
     trace,
     version_info as bzrlib_version,
     )
@@ -30,19 +30,22 @@ from bzrlib.controldir import (
     ControlDir,
     format_registry,
     )
+from bzrlib.lockable_files import (
+    TransportLock,
+    )
 from bzrlib.revision import (
     NULL_REVISION,
     )
 from bzrlib.push import (
     PushResult,
     )
+from bzrlib.transport import (
+    do_catching_redirections,
+    )
 
 from bzrlib.plugins.svn.errors import (
     NoSvnRepositoryPresent,
     NotSvnBranchPath,
-    )
-from bzrlib.plugins.svn.format import (
-    SvnRemoteFormat,
     )
 from bzrlib.plugins.svn.repository import (
     SvnRepository,
@@ -73,6 +76,99 @@ class SubversionPushResult(PushResult):
         if self.branch_push_result is None:
             return NULL_REVISION
         return self.branch_push_result.old_revid
+
+
+class SvnRemoteFormat(ControlDirFormat):
+    """Format for the Subversion smart server."""
+
+    supports_workingtrees = False
+    _lock_class = TransportLock
+
+    @property
+    def repository_format(self):
+        from bzrlib.plugins.svn.repository import SvnRepositoryFormat
+        return SvnRepositoryFormat()
+
+    def is_supported(self):
+        """See ControlDirFormat.is_supported()."""
+        return True
+
+    def get_branch_format(self):
+        from bzrlib.plugins.svn.branch import SvnBranchFormat
+        return SvnBranchFormat()
+
+    def open(self, transport, _found=False):
+        import subvertpy
+        try:
+            return SvnRemoteAccess(transport, self)
+        except subvertpy.SubversionException, (_, num):
+            if num in (subvertpy.ERR_RA_DAV_REQUEST_FAILED,
+                       subvertpy.ERR_RA_DAV_NOT_VCC):
+                raise errors.NotBranchError(transport.base)
+            if num == subvertpy.ERR_XML_MALFORMED:
+                # This *could* be an indication of an actual corrupt
+                # svn server, but usually it just means a broken
+                # xml page
+                raise errors.NotBranchError(transport.base)
+            raise
+
+    def network_name(self):
+        return "subversion"
+
+    def get_format_string(self):
+        raise NotImplementedError(self.get_format_string)
+
+    def get_format_description(self):
+        return 'Subversion Smart Server'
+
+    def initialize_on_transport_ex(self, transport, use_existing_dir=False,
+        create_prefix=False, force_new_repo=False, stacked_on=None,
+        stack_on_pwd=None, repo_format_name=None, make_working_trees=None,
+        shared_repo=False, vfs_only=False):
+        from bzrlib.bzrdir import CreateRepository
+        def make_directory(transport):
+            transport.mkdir('.')
+            return transport
+        def redirected(transport, e, redirection_notice):
+            trace.note(redirection_notice)
+            return transport._redirected_to(e.source, e.target)
+        try:
+            transport = do_catching_redirections(make_directory, transport,
+                redirected)
+        except errors.FileExists:
+            if not use_existing_dir:
+                raise
+        except errors.NoSuchFile:
+            if not create_prefix:
+                raise
+            transport.create_prefix()
+
+        controldir = self.initialize_on_transport(transport)
+        repository = controldir.open_repository()
+        repository.lock_write()
+        return (repository, controldir, None, CreateRepository(controldir))
+
+    def initialize_on_transport(self, transport):
+        """See ControlDir.initialize_on_transport()."""
+        from bzrlib.plugins.svn import lazy_check_versions
+        lazy_check_versions()
+        from bzrlib.transport.local import LocalTransport
+        import os
+        from subvertpy import repos
+
+        if not isinstance(transport, LocalTransport):
+            raise NotImplementedError(self.initialize,
+                "Can't create Subversion Repositories/branches on "
+                "non-local transports")
+
+        local_path = transport.local_abspath(".").rstrip("/").encode(osutils._fs_enc)
+        assert type(local_path) == str
+        repos.create(local_path)
+        # All revision property changes
+        revprop_hook = os.path.join(local_path, "hooks", "pre-revprop-change")
+        open(revprop_hook, 'w').write("#!/bin/sh")
+        os.chmod(revprop_hook, os.stat(revprop_hook).st_mode | 0111)
+        return self.open(get_svn_ra_transport(transport), _found=True)
 
 
 class SvnRemoteAccess(ControlDir):
@@ -173,12 +269,8 @@ class SvnRemoteAccess(ControlDir):
         """
         raise errors.NotLocalUrl(self.root_transport.base)
 
-    def needs_format_conversion(self, format=None):
+    def needs_format_conversion(self, format):
         """See ControlDir.needs_format_conversion()."""
-        # if the format is not the same as the system default,
-        # an upgrade is needed.
-        if format is None:
-            format = ControlDirFormat.get_default_format()
         return not isinstance(self._format, format.__class__)
 
     def import_branch(self, source, stop_revision=None, overwrite=False,

@@ -53,9 +53,17 @@ from bzrlib.branch import (
 from bzrlib.commands import (
     plugin_cmds,
     )
+from bzrlib.controldir import (
+    Prober,
+    )
 from bzrlib.errors import (
     DependencyNotPresent,
     InvalidRevisionId,
+    InProcessTransport,
+    InvalidHttpResponse,
+    InvalidURL,
+    NotBranchError,
+    NoSuchFile,
     )
 from bzrlib.filters import (
     lazy_register_filter_stack_map,
@@ -132,7 +140,98 @@ def lazy_check_versions():
     _versions_checked = True
     init_subvertpy()
 
-from bzrlib.plugins.svn import format
+
+class SvnProber(Prober):
+
+    @classmethod
+    def _check_versions(cls):
+        lazy_check_versions()
+
+
+class SvnWorkingTreeProber(SvnProber):
+
+    def probe_transport(self, transport):
+        from bzrlib.transport.local import LocalTransport
+
+        if isinstance(transport, LocalTransport) and transport.has(".svn"):
+            self._check_versions()
+            from subvertpy.wc import check_wc
+            version = check_wc(transport.local_abspath('.').encode("utf-8"))
+            from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
+            return SvnWorkingTreeDirFormat(version)
+
+        raise NotBranchError(path=transport.base)
+
+    def known_formats(self):
+        from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
+        return set([SvnWorkingTreeDirFormat()])
+
+
+class SvnRemoteProber(SvnProber):
+
+    _supported_schemes = ["http", "https", "file", "svn"]
+
+    def probe_transport(self, transport):
+        from bzrlib.transport.local import LocalTransport
+
+        if isinstance(transport, LocalTransport):
+            # Cheaper way to figure out if there is a svn repo
+            maybe = False
+            subtransport = transport
+            while subtransport:
+                try:
+                    if subtransport.has("format"):
+                        maybe = True
+                        break
+                except UnicodeEncodeError:
+                    pass
+                prevsubtransport = subtransport
+                subtransport = prevsubtransport.clone("..")
+                if subtransport.base == prevsubtransport.base:
+                    break
+            if not maybe:
+                raise NotBranchError(path=transport.base)
+
+        try:
+            scheme = transport.external_url().split(":")[0]
+        except InProcessTransport:
+            # bzr-svn not supported on MemoryTransport
+            raise NotBranchError(path=transport.base)
+        if (not scheme.startswith("svn+") and
+            not scheme in self._supported_schemes):
+            raise NotBranchError(path=transport.base)
+
+        self._check_versions()
+        from bzrlib.plugins.svn.transport import get_svn_ra_transport
+        from bzrlib.plugins.svn.errors import DavRequestFailed
+        import subvertpy
+        try:
+            transport = get_svn_ra_transport(transport)
+        except subvertpy.SubversionException, (msg, num):
+            if num == subvertpy.ERR_RA_DAV_NOT_VCC:
+                raise NotBranchError(path=transport.base)
+            if num in (subvertpy.ERR_RA_ILLEGAL_URL,
+                       subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED,
+                       subvertpy.ERR_BAD_URL):
+                from bzrlib.trace import mutter
+                mutter("Unable to open %r with Subversion: %s", transport, msg)
+                raise NotBranchError(path=transport.base)
+            raise
+        except (InProcessTransport, NoSuchFile, InvalidURL, InvalidHttpResponse):
+            raise NotBranchError(path=transport.base)
+        except DavRequestFailed, e:
+            if "501 Unsupported method" in e.msg:
+                raise NotBranchError(path=transport.base)
+            else:
+                raise
+
+        from bzrlib.plugins.svn.remote import SvnRemoteFormat
+        return SvnRemoteFormat()
+
+    def known_formats(self):
+        from bzrlib.plugins.svn.remote import SvnRemoteFormat
+        return set([SvnRemoteFormat()])
+
 
 register_transport_proto('svn+ssh://',
     help="Access using the Subversion smart server tunneled over SSH.")
@@ -159,16 +258,22 @@ from bzrlib.controldir import (
 # server implementation tries to do a POST request against .bzr/smart and
 # this causes some Subversion servers to reply with 401 Authentication required
 # even though they are accessible without authentication.
-ControlDirFormat.register_prober(format.SvnWorkingTreeProber)
-ControlDirFormat._server_probers.insert(0, format.SvnRemoteProber)
-ControlDirFormat.register_format(format.SvnWorkingTreeDirFormat())
-ControlDirFormat.register_format(format.SvnRemoteFormat())
+ControlDirFormat.register_prober(SvnWorkingTreeProber)
+ControlDirFormat._server_probers.insert(0, SvnRemoteProber)
+
+try:
+    register_controldir_format = ControlDirFormat.register_format
+except AttributeError: # bzr >= 2.4
+    from bzrlib.plugins.svn.remote import SvnRemoteFormat
+    ControlDirFormat.register_format(SvnRemoteFormat())
+    from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
+    ControlDirFormat.register_format(SvnWorkingTreeDirFormat())
 
 
 network_format_registry.register_lazy("svn-wc",
-    'bzrlib.plugins.svn.format', 'SvnWorkingTreeDirFormat')
+    'bzrlib.plugins.svn.workingtree', 'SvnWorkingTreeDirFormat')
 network_format_registry.register_lazy("subversion",
-    'bzrlib.plugins.svn.format', 'SvnRemoteFormat')
+    'bzrlib.plugins.svn.remote', 'SvnRemoteFormat')
 try:
     from bzrlib.branch import (
         format_registry as branch_format_registry,
@@ -200,11 +305,11 @@ else:
     register_extra_lazy_repository_format('bzrlib.plugins.svn.repository',
         'SvnRepositoryFormat')
 
-format_registry.register_lazy("subversion", "bzrlib.plugins.svn.format",
+format_registry.register_lazy("subversion", "bzrlib.plugins.svn.remote",
                          "SvnRemoteFormat",
                          "Subversion repository. ",
                          native=False)
-format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.format",
+format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.workingtree",
                          "SvnWorkingTreeDirFormat",
                          "Subversion working copy. ",
                          native=False, hidden=True)

@@ -24,7 +24,7 @@ from bzrlib.repository import Repository
 from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import TestSkipped, TestNotApplicable
 
-from bzrlib.plugins.svn import errors as svn_errors, format
+from bzrlib.plugins.svn import errors as svn_errors
 from subvertpy import ra
 from bzrlib.plugins.svn.layout.standard import (
     TrunkLayout, RootLayout, CustomLayout,)
@@ -926,7 +926,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f",format=format.get_rich_root_format())
+        dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
 

@@ -31,7 +31,7 @@ from bzrlib.errors import (
     NoWorkingTree,
     )
 
-from bzrlib.plugins.svn.format import SvnRemoteFormat
+from bzrlib.plugins.svn.remote import SvnRemoteFormat
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.transport import SvnRaTransport
 
@@ -157,15 +157,10 @@ class TestRemoteAccess(SubversionTestCase):
         x = BzrDir.open(repos_url+"/trunk")
         self.assertRaises(NoRepositoryPresent, x.open_repository)
 
-    def test_needs_format_upgrade_other(self):
-        repos_url = self.make_repository("d")
-        x = BzrDir.open(repos_url+"/trunk")
-        self.assertTrue(x.needs_format_conversion(format_registry.make_bzrdir("rich-root")))
-
     def test_needs_format_upgrade_default(self):
         repos_url = self.make_repository("d")
         x = BzrDir.open(repos_url+"/trunk")
-        self.assertTrue(x.needs_format_conversion())
+        self.assertTrue(x.needs_format_conversion(format_registry.make_bzrdir("default")))
 
     def test_needs_format_upgrade_self(self):
         repos_url = self.make_repository("d")

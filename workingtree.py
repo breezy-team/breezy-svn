@@ -69,7 +69,10 @@ from bzrlib.inventory import (
     InventoryFile,
     InventoryLink,
     )
-from bzrlib.lockable_files import LockableFiles
+from bzrlib.lockable_files import (
+    LockableFiles,
+    TransportLock,
+    )
 from bzrlib.lockdir import LockDir
 from bzrlib.revision import (
     NULL_REVISION,
@@ -93,9 +96,7 @@ from bzrlib.plugins.svn.commit import (
 from bzrlib.plugins.svn.errors import (
     convert_svn_error,
     NotSvnBranchPath,
-    )
-from bzrlib.plugins.svn.format import (
-    SvnWorkingTreeDirFormat,
+    NoSvnRepositoryPresent,
     )
 from bzrlib.plugins.svn.mapping import (
     escape_svn_path,
@@ -196,12 +197,11 @@ def generate_ignore_list(ignore_map):
 class SvnWorkingTree(SubversionTree,WorkingTree):
     """WorkingTree implementation that uses a svn working copy for storage."""
 
-    def __init__(self, bzrdir, local_path, entry):
+    def __init__(self, bzrdir, format, local_path, entry):
         assert isinstance(local_path, unicode)
         self.entry = entry
         self.basedir = local_path
-        version = check_wc(self.basedir.encode("utf-8"))
-        self._format = SvnWorkingTreeFormat(version)
+        self._format = format
         self.bzrdir = bzrdir
         self._branch = None
         self.base_revnum = 0
@@ -1005,7 +1005,7 @@ class SvnWorkingTreeFormat(WorkingTreeFormat):
         self.version = version
 
     def __get_matchingbzrdir(self):
-        return SvnWorkingTreeDirFormat()
+        return SvnWorkingTreeDirFormat(self.version)
 
     _matchingbzrdir = property(__get_matchingbzrdir)
 
@@ -1023,6 +1023,53 @@ class SvnWorkingTreeFormat(WorkingTreeFormat):
 
     def open(self, a_bzrdir):
         raise NotImplementedError(self.initialize)
+
+
+class SvnWorkingTreeDirFormat(ControlDirFormat):
+    """Working Tree implementation that uses Subversion working copies."""
+
+    _lock_class = TransportLock
+
+    def __init__(self, version=None):
+        super(SvnWorkingTreeDirFormat, self).__init__()
+        self.version = version
+
+    def open(self, transport, _found=False):
+        import subvertpy
+        try:
+            return SvnCheckout(transport, self)
+        except subvertpy.SubversionException, (_, num):
+            if num in (subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED,):
+                raise NoSvnRepositoryPresent(transport.base)
+            raise
+
+    def get_format_string(self):
+        raise NotImplementedError(self.get_format_string)
+
+    def get_format_description(self):
+        return 'Subversion Local Checkout'
+
+    def initialize_on_transport(self, transport):
+        raise UninitializableFormat(self)
+
+    def initialize_on_transport_ex(self, transport, use_existing_dir=False,
+        create_prefix=False, force_new_repo=False, stacked_on=None,
+        stack_on_pwd=None, repo_format_name=None, make_working_trees=None,
+        shared_repo=False, vfs_only=False):
+        raise UninitializableFormat(self)
+
+    def get_converter(self, format):
+        """See ControlDirFormat.get_converter()."""
+        return SvnCheckoutConverter(format)
+
+    def is_supported(self):
+        """See ControlDirFormat.is_supported()."""
+        return True
+
+    @property
+    def repository_format(self):
+        from bzrlib.plugins.svn.repository import SvnRepositoryFormat
+        return SvnRepositoryFormat()
 
 
 class SvnCheckout(ControlDir):
@@ -1097,7 +1144,8 @@ class SvnCheckout(ControlDir):
 
     def open_workingtree(self, _unsupported=False, recommend_upgrade=False):
         try:
-            return SvnWorkingTree(self, self.local_path, self.entry)
+            return SvnWorkingTree(self, SvnWorkingTreeFormat(self._format.version),
+                    self.local_path, self.entry)
         except NotSvnBranchPath, e:
             raise NoWorkingTree(self.local_path)
 
@@ -1144,9 +1192,7 @@ class SvnCheckout(ControlDir):
         assert self.entry.url.startswith(self.entry.repos)
         return self.entry.url[len(self.entry.repos):].strip("/")
 
-    def needs_format_conversion(self, format=None):
-        if format is None:
-            format = ControlDirFormat.get_default_format()
+    def needs_format_conversion(self, format):
         return not isinstance(self._format, format.__class__)
 
     def get_workingtree_transport(self, format):
