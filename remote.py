@@ -21,7 +21,6 @@ import urllib
 
 from bzrlib import (
     errors,
-    osutils,
     trace,
     version_info as bzrlib_version,
     )
@@ -41,18 +40,6 @@ from bzrlib.push import (
     )
 from bzrlib.transport import (
     do_catching_redirections,
-    )
-
-from bzrlib.plugins.svn.errors import (
-    NoSvnRepositoryPresent,
-    NotSvnBranchPath,
-    )
-from bzrlib.plugins.svn.repository import (
-    SvnRepository,
-    )
-from bzrlib.plugins.svn.transport import (
-    bzr_to_svn_url,
-    get_svn_ra_transport,
     )
 
 
@@ -150,6 +137,7 @@ class SvnRemoteFormat(ControlDirFormat):
 
     def initialize_on_transport(self, transport):
         """See ControlDir.initialize_on_transport()."""
+        from bzrlib import osutils
         from bzrlib.plugins.svn import lazy_check_versions
         lazy_check_versions()
         from bzrlib.transport.local import LocalTransport
@@ -168,6 +156,7 @@ class SvnRemoteFormat(ControlDirFormat):
         revprop_hook = os.path.join(local_path, "hooks", "pre-revprop-change")
         open(revprop_hook, 'w').write("#!/bin/sh")
         os.chmod(revprop_hook, os.stat(revprop_hook).st_mode | 0111)
+        from bzrlib.plugins.svn.transport import get_svn_ra_transport
         return self.open(get_svn_ra_transport(transport), _found=True)
 
 
@@ -188,6 +177,7 @@ class SvnRemoteAccess(ControlDir):
 
     def __init__(self, _transport, _format=None):
         """See ControlDir.__init__()."""
+        from bzrlib.plugins.svn.transport import bzr_to_svn_url, get_svn_ra_transport
         _transport = get_svn_ra_transport(_transport)
         if _format is None:
             _format = SvnRemoteFormat()
@@ -230,6 +220,8 @@ class SvnRemoteAccess(ControlDir):
 
         :return: instance of SvnRepository.
         """
+        from bzrlib.plugins.svn.errors import NoSvnRepositoryPresent
+        from bzrlib.plugins.svn.repository import SvnRepository
         if self.branch_path == "":
             return SvnRepository(self, self.root_transport)
         raise NoSvnRepositoryPresent(self.root_transport.base)
@@ -239,6 +231,7 @@ class SvnRemoteAccess(ControlDir):
 
         :return: instance of SvnRepository.
         """
+        from bzrlib.plugins.svn.repository import SvnRepository
         transport = self.root_transport
         if self.root_url != transport.base:
             transport = transport.clone_root()
@@ -282,6 +275,7 @@ class SvnRemoteAccess(ControlDir):
         :param stop_revision: Tip of new branch
         :return: Branch object
         """
+        from bzrlib.plugins.svn.errors import NotSvnBranchPath
         from bzrlib.plugins.svn.push import InterToSvnRepository
         source.lock_read()
         try:
