@@ -548,12 +548,12 @@ class RepositoryTests(SubversionTestCase):
         revid2 = bzrwt.commit("Merge something", rev_id="mergerevid")
         bzr_parents = bzrwt.branch.repository.get_revision(revid2).parent_ids
         trunk = Branch.open(repos_url + "/trunk")
-        self.assertRaises(AppendRevisionsOnlyViolation, 
+        self.assertRaises(AppendRevisionsOnlyViolation,
             trunk.pull, bzrwt.branch)
         trunk.get_config().set_user_option('append_revisions_only', 'False')
         trunk.pull(bzrwt.branch)
 
-        self.assertEquals(tuple(bzr_parents), 
+        self.assertEquals(tuple(bzr_parents),
                 trunk.repository.get_revision(revid2).parent_ids)
 
         self.assertEquals([revid1, revid2], trunk.revision_history())

@@ -95,7 +95,8 @@ class TestCheckout(SubversionTestCase):
     def test_needs_format_conversion_default(self):
         self.make_client("d", "dc")
         x = BzrDir.open("dc")
-        self.assertTrue(x.needs_format_conversion())
+        self.assertTrue(x.needs_format_conversion(
+            format_registry.make_bzrdir('default')))
 
     def test_needs_format_conversion_self(self):
         self.make_client("d", "dc")
