@@ -260,7 +260,7 @@ class SvnRemoteAccess(ControlDir):
         Will always raise NotLocalUrl as this
         ControlDir can not be associated with working trees.
         """
-        raise errors.NotLocalUrl(self.root_transport.base)
+        raise errors.UnsupportedOperation(self.create_workingtree, self)
 
     def needs_format_conversion(self, format):
         """See ControlDir.needs_format_conversion()."""
