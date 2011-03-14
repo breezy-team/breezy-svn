@@ -497,11 +497,16 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
         revmeta, mapping = repository._get_revmeta(revid)
         old_fileprops = revmeta.get_fileprops()
         fileprops = dict(old_fileprops.iteritems())
-        from_url = url_join_unescaped_path(repository.base, revmeta.branch_path)
+        from_url = url_join_unescaped_path(repository.base,
+            revmeta.branch_path)
         from_revnum = revmeta.revnum
     if set_metadata:
-        assert mapping.supports_hidden
-        (set_custom_revprops, set_custom_fileprops) = repository._properties_to_set(mapping)
+        if not mapping.supports_hidden:
+            import pdb; pdb.set_trace()
+            raise AssertionError("mapping format %r doesn't support hidden" %
+                mapping)
+        (set_custom_revprops,
+            set_custom_fileprops) = repository._properties_to_set(mapping)
         if set_custom_revprops:
             mapping.export_hidden_revprops(branch_path, revprops)
             if (not set_custom_fileprops and
