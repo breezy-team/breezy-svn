@@ -27,8 +27,8 @@ from bzrlib.bzrdir import (
 from bzrlib.errors import (
     AlreadyBranchError,
     NoRepositoryPresent,
-    NotLocalUrl,
     NoWorkingTree,
+    UnsupportedOperation,
     )
 
 from bzrlib.plugins.svn.remote import SvnRemoteFormat
@@ -72,7 +72,7 @@ class TestRemoteAccess(SubversionTestCase):
     def test_create_workingtree(self):
         repos_url = self.make_repository("d")
         x = BzrDir.open(repos_url)
-        self.assertRaises(NotLocalUrl, x.create_workingtree)
+        self.assertRaises(UnsupportedOperation, x.create_workingtree)
 
     def test_create_branch_top(self):
         repos_url = self.make_repository("d")
