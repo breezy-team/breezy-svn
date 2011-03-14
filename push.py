@@ -502,7 +502,6 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
         from_revnum = revmeta.revnum
     if set_metadata:
         if not mapping.supports_hidden:
-            import pdb; pdb.set_trace()
             raise AssertionError("mapping format %r doesn't support hidden" %
                 mapping)
         (set_custom_revprops,
