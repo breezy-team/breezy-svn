@@ -16,8 +16,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+"""Tests for push from a Bazaar to a Subversion repository."""
+
 import os
-from subvertpy import NODE_DIR, NODE_FILE, ra
+from subvertpy import (
+    NODE_DIR,
+    NODE_FILE,
+    ra,
+    )
 
 from bzrlib import osutils
 from bzrlib.branch import Branch
@@ -57,7 +63,6 @@ from bzrlib.plugins.svn.push import (
 from bzrlib.plugins.svn.tests import (
     SubversionTestCase,
     )
-
 
 
 class TestDPush(SubversionTestCase):
@@ -1088,9 +1093,6 @@ class PushNewBranchTests(SubversionTestCase):
         check(copybranch)
 
     def test_push_non_lhs_parent(self):
-        from bzrlib.debug import debug_flags
-        debug_flags.add("commit")
-        debug_flags.add("fetch")
         repos_url = self.make_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
@@ -1105,7 +1107,6 @@ class PushNewBranchTests(SubversionTestCase):
         newbranch = newdir.import_branch(bzrwt.branch)
 
         # Should create dc/trunk
-
         dc = self.get_commit_editor(repos_url)
         branches = dc.add_dir("branches")
         branches.add_dir('branches/foo', 'trunk')
@@ -1218,6 +1219,7 @@ class PushNewBranchTests(SubversionTestCase):
 
 
 class TestPushTwice(SubversionTestCase):
+
     def test_push_twice(self):
         # bug 208566
         repos_url = self.make_repository('d')

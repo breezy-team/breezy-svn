@@ -227,9 +227,10 @@ class InterToSvnRepository(InterRepository):
         return None
 
     def push_branch(self, todo, layout, project, target_branch, target_config,
-        push_merged, overwrite):
+                    push_merged, overwrite):
         """Push a series of revisions into a Subversion repository.
 
+        :param todo: New revisions to push
         """
         assert todo != []
         count = 0
