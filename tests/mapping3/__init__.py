@@ -126,10 +126,7 @@ class RepositoryTests(SubversionTestCase):
         super(RepositoryTests, self).setUp()
         self.repos_url = self.make_repository("d")
         self._old_mapping = mapping_registry._get_default_key()
-        mapping_registry.set_default("v3")
-
-    def tearDown(self):
-        super(RepositoryTests, self).tearDown()
+        self.addCleanup(mapping_registry.set_default, self._old_mapping)
         mapping_registry.set_default("v3")
 
     def test_revision_id_to_revno_simple(self):
