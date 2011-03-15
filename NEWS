@@ -56,6 +56,9 @@ bzr-svn 1.1.0					  UNRELEASED
   * Support non-ascii characters in branch paths in foreign revision displayer
     (used by e.g. "bzr log"). (Jelmer Vernooij, #728380)
 
+  * dpushing multiple commits no longer repeatedly downloads the entire
+    tree. (Jelmer Vernooij, #582898)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
