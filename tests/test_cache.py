@@ -20,6 +20,7 @@ from bzrlib.errors import (
     NoSuchRevision,
     )
 from bzrlib.tests import (
+    Feature,
     TestCase,
     TestCaseInTempDir,
     TestSkipped,
@@ -31,6 +32,22 @@ from bzrlib.plugins.svn.mapping4 import (
     )
 
 from subvertpy import NODE_DIR, NODE_FILE
+
+
+class _TdbFeature(Feature):
+
+    def _probe(self):
+        try:
+            from tdb import Tdb
+        except ImportError:
+            return False
+        else:
+            return True
+
+    def feature_name(self):
+        return "tdb"
+
+tdb_feature = _TdbFeature()
 
 
 class LogCacheTests(object):
@@ -77,10 +94,8 @@ class TdbLogCacheTests(TestCaseInTempDir,LogCacheTests):
 
     def setUp(self):
         super(TdbLogCacheTests, self).setUp()
-        try:
-            from bzrlib.plugins.svn.cache.tdbcache import TdbLogCache, tdb_open
-        except ImportError:
-            raise UnavailableFeature("tdb")
+        self.requireFeature(tdb_feature)
+        from bzrlib.plugins.svn.cache.tdbcache import TdbLogCache, tdb_open
         import tdb
         self.cache = TdbLogCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
@@ -132,10 +147,8 @@ class TdbRevidMapCacheTests(TestCaseInTempDir,RevidMapCacheTests):
 
     def setUp(self):
         super(TdbRevidMapCacheTests, self).setUp()
-        try:
-            from bzrlib.plugins.svn.cache.tdbcache import TdbRevisionIdMapCache, tdb_open
-        except ImportError:
-            raise UnavailableFeature("tdb")
+        self.requireFeature(tdb_feature)
+        from bzrlib.plugins.svn.cache.tdbcache import TdbRevisionIdMapCache, tdb_open
         import tdb
         self.cache = TdbRevisionIdMapCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
@@ -193,10 +206,8 @@ class TdbRevInfoCacheTests(TestCaseInTempDir,RevInfoCacheTests):
 
     def setUp(self):
         super(TdbRevInfoCacheTests, self).setUp()
-        try:
-            from bzrlib.plugins.svn.cache.tdbcache import TdbRevisionInfoCache, tdb_open
-        except ImportError:
-            raise UnavailableFeature("tdb")
+        self.requireFeature(tdb_feature)
+        from bzrlib.plugins.svn.cache.tdbcache import TdbRevisionInfoCache, tdb_open
         import tdb
         self.cache = TdbRevisionInfoCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
@@ -236,9 +247,7 @@ class TdbParentsCacheTests(TestCaseInTempDir,ParentsCacheTests):
 
     def setUp(self):
         super(TdbParentsCacheTests, self).setUp()
-        try:
-            from bzrlib.plugins.svn.cache.tdbcache import TdbParentsCache, tdb_open
-        except ImportError:
-            raise UnavailableFeature("tdb")
+        self.requireFeature(tdb_feature)
+        from bzrlib.plugins.svn.cache.tdbcache import TdbParentsCache, tdb_open
         import tdb
         self.cache = TdbParentsCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))

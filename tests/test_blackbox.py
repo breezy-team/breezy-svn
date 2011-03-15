@@ -21,7 +21,6 @@ import sys
 import bzrlib.gpg
 from bzrlib.repository import Repository
 from bzrlib.tests.blackbox import ExternalBase
-from bzrlib.tests import TestSkipped
 
 from bzrlib.plugins.svn.convert import load_dumpfile
 from bzrlib.plugins.svn.layout.standard import RootLayout
