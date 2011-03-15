@@ -1344,6 +1344,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         self.interrepo.push_revision("trunk",
             self.interrepo._get_branch_config("trunk"),
             self.from_repo.get_revision(self.revid1),
+            append_revisions_only=True,
             push_metadata=True, base_revid=None, overwrite=False)
         paths = self.client_log(self.svn_repo_url, 1, 0)[1][0]
         self.assertEquals(paths,
@@ -1354,6 +1355,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         self.interrepo.push_revision("trunk",
             self.interrepo._get_branch_config("trunk"),
             self.from_repo.get_revision(self.revid1),
+            append_revisions_only=True,
             push_metadata=False, base_revid=None, overwrite=False)
         paths = self.client_log(self.svn_repo_url, 1, 0)[1][0]
         self.assertEquals(paths,
@@ -1374,10 +1376,12 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         # Push without and without configuration should raise AppendRevisionsOnlyViolation
         self.assertRaises(AppendRevisionsOnlyViolation,
             self.interrepo.push_revision, "trunk", config, rev1,
+            append_revisions_only=True,
             push_metadata=False, base_revid=None, overwrite=False)
 
-        # With append revisions only disable it should raise
+        # With append revisions only disabled but overwrite it should work
         self.interrepo.push_revision("trunk", config, rev1,
+            append_revisions_only=True,
             push_metadata=False, base_revid=None, overwrite=True)
 
         paths = self.client_log(self.svn_repo_url, 2, 0)[2][0]
@@ -1398,11 +1402,12 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         # Push without and without configuration should raise AppendRevisionsOnlyViolation
         self.assertRaises(AppendRevisionsOnlyViolation,
             self.interrepo.push_revision, "trunk", config, rev1,
+            append_revisions_only=True,
             push_metadata=False, base_revid=None, overwrite=False)
 
         # With append revisions only disable it should raise
-        config.set_user_option('append_revisions_only', 'False')
         self.interrepo.push_revision("trunk", config, rev1,
+            append_revisions_only=False,
             push_metadata=False, base_revid=None, overwrite=False)
 
         paths = self.client_log(self.svn_repo_url, 2, 0)[2][0]

@@ -237,18 +237,21 @@ class InterToSvnRepository(InterRepository):
                     self.push_ancestors(layout, project,
                         rev.parent_ids, create_prefix=True)
                 last = self.push_revision(target_branch, target_config, rev,
-                    overwrite=overwrite)
+                    overwrite=overwrite,
+                    append_revisions_only=self.get_append_revisions_only(target_config, overwrite))
             return last
         finally:
             pb.finished()
 
     def push_revision(self, target_path, target_config, rev,
+            append_revisions_only,
             push_metadata=True, base_revid=None, overwrite=False):
         """Push a single revision.
 
         :param target_path: Target branch path in the svn repository
         :param target_config: Config object for the target branch
         :param rev: Revision object of revision that needs to be pushed
+        :param append_revisions_only: Whether to append revisions only
         :param push_metadata: Whether to push svn-specific metadata
         :param base_revid: Base revision (used when pushing a custom base),
             e.g. during dpush.
@@ -270,6 +273,7 @@ class InterToSvnRepository(InterRepository):
         # FIXME: overwrite doesn't quite make sense here
         if overwrite:
             overwrite_revnum = self.target.get_latest_revnum()
+            append_revisions_only = False
         elif base_foreign_revid is not None:
             overwrite_revnum = base_foreign_revid[2]
         else:
@@ -281,7 +285,7 @@ class InterToSvnRepository(InterRepository):
                 rev.revision_id, rev,
                 base_foreign_revid, base_mapping,
                 push_metadata=push_metadata,
-                append_revisions_only=self.get_append_revisions_only(target_config, overwrite),
+                append_revisions_only=append_revisions_only,
                 overwrite_revnum=overwrite_revnum)
         finally:
             self.source.unlock()
@@ -325,13 +329,10 @@ class InterToSvnRepository(InterRepository):
             revid, foreign_info = create_branch_with_hidden_commit(self.target,
                 target_branch_path, revid, set_metadata=True, deletefirst=None)
         else:
-            base_foreign_revid, base_mapping = self._get_foreign_revision_info(start_revid_parent, target_branch_path)
-            revid, foreign_info = push_revision_tree(self.get_graph(), self.target, target_branch_path,
+            revid, foreign_info = self.push_revision(target_branch_path,
                 self._get_branch_config(target_branch_path),
-                self.source, start_revid_parent, start_revid,
-                rev, base_foreign_revid, base_mapping,
-                push_metadata=push_metadata,
-                append_revisions_only=append_revisions_only)
+                rev, push_metadata=push_metadata, base_revid=start_revid_parent,
+                overwrite=False, append_revisions_only=append_revisions_only)
         self._add_path_info(target_branch_path, revid, foreign_info)
         return revid, foreign_info
 

@@ -416,7 +416,7 @@ class SvnBranch(ForeignBranch):
         else:
             base_revid = NULL_REVISION
         interrepo = InterToSvnRepository(self.repository, self.repository)
-        interrepo.push_revision(self.get_branch_path(), self.get_config(), rev, overwrite=True)
+        interrepo.push_revision(self.get_branch_path(), self.get_config(), rev, overwrite=True, append_revisions_only=False)
         self._clear_cached_state()
 
     def set_last_revision_info(self, revno, revid):
@@ -982,7 +982,8 @@ class InterOtherSvnBranch(InterBranch):
                         base_revid = rev.parent_ids[0]
                     revid_map[rev.revision_id], _ = interrepo.push_revision(
                         target_branch_path, target_config, rev,
-                        push_metadata=False, base_revid=base_revid)
+                        push_metadata=False, base_revid=base_revid,
+                        append_revisions_only=True)
             finally:
                 pb.finished()
             interrepo = InterFromSvnRepository(self.target.repository,
