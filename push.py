@@ -271,16 +271,22 @@ class InterToSvnRepository(InterRepository):
         mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
         if overwrite:
             overwrite_revnum = self.target.get_latest_revnum()
-        else:
+        elif base_foreign_revid is not None:
             overwrite_revnum = base_foreign_revid[2]
-        revid, foreign_info = push_revision_tree(self.get_graph(),
-            self.target, target_path, target_config, self.source, base_revid,
-            rev.revision_id, rev,
-            base_foreign_revid, base_mapping,
-            push_metadata=push_metadata,
-            append_revisions_only=self.get_append_revisions_only(target_config, overwrite),
-            override_svn_revprops=target_config.get_override_svn_revprops(),
-            overwrite_revnum=overwrite_revnum)
+        else:
+            overwrite_revnum = None
+        self.source.lock_read()
+        try:
+            revid, foreign_info = push_revision_tree(self.get_graph(),
+                self.target, target_path, target_config, self.source, base_revid,
+                rev.revision_id, rev,
+                base_foreign_revid, base_mapping,
+                push_metadata=push_metadata,
+                append_revisions_only=self.get_append_revisions_only(target_config, overwrite),
+                override_svn_revprops=target_config.get_override_svn_revprops(),
+                overwrite_revnum=overwrite_revnum)
+        finally:
+            self.source.unlock()
         assert revid == rev.revision_id or not push_metadata
         self.add_path_info(target_path, revid, foreign_info)
         return (revid, foreign_info)

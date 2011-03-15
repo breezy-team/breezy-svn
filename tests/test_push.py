@@ -48,7 +48,10 @@ from bzrlib.revision import (
     Revision,
     )
 from bzrlib.trace import mutter
-from bzrlib.tests import TestCase
+from bzrlib.tests import (
+    TestCaseWithTransport,
+    TestCase,
+    )
 
 from bzrlib.plugins.svn import (
     transport,
@@ -1285,11 +1288,36 @@ class InterToSvnRepositoryTests(SubversionTestCase):
         super(InterToSvnRepositoryTests, self).setUp()
         self.from_bzrdir = BzrDir.create('bzrrepo')
         self.from_repo = self.from_bzrdir.create_repository(shared=True)
-        repos_url = self.make_repository('svnrepo')
-        self.to_repo = Repository.open(repos_url)
-
+        self.svn_repo_url = self.make_repository('svnrepo')
+        self.to_repo = Repository.open(self.svn_repo_url)
         self.interrepo = InterRepository.get(self.from_repo, self.to_repo)
 
     def test__target_has_revision(self):
         self.assertTrue(self.interrepo._target_has_revision(NULL_REVISION))
         self.assertFalse(self.interrepo._target_has_revision("foo"))
+
+    def test_push_first_revision_with_metadata(self):
+        branch = BzrDir.create_branch_convenience('bzrrepo/tree1')
+        tree = branch.bzrdir.open_workingtree()
+        self.build_tree_contents([('bzrrepo/tree1/a', 'data')])
+        tree.add(['a'])
+        revid = tree.commit('msg')
+        self.interrepo.push_revision("trunk", self.interrepo._get_branch_config("trunk"),
+            self.from_repo.get_revision(revid),
+            push_metadata=True, base_revid=None, overwrite=False)
+        paths = self.client_log(self.svn_repo_url, 1, 0)[1][0]
+        self.assertEquals(paths,
+            {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
+
+    def test_push_first_revision_without_metadata(self):
+        branch = BzrDir.create_branch_convenience('bzrrepo/tree1')
+        tree = branch.bzrdir.open_workingtree()
+        self.build_tree_contents([('bzrrepo/tree1/a', 'data')])
+        tree.add(['a'])
+        revid = tree.commit('msg')
+        self.interrepo.push_revision("trunk", self.interrepo._get_branch_config("trunk"),
+            self.from_repo.get_revision(revid),
+            push_metadata=False, base_revid=None, overwrite=False)
+        paths = self.client_log(self.svn_repo_url, 1, 0)[1][0]
+        self.assertEquals(paths,
+            {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
