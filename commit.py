@@ -747,8 +747,11 @@ class SvnCommitBuilder(RootCommitBuilder):
                     trace.warning("Setting property %r with invalid characters in name", prop)
             if self.supports_custom_revprops:
                 self._svn_revprops[properties.PROP_REVISION_ORIGINAL_DATE] = properties.time_to_cstring(1000000*self._timestamp)
-            assert self.supports_custom_revprops or self._svn_revprops.keys() == [properties.PROP_REVISION_LOG], \
-                    "revprops: %r" % self._svn_revprops.keys()
+            if (not self.supports_custom_revprops and
+                self._svn_revprops.keys() != [properties.PROP_REVISION_LOG]):
+                raise AssertionError(
+                    "non-log revision properties set but not supported: %r" %
+                    self._svn_revprops.keys())
             replace_existing = False
             # See whether the base of the commit matches the lhs parent
             # if not, we need to replace the existing directory
