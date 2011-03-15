@@ -424,9 +424,7 @@ class InterToSvnRepository(InterRepository):
             len(rev.parent_ids) > 1):
             self.push_ancestors(layout, target_project,
                 rev.parent_ids, create_prefix=True)
-        return push_revision_tree(self.get_graph(), self.target,
-            bp, target_config, self.source, parent_revid, rev.revision_id, rev,
-            base_foreign_revid, base_mapping,
+        return self.push_revision(bp, target_config, rev, overwrite=False,
             append_revisions_only=self.get_append_revisions_only(target_config))
 
     def get_append_revisions_only(self, target_config, overwrite=False):
