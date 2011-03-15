@@ -221,31 +221,44 @@ class InterToSvnRepository(InterRepository):
         """See InterRepository._get_repo_format_to_test()."""
         return None
 
-    def push_revision_series(self, todo, layout, project, target_branch, target_config,
-                    push_merged, overwrite):
+    def push_revision_series(self, todo, layout, project, target_branch,
+            target_config, push_merged, overwrite):
         """Push a series of revisions into a Subversion repository.
 
         :param todo: New revisions to push
         """
+        append_revisions_only = self.get_append_revisions_only(target_config,
+            overwrite)
         assert todo != []
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for rev in self.source.get_revisions(todo):
                 pb.update("pushing revisions", todo.index(rev.revision_id),
                           len(todo))
-                if push_merged and len(rev.parent_ids) > 1:
-                    self.push_ancestors(layout, project,
-                        rev.parent_ids, create_prefix=True)
-                last = self.push_revision(target_branch, target_config, rev,
-                    overwrite=overwrite,
-                    append_revisions_only=self.get_append_revisions_only(target_config, overwrite))
+                last = self.push_revision_inclusive(target_branch,
+                    target_config, rev, overwrite=overwrite,
+                    append_revisions_only=append_revisions_only,
+                    push_merged=push_merged, project=project, layout=layout)
+                append_revisions_only = True
+                overwrite = False
             return last
         finally:
             pb.finished()
 
+    def push_revision_inclusive(self, target_path, target_config, rev,
+            append_revisions_only, push_merged, layout, project,
+            push_metadata=True, overwrite=False):
+        """Push a revision including ancestors."""
+        if push_merged and len(rev.parent_ids) > 1:
+            self.push_ancestors(layout, project,
+                rev.parent_ids, create_prefix=True)
+        return self.push_revision(target_path, target_config, rev,
+            overwrite=overwrite, append_revisions_only=append_revisions_only,
+            push_metadata=push_metadata)
+
     def push_revision(self, target_path, target_config, rev,
-            append_revisions_only,
-            push_metadata=True, base_revid=None, overwrite=False):
+            append_revisions_only, push_metadata=True, base_revid=None,
+            overwrite=False):
         """Push a single revision.
 
         :param target_path: Target branch path in the svn repository
@@ -263,8 +276,8 @@ class InterToSvnRepository(InterRepository):
                 base_revid = rev.parent_ids[0]
             else:
                 base_revid = NULL_REVISION
-        base_foreign_revid, base_mapping = self._get_foreign_revision_info(base_revid,
-            target_path)
+        base_foreign_revid, base_mapping = self._get_foreign_revision_info(
+            base_revid, target_path)
         if rev.parent_ids:
             base_revid = rev.parent_ids[0]
         else:
@@ -281,10 +294,9 @@ class InterToSvnRepository(InterRepository):
         self.source.lock_read()
         try:
             revid, foreign_info = push_revision_tree(self.get_graph(),
-                self.target, target_path, target_config, self.source, base_revid,
-                rev.revision_id, rev,
-                base_foreign_revid, base_mapping,
-                push_metadata=push_metadata,
+                self.target, target_path, target_config, self.source,
+                base_revid, rev.revision_id, rev, base_foreign_revid,
+                base_mapping, push_metadata=push_metadata,
                 append_revisions_only=append_revisions_only,
                 overwrite_revnum=overwrite_revnum)
         finally:
@@ -394,8 +406,8 @@ class InterToSvnRepository(InterRepository):
             todo.append(revid)
         todo.reverse()
         if todo != []:
-            self.push_revision_series(todo, layout, project, target_branch_path,
-                target_config, push_merged, overwrite)
+            self.push_revision_series(todo, layout, project,
+                target_branch_path, target_config, push_merged, overwrite)
 
     def push_nonmainline_revision(self, rev, layout):
         """Push a non-mainline revision *somewhere*.
