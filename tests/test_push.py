@@ -165,7 +165,7 @@ class TestDPush(SubversionTestCase):
         repos = self.svndir.find_repository()
         revmeta = repos._revmeta_provider.get_revision("", 3)
         self.assertChangedPathsEquals(
-                {"foo/bliel": ('A', None, -1, NODE_FILE)}, revmeta.paths)
+                {'': ('M', None, -1, 2), "foo/bliel": ('A', None, -1, NODE_FILE)}, revmeta.paths)
 
     def test_diverged(self):
         dc = self.commit_editor()

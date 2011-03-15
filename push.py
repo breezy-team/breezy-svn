@@ -266,6 +266,10 @@ class InterToSvnRepository(InterRepository):
                 base_revid = NULL_REVISION
         base_foreign_revid, base_mapping = self._get_base_revision(base_revid,
             target_path)
+        if rev.parent_ids:
+            base_revid = rev.parent_ids[0]
+        else:
+            base_revid = NULL_REVISION
         mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
         if overwrite:
             overwrite_revnum = self.target.get_latest_revnum()
