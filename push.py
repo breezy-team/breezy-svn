@@ -74,6 +74,20 @@ from bzrlib.plugins.svn.transport import (
     url_join_unescaped_path,
     )
 
+
+def create_prefix(transport, prefix, already_present):
+    """Create a branch prefix.
+
+    :param transport: Repository root transport
+    :param prefix: Prefix to create
+    :param already_present: Path that already exists
+    """
+    revprops = {properties.PROP_REVISION_LOG: "Add branches directory."}
+    if transport.has_capability("commit-revprops"):
+        revprops[SVN_REVPROP_BZR_SKIP] = ""
+    create_branch_prefix(transport, revprops, prefix.split("/")[:-1], filter(lambda x: x != "", already_present.split("/")))
+
+
 def find_push_base_revision(source, target, stop_revision):
     """Find the first revision to push.
 
@@ -345,12 +359,6 @@ class InterToSvnRepository(InterRepository):
         self._add_path_info(target_branch_path, revid, foreign_info)
         return revid, foreign_info
 
-    def create_prefix(self, prefix, already_present):
-        revprops = {properties.PROP_REVISION_LOG: "Add branches directory."}
-        if self.target.transport.has_capability("commit-revprops"):
-            revprops[SVN_REVPROP_BZR_SKIP] = ""
-        create_branch_prefix(self.target.transport, revprops, prefix.split("/")[:-1], filter(lambda x: x != "", already_present.split("/")))
-
     def push_ancestors(self, layout, project, parent_revids):
         """Push the ancestors of a revision.
 
@@ -372,7 +380,7 @@ class InterToSvnRepository(InterRepository):
             try:
                 self.push_revision(rhs_branch_path, x, append_revisions_only=False)
             except MissingPrefix, e:
-                self.create_prefix(e.path, e.existing_path)
+                create_prefix(self.target.transport, e.path, e.existing_path)
                 self.push_revision(rhs_branch_path, x, append_revisions_only=False)
 
     def push_new_branch(self, layout, project, target_branch_path,

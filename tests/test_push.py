@@ -66,6 +66,7 @@ from bzrlib.plugins.svn.layout.standard import (
     TrunkLayout,
     )
 from bzrlib.plugins.svn.push import (
+    create_prefix,
     determine_branch_path,
     )
 from bzrlib.plugins.svn.tests import (
@@ -1413,3 +1414,29 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         paths = self.client_log(self.svn_repo_url, 2, 0)[2][0]
         self.assertEquals(paths,
             {'/trunk': ('R', None, -1), '/trunk/a': ('A', None, -1)})
+
+
+class CreatePrefixTests(SubversionTestCase):
+
+    def setUp(self):
+        super(CreatePrefixTests, self).setUp()
+        self.repos_url = self.make_repository("d")
+        self.repo = Repository.open(self.repos_url)
+
+    def test_create_single(self):
+        create_prefix(self.repo.transport, "branches/abranch", "")
+        paths = self.client_log(self.repos_url, 1, 0)[1][0]
+        self.assertEquals(paths, {'/branches': ('A', None, -1)})
+
+    def test_create_double(self):
+        create_prefix(self.repo.transport, "project/branches/abranch", "")
+        paths = self.client_log(self.repos_url, 1, 0)[1][0]
+        self.assertEquals(paths, {'/project': ('A', None, -1), '/project/branches': ('A', None, -1)})
+
+    def test_part_exists(self):
+        dc = self.get_commit_editor(self.repos_url)
+        dc.add_dir("project")
+        dc.close()
+        create_prefix(self.repo.transport, "project/branches/abranch", "project")
+        paths = self.client_log(self.repos_url, 2, 0)[2][0]
+        self.assertEquals(paths, {'/project/branches': ('A', None, -1)})
