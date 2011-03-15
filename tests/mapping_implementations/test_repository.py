@@ -40,11 +40,8 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
     def setUp(self):
         super(TestSubversionMappingRepositoryWorks, self).setUp()
         self._old_mapping = mapping_registry._get_default_key()
+        self.addCleanup(mapping_registry.set_default, self._old_mapping)
         mapping_registry.set_default(self.mapping_name)
-
-    def tearDown(self):
-        super(TestSubversionMappingRepositoryWorks, self).tearDown()
-        mapping_registry.set_default(self._old_mapping)
 
     def test_get_branch_log(self):
         repos_url = self.make_repository("a")

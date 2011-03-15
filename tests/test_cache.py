@@ -24,7 +24,6 @@ from bzrlib.tests import (
     TestCase,
     TestCaseInTempDir,
     TestSkipped,
-    UnavailableFeature,
     )
 
 from bzrlib.plugins.svn.mapping4 import (
