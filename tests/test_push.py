@@ -39,8 +39,14 @@ from bzrlib.merge import (
     Merger,
     Merge3Merger,
     )
-from bzrlib.repository import Repository
-from bzrlib.revision import Revision
+from bzrlib.repository import (
+    InterRepository,
+    Repository,
+    )
+from bzrlib.revision import (
+    NULL_REVISION,
+    Revision,
+    )
 from bzrlib.trace import mutter
 from bzrlib.tests import TestCase
 
@@ -1270,3 +1276,20 @@ class DetermineBranchPathTests(TestCase):
         rev.properties['branch-nick'] = 'bla'
         self.assertEquals("someproj/branches/bla",
             determine_branch_path(rev, TrunkLayout(1), "someproj"))
+
+
+
+class InterToSvnRepositoryTests(SubversionTestCase):
+
+    def setUp(self):
+        super(InterToSvnRepositoryTests, self).setUp()
+        self.from_bzrdir = BzrDir.create('bzrrepo')
+        self.from_repo = self.from_bzrdir.create_repository(shared=True)
+        repos_url = self.make_repository('svnrepo')
+        self.to_repo = Repository.open(repos_url)
+
+        self.interrepo = InterRepository.get(self.from_repo, self.to_repo)
+
+    def test__target_has_revision(self):
+        self.assertTrue(self.interrepo._target_has_revision(NULL_REVISION))
+        self.assertFalse(self.interrepo._target_has_revision("foo"))
