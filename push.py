@@ -431,12 +431,11 @@ class InterToSvnRepository(InterRepository):
             (_, target_project, _, _) = layout.parse(base_foreign_revid[1])
         bp = determine_branch_path(rev, layout, target_project)
         target_config = self._get_branch_config(bp)
-        if (layout.push_merged_revisions(target_project) and
-            target_config.get_push_merged_revisions() and
-            len(rev.parent_ids) > 1):
-            self.push_ancestors(layout, target_project,
-                rev.parent_ids, create_prefix=True)
-        return self.push_revision(bp, target_config, rev, overwrite=False,
+        push_merged = (layout.push_merged_revisions(target_project) and
+            target_config.get_push_merged_revisions())
+        return self.push_revision_inclusive(bp, target_config, rev,
+            overwrite=False, push_metadata=True, push_merged=push_merged,
+            layout=layout, project=target_project,
             append_revisions_only=self.get_append_revisions_only(target_config))
 
     def get_append_revisions_only(self, target_config, overwrite=False):
