@@ -64,6 +64,7 @@ from bzrlib.plugins.svn.errors import (
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
+    TrunkLayout0,
     )
 from bzrlib.plugins.svn.push import (
     create_prefix,
@@ -1416,6 +1417,71 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
             {'/trunk': ('R', None, -1), '/trunk/a': ('A', None, -1)})
 
 
+class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
+
+    def setUp(self):
+        super(PushRevisionInclusiveTests, self).setUp()
+        branch = BzrDir.create_branch_convenience('bzrrepo/tree1')
+        tree1 = branch.bzrdir.open_workingtree()
+        self.build_tree_contents([('bzrrepo/tree1/a', 'data')])
+        tree1.add(['a'])
+        self.revid1 = tree1.commit('msg1')
+
+        branch = BzrDir.create_branch_convenience('bzrrepo/tree2')
+        tree2 = branch.bzrdir.open_workingtree()
+        self.build_tree_contents([('bzrrepo/tree2/b', 'data')])
+        tree2.add(['b'])
+        self.revid2 = tree2.commit('msg2')
+
+        tree1.merge_from_branch(tree2.branch, from_revision=NULL_REVISION,
+                to_revision=self.revid2)
+        self.revid_merge = tree1.commit("merge")
+
+    def test_push_no_merged(self):
+        config = self.interrepo._get_branch_config("trunk")
+        self.addCleanup(self.from_repo.unlock)
+        self.from_repo.lock_read()
+        rev1 = self.from_repo.get_revision(self.revid1)
+        self.interrepo.push_revision("trunk", 
+            config, rev1, append_revisions_only=False,
+            push_metadata=True, overwrite=False)
+        rev_merged = self.from_repo.get_revision(self.revid_merge)
+        self.interrepo.push_revision_inclusive("trunk", config,
+            rev_merged, append_revisions_only=True, push_merged=False,
+            layout=TrunkLayout0(), project="",
+            push_metadata=True, overwrite=False)
+        log = self.client_log(self.svn_repo_url, 2, 0)
+        self.assertEquals(log[1][0],
+            {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
+        self.assertEquals(log[2][0],
+            {'/trunk': ('M', None, -1), '/trunk/b': ('A', None, -1)})
+
+    def test_push_merged(self):
+        config = self.interrepo._get_branch_config("trunk")
+        self.addCleanup(self.from_repo.unlock)
+        self.from_repo.lock_read()
+        rev1 = self.from_repo.get_revision(self.revid1)
+        self.interrepo.push_revision("trunk", 
+            config, rev1, append_revisions_only=False,
+            push_metadata=True, overwrite=False)
+        rev_merged = self.from_repo.get_revision(self.revid_merge)
+        self.interrepo.push_revision_inclusive("trunk", config,
+            rev_merged, append_revisions_only=True, push_merged=True,
+            layout=TrunkLayout0(), project="",
+            push_metadata=True, overwrite=False)
+        log = self.client_log(self.svn_repo_url, 4, 0)
+        self.assertEquals(log[1][0],
+            {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
+        self.assertEquals(log[2][0], {'/branches': ('A', None, -1)})
+        self.assertEquals(log[2][3], "Add branches directory.")
+        self.assertEquals(log[3][3], 'msg2')
+        self.assertEquals(log[3][0],
+            {'/branches/tree2': ('A', None, -1), '/branches/tree2/b': ('A', None, -1)})
+        self.assertEquals(log[4][0],
+            {'/trunk': ('M', None, -1), '/trunk/b': ('A', '/branches/tree2/b', 3)})
+        self.assertEquals(log[4][3], 'merge')
+
+
 class CreatePrefixTests(SubversionTestCase):
 
     def setUp(self):
@@ -1425,8 +1491,9 @@ class CreatePrefixTests(SubversionTestCase):
 
     def test_create_single(self):
         create_prefix(self.repo.transport, "branches/abranch", "")
-        paths = self.client_log(self.repos_url, 1, 0)[1][0]
-        self.assertEquals(paths, {'/branches': ('A', None, -1)})
+        log = self.client_log(self.repos_url, 1, 0)
+        self.assertEquals(log[1][0], {'/branches': ('A', None, -1)})
+        self.assertEquals(log[1][3], "Add branches directory.")
 
     def test_create_double(self):
         create_prefix(self.repo.transport, "project/branches/abranch", "")

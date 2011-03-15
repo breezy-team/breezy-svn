@@ -342,7 +342,7 @@ class InterToSvnRepository(InterRepository):
             start_revid_parent = rev.parent_ids[0]
         # If this is just intended to create a new branch
         mapping = self.target.get_mapping()
-        if (stop_revision == start_revid and (mapping.supports_hidden or not push_metadata) and not append_revisions_only):
+        if (start_revid_parent != NULL_REVISION and stop_revision == start_revid and (mapping.supports_hidden or not push_metadata) and not append_revisions_only):
             if (self._target_has_revision(start_revid) or
                 start_revid == NULL_REVISION):
                 revid = start_revid
@@ -377,11 +377,12 @@ class InterToSvnRepository(InterRepository):
                 continue
             rev = self.source.get_revision(x)
             rhs_branch_path = determine_branch_path(rev, layout, project)
+            mutter("pushing ancestor %r to %s", x, rhs_branch_path)
             try:
-                self.push_revision(rhs_branch_path, x, append_revisions_only=False)
+                self.push_new_branch_first_revision(rhs_branch_path, x, append_revisions_only=False)
             except MissingPrefix, e:
                 create_prefix(self.target.transport, e.path, e.existing_path)
-                self.push_revision(rhs_branch_path, x, append_revisions_only=False)
+                self.push_new_branch_first_revision(rhs_branch_path, x, append_revisions_only=False)
 
     def push_new_branch(self, layout, project, target_branch_path,
         stop_revision, push_merged=None, overwrite=False):
