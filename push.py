@@ -203,7 +203,7 @@ class InterToSvnRepository(InterRepository):
             return True
         return self.target.has_revision(revid)
 
-    def _get_base_revision(self, revid, path):
+    def _get_foreign_revision_info(self, revid, path):
         """Find the revision info for a revision id."""
         if revid == NULL_REVISION:
             return None, None
@@ -215,7 +215,7 @@ class InterToSvnRepository(InterRepository):
         else:
             return self._foreign_info[revid].values()[0]
 
-    def add_path_info(self, revid, path, foreign_info):
+    def _add_path_info(self, revid, path, foreign_info):
         self._foreign_info[revid][path] = foreign_info
 
     @staticmethod
@@ -262,13 +262,14 @@ class InterToSvnRepository(InterRepository):
                 base_revid = rev.parent_ids[0]
             else:
                 base_revid = NULL_REVISION
-        base_foreign_revid, base_mapping = self._get_base_revision(base_revid,
+        base_foreign_revid, base_mapping = self._get_foreign_revision_info(base_revid,
             target_path)
         if rev.parent_ids:
             base_revid = rev.parent_ids[0]
         else:
             base_revid = NULL_REVISION
         mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
+        # FIXME: overwrite doesn't quite make sense here
         if overwrite:
             overwrite_revnum = self.target.get_latest_revnum()
         elif base_foreign_revid is not None:
@@ -288,7 +289,7 @@ class InterToSvnRepository(InterRepository):
         finally:
             self.source.unlock()
         assert revid == rev.revision_id or not push_metadata
-        self.add_path_info(target_path, revid, foreign_info)
+        self._add_path_info(target_path, revid, foreign_info)
         return (revid, foreign_info)
 
     def _get_branch_config(self, branch_path):
@@ -328,7 +329,7 @@ class InterToSvnRepository(InterRepository):
             revid, foreign_info = create_branch_with_hidden_commit(self.target,
                 target_branch_path, revid, set_metadata=True, deletefirst=None)
         else:
-            base_foreign_revid, base_mapping = self._get_base_revision(start_revid_parent, target_branch_path)
+            base_foreign_revid, base_mapping = self._get_foreign_revision_info(start_revid_parent, target_branch_path)
             revid, foreign_info = push_revision_tree(self.get_graph(), self.target, target_branch_path,
                 self._get_branch_config(target_branch_path),
                 self.source, start_revid_parent, start_revid,
@@ -336,7 +337,7 @@ class InterToSvnRepository(InterRepository):
                 push_metadata=push_metadata,
                 append_revisions_only=append_revisions_only,
                 override_svn_revprops=override_svn_revprops)
-        self.add_path_info(target_branch_path, revid, foreign_info)
+        self._add_path_info(target_branch_path, revid, foreign_info)
         return revid, foreign_info
 
     def push_ancestors(self, layout, project, parent_revids, create_prefix=False):

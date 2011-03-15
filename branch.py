@@ -904,7 +904,7 @@ class InterOtherSvnBranch(InterBranch):
         last_branch_path = self.target.get_branch_path()
         last_revnum = self.target.repository._log.find_latest_change(
             last_branch_path, self.target.repository.get_latest_revnum())
-        interrepo.add_path_info(self.target.last_revision(),
+        interrepo._add_path_info(self.target.last_revision(),
             last_branch_path,
             ((self.target.repository.uuid, last_branch_path, last_revnum), self.target.mapping))
         return interrepo

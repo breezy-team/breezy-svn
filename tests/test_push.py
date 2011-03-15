@@ -1291,11 +1291,43 @@ class InterToSvnRepositoryTestCase(SubversionTestCase):
         self.interrepo = InterRepository.get(self.from_repo, self.to_repo)
 
 
-class TargetHasRevisionTests(InterToSvnRepositoryTestCase):
+class ForeignRevisionInfoTests(InterToSvnRepositoryTestCase):
 
     def test__target_has_revision(self):
         self.assertTrue(self.interrepo._target_has_revision(NULL_REVISION))
         self.assertFalse(self.interrepo._target_has_revision("foo"))
+        self.interrepo._add_path_info("myrevid", "trunk", ("myuuid", "trunk", 4))
+        self.assertTrue(self.interrepo._target_has_revision("myrevid"))
+
+    def test_foreign_revision_info_null(self):
+        self.assertEquals((None, None),
+            self.interrepo._get_foreign_revision_info(NULL_REVISION, "apath"))
+
+    def test_foreign_revision_info_available(self):
+        # Prefer path if it is available
+        self.interrepo._add_path_info("myrevid", "trunk", ("myuuid", "trunk", 4))
+        self.interrepo._add_path_info("myrevid", "otherpath", ("myuuid", "trunk", 4))
+        self.assertEquals(("myuuid", "trunk", 4),
+            self.interrepo._get_foreign_revision_info("myrevid", "trunk"))
+
+    def test_foreign_revision_info_first(self):
+        # Prefer path if it is available
+        self.interrepo._add_path_info("myrevid", "anotherpath", ("myuuid", "trunk1", 4))
+        self.interrepo._add_path_info("myrevid", "otherpath", ("myuuid", "trunk2", 4))
+        foreign_info = self.interrepo._get_foreign_revision_info("myrevid", "trunk")
+        self.assertEquals("myuuid", foreign_info[0])
+        self.assertEquals(4, foreign_info[2])
+
+    def test_lookup(self):
+        revids_check = []
+        # If the foreign revision info is not cached it should be retrieved
+        def lookup(revid):
+            revids_check.append(revid)
+            return ("someuuid", "somebranch", 42)
+        self.to_repo.lookup_bzr_revision_id = lookup
+        self.assertEquals(("someuuid", "somebranch", 42),
+            self.interrepo._get_foreign_revision_info("auuid", "trunk"))
+        self.assertEquals(["auuid"], revids_check)
 
 
 class PushRevisionTests(InterToSvnRepositoryTestCase):
