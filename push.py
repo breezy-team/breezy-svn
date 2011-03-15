@@ -514,7 +514,8 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
     :param repository: Repository in which to create the branch.
     :param branch_path: Branch path
     :param revid: Revision id to keep as tip.
-    :param deletefirst: Whether to delete an existing branch at this location first.
+    :param deletefirst: Whether to delete an existing branch at this location
+        first.
     :return: Revision id that was pushed and the related foreign revision id.
     """
     revprops = {properties.PROP_REVISION_LOG: "Create new branch."}
@@ -571,7 +572,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
                 root.delete_entry(urlutils.basename(branch_path))
             branch_dir = root.add_directory(
                 urlutils.basename(branch_path), from_url, from_revnum)
-            for k, (ov, nv) in properties.diff(fileprops, revmeta.get_fileprops()).iteritems():
+            for k, (ov, nv) in properties.diff(fileprops, old_fileprops).iteritems():
                 branch_dir.change_prop(k, nv)
             branch_dir.close()
             root.close()
