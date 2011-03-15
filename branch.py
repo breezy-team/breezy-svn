@@ -552,7 +552,7 @@ class SvnBranch(ForeignBranch):
         if todo is None:
             raise DivergedBranches(self, None)
         assert todo != []
-        interrepo.push_branch(todo, self.layout, self.project,
+        interrepo.push_revision_series(todo, self.layout, self.project,
             self.get_branch_path(), self.get_config(),
             self.get_push_merged_revisions(), overwrite=False)
 
@@ -935,7 +935,7 @@ class InterOtherSvnBranch(InterBranch):
         else:
             interrepo = self._get_interrepo(graph)
             assert todo != []
-            (count, (new_last_revid, new_foreign_info)) = interrepo.push_branch(
+            (new_last_revid, new_foreign_info) = interrepo.push_revision_series(
                 todo, self.target.layout, self.target.project,
                 self.target.get_branch_path(), self.target.get_config(),
                 push_merged, overwrite=overwrite)

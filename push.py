@@ -223,14 +223,13 @@ class InterToSvnRepository(InterRepository):
         """See InterRepository._get_repo_format_to_test()."""
         return None
 
-    def push_branch(self, todo, layout, project, target_branch, target_config,
+    def push_revision_series(self, todo, layout, project, target_branch, target_config,
                     push_merged, overwrite):
         """Push a series of revisions into a Subversion repository.
 
         :param todo: New revisions to push
         """
         assert todo != []
-        count = 0
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for rev in self.source.get_revisions(todo):
@@ -241,8 +240,7 @@ class InterToSvnRepository(InterRepository):
                         rev.parent_ids, create_prefix=True)
                 last = self.push_revision(target_branch, target_config, rev,
                     overwrite=overwrite)
-                count += 1
-            return (count, last)
+            return last
         finally:
             pb.finished()
 
@@ -291,12 +289,10 @@ class InterToSvnRepository(InterRepository):
         return BranchConfig(urlutils.join(self.target.base, branch_path),
                 self.target.uuid)
 
-    def push_new(self, target_branch_path,
+    def push_new_branch_first_revision(self, target_branch_path,
              stop_revision, push_metadata=True, append_revisions_only=False,
              override_svn_revprops=None):
-        """Push revisions into Subversion, creating a new branch.
-
-        This will do a new commit in the target branch.
+        """Push a revision into Subversion, creating a new branch.
 
         :param graph: Repository graph.
         :param target_repository: Repository to push to
@@ -337,8 +333,7 @@ class InterToSvnRepository(InterRepository):
         self.add_path_info(target_branch_path, revid, foreign_info)
         return revid, foreign_info
 
-    def push_ancestors(self, layout, project, parent_revids,
-                       create_prefix=False):
+    def push_ancestors(self, layout, project, parent_revids, create_prefix=False):
         """Push the ancestors of a revision.
 
         :param layout: Subversion layout
@@ -359,7 +354,7 @@ class InterToSvnRepository(InterRepository):
             rev = self.source.get_revision(x)
             rhs_branch_path = determine_branch_path(rev, layout, project)
             try:
-                self.push_new(rhs_branch_path, x, append_revisions_only=False)
+                self.push_new_branch_first_revision(rhs_branch_path, x, append_revisions_only=False)
             except MissingPrefix, e:
                 if not create_prefix:
                     raise
@@ -367,7 +362,7 @@ class InterToSvnRepository(InterRepository):
                 if self.target.transport.has_capability("commit-revprops"):
                     revprops[SVN_REVPROP_BZR_SKIP] = ""
                 create_branch_prefix(self.target.transport, revprops, e.path.split("/")[:-1], filter(lambda x: x != "", e.existing_path.split("/")))
-                self.push_new(rhs_branch_path, x, append_revisions_only=False)
+                self.push_new_branch_first_revision(rhs_branch_path, x, append_revisions_only=False)
 
     def push_new_branch(self, layout, project, target_branch_path,
         stop_revision, push_merged=None, override_svn_revprops=None,
@@ -388,9 +383,9 @@ class InterToSvnRepository(InterRepository):
         if push_merged is None:
             push_merged = (layout.push_merged_revisions(project) and
                            target_config.get_push_merged_revisions())
-        begin_revid, _ = self.push_new(target_branch_path, stop_revision,
-                 append_revisions_only=True,
-                 override_svn_revprops=override_svn_revprops)
+        begin_revid, _ = self.push_new_branch_first_revision(
+            target_branch_path, stop_revision, append_revisions_only=True,
+             override_svn_revprops=override_svn_revprops)
         todo = []
         for revid in self.source.iter_reverse_revision_history(stop_revision):
             if revid == begin_revid:
@@ -398,7 +393,7 @@ class InterToSvnRepository(InterRepository):
             todo.append(revid)
         todo.reverse()
         if todo != []:
-            self.push_branch(todo, layout, project, target_branch_path,
+            self.push_revision_series(todo, layout, project, target_branch_path,
                 target_config, push_merged, overwrite)
 
     def push_nonmainline_revision(self, rev, layout):
