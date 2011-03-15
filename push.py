@@ -329,17 +329,14 @@ class InterToSvnRepository(InterRepository):
             start_revid_parent = rev.parent_ids[0]
         # If this is just intended to create a new branch
         mapping = self.target.get_mapping()
-        if (start_revid != NULL_REVISION and
-            start_revid_parent != NULL_REVISION and
-            stop_revision == start_revid and mapping.supports_hidden and
-            not append_revisions_only):
+        if (stop_revision == start_revid and (mapping.supports_hidden or not push_metadata) and not append_revisions_only):
             if (self._target_has_revision(start_revid) or
                 start_revid == NULL_REVISION):
                 revid = start_revid
             else:
                 revid = start_revid_parent
             revid, foreign_info = create_branch_with_hidden_commit(self.target,
-                target_branch_path, revid, set_metadata=True, deletefirst=None)
+                target_branch_path, revid, set_metadata=push_metadata, deletefirst=None)
         else:
             revid, foreign_info = self.push_revision(target_branch_path,
                 self._get_branch_config(target_branch_path),
