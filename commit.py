@@ -393,8 +393,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                  base_foreign_revid, base_mapping, old_inv=None,
                  push_metadata=True, graph=None, opt_signature=None,
                  texts=None, append_revisions_only=True,
-                 override_svn_revprops=None, testament=None,
-                 overwrite_revnum=None):
+                 testament=None, overwrite_revnum=None):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -428,11 +427,6 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.overwrite_revnum = overwrite_revnum
         self._append_revisions_only = append_revisions_only
         self._texts = texts
-
-        if override_svn_revprops is None:
-            self._override_svn_revprops = self._config.get_override_svn_revprops()
-        else:
-            self._override_svn_revprops = override_svn_revprops
 
         # Gather information about revision on top of which the commit is
         # happening
@@ -836,14 +830,15 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.mutter('commit %d finished. author: %r, date: %r',
                result_revision, result_author, result_date)
 
-        if self._override_svn_revprops is not None:
+        override_svn_revprops = self._config.get_override_svn_revprops()
+        if override_svn_revprops is not None:
             new_revprops = {}
-            if (("%s=committer" % properties.PROP_REVISION_AUTHOR) in self._override_svn_revprops or
-                properties.PROP_REVISION_AUTHOR in self._override_svn_revprops):
+            if (("%s=committer" % properties.PROP_REVISION_AUTHOR) in override_svn_revprops or
+                properties.PROP_REVISION_AUTHOR in override_svn_revprops):
                 new_revprops[properties.PROP_REVISION_AUTHOR] = self._committer.encode("utf-8")
-            if "%s=author" % properties.PROP_REVISION_AUTHOR in self._override_svn_revprops:
+            if "%s=author" % properties.PROP_REVISION_AUTHOR in override_svn_revprops:
                 new_revprops[properties.PROP_REVISION_AUTHOR] = self._get_author()
-            if properties.PROP_REVISION_DATE in self._override_svn_revprops:
+            if properties.PROP_REVISION_DATE in override_svn_revprops:
                 new_revprops[properties.PROP_REVISION_DATE] = properties.time_to_cstring(1000000*self._timestamp)
             set_svn_revprops(self.repository, result_revision, new_revprops)
             self._svn_revprops.update(new_revprops)

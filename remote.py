@@ -267,7 +267,7 @@ class SvnRemoteAccess(ControlDir):
         return not isinstance(self._format, format.__class__)
 
     def import_branch(self, source, stop_revision=None, overwrite=False,
-                      _push_merged=None, _override_svn_revprops=None):
+            _push_merged=None):
         """Create a new branch in this repository, possibly
         with the specified history, optionally importing revisions.
 
@@ -294,9 +294,7 @@ class SvnRemoteAccess(ControlDir):
                 if type not in ('branch', 'tag') or ip != '':
                     raise errors.NotBranchError(target_branch_path)
                 inter.push_new_branch(layout, project, target_branch_path,
-                        stop_revision,
-                        override_svn_revprops=_override_svn_revprops,
-                        push_merged=_push_merged, overwrite=overwrite)
+                        stop_revision, push_merged=_push_merged, overwrite=overwrite)
                 return self.open_branch()
             finally:
                 repos.unlock()

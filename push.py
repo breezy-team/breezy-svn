@@ -112,7 +112,6 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                        base_foreign_revid, base_mapping,
                        push_metadata=True,
                        append_revisions_only=True,
-                       override_svn_revprops=None,
                        overwrite_revnum=None):
     """Push a revision tree into a target repository.
 
@@ -160,7 +159,6 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                                graph=graph, opt_signature=opt_signature,
                                texts=source_repo.texts,
                                append_revisions_only=append_revisions_only,
-                               override_svn_revprops=override_svn_revprops,
                                testament=testament,
                                overwrite_revnum=overwrite_revnum)
     try:
@@ -284,7 +282,6 @@ class InterToSvnRepository(InterRepository):
                 base_foreign_revid, base_mapping,
                 push_metadata=push_metadata,
                 append_revisions_only=self.get_append_revisions_only(target_config, overwrite),
-                override_svn_revprops=target_config.get_override_svn_revprops(),
                 overwrite_revnum=overwrite_revnum)
         finally:
             self.source.unlock()
@@ -297,8 +294,7 @@ class InterToSvnRepository(InterRepository):
                 self.target.uuid)
 
     def push_new_branch_first_revision(self, target_branch_path,
-             stop_revision, push_metadata=True, append_revisions_only=False,
-             override_svn_revprops=None):
+            stop_revision, push_metadata=True, append_revisions_only=False):
         """Push a revision into Subversion, creating a new branch.
 
         :param graph: Repository graph.
@@ -335,8 +331,7 @@ class InterToSvnRepository(InterRepository):
                 self.source, start_revid_parent, start_revid,
                 rev, base_foreign_revid, base_mapping,
                 push_metadata=push_metadata,
-                append_revisions_only=append_revisions_only,
-                override_svn_revprops=override_svn_revprops)
+                append_revisions_only=append_revisions_only)
         self._add_path_info(target_branch_path, revid, foreign_info)
         return revid, foreign_info
 
@@ -372,8 +367,7 @@ class InterToSvnRepository(InterRepository):
                 self.push_new_branch_first_revision(rhs_branch_path, x, append_revisions_only=False)
 
     def push_new_branch(self, layout, project, target_branch_path,
-        stop_revision, push_merged=None, override_svn_revprops=None,
-        overwrite=False):
+        stop_revision, push_merged=None, overwrite=False):
         """Push a new branch.
 
         :param layout: Repository layout to use
@@ -391,8 +385,7 @@ class InterToSvnRepository(InterRepository):
             push_merged = (layout.push_merged_revisions(project) and
                            target_config.get_push_merged_revisions())
         begin_revid, _ = self.push_new_branch_first_revision(
-            target_branch_path, stop_revision, append_revisions_only=True,
-             override_svn_revprops=override_svn_revprops)
+            target_branch_path, stop_revision, append_revisions_only=True)
         todo = []
         for revid in self.source.iter_reverse_revision_history(stop_revision):
             if revid == begin_revid:
