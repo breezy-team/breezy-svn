@@ -68,7 +68,7 @@ class NoSvnRepositoryPresent(NoRepositoryPresent):
 
 
 class ChangesRootLHSHistory(BzrError):
-    _fmt = """changing lhs branch history not possible on repository root"""
+    _fmt = """Changing lhs branch history not possible on repository root"""
 
 
 class MissingPrefix(BzrError):

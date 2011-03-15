@@ -75,6 +75,9 @@ from bzrlib.plugins.svn.transport import (
     )
 
 def find_push_base_revision(source, target, stop_revision):
+    """Find the first revision to push.
+
+    """
     start_revid = stop_revision
     for revid in source.iter_reverse_revision_history(stop_revision):
         if target.has_revision(revid):
@@ -102,22 +105,6 @@ def _filter_iter_changes(iter_changes):
                 (change[3][0], False)) + change[4:]
         if change[3][0] or change[3][1]:
             yield change
-
-
-def replay_delta(builder, base_tree, new_tree):
-    """Replays a delta to a commit builder.
-
-    :param builder: The commit builder.
-    :param base_tree: Original tree on top of which the delta should be applied
-    :param new_tree: New tree that should be committed
-    """
-    builder.will_record_deletes()
-    iter_changes = new_tree.iter_changes(base_tree)
-    iter_changes = _filter_iter_changes(iter_changes)
-    for file_id, path, fs_hash in builder.record_iter_changes(
-        new_tree, base_tree.get_revision_id(), iter_changes):
-        pass
-    builder.finish_inventory()
 
 
 def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
@@ -176,7 +163,17 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                                override_svn_revprops=override_svn_revprops,
                                testament=testament,
                                overwrite_revnum=overwrite_revnum)
-    replay_delta(builder, base_tree, old_tree)
+    try:
+        builder.will_record_deletes()
+        iter_changes = old_tree.iter_changes(base_tree)
+        iter_changes = _filter_iter_changes(iter_changes)
+        for file_id, path, fs_hash in builder.record_iter_changes(
+            old_tree, base_tree.get_revision_id(), iter_changes):
+            pass
+        builder.finish_inventory()
+    except:
+        builder.abort()
+        raise
     try:
         revid = builder.commit(rev.message)
     except SubversionException, (msg, num):
@@ -242,15 +239,26 @@ class InterToSvnRepository(InterRepository):
                 if push_merged and len(rev.parent_ids) > 1:
                     self.push_ancestors(layout, project,
                         rev.parent_ids, create_prefix=True)
-                last = self.push(target_branch, target_config, rev,
+                last = self.push_revision(target_branch, target_config, rev,
                     overwrite=overwrite)
                 count += 1
             return (count, last)
         finally:
             pb.finished()
 
-    def push(self, target_path, target_config, rev, push_metadata=True,
-             base_revid=None, overwrite=False):
+    def push_revision(self, target_path, target_config, rev,
+            push_metadata=True, base_revid=None, overwrite=False):
+        """Push a single revision.
+
+        :param target_path: Target branch path in the svn repository
+        :param target_config: Config object for the target branch
+        :param rev: Revision object of revision that needs to be pushed
+        :param push_metadata: Whether to push svn-specific metadata
+        :param base_revid: Base revision (used when pushing a custom base),
+            e.g. during dpush.
+        :param overwrite: Whether to overwrite the existing branch
+        :return: Tuple with pushed revision id and foreign revision id
+        """
         if base_revid is None:
             if rev.parent_ids:
                 base_revid = rev.parent_ids[0]
@@ -262,9 +270,9 @@ class InterToSvnRepository(InterRepository):
         if overwrite:
             overwrite_revnum = self.target.get_latest_revnum()
         else:
-            overwrite_revnum = None
-        revid, foreign_info = push_revision_tree(self.get_graph(), self.target,
-            target_path, target_config, self.source, base_revid,
+            overwrite_revnum = base_foreign_revid[2]
+        revid, foreign_info = push_revision_tree(self.get_graph(),
+            self.target, target_path, target_config, self.source, base_revid,
             rev.revision_id, rev,
             base_foreign_revid, base_mapping,
             push_metadata=push_metadata,
@@ -282,7 +290,7 @@ class InterToSvnRepository(InterRepository):
     def push_new(self, target_branch_path,
              stop_revision, push_metadata=True, append_revisions_only=False,
              override_svn_revprops=None):
-        """Push a revision into Subversion, creating a new branch.
+        """Push revisions into Subversion, creating a new branch.
 
         This will do a new commit in the target branch.
 
@@ -360,6 +368,15 @@ class InterToSvnRepository(InterRepository):
     def push_new_branch(self, layout, project, target_branch_path,
         stop_revision, push_merged=None, override_svn_revprops=None,
         overwrite=False):
+        """Push a new branch.
+
+        :param layout: Repository layout to use
+        :param project: Project name
+        :param target_branch_path: Target branch path
+        :param stop_revision: New branch tip revision id
+        :param push_merged: Whether to push merged revisions
+        :param overwrite: Whether to override any existing branch
+        """
         if self.target.transport.check_path(target_branch_path,
             self.target.get_latest_revnum()) != subvertpy.NODE_NONE:
             raise AlreadyBranchError(target_branch_path)
@@ -381,6 +398,11 @@ class InterToSvnRepository(InterRepository):
                 target_config, push_merged, overwrite)
 
     def push_nonmainline_revision(self, rev, layout):
+        """Push a non-mainline revision *somewhere*.
+
+        :param rev: Revision object
+        :param layout: Repository layout
+        """
         mutter('pushing %r', rev.revision_id)
         if rev.parent_ids:
             parent_revid = rev.parent_ids[0]
@@ -392,8 +414,8 @@ class InterToSvnRepository(InterRepository):
             base_foreign_revid = None
             base_mapping = None
         else:
-            base_foreign_revid, base_mapping = self.target.lookup_bzr_revision_id(parent_revid,
-                foreign_sibling=getattr(rev, "foreign_revid", None))
+            base_foreign_revid, base_mapping = self.target.lookup_bzr_revision_id(
+                parent_revid, foreign_sibling=getattr(rev, "foreign_revid", None))
             (_, target_project, _, _) = layout.parse(base_foreign_revid[1])
         bp = determine_branch_path(rev, layout, target_project)
         target_config = self._get_branch_config(bp)
@@ -403,8 +425,7 @@ class InterToSvnRepository(InterRepository):
             self.push_ancestors(layout, target_project,
                 rev.parent_ids, create_prefix=True)
         return push_revision_tree(self.get_graph(), self.target,
-            bp, target_config,
-            self.source, parent_revid, rev.revision_id, rev,
+            bp, target_config, self.source, parent_revid, rev.revision_id, rev,
             base_foreign_revid, base_mapping,
             append_revisions_only=self.get_append_revisions_only(target_config))
 
