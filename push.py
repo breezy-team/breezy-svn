@@ -369,20 +369,26 @@ class InterToSvnRepository(InterRepository):
         present_rhs_parents = self.target.has_revisions(parent_revids[1:])
         unique_ancestors = set()
         missing_rhs_parents = set(parent_revids[1:]) - present_rhs_parents
+        graph = self.get_graph()
         for parent_revid in missing_rhs_parents:
             # Push merged revisions
-            unique_ancestors.update(self.get_graph().find_unique_ancestors(parent_revid, [parent_revids[0]]))
+            ancestors = graph.find_unique_ancestors(parent_revid, [parent_revids[0]])
+            unique_ancestors.update(ancestors)
         for x in self.get_graph().iter_topo_order(unique_ancestors):
             if self._target_has_revision(x):
                 continue
             rev = self.source.get_revision(x)
             rhs_branch_path = determine_branch_path(rev, layout, project)
+            # FIXME: See if the existing revision at rhs_branch_path is already
+            # at base revision
             mutter("pushing ancestor %r to %s", x, rhs_branch_path)
             try:
-                self.push_new_branch_first_revision(rhs_branch_path, x, append_revisions_only=False)
+                self.push_new_branch_first_revision(rhs_branch_path, x,
+                    append_revisions_only=False)
             except MissingPrefix, e:
                 create_prefix(self.target.transport, e.path, e.existing_path)
-                self.push_new_branch_first_revision(rhs_branch_path, x, append_revisions_only=False)
+                self.push_new_branch_first_revision(rhs_branch_path, x,
+                    append_revisions_only=False)
 
     def push_new_branch(self, layout, project, target_branch_path,
         stop_revision, push_merged=None, overwrite=False):

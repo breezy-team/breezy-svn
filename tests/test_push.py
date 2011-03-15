@@ -1422,20 +1422,20 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
     def setUp(self):
         super(PushRevisionInclusiveTests, self).setUp()
         branch = BzrDir.create_branch_convenience('bzrrepo/tree1')
-        tree1 = branch.bzrdir.open_workingtree()
+        self.tree1 = branch.bzrdir.open_workingtree()
         self.build_tree_contents([('bzrrepo/tree1/a', 'data')])
-        tree1.add(['a'])
-        self.revid1 = tree1.commit('msg1')
+        self.tree1.add(['a'])
+        self.revid1 = self.tree1.commit('msg1')
 
         branch = BzrDir.create_branch_convenience('bzrrepo/tree2')
-        tree2 = branch.bzrdir.open_workingtree()
+        self.tree2 = branch.bzrdir.open_workingtree()
         self.build_tree_contents([('bzrrepo/tree2/b', 'data')])
-        tree2.add(['b'])
-        self.revid2 = tree2.commit('msg2')
+        self.tree2.add(['b'])
+        self.revid2 = self.tree2.commit('msg2')
 
-        tree1.merge_from_branch(tree2.branch, from_revision=NULL_REVISION,
+        self.tree1.merge_from_branch(self.tree2.branch, from_revision=NULL_REVISION,
                 to_revision=self.revid2)
-        self.revid_merge = tree1.commit("merge")
+        self.revid_merge = self.tree1.commit("merge")
 
     def test_push_no_merged(self):
         config = self.interrepo._get_branch_config("trunk")
@@ -1461,7 +1461,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.addCleanup(self.from_repo.unlock)
         self.from_repo.lock_read()
         rev1 = self.from_repo.get_revision(self.revid1)
-        self.interrepo.push_revision("trunk", 
+        self.interrepo.push_revision("trunk",
             config, rev1, append_revisions_only=False,
             push_metadata=True, overwrite=False)
         rev_merged = self.from_repo.get_revision(self.revid_merge)
