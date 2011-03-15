@@ -30,9 +30,9 @@ from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import (
     AlreadyBranchError,
+    AppendRevisionsOnlyViolation,
     BzrError,
     DivergedBranches,
-    AppendRevisionsOnlyViolation,
     )
 from bzrlib.inventory import InventoryDirectory
 from bzrlib.merge import (
@@ -49,7 +49,6 @@ from bzrlib.revision import (
     )
 from bzrlib.trace import mutter
 from bzrlib.tests import (
-    TestCaseWithTransport,
     TestCase,
     )
 
@@ -1281,43 +1280,99 @@ class DetermineBranchPathTests(TestCase):
             determine_branch_path(rev, TrunkLayout(1), "someproj"))
 
 
-
-class InterToSvnRepositoryTests(SubversionTestCase):
+class InterToSvnRepositoryTestCase(SubversionTestCase):
 
     def setUp(self):
-        super(InterToSvnRepositoryTests, self).setUp()
+        super(InterToSvnRepositoryTestCase, self).setUp()
         self.from_bzrdir = BzrDir.create('bzrrepo')
         self.from_repo = self.from_bzrdir.create_repository(shared=True)
         self.svn_repo_url = self.make_repository('svnrepo')
         self.to_repo = Repository.open(self.svn_repo_url)
         self.interrepo = InterRepository.get(self.from_repo, self.to_repo)
 
+
+class TargetHasRevisionTests(InterToSvnRepositoryTestCase):
+
     def test__target_has_revision(self):
         self.assertTrue(self.interrepo._target_has_revision(NULL_REVISION))
         self.assertFalse(self.interrepo._target_has_revision("foo"))
 
-    def test_push_first_revision_with_metadata(self):
+
+class PushRevisionTests(InterToSvnRepositoryTestCase):
+
+    def setUp(self):
+        super(PushRevisionTests, self).setUp()
         branch = BzrDir.create_branch_convenience('bzrrepo/tree1')
         tree = branch.bzrdir.open_workingtree()
         self.build_tree_contents([('bzrrepo/tree1/a', 'data')])
         tree.add(['a'])
-        revid = tree.commit('msg')
-        self.interrepo.push_revision("trunk", self.interrepo._get_branch_config("trunk"),
-            self.from_repo.get_revision(revid),
+        self.revid1 = tree.commit('msg')
+
+    def test_push_first_revision_with_metadata(self):
+        self.interrepo.push_revision("trunk",
+            self.interrepo._get_branch_config("trunk"),
+            self.from_repo.get_revision(self.revid1),
             push_metadata=True, base_revid=None, overwrite=False)
         paths = self.client_log(self.svn_repo_url, 1, 0)[1][0]
         self.assertEquals(paths,
             {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
+        # FIXME: Check revision properties
 
     def test_push_first_revision_without_metadata(self):
-        branch = BzrDir.create_branch_convenience('bzrrepo/tree1')
-        tree = branch.bzrdir.open_workingtree()
-        self.build_tree_contents([('bzrrepo/tree1/a', 'data')])
-        tree.add(['a'])
-        revid = tree.commit('msg')
-        self.interrepo.push_revision("trunk", self.interrepo._get_branch_config("trunk"),
-            self.from_repo.get_revision(revid),
+        self.interrepo.push_revision("trunk",
+            self.interrepo._get_branch_config("trunk"),
+            self.from_repo.get_revision(self.revid1),
             push_metadata=False, base_revid=None, overwrite=False)
         paths = self.client_log(self.svn_repo_url, 1, 0)[1][0]
         self.assertEquals(paths,
             {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
+        # FIXME: Check revision properties
+
+    def test_push_first_revision_overwrite(self):
+        ce = self.get_commit_editor(self.svn_repo_url, "msg")
+        ce.add_dir("trunk")
+        ce.close()
+
+        paths = self.client_log(self.svn_repo_url, 1, 0)[1][0]
+        self.assertEquals(paths, {'/trunk': ('A', None, -1)})
+
+        config = self.interrepo._get_branch_config("trunk")
+        rev1 = self.from_repo.get_revision(self.revid1)
+
+        # Push without and without configuration should raise AppendRevisionsOnlyViolation
+        self.assertRaises(AppendRevisionsOnlyViolation,
+            self.interrepo.push_revision, "trunk", config, rev1,
+            push_metadata=False, base_revid=None, overwrite=False)
+
+        # With append revisions only disable it should raise
+        self.interrepo.push_revision("trunk", config, rev1,
+            push_metadata=False, base_revid=None, overwrite=True)
+
+        paths = self.client_log(self.svn_repo_url, 2, 0)[2][0]
+        self.assertEquals(paths,
+            {'/trunk': ('R', None, -1), '/trunk/a': ('A', None, -1)})
+
+    def test_push_first_revision_append_revisions_only(self):
+        ce = self.get_commit_editor(self.svn_repo_url, "msg")
+        ce.add_dir("trunk")
+        ce.close()
+
+        paths = self.client_log(self.svn_repo_url, 1, 0)[1][0]
+        self.assertEquals(paths, {'/trunk': ('A', None, -1)})
+
+        config = self.interrepo._get_branch_config("trunk")
+        rev1 = self.from_repo.get_revision(self.revid1)
+
+        # Push without and without configuration should raise AppendRevisionsOnlyViolation
+        self.assertRaises(AppendRevisionsOnlyViolation,
+            self.interrepo.push_revision, "trunk", config, rev1,
+            push_metadata=False, base_revid=None, overwrite=False)
+
+        # With append revisions only disable it should raise
+        config.set_user_option('append_revisions_only', 'False')
+        self.interrepo.push_revision("trunk", config, rev1,
+            push_metadata=False, base_revid=None, overwrite=False)
+
+        paths = self.client_log(self.svn_repo_url, 2, 0)[2][0]
+        self.assertEquals(paths,
+            {'/trunk': ('R', None, -1), '/trunk/a': ('A', None, -1)})
