@@ -406,17 +406,19 @@ class SvnBranch(ForeignBranch):
 
     def set_revision_history(self, rev_history):
         """See Branch.set_revision_history()."""
-        if (rev_history == [] or
-            not self.repository.has_revision(rev_history[-1],
-                project=self.project)):
+        if rev_history == []:
+            # FIXME: Just create a new empty branch?
+            raise NotImplementedError("set_revision_history can't set empty history")
+        try:
+            rev = self.repository.get_revision(rev_history[-1])
+        except NoSuchRevision:
             raise NotImplementedError("set_revision_history can't add ghosts")
-        rev = self.repository.get_revision(rev_history[-1])
         if rev.parent_ids:
             base_revid = rev.parent_ids[0]
         else:
             base_revid = NULL_REVISION
         interrepo = InterToSvnRepository(self.repository, self.repository)
-        interrepo.push_revision(self.get_branch_path(), self.get_config(), rev,
+        interrepo.push_single_revision(self.get_branch_path(), self.get_config(), rev,
             overwrite=True, append_revisions_only=False)
         self._clear_cached_state()
 
@@ -981,7 +983,7 @@ class InterOtherSvnBranch(InterBranch):
                         base_revid = revid_map[rev.parent_ids[0]]
                     else:
                         base_revid = rev.parent_ids[0]
-                    revid_map[rev.revision_id], _ = interrepo.push_revision(
+                    revid_map[rev.revision_id], _ = interrepo.push_single_revision(
                         target_branch_path, target_config, rev,
                         push_metadata=False, base_revid=base_revid,
                         append_revisions_only=True)

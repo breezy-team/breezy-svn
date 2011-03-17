@@ -1354,7 +1354,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         self.revid1 = tree.commit('msg')
 
     def test_push_first_revision_with_metadata(self):
-        self.interrepo.push_revision("trunk",
+        self.interrepo.push_single_revision("trunk",
             self.interrepo._get_branch_config("trunk"),
             self.from_repo.get_revision(self.revid1),
             append_revisions_only=True,
@@ -1365,7 +1365,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         # FIXME: Check revision properties
 
     def test_push_first_revision_without_metadata(self):
-        self.interrepo.push_revision("trunk",
+        self.interrepo.push_single_revision("trunk",
             self.interrepo._get_branch_config("trunk"),
             self.from_repo.get_revision(self.revid1),
             append_revisions_only=True,
@@ -1389,12 +1389,12 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         # Push without and without configuration should raise
         # AppendRevisionsOnlyViolation
         self.assertRaises(AppendRevisionsOnlyViolation,
-            self.interrepo.push_revision, "trunk", config, rev1,
+            self.interrepo.push_single_revision, "trunk", config, rev1,
             append_revisions_only=True,
             push_metadata=False, base_revid=None, overwrite=False)
 
         # With append revisions only disabled but overwrite it should work
-        self.interrepo.push_revision("trunk", config, rev1,
+        self.interrepo.push_single_revision("trunk", config, rev1,
             append_revisions_only=True,
             push_metadata=False, base_revid=None, overwrite=True)
 
@@ -1413,14 +1413,15 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         config = self.interrepo._get_branch_config("trunk")
         rev1 = self.from_repo.get_revision(self.revid1)
 
-        # Push without and without configuration should raise AppendRevisionsOnlyViolation
+        # Push without and without configuration should raise
+        # AppendRevisionsOnlyViolation
         self.assertRaises(AppendRevisionsOnlyViolation,
-            self.interrepo.push_revision, "trunk", config, rev1,
+            self.interrepo.push_single_revision, "trunk", config, rev1,
             append_revisions_only=True,
             push_metadata=False, base_revid=None, overwrite=False)
 
         # With append revisions only disable it should raise
-        self.interrepo.push_revision("trunk", config, rev1,
+        self.interrepo.push_single_revision("trunk", config, rev1,
             append_revisions_only=False,
             push_metadata=False, base_revid=None, overwrite=False)
 
@@ -1454,7 +1455,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.addCleanup(self.from_repo.unlock)
         self.from_repo.lock_read()
         rev1 = self.from_repo.get_revision(self.revid1)
-        self.interrepo.push_revision("trunk", 
+        self.interrepo.push_single_revision("trunk", 
             config, rev1, append_revisions_only=False,
             push_metadata=True, overwrite=False)
         rev_merged = self.from_repo.get_revision(self.revid_merge)
@@ -1473,7 +1474,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.addCleanup(self.from_repo.unlock)
         self.from_repo.lock_read()
         rev1 = self.from_repo.get_revision(self.revid1)
-        self.interrepo.push_revision("trunk",
+        self.interrepo.push_single_revision("trunk",
             config, rev1, append_revisions_only=False,
             push_metadata=True, overwrite=False)
         rev_merged = self.from_repo.get_revision(self.revid_merge)
@@ -1500,7 +1501,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.addCleanup(self.from_repo.unlock)
         self.from_repo.lock_read()
         rev1 = self.from_repo.get_revision(self.revid1)
-        self.interrepo.push_revision("trunk",
+        self.interrepo.push_single_revision("trunk",
             config, rev1, append_revisions_only=False,
             push_metadata=True, overwrite=False)
         rev_merged = self.from_repo.get_revision(self.revid_merge)

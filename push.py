@@ -270,11 +270,11 @@ class InterToSvnRepository(InterRepository):
         """Push a revision including ancestors."""
         if push_merged and len(rev.parent_ids) > 1:
             self.push_ancestors(layout, project, rev.parent_ids)
-        return self.push_revision(target_path, target_config, rev,
+        return self.push_single_revision(target_path, target_config, rev,
             overwrite=overwrite, append_revisions_only=append_revisions_only,
             push_metadata=push_metadata)
 
-    def push_revision(self, target_path, target_config, rev,
+    def push_single_revision(self, target_path, target_config, rev,
             append_revisions_only, push_metadata=True, base_revid=None,
             overwrite=False):
         """Push a single revision.
@@ -356,7 +356,7 @@ class InterToSvnRepository(InterRepository):
             revid, foreign_info = create_branch_with_hidden_commit(self.target,
                 target_branch_path, revid, set_metadata=push_metadata, deletefirst=None)
         else:
-            revid, foreign_info = self.push_revision(target_branch_path,
+            revid, foreign_info = self.push_single_revision(target_branch_path,
                 self._get_branch_config(target_branch_path),
                 rev, push_metadata=push_metadata,
                 base_revid=start_revid_parent,
