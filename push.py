@@ -387,13 +387,34 @@ class InterToSvnRepository(InterRepository):
             # FIXME: See if the existing revision at rhs_branch_path is already
             # at base revision
             mutter("pushing ancestor %r to %s", x, rhs_branch_path)
+
+            if rev.parent_ids:
+                parent_revid = rev.parent_ids[0]
+            else:
+                parent_revid = NULL_REVISION
+
+            base_foreign_revid, base_mapping = self._get_foreign_revision_info(
+                parent_revid)
+            if base_foreign_revid is None:
+                target_project = None
+            else:
+                (_, target_project, _, _) = layout.parse(base_foreign_revid[1])
+            bp = determine_branch_path(rev, layout, target_project)
+            target_config = self._get_branch_config(bp)
+            push_merged = (layout.push_merged_revisions(target_project) and
+                target_config.get_push_merged_revisions())
+            append_revisions_only = self.get_append_revisions_only(target_config)
             try:
-                self.push_new_branch_first_revision(rhs_branch_path, x,
-                    append_revisions_only=False)
+                self.push_revision_inclusive(bp, target_config, rev,
+                    overwrite=False, push_metadata=True, push_merged=push_merged,
+                    layout=layout, project=target_project,
+                    append_revisions_only=append_revisions_only)
             except MissingPrefix, e:
                 create_prefix(self.target.transport, e.path, e.existing_path)
-                self.push_new_branch_first_revision(rhs_branch_path, x,
-                    append_revisions_only=False)
+                self.push_revision_inclusive(bp, target_config, rev,
+                    overwrite=False, push_metadata=True, push_merged=push_merged,
+                    layout=layout, project=target_project,
+                    append_revisions_only=append_revisions_only)
 
     def push_new_branch(self, layout, project, target_branch_path,
         stop_revision, push_merged=None, overwrite=False):
@@ -425,33 +446,6 @@ class InterToSvnRepository(InterRepository):
             self.push_revision_series(todo, layout, project,
                 target_branch_path, target_config, push_merged, overwrite)
 
-    def push_nonmainline_revision(self, rev, layout):
-        """Push a non-mainline revision *somewhere*.
-
-        :param rev: Revision object
-        :param layout: Repository layout
-        """
-        mutter('pushing %r', rev.revision_id)
-
-        if rev.parent_ids:
-            parent_revid = rev.parent_ids[0]
-        else:
-            parent_revid = NULL_REVISION
-
-        base_foreign_revid, base_mapping = self._get_foreign_revision_info(parent_revid)
-        if base_foreign_revid is None:
-            target_project = None
-        else:
-            (_, target_project, _, _) = layout.parse(base_foreign_revid[1])
-        bp = determine_branch_path(rev, layout, target_project)
-        target_config = self._get_branch_config(bp)
-        push_merged = (layout.push_merged_revisions(target_project) and
-            target_config.get_push_merged_revisions())
-        return self.push_revision_inclusive(bp, target_config, rev,
-            overwrite=False, push_metadata=True, push_merged=push_merged,
-            layout=layout, project=target_project,
-            append_revisions_only=self.get_append_revisions_only(target_config))
-
     def get_append_revisions_only(self, target_config, overwrite=False):
         return target_config.get_append_revisions_only(not overwrite)
 
@@ -481,7 +475,26 @@ class InterToSvnRepository(InterRepository):
                 if pb is not None:
                     pb.update("pushing revisions", todo.index(rev.revision_id),
                         len(todo))
-                self.push_nonmainline_revision(rev, layout)
+                mutter('pushing %r', rev.revision_id)
+
+                if rev.parent_ids:
+                    parent_revid = rev.parent_ids[0]
+                else:
+                    parent_revid = NULL_REVISION
+
+                base_foreign_revid, base_mapping = self._get_foreign_revision_info(parent_revid)
+                if base_foreign_revid is None:
+                    target_project = None
+                else:
+                    (_, target_project, _, _) = layout.parse(base_foreign_revid[1])
+                bp = determine_branch_path(rev, layout, target_project)
+                target_config = self._get_branch_config(bp)
+                push_merged = (layout.push_merged_revisions(target_project) and
+                    target_config.get_push_merged_revisions())
+                self.push_revision_inclusive(bp, target_config, rev,
+                    overwrite=False, push_metadata=True, push_merged=push_merged,
+                    layout=layout, project=target_project,
+                    append_revisions_only=self.get_append_revisions_only(target_config))
         finally:
             self.source.unlock()
 

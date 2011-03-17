@@ -1281,6 +1281,12 @@ class DetermineBranchPathTests(TestCase):
         self.assertEquals("someproj/branches/bla",
             determine_branch_path(rev, TrunkLayout(1), "someproj"))
 
+    def test_nick_slashes(self):
+        rev = Revision("fooid")
+        rev.properties['branch-nick'] = 'bla/bloe'
+        self.assertEquals("someproj/branches/bla_bloe",
+            determine_branch_path(rev, TrunkLayout(1), "someproj"))
+
 
 class InterToSvnRepositoryTestCase(SubversionTestCase):
 
@@ -1486,6 +1492,39 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.assertEquals(log[4][0],
             {'/trunk': ('M', None, -1), '/trunk/b': ('A', '/branches/tree2/b', 3)})
         self.assertEquals(log[4][3], 'merge')
+
+    def test_push_merged_again(self):
+        # Push a branch with a merge, then later push another branch with a
+        # merge.
+        config = self.interrepo._get_branch_config("trunk")
+        self.addCleanup(self.from_repo.unlock)
+        self.from_repo.lock_read()
+        rev1 = self.from_repo.get_revision(self.revid1)
+        self.interrepo.push_revision("trunk",
+            config, rev1, append_revisions_only=False,
+            push_metadata=True, overwrite=False)
+        rev_merged = self.from_repo.get_revision(self.revid_merge)
+        self.interrepo.push_revision_inclusive("trunk", config,
+            rev_merged, append_revisions_only=True, push_merged=True,
+            layout=TrunkLayout0(), project="",
+            push_metadata=True, overwrite=False)
+
+        revid3 = self.tree2.commit('msg2 again')
+        self.tree1.merge_from_branch(self.tree2.branch, to_revision=revid3)
+        revid_merge = self.tree1.commit("merge again")
+        self.from_repo.unlock()
+        self.from_repo.lock_read()
+        rev_merged = self.from_repo.get_revision(revid_merge)
+        self.interrepo.push_revision_inclusive("trunk", config,
+            rev_merged, append_revisions_only=True, push_merged=True,
+            layout=TrunkLayout0(), project="",
+            push_metadata=True, overwrite=False)
+
+        log = self.client_log(self.svn_repo_url, 6, 4)
+        self.assertEquals(log[5][3], 'msg2 again')
+        self.assertEquals(log[5][0], {'/branches/tree2': ('M', None, -1)})
+        self.assertEquals(log[6][0], {'/trunk': ('M', None, -1)})
+        self.assertEquals(log[6][3], 'merge again')
 
 
 class CreatePrefixTests(SubversionTestCase):
