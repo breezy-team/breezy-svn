@@ -391,7 +391,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                  timezone, committer, revprops, revision_id,
                  base_foreign_revid, base_mapping, old_inv=None,
                  push_metadata=True, graph=None, opt_signature=None,
-                 texts=None, testament=None, overwrite_revnum=None):
+                 texts=None, testament=None, delete_root_revnum=None):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -410,7 +410,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         :param graph: Optional graph object
         :param opt_signature: Optional signature to write.
         :param testament: A Testament object to store
-        :param overwrite_revnum: Oldest revision number allowed to overwrite
+        :param delete_root_revnum: Oldest revision number allowed to overwrite
         """
         super(SvnCommitBuilder, self).__init__(repository, parents,
             config, timestamp, timezone, committer, revprops, revision_id)
@@ -422,7 +422,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.random_revid = False
         self.branch_path = branch_path
         self.push_metadata = push_metadata
-        self.overwrite_revnum = overwrite_revnum
+        self.delete_root_revnum = delete_root_revnum
         self._texts = texts
 
         # Gather information about revision on top of which the commit is
@@ -749,35 +749,19 @@ class SvnCommitBuilder(RootCommitBuilder):
                 raise AssertionError(
                     "non-log revision properties set but not supported: %r" %
                     self._svn_revprops.keys())
-            replace_existing = False
-            # See whether the base of the commit matches the lhs parent
-            # if not, we need to replace the existing directory
-            if len(bp_parts) == len(existing_bp_parts):
-                if (
-                    # base didn't exist
-                    self.base_path is None or
-                    # base is in different location
-                    self.base_path.strip("/") != "/".join(bp_parts).strip("/") or 
-                    # base has newer version
-                    self.base_revnum < self.repository._log.find_latest_change(self.branch_path, repository_latest_revnum)):
-                    replace_existing = True
 
             if self.new_root_id in self.old_inv:
                 root_from = self.old_inv.id2path(self.new_root_id)
                 if root_from != "":
-                    replace_existing = True
+                    self.overwrite_revum = max(self.delete_root_revnum, self.base_foreign_revid[2])
             else:
                 root_from = None
 
             try:
                 root = self.editor.open_root(self.base_revnum)
-                if replace_existing:
-                    delete_root_revnum = self.overwrite_revnum or -1
-                else:
-                    delete_root_revnum = None
                 branch_editors = self.open_branch_editors(root, bp_parts,
                     existing_bp_parts, self.base_url, self.base_revnum,
-                    root_from, delete_root_revnum)
+                    root_from, self.delete_root_revnum)
 
                 changed = dir_editor_send_changes(
                         (self.old_inv, self.base_url, self.base_revnum),

@@ -173,7 +173,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                                graph=graph, opt_signature=opt_signature,
                                texts=source_repo.texts,
                                testament=testament,
-                               overwrite_revnum=overwrite_revnum)
+                               delete_root_revnum=overwrite_revnum)
     try:
         builder.will_record_deletes()
         iter_changes = old_tree.iter_changes(base_tree)
