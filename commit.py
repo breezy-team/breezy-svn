@@ -571,8 +571,6 @@ class SvnCommitBuilder(RootCommitBuilder):
             len(existing_elements)+1 != len(elements)):
             raise MissingPrefix("/".join(elements), "/".join(existing_elements))
 
-        replace_existing |= (root_from is not None and root_from != "")
-
         # Branch already exists and stayed at the same location, open:
         # TODO: What if the branch didn't change but the new revision
         # was based on an older revision of the branch?
@@ -774,6 +772,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                 root_from = self.old_inv.id2path(self.new_root_id)
             else:
                 root_from = None
+
+            replace_existing |= (root_from is not None and root_from != "")
 
             try:
                 root = self.editor.open_root(self.base_revnum)
