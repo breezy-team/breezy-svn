@@ -60,7 +60,6 @@ from bzrlib.plugins.svn import (
     )
 from bzrlib.plugins.svn.errors import (
     convert_svn_error,
-    AppendRevisionsOnlyViolation,
     ChangesRootLHSHistory,
     MissingPrefix,
     RevpropChangeFailed,
@@ -392,8 +391,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                  timezone, committer, revprops, revision_id,
                  base_foreign_revid, base_mapping, old_inv=None,
                  push_metadata=True, graph=None, opt_signature=None,
-                 texts=None, append_revisions_only=True,
-                 testament=None, overwrite_revnum=None):
+                 texts=None, testament=None, overwrite_revnum=None):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -425,7 +423,6 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.branch_path = branch_path
         self.push_metadata = push_metadata
         self.overwrite_revnum = overwrite_revnum
-        self._append_revisions_only = append_revisions_only
         self._texts = texts
 
         # Gather information about revision on top of which the commit is

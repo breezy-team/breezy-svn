@@ -18,14 +18,18 @@
 
 """Subversion repository tests."""
 
+from bzrlib.branch import (
+    Branch,
+    )
 from bzrlib.bzrdir import (
     BzrDir,
     format_registry,
     )
 from bzrlib.config import GlobalConfig
 from bzrlib.errors import (
-    UninitializableFormat,
+    AppendRevisionsOnlyViolation,
     BadConversionTarget,
+    UninitializableFormat,
     )
 from bzrlib.repository import Repository
 from bzrlib.tests import TestCase
@@ -153,3 +157,45 @@ class ForeignTestsRepositoryFactory(object):
     def make_repository(self, transport):
         subvertpy.repos.create(transport.local_abspath("."))
         return BzrDir.open_from_transport(transport).open_repository()
+
+
+class GetCommitBuilderTests(SubversionTestCase):
+
+    def setUp(self):
+        super(GetCommitBuilderTests, self).setUp()
+        self.repos_url = self.make_repository("d")
+        dc = self.get_commit_editor(self.repos_url)
+        dc.add_dir('trunk')
+        dc.close()
+        self.branch = Branch.open("d/trunk")
+
+    def test_simple(self):
+        cb = self.branch.get_commit_builder([self.branch.last_revision()])
+        cb.commit("MSG")
+
+        log = self.client_log(self.repos_url, 0, 2)
+        self.assertEquals("MSG", log[2][3])
+        self.assertEquals({"/trunk": ('M', None, -1)}, log[2][0])
+
+    def test_diverged(self):
+        cb = self.branch.get_commit_builder(["null:"])
+        cb.will_record_deletes()
+        list(cb.record_iter_changes(None, "null:", []))
+        cb.commit("MSG")
+
+        log = self.client_log(self.repos_url, 0, 2)
+        self.assertEquals("MSG", log[2][3])
+        self.assertEquals({"/trunk": ('R', None, -1)}, log[2][0])
+
+    def test_append_only(self):
+        cb = self.get_commit_editor(self.repos_url)
+        branches = cb.add_dir("branches")
+        branches.add_dir("branches/dir")
+        cb.close()
+
+        otherrevid = self.branch.repository.generate_revision_id(2, "branches/dir",
+            self.branch.mapping)
+
+        self.assertRaises(AppendRevisionsOnlyViolation,
+            self.branch.get_commit_builder,
+            [otherrevid, self.branch.last_revision()])
