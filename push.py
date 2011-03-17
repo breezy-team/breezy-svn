@@ -172,7 +172,6 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                                push_metadata=push_metadata,
                                graph=graph, opt_signature=opt_signature,
                                texts=source_repo.texts,
-                               append_revisions_only=append_revisions_only,
                                testament=testament,
                                overwrite_revnum=overwrite_revnum)
     try:

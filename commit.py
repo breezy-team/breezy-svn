@@ -753,10 +753,13 @@ class SvnCommitBuilder(RootCommitBuilder):
             # See whether the base of the commit matches the lhs parent
             # if not, we need to replace the existing directory
             if len(bp_parts) == len(existing_bp_parts):
-                if (self.base_path is None or
-                    self.base_path.strip("/") != "/".join(bp_parts).strip("/")):
-                    replace_existing = True
-                elif self.base_revnum < self.repository._log.find_latest_change(self.branch_path, repository_latest_revnum):
+                if (
+                    # base didn't exist
+                    self.base_path is None or
+                    # base is in different location
+                    self.base_path.strip("/") != "/".join(bp_parts).strip("/") or 
+                    # base has newer version
+                    self.base_revnum < self.repository._log.find_latest_change(self.branch_path, repository_latest_revnum)):
                     replace_existing = True
 
             if self.new_root_id in self.old_inv:
@@ -766,12 +769,10 @@ class SvnCommitBuilder(RootCommitBuilder):
             else:
                 root_from = None
 
-            replace_existing |= (root_from is not None and root_from != "")
-
             try:
                 root = self.editor.open_root(self.base_revnum)
                 if replace_existing:
-                    overwrite_revnum = self.overwrite_revnum
+                    overwrite_revnum = self.overwrite_revnum or -1
                 else:
                     overwrite_revnum = None
                 branch_editors = self.open_branch_editors(root, bp_parts,
