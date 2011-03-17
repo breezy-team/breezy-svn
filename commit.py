@@ -614,12 +614,13 @@ class SvnCommitBuilder(RootCommitBuilder):
         text_revisions = {}
         changes = []
 
-        if (self.old_inv.root is None or new_root_id != self.old_inv.root.file_id):
+        if self.old_inv.root is None or new_root_id != self.old_inv.root.file_id:
             changes.append((new_root_id, "", self._get_new_ie(new_root_id).revision))
 
         changes += _dir_process_file_id("", new_root_id)
 
         # Find the "unusual" text revisions
+        # FIXME: This is wrong
         for id, path, revid in changes:
             fileids[path] = id
             if revid is not None and revid != self.base_revid and revid != self._new_revision_id:

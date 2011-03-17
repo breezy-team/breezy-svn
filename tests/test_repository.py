@@ -38,6 +38,10 @@ from bzrlib.tests import TestCase
 from bzrlib.plugins.svn.tests import (
     SubversionTestCase,
     )
+from bzrlib.plugins.svn.branch import (
+    SvnBranch,
+    )
+from bzrlib.plugins.svn.layout.standard import TrunkLayout
 from bzrlib.plugins.svn.repository import (
     SvnRepositoryFormat,
     )
@@ -212,3 +216,17 @@ class GetCommitBuilderTests(SubversionTestCase):
         self.assertRaises(AppendRevisionsOnlyViolation,
             self.branch.get_commit_builder,
             [otherrevid, self.branch.last_revision()])
+
+    def test_create_new_branch(self):
+        self.branch.repository.set_layout(TrunkLayout())
+
+        cb = self.branch.get_commit_builder([])
+        list(cb.record_iter_changes(self.branch.repository.revision_tree("null:"),
+            "null:", [("rootid", (None, ""), (False, True), (False, True),
+             (None, None), ("", ""), (None, "directory"), (None, False))]))
+        cb.finish_inventory()
+        cb.commit("FOO")
+
+        log = self.client_log(self.repos_url, 0, 2)
+        self.assertEquals("FOO", log[2][3])
+        self.assertEquals({"/trunk": ('R', None, -1)}, log[2][0])
