@@ -230,3 +230,24 @@ class GetCommitBuilderTests(SubversionTestCase):
         log = self.client_log(self.repos_url, 0, 2)
         self.assertEquals("FOO", log[2][3])
         self.assertEquals({"/trunk": ('R', None, -1)}, log[2][0])
+
+    def test_based_on_older(self):
+        first_rev = self.branch.last_revision()
+
+        self.branch = Branch.open("d/trunk")
+
+        cb = self.get_commit_editor(self.repos_url + "/trunk")
+        cb.add_dir("foo")
+        cb.close()
+
+        self.branch.repository.set_layout(TrunkLayout())
+
+        self.branch.get_config().set_user_option("append_revisions_only", "False")
+
+        cb = self.branch.get_commit_builder([first_rev])
+        cb.finish_inventory()
+        cb.commit("FOO")
+
+        log = self.client_log(self.repos_url, 0, 3)
+        self.assertEquals("FOO", log[3][3])
+        self.assertEquals({"/trunk": ('R', "/trunk", 1)}, log[3][0])
