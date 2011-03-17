@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2006-2009 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2006-2011 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2011 Canonical Ltd.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -178,14 +179,26 @@ class GetCommitBuilderTests(SubversionTestCase):
         self.assertEquals({"/trunk": ('M', None, -1)}, log[2][0])
 
     def test_diverged(self):
-        cb = self.branch.get_commit_builder(["null:"])
-        cb.will_record_deletes()
-        list(cb.record_iter_changes(None, "null:", []))
+        cb = self.get_commit_editor(self.repos_url)
+        branches = cb.add_dir("branches")
+        branches.add_dir("branches/dir")
+        cb.close()
+
+        otherrevid = self.branch.repository.generate_revision_id(2, "branches/dir",
+            self.branch.mapping)
+
+        other_tree = self.branch.repository.revision_tree(otherrevid)
+
+        self.branch.get_config().set_user_option("append_revisions_only", "False")
+
+        cb = self.branch.get_commit_builder([otherrevid])
+        list(cb.record_iter_changes(other_tree, otherrevid, []))
+        cb.finish_inventory()
         cb.commit("MSG")
 
-        log = self.client_log(self.repos_url, 0, 2)
-        self.assertEquals("MSG", log[2][3])
-        self.assertEquals({"/trunk": ('R', None, -1)}, log[2][0])
+        log = self.client_log(self.repos_url, 0, 3)
+        self.assertEquals("MSG", log[3][3])
+        self.assertEquals({"/trunk": ('R', '/branches/dir', 2)}, log[3][0])
 
     def test_append_only(self):
         cb = self.get_commit_editor(self.repos_url)
