@@ -545,7 +545,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         pass
 
     def open_branch_editors(self, root, elements, existing_elements,
-                           base_url, base_rev, root_from, replace_existing):
+                           base_url, base_rev, root_from, overwrite_revnum=None):
         """Open a specified directory given an editor for the repository root.
 
         :param root: Editor for the repository root
@@ -555,7 +555,9 @@ class SvnCommitBuilder(RootCommitBuilder):
         :param base_rev: Revision of path to base top-level branch on
         :param root_from: Path inside the branch to copy the root from,
             or None if it should be created from scratch.
-        :param replace_existing: Whether the current branch should be replaced
+        :param overwrite_revnum: If non-None, indicates the existing path
+            with at maximum overwrite_revnum in the specified path should
+            be removed
         """
         ret = [root]
 
@@ -576,16 +578,16 @@ class SvnCommitBuilder(RootCommitBuilder):
         # was based on an older revision of the branch?
         # This needs to also check that base_rev was the latest version of
         # branch_path.
-        if len(existing_elements) == len(elements) and not replace_existing:
+        if len(existing_elements) == len(elements) and overwrite_revnum is None:
             ret.append(ret[-1].open_directory("/".join(elements), base_rev))
         else: # Branch has to be created
             # Already exists, old copy needs to be removed
             name = "/".join(elements)
-            if replace_existing:
+            if overwrite_revnum is not None:
                 if name == "":
                     raise ChangesRootLHSHistory()
                 self.mutter("removing branch dir %r", name)
-                ret[-1].delete_entry(name, max(base_rev, self.overwrite_revnum))
+                ret[-1].delete_entry(name, max(base_rev, overwrite_revnum))
             self.mutter("adding branch dir %r", name)
             if base_url is None or root_from is None:
                 copyfrom_url = None
@@ -771,9 +773,13 @@ class SvnCommitBuilder(RootCommitBuilder):
 
             try:
                 root = self.editor.open_root(self.base_revnum)
+                if replace_existing:
+                    overwrite_revnum = self.overwrite_revnum
+                else:
+                    overwrite_revnum = None
                 branch_editors = self.open_branch_editors(root, bp_parts,
                     existing_bp_parts, self.base_url, self.base_revnum,
-                    root_from, replace_existing)
+                    root_from, overwrite_revnum)
 
                 changed = dir_editor_send_changes(
                         (self.old_inv, self.base_url, self.base_revnum),
