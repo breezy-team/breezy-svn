@@ -215,14 +215,19 @@ class InterToSvnRepository(InterRepository):
             return True
         return self.target.has_revision(revid)
 
-    def _get_foreign_revision_info(self, revid, path):
-        """Find the revision info for a revision id."""
+    def _get_foreign_revision_info(self, revid, path=None):
+        """Find the revision info for a revision id.
+
+        :param revid: Revision id to foreign foreign revision info for
+        :param path: Preferred path
+        :return: Foreign revision id and mapping
+        """
         if revid == NULL_REVISION:
             return None, None
         if not revid in self._foreign_info:
             # FIXME: Prefer revisions in path
             return self.target.lookup_bzr_revision_id(revid)
-        if path in self._foreign_info[revid]:
+        if path is not None and path in self._foreign_info[revid]:
             return self._foreign_info[revid][path]
         else:
             return self._foreign_info[revid].values()[0]
@@ -427,18 +432,16 @@ class InterToSvnRepository(InterRepository):
         :param layout: Repository layout
         """
         mutter('pushing %r', rev.revision_id)
+
         if rev.parent_ids:
             parent_revid = rev.parent_ids[0]
         else:
             parent_revid = NULL_REVISION
 
-        if parent_revid == NULL_REVISION:
+        base_foreign_revid, base_mapping = self._get_foreign_revision_info(parent_revid)
+        if base_foreign_revid is None:
             target_project = None
-            base_foreign_revid = None
-            base_mapping = None
         else:
-            base_foreign_revid, base_mapping = self.target.lookup_bzr_revision_id(
-                parent_revid, foreign_sibling=getattr(rev, "foreign_revid", None))
             (_, target_project, _, _) = layout.parse(base_foreign_revid[1])
         bp = determine_branch_path(rev, layout, target_project)
         target_config = self._get_branch_config(bp)

@@ -1305,6 +1305,11 @@ class ForeignRevisionInfoTests(InterToSvnRepositoryTestCase):
         self.assertEquals((None, None),
             self.interrepo._get_foreign_revision_info(NULL_REVISION, "apath"))
 
+    def test_foreign_revision_info_no_path(self):
+        self.interrepo._add_path_info("myrevid", "trunk", ("myuuid", "trunk", 4))
+        self.assertEquals(("myuuid", "trunk", 4),
+            self.interrepo._get_foreign_revision_info("myrevid"))
+
     def test_foreign_revision_info_available(self):
         # Prefer path if it is available
         self.interrepo._add_path_info("myrevid", "trunk", ("myuuid", "trunk", 4))
@@ -1375,7 +1380,8 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         config = self.interrepo._get_branch_config("trunk")
         rev1 = self.from_repo.get_revision(self.revid1)
 
-        # Push without and without configuration should raise AppendRevisionsOnlyViolation
+        # Push without and without configuration should raise
+        # AppendRevisionsOnlyViolation
         self.assertRaises(AppendRevisionsOnlyViolation,
             self.interrepo.push_revision, "trunk", config, rev1,
             append_revisions_only=True,
@@ -1498,7 +1504,8 @@ class CreatePrefixTests(SubversionTestCase):
     def test_create_double(self):
         create_prefix(self.repo.transport, "project/branches/abranch", "")
         paths = self.client_log(self.repos_url, 1, 0)[1][0]
-        self.assertEquals(paths, {'/project': ('A', None, -1), '/project/branches': ('A', None, -1)})
+        self.assertEquals(paths,
+            {'/project': ('A', None, -1), '/project/branches': ('A', None, -1)})
 
     def test_part_exists(self):
         dc = self.get_commit_editor(self.repos_url)
