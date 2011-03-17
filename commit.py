@@ -757,19 +757,13 @@ class SvnCommitBuilder(RootCommitBuilder):
                 if (self.base_path is None or
                     self.base_path.strip("/") != "/".join(bp_parts).strip("/")):
                     replace_existing = True
-                    if self._append_revisions_only:
-                        raise AppendRevisionsOnlyViolation(
-                            urlutils.join(self.repository.base, self.branch_path))
                 elif self.base_revnum < self.repository._log.find_latest_change(self.branch_path, repository_latest_revnum):
-                    replace_existing = True
-                    if self._append_revisions_only:
-                        raise AppendRevisionsOnlyViolation(
-                            urlutils.join(self.repository.base, self.branch_path))
-                elif self.old_inv.root.file_id != self.new_root_id:
                     replace_existing = True
 
             if self.new_root_id in self.old_inv:
                 root_from = self.old_inv.id2path(self.new_root_id)
+                if root_from != "":
+                    replace_existing = True
             else:
                 root_from = None
 
