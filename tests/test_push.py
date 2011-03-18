@@ -1357,7 +1357,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         self.interrepo.push_single_revision("trunk",
             self.interrepo._get_branch_config("trunk"),
             self.from_repo.get_revision(self.revid1),
-            push_metadata=True, base_revid=None, root_action=("create",))
+            push_metadata=True, base_foreign_info=(None, None), root_action=("create",))
         paths = self.client_log(self.svn_repo_url, 1, 0)[1][0]
         self.assertEquals(paths,
             {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
@@ -1367,7 +1367,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         self.interrepo.push_single_revision("trunk",
             self.interrepo._get_branch_config("trunk"),
             self.from_repo.get_revision(self.revid1),
-            push_metadata=False, base_revid=None, root_action=("create",))
+            push_metadata=False, base_foreign_info=(None, None), root_action=("create",))
         paths = self.client_log(self.svn_repo_url, 1, 0)[1][0]
         self.assertEquals(paths,
             {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
@@ -1386,7 +1386,8 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
 
         # With append revisions only disabled but overwrite it should work
         self.interrepo.push_single_revision("trunk", config, rev1,
-            push_metadata=False, base_revid=None, root_action=("replace", 2))
+            push_metadata=False, base_foreign_info=(None, None),
+            root_action=("replace", 2))
 
         paths = self.client_log(self.svn_repo_url, 2, 0)[2][0]
         self.assertEquals(paths,
@@ -1404,7 +1405,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         rev1 = self.from_repo.get_revision(self.revid1)
 
         self.interrepo.push_single_revision("trunk", config, rev1,
-            push_metadata=False, base_revid=None, root_action=("replace", 1))
+            push_metadata=False, base_foreign_info=(None, None), root_action=("replace", 1))
 
         paths = self.client_log(self.svn_repo_url, 2, 0)[2][0]
         self.assertEquals(paths,
@@ -1437,12 +1438,14 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.from_repo.lock_read()
         rev1 = self.from_repo.get_revision(self.revid1)
         self.interrepo.push_single_revision("trunk",
-            config, rev1, push_metadata=True, root_action=("replace", 1))
+            config, rev1, push_metadata=True, root_action=("create", ),
+            base_foreign_info=(None, None))
         rev_merged = self.from_repo.get_revision(self.revid_merge)
         self.interrepo.push_revision_inclusive("trunk", config,
             rev_merged, push_merged=False,
             layout=TrunkLayout0(), project="",
-            push_metadata=True, root_action=("open",))
+            push_metadata=True, root_action=("open",),
+            base_foreign_info=self.interrepo._get_foreign_revision_info(rev_merged.parent_ids[0]))
         log = self.client_log(self.svn_repo_url, 2, 0)
         self.assertEquals(log[1][0],
             {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
@@ -1455,12 +1458,14 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.from_repo.lock_read()
         rev1 = self.from_repo.get_revision(self.revid1)
         self.interrepo.push_single_revision("trunk",
-            config, rev1, push_metadata=True, root_action=("replace", 1))
+            config, rev1, push_metadata=True, root_action=("create", ),
+            base_foreign_info=(None, None))
         rev_merged = self.from_repo.get_revision(self.revid_merge)
         self.interrepo.push_revision_inclusive("trunk", config,
             rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
-            push_metadata=True, root_action=("open", ))
+            push_metadata=True, root_action=("open", ),
+            base_foreign_info=self.interrepo._get_foreign_revision_info(rev_merged.parent_ids[0]))
         log = self.client_log(self.svn_repo_url, 4, 0)
         self.assertEquals(log[1][0],
             {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
@@ -1481,12 +1486,14 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.from_repo.lock_read()
         rev1 = self.from_repo.get_revision(self.revid1)
         self.interrepo.push_single_revision("trunk",
-            config, rev1, push_metadata=True, root_action=("create", ))
+            config, rev1, push_metadata=True, root_action=("create", ),
+            base_foreign_info=(None, None))
         rev_merged = self.from_repo.get_revision(self.revid_merge)
         self.interrepo.push_revision_inclusive("trunk", config,
             rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
-            push_metadata=True, root_action=("open", ))
+            push_metadata=True, root_action=("open", ),
+            base_foreign_info=self.interrepo._get_foreign_revision_info(rev_merged.parent_ids[0]))
 
         revid3 = self.tree2.commit('msg2 again')
         self.tree1.merge_from_branch(self.tree2.branch, to_revision=revid3)
@@ -1497,7 +1504,8 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.interrepo.push_revision_inclusive("trunk", config,
             rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
-            push_metadata=True, root_action=("open",))
+            push_metadata=True, root_action=("open",),
+            base_foreign_info=self.interrepo._get_foreign_revision_info(rev_merged.parent_ids[0]))
 
         log = self.client_log(self.svn_repo_url, 6, 4)
         self.assertEquals(log[5][3], 'msg2 again')

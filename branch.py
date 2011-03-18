@@ -418,8 +418,10 @@ class SvnBranch(ForeignBranch):
         else:
             base_revid = NULL_REVISION
         interrepo = InterToSvnRepository(self.repository, self.repository)
+        base_foreign_info = interrepo._get_foreign_revision_info(base_revid, self.get_branch_path())
         interrepo.push_single_revision(self.get_branch_path(), self.get_config(), rev,
-            push_metadata=True, root_action=("replace", self.get_revnum()))
+            push_metadata=True, root_action=("replace", self.get_revnum()),
+            base_foreign_info=base_foreign_info)
         self._clear_cached_state()
 
     def set_last_revision_info(self, revno, revid):

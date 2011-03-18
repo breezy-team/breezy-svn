@@ -311,14 +311,15 @@ class InterToSvnRepository(InterRepository):
                           len(todo))
                 if len(rev.parent_ids) == 0:
                     base_revid = NULL_REVISION
-                elif rev.parent_ids[0] in revid_map:
-                    base_revid = revid_map[rev.parent_ids[0]][0]
                 else:
                     base_revid = rev.parent_ids[0]
+                try:
+                    base_foreign_info = revid_map[base_revid][1]
+                except KeyError:
+                    base_foreign_info = self._get_foreign_revision_info(base_revid, target_branch)
                 last_revid, last_foreign_info = self.push_revision_inclusive(
-                    target_branch, target_config, rev,
-                    root_action=root_action,
-                    base_revid=base_revid, push_metadata=push_metadata,
+                    target_branch, target_config, rev, root_action=root_action,
+                    base_foreign_info=base_foreign_info, push_metadata=push_metadata,
                     push_merged=push_merged, project=project, layout=layout)
                 revid_map[rev.revision_id] = (last_revid, last_foreign_info)
                 root_action = ("open", )
@@ -328,7 +329,7 @@ class InterToSvnRepository(InterRepository):
 
     def push_revision_inclusive(self, target_path, target_config, rev,
             push_merged, layout, project, root_action, push_metadata,
-            base_revid=None):
+            base_foreign_info):
         """Push a revision including ancestors.
 
         :return: Tuple with pushed revision id and foreign revision id
@@ -336,11 +337,11 @@ class InterToSvnRepository(InterRepository):
         if push_merged and len(rev.parent_ids) > 1:
             self.push_ancestors(layout, project, rev.parent_ids)
         return self.push_single_revision(target_path, target_config, rev,
-            push_metadata=push_metadata, base_revid=base_revid,
-            root_action=root_action)
+            push_metadata=push_metadata,
+            root_action=root_action, base_foreign_info=base_foreign_info)
 
     def push_single_revision(self, target_path, target_config, rev,
-            push_metadata, root_action, base_revid=None):
+            push_metadata, root_action, base_foreign_info):
         """Push a single revision.
 
         :param target_path: Target branch path in the svn repository
@@ -353,13 +354,7 @@ class InterToSvnRepository(InterRepository):
         :param delete_root_revnum: If not None, maximum revision of the root to delete
         :return: Tuple with pushed revision id and foreign revision id
         """
-        if base_revid is None:
-            if rev.parent_ids:
-                base_revid = rev.parent_ids[0]
-            else:
-                base_revid = NULL_REVISION
-        base_foreign_revid, base_mapping = self._get_foreign_revision_info(
-            base_revid, target_path)
+        (base_foreign_revid, base_mapping) = base_foreign_info
         if rev.parent_ids:
             base_revid = rev.parent_ids[0]
         else:
@@ -413,10 +408,11 @@ class InterToSvnRepository(InterRepository):
                 target_branch_path, revid, set_metadata=push_metadata,
                 deletefirst=False)
         else:
+            start_parent_foreign_info = self._get_foreign_revision_info(start_revid_parent)
             revid, foreign_info = self.push_single_revision(target_branch_path,
                 self._get_branch_config(target_branch_path),
                 rev, push_metadata=push_metadata,
-                base_revid=start_revid_parent,
+                base_foreign_info=start_parent_foreign_info,
                 root_action=("create", ))
         self._add_path_info(target_branch_path, revid, foreign_info)
         return revid, foreign_info
@@ -465,7 +461,8 @@ class InterToSvnRepository(InterRepository):
             self.push_revision_inclusive(bp, target_config, rev,
                 push_metadata=True, push_merged=push_merged,
                 layout=layout, project=target_project,
-                root_action=root_action)
+                root_action=root_action,
+                base_foreign_info=(base_foreign_revid, base_mapping))
 
     def push_new_branch(self, layout, project, target_branch_path,
         stop_revision, push_merged=None, overwrite=False):
@@ -544,7 +541,8 @@ class InterToSvnRepository(InterRepository):
                 root_action = self._get_root_action(bp, rev, overwrite=False, target_config=target_config)
                 (pushed_revid, (pushed_foreign_revid, pushed_mapping)) = self.push_revision_inclusive(bp,
                     target_config, rev, push_metadata=True,
-                    root_action=root_action, layout=layout, project=target_project)
+                    root_action=root_action, layout=layout, project=target_project,
+                    base_foreign_info=(base_foreign_revid, base_mapping))
                 overwrite_revnum = pushed_foreign_revid[2]
         finally:
             self.source.unlock()
