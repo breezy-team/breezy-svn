@@ -241,6 +241,15 @@ class InterToSvnRepository(InterRepository):
         return None
 
     def _get_root_action(self, path, rev, overwrite, target_config, create_prefix=False):
+        """Determine the action to take on the tree root.
+
+        :param path: Branch path
+        :param rev: Revision to push
+        :param overwrite: Whether to overwrite any existing history
+        :param target_config: Configuration for the target location
+        :param create_prefix: Whether to create the prefix for path
+        :return: root_action tuple for use with SvnCommitBuilder
+        """
         append_revisions_only = target_config.get_append_revisions_only(not overwrite)
         bp_parts = path.split("/")
         existing_bp_parts = check_dirs_exist(self.target.transport, bp_parts, -1)
@@ -257,9 +266,9 @@ class InterToSvnRepository(InterRepository):
         delete_root_revnum = self._get_delete_root_revnum(
             path, rev.parent_ids,
             overwrite=overwrite, append_revisions_only=append_revisions_only)
-        if len(existing_bp_parts) == len(bp_parts) and delete_root_revnum is None:
+        if delete_root_revnum is None:
             return ("open", )
-        elif delete_root_revnum is not None:
+        else:
             return ("replace", delete_root_revnum)
 
     def _get_delete_root_revnum(self, target_path, parent_revids, overwrite,
