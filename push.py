@@ -240,24 +240,30 @@ class InterToSvnRepository(InterRepository):
         """See InterRepository._get_repo_format_to_test()."""
         return None
 
-    def _get_root_action(self, target_branch, rev, overwrite, target_config):
+    def _get_root_action(self, path, rev, overwrite, target_config):
+        bp_parts = path.split("/")
+        existing_bp_parts = check_dirs_exist(self.target.transport, bp_parts, -1)
+        if (len(existing_bp_parts) != len(bp_parts) and
+            len(existing_bp_parts)+1 != len(bp_parts)):
+            raise MissingPrefix("/".join(bp_parts), "/".join(existing_bp_parts))
+        if len(existing_bp_parts) < len(bp_parts):
+            # Branch doesn't exist yet
+            return ("create", )
         delete_root_revnum = self._get_delete_root_revnum(
-            target_branch, rev.parent_ids,
+            path, rev.parent_ids,
             overwrite=overwrite, target_config=target_config)
-        return determine_root_action(self.target.transport,
-            target_branch, base_foreign_revid[2], delete_root_revnum)
+        if len(existing_bp_parts) == len(bp_parts) and delete_root_revnum is None:
+            return ("open", )
+        elif delete_root_revnum is not None:
+            return ("replace", delete_root_revnum)
 
     def _get_delete_root_revnum(self, target_path, parent_revids, overwrite,
             target_config):
         #FIXME
         append_revisions_only = target_config.get_append_revisions_only(not overwrite)
         from bzrlib.branch import Branch
-        from bzrlib.errors import NotBranchError
         url = urlutils.join(self.target.base, target_path)
-        try:
-            b = Branch.open(url)
-        except NotBranchError:
-            return None
+        b = Branch.open(url)
         if parent_revids == [] or parent_revids == [NULL_REVISION]:
             return b.get_revnum()
         else:
@@ -647,23 +653,3 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
         return revid, (tuple(foreign_revid), mapping)
     finally:
         repository.transport.add_connection(conn)
-
-
-def determine_root_action(transport, path, base_revnum, delete_root_revnum):
-    """Determine the action to take on the tree root.
-
-    :param transport: Transport to work with
-    :param base_revnum: Revision number to base the new tree on
-    :param delete_root_revnum: Maximum revision number to delete
-    """
-    bp_parts = path.split("/")
-    existing_bp_parts = check_dirs_exist(transport, bp_parts, -1)
-    if (len(existing_bp_parts) != len(bp_parts) and
-        len(existing_bp_parts)+1 != len(bp_parts)):
-        raise MissingPrefix("/".join(bp_parts), "/".join(existing_bp_parts))
-    if len(existing_bp_parts) == len(bp_parts) and delete_root_revnum is None:
-        return ("open", base_revnum)
-    elif delete_root_revnum is not None:
-        return ("replace", delete_root_revnum)
-    else:
-        return ("create", )

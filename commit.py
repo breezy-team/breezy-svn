@@ -26,6 +26,8 @@ from cStringIO import (
     StringIO,
     )
 from subvertpy import (
+    ERR_FS_NOT_DIRECTORY,
+    ERR_REPOS_DISABLED_FEATURE,
     delta,
     properties,
     SubversionException,
@@ -188,8 +190,9 @@ def set_svn_revprops(repository, revnum, revprops):
     for (name, value) in revprops.iteritems():
         try:
             repository.transport.change_rev_prop(revnum, name, value)
-        except SubversionException, (_, ERR_REPOS_DISABLED_FEATURE):
-            raise RevpropChangeFailed(name)
+        except SubversionException, (_, num):
+            if num == ERR_REPOS_DISABLED_FEATURE:
+                raise RevpropChangeFailed(name)
 
 
 def file_editor_send_content_changes(reader, file_editor):
@@ -558,8 +561,14 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         # Open paths leading up to branch
         for i in range(0, len(elements)-1):
-            ret.append(ret[-1].open_directory(
-                "/".join(elements[0:i+1]), -1))
+            try:
+                ret.append(ret[-1].open_directory(
+                    "/".join(elements[0:i+1]), -1))
+            except SubversionException, (_, num):
+                if num == ERR_FS_NOT_DIRECTORY:
+                    raise MissingPrefix("/".join(elements), "/".join(elements[0:i]))
+                else:
+                    raise
 
         # Branch already exists and stayed at the same location, open:
         if root_action[0] == "open":
