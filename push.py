@@ -76,7 +76,7 @@ from bzrlib.plugins.svn.transport import (
     )
 
 
-def create_prefix(transport, prefix, already_present):
+def create_branch_container(transport, prefix, already_present):
     """Create a branch prefix.
 
     :param transport: Repository root transport
@@ -240,13 +240,17 @@ class InterToSvnRepository(InterRepository):
         """See InterRepository._get_repo_format_to_test()."""
         return None
 
-    def _get_root_action(self, path, rev, overwrite, target_config):
+    def _get_root_action(self, path, rev, overwrite, target_config, create_prefix=False):
         append_revisions_only = target_config.get_append_revisions_only(not overwrite)
         bp_parts = path.split("/")
         existing_bp_parts = check_dirs_exist(self.target.transport, bp_parts, -1)
         if (len(existing_bp_parts) != len(bp_parts) and
             len(existing_bp_parts)+1 != len(bp_parts)):
-            raise MissingPrefix("/".join(bp_parts), "/".join(existing_bp_parts))
+            existing_path = "/".join(existing_bp_parts)
+            if create_prefix:
+                create_branch_container(self.target.transport, path, existing_path)
+                return ("create", )
+            raise MissingPrefix(path, existing_path)
         if len(existing_bp_parts) < len(bp_parts):
             # Branch doesn't exist yet
             return ("create", )
@@ -446,18 +450,11 @@ class InterToSvnRepository(InterRepository):
             push_merged = (layout.push_merged_revisions(target_project) and
                 target_config.get_push_merged_revisions())
             root_action = self._get_root_action(bp, rev, overwrite=False,
-                target_config=target_config)
-            try:
-                self.push_revision_inclusive(bp, target_config, rev,
-                    push_metadata=True, push_merged=push_merged,
-                    layout=layout, project=target_project,
-                    root_action=root_action)
-            except MissingPrefix, e:
-                create_prefix(self.target.transport, e.path, e.existing_path)
-                self.push_revision_inclusive(bp, target_config, rev,
-                    push_metadata=True, push_merged=push_merged,
-                    layout=layout, project=target_project,
-                    root_action=root_action)
+                target_config=target_config, create_prefix=True)
+            self.push_revision_inclusive(bp, target_config, rev,
+                push_metadata=True, push_merged=push_merged,
+                layout=layout, project=target_project,
+                root_action=root_action)
 
     def push_new_branch(self, layout, project, target_branch_path,
         stop_revision, push_merged=None, overwrite=False):

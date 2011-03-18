@@ -564,7 +564,6 @@ class JoinedCommitTests(SubversionTestCase):
 
         self.olddir.open_branch().pull(self.newdir.open_branch())
         paths = self.client_log(repos_url, 4, 0)[4][0]
-        mutter('paths %r' % paths)
         self.assertEquals(('A', "/branches/newbranch", 2), paths["/trunk/newdir"])
 
 
