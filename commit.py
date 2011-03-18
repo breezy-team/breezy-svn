@@ -932,6 +932,16 @@ class SvnCommitBuilder(RootCommitBuilder):
 
 
 def send_svn_file_text_delta(tree, base_ie, ie, editor):
+    """Send the file text delta to a Subversion editor object.
+
+    Tree can either be a native Subversion tree of some sort,
+    in which case the optimized Subversion functions will be used,
+    or another tree.
+
+    :param tree: Tree
+    :param base_ie: Base inventory entry
+    :param editor: Editor to report changes to
+    """
     contents = mapping.get_svn_file_contents(tree, ie.kind, ie.file_id)
     try:
         file_editor_send_content_changes(contents, editor)
@@ -973,6 +983,12 @@ def file_editor_send_prop_changes(base_ie, ie, editor):
 
 
 def determine_root_action(transport, path, base_revnum, delete_root_revnum):
+    """Determine the action to take on the tree root.
+
+    :param transport: Transport to work with
+    :param base_revnum: Revision number to base the new tree on
+    :param delete_root_revnum: Maximum revision number to delete
+    """
     bp_parts = path.split("/")
     existing_bp_parts = check_dirs_exist(transport, bp_parts, -1)
     if (len(existing_bp_parts) != len(bp_parts) and
