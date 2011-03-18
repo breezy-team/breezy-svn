@@ -938,10 +938,11 @@ class InterOtherSvnBranch(InterBranch):
         else:
             interrepo = self._get_interrepo(graph)
             assert todo != []
-            (new_last_revid, new_foreign_info) = interrepo.push_revision_series(
+            revid_map = interrepo.push_revision_series(
                 todo, self.target.layout, self.target.project,
                 self.target.get_branch_path(), self.target.get_config(),
                 push_merged, overwrite=overwrite)
+            (new_last_revid, new_foreign_info) = revid_map[stop_revision]
         self.target._clear_cached_state()
         assert isinstance(new_last_revid, str)
         assert isinstance(old_last_revid, str)
@@ -963,10 +964,10 @@ class InterOtherSvnBranch(InterBranch):
             graph = self.source.repository.get_graph(self.target.repository)
             todo = self._todo(graph, stop_revision)
             if todo == []:
-                return { self.source.last_revision(): self.source.last_revision() }
-            revid_map = {}
+                return { stop_revision: stop_revision }
             target_branch_path = self.target.get_branch_path()
             target_config = self.target.get_config()
+            push_merged = self.target.get_push_merged_revisions()
             # Request graph from other repository, since it's most likely faster
             # than Subversion
             interrepo = self._get_interrepo(graph)
@@ -974,24 +975,14 @@ class InterOtherSvnBranch(InterBranch):
             try:
                 # FIXME: Call create_branch_with_hidden_commit if the revision
                 # is already present in the target repository ?
-                for rev in self.source.repository.get_revisions(todo):
-                    pb.update("pushing revisions", todo.index(rev.revision_id),
-                              len(todo))
-                    if len(rev.parent_ids) == 0:
-                        base_revid = NULL_REVISION
-                    elif rev.parent_ids[0] in revid_map:
-                        base_revid = revid_map[rev.parent_ids[0]]
-                    else:
-                        base_revid = rev.parent_ids[0]
-                    revid_map[rev.revision_id], _ = interrepo.push_single_revision(
-                        target_branch_path, target_config, rev,
-                        push_metadata=False, base_revid=base_revid,
-                        append_revisions_only=True)
+                revid_map = interrepo.push_revision_series(todo, self.target.layout,
+                    self.target.project, target_branch_path,
+                    target_config, push_merged=push_merged, overwrite=False)
             finally:
                 pb.finished()
             interrepo = InterFromSvnRepository(self.target.repository,
                                                self.source.repository)
-            interrepo.fetch(revision_id=revid_map[rev.revision_id],
+            interrepo.fetch(revision_id=revid_map[stop_revision],
                 mapping=self.target.mapping, project=self.target.project)
             self.target._clear_cached_state()
             assert stop_revision in revid_map

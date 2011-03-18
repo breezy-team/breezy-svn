@@ -248,30 +248,39 @@ class InterToSvnRepository(InterRepository):
         append_revisions_only = self.get_append_revisions_only(target_config,
             overwrite)
         assert todo != []
+        revid_map = {}
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for rev in self.source.get_revisions(todo):
                 pb.update("pushing revisions", todo.index(rev.revision_id),
                           len(todo))
-                last = self.push_revision_inclusive(target_branch,
-                    target_config, rev, overwrite=overwrite,
+                if len(rev.parent_ids) == 0:
+                    base_revid = NULL_REVISION
+                elif rev.parent_ids[0] in revid_map:
+                    base_revid = revid_map[rev.parent_ids[0]][0]
+                else:
+                    base_revid = rev.parent_ids[0]
+                last_revid, last_foreign_info = self.push_revision_inclusive(
+                    target_branch, target_config, rev, overwrite=overwrite,
                     append_revisions_only=append_revisions_only,
+                     base_revid=base_revid,
                     push_merged=push_merged, project=project, layout=layout)
+                revid_map[rev.revision_id] = (last_revid, last_foreign_info)
                 append_revisions_only = True
                 overwrite = False
-            return last
+            return revid_map
         finally:
             pb.finished()
 
     def push_revision_inclusive(self, target_path, target_config, rev,
-            append_revisions_only, push_merged, layout, project,
+            append_revisions_only, push_merged, layout, project, base_revid=None,
             push_metadata=True, overwrite=False):
         """Push a revision including ancestors."""
         if push_merged and len(rev.parent_ids) > 1:
             self.push_ancestors(layout, project, rev.parent_ids)
         return self.push_single_revision(target_path, target_config, rev,
             overwrite=overwrite, append_revisions_only=append_revisions_only,
-            push_metadata=push_metadata)
+            push_metadata=push_metadata, base_revid=base_revid)
 
     def push_single_revision(self, target_path, target_config, rev,
             append_revisions_only, push_metadata=True, base_revid=None,
