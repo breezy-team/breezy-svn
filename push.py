@@ -53,7 +53,6 @@ from bzrlib.trace import (
 
 from bzrlib.plugins.svn.commit import (
     SvnCommitBuilder,
-    determine_root_action,
     )
 from bzrlib.plugins.svn.config import (
     BranchConfig,
@@ -273,14 +272,16 @@ class InterToSvnRepository(InterRepository):
         """
         assert todo != []
         revid_map = {}
-        delete_root_revnum = None
+        root_action = None
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for rev in self.source.get_revisions(todo):
-                if delete_root_revnum is None:
+                if root_action is None:
                     delete_root_revnum = self._get_delete_root_revnum(
                         target_branch, rev.parent_ids,
                         overwrite=overwrite, target_config=target_config)
+                    root_action = determine_root_action(self.target.transport,
+                        target_branch, base_foreign_revid[2], delete_root_revnum)
                 pb.update("pushing revisions", todo.index(rev.revision_id),
                           len(todo))
                 if len(rev.parent_ids) == 0:
@@ -290,18 +291,18 @@ class InterToSvnRepository(InterRepository):
                 else:
                     base_revid = rev.parent_ids[0]
                 last_revid, last_foreign_info = self.push_revision_inclusive(
-                    target_branch, target_config, rev, 
-                    delete_root_revnum=delete_root_revnum,
+                    target_branch, target_config, rev,
+                    root_action=root_action,
                     base_revid=base_revid, push_metadata=push_metadata,
                     push_merged=push_merged, project=project, layout=layout)
                 revid_map[rev.revision_id] = (last_revid, last_foreign_info)
-                delete_root_revnum = last_foreign_info[0][2]
+                root_action = ("open", )
             return revid_map
         finally:
             pb.finished()
 
     def push_revision_inclusive(self, target_path, target_config, rev,
-            push_merged, layout, project, delete_root_revnum, push_metadata,
+            push_merged, layout, project, root_action, push_metadata,
             base_revid=None):
         """Push a revision including ancestors.
 
@@ -311,10 +312,10 @@ class InterToSvnRepository(InterRepository):
             self.push_ancestors(layout, project, rev.parent_ids)
         return self.push_single_revision(target_path, target_config, rev,
             push_metadata=push_metadata, base_revid=base_revid,
-            delete_root_revnum=delete_root_revnum)
+            root_action=root_action)
 
     def push_single_revision(self, target_path, target_config, rev,
-            push_metadata, base_revid=None, delete_root_revnum=None):
+            push_metadata, root_action, base_revid=None):
         """Push a single revision.
 
         :param target_path: Target branch path in the svn repository
@@ -338,9 +339,6 @@ class InterToSvnRepository(InterRepository):
             base_revid = rev.parent_ids[0]
         else:
             base_revid = NULL_REVISION
-
-        root_action = determine_root_action(self.target.transport,
-            target_path, base_foreign_revid[2], delete_root_revnum)
 
         mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
         self.source.lock_read()
@@ -393,7 +391,8 @@ class InterToSvnRepository(InterRepository):
             revid, foreign_info = self.push_single_revision(target_branch_path,
                 self._get_branch_config(target_branch_path),
                 rev, push_metadata=push_metadata,
-                base_revid=start_revid_parent, delete_root_revnum=None)
+                base_revid=start_revid_parent,
+                root_action=("create", ))
         self._add_path_info(target_branch_path, revid, foreign_info)
         return revid, foreign_info
 
@@ -438,17 +437,19 @@ class InterToSvnRepository(InterRepository):
                 target_config.get_push_merged_revisions())
             delete_root_revnum = self._get_delete_root_revnum(bp,
                 rev.parent_ids, overwrite=False, target_config=target_config)
+            root_action = determine_root_action(self.target.transport,
+                bp, base_foreign_revid[2], delete_root_revnum)
             try:
                 self.push_revision_inclusive(bp, target_config, rev,
                     push_metadata=True, push_merged=push_merged,
                     layout=layout, project=target_project,
-                    delete_root_revnum=delete_root_revnum)
+                    root_action=root_action)
             except MissingPrefix, e:
                 create_prefix(self.target.transport, e.path, e.existing_path)
                 self.push_revision_inclusive(bp, target_config, rev,
                     push_metadata=True, push_merged=push_merged,
                     layout=layout, project=target_project,
-                    delete_root_revnum=delete_root_revnum)
+                    root_action=root_action)
 
     def push_new_branch(self, layout, project, target_branch_path,
         stop_revision, push_merged=None, overwrite=False):
@@ -526,9 +527,11 @@ class InterToSvnRepository(InterRepository):
                     target_config.get_push_merged_revisions())
                 delete_root_revnum = self._get_delete_root_revnum(bp,
                     rev.parent_ids, overwrite=False, target_config=target_config)
+                root_action = determine_root_action(self.target.transport,
+                    bp, base_foreign_revid[2], delete_root_revnum)
                 (pushed_revid, (pushed_foreign_revid, pushed_mapping)) = self.push_revision_inclusive(bp,
                     target_config, rev, push_metadata=True,
-                    push_merged=push_merged, layout=layout, project=target_project,
+                    root_action=root_action, layout=layout, project=target_project,
                     delete_root_revnum=delete_root_revnum)
                 overwrite_revnum = pushed_foreign_revid[2]
         finally:
@@ -646,3 +649,23 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
         return revid, (tuple(foreign_revid), mapping)
     finally:
         repository.transport.add_connection(conn)
+
+
+def determine_root_action(transport, path, base_revnum, delete_root_revnum):
+    """Determine the action to take on the tree root.
+
+    :param transport: Transport to work with
+    :param base_revnum: Revision number to base the new tree on
+    :param delete_root_revnum: Maximum revision number to delete
+    """
+    bp_parts = path.split("/")
+    existing_bp_parts = check_dirs_exist(transport, bp_parts, -1)
+    if (len(existing_bp_parts) != len(bp_parts) and
+        len(existing_bp_parts)+1 != len(bp_parts)):
+        raise MissingPrefix("/".join(bp_parts), "/".join(existing_bp_parts))
+    if len(existing_bp_parts) == len(bp_parts) and delete_root_revnum is None:
+        return ("open", base_revnum)
+    elif delete_root_revnum is not None:
+        return ("replace", delete_root_revnum)
+    else:
+        return ("create", )

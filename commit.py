@@ -982,21 +982,4 @@ def file_editor_send_prop_changes(base_ie, ie, editor):
         editor.change_prop(properties.PROP_SPECIAL, value)
 
 
-def determine_root_action(transport, path, base_revnum, delete_root_revnum):
-    """Determine the action to take on the tree root.
 
-    :param transport: Transport to work with
-    :param base_revnum: Revision number to base the new tree on
-    :param delete_root_revnum: Maximum revision number to delete
-    """
-    bp_parts = path.split("/")
-    existing_bp_parts = check_dirs_exist(transport, bp_parts, -1)
-    if (len(existing_bp_parts) != len(bp_parts) and
-        len(existing_bp_parts)+1 != len(bp_parts)):
-        raise MissingPrefix("/".join(bp_parts), "/".join(existing_bp_parts))
-    if len(existing_bp_parts) == len(bp_parts) and delete_root_revnum is None:
-        return ("open", base_revnum)
-    elif delete_root_revnum is not None:
-        return ("replace", delete_root_revnum)
-    else:
-        return ("create", )
