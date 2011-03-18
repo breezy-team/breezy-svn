@@ -1306,11 +1306,12 @@ class SvnRepository(ForeignRepository):
                 self.lookup_bzr_revision_id(parents[0], project=branch.project)
             if ((base_foreign_revid[2] != branch.get_revnum() or
                 base_foreign_revid[1] != bp)):
-                if append_revisions_only:
-                    raise bzr_errors.AppendRevisionsOnlyViolation(branch.base)
                 root_action = ("replace", branch.get_revnum())
             else:
                 root_action = ("open", )
+
+        if root_action[0] == "replace" and append_revisions_only:
+            raise bzr_errors.AppendRevisionsOnlyViolation(branch.base)
 
         return SvnCommitBuilder(self, bp, parents,
                                 config, timestamp, timezone, committer,
