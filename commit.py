@@ -743,10 +743,11 @@ class SvnCommitBuilder(RootCommitBuilder):
 
             if self.new_root_id in self.old_inv:
                 root_from = self.old_inv.id2path(self.new_root_id)
-                if root_from != "" and self.root_action[0] == "open":
-                    self.root_action = ("replace", self.base_revnum)
             else:
                 root_from = None
+
+            if self.old_inv.root is not None and self.old_inv.root.file_id != self.new_root_id:
+                self.root_action = ("replace", self.base_revnum)
 
             try:
                 root = self.editor.open_root(self.base_revnum)
