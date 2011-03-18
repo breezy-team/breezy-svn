@@ -203,7 +203,6 @@ class SvnRepositoryFormat(RepositoryFormat):
                 'Does not support rich root data.', target_repo_format)
 
 
-
 class SubversionRepositoryCheckResult(branch.BranchCheckResult):
     """Results of checking a Subversion repository."""
 

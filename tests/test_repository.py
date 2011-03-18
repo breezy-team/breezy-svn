@@ -220,6 +220,8 @@ class GetCommitBuilderTests(SubversionTestCase):
     def test_create_new_branch(self):
         self.branch.repository.set_layout(TrunkLayout())
 
+        self.branch.get_config().set_user_option("append_revisions_only", "False")
+
         cb = self.branch.get_commit_builder([])
         list(cb.record_iter_changes(self.branch.repository.revision_tree("null:"),
             "null:", [("rootid", (None, ""), (False, True), (False, True),

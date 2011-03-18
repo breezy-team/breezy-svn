@@ -193,6 +193,8 @@ def set_svn_revprops(repository, revnum, revprops):
         except SubversionException, (_, num):
             if num == ERR_REPOS_DISABLED_FEATURE:
                 raise RevpropChangeFailed(name)
+            else:
+                raise
 
 
 def file_editor_send_content_changes(reader, file_editor):

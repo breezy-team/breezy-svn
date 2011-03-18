@@ -241,6 +241,7 @@ class InterToSvnRepository(InterRepository):
         return None
 
     def _get_root_action(self, path, rev, overwrite, target_config):
+        append_revisions_only = target_config.get_append_revisions_only(not overwrite)
         bp_parts = path.split("/")
         existing_bp_parts = check_dirs_exist(self.target.transport, bp_parts, -1)
         if (len(existing_bp_parts) != len(bp_parts) and
@@ -251,16 +252,15 @@ class InterToSvnRepository(InterRepository):
             return ("create", )
         delete_root_revnum = self._get_delete_root_revnum(
             path, rev.parent_ids,
-            overwrite=overwrite, target_config=target_config)
+            overwrite=overwrite, append_revisions_only=append_revisions_only)
         if len(existing_bp_parts) == len(bp_parts) and delete_root_revnum is None:
             return ("open", )
         elif delete_root_revnum is not None:
             return ("replace", delete_root_revnum)
 
     def _get_delete_root_revnum(self, target_path, parent_revids, overwrite,
-            target_config):
+            append_revisions_only):
         #FIXME
-        append_revisions_only = target_config.get_append_revisions_only(not overwrite)
         from bzrlib.branch import Branch
         url = urlutils.join(self.target.base, target_path)
         b = Branch.open(url)
