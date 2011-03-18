@@ -516,6 +516,7 @@ class InterToSvnRepository(InterRepository):
                 return
             todo.reverse()
             mutter("pushing %r into svn", todo)
+            base_foreign_info = None
             layout = self.target.get_layout()
             for rev in self.source.get_revisions(todo):
                 if pb is not None:
@@ -523,13 +524,15 @@ class InterToSvnRepository(InterRepository):
                         len(todo))
                 mutter('pushing %r', rev.revision_id)
 
-                if rev.parent_ids:
-                    parent_revid = rev.parent_ids[0]
-                else:
-                    parent_revid = NULL_REVISION
+                if base_foreign_info is None:
+                    if rev.parent_ids:
+                        base_revid = rev.parent_ids[0]
+                    else:
+                        base_revid = NULL_REVISION
+                    base_foreign_info  = self._get_foreign_revision_info(
+                        base_revid)
 
-                base_foreign_revid, base_mapping = self._get_foreign_revision_info(
-                    parent_revid)
+                (base_foreign_revid, base_mapping) = base_foreign_info
                 if base_foreign_revid is None:
                     target_project = None
                 else:
@@ -539,11 +542,10 @@ class InterToSvnRepository(InterRepository):
                 push_merged = (layout.push_merged_revisions(target_project) and
                     target_config.get_push_merged_revisions())
                 root_action = self._get_root_action(bp, rev, overwrite=False, target_config=target_config)
-                (pushed_revid, (pushed_foreign_revid, pushed_mapping)) = self.push_revision_inclusive(bp,
+                (pushed_revid, base_foreign_info) = self.push_revision_inclusive(bp,
                     target_config, rev, push_metadata=True,
                     root_action=root_action, layout=layout, project=target_project,
-                    base_foreign_info=(base_foreign_revid, base_mapping))
-                overwrite_revnum = pushed_foreign_revid[2]
+                    base_foreign_info=base_foreign_info)
         finally:
             self.source.unlock()
 
