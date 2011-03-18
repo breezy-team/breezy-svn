@@ -53,6 +53,7 @@ from bzrlib.trace import (
 
 from bzrlib.plugins.svn.commit import (
     SvnCommitBuilder,
+    determine_root_action,
     )
 from bzrlib.plugins.svn.config import (
     BranchConfig,
@@ -125,7 +126,7 @@ def _filter_iter_changes(iter_changes):
 def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                        base_revid, revision_id, rev,
                        base_foreign_revid, base_mapping,
-                       push_metadata=True,
+                       push_metadata,
                        delete_root_revnum=None):
     """Push a revision tree into a target repository.
 
@@ -163,16 +164,18 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
     else:
         testament = None
 
+    root_action = determine_root_action(target_repo.transport,
+        branch_path, base_foreign_revid[2], delete_root_revnum)
+
     builder = SvnCommitBuilder(target_repo, branch_path, base_revids,
                                config, rev.timestamp,
                                rev.timezone, rev.committer, rev.properties,
                                revision_id, base_foreign_revid, base_mapping,
-                               base_tree.inventory,
+                               root_action, base_tree.inventory,
                                push_metadata=push_metadata,
                                graph=graph, opt_signature=opt_signature,
                                texts=source_repo.texts,
-                               testament=testament,
-                               delete_root_revnum=delete_root_revnum)
+                               testament=testament)
     try:
         builder.will_record_deletes()
         iter_changes = old_tree.iter_changes(base_tree)

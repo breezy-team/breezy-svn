@@ -389,9 +389,9 @@ class SvnCommitBuilder(RootCommitBuilder):
 
     def __init__(self, repository, branch_path, parents, config, timestamp,
                  timezone, committer, revprops, revision_id,
-                 base_foreign_revid, base_mapping, old_inv=None,
+                 base_foreign_revid, base_mapping, root_action, old_inv=None,
                  push_metadata=True, graph=None, opt_signature=None,
-                 texts=None, testament=None, delete_root_revnum=None):
+                 texts=None, testament=None):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -410,7 +410,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         :param graph: Optional graph object
         :param opt_signature: Optional signature to write.
         :param testament: A Testament object to store
-        :param delete_root_revnum: Oldest revision number allowed to overwrite
+        :param root_action: Action to take on the branch root
         """
         super(SvnCommitBuilder, self).__init__(repository, parents,
             config, timestamp, timezone, committer, revprops, revision_id)
@@ -422,6 +422,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.random_revid = False
         self.branch_path = branch_path
         self.push_metadata = push_metadata
+        self.root_action = root_action
         self._texts = texts
 
         # Gather information about revision on top of which the commit is
@@ -456,9 +457,6 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         self.mapping = self.repository.get_mapping()
         # FIXME: Check that self.mapping >= self.base_mapping
-
-        self.root_action = determine_root_action(self.repository.transport,
-            self.branch_path, self.base_revnum, delete_root_revnum)
 
         self._parent_invs = None
         if self.base_revid == NULL_REVISION:
@@ -581,6 +579,8 @@ class SvnCommitBuilder(RootCommitBuilder):
             else:
                 copyfrom_url = urlutils.join(base_url, root_from)
             ret.append(ret[-1].add_directory(name, copyfrom_url, base_rev))
+        else:
+            raise AssertionError
 
         return ret
 

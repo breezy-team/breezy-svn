@@ -1300,7 +1300,7 @@ class SvnRepository(ForeignRepository):
         if parents == [] or parents == [NULL_REVISION]:
             base_foreign_revid = None
             base_mapping = None
-            delete_root_revnum = branch.get_revnum()
+            root_action = ("replace", branch.get_revnum())
         else:
             base_foreign_revid, base_mapping = \
                 self.lookup_bzr_revision_id(parents[0], project=branch.project)
@@ -1308,14 +1308,15 @@ class SvnRepository(ForeignRepository):
                 base_foreign_revid[1] != bp)):
                 if append_revisions_only:
                     raise bzr_errors.AppendRevisionsOnlyViolation(branch.base)
-                delete_root_revnum = branch.get_revnum()
+                root_action = ("replace", branch.get_revnum())
             else:
-                delete_root_revnum = None
+                root_action = ("open", )
+
         return SvnCommitBuilder(self, bp, parents,
                                 config, timestamp, timezone, committer,
                                 revprops, revision_id,
                                 base_foreign_revid, base_mapping,
-                                delete_root_revnum=delete_root_revnum)
+                                root_action=root_action)
 
     def find_fileprop_paths(self, layout, from_revnum, to_revnum,
                                project=None, check_removed=False):
