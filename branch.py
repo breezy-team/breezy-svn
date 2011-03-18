@@ -419,7 +419,7 @@ class SvnBranch(ForeignBranch):
             base_revid = NULL_REVISION
         interrepo = InterToSvnRepository(self.repository, self.repository)
         interrepo.push_single_revision(self.get_branch_path(), self.get_config(), rev,
-            overwrite=True, append_revisions_only=False)
+            delete_root_revnum=self.get_revnum())
         self._clear_cached_state()
 
     def set_last_revision_info(self, revno, revid):
@@ -557,7 +557,7 @@ class SvnBranch(ForeignBranch):
         assert todo != []
         interrepo.push_revision_series(todo, self.layout, self.project,
             self.get_branch_path(), self.get_config(),
-            self.get_push_merged_revisions(), overwrite=False)
+            self.get_push_merged_revisions(), overwrite=False, push_metadata=True)
 
     def import_last_revision_info_and_tags(self, source, revno, revid):
         self.import_last_revision_info(source.repository, revno, revid)
@@ -941,7 +941,7 @@ class InterOtherSvnBranch(InterBranch):
             revid_map = interrepo.push_revision_series(
                 todo, self.target.layout, self.target.project,
                 self.target.get_branch_path(), self.target.get_config(),
-                push_merged, overwrite=overwrite)
+                push_merged, overwrite=overwrite, push_metadata=False)
             (new_last_revid, new_foreign_info) = revid_map[stop_revision]
         self.target._clear_cached_state()
         assert isinstance(new_last_revid, str)
@@ -977,7 +977,8 @@ class InterOtherSvnBranch(InterBranch):
                 # is already present in the target repository ?
                 revid_map = interrepo.push_revision_series(todo, self.target.layout,
                     self.target.project, target_branch_path,
-                    target_config, push_merged=push_merged, overwrite=False)
+                    target_config, push_merged=push_merged,
+                    overwrite=False, push_metadata=False)
             finally:
                 pb.finished()
             interrepo = InterFromSvnRepository(self.target.repository,

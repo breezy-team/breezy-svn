@@ -1456,13 +1456,12 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.from_repo.lock_read()
         rev1 = self.from_repo.get_revision(self.revid1)
         self.interrepo.push_single_revision("trunk", 
-            config, rev1, append_revisions_only=False,
-            push_metadata=True, overwrite=False)
+            config, rev1, push_metadata=True, delete_root_revnum=1)
         rev_merged = self.from_repo.get_revision(self.revid_merge)
         self.interrepo.push_revision_inclusive("trunk", config,
-            rev_merged, append_revisions_only=True, push_merged=False,
+            rev_merged, push_merged=False,
             layout=TrunkLayout0(), project="",
-            push_metadata=True, overwrite=False)
+            push_metadata=True, delete_root_revnum=None)
         log = self.client_log(self.svn_repo_url, 2, 0)
         self.assertEquals(log[1][0],
             {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
@@ -1475,13 +1474,12 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.from_repo.lock_read()
         rev1 = self.from_repo.get_revision(self.revid1)
         self.interrepo.push_single_revision("trunk",
-            config, rev1, append_revisions_only=False,
-            push_metadata=True, overwrite=False)
+            config, rev1, push_metadata=True, delete_root_revnum=1)
         rev_merged = self.from_repo.get_revision(self.revid_merge)
         self.interrepo.push_revision_inclusive("trunk", config,
-            rev_merged, append_revisions_only=True, push_merged=True,
+            rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
-            push_metadata=True, overwrite=False)
+            push_metadata=True, delete_root_revnum=None)
         log = self.client_log(self.svn_repo_url, 4, 0)
         self.assertEquals(log[1][0],
             {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
@@ -1502,13 +1500,12 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.from_repo.lock_read()
         rev1 = self.from_repo.get_revision(self.revid1)
         self.interrepo.push_single_revision("trunk",
-            config, rev1, append_revisions_only=False,
-            push_metadata=True, overwrite=False)
+            config, rev1, push_metadata=True, delete_root_revnum=None)
         rev_merged = self.from_repo.get_revision(self.revid_merge)
         self.interrepo.push_revision_inclusive("trunk", config,
-            rev_merged, append_revisions_only=True, push_merged=True,
+            rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
-            push_metadata=True, overwrite=False)
+            push_metadata=True, delete_root_revnum=None)
 
         revid3 = self.tree2.commit('msg2 again')
         self.tree1.merge_from_branch(self.tree2.branch, to_revision=revid3)
@@ -1517,9 +1514,9 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.from_repo.lock_read()
         rev_merged = self.from_repo.get_revision(revid_merge)
         self.interrepo.push_revision_inclusive("trunk", config,
-            rev_merged, append_revisions_only=True, push_merged=True,
+            rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
-            push_metadata=True, overwrite=False)
+            push_metadata=True, delete_root_revnum=None)
 
         log = self.client_log(self.svn_repo_url, 6, 4)
         self.assertEquals(log[5][3], 'msg2 again')

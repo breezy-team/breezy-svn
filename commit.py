@@ -422,7 +422,6 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.random_revid = False
         self.branch_path = branch_path
         self.push_metadata = push_metadata
-        self.delete_root_revnum = delete_root_revnum
         self._texts = texts
 
         # Gather information about revision on top of which the commit is
@@ -457,6 +456,9 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         self.mapping = self.repository.get_mapping()
         # FIXME: Check that self.mapping >= self.base_mapping
+
+        self.root_action = determine_root_action(self.repository.transport,
+            self.branch_path, self.base_revnum, delete_root_revnum)
 
         self._parent_invs = None
         if self.base_revid == NULL_REVISION:
@@ -541,20 +543,16 @@ class SvnCommitBuilder(RootCommitBuilder):
         """See CommitBuilder.finish_inventory()."""
         pass
 
-    def open_branch_editors(self, root, elements, existing_elements,
-                           base_url, base_rev, root_from, delete_root_revnum=None):
+    def open_branch_editors(self, root, elements, base_url, base_rev, root_from, root_action):
         """Open a specified directory given an editor for the repository root.
 
         :param root: Editor for the repository root
         :param elements: List of directory names to open
-        :param existing_elements: List of directory names that exist
         :param base_url: URL to base top-level branch on
         :param base_rev: Revision of path to base top-level branch on
         :param root_from: Path inside the branch to copy the root from,
             or None if it should be created from scratch.
-        :param delete_root_revnum: If non-None, indicates the existing path
-            with at maximum delete_root_revnum in the specified path should
-            be removed
+        :param root_action: tuple with action for the root and releted revnum.
         """
         ret = [root]
 
@@ -562,29 +560,21 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         # Open paths leading up to branch
         for i in range(0, len(elements)-1):
-            # Does directory already exist?
             ret.append(ret[-1].open_directory(
-                "/".join(existing_elements[0:i+1]), -1))
-
-        if (len(existing_elements) != len(elements) and
-            len(existing_elements)+1 != len(elements)):
-            raise MissingPrefix("/".join(elements), "/".join(existing_elements))
+                "/".join(elements[0:i+1]), -1))
 
         # Branch already exists and stayed at the same location, open:
-        # TODO: What if the branch didn't change but the new revision
-        # was based on an older revision of the branch?
-        # This needs to also check that base_rev was the latest version of
-        # branch_path.
-        if len(existing_elements) == len(elements) and delete_root_revnum is None:
+        if root_action[0] == "open":
             ret.append(ret[-1].open_directory("/".join(elements), base_rev))
-        else: # Branch has to be created
+        elif root_action[0] in ("create", "replace"):
+            # Branch has to be created
             # Already exists, old copy needs to be removed
             name = "/".join(elements)
-            if delete_root_revnum is not None:
+            if root_action[0] == "replace":
                 if name == "":
                     raise ChangesRootLHSHistory()
                 self.mutter("removing branch dir %r", name)
-                ret[-1].delete_entry(name, max(base_rev, delete_root_revnum))
+                ret[-1].delete_entry(name, max(base_rev, root_action[1]))
             self.mutter("adding branch dir %r", name)
             if base_url is None or root_from is None:
                 copyfrom_url = None
@@ -725,19 +715,9 @@ class SvnCommitBuilder(RootCommitBuilder):
             self.revision_metadata = args
 
         conn = self.conn
-        repository_latest_revnum = conn.get_latest_revnum()
         self.editor = convert_svn_error(conn.get_commit_editor)(
                 self._svn_revprops, done)
         try:
-            # Shortcut - no need to see if dir exists if our base
-            # was the last revision in the repo. This situation
-            # happens a lot when pushing multiple subsequent revisions.
-            if (self.base_revnum == self.repository.get_latest_revnum() and
-                self.base_path == self.branch_path):
-                existing_bp_parts = bp_parts
-            else:
-                existing_bp_parts = check_dirs_exist(self.repository.transport,
-                                              bp_parts, -1)
             self.revision_metadata = None
             for prop in self._svn_revprops:
                 assert prop.split(":")[0] in ("bzr", "svk", "svn")
@@ -753,16 +733,16 @@ class SvnCommitBuilder(RootCommitBuilder):
 
             if self.new_root_id in self.old_inv:
                 root_from = self.old_inv.id2path(self.new_root_id)
-                if root_from != "":
-                    self.overwrite_revum = max(self.delete_root_revnum, self.base_foreign_revid[2])
+                if root_from != "" and self.root_action[0] == "open":
+                    assert self.delete_root_revnum is None
+                    self.root_action = ("replace", self.base_revnum)
             else:
                 root_from = None
 
             try:
                 root = self.editor.open_root(self.base_revnum)
                 branch_editors = self.open_branch_editors(root, bp_parts,
-                    existing_bp_parts, self.base_url, self.base_revnum,
-                    root_from, self.delete_root_revnum)
+                    self.base_url, self.base_revnum, root_from, self.root_action)
 
                 changed = dir_editor_send_changes(
                         (self.old_inv, self.base_url, self.base_revnum),
@@ -990,3 +970,17 @@ def file_editor_send_prop_changes(base_ie, ie, editor):
         else:
             value = None
         editor.change_prop(properties.PROP_SPECIAL, value)
+
+
+def determine_root_action(transport, path, base_revnum, delete_root_revnum):
+    bp_parts = path.split("/")
+    existing_bp_parts = check_dirs_exist(transport, bp_parts, -1)
+    if (len(existing_bp_parts) != len(bp_parts) and
+        len(existing_bp_parts)+1 != len(bp_parts)):
+        raise MissingPrefix("/".join(bp_parts), "/".join(existing_bp_parts))
+    if len(existing_bp_parts) == len(bp_parts) and delete_root_revnum is None:
+        return ("open", base_revnum)
+    elif delete_root_revnum is not None:
+        return ("replace", delete_root_revnum)
+    else:
+        return ("create", )
