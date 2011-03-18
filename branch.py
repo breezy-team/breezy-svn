@@ -983,12 +983,12 @@ class InterOtherSvnBranch(InterBranch):
                 pb.finished()
             interrepo = InterFromSvnRepository(self.target.repository,
                                                self.source.repository)
-            interrepo.fetch(revision_id=revid_map[stop_revision],
+            interrepo.fetch(revision_id=revid_map[stop_revision][0],
                 mapping=self.target.mapping, project=self.target.project)
             self.target._clear_cached_state()
             assert stop_revision in revid_map
             assert len(revid_map.keys()) > 0
-            return revid_map
+            return dict([(k, v[0]) for (k, v) in revid_map.iteritems()])
         finally:
             self.source.unlock()
 

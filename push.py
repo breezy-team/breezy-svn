@@ -286,6 +286,8 @@ class InterToSvnRepository(InterRepository):
         """Push a series of revisions into a Subversion repository.
 
         :param todo: New revisions to push
+        :return: Dictionary mapping revision ids to tuples
+            with new revision id and foreign info.
         """
         assert todo != []
         revid_map = {}
