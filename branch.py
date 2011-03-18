@@ -941,7 +941,7 @@ class InterOtherSvnBranch(InterBranch):
             revid_map = interrepo.push_revision_series(
                 todo, self.target.layout, self.target.project,
                 self.target.get_branch_path(), self.target.get_config(),
-                push_merged, overwrite=overwrite, push_metadata=False)
+                push_merged, overwrite=overwrite, push_metadata=True)
             (new_last_revid, new_foreign_info) = revid_map[stop_revision]
         self.target._clear_cached_state()
         assert isinstance(new_last_revid, str)

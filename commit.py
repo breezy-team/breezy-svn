@@ -73,7 +73,6 @@ from bzrlib.plugins.svn.svk import (
     SVN_PROP_SVK_MERGE
     )
 from bzrlib.plugins.svn.transport import (
-    check_dirs_exist,
     url_join_unescaped_path,
     )
 from bzrlib.plugins.svn.util import (
