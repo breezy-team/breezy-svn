@@ -456,7 +456,7 @@ class InterToSvnRepository(InterRepository):
             target_config = self._get_branch_config(bp)
             push_merged = (layout.push_merged_revisions(target_project) and
                 target_config.get_push_merged_revisions())
-            root_action = self._get_root_action(bp, rev, overwrite=False,
+            root_action = self._get_root_action(bp, rev, overwrite=True,
                 target_config=target_config, create_prefix=True)
             self.push_revision_inclusive(bp, target_config, rev,
                 push_metadata=True, push_merged=push_merged,
