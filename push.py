@@ -240,6 +240,13 @@ class InterToSvnRepository(InterRepository):
         """See InterRepository._get_repo_format_to_test()."""
         return None
 
+    def _get_root_action(self, target_branch, rev, overwrite, target_config):
+        delete_root_revnum = self._get_delete_root_revnum(
+            target_branch, rev.parent_ids,
+            overwrite=overwrite, target_config=target_config)
+        return determine_root_action(self.target.transport,
+            target_branch, base_foreign_revid[2], delete_root_revnum)
+
     def _get_delete_root_revnum(self, target_path, parent_revids, overwrite,
             target_config):
         #FIXME
@@ -277,11 +284,8 @@ class InterToSvnRepository(InterRepository):
         try:
             for rev in self.source.get_revisions(todo):
                 if root_action is None:
-                    delete_root_revnum = self._get_delete_root_revnum(
-                        target_branch, rev.parent_ids,
+                    root_action = self._get_root_action(target_branch, rev,
                         overwrite=overwrite, target_config=target_config)
-                    root_action = determine_root_action(self.target.transport,
-                        target_branch, base_foreign_revid[2], delete_root_revnum)
                 pb.update("pushing revisions", todo.index(rev.revision_id),
                           len(todo))
                 if len(rev.parent_ids) == 0:
@@ -435,10 +439,8 @@ class InterToSvnRepository(InterRepository):
             target_config = self._get_branch_config(bp)
             push_merged = (layout.push_merged_revisions(target_project) and
                 target_config.get_push_merged_revisions())
-            delete_root_revnum = self._get_delete_root_revnum(bp,
-                rev.parent_ids, overwrite=False, target_config=target_config)
-            root_action = determine_root_action(self.target.transport,
-                bp, base_foreign_revid[2], delete_root_revnum)
+            root_action = self._get_root_action(bp, rev, overwrite=False,
+                target_config=target_config)
             try:
                 self.push_revision_inclusive(bp, target_config, rev,
                     push_metadata=True, push_merged=push_merged,
@@ -525,14 +527,10 @@ class InterToSvnRepository(InterRepository):
                 target_config = self._get_branch_config(bp)
                 push_merged = (layout.push_merged_revisions(target_project) and
                     target_config.get_push_merged_revisions())
-                delete_root_revnum = self._get_delete_root_revnum(bp,
-                    rev.parent_ids, overwrite=False, target_config=target_config)
-                root_action = determine_root_action(self.target.transport,
-                    bp, base_foreign_revid[2], delete_root_revnum)
+                root_action = self._get_root_action(bp, rev, overwrite=False, target_config=target_config)
                 (pushed_revid, (pushed_foreign_revid, pushed_mapping)) = self.push_revision_inclusive(bp,
                     target_config, rev, push_metadata=True,
-                    root_action=root_action, layout=layout, project=target_project,
-                    delete_root_revnum=delete_root_revnum)
+                    root_action=root_action, layout=layout, project=target_project)
                 overwrite_revnum = pushed_foreign_revid[2]
         finally:
             self.source.unlock()
