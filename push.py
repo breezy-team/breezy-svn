@@ -127,7 +127,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                        base_revid, revision_id, rev,
                        base_foreign_revid, base_mapping,
                        push_metadata,
-                       delete_root_revnum=None):
+                       root_action):
     """Push a revision tree into a target repository.
 
     :param graph: Repository graph.
@@ -139,7 +139,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
     :param revision_id: Revision id to push.
     :param rev: Revision object of revision to push.
     :param push_metadata: Whether to push metadata.
-    :param delete_root_revnum: If not None, maximum revision of the root to remove.
+    :param root_action: Action to take on the tree root
     :return: Revision id of newly created revision.
     """
     assert rev.revision_id in (None, revision_id)
@@ -163,9 +163,6 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
         testament = StrictTestament(rev, old_tree.inventory)
     else:
         testament = None
-
-    root_action = determine_root_action(target_repo.transport,
-        branch_path, base_foreign_revid[2], delete_root_revnum)
 
     builder = SvnCommitBuilder(target_repo, branch_path, base_revids,
                                config, rev.timestamp,
@@ -317,7 +314,7 @@ class InterToSvnRepository(InterRepository):
             delete_root_revnum=delete_root_revnum)
 
     def push_single_revision(self, target_path, target_config, rev,
-            push_metadata=True, base_revid=None, delete_root_revnum=None):
+            push_metadata, base_revid=None, delete_root_revnum=None):
         """Push a single revision.
 
         :param target_path: Target branch path in the svn repository
@@ -341,6 +338,10 @@ class InterToSvnRepository(InterRepository):
             base_revid = rev.parent_ids[0]
         else:
             base_revid = NULL_REVISION
+
+        root_action = determine_root_action(self.target.transport,
+            target_path, base_foreign_revid[2], delete_root_revnum)
+
         mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
         self.source.lock_read()
         try:
@@ -348,7 +349,7 @@ class InterToSvnRepository(InterRepository):
                 self.target, target_path, target_config, self.source,
                 base_revid, rev.revision_id, rev, base_foreign_revid,
                 base_mapping, push_metadata=push_metadata,
-                delete_root_revnum=delete_root_revnum)
+                root_action=root_action)
         finally:
             self.source.unlock()
         assert revid == rev.revision_id or not push_metadata
