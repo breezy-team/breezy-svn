@@ -934,17 +934,18 @@ class InterOtherSvnBranch(InterBranch):
         if push_merged is None:
             push_merged = self.target.get_push_merged_revisions()
         interrepo = self._get_interrepo(graph)
-        (new_last_revid, new_foreign_info) = interrepo.push_todo(
+        revidmap = interrepo.push_todo(
             stop_revision, todo, self.target.layout, self.target.project,
             self.target.get_branch_path(), self.target.get_config(),
             push_merged=push_merged,
             overwrite=overwrite, push_metadata=True)
+        (new_last_revid, new_foreign_info) = revidmap[stop_revision]
         self.target._clear_cached_state()
         assert isinstance(new_last_revid, str)
         assert isinstance(old_last_revid, str)
         return (old_last_revid, new_last_revid, new_foreign_info)
 
-    def _update_revisions_lossy(self, stop_revision=None):
+    def _update_revisions_lossy(self, stop_revision=None, overwrite=False):
         """Push derivatives of the revisions missing from target from source
         into target.
 
@@ -967,12 +968,11 @@ class InterOtherSvnBranch(InterBranch):
             # Request graph from other repository, since it's most likely faster
             # than Subversion
             interrepo = self._get_interrepo(graph)
-            # FIXME: Call create_branch_with_hidden_commit if the revision
-            # is already present in the target repository ?
-            revid_map = interrepo.push_revision_series(todo, self.target.layout,
-                self.target.project, target_branch_path,
-                target_config, push_merged=push_merged,
-                overwrite=False, push_metadata=False)
+            revid_map = interrepo.push_todo(
+                stop_revision, todo, self.target.layout, self.target.project,
+                self.target.get_branch_path(), self.target.get_config(),
+                push_merged=push_merged,
+                overwrite=overwrite, push_metadata=False)
             interrepo = InterFromSvnRepository(self.target.repository,
                                                self.source.repository)
             interrepo.fetch(revision_id=revid_map[stop_revision][0],

@@ -296,16 +296,17 @@ class InterToSvnRepository(InterRepository):
             self.target.has_revision(stop_revision)):
             # Revision is already present in the repository, so just
             # copy from there.
-            return create_branch_with_hidden_commit(self.target,
+            (revid, foreign_revinfo) = create_branch_with_hidden_commit(self.target,
                 target_branch, stop_revision,
                 set_metadata=push_metadata, deletefirst=True)
+            return { stop_revision: (revid, foreign_revinfo) }
         else:
             assert todo != []
             revid_map = self.push_revision_series(
                 todo, layout, project,
                 target_branch, target_config,
                 push_merged, overwrite=overwrite, push_metadata=push_metadata)
-            return revid_map[stop_revision]
+            return revid_map
 
     def push_revision_series(self, todo, layout, project, target_branch,
             target_config, push_merged, overwrite, push_metadata):
