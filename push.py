@@ -209,11 +209,11 @@ class InterToSvnRepository(InterRepository):
         # Dictionary: revid -> branch_path -> (foreign_revid, mapping)
         self._foreign_info = defaultdict(dict)
 
-    def _target_has_revision(self, revid):
+    def _target_has_revision(self, revid, project=None):
         """Slightly optimized version of self.target.has_revision()."""
         if revid in self._foreign_info:
             return True
-        return self.target.has_revision(revid)
+        return self.target.has_revision(revid, project=project)
 
     def _get_foreign_revision_info(self, revid, path=None):
         """Find the revision info for a revision id.
@@ -320,7 +320,7 @@ class InterToSvnRepository(InterRepository):
         """
         missing = []
         for revid in self.source.iter_reverse_revision_history(stop_revision):
-            if self.target.has_revision(revid, project=project):
+            if self._target_has_revision(revid, project=project):
                 missing.reverse()
                 return missing
             missing.append(revid)
@@ -491,7 +491,7 @@ class InterToSvnRepository(InterRepository):
             ancestors = graph.find_unique_ancestors(parent_revid, [parent_revids[0]])
             unique_ancestors.update(ancestors)
         for x in self.get_graph().iter_topo_order(unique_ancestors):
-            if self._target_has_revision(x):
+            if self._target_has_revision(x, project):
                 continue
             rev = self.source.get_revision(x)
             rhs_branch_path = determine_branch_path(rev, layout, project)
@@ -542,12 +542,8 @@ class InterToSvnRepository(InterRepository):
                            target_config.get_push_merged_revisions())
         begin_revid, _ = self.push_new_branch_first_revision(
             target_branch_path, stop_revision, append_revisions_only=True)
-        todo = []
-        for revid in self.source.iter_reverse_revision_history(stop_revision):
-            if revid == begin_revid:
-                break
-            todo.append(revid)
-        todo.reverse()
+        todo = self._mainline_missing_revisions(begin_revid, stop_revision)
+        assert todo is not None
         if todo != []:
             self.push_revision_series(todo, layout, project,
                 target_branch_path, target_config, push_merged,
