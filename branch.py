@@ -407,12 +407,19 @@ class SvnBranch(ForeignBranch):
     def set_revision_history(self, rev_history):
         """See Branch.set_revision_history()."""
         if rev_history == []:
-            # FIXME: Just create a new empty branch?
-            raise NotImplementedError("set_revision_history can't set empty history")
+            self._set_last_revision(NULL_REVISION)
+        else:
+            self._set_last_revision(rev_history[-1])
+
+    def set_last_revision_info(self, revno, revid):
+        """See Branch.set_last_revision_info()."""
+        # FIXME: 
+
+    def _set_last_revision(self, revid):
         try:
-            rev = self.repository.get_revision(rev_history[-1])
+            rev = self.repository.get_revision(revid)
         except NoSuchRevision:
-            raise NotImplementedError("set_revision_history can't add ghosts")
+            raise NotImplementedError("set_last_revision_info can't add ghosts")
         if rev.parent_ids:
             base_revid = rev.parent_ids[0]
         else:
@@ -423,9 +430,6 @@ class SvnBranch(ForeignBranch):
             push_metadata=True, root_action=("replace", self.get_revnum()),
             base_foreign_info=base_foreign_info)
         self._clear_cached_state()
-
-    def set_last_revision_info(self, revno, revid):
-        """See Branch.set_last_revision_info()."""
 
     def _missing_revisions(self, other_repo, stop_revision, overwrite=False):
         todo = self._mainline_missing_revisions(other_repo, stop_revision)
