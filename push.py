@@ -290,6 +290,46 @@ class InterToSvnRepository(InterRepository):
                 return b.get_revnum()
             return None
 
+    def _missing_revisions(self, lastrevid, stop_revision, project, overwrite=False):
+        todo = self._mainline_missing_revisions(lastrevid, stop_revision)
+        if todo is not None:
+            return todo
+        # Not possible to add cleanly onto mainline, perhaps need a replace
+        # operation
+        return self._otherline_missing_revisions(stop_revision, project, overwrite)
+
+    def _mainline_missing_revisions(self, lastrevid, stop_revision):
+        """Find the revisions missing on the mainline.
+
+        :param stop_revision: Revision to stop fetching at.
+        """
+        missing = []
+        for revid in self.source.iter_reverse_revision_history(stop_revision):
+            if lastrevid == revid:
+                missing.reverse()
+                return missing
+            missing.append(revid)
+        return None
+
+    def _otherline_missing_revisions(self, stop_revision, project, overwrite):
+        """Find the revisions missing on the mainline.
+
+        :param stop_revision: Revision to stop fetching at.
+        :param overwrite: Whether or not the existing data should be
+            overwritten
+        """
+        missing = []
+        for revid in self.source.iter_reverse_revision_history(stop_revision):
+            if self.target.has_revision(revid, project=project):
+                missing.reverse()
+                return missing
+            missing.append(revid)
+        if not overwrite:
+            return None
+        else:
+            missing.reverse()
+            return missing
+
     def push_todo(self, stop_revision, todo, layout, project, target_branch, target_config, push_merged, overwrite, push_metadata):
         mapping = self.target.get_mapping()
         if (mapping.supports_hidden and
