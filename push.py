@@ -560,15 +560,10 @@ class InterToSvnRepository(InterRepository):
         try:
             assert revision_id is not None, "fetching all revisions not supported"
             # Go back over the LHS parent until we reach a revid we know
-            todo = []
-            for revision_id in self.source.iter_reverse_revision_history(revision_id):
-                if self._target_has_revision(revision_id):
-                    break
-                todo.append(revision_id)
+            todo = self._otherline_missing_revisions(revision_id, project=None, overwrite=True)
             if todo == []:
                 # Nothing to do
                 return
-            todo.reverse()
             mutter("pushing %r into svn", todo)
             base_foreign_info = None
             layout = self.target.get_layout()
