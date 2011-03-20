@@ -933,22 +933,12 @@ class InterOtherSvnBranch(InterBranch):
             return old_last_revid, old_last_revid, None
         if push_merged is None:
             push_merged = self.target.get_push_merged_revisions()
-        if (self.target.mapping.supports_hidden and
-            self.target.repository.has_revision(stop_revision)):
-            # Revision is already present in the repository, so just
-            # copy from there.
-            new_last_revid, new_foreign_info = \
-                create_branch_with_hidden_commit(self.target.repository,
-                    self.target.get_branch_path(), stop_revision,
-                    set_metadata=True, deletefirst=True)
-        else:
-            interrepo = self._get_interrepo(graph)
-            assert todo != []
-            revid_map = interrepo.push_revision_series(
-                todo, self.target.layout, self.target.project,
-                self.target.get_branch_path(), self.target.get_config(),
-                push_merged, overwrite=overwrite, push_metadata=True)
-            (new_last_revid, new_foreign_info) = revid_map[stop_revision]
+        interrepo = self._get_interrepo(graph)
+        (new_last_revid, new_foreign_info) = interrepo.push_todo(
+            stop_revision, todo, self.target.layout, self.target.project,
+            self.target.get_branch_path(), self.target.get_config(),
+            push_merged=push_merged,
+            overwrite=overwrite, push_metadata=True)
         self.target._clear_cached_state()
         assert isinstance(new_last_revid, str)
         assert isinstance(old_last_revid, str)
@@ -977,16 +967,12 @@ class InterOtherSvnBranch(InterBranch):
             # Request graph from other repository, since it's most likely faster
             # than Subversion
             interrepo = self._get_interrepo(graph)
-            pb = ui.ui_factory.nested_progress_bar()
-            try:
-                # FIXME: Call create_branch_with_hidden_commit if the revision
-                # is already present in the target repository ?
-                revid_map = interrepo.push_revision_series(todo, self.target.layout,
-                    self.target.project, target_branch_path,
-                    target_config, push_merged=push_merged,
-                    overwrite=False, push_metadata=False)
-            finally:
-                pb.finished()
+            # FIXME: Call create_branch_with_hidden_commit if the revision
+            # is already present in the target repository ?
+            revid_map = interrepo.push_revision_series(todo, self.target.layout,
+                self.target.project, target_branch_path,
+                target_config, push_merged=push_merged,
+                overwrite=False, push_metadata=False)
             interrepo = InterFromSvnRepository(self.target.repository,
                                                self.source.repository)
             interrepo.fetch(revision_id=revid_map[stop_revision][0],

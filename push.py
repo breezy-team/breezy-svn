@@ -290,6 +290,23 @@ class InterToSvnRepository(InterRepository):
                 return b.get_revnum()
             return None
 
+    def push_todo(self, stop_revision, todo, layout, project, target_branch, target_config, push_merged, overwrite, push_metadata):
+        mapping = self.target.get_mapping()
+        if (mapping.supports_hidden and
+            self.target.has_revision(stop_revision)):
+            # Revision is already present in the repository, so just
+            # copy from there.
+            return create_branch_with_hidden_commit(self.target,
+                target_branch, stop_revision,
+                set_metadata=push_metadata, deletefirst=True)
+        else:
+            assert todo != []
+            revid_map = self.push_revision_series(
+                todo, layout, project,
+                target_branch, target_config,
+                push_merged, overwrite=overwrite, push_metadata=push_metadata)
+            return revid_map[stop_revision]
+
     def push_revision_series(self, todo, layout, project, target_branch,
             target_config, push_merged, overwrite, push_metadata):
         """Push a series of revisions into a Subversion repository.
