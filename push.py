@@ -251,12 +251,12 @@ class InterToSvnRepository(InterRepository):
         """See InterRepository._get_repo_format_to_test()."""
         return None
 
-    def _get_root_action(self, path, rev, overwrite, target_config,
+    def _get_root_action(self, path, parent_ids, overwrite, target_config,
                          create_prefix=False):
         """Determine the action to take on the tree root.
 
         :param path: Branch path
-        :param rev: Revision to push
+        :param parent_ids: Parent ids
         :param overwrite: Whether to overwrite any existing history
         :param target_config: Configuration for the target location
         :param create_prefix: Whether to create the prefix for path
@@ -278,7 +278,7 @@ class InterToSvnRepository(InterRepository):
             # Branch doesn't exist yet
             return ("create", )
         delete_root_revnum = self._get_delete_root_revnum(
-            path, rev.parent_ids,
+            path, parent_ids,
             overwrite=overwrite, append_revisions_only=append_revisions_only)
         if delete_root_revnum is None:
             return ("open", )
@@ -387,8 +387,9 @@ class InterToSvnRepository(InterRepository):
         try:
             for rev in self.source.get_revisions(todo):
                 if root_action is None:
-                    root_action = self._get_root_action(target_branch, rev,
-                        overwrite=overwrite, target_config=target_config)
+                    root_action = self._get_root_action(target_branch,
+                        rev.parent_ids, overwrite=overwrite,
+                        target_config=target_config)
                 pb.update("pushing revisions", todo.index(rev.revision_id),
                           len(todo))
                 if len(rev.parent_ids) == 0:
@@ -545,8 +546,9 @@ class InterToSvnRepository(InterRepository):
             target_config = self._get_branch_config(bp)
             push_merged = (layout.push_merged_revisions(target_project) and
                 target_config.get_push_merged_revisions())
-            root_action = self._get_root_action(bp, rev, overwrite=True,
-                target_config=target_config, create_prefix=True)
+            root_action = self._get_root_action(bp, rev.parent_ids,
+                overwrite=True, target_config=target_config,
+                create_prefix=True)
             self.push_revision_inclusive(bp, target_config, rev,
                 push_metadata=True, push_merged=push_merged,
                 layout=layout, project=target_project,
@@ -621,7 +623,7 @@ class InterToSvnRepository(InterRepository):
                 target_config = self._get_branch_config(bp)
                 push_merged = (layout.push_merged_revisions(target_project) and
                     target_config.get_push_merged_revisions())
-                root_action = self._get_root_action(bp, rev, overwrite=False,
+                root_action = self._get_root_action(bp, rev.parent_ids, overwrite=False,
                     target_config=target_config)
                 (pushed_revid, base_foreign_info) = self.push_revision_inclusive(bp,
                     target_config, rev, push_metadata=True,
