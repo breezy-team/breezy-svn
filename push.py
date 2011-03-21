@@ -304,20 +304,20 @@ class InterToSvnRepository(InterRepository):
                 return b.get_revnum()
             return None
 
-    def _mainline_missing_revisions(self, lastrevid, stop_revision):
+    def _mainline_missing_revisions(self, graph, lastrevid, stop_revision):
         """Find the revisions missing on the mainline.
 
         :param stop_revision: Revision to stop fetching at.
         """
         missing = []
-        for revid in self.source.iter_reverse_revision_history(stop_revision):
-            if lastrevid == revid:
+        for revid in graph.iter_lefthand_ancestry(stop_revision, (NULL_REVISION, None)):
+            if revid == lastrevid:
                 missing.reverse()
                 return missing
             missing.append(revid)
         return None
 
-    def _otherline_missing_revisions(self, stop_revision, project, overwrite):
+    def _otherline_missing_revisions(self, graph, stop_revision, project, overwrite):
         """Find the revisions missing on the mainline.
 
         :param stop_revision: Revision to stop fetching at.
@@ -325,7 +325,8 @@ class InterToSvnRepository(InterRepository):
             overwritten
         """
         missing = []
-        for revid in self.source.iter_reverse_revision_history(stop_revision):
+        for revid in graph.iter_lefthand_ancestry(stop_revision,
+                (NULL_REVISION, None)):
             if self._target_has_revision(revid, project=project):
                 missing.reverse()
                 return missing
@@ -337,12 +338,14 @@ class InterToSvnRepository(InterRepository):
             return missing
 
     def _todo(self, target_branch, last_revid, stop_revision, project, overwrite, append_revisions_only):
-        todo = self._mainline_missing_revisions(last_revid, stop_revision)
+        graph = self.get_graph()
+        todo = self._mainline_missing_revisions(graph, last_revid,
+            stop_revision)
         if todo is None:
             # Not possible to add cleanly onto mainline, perhaps need a replace
             # operation
-            todo = self._otherline_missing_revisions(stop_revision, project,
-                overwrite)
+            todo = self._otherline_missing_revisions(graph, stop_revision,
+                project, overwrite)
         if todo is None:
             raise SubversionBranchDiverged(self.source, stop_revision, self.target, None, last_revid)
         rev = self.source.get_revision(todo[0])
@@ -604,7 +607,7 @@ class InterToSvnRepository(InterRepository):
         try:
             assert revision_id is not None, "fetching all revisions not supported"
             # Go back over the LHS parent until we reach a revid we know
-            todo = self._otherline_missing_revisions(revision_id, project=None, overwrite=True)
+            todo = self._otherline_missing_revisions(self.get_graph(), revision_id, project=None, overwrite=True)
             if todo == []:
                 # Nothing to do
                 return

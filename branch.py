@@ -513,7 +513,7 @@ class SvnBranch(ForeignBranch):
 
     def import_last_revision_info(self, source_repo, revno, revid):
         interrepo = InterToSvnRepository(source_repo, self.repository)
-        todo = interrepo._mainline_missing_revisions(self.last_revision(), revid)
+        todo = interrepo._mainline_missing_revisions(interrepo.get_graph(), self.last_revision(), revid)
         if todo is None:
             raise DivergedBranches(self, None)
         assert todo != []
