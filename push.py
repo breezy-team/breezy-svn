@@ -304,16 +304,6 @@ class InterToSvnRepository(InterRepository):
                 return b.get_revnum()
             return None
 
-    def _missing_revisions(self, lastrevid, stop_revision, project,
-            overwrite=False):
-        todo = self._mainline_missing_revisions(lastrevid, stop_revision)
-        if todo is not None:
-            return todo
-        # Not possible to add cleanly onto mainline, perhaps need a replace
-        # operation
-        return self._otherline_missing_revisions(stop_revision, project,
-            overwrite)
-
     def _mainline_missing_revisions(self, lastrevid, stop_revision):
         """Find the revisions missing on the mainline.
 
@@ -347,7 +337,12 @@ class InterToSvnRepository(InterRepository):
             return missing
 
     def _todo(self, target_branch, last_revid, stop_revision, project, overwrite, append_revisions_only):
-        todo = self._missing_revisions(last_revid, stop_revision, project, overwrite)
+        todo = self._mainline_missing_revisions(last_revid, stop_revision)
+        if todo is None:
+            # Not possible to add cleanly onto mainline, perhaps need a replace
+            # operation
+            todo = self._otherline_missing_revisions(stop_revision, project,
+                overwrite)
         if todo is None:
             raise SubversionBranchDiverged(self.source, stop_revision, self.target, None, last_revid)
         rev = self.source.get_revision(todo[0])
@@ -640,7 +635,7 @@ class InterToSvnRepository(InterRepository):
                 push_merged = (layout.push_merged_revisions(target_project) and
                     target_config.get_push_merged_revisions())
                 root_action = self._get_root_action(bp, rev.parent_ids, overwrite=False,
-                    append_revisions_only=target_config.get_append_revisions_only(True))
+                    append_revisions_only=target_config.get_append_revisions_only(True), create_prefix=True)
                 (pushed_revid, base_foreign_info) = self.push_revision_inclusive(bp,
                     target_config, rev, push_metadata=True,
                     root_action=root_action, layout=layout,
