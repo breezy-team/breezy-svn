@@ -80,11 +80,12 @@ class SubversionBranchDiverged(DivergedBranches):
 
     _fmt = "Subversion branch at %(branch_path)s has diverged from %(source_repo)r."
 
-    def __init__(self, source_repo, source_revision_id, target_repo, branch_path):
+    def __init__(self, source_repo, source_revid, target_repo, branch_path, target_revid):
         self.branch_path = branch_path
         self.target_repo = target_repo
         self.source_repo = source_repo
-        self.source_revision_id = source_revision_id
+        self.source_revid = source_revid
+        self.target_revid = target_revid
 
 
 def create_branch_container(transport, prefix, already_present):
@@ -349,13 +350,30 @@ class InterToSvnRepository(InterRepository):
     def _todo(self, last_revid, stop_revision, project, overwrite):
         todo = self._missing_revisions(last_revid, stop_revision, project, overwrite)
         if todo is None:
-            raise SubversionBranchDiverged(self.source, stop_revision, self.target, None)
+            raise SubversionBranchDiverged(self.source, stop_revision, self.target, None, last_revid)
         return todo
 
-    def push_todo(self, last_revid, stop_revision, layout, project, target_branch,
+    def push_branch(self, target_branch_path, target_config, (last_revmeta, mapping), stop_revision, layout, project, overwrite, push_metadata, push_merged):
+        old_last_revid = last_revmeta.get_revision_id(mapping)
+        graph = self.get_graph()
+        if not overwrite:
+            heads = graph.heads([old_last_revid, stop_revision])
+            if heads == set([old_last_revid]):
+                # stop-revision is ancestor of current tip
+                return { stop_revision: (stop_revision, None),
+                         old_last_revid: (old_last_revid, None)}
+            if heads == set([old_last_revid, stop_revision]):
+                raise SubversionBranchDiverged(self.source, stop_revision,
+                        self.target, target_branch_path, old_last_revid)
+        return self.push_todo(old_last_revid,
+            mapping, stop_revision, layout, project,
+            target_branch_path, target_config,
+            push_merged=push_merged,
+            overwrite=overwrite, push_metadata=push_metadata)
+
+    def push_todo(self, last_revid, mapping, stop_revision, layout, project, target_branch,
             target_config, push_merged, overwrite, push_metadata):
         todo = self._todo(last_revid, stop_revision, project, overwrite)
-        mapping = self.target.get_mapping()
         if (mapping.supports_hidden and
             self.target.has_revision(stop_revision)):
             # Revision is already present in the repository, so just
@@ -464,7 +482,7 @@ class InterToSvnRepository(InterRepository):
                 self.target.uuid)
 
     def push_new_branch_first_revision(self, target_branch_path,
-            stop_revision, push_metadata=True, append_revisions_only=False):
+            stop_revision, mapping, push_metadata=True, append_revisions_only=False):
         """Push a revision into Subversion, creating a new branch.
 
         :param graph: Repository graph.
@@ -482,7 +500,6 @@ class InterToSvnRepository(InterRepository):
         else:
             start_revid_parent = rev.parent_ids[0]
         # If this is just intended to create a new branch
-        mapping = self.target.get_mapping()
         if (start_revid_parent != NULL_REVISION and
             stop_revision == start_revid and
             (mapping.supports_hidden or not push_metadata) and
@@ -572,11 +589,12 @@ class InterToSvnRepository(InterRepository):
         if push_merged is None:
             push_merged = (layout.push_merged_revisions(project) and
                            target_config.get_push_merged_revisions())
+        mapping = self.target.get_mapping()
         begin_revid, _ = self.push_new_branch_first_revision(
-            target_branch_path, stop_revision, append_revisions_only=True)
+            target_branch_path, stop_revision, mapping, append_revisions_only=True)
         if stop_revision != begin_revid:
             self.push_todo(
-                begin_revid, stop_revision, layout, project,
+                begin_revid, mapping, stop_revision, layout, project,
                 target_branch_path, target_config, push_merged,
                 overwrite=False, push_metadata=True)
 

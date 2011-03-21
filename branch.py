@@ -849,28 +849,19 @@ class InterOtherSvnBranch(InterBranch):
         old_last_revid = self.target.last_revision()
         if old_last_revid == stop_revision:
             return { old_last_revid: (old_last_revid, None) }
-        interrepo = InterToSvnRepository(
-            self.source.repository, self.target.repository)
-        graph = interrepo.get_graph()
-        if not overwrite:
-            heads = graph.heads([old_last_revid, stop_revision])
-            if heads == set([old_last_revid]):
-                # stop-revision is ancestor of current tip
-                return { stop_revision: (stop_revision, None),
-                         old_last_revid: (old_last_revid, None)}
-            if heads == set([old_last_revid, stop_revision]):
-                if self._target_is_empty(graph, old_last_revid):
-                    raise PushToEmptyBranch(self.target, self.source)
-                raise DivergedBranches(self.target, self.source)
         if push_merged is None:
             push_merged = self.target.get_push_merged_revisions()
+        interrepo = InterToSvnRepository(
+            self.source.repository, self.target.repository)
         try:
-            return interrepo.push_todo(self.target.last_revision(),
-                stop_revision, self.target.layout, self.target.project,
-                self.target.get_branch_path(), self.target.get_config(),
-                push_merged=push_merged,
-                overwrite=overwrite, push_metadata=push_metadata)
-        except SubversionBranchDiverged:
+            return interrepo.push_branch(self.target.get_branch_path(),
+                    self.target.get_config(), self.target.last_revmeta(),
+                    stop_revision=stop_revision, overwrite=overwrite,
+                    push_metadata=push_metadata, push_merged=push_merged,
+                    layout=self.target.layout, project=self.target.project)
+        except SubversionBranchDiverged, e:
+            if self._target_is_empty(interrepo.get_graph(), e.target_revid):
+                raise PushToEmptyBranch(self.target, self.source)
             raise DivergedBranches(self.target, self.source)
 
     def _update_revisions(self, stop_revision=None, overwrite=False,
