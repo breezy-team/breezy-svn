@@ -852,11 +852,13 @@ class InterOtherSvnBranch(InterBranch):
         interrepo = InterToSvnRepository(
             self.source.repository, self.target.repository)
         graph = interrepo.get_graph()
-        if not graph.is_ancestor(old_last_revid, stop_revision):
-            if graph.is_ancestor(stop_revision, old_last_revid):
+        if not overwrite:
+            heads = graph.heads([old_last_revid, stop_revision])
+            if heads == set([old_last_revid]):
+                # stop-revision is ancestor of current tip
                 return { stop_revision: (stop_revision, None),
                          old_last_revid: (old_last_revid, None)}
-            if not overwrite:
+            if heads == set([old_last_revid, stop_revision]):
                 if self._target_is_empty(graph, old_last_revid):
                     raise PushToEmptyBranch(self.target, self.source)
                 raise DivergedBranches(self.target, self.source)
