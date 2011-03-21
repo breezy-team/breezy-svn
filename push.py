@@ -252,18 +252,17 @@ class InterToSvnRepository(InterRepository):
         """See InterRepository._get_repo_format_to_test()."""
         return None
 
-    def _get_root_action(self, path, parent_ids, overwrite, target_config,
-                         create_prefix=False):
+    def _get_root_action(self, path, parent_ids, overwrite,
+                         append_revisions_only, create_prefix=False):
         """Determine the action to take on the tree root.
 
         :param path: Branch path
         :param parent_ids: Parent ids
         :param overwrite: Whether to overwrite any existing history
-        :param target_config: Configuration for the target location
         :param create_prefix: Whether to create the prefix for path
         :return: root_action tuple for use with SvnCommitBuilder
         """
-        append_revisions_only = target_config.get_append_revisions_only(not overwrite)
+        assert not append_revisions_only or not overwrite
         bp_parts = path.split("/")
         existing_bp_parts = check_dirs_exist(self.target.transport, bp_parts,
             -1)
@@ -347,11 +346,15 @@ class InterToSvnRepository(InterRepository):
             missing.reverse()
             return missing
 
-    def _todo(self, last_revid, stop_revision, project, overwrite):
+    def _todo(self, target_branch, last_revid, stop_revision, project, overwrite, append_revisions_only):
         todo = self._missing_revisions(last_revid, stop_revision, project, overwrite)
         if todo is None:
             raise SubversionBranchDiverged(self.source, stop_revision, self.target, None, last_revid)
-        return todo
+        rev = self.source.get_revision(todo[0])
+        root_action = self._get_root_action(target_branch,
+            rev.parent_ids, overwrite=overwrite,
+            append_revisions_only=append_revisions_only)
+        return todo, root_action
 
     def push_branch(self, target_branch_path, target_config, (last_revmeta, mapping), stop_revision, layout, project, overwrite, push_metadata, push_merged):
         old_last_revid = last_revmeta.get_revision_id(mapping)
@@ -373,7 +376,7 @@ class InterToSvnRepository(InterRepository):
 
     def push_todo(self, last_revid, mapping, stop_revision, layout, project, target_branch,
             target_config, push_merged, overwrite, push_metadata):
-        todo = self._todo(last_revid, stop_revision, project, overwrite)
+        todo, root_action = self._todo(target_branch, last_revid, stop_revision, project, overwrite, append_revisions_only=target_config.get_append_revisions_only(not overwrite))
         if (mapping.supports_hidden and
             self.target.has_revision(stop_revision)):
             # Revision is already present in the repository, so just
@@ -383,10 +386,6 @@ class InterToSvnRepository(InterRepository):
                 set_metadata=push_metadata, deletefirst=True)
             return { stop_revision: (revid, foreign_revinfo) }
         else:
-            rev = self.source.get_revision(todo[0])
-            root_action = self._get_root_action(target_branch,
-                rev.parent_ids, overwrite=overwrite,
-                target_config=target_config)
             revid_map = self.push_revision_series(
                 todo, layout, project,
                 target_branch, target_config,
@@ -563,7 +562,8 @@ class InterToSvnRepository(InterRepository):
             push_merged = (layout.push_merged_revisions(target_project) and
                 target_config.get_push_merged_revisions())
             root_action = self._get_root_action(bp, rev.parent_ids,
-                overwrite=True, target_config=target_config,
+                overwrite=True,
+                append_revisions_only=target_config.get_append_revisions_only(False),
                 create_prefix=True)
             self.push_revision_inclusive(bp, target_config, rev,
                 push_metadata=True, push_merged=push_merged,
@@ -640,7 +640,7 @@ class InterToSvnRepository(InterRepository):
                 push_merged = (layout.push_merged_revisions(target_project) and
                     target_config.get_push_merged_revisions())
                 root_action = self._get_root_action(bp, rev.parent_ids, overwrite=False,
-                    target_config=target_config)
+                    append_revisions_only=target_config.get_append_revisions_only(True))
                 (pushed_revid, base_foreign_info) = self.push_revision_inclusive(bp,
                     target_config, rev, push_metadata=True,
                     root_action=root_action, layout=layout,
