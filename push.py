@@ -365,7 +365,6 @@ class InterToSvnRepository(InterRepository):
                 set_metadata=push_metadata, deletefirst=True)
             return { stop_revision: (revid, foreign_revinfo) }
         else:
-            assert todo != []
             rev = self.source.get_revision(todo[0])
             root_action = self._get_root_action(target_branch,
                 rev.parent_ids, overwrite=overwrite,
@@ -373,7 +372,8 @@ class InterToSvnRepository(InterRepository):
             revid_map = self.push_revision_series(
                 todo, layout, project,
                 target_branch, target_config,
-                push_merged, root_action=root_action, push_metadata=push_metadata)
+                push_merged, root_action=root_action,
+                push_metadata=push_metadata)
             return revid_map
 
     def push_revision_series(self, todo, layout, project, target_branch,
@@ -574,16 +574,11 @@ class InterToSvnRepository(InterRepository):
                            target_config.get_push_merged_revisions())
         begin_revid, _ = self.push_new_branch_first_revision(
             target_branch_path, stop_revision, append_revisions_only=True)
-        todo = self._mainline_missing_revisions(begin_revid, stop_revision)
-        assert todo is not None
-        if todo != []:
-            rev = self.source.get_revision(todo[0])
-            root_action = self._get_root_action(target_branch_path,
-                rev.parent_ids, overwrite=overwrite,
-                target_config=target_config)
-            self.push_revision_series(todo, layout, project,
+        if stop_revision != begin_revid:
+            self.push_todo(
+                begin_revid, stop_revision, layout, project,
                 target_branch_path, target_config, push_merged,
-                root_action=root_action, push_metadata=True)
+                overwrite=False, push_metadata=True)
 
     def get_graph(self):
         if self._graph is None:
