@@ -77,6 +77,7 @@ from bzrlib.plugins.svn.fetch import (
     )
 from bzrlib.plugins.svn.push import (
     InterToSvnRepository,
+    SubversionBranchDiverged,
     create_branch_with_hidden_commit,
     )
 from bzrlib.plugins.svn.config import (
@@ -853,12 +854,11 @@ class InterOtherSvnBranch(InterBranch):
                 if self._target_is_empty(graph, old_last_revid):
                     raise PushToEmptyBranch(self.target, self.source)
                 raise DivergedBranches(self.target, self.source)
-        todo = interrepo._missing_revisions(
-            self.target.last_revision(), stop_revision, self.target.project,
-            overwrite)
-        if todo is None:
+        try:
+            return interrepo._todo(self.target.last_revision(),
+                stop_revision, self.target.project, overwrite)
+        except SubversionBranchDiverged:
             raise DivergedBranches(self.target, self.source)
-        return todo
 
     def _get_interrepo(self, graph):
         interrepo = InterToSvnRepository(self.source.repository,
