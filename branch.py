@@ -854,11 +854,6 @@ class InterOtherSvnBranch(InterBranch):
                 if self._target_is_empty(graph, old_last_revid):
                     raise PushToEmptyBranch(self.target, self.source)
                 raise DivergedBranches(self.target, self.source)
-        try:
-            return interrepo._todo(self.target.last_revision(),
-                stop_revision, self.target.project, overwrite)
-        except SubversionBranchDiverged:
-            raise DivergedBranches(self.target, self.source)
 
     def _get_interrepo(self, graph):
         return InterToSvnRepository(self.source.repository,
@@ -880,11 +875,14 @@ class InterOtherSvnBranch(InterBranch):
             return old_last_revid, old_last_revid, None
         if push_merged is None:
             push_merged = self.target.get_push_merged_revisions()
-        revidmap = interrepo.push_todo(
-            stop_revision, todo, self.target.layout, self.target.project,
-            self.target.get_branch_path(), self.target.get_config(),
-            push_merged=push_merged,
-            overwrite=overwrite, push_metadata=True)
+        try:
+            revidmap = interrepo.push_todo(self.target.last_revision(),
+                stop_revision, self.target.layout, self.target.project,
+                self.target.get_branch_path(), self.target.get_config(),
+                push_merged=push_merged,
+                overwrite=overwrite, push_metadata=True)
+        except SubversionBranchDiverged:
+            raise DivergedBranches(self.target, self.source)
         (new_last_revid, new_foreign_info) = revidmap[stop_revision]
         self.target._clear_cached_state()
         assert isinstance(new_last_revid, str)
@@ -914,11 +912,14 @@ class InterOtherSvnBranch(InterBranch):
             push_merged = self.target.get_push_merged_revisions()
             # Request graph from other repository, since it's most likely faster
             # than Subversion
-            revid_map = interrepo.push_todo(
-                stop_revision, todo, self.target.layout, self.target.project,
-                self.target.get_branch_path(), self.target.get_config(),
-                push_merged=push_merged,
-                overwrite=overwrite, push_metadata=False)
+            try:
+                revid_map = interrepo.push_todo(self.target.last_revision(),
+                    stop_revision, self.target.layout, self.target.project,
+                    self.target.get_branch_path(), self.target.get_config(),
+                    push_merged=push_merged,
+                    overwrite=overwrite, push_metadata=False)
+            except SubversionBranchDiverged:
+                raise DivergedBranches(self.target, self.source)
             interrepo = InterFromSvnRepository(self.target.repository,
                                                self.source.repository)
             interrepo.fetch(revision_id=revid_map[stop_revision][0],

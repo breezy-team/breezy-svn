@@ -352,8 +352,9 @@ class InterToSvnRepository(InterRepository):
             raise SubversionBranchDiverged(self.source, stop_revision, self.target, None)
         return todo
 
-    def push_todo(self, stop_revision, todo, layout, project, target_branch,
+    def push_todo(self, last_revid, stop_revision, layout, project, target_branch,
             target_config, push_merged, overwrite, push_metadata):
+        todo = self._todo(last_revid, stop_revision, project, overwrite)
         mapping = self.target.get_mapping()
         if (mapping.supports_hidden and
             self.target.has_revision(stop_revision)):
