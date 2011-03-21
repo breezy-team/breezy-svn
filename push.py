@@ -283,6 +283,7 @@ class InterToSvnRepository(InterRepository):
         if delete_root_revnum is None:
             return ("open", )
         else:
+            assert isinstance(delete_root_revnum, int)
             return ("replace", delete_root_revnum)
 
     def _get_delete_root_revnum(self, target_path, parent_revids, overwrite,
@@ -304,19 +305,6 @@ class InterToSvnRepository(InterRepository):
                 return b.get_revnum()
             return None
 
-    def _mainline_missing_revisions(self, graph, lastrevid, stop_revision):
-        """Find the revisions missing on the mainline.
-
-        :param stop_revision: Revision to stop fetching at.
-        """
-        missing = []
-        for revid in graph.iter_lefthand_ancestry(stop_revision, (NULL_REVISION, None)):
-            if revid == lastrevid:
-                missing.reverse()
-                return missing
-            missing.append(revid)
-        return None
-
     def _otherline_missing_revisions(self, graph, stop_revision, project, overwrite):
         """Find the revisions missing on the mainline.
 
@@ -337,23 +325,28 @@ class InterToSvnRepository(InterRepository):
             missing.reverse()
             return missing
 
-    def _todo(self, target_branch, last_revid, stop_revision, project,
+    def _todo(self, target_branch, last_revid, last_foreign_revid, stop_revision, project,
             overwrite, append_revisions_only):
         graph = self.get_graph()
-        todo = self._mainline_missing_revisions(graph, last_revid,
-            stop_revision)
-        if todo is None:
-            # Not possible to add cleanly onto mainline, perhaps need a replace
-            # operation
-            todo = self._otherline_missing_revisions(graph, stop_revision,
-                project, overwrite)
-        if todo is None:
-            raise SubversionBranchDiverged(self.source, stop_revision, self.target, None, last_revid)
-        rev = self.source.get_revision(todo[0])
-        root_action = self._get_root_action(target_branch,
-            rev.parent_ids, overwrite=overwrite,
-            append_revisions_only=append_revisions_only)
-        return todo, root_action
+        todo = []
+        if append_revisions_only:
+            # FIXME: Just specify last_revid as one of the stop revisions ?
+            for revid in graph.iter_lefthand_ancestry(stop_revision, (NULL_REVISION, None)):
+                if revid == last_revid:
+                    todo.reverse()
+                    break
+                todo.append(revid)
+            else:
+                url = urlutils.join(self.target.base, target_branch)
+                raise AppendRevisionsOnlyViolation(url)
+            return todo, ("open", )
+        else:
+            for revid in graph.iter_lefthand_ancestry(stop_revision, (NULL_REVISION, None)):
+                if self._target_has_revision(revid, project=project):
+                    todo.reverse()
+                    break
+                todo.append(revid)
+            return todo, ("replace", last_foreign_revid[2])
 
     def push_branch(self, target_branch_path, target_config, (last_revmeta, mapping), stop_revision, layout, project, overwrite, push_metadata, push_merged):
         old_last_revid = last_revmeta.get_revision_id(mapping)
@@ -367,15 +360,15 @@ class InterToSvnRepository(InterRepository):
             if heads == set([old_last_revid, stop_revision]):
                 raise SubversionBranchDiverged(self.source, stop_revision,
                         self.target, target_branch_path, old_last_revid)
-        return self.push_todo(old_last_revid,
+        return self.push_todo(old_last_revid, last_revmeta.get_foreign_revid(),
             mapping, stop_revision, layout, project,
             target_branch_path, target_config,
             push_merged=push_merged,
             overwrite=overwrite, push_metadata=push_metadata)
 
-    def push_todo(self, last_revid, mapping, stop_revision, layout, project, target_branch,
+    def push_todo(self, last_revid, last_foreign_revid, mapping, stop_revision, layout, project, target_branch,
             target_config, push_merged, overwrite, push_metadata):
-        todo, root_action = self._todo(target_branch, last_revid, stop_revision, project, overwrite, append_revisions_only=target_config.get_append_revisions_only(not overwrite))
+        todo, root_action = self._todo(target_branch, last_revid, last_foreign_revid, stop_revision, project, overwrite, append_revisions_only=target_config.get_append_revisions_only(not overwrite))
         if (mapping.supports_hidden and
             self.target.has_revision(stop_revision)):
             # FIXME: Only do this if there is no existing branch, or if append_revisions_only=False
@@ -590,11 +583,11 @@ class InterToSvnRepository(InterRepository):
             push_merged = (layout.push_merged_revisions(project) and
                            target_config.get_push_merged_revisions())
         mapping = self.target.get_mapping()
-        begin_revid, _ = self.push_new_branch_first_revision(
+        begin_revid, begin_foreign_info = self.push_new_branch_first_revision(
             target_branch_path, stop_revision, mapping, append_revisions_only=True)
         if stop_revision != begin_revid:
             self.push_todo(
-                begin_revid, mapping, stop_revision, layout, project,
+                begin_revid, begin_foreign_info[0], mapping, stop_revision, layout, project,
                 target_branch_path, target_config, push_merged,
                 overwrite=False, push_metadata=True)
 

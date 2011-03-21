@@ -513,7 +513,8 @@ class SvnBranch(ForeignBranch):
 
     def import_last_revision_info(self, source_repo, revno, revid):
         interrepo = InterToSvnRepository(source_repo, self.repository)
-        interrepo.push_todo(self.last_revision(), self.mapping, revid, self.layout, self.project, self.get_branch_path(), self.get_config(),
+        last_revmeta, mapping = self.last_revmeta()
+        interrepo.push_todo(last_revmeta.get_revision_id(mapping), last_revmeta.get_foreign_revid(), mapping, revid, self.layout, self.project, self.get_branch_path(), self.get_config(),
                 push_merged=None, overwrite=False, push_metadata=True)
 
     def import_last_revision_info_and_tags(self, source, revno, revid):
