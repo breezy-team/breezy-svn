@@ -845,49 +845,42 @@ class InterOtherSvnBranch(InterBranch):
             self.target.get_branch_path(), self.target.get_revnum())[0]
         return tree_contents == {}
 
-    def _todo(self, graph, interrepo, stop_revision, overwrite):
+    def _push(self, stop_revision, overwrite, push_metadata, push_merged=None):
         old_last_revid = self.target.last_revision()
+        if old_last_revid == stop_revision:
+            return { old_last_revid: (old_last_revid, None) }
+        interrepo = InterToSvnRepository(
+            self.source.repository, self.target.repository)
+        graph = interrepo.get_graph()
         if not graph.is_ancestor(old_last_revid, stop_revision):
             if graph.is_ancestor(stop_revision, old_last_revid):
-                return []
+                return { stop_revision: (stop_revision, None),
+                         old_last_revid: (old_last_revid, None)}
             if not overwrite:
                 if self._target_is_empty(graph, old_last_revid):
                     raise PushToEmptyBranch(self.target, self.source)
                 raise DivergedBranches(self.target, self.source)
-
-    def _get_interrepo(self, graph):
-        return InterToSvnRepository(self.source.repository,
-                self.target.repository, graph)
+        if push_merged is None:
+            push_merged = self.target.get_push_merged_revisions()
+        try:
+            return interrepo.push_todo(self.target.last_revision(),
+                stop_revision, self.target.layout, self.target.project,
+                self.target.get_branch_path(), self.target.get_config(),
+                push_merged=push_merged,
+                overwrite=overwrite, push_metadata=push_metadata)
+        except SubversionBranchDiverged:
+            raise DivergedBranches(self.target, self.source)
 
     def _update_revisions(self, stop_revision=None, overwrite=False,
             graph=None, push_merged=False, override_svn_revprops=None):
         old_last_revid = self.target.last_revision()
         if stop_revision is None:
             stop_revision = ensure_null(self.source.last_revision())
-        if old_last_revid == stop_revision:
-            return old_last_revid, old_last_revid, None
-        # Request graph from other repository, since it's most likely faster
-        # than Subversion
-        graph = self.source.repository.get_graph(self.target.repository)
-        interrepo = self._get_interrepo(graph)
-        todo = self._todo(graph, interrepo, stop_revision, overwrite=overwrite)
-        if todo == []:
-            return old_last_revid, old_last_revid, None
-        if push_merged is None:
-            push_merged = self.target.get_push_merged_revisions()
-        try:
-            revidmap = interrepo.push_todo(self.target.last_revision(),
-                stop_revision, self.target.layout, self.target.project,
-                self.target.get_branch_path(), self.target.get_config(),
-                push_merged=push_merged,
-                overwrite=overwrite, push_metadata=True)
-        except SubversionBranchDiverged:
-            raise DivergedBranches(self.target, self.source)
-        (new_last_revid, new_foreign_info) = revidmap[stop_revision]
+        self._push(stop_revision, overwrite=overwrite,
+            push_merged=push_merged, push_metadata=True)
         self.target._clear_cached_state()
-        assert isinstance(new_last_revid, str)
         assert isinstance(old_last_revid, str)
-        return (old_last_revid, new_last_revid, new_foreign_info)
+        return (old_last_revid, self.target.last_revision())
 
     def _update_revisions_lossy(self, stop_revision=None, overwrite=False):
         """Push derivatives of the revisions missing from target from source
@@ -902,24 +895,8 @@ class InterOtherSvnBranch(InterBranch):
         try:
             if stop_revision is None:
                 stop_revision = ensure_null(self.source.last_revision())
-            graph = self.source.repository.get_graph(self.target.repository)
-            interrepo = self._get_interrepo(graph)
-            todo = self._todo(graph, interrepo, stop_revision, overwrite=overwrite)
-            if todo == []:
-                return { stop_revision: stop_revision }
-            target_branch_path = self.target.get_branch_path()
-            target_config = self.target.get_config()
-            push_merged = self.target.get_push_merged_revisions()
-            # Request graph from other repository, since it's most likely faster
-            # than Subversion
-            try:
-                revid_map = interrepo.push_todo(self.target.last_revision(),
-                    stop_revision, self.target.layout, self.target.project,
-                    self.target.get_branch_path(), self.target.get_config(),
-                    push_merged=push_merged,
-                    overwrite=overwrite, push_metadata=False)
-            except SubversionBranchDiverged:
-                raise DivergedBranches(self.target, self.source)
+            revid_map = self._push(stop_revision, overwrite=overwrite,
+                push_metadata=False)
             interrepo = InterFromSvnRepository(self.target.repository,
                                                self.source.repository)
             interrepo.fetch(revision_id=revid_map[stop_revision][0],
@@ -960,7 +937,7 @@ class InterOtherSvnBranch(InterBranch):
         result.source_branch = self.source
         self.source.lock_read()
         try:
-            (result.old_revid, result.new_revid, result.new_foreign_info) = \
+            (result.old_revid, result.new_revid) = \
                 self._update_revisions(stop_revision, overwrite,
                     push_merged=_push_merged,
                     override_svn_revprops=_override_svn_revprops)
@@ -982,7 +959,7 @@ class InterOtherSvnBranch(InterBranch):
         result.target_branch = self.target
         self.source.lock_read()
         try:
-            (result.old_revid, result.new_revid, result.new_foreign_info) = \
+            (result.old_revid, result.new_revid) = \
                 self._update_revisions(stop_revision, overwrite,
                     push_merged=_push_merged,
                     override_svn_revprops=_override_svn_revprops)
