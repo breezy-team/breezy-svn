@@ -513,13 +513,8 @@ class SvnBranch(ForeignBranch):
 
     def import_last_revision_info(self, source_repo, revno, revid):
         interrepo = InterToSvnRepository(source_repo, self.repository)
-        todo = interrepo._mainline_missing_revisions(interrepo.get_graph(), self.last_revision(), revid)
-        if todo is None:
-            raise DivergedBranches(self, None)
-        assert todo != []
-        interrepo.push_revision_series(todo, self.layout, self.project,
-            self.get_branch_path(), self.get_config(),
-            self.get_push_merged_revisions(), ("open",), push_metadata=True)
+        interrepo.push_todo(self.last_revision(), self.mapping, revid, self.layout, self.project, self.get_branch_path(), self.get_config(),
+                push_merged=None, overwrite=False, push_metadata=True)
 
     def import_last_revision_info_and_tags(self, source, revno, revid):
         self.import_last_revision_info(source.repository, revno, revid)

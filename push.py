@@ -337,7 +337,8 @@ class InterToSvnRepository(InterRepository):
             missing.reverse()
             return missing
 
-    def _todo(self, target_branch, last_revid, stop_revision, project, overwrite, append_revisions_only):
+    def _todo(self, target_branch, last_revid, stop_revision, project,
+            overwrite, append_revisions_only):
         graph = self.get_graph()
         todo = self._mainline_missing_revisions(graph, last_revid,
             stop_revision)
@@ -377,6 +378,7 @@ class InterToSvnRepository(InterRepository):
         todo, root_action = self._todo(target_branch, last_revid, stop_revision, project, overwrite, append_revisions_only=target_config.get_append_revisions_only(not overwrite))
         if (mapping.supports_hidden and
             self.target.has_revision(stop_revision)):
+            # FIXME: Only do this if there is no existing branch, or if append_revisions_only=False
             # Revision is already present in the repository, so just
             # copy from there.
             (revid, foreign_revinfo) = create_branch_with_hidden_commit(
