@@ -718,7 +718,8 @@ class InterSvnOtherBranch(GenericInterBranch):
 
     @staticmethod
     def _get_branch_formats_to_test():
-        return []
+        from bzrlib.branch import format_registry
+        return [(SvnBranchFormat(), format_registry.get_default())]
 
     def update_revisions(self, stop_revision=None, overwrite=False,
                          graph=None):
@@ -867,7 +868,8 @@ class InterOtherSvnBranch(InterBranch):
 
     @staticmethod
     def _get_branch_formats_to_test():
-        return []
+        from bzrlib.branch import format_registry
+        return [(format_registry.get_default(), SvnBranchFormat())]
 
     def update_revisions(self, stop_revision=None, overwrite=False, graph=None):
         """See Branch.update_revisions()."""
