@@ -520,7 +520,7 @@ class SvnBranch(ForeignBranch):
         assert todo != []
         interrepo.push_revision_series(todo, self.layout, self.project,
             self.get_branch_path(), self.get_config(),
-            self.get_push_merged_revisions(), overwrite=False, push_metadata=True)
+            self.get_push_merged_revisions(), ("open",), push_metadata=True)
 
     def import_last_revision_info_and_tags(self, source, revno, revid):
         self.import_last_revision_info(source.repository, revno, revid)

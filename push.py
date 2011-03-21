@@ -366,14 +366,18 @@ class InterToSvnRepository(InterRepository):
             return { stop_revision: (revid, foreign_revinfo) }
         else:
             assert todo != []
+            rev = self.source.get_revision(todo[0])
+            root_action = self._get_root_action(target_branch,
+                rev.parent_ids, overwrite=overwrite,
+                target_config=target_config)
             revid_map = self.push_revision_series(
                 todo, layout, project,
                 target_branch, target_config,
-                push_merged, overwrite=overwrite, push_metadata=push_metadata)
+                push_merged, root_action=root_action, push_metadata=push_metadata)
             return revid_map
 
     def push_revision_series(self, todo, layout, project, target_branch,
-            target_config, push_merged, overwrite, push_metadata):
+            target_config, push_merged, root_action, push_metadata):
         """Push a series of revisions into a Subversion repository.
 
         :param todo: New revisions to push
@@ -382,14 +386,9 @@ class InterToSvnRepository(InterRepository):
         """
         assert todo != []
         revid_map = {}
-        root_action = None
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for rev in self.source.get_revisions(todo):
-                if root_action is None:
-                    root_action = self._get_root_action(target_branch,
-                        rev.parent_ids, overwrite=overwrite,
-                        target_config=target_config)
                 pb.update("pushing revisions", todo.index(rev.revision_id),
                           len(todo))
                 if len(rev.parent_ids) == 0:
@@ -578,9 +577,13 @@ class InterToSvnRepository(InterRepository):
         todo = self._mainline_missing_revisions(begin_revid, stop_revision)
         assert todo is not None
         if todo != []:
+            rev = self.source.get_revision(todo[0])
+            root_action = self._get_root_action(target_branch_path,
+                rev.parent_ids, overwrite=overwrite,
+                target_config=target_config)
             self.push_revision_series(todo, layout, project,
                 target_branch_path, target_config, push_merged,
-                overwrite=overwrite, push_metadata=True)
+                root_action=root_action, push_metadata=True)
 
     def get_graph(self):
         if self._graph is None:
