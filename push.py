@@ -608,10 +608,15 @@ class InterToSvnRepository(InterRepository):
         self.source.lock_read()
         try:
             assert revision_id is not None, "fetching all revisions not supported"
+            graph = self.get_graph()
+            todo = []
             # Go back over the LHS parent until we reach a revid we know
-            todo = self._otherline_missing_revisions(self.get_graph(), revision_id, project=None, overwrite=True)
-            if todo == []:
-                # Nothing to do
+            for revid in graph.iter_lefthand_ancestry(revision_id,
+                    (NULL_REVISION, None)):
+                if self._target_has_revision(revid):
+                    break
+                todo.append(revid)
+            else:
                 return
             mutter("pushing %r into svn", todo)
             base_foreign_info = None
