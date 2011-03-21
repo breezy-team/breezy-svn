@@ -861,19 +861,8 @@ class InterOtherSvnBranch(InterBranch):
             raise DivergedBranches(self.target, self.source)
 
     def _get_interrepo(self, graph):
-        interrepo = InterToSvnRepository(self.source.repository,
+        return InterToSvnRepository(self.source.repository,
                 self.target.repository, graph)
-        # Add the current branch path as a hint, since it's very likely we'll
-        # need it as base for new revisions that will be pushed, and
-        # push should preferably use it over other paths in the
-        # repository that contain the same data.
-        last_branch_path = self.target.get_branch_path()
-        last_revnum = self.target.repository._log.find_latest_change(
-            last_branch_path, self.target.repository.get_latest_revnum())
-        interrepo._add_path_info(self.target.last_revision(),
-            last_branch_path,
-            ((self.target.repository.uuid, last_branch_path, last_revnum), self.target.mapping))
-        return interrepo
 
     def _update_revisions(self, stop_revision=None, overwrite=False,
             graph=None, push_merged=False, override_svn_revprops=None):

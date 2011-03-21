@@ -80,7 +80,7 @@ class SubversionBranchDiverged(DivergedBranches):
 
     _fmt = "Subversion branch at %(branch_path)s has diverged from %(source_repo)r."
 
-    def __init__(self, source, source_revision_id, target_repo, branch_path):
+    def __init__(self, source_repo, source_revision_id, target_repo, branch_path):
         self.branch_path = branch_path
         self.target_repo = target_repo
         self.source_repo = source_repo
