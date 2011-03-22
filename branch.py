@@ -845,6 +845,11 @@ class InterOtherSvnBranch(InterBranch):
             self.target.get_branch_path(), self.target.get_revnum())[0]
         return tree_contents == {}
 
+    def copy_content_into(self, revision_id=None):
+        if revision_id is None:
+            revision_id = self.source.last_revision()
+        self._push(revision_id, overwrite=True, push_metadata=True)
+
     def _push(self, stop_revision, overwrite, push_metadata):
         old_last_revid = self.target.last_revision()
         if old_last_revid == stop_revision:
