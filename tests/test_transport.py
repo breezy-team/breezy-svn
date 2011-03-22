@@ -51,12 +51,20 @@ class SvnRaTest(SubversionTestCase):
         t = SvnRaTransport(repos_url)
         self.assertIsInstance(t, SvnRaTransport)
         self.assertEqual(t.base, repos_url)
+        self.assertEqual(t.is_readonly(), False)
 
     def test_create_direct(self):
         repos_url = self.make_repository('a')
         t = SvnRaTransport(repos_url)
         self.assertIsInstance(t, SvnRaTransport)
         self.assertEqual(t.base, repos_url)
+
+    def test_create_readonly(self):
+        repos_url = self.make_repository('a')
+        t = SvnRaTransport(repos_url, readonly=True)
+        self.assertIsInstance(t, SvnRaTransport)
+        self.assertEqual(t.base, repos_url)
+        self.assertEqual(t.is_readonly(), True)
 
     def test_lock_read(self):
         repos_url = self.make_repository('a')
@@ -134,6 +142,11 @@ class SvnRaTest(SubversionTestCase):
         t = SvnRaTransport(repos_url)
         tt = t.clone()
         self.assertEqual(tt.base, t.base)
+
+    def test_mkdir_readonly(self):
+        repos_url = self.make_repository('a')
+        t = SvnRaTransport(repos_url, readonly=True)
+        self.assertRaises(TransportNotPossible, t.mkdir, "bla")
 
     def test_mkdir(self):
         repos_url = self.make_repository('a')
@@ -266,3 +279,8 @@ class ReadonlyConnectionTests(SubversionTestCase):
         conn = Connection(self.repos_url, readonly=True)
         self.assertRaises(TransportNotPossible, conn.change_rev_prop,
              3, "foo", "bar")
+
+    def test_get_commit_editor(self):
+        conn = Connection(self.repos_url, readonly=True)
+        self.assertRaises(TransportNotPossible, conn.get_commit_editor,
+                { "svn:log": "msg" } )

@@ -119,7 +119,8 @@ def get_svn_ra_transport(bzr_transport):
             creds = None
     else:
         creds = None
-    ra_transport = SvnRaTransport(svnbase, credentials=creds)
+    ra_transport = SvnRaTransport(svnbase, credentials=creds,
+                                  readonly=bzr_transport.is_readonly())
     bzr_transport._svn_ra = ra_transport
     return ra_transport
 
@@ -198,7 +199,8 @@ class SubversionProgressReporter(object):
             assert progress < 100000
             self._last_progress = 0
         changed = progress - self._last_progress
-        assert changed >= 0, "changed was %d (%d -> %d)" % (changed, self._last_progress, progress)
+        if changed < 0:
+            raise AssertionError("changed was %d (%d -> %d)" % (changed, self._last_progress, progress))
         self._last_progress = progress
         ui.ui_factory.report_transport_activity(self, changed, None)
 
@@ -250,9 +252,10 @@ def Connection(url, auth=None, config=None, readonly=False):
 class ConnectionPool(object):
     """Collection of connections to a Subversion repository."""
 
-    def __init__(self, url):
+    def __init__(self, url, readonly=False):
         self.start_url = url
         self.connections = set()
+        self.readonly = readonly
         self.auth_baton = create_auth_baton(url)
 
     def set_credentials(self, credentials):
@@ -270,7 +273,8 @@ class ConnectionPool(object):
         try:
             c = self.connections.pop()
         except KeyError:
-            return Connection(self.start_url, self.auth_baton)
+            return Connection(self.start_url, self.auth_baton,
+                readonly=self.readonly)
         else:
             assert not c.busy, "busy connection in pool"
             return c
@@ -278,14 +282,14 @@ class ConnectionPool(object):
     def new(self, url):
         # Nothing available? Just pick an existing one and reparent:
         if len(self.connections) == 0:
-            return Connection(url, self.auth_baton)
+            return Connection(url, self.auth_baton, readonly=self.readonly)
         c = self.connections.pop()
         try:
             c.reparent(_url_escape_uri(url))
             return c
         except NotImplementedError:
             self.connections.add(c)
-            return Connection(url, self.auth_baton)
+            return Connection(url, self.auth_baton, readonly=self.readonly)
         except:
             self.connections.add(c)
             raise
@@ -324,7 +328,8 @@ class SvnRaTransport(Transport):
     to fool Bazaar. """
 
     @convert_svn_error
-    def __init__(self, url, from_transport=None, credentials=None):
+    def __init__(self, url, from_transport=None, credentials=None,
+                 readonly=False):
         bzr_url = url
         self.svn_url = bzr_to_svn_url(url)
         Transport.__init__(self, bzr_url)
@@ -332,13 +337,16 @@ class SvnRaTransport(Transport):
         if host.endswith(".codeplex.com"):
             warn_codeplex(host)
         if from_transport is None:
-            self.connections = ConnectionPool(self.svn_url)
+            self.connections = ConnectionPool(self.svn_url,
+                readonly=readonly)
             if credentials is not None:
                 assert isinstance(credentials, dict)
                 self.connections.set_credentials(credentials)
             # Make sure that the URL is valid by connecting to it.
             self.connections.add(self.connections.get(self.svn_url))
         else:
+            if readonly != from_transport.is_readonly():
+                raise AssertionError
             self.connections = from_transport.connections
             if credentials is not None:
                 assert isinstance(credentials, dict)
@@ -348,6 +356,9 @@ class SvnRaTransport(Transport):
         self.capabilities = {}
         from bzrlib.plugins.svn import lazy_check_versions
         lazy_check_versions()
+
+    def is_readonly(self):
+        return self.connections.readonly
 
     def get_any_connection(self):
         return self.connections.get_any()
