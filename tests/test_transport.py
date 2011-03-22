@@ -32,6 +32,7 @@ from bzrlib.errors import (
 
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.transport import (
+    Connection,
     SvnRaTransport,
     bzr_to_svn_url,
     url_join_unescaped_path,
@@ -250,3 +251,18 @@ class UrlSplitSvnPlus(TestCase):
                 fragment=''),
             urlparse.urlsplit('svn+http://foo.bar@host.com/svn/trunk'))
 
+
+class ReadonlyConnectionTests(SubversionTestCase):
+
+    def setUp(self):
+        super(ReadonlyConnectionTests, self).setUp()
+        self.repos_url = self.make_repository("d")
+
+    def test_get_latest_revnum(self):
+        conn = Connection(self.repos_url, readonly=True)
+        self.assertEquals(0, conn.get_latest_revnum())
+
+    def test_change_rev_prop(self):
+        conn = Connection(self.repos_url, readonly=True)
+        self.assertRaises(TransportNotPossible, conn.change_rev_prop,
+             3, "foo", "bar")

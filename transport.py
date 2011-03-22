@@ -203,7 +203,7 @@ class SubversionProgressReporter(object):
         ui.ui_factory.report_transport_activity(self, changed, None)
 
 
-def Connection(url, auth=None, config=None):
+def Connection(url, auth=None, config=None, readonly=False):
     # Subvertpy <= 0.6.3 has a bug in the reference counting of the
     # progress update function
     if subvertpy.__version__ >= (0, 6, 3):
@@ -218,6 +218,8 @@ def Connection(url, auth=None, config=None):
                 config=config)
         if 'transport' in debug.debug_flags:
             ret = MutteringRemoteAccess(ret)
+        if readonly:
+            ret = ReadonlyRemoteAccess(ret)
     except subvertpy.SubversionException, e:
         msg, num = e.args
         if num in (subvertpy.ERR_RA_SVN_REPOS_NOT_FOUND,):
@@ -638,7 +640,83 @@ class SvnRaTransport(Transport):
         return urlutils.join(self.base, relpath)
 
 
+class ReadonlyRemoteAccess(object):
+
+    busy = property(lambda self: self.actual.busy)
+    url = property(lambda self: self.actual.url)
+
+    def __init__(self, actual):
+        self.actual = actual
+
+    def check_path(self, path, revnum):
+        return self.actual.check_path(path, revnum)
+
+    def stat(self, path, revnum):
+        return self.actual.stat(path, revnum)
+
+    def has_capability(self, cap):
+        return self.actual.has_capability(cap)
+
+    def get_uuid(self):
+        return self.actual.get_uuid()
+
+    def get_repos_root(self):
+        return self.actual.get_repos_root()
+
+    def get_latest_revnum(self):
+        return self.actual.get_latest_revnum()
+
+    def get_log(self, *args, **kwargs):
+        return self.actual.get_log(*args, **kwargs)
+
+    def iter_log(self, *args, **kwargs):
+        return self.actual.iter_log(*args, **kwargs)
+
+    def change_rev_prop(self, revnum, name, value):
+        raise TransportNotPossible('readonly transport')
+
+    def get_dir(self, *args, **kwargs):
+        return self.actual.get_dir(*args, **kwargs)
+
+    def get_file(self, *args, **kwargs):
+        return self.actual.get_file(*args, **kwargs)
+
+    def get_file_revs(self, *args, **kwargs):
+        return self.actual.get_file_revs(*args, **kwargs)
+
+    def revprop_list(self, revnum):
+        return self.actual.revprop_list(revnum)
+
+    def get_locations(self, path, peg_revnum, revnums):
+        return self.actual.get_locations(path, peg_revnum, revnums)
+
+    def do_update(self, revnum, path, start_empty, editor):
+        return self.actual.do_update(revnum, path, start_empty, editor)
+
+    def do_diff(self, *args, **kwargs):
+        return self.actual.do_diff(*args, **kwargs)
+
+    def do_switch(self, *args, **kwargs):
+        return self.actual.do_switch(*args, **kwargs)
+
+    def reparent(self, url):
+        return self.actual.reparent(url)
+
+    def get_commit_editor(self, *args, **kwargs):
+        raise TransportNotPossible('readonly transport')
+
+    def rev_proplist(self, revnum):
+        return self.actual.rev_proplist(revnum)
+
+    def replay_range(self, *args, **kwargs):
+        return self.actual.replay_range(*args, **kwargs)
+
+    def replay(self, *args, **kwargs):
+        return self.actual.replay(*args, **kwargs)
+
+
 class MutteringRemoteAccess(object):
+    """Trivial RemoteAccess wrapper that mutters all activity."""
 
     busy = property(lambda self: self.actual.busy)
     url = property(lambda self: self.actual.url)
