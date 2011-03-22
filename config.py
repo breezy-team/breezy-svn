@@ -456,7 +456,9 @@ class SubversionBuildPackageConfig(object):
             self.wt_layout_path = os.path.join(tree.abspath("."), ".svn", "svn-layout")
             self.option_source = ConfigObj(self.wt_layout_path, encoding="utf-8")
         elif tree.has_filename("debian/svn-layout"):
-            self.option_source = ConfigObj(tree.get_file(tree.path2id("debian/svn-layout"), "debian/svn-layout"), encoding="utf-8")
+            file_id = tree.path2id("debian/svn-layout")
+            layout_file = tree.get_file(file_id, "debian/svn-layout")
+            self.option_source = ConfigObj(layout_file, encoding="utf-8")
         elif isinstance(tree, SubversionTree) and tree.has_filename("debian"):
             self.option_source = PropertyConfig(tree, "debian", "svn-bp:")
         else:
