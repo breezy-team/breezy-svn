@@ -76,6 +76,9 @@ bzr-svn 1.1.0					  UNRELEASED
   * Switch to using record_iter_changes style committing everywhere.
     (Jelmer Vernooij)
 
+  * Implement InterOtherSvnBranch.copy_content_into. (Jelmer Vernooij,
+     #731289)
+
 bzr-svn 1.0.4					  2010-08-30
 
  BUG FIXES
