@@ -59,6 +59,9 @@ bzr-svn 1.1.0					  UNRELEASED
   * dpushing multiple commits no longer repeatedly downloads the entire
     tree. (Jelmer Vernooij, #582898)
 
+  * Fix `push_merged_revisions = True` for committing to bound branches.
+    (Jelmer Vernooij, #486811)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is

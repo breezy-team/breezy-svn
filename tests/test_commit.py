@@ -52,6 +52,9 @@ from bzrlib.plugins.svn.commit import (
     set_svn_revprops,
     _revision_id_to_svk_feature,
     )
+from bzrlib.plugins.svn.config import (
+    SubversionUUIDConfig,
+    )
 from bzrlib.plugins.svn.errors import (
     RevpropChangeFailed,
     )
@@ -661,6 +664,45 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         self.assertEquals({"dir": dirid,
                           "dir/file": fileid},
                           rm_provider.get_revision("", 1).get_fileid_overrides(mapping))
+
+    def test_push_merged_revision(self):
+        repos_url = self.make_repository("d")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("trunk")
+        dc.add_dir("branches")
+        dc.add_dir("tags")
+        dc.close() # 1
+
+        master_branch = Branch.open(repos_url+"/trunk")
+        trunk = master_branch.bzrdir.sprout("trunk")
+        trunk.open_branch().bind(master_branch)
+
+        config = master_branch.repository.get_config()
+        config.set_user_option("push_merged_revisions", "True")
+
+        feature = trunk.sprout("feature")
+        wt = feature.open_workingtree()
+        self.build_tree_contents([("feature/test.txt", "test")])
+        wt.add("test.txt")
+        revid2 = wt.commit("added test.txt") # 2
+
+        wt = trunk.open_workingtree()
+        wt.merge_from_branch(feature.open_branch(), to_revision=revid2)
+        wt.commit("merged feature") # 3
+
+        log = self.client_log(repos_url, 3, 0)
+        self.assertEquals({
+            '/branches': ('A', None, -1),
+            '/tags': ('A', None, -1),
+            '/trunk': ('A', None, -1)}, log[1][0])
+        self.assertEquals({
+            '/branches/feature': ('A', '/trunk', 1),
+            '/branches/feature/test.txt': ('A', None, -1)}, log[2][0])
+        self.assertEquals({
+            '/trunk': ('M', None, -1),
+            '/trunk/test.txt': ('A', '/branches/feature/test.txt', 2)},
+            log[3][0])
 
 
 class RevpropTests(SubversionTestCase):

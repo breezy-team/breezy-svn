@@ -554,7 +554,7 @@ class InterToSvnRepository(InterRepository):
                 base_foreign_info=(base_foreign_revid, base_mapping))
 
     def push_new_branch(self, layout, project, target_branch_path,
-        stop_revision, push_merged=None, overwrite=False):
+        stop_revision, overwrite=False):
         """Push a new branch.
 
         :param layout: Repository layout to use
@@ -568,16 +568,15 @@ class InterToSvnRepository(InterRepository):
             self.target.get_latest_revnum()) != subvertpy.NODE_NONE:
             raise AlreadyBranchError(target_branch_path)
         target_config = self._get_branch_config(target_branch_path)
-        if push_merged is None:
-            push_merged = (layout.push_merged_revisions(project) and
-                           target_config.get_push_merged_revisions())
         mapping = self.target.get_mapping()
+        push_merged = (layout.push_merged_revisions(project) and
+            target_config.get_push_merged_revisions())
         begin_revid, begin_foreign_info = self.push_new_branch_first_revision(
             target_branch_path, stop_revision, mapping, append_revisions_only=True)
         if stop_revision != begin_revid:
             self.push_todo(
                 begin_revid, begin_foreign_info[0], mapping, stop_revision, layout, project,
-                target_branch_path, target_config, push_merged,
+                target_branch_path, target_config, push_merged=push_merged,
                 overwrite=False, push_metadata=True)
 
     def get_graph(self):

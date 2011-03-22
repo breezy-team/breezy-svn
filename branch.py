@@ -514,8 +514,11 @@ class SvnBranch(ForeignBranch):
     def import_last_revision_info(self, source_repo, revno, revid):
         interrepo = InterToSvnRepository(source_repo, self.repository)
         last_revmeta, mapping = self.last_revmeta()
-        interrepo.push_todo(last_revmeta.get_revision_id(mapping), last_revmeta.get_foreign_revid(), mapping, revid, self.layout, self.project, self.get_branch_path(), self.get_config(),
-                push_merged=None, overwrite=False, push_metadata=True)
+        interrepo.push_todo(last_revmeta.get_revision_id(mapping),
+            last_revmeta.get_foreign_revid(), mapping, revid, self.layout,
+            self.project, self.get_branch_path(), self.get_config(),
+            push_merged=self.get_push_merged_revisions(),
+            overwrite=False, push_metadata=True)
 
     def import_last_revision_info_and_tags(self, source, revno, revid):
         self.import_last_revision_info(source.repository, revno, revid)
@@ -842,12 +845,11 @@ class InterOtherSvnBranch(InterBranch):
             self.target.get_branch_path(), self.target.get_revnum())[0]
         return tree_contents == {}
 
-    def _push(self, stop_revision, overwrite, push_metadata, push_merged=None):
+    def _push(self, stop_revision, overwrite, push_metadata):
         old_last_revid = self.target.last_revision()
         if old_last_revid == stop_revision:
             return { old_last_revid: (old_last_revid, None) }
-        if push_merged is None:
-            push_merged = self.target.get_push_merged_revisions()
+        push_merged = self.target.get_push_merged_revisions()
         interrepo = InterToSvnRepository(
             self.source.repository, self.target.repository)
         try:
@@ -862,12 +864,11 @@ class InterOtherSvnBranch(InterBranch):
             raise DivergedBranches(self.target, self.source)
 
     def _update_revisions(self, stop_revision=None, overwrite=False,
-            graph=None, push_merged=False, override_svn_revprops=None):
+            graph=None, override_svn_revprops=None):
         old_last_revid = self.target.last_revision()
         if stop_revision is None:
             stop_revision = ensure_null(self.source.last_revision())
-        self._push(stop_revision, overwrite=overwrite,
-            push_merged=push_merged, push_metadata=True)
+        self._push(stop_revision, overwrite=overwrite, push_metadata=True)
         self.target._clear_cached_state()
         assert isinstance(old_last_revid, str)
         return (old_last_revid, self.target.last_revision())
@@ -918,7 +919,7 @@ class InterOtherSvnBranch(InterBranch):
         return self.source.tags.merge_to(self.target.tags, overwrite)
 
     def push(self, overwrite=False, stop_revision=None,
-            _push_merged=None, _override_svn_revprops=None,
+            _override_svn_revprops=None,
             _override_hook_source_branch=None):
         """See InterBranch.push()."""
         result = SubversionTargetBranchPushResult()
@@ -929,7 +930,6 @@ class InterOtherSvnBranch(InterBranch):
         try:
             (result.old_revid, result.new_revid) = \
                 self._update_revisions(stop_revision, overwrite,
-                    push_merged=_push_merged,
                     override_svn_revprops=_override_svn_revprops)
             result.tag_conflicts = self.update_tags(overwrite)
             return result
@@ -938,7 +938,7 @@ class InterOtherSvnBranch(InterBranch):
 
     def pull(self, overwrite=False, stop_revision=None,
              _hook_master=None, run_hooks=True, possible_transports=None,
-             _push_merged=None, _override_svn_revprops=None, local=False,
+             _override_svn_revprops=None, local=False,
              limit=None):
         """See InterBranch.pull()."""
         if local:
@@ -951,7 +951,6 @@ class InterOtherSvnBranch(InterBranch):
         try:
             (result.old_revid, result.new_revid) = \
                 self._update_revisions(stop_revision, overwrite,
-                    push_merged=_push_merged,
                     override_svn_revprops=_override_svn_revprops)
             result.tag_conflicts = self.update_tags(overwrite)
             return result
