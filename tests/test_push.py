@@ -49,6 +49,7 @@ from bzrlib.revision import (
     )
 from bzrlib.trace import mutter
 from bzrlib.tests import (
+    SymlinkFeature,
     TestCase,
     )
 
@@ -322,8 +323,7 @@ class TestPush(SubversionTestCase):
                         self.svndir.open_branch().last_revision())
 
     def test_symlink(self):
-        if not osutils.has_symlinks():
-            return
+        self.requireFeature(SymlinkFeature)
         os.symlink("bla", "dc/south")
         self.assertTrue(os.path.islink("dc/south"))
         wt = self.bzrdir.open_workingtree()

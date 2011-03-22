@@ -32,7 +32,6 @@ from bzrlib.bzrdir import (
     BzrDir,
     )
 from bzrlib.osutils import (
-    has_symlinks,
     sha_string,
     )
 from bzrlib.repository import (
@@ -45,6 +44,7 @@ from bzrlib.tests import (
     KnownFailure,
     TestCase,
     TestSkipped,
+    SymlinkFeature,
     )
 from bzrlib.trace import (
     mutter,
@@ -1716,8 +1716,7 @@ Node-copyfrom-path: x
         self.assertTrue(inv2[inv2.path2id("bla")].executable)
 
     def test_fetch_symlink(self):
-        if not has_symlinks():
-            return
+        self.requireFeature(SymlinkFeature)
         repos_url = self.make_repository('d')
 
         dc = self.get_commit_editor(repos_url)
@@ -1750,8 +1749,7 @@ Node-copyfrom-path: x
             newrepos.unlock()
 
     def test_fetch_symlink_with_newlines(self):
-        if not has_symlinks():
-            return
+        self.requireFeature(SymlinkFeature)
         raise KnownFailure("Bazaar doesn't support newlines in symlink targets (#219832)")
         repos_url = self.make_repository('d')
 
