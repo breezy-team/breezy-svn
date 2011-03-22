@@ -369,8 +369,19 @@ class SvnRemoteAccess(ControlDir):
             raise errors.NoColocatedBranchSupport(self)
         if self.branch_path == "":
             raise errors.UnsupportedOperation(self.destroy_branch, self)
-        # FIXME: Remove branch
-        raise NotImplementedError(self.destroy_branch)
+        conn = self.root_transport.get_connection()
+        try:
+            ce = conn.get_commit_editor({"svn:log": "Remove branch."})
+            try:
+                root = ce.open_root()
+                root.delete_entry(".")
+                root.close()
+            except:
+                ce.abort()
+                raise
+            ce.close()
+        finally:
+            self.root_transport.add_connection(conn)
 
     def destroy_repository(self):
         raise errors.UnsupportedOperation(self.destroy_repository, self)

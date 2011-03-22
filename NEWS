@@ -66,6 +66,8 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * bzr-svn now requires Bazaar 2.3 or higher. (Jelmer Vernooij)
 
+  * `bzr rmbranch` was implemented.  (Jelmer Vernooij, #731305)
+
  INTERNALS
 
   * Switch to using record_iter_changes style committing everywhere.

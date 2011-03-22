@@ -26,6 +26,7 @@ from bzrlib.bzrdir import (
     )
 from bzrlib.errors import (
     AlreadyBranchError,
+    NotBranchError,
     NoRepositoryPresent,
     NoWorkingTree,
     UnsupportedOperation,
@@ -97,6 +98,17 @@ class TestRemoteAccess(SubversionTestCase):
         transport = SvnRaTransport(repos_url)
         self.assertEquals(subvertpy.NODE_DIR,
                 transport.check_path("trunk", 1))
+
+    def test_destroy_branch(self):
+        repos_url = self.make_repository("d")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("trunk")
+        dc.close()
+
+        x = BzrDir.open(repos_url+"/trunk")
+        x.destroy_branch()
+        self.assertRaises(NotBranchError, x.open_branch)
 
     def test_bad_dir(self):
         repos_url = self.make_repository("d")

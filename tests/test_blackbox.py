@@ -68,6 +68,15 @@ class TestBranch(SubversionTestCase, ExternalBase):
         repos_url = self.make_repository('d')
         self.run_bzr('pack %s' % repos_url)
 
+    def test_rmbranch(self):
+        repos_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        dc.add_dir("trunk")
+        dc.close()
+
+        self.run_bzr("rmbranch %s/trunk" % repos_url)
+
     def test_push_create_prefix(self):
         repos_url = self.make_repository('d')
 
