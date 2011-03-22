@@ -277,33 +277,19 @@ class InterToSvnRepository(InterRepository):
         if len(existing_bp_parts) < len(bp_parts):
             # Branch doesn't exist yet
             return ("create", )
-        delete_root_revnum = self._get_delete_root_revnum(
-            path, parent_ids,
-            overwrite=overwrite, append_revisions_only=append_revisions_only)
-        if delete_root_revnum is None:
-            return ("open", )
+        (revmeta, mapping) = self.target._iter_reverse_revmeta_mapping_history(
+            path, self.target.get_latest_revnum(), to_revnum=0,
+            mapping=self.target.get_mapping()).next()
+        if parent_ids == [] or parent_ids == [NULL_REVISION]:
+            return ("replace", revmeta.revnum)
         else:
-            assert isinstance(delete_root_revnum, int)
-            return ("replace", delete_root_revnum)
-
-    def _get_delete_root_revnum(self, target_path, parent_revids, overwrite,
-            append_revisions_only):
-        #FIXME
-        from bzrlib.branch import Branch
-        url = urlutils.join(self.target.base, target_path)
-        b = Branch.open(url)
-        if parent_revids == [] or parent_revids == [NULL_REVISION]:
-            return b.get_revnum()
-        else:
-            if b.last_revision() not in parent_revids:
-                if not overwrite:
-                    raise DivergedBranches(self.source, self.target)
-                return b.get_revnum()
-            elif b.last_revision() != parent_revids[0]:
+            if revmeta.get_revision_id(mapping) != parent_ids[0]:
                 if append_revisions_only:
-                    raise AppendRevisionsOnlyViolation(url)
-                return b.get_revnum()
-            return None
+                    raise AppendRevisionsOnlyViolation(
+                        urlutils.join(self.target.base, path))
+                return ("replace", revmeta.revnum)
+            else:
+                return ("open", )
 
     def _otherline_missing_revisions(self, graph, stop_revision, project, overwrite):
         """Find the revisions missing on the mainline.
@@ -330,8 +316,8 @@ class InterToSvnRepository(InterRepository):
         graph = self.get_graph()
         todo = []
         if append_revisions_only:
-            # FIXME: Just specify last_revid as one of the stop revisions ?
-            for revid in graph.iter_lefthand_ancestry(stop_revision, (NULL_REVISION, None)):
+            for revid in graph.iter_lefthand_ancestry(stop_revision,
+                    (NULL_REVISION, None)):
                 if revid == last_revid:
                     todo.reverse()
                     break
@@ -371,7 +357,8 @@ class InterToSvnRepository(InterRepository):
         todo, root_action = self._todo(target_branch, last_revid, last_foreign_revid, stop_revision, project, overwrite, append_revisions_only=target_config.get_append_revisions_only(not overwrite))
         if (mapping.supports_hidden and
             self.target.has_revision(stop_revision)):
-            # FIXME: Only do this if there is no existing branch, or if append_revisions_only=False
+            # FIXME: Only do this if there is no existing branch, or if
+            # append_revisions_only=False
             # Revision is already present in the repository, so just
             # copy from there.
             (revid, foreign_revinfo) = create_branch_with_hidden_commit(
@@ -535,8 +522,6 @@ class InterToSvnRepository(InterRepository):
                 continue
             rev = self.source.get_revision(x)
             rhs_branch_path = determine_branch_path(rev, layout, project)
-            # FIXME: See if the existing revision at rhs_branch_path is already
-            # at base revision
             mutter("pushing ancestor %r to %s", x, rhs_branch_path)
 
             if rev.parent_ids:
