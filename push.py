@@ -334,7 +334,9 @@ class InterToSvnRepository(InterRepository):
                 todo.append(revid)
             return todo, ("replace", last_foreign_revid[2])
 
-    def push_branch(self, target_branch_path, target_config, (last_revmeta, mapping), stop_revision, layout, project, overwrite, push_metadata, push_merged):
+    def push_branch(self, target_branch_path, target_config,
+            (last_revmeta, mapping), stop_revision, layout, project,
+            overwrite, push_metadata, push_merged):
         old_last_revid = last_revmeta.get_revision_id(mapping)
         graph = self.get_graph()
         if not overwrite:
@@ -348,13 +350,17 @@ class InterToSvnRepository(InterRepository):
                         self.target, target_branch_path, old_last_revid)
         return self.push_todo(old_last_revid, last_revmeta.get_foreign_revid(),
             mapping, stop_revision, layout, project,
-            target_branch_path, target_config,
-            push_merged=push_merged,
+            target_branch_path, target_config, push_merged=push_merged,
             overwrite=overwrite, push_metadata=push_metadata)
 
-    def push_todo(self, last_revid, last_foreign_revid, mapping, stop_revision, layout, project, target_branch,
+    def push_todo(self, last_revid, last_foreign_revid, mapping,
+            stop_revision, layout, project, target_branch,
             target_config, push_merged, overwrite, push_metadata):
-        todo, root_action = self._todo(target_branch, last_revid, last_foreign_revid, stop_revision, project, overwrite, append_revisions_only=target_config.get_append_revisions_only(not overwrite))
+        append_revisions_only = target_config.get_append_revisions_only(
+            not overwrite)
+        todo, root_action = self._todo(target_branch, last_revid,
+                last_foreign_revid, stop_revision, project, overwrite,
+                append_revisions_only=append_revisions_only)
         if (mapping.supports_hidden and
             self.target.has_revision(stop_revision)):
             # FIXME: Only do this if there is no existing branch, or if
@@ -366,12 +372,10 @@ class InterToSvnRepository(InterRepository):
                 set_metadata=push_metadata, deletefirst=True)
             return { stop_revision: (revid, foreign_revinfo) }
         else:
-            revid_map = self.push_revision_series(
-                todo, layout, project,
-                target_branch, target_config,
+            return self.push_revision_series(
+                todo, layout, project, target_branch, target_config,
                 push_merged, root_action=root_action,
                 push_metadata=push_metadata)
-            return revid_map
 
     def push_revision_series(self, todo, layout, project, target_branch,
             target_config, push_merged, root_action, push_metadata):
