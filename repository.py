@@ -203,7 +203,6 @@ class SvnRepositoryFormat(RepositoryFormat):
                 'Does not support rich root data.', target_repo_format)
 
 
-
 class SubversionRepositoryCheckResult(branch.BranchCheckResult):
     """Results of checking a Subversion repository."""
 
@@ -1295,17 +1294,29 @@ class SvnRepository(ForeignRepository):
         append_revisions_only = branch.get_config().get_append_revisions_only()
         if append_revisions_only is None:
             append_revisions_only = True
+        branch_last_revid = branch.last_revision()
+        bp = branch.get_branch_path()
         if parents == [] or parents == [NULL_REVISION]:
             base_foreign_revid = None
             base_mapping = None
+            root_action = ("replace", branch.get_revnum())
         else:
             base_foreign_revid, base_mapping = \
                 self.lookup_bzr_revision_id(parents[0], project=branch.project)
-        return SvnCommitBuilder(self, branch.get_branch_path(), parents,
+            if ((base_foreign_revid[2] != branch.get_revnum() or
+                base_foreign_revid[1] != bp)):
+                root_action = ("replace", branch.get_revnum())
+            else:
+                root_action = ("open", )
+
+        if root_action[0] == "replace" and append_revisions_only:
+            raise bzr_errors.AppendRevisionsOnlyViolation(branch.base)
+
+        return SvnCommitBuilder(self, bp, parents,
                                 config, timestamp, timezone, committer,
                                 revprops, revision_id,
                                 base_foreign_revid, base_mapping,
-                                append_revisions_only=append_revisions_only)
+                                root_action=root_action)
 
     def find_fileprop_paths(self, layout, from_revnum, to_revnum,
                                project=None, check_removed=False):

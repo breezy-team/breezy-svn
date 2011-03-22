@@ -42,7 +42,7 @@ from bzrlib.inventory import (
 from bzrlib.repository import Repository
 from bzrlib.tests import (
     TestCase,
-    TestSkipped,
+    UnicodeFilenameFeature,
     )
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
@@ -106,11 +106,9 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEqual(wt.branch.last_revision(), new_revision.revision_id)
 
     def test_commit_unicode_filename(self):
+        self.requireFeature(UnicodeFilenameFeature)
         self.make_client('d', 'dc')
-        try:
-            self.build_tree({u'dc/I²C': "data"})
-        except UnicodeError:
-            raise TestSkipped("This platform does not support unicode symlinks")
+        self.build_tree({u'dc/I²C': "data"})
         self.client_add(u"dc/I²C".encode("utf-8"))
         wt = WorkingTree.open("dc")
         wt.commit(message="data")
@@ -347,10 +345,8 @@ class TestPush(SubversionTestCase):
                           self.newdir.open_branch())
 
     def test_unicode_filename(self):
-        try:
-            self.build_tree({u'dc/I²C': 'other data'})
-        except UnicodeError:
-            raise TestSkipped("This platform does not support unicode paths")
+        self.requireFeature(UnicodeFilenameFeature)
+        self.build_tree({u'dc/I²C': 'other data'})
         wt = self.newdir.open_workingtree()
         wt.add(u'I²C')
         wt.commit(message="Commit from Bzr")
@@ -359,10 +355,8 @@ class TestPush(SubversionTestCase):
         self.assertEquals(3, result.new_revno)
 
     def test_rename_from_unicode_filename(self):
-        try:
-            self.build_tree({u'dc/I²C': 'other data'})
-        except UnicodeError:
-            raise TestSkipped("This platform does not support symlink paths")
+        self.requireFeature(UnicodeFilenameFeature)
+        self.build_tree({u'dc/I²C': 'other data'})
         wt = self.newdir.open_workingtree()
         wt.add(u'I²C')
         wt.commit(message="Commit from Bzr")
@@ -564,7 +558,6 @@ class JoinedCommitTests(SubversionTestCase):
 
         self.olddir.open_branch().pull(self.newdir.open_branch())
         paths = self.client_log(repos_url, 4, 0)[4][0]
-        mutter('paths %r' % paths)
         self.assertEquals(('A', "/branches/newbranch", 2), paths["/trunk/newdir"])
 
 

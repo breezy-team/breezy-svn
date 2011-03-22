@@ -26,6 +26,8 @@ from cStringIO import (
     StringIO,
     )
 from subvertpy import (
+    ERR_FS_NOT_DIRECTORY,
+    ERR_REPOS_DISABLED_FEATURE,
     delta,
     properties,
     SubversionException,
@@ -60,7 +62,6 @@ from bzrlib.plugins.svn import (
     )
 from bzrlib.plugins.svn.errors import (
     convert_svn_error,
-    AppendRevisionsOnlyViolation,
     ChangesRootLHSHistory,
     MissingPrefix,
     RevpropChangeFailed,
@@ -72,7 +73,6 @@ from bzrlib.plugins.svn.svk import (
     SVN_PROP_SVK_MERGE
     )
 from bzrlib.plugins.svn.transport import (
-    check_dirs_exist,
     url_join_unescaped_path,
     )
 from bzrlib.plugins.svn.util import (
@@ -189,8 +189,11 @@ def set_svn_revprops(repository, revnum, revprops):
     for (name, value) in revprops.iteritems():
         try:
             repository.transport.change_rev_prop(revnum, name, value)
-        except SubversionException, (_, ERR_REPOS_DISABLED_FEATURE):
-            raise RevpropChangeFailed(name)
+        except SubversionException, (_, num):
+            if num == ERR_REPOS_DISABLED_FEATURE:
+                raise RevpropChangeFailed(name)
+            else:
+                raise
 
 
 def file_editor_send_content_changes(reader, file_editor):
@@ -390,10 +393,9 @@ class SvnCommitBuilder(RootCommitBuilder):
 
     def __init__(self, repository, branch_path, parents, config, timestamp,
                  timezone, committer, revprops, revision_id,
-                 base_foreign_revid, base_mapping, old_inv=None,
+                 base_foreign_revid, base_mapping, root_action, old_inv=None,
                  push_metadata=True, graph=None, opt_signature=None,
-                 texts=None, append_revisions_only=True,
-                 testament=None, overwrite_revnum=None):
+                 texts=None, testament=None):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -412,7 +414,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         :param graph: Optional graph object
         :param opt_signature: Optional signature to write.
         :param testament: A Testament object to store
-        :param overwrite_revnum: Oldest revision number allowed to overwrite
+        :param root_action: Action to take on the branch root
         """
         super(SvnCommitBuilder, self).__init__(repository, parents,
             config, timestamp, timezone, committer, revprops, revision_id)
@@ -424,8 +426,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.random_revid = False
         self.branch_path = branch_path
         self.push_metadata = push_metadata
-        self.overwrite_revnum = overwrite_revnum
-        self._append_revisions_only = append_revisions_only
+        self.root_action = root_action
         self._texts = texts
 
         # Gather information about revision on top of which the commit is
@@ -544,18 +545,16 @@ class SvnCommitBuilder(RootCommitBuilder):
         """See CommitBuilder.finish_inventory()."""
         pass
 
-    def open_branch_editors(self, root, elements, existing_elements,
-                           base_url, base_rev, root_from, replace_existing):
+    def open_branch_editors(self, root, elements, base_url, base_rev, root_from, root_action):
         """Open a specified directory given an editor for the repository root.
 
         :param root: Editor for the repository root
         :param elements: List of directory names to open
-        :param existing_elements: List of directory names that exist
         :param base_url: URL to base top-level branch on
         :param base_rev: Revision of path to base top-level branch on
         :param root_from: Path inside the branch to copy the root from,
             or None if it should be created from scratch.
-        :param replace_existing: Whether the current branch should be replaced
+        :param root_action: tuple with action for the root and releted revnum.
         """
         ret = [root]
 
@@ -563,35 +562,35 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         # Open paths leading up to branch
         for i in range(0, len(elements)-1):
-            # Does directory already exist?
-            ret.append(ret[-1].open_directory(
-                "/".join(existing_elements[0:i+1]), -1))
-
-        if (len(existing_elements) != len(elements) and
-            len(existing_elements)+1 != len(elements)):
-            raise MissingPrefix("/".join(elements), "/".join(existing_elements))
+            try:
+                ret.append(ret[-1].open_directory(
+                    "/".join(elements[0:i+1]), -1))
+            except SubversionException, (_, num):
+                if num == ERR_FS_NOT_DIRECTORY:
+                    raise MissingPrefix("/".join(elements), "/".join(elements[0:i]))
+                else:
+                    raise
 
         # Branch already exists and stayed at the same location, open:
-        # TODO: What if the branch didn't change but the new revision
-        # was based on an older revision of the branch?
-        # This needs to also check that base_rev was the latest version of
-        # branch_path.
-        if len(existing_elements) == len(elements) and not replace_existing:
+        if root_action[0] == "open":
             ret.append(ret[-1].open_directory("/".join(elements), base_rev))
-        else: # Branch has to be created
+        elif root_action[0] in ("create", "replace"):
+            # Branch has to be created
             # Already exists, old copy needs to be removed
             name = "/".join(elements)
-            if replace_existing:
+            if root_action[0] == "replace":
                 if name == "":
                     raise ChangesRootLHSHistory()
                 self.mutter("removing branch dir %r", name)
-                ret[-1].delete_entry(name, max(base_rev, self.overwrite_revnum))
+                ret[-1].delete_entry(name, max(base_rev, root_action[1]))
             self.mutter("adding branch dir %r", name)
             if base_url is None or root_from is None:
                 copyfrom_url = None
             else:
                 copyfrom_url = urlutils.join(base_url, root_from)
             ret.append(ret[-1].add_directory(name, copyfrom_url, base_rev))
+        else:
+            raise AssertionError
 
         return ret
 
@@ -615,12 +614,13 @@ class SvnCommitBuilder(RootCommitBuilder):
         text_revisions = {}
         changes = []
 
-        if (self.old_inv.root is None or new_root_id != self.old_inv.root.file_id):
+        if self.old_inv.root is None or new_root_id != self.old_inv.root.file_id:
             changes.append((new_root_id, "", self._get_new_ie(new_root_id).revision))
 
         changes += _dir_process_file_id("", new_root_id)
 
         # Find the "unusual" text revisions
+        # FIXME: This is wrong
         for id, path, revid in changes:
             fileids[path] = id
             if revid is not None and revid != self.base_revid and revid != self._new_revision_id:
@@ -725,19 +725,9 @@ class SvnCommitBuilder(RootCommitBuilder):
             self.revision_metadata = args
 
         conn = self.conn
-        repository_latest_revnum = conn.get_latest_revnum()
         self.editor = convert_svn_error(conn.get_commit_editor)(
                 self._svn_revprops, done)
         try:
-            # Shortcut - no need to see if dir exists if our base
-            # was the last revision in the repo. This situation
-            # happens a lot when pushing multiple subsequent revisions.
-            if (self.base_revnum == self.repository.get_latest_revnum() and
-                self.base_path == self.branch_path):
-                existing_bp_parts = bp_parts
-            else:
-                existing_bp_parts = check_dirs_exist(self.repository.transport,
-                                              bp_parts, -1)
             self.revision_metadata = None
             for prop in self._svn_revprops:
                 assert prop.split(":")[0] in ("bzr", "svk", "svn")
@@ -750,36 +740,19 @@ class SvnCommitBuilder(RootCommitBuilder):
                 raise AssertionError(
                     "non-log revision properties set but not supported: %r" %
                     self._svn_revprops.keys())
-            replace_existing = False
-            # See whether the base of the commit matches the lhs parent
-            # if not, we need to replace the existing directory
-            if len(bp_parts) == len(existing_bp_parts):
-                if (self.base_path is None or
-                    self.base_path.strip("/") != "/".join(bp_parts).strip("/")):
-                    replace_existing = True
-                    if self._append_revisions_only:
-                        raise AppendRevisionsOnlyViolation(
-                            urlutils.join(self.repository.base, self.branch_path))
-                elif self.base_revnum < self.repository._log.find_latest_change(self.branch_path, repository_latest_revnum):
-                    replace_existing = True
-                    if self._append_revisions_only:
-                        raise AppendRevisionsOnlyViolation(
-                            urlutils.join(self.repository.base, self.branch_path))
-                elif self.old_inv.root.file_id != self.new_root_id:
-                    replace_existing = True
 
             if self.new_root_id in self.old_inv:
                 root_from = self.old_inv.id2path(self.new_root_id)
             else:
                 root_from = None
 
-            replace_existing |= (root_from is not None and root_from != "")
+            if self.old_inv.root is not None and self.old_inv.root.file_id != self.new_root_id:
+                self.root_action = ("replace", self.base_revnum)
 
             try:
                 root = self.editor.open_root(self.base_revnum)
                 branch_editors = self.open_branch_editors(root, bp_parts,
-                    existing_bp_parts, self.base_url, self.base_revnum,
-                    root_from, replace_existing)
+                    self.base_url, self.base_revnum, root_from, self.root_action)
 
                 changed = dir_editor_send_changes(
                         (self.old_inv, self.base_url, self.base_revnum),
@@ -969,6 +942,16 @@ class SvnCommitBuilder(RootCommitBuilder):
 
 
 def send_svn_file_text_delta(tree, base_ie, ie, editor):
+    """Send the file text delta to a Subversion editor object.
+
+    Tree can either be a native Subversion tree of some sort,
+    in which case the optimized Subversion functions will be used,
+    or another tree.
+
+    :param tree: Tree
+    :param base_ie: Base inventory entry
+    :param editor: Editor to report changes to
+    """
     contents = mapping.get_svn_file_contents(tree, ie.kind, ie.file_id)
     try:
         file_editor_send_content_changes(contents, editor)
@@ -1007,3 +990,6 @@ def file_editor_send_prop_changes(base_ie, ie, editor):
         else:
             value = None
         editor.change_prop(properties.PROP_SPECIAL, value)
+
+
+

@@ -33,13 +33,13 @@ from bzrlib.errors import (
     )
 from bzrlib.inventory import Inventory
 from bzrlib.osutils import (
-    has_symlinks,
     supports_executable,
     )
 from bzrlib.repository import Repository
 from bzrlib.tests import (
     TestCase,
-    TestSkipped,
+    SymlinkFeature,
+    UnicodeFilenameFeature,
     )
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
@@ -96,11 +96,9 @@ class TestWorkingTree(SubversionTestCase):
         self.assertFalse(inv.has_filename("aa"))
 
     def test_special_char(self):
+        self.requireFeature(UnicodeFilenameFeature)
         self.make_client('a', 'dc')
-        try:
-            self.build_tree({u"dc/I²C": "data"})
-        except UnicodeError:
-            raise TestSkipped("This platform does not support unicode paths")
+        self.build_tree({u"dc/I²C": "data"})
         self.client_add("dc/I²C")
         tree = WorkingTree.open("dc")
         inv = tree.read_working_inventory()
@@ -134,10 +132,8 @@ class TestWorkingTree(SubversionTestCase):
         self.assertFalse(inv.has_filename("aa"))
 
     def test_smart_add_unicode(self):
-        try:
-            self.make_client('a', u'dć'.encode(osutils._fs_enc))
-        except (UnicodeDecodeError, UnicodeEncodeError):
-            raise TestSkipped("This platform does not support unicode paths")
+        self.requireFeature(UnicodeFilenameFeature)
+        self.make_client('a', u'dć'.encode(osutils._fs_enc))
         self.build_tree({u"dć/bé".encode(osutils._fs_enc): "data"})
         tree = WorkingTree.open(u"dć")
         tree.smart_add([u"dć/bé"])
@@ -557,8 +553,7 @@ class TestWorkingTree(SubversionTestCase):
         self.assertTrue(inv[inv.path2id("bla")].executable)
 
     def test_symlink(self):
-        if not has_symlinks():
-            return
+        self.requireFeature(SymlinkFeature)
         self.make_client('a', 'dc')
         os.symlink("target", "dc/bla")
         self.client_add("dc/bla")
@@ -798,13 +793,10 @@ class TestWorkingTree(SubversionTestCase):
         self.assertRaises(OutOfDateTree, lambda: tree.commit("bar"))
 
     def test_unicode_symlink(self):
-        if not has_symlinks():
-            return
+        self.requireFeature(SymlinkFeature)
+        self.requireFeature(UnicodeFilenameFeature)
         repos_url = self.make_client('a', 'dc')
-        try:
-            self.build_tree({u"dc/\U00020001".encode(osutils._fs_enc): ""})
-        except UnicodeError:
-            raise TestSkipped("This platform does not support unicode code paths")
+        self.build_tree({u"dc/\U00020001".encode(osutils._fs_enc): ""})
         os.symlink(u"\U00020001", "dc/a")
         self.build_tree({"dc/b": ""})
         os.symlink("b", u"dc/\U00020002")

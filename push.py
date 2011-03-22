@@ -33,6 +33,7 @@ from bzrlib import (
     )
 from bzrlib.errors import (
     AlreadyBranchError,
+    AppendRevisionsOnlyViolation,
     BzrError,
     DivergedBranches,
     NoSuchRevision,
@@ -75,7 +76,19 @@ from bzrlib.plugins.svn.transport import (
     )
 
 
-def create_prefix(transport, prefix, already_present):
+class SubversionBranchDiverged(DivergedBranches):
+
+    _fmt = "Subversion branch at %(branch_path)s has diverged from %(source_repo)r."
+
+    def __init__(self, source_repo, source_revid, target_repo, branch_path, target_revid):
+        self.branch_path = branch_path
+        self.target_repo = target_repo
+        self.source_repo = source_repo
+        self.source_revid = source_revid
+        self.target_revid = target_revid
+
+
+def create_branch_container(transport, prefix, already_present):
     """Create a branch prefix.
 
     :param transport: Repository root transport
@@ -124,9 +137,8 @@ def _filter_iter_changes(iter_changes):
 def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                        base_revid, revision_id, rev,
                        base_foreign_revid, base_mapping,
-                       push_metadata=True,
-                       append_revisions_only=True,
-                       overwrite_revnum=None):
+                       push_metadata,
+                       root_action):
     """Push a revision tree into a target repository.
 
     :param graph: Repository graph.
@@ -138,8 +150,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
     :param revision_id: Revision id to push.
     :param rev: Revision object of revision to push.
     :param push_metadata: Whether to push metadata.
-    :param append_revisions_only: Append revisions only.
-    :param overwrite_revnum: Oldest svn revision that may be overwritten
+    :param root_action: Action to take on the tree root
     :return: Revision id of newly created revision.
     """
     assert rev.revision_id in (None, revision_id)
@@ -168,13 +179,11 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                                config, rev.timestamp,
                                rev.timezone, rev.committer, rev.properties,
                                revision_id, base_foreign_revid, base_mapping,
-                               base_tree.inventory,
+                               root_action, base_tree.inventory,
                                push_metadata=push_metadata,
                                graph=graph, opt_signature=opt_signature,
                                texts=source_repo.texts,
-                               append_revisions_only=append_revisions_only,
-                               testament=testament,
-                               overwrite_revnum=overwrite_revnum)
+                               testament=testament)
     try:
         builder.will_record_deletes()
         iter_changes = old_tree.iter_changes(base_tree)
@@ -193,7 +202,10 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
             raise DivergedBranches(source_repo, target_repo)
         raise
     except ChangesRootLHSHistory:
-        raise BzrError("Unable to push revision %r because it would change the ordering of existing revisions on the Subversion repository root. Use rebase and try again or push to a non-root path" % revision_id)
+        raise BzrError("Unable to push revision %r because it would change "
+            "the ordering of existing revisions on the Subversion repository "
+            "root. Use rebase and try again or push to a non-root path" %
+            revision_id)
 
     return revid, (builder.result_foreign_revid, builder.mapping)
 
@@ -209,11 +221,11 @@ class InterToSvnRepository(InterRepository):
         # Dictionary: revid -> branch_path -> (foreign_revid, mapping)
         self._foreign_info = defaultdict(dict)
 
-    def _target_has_revision(self, revid):
+    def _target_has_revision(self, revid, project=None):
         """Slightly optimized version of self.target.has_revision()."""
         if revid in self._foreign_info:
             return True
-        return self.target.has_revision(revid)
+        return self.target.has_revision(revid, project=project)
 
     def _get_foreign_revision_info(self, revid, path=None):
         """Find the revision info for a revision id.
@@ -240,43 +252,177 @@ class InterToSvnRepository(InterRepository):
         """See InterRepository._get_repo_format_to_test()."""
         return None
 
+    def _get_root_action(self, path, parent_ids, overwrite,
+                         append_revisions_only, create_prefix=False):
+        """Determine the action to take on the tree root.
+
+        :param path: Branch path
+        :param parent_ids: Parent ids
+        :param overwrite: Whether to overwrite any existing history
+        :param create_prefix: Whether to create the prefix for path
+        :return: root_action tuple for use with SvnCommitBuilder
+        """
+        assert not append_revisions_only or not overwrite
+        bp_parts = path.split("/")
+        existing_bp_parts = check_dirs_exist(self.target.transport, bp_parts,
+            -1)
+        if (len(existing_bp_parts) != len(bp_parts) and
+            len(existing_bp_parts)+1 != len(bp_parts)):
+            existing_path = "/".join(existing_bp_parts)
+            if create_prefix:
+                create_branch_container(self.target.transport, path,
+                    existing_path)
+                return ("create", )
+            raise MissingPrefix(path, existing_path)
+        if len(existing_bp_parts) < len(bp_parts):
+            # Branch doesn't exist yet
+            return ("create", )
+        (revmeta, mapping) = self.target._iter_reverse_revmeta_mapping_history(
+            path, self.target.get_latest_revnum(), to_revnum=0,
+            mapping=self.target.get_mapping()).next()
+        if parent_ids == [] or parent_ids == [NULL_REVISION]:
+            return ("replace", revmeta.revnum)
+        else:
+            if revmeta.get_revision_id(mapping) != parent_ids[0]:
+                if append_revisions_only:
+                    raise AppendRevisionsOnlyViolation(
+                        urlutils.join(self.target.base, path))
+                return ("replace", revmeta.revnum)
+            else:
+                return ("open", )
+
+    def _otherline_missing_revisions(self, graph, stop_revision, project, overwrite):
+        """Find the revisions missing on the mainline.
+
+        :param stop_revision: Revision to stop fetching at.
+        :param overwrite: Whether or not the existing data should be
+            overwritten
+        """
+        missing = []
+        for revid in graph.iter_lefthand_ancestry(stop_revision,
+                (NULL_REVISION, None)):
+            if self._target_has_revision(revid, project=project):
+                missing.reverse()
+                return missing
+            missing.append(revid)
+        if not overwrite:
+            return None
+        else:
+            missing.reverse()
+            return missing
+
+    def _todo(self, target_branch, last_revid, last_foreign_revid, stop_revision, project,
+            overwrite, append_revisions_only):
+        graph = self.get_graph()
+        todo = []
+        if append_revisions_only:
+            for revid in graph.iter_lefthand_ancestry(stop_revision,
+                    (NULL_REVISION, None)):
+                if revid == last_revid:
+                    todo.reverse()
+                    break
+                todo.append(revid)
+            else:
+                url = urlutils.join(self.target.base, target_branch)
+                raise AppendRevisionsOnlyViolation(url)
+            return todo, ("open", )
+        else:
+            for revid in graph.iter_lefthand_ancestry(stop_revision, (NULL_REVISION, None)):
+                if self._target_has_revision(revid, project=project):
+                    todo.reverse()
+                    break
+                todo.append(revid)
+            return todo, ("replace", last_foreign_revid[2])
+
+    def push_branch(self, target_branch_path, target_config, (last_revmeta, mapping), stop_revision, layout, project, overwrite, push_metadata, push_merged):
+        old_last_revid = last_revmeta.get_revision_id(mapping)
+        graph = self.get_graph()
+        if not overwrite:
+            heads = graph.heads([old_last_revid, stop_revision])
+            if heads == set([old_last_revid]):
+                # stop-revision is ancestor of current tip
+                return { stop_revision: (stop_revision, None),
+                         old_last_revid: (old_last_revid, None)}
+            if heads == set([old_last_revid, stop_revision]):
+                raise SubversionBranchDiverged(self.source, stop_revision,
+                        self.target, target_branch_path, old_last_revid)
+        return self.push_todo(old_last_revid, last_revmeta.get_foreign_revid(),
+            mapping, stop_revision, layout, project,
+            target_branch_path, target_config,
+            push_merged=push_merged,
+            overwrite=overwrite, push_metadata=push_metadata)
+
+    def push_todo(self, last_revid, last_foreign_revid, mapping, stop_revision, layout, project, target_branch,
+            target_config, push_merged, overwrite, push_metadata):
+        todo, root_action = self._todo(target_branch, last_revid, last_foreign_revid, stop_revision, project, overwrite, append_revisions_only=target_config.get_append_revisions_only(not overwrite))
+        if (mapping.supports_hidden and
+            self.target.has_revision(stop_revision)):
+            # FIXME: Only do this if there is no existing branch, or if
+            # append_revisions_only=False
+            # Revision is already present in the repository, so just
+            # copy from there.
+            (revid, foreign_revinfo) = create_branch_with_hidden_commit(
+                self.target, target_branch, stop_revision,
+                set_metadata=push_metadata, deletefirst=True)
+            return { stop_revision: (revid, foreign_revinfo) }
+        else:
+            revid_map = self.push_revision_series(
+                todo, layout, project,
+                target_branch, target_config,
+                push_merged, root_action=root_action,
+                push_metadata=push_metadata)
+            return revid_map
+
     def push_revision_series(self, todo, layout, project, target_branch,
-            target_config, push_merged, overwrite):
+            target_config, push_merged, root_action, push_metadata):
         """Push a series of revisions into a Subversion repository.
 
         :param todo: New revisions to push
+        :return: Dictionary mapping revision ids to tuples
+            with new revision id and foreign info.
         """
-        append_revisions_only = self.get_append_revisions_only(target_config,
-            overwrite)
         assert todo != []
+        revid_map = {}
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for rev in self.source.get_revisions(todo):
                 pb.update("pushing revisions", todo.index(rev.revision_id),
                           len(todo))
-                last = self.push_revision_inclusive(target_branch,
-                    target_config, rev, overwrite=overwrite,
-                    append_revisions_only=append_revisions_only,
-                    push_merged=push_merged, project=project, layout=layout)
-                append_revisions_only = True
-                overwrite = False
-            return last
+                if len(rev.parent_ids) == 0:
+                    base_revid = NULL_REVISION
+                else:
+                    base_revid = rev.parent_ids[0]
+                try:
+                    base_foreign_info = revid_map[base_revid][1]
+                except KeyError:
+                    base_foreign_info = self._get_foreign_revision_info(
+                        base_revid, target_branch)
+                last_revid, last_foreign_info = self.push_revision_inclusive(
+                    target_branch, target_config, rev, root_action=root_action,
+                    base_foreign_info=base_foreign_info,
+                    push_metadata=push_metadata, push_merged=push_merged,
+                    project=project, layout=layout)
+                revid_map[rev.revision_id] = (last_revid, last_foreign_info)
+                root_action = ("open", )
+            return revid_map
         finally:
             pb.finished()
 
     def push_revision_inclusive(self, target_path, target_config, rev,
-            append_revisions_only, push_merged, layout, project,
-            push_metadata=True, overwrite=False):
-        """Push a revision including ancestors."""
+            push_merged, layout, project, root_action, push_metadata,
+            base_foreign_info):
+        """Push a revision including ancestors.
+
+        :return: Tuple with pushed revision id and foreign revision id
+        """
         if push_merged and len(rev.parent_ids) > 1:
             self.push_ancestors(layout, project, rev.parent_ids)
         return self.push_single_revision(target_path, target_config, rev,
-            overwrite=overwrite, append_revisions_only=append_revisions_only,
-            push_metadata=push_metadata)
+            push_metadata=push_metadata, root_action=root_action,
+            base_foreign_info=base_foreign_info)
 
     def push_single_revision(self, target_path, target_config, rev,
-            append_revisions_only, push_metadata=True, base_revid=None,
-            overwrite=False):
+            push_metadata, root_action, base_foreign_info):
         """Push a single revision.
 
         :param target_path: Target branch path in the svn repository
@@ -286,37 +432,24 @@ class InterToSvnRepository(InterRepository):
         :param push_metadata: Whether to push svn-specific metadata
         :param base_revid: Base revision (used when pushing a custom base),
             e.g. during dpush.
-        :param overwrite: Whether to overwrite the existing branch
+        :param delete_root_revnum: If not None, maximum revision of the root
+            to delete
         :return: Tuple with pushed revision id and foreign revision id
         """
-        if base_revid is None:
-            if rev.parent_ids:
-                base_revid = rev.parent_ids[0]
-            else:
-                base_revid = NULL_REVISION
-        base_foreign_revid, base_mapping = self._get_foreign_revision_info(
-            base_revid, target_path)
+        (base_foreign_revid, base_mapping) = base_foreign_info
         if rev.parent_ids:
             base_revid = rev.parent_ids[0]
         else:
             base_revid = NULL_REVISION
+
         mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
-        # FIXME: overwrite doesn't quite make sense here
-        if overwrite:
-            overwrite_revnum = self.target.get_latest_revnum()
-            append_revisions_only = False
-        elif base_foreign_revid is not None:
-            overwrite_revnum = base_foreign_revid[2]
-        else:
-            overwrite_revnum = None
         self.source.lock_read()
         try:
             revid, foreign_info = push_revision_tree(self.get_graph(),
                 self.target, target_path, target_config, self.source,
                 base_revid, rev.revision_id, rev, base_foreign_revid,
                 base_mapping, push_metadata=push_metadata,
-                append_revisions_only=append_revisions_only,
-                overwrite_revnum=overwrite_revnum)
+                root_action=root_action)
         finally:
             self.source.unlock()
         assert revid == rev.revision_id or not push_metadata
@@ -328,7 +461,7 @@ class InterToSvnRepository(InterRepository):
                 self.target.uuid)
 
     def push_new_branch_first_revision(self, target_branch_path,
-            stop_revision, push_metadata=True, append_revisions_only=False):
+            stop_revision, mapping, push_metadata=True, append_revisions_only=False):
         """Push a revision into Subversion, creating a new branch.
 
         :param graph: Repository graph.
@@ -346,21 +479,26 @@ class InterToSvnRepository(InterRepository):
         else:
             start_revid_parent = rev.parent_ids[0]
         # If this is just intended to create a new branch
-        mapping = self.target.get_mapping()
-        if (start_revid_parent != NULL_REVISION and stop_revision == start_revid and (mapping.supports_hidden or not push_metadata) and not append_revisions_only):
+        if (start_revid_parent != NULL_REVISION and
+            stop_revision == start_revid and
+            (mapping.supports_hidden or not push_metadata) and
+            not append_revisions_only):
             if (self._target_has_revision(start_revid) or
                 start_revid == NULL_REVISION):
                 revid = start_revid
             else:
                 revid = start_revid_parent
             revid, foreign_info = create_branch_with_hidden_commit(self.target,
-                target_branch_path, revid, set_metadata=push_metadata, deletefirst=None)
+                target_branch_path, revid, set_metadata=push_metadata,
+                deletefirst=False)
         else:
+            start_parent_foreign_info = self._get_foreign_revision_info(
+                start_revid_parent)
             revid, foreign_info = self.push_single_revision(target_branch_path,
                 self._get_branch_config(target_branch_path),
                 rev, push_metadata=push_metadata,
-                base_revid=start_revid_parent,
-                overwrite=False, append_revisions_only=append_revisions_only)
+                base_foreign_info=start_parent_foreign_info,
+                root_action=("create", ))
         self._add_path_info(target_branch_path, revid, foreign_info)
         return revid, foreign_info
 
@@ -380,12 +518,10 @@ class InterToSvnRepository(InterRepository):
             ancestors = graph.find_unique_ancestors(parent_revid, [parent_revids[0]])
             unique_ancestors.update(ancestors)
         for x in self.get_graph().iter_topo_order(unique_ancestors):
-            if self._target_has_revision(x):
+            if self._target_has_revision(x, project):
                 continue
             rev = self.source.get_revision(x)
             rhs_branch_path = determine_branch_path(rev, layout, project)
-            # FIXME: See if the existing revision at rhs_branch_path is already
-            # at base revision
             mutter("pushing ancestor %r to %s", x, rhs_branch_path)
 
             if rev.parent_ids:
@@ -403,18 +539,15 @@ class InterToSvnRepository(InterRepository):
             target_config = self._get_branch_config(bp)
             push_merged = (layout.push_merged_revisions(target_project) and
                 target_config.get_push_merged_revisions())
-            append_revisions_only = self.get_append_revisions_only(target_config)
-            try:
-                self.push_revision_inclusive(bp, target_config, rev,
-                    overwrite=False, push_metadata=True, push_merged=push_merged,
-                    layout=layout, project=target_project,
-                    append_revisions_only=append_revisions_only)
-            except MissingPrefix, e:
-                create_prefix(self.target.transport, e.path, e.existing_path)
-                self.push_revision_inclusive(bp, target_config, rev,
-                    overwrite=False, push_metadata=True, push_merged=push_merged,
-                    layout=layout, project=target_project,
-                    append_revisions_only=append_revisions_only)
+            root_action = self._get_root_action(bp, rev.parent_ids,
+                overwrite=True,
+                append_revisions_only=target_config.get_append_revisions_only(False),
+                create_prefix=True)
+            self.push_revision_inclusive(bp, target_config, rev,
+                push_metadata=True, push_merged=push_merged,
+                layout=layout, project=target_project,
+                root_action=root_action,
+                base_foreign_info=(base_foreign_revid, base_mapping))
 
     def push_new_branch(self, layout, project, target_branch_path,
         stop_revision, push_merged=None, overwrite=False):
@@ -434,20 +567,14 @@ class InterToSvnRepository(InterRepository):
         if push_merged is None:
             push_merged = (layout.push_merged_revisions(project) and
                            target_config.get_push_merged_revisions())
-        begin_revid, _ = self.push_new_branch_first_revision(
-            target_branch_path, stop_revision, append_revisions_only=True)
-        todo = []
-        for revid in self.source.iter_reverse_revision_history(stop_revision):
-            if revid == begin_revid:
-                break
-            todo.append(revid)
-        todo.reverse()
-        if todo != []:
-            self.push_revision_series(todo, layout, project,
-                target_branch_path, target_config, push_merged, overwrite)
-
-    def get_append_revisions_only(self, target_config, overwrite=False):
-        return target_config.get_append_revisions_only(not overwrite)
+        mapping = self.target.get_mapping()
+        begin_revid, begin_foreign_info = self.push_new_branch_first_revision(
+            target_branch_path, stop_revision, mapping, append_revisions_only=True)
+        if stop_revision != begin_revid:
+            self.push_todo(
+                begin_revid, begin_foreign_info[0], mapping, stop_revision, layout, project,
+                target_branch_path, target_config, push_merged,
+                overwrite=False, push_metadata=True)
 
     def get_graph(self):
         if self._graph is None:
@@ -459,17 +586,18 @@ class InterToSvnRepository(InterRepository):
         self.source.lock_read()
         try:
             assert revision_id is not None, "fetching all revisions not supported"
-            # Go back over the LHS parent until we reach a revid we know
+            graph = self.get_graph()
             todo = []
-            for revision_id in self.source.iter_reverse_revision_history(revision_id):
-                if self._target_has_revision(revision_id):
+            # Go back over the LHS parent until we reach a revid we know
+            for revid in graph.iter_lefthand_ancestry(revision_id,
+                    (NULL_REVISION, None)):
+                if self._target_has_revision(revid):
                     break
-                todo.append(revision_id)
-            if todo == []:
-                # Nothing to do
+                todo.append(revid)
+            else:
                 return
-            todo.reverse()
             mutter("pushing %r into svn", todo)
+            base_foreign_info = None
             layout = self.target.get_layout()
             for rev in self.source.get_revisions(todo):
                 if pb is not None:
@@ -477,12 +605,15 @@ class InterToSvnRepository(InterRepository):
                         len(todo))
                 mutter('pushing %r', rev.revision_id)
 
-                if rev.parent_ids:
-                    parent_revid = rev.parent_ids[0]
-                else:
-                    parent_revid = NULL_REVISION
+                if base_foreign_info is None:
+                    if rev.parent_ids:
+                        base_revid = rev.parent_ids[0]
+                    else:
+                        base_revid = NULL_REVISION
+                    base_foreign_info  = self._get_foreign_revision_info(
+                        base_revid)
 
-                base_foreign_revid, base_mapping = self._get_foreign_revision_info(parent_revid)
+                (base_foreign_revid, base_mapping) = base_foreign_info
                 if base_foreign_revid is None:
                     target_project = None
                 else:
@@ -491,10 +622,13 @@ class InterToSvnRepository(InterRepository):
                 target_config = self._get_branch_config(bp)
                 push_merged = (layout.push_merged_revisions(target_project) and
                     target_config.get_push_merged_revisions())
-                self.push_revision_inclusive(bp, target_config, rev,
-                    overwrite=False, push_metadata=True, push_merged=push_merged,
-                    layout=layout, project=target_project,
-                    append_revisions_only=self.get_append_revisions_only(target_config))
+                root_action = self._get_root_action(bp, rev.parent_ids, overwrite=False,
+                    append_revisions_only=target_config.get_append_revisions_only(True), create_prefix=True)
+                (pushed_revid, base_foreign_info) = self.push_revision_inclusive(bp,
+                    target_config, rev, push_metadata=True,
+                    root_action=root_action, layout=layout,
+                    project=target_project,
+                    base_foreign_info=base_foreign_info)
         finally:
             self.source.unlock()
 
@@ -526,7 +660,8 @@ def determine_branch_path(rev, layout, project=None):
     :param project: Optional project name, as used by the layout
     :return: Branch path string
     """
-    nick = (rev.properties.get('branch-nick') or "merged").encode("utf-8").replace("/","_")
+    nick = (rev.properties.get('branch-nick') or "merged")
+    nick = nick.encode("utf-8").replace("/","_")
     if project is None:
         return layout.get_branch_path(nick)
     else:
@@ -534,8 +669,7 @@ def determine_branch_path(rev, layout, project=None):
 
 
 def create_branch_with_hidden_commit(repository, branch_path, revid,
-                                     set_metadata=True,
-                                     deletefirst=False):
+                                     set_metadata=True, deletefirst=False):
     """Create a new branch using a simple "svn cp" operation.
 
     :param repository: Repository in which to create the branch.
@@ -579,7 +713,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
 
     bp_parts = branch_path.split("/")
     existing_bp_parts = check_dirs_exist(repository.transport, bp_parts, -1)
-    if (len(bp_parts) not in (len(existing_bp_parts), len(existing_bp_parts)+1)):
+    if len(bp_parts) not in (len(existing_bp_parts), len(existing_bp_parts)+1):
         raise MissingPrefix("/".join(bp_parts), "/".join(existing_bp_parts))
 
     if deletefirst is None:

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2006-2009 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2006-2011 Jelmer Vernooij <jelmer@samba.org>
+# Copyright (C) 2011 Canonical Ltd.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,14 +19,18 @@
 
 """Subversion repository tests."""
 
+from bzrlib.branch import (
+    Branch,
+    )
 from bzrlib.bzrdir import (
     BzrDir,
     format_registry,
     )
 from bzrlib.config import GlobalConfig
 from bzrlib.errors import (
-    UninitializableFormat,
+    AppendRevisionsOnlyViolation,
     BadConversionTarget,
+    UninitializableFormat,
     )
 from bzrlib.repository import Repository
 from bzrlib.tests import TestCase
@@ -33,6 +38,10 @@ from bzrlib.tests import TestCase
 from bzrlib.plugins.svn.tests import (
     SubversionTestCase,
     )
+from bzrlib.plugins.svn.branch import (
+    SvnBranch,
+    )
+from bzrlib.plugins.svn.layout.standard import TrunkLayout
 from bzrlib.plugins.svn.repository import (
     SvnRepositoryFormat,
     )
@@ -153,3 +162,94 @@ class ForeignTestsRepositoryFactory(object):
     def make_repository(self, transport):
         subvertpy.repos.create(transport.local_abspath("."))
         return BzrDir.open_from_transport(transport).open_repository()
+
+
+class GetCommitBuilderTests(SubversionTestCase):
+
+    def setUp(self):
+        super(GetCommitBuilderTests, self).setUp()
+        self.repos_url = self.make_repository("d")
+        dc = self.get_commit_editor(self.repos_url)
+        dc.add_dir('trunk')
+        dc.close()
+        self.branch = Branch.open("d/trunk")
+
+    def test_simple(self):
+        cb = self.branch.get_commit_builder([self.branch.last_revision()])
+        cb.commit("MSG")
+
+        log = self.client_log(self.repos_url, 0, 2)
+        self.assertEquals("MSG", log[2][3])
+        self.assertEquals({"/trunk": ('M', None, -1)}, log[2][0])
+
+    def test_diverged(self):
+        cb = self.get_commit_editor(self.repos_url)
+        branches = cb.add_dir("branches")
+        branches.add_dir("branches/dir")
+        cb.close()
+
+        otherrevid = self.branch.repository.generate_revision_id(2, "branches/dir",
+            self.branch.mapping)
+
+        other_tree = self.branch.repository.revision_tree(otherrevid)
+
+        self.branch.get_config().set_user_option("append_revisions_only", "False")
+
+        cb = self.branch.get_commit_builder([otherrevid])
+        list(cb.record_iter_changes(other_tree, otherrevid, []))
+        cb.finish_inventory()
+        cb.commit("MSG")
+
+        log = self.client_log(self.repos_url, 0, 3)
+        self.assertEquals("MSG", log[3][3])
+        self.assertEquals({"/trunk": ('R', '/branches/dir', 2)}, log[3][0])
+
+    def test_append_only(self):
+        cb = self.get_commit_editor(self.repos_url)
+        branches = cb.add_dir("branches")
+        branches.add_dir("branches/dir")
+        cb.close()
+
+        otherrevid = self.branch.repository.generate_revision_id(2, "branches/dir",
+            self.branch.mapping)
+
+        self.assertRaises(AppendRevisionsOnlyViolation,
+            self.branch.get_commit_builder,
+            [otherrevid, self.branch.last_revision()])
+
+    def test_create_new_branch(self):
+        self.branch.repository.set_layout(TrunkLayout())
+
+        self.branch.get_config().set_user_option("append_revisions_only", "False")
+
+        cb = self.branch.get_commit_builder([])
+        list(cb.record_iter_changes(self.branch.repository.revision_tree("null:"),
+            "null:", [("rootid", (None, ""), (False, True), (False, True),
+             (None, None), ("", ""), (None, "directory"), (None, False))]))
+        cb.finish_inventory()
+        cb.commit("FOO")
+
+        log = self.client_log(self.repos_url, 0, 2)
+        self.assertEquals("FOO", log[2][3])
+        self.assertEquals({"/trunk": ('R', None, -1)}, log[2][0])
+
+    def test_based_on_older(self):
+        first_rev = self.branch.last_revision()
+
+        self.branch = Branch.open("d/trunk")
+
+        cb = self.get_commit_editor(self.repos_url + "/trunk")
+        cb.add_dir("foo")
+        cb.close()
+
+        self.branch.repository.set_layout(TrunkLayout())
+
+        self.branch.get_config().set_user_option("append_revisions_only", "False")
+
+        cb = self.branch.get_commit_builder([first_rev])
+        cb.finish_inventory()
+        cb.commit("FOO")
+
+        log = self.client_log(self.repos_url, 0, 3)
+        self.assertEquals("FOO", log[3][3])
+        self.assertEquals({"/trunk": ('R', "/trunk", 1)}, log[3][0])

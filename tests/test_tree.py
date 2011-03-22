@@ -22,13 +22,15 @@ from bzrlib.inventory import (
     Inventory,
     TreeReference,
     )
-from bzrlib.osutils import has_symlinks
 from bzrlib.repository import Repository
 from bzrlib.revision import (
     NULL_REVISION,
     CURRENT_REVISION,
     )
-from bzrlib.tests import TestSkipped
+from bzrlib.tests import (
+    SymlinkFeature,
+    TestSkipped,
+    )
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn.layout.standard import RootLayout
@@ -144,8 +146,6 @@ class TestBasisTree(SubversionTestCase):
                          tree.inventory[tree.inventory.path2id("file")].symlink_target)
 
     def test_annotate_iter(self):
-        if subvertpy.__version__ < (0, 6, 5):
-            raise TestSkipped("Unable to run without subvertpy >= 0.6.4")
         repos_url = self.make_client("d", "dc")
 
         dc = self.get_commit_editor(repos_url)
@@ -188,8 +188,7 @@ class TestBasisTree(SubversionTestCase):
         self.assertEquals("bloe", props["bzrbla"])
 
     def test_executable_link(self):
-        if not has_symlinks():
-            return
+        self.requireFeature(SymlinkFeature)
         repos_url = self.make_client("d", "dc")
 
         dc = self.get_commit_editor(repos_url)
@@ -315,8 +314,7 @@ class TestSvnRevisionTree(SubversionTestCase):
         self.assertTrue(inventory[inventory.path2id("foo/bla")].executable)
 
     def test_symlink(self):
-        if not has_symlinks():
-            return
+        self.requireFeature(SymlinkFeature)
         os.symlink('foo/bla', 'dc/bar')
         self.client_add('dc/bar')
         self.client_commit("dc", "My Message")

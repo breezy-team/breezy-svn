@@ -77,6 +77,7 @@ from bzrlib.plugins.svn.fetch import (
     )
 from bzrlib.plugins.svn.push import (
     InterToSvnRepository,
+    SubversionBranchDiverged,
     create_branch_with_hidden_commit,
     )
 from bzrlib.plugins.svn.config import (
@@ -407,68 +408,29 @@ class SvnBranch(ForeignBranch):
     def set_revision_history(self, rev_history):
         """See Branch.set_revision_history()."""
         if rev_history == []:
-            # FIXME: Just create a new empty branch?
-            raise NotImplementedError("set_revision_history can't set empty history")
+            self._set_last_revision(NULL_REVISION)
+        else:
+            self._set_last_revision(rev_history[-1])
+
+    def set_last_revision_info(self, revno, revid):
+        """See Branch.set_last_revision_info()."""
+        # FIXME: 
+
+    def _set_last_revision(self, revid):
         try:
-            rev = self.repository.get_revision(rev_history[-1])
+            rev = self.repository.get_revision(revid)
         except NoSuchRevision:
-            raise NotImplementedError("set_revision_history can't add ghosts")
+            raise NotImplementedError("set_last_revision_info can't add ghosts")
         if rev.parent_ids:
             base_revid = rev.parent_ids[0]
         else:
             base_revid = NULL_REVISION
         interrepo = InterToSvnRepository(self.repository, self.repository)
+        base_foreign_info = interrepo._get_foreign_revision_info(base_revid, self.get_branch_path())
         interrepo.push_single_revision(self.get_branch_path(), self.get_config(), rev,
-            overwrite=True, append_revisions_only=False)
+            push_metadata=True, root_action=("replace", self.get_revnum()),
+            base_foreign_info=base_foreign_info)
         self._clear_cached_state()
-
-    def set_last_revision_info(self, revno, revid):
-        """See Branch.set_last_revision_info()."""
-
-    def _missing_revisions(self, other_repo, stop_revision, overwrite=False):
-        todo = self._mainline_missing_revisions(other_repo, stop_revision)
-        if todo is not None:
-            return todo
-        # Not possible to add cleanly onto mainline, perhaps need a replace
-        # operation
-        return self._otherline_missing_revisions(other_repo, stop_revision,
-                                                 overwrite)
-
-    def _mainline_missing_revisions(self, other_repo, stop_revision):
-        """Find the revisions missing on the mainline.
-
-        :param other: Other branch to retrieve revisions from.
-        :param stop_revision: Revision to stop fetching at.
-        """
-        missing = []
-        lastrevid = self.last_revision()
-        for revid in other_repo.iter_reverse_revision_history(stop_revision):
-            if lastrevid == revid:
-                missing.reverse()
-                return missing
-            missing.append(revid)
-        return None
-
-    def _otherline_missing_revisions(self, other_repo, stop_revision,
-                                     overwrite=False):
-        """Find the revisions missing on the mainline.
-
-        :param other: Other branch to retrieve revisions from.
-        :param stop_revision: Revision to stop fetching at.
-        :param overwrite: Whether or not the existing data should be
-            overwritten
-        """
-        missing = []
-        for revid in other_repo.iter_reverse_revision_history(stop_revision):
-            if self.repository.has_revision(revid, project=self.project):
-                missing.reverse()
-                return missing
-            missing.append(revid)
-        if not overwrite:
-            return None
-        else:
-            missing.reverse()
-            return missing
 
     def last_revision_info(self):
         """See Branch.last_revision_info()."""
@@ -551,13 +513,9 @@ class SvnBranch(ForeignBranch):
 
     def import_last_revision_info(self, source_repo, revno, revid):
         interrepo = InterToSvnRepository(source_repo, self.repository)
-        todo = self._missing_revisions(source_repo, revid, overwrite=False)
-        if todo is None:
-            raise DivergedBranches(self, None)
-        assert todo != []
-        interrepo.push_revision_series(todo, self.layout, self.project,
-            self.get_branch_path(), self.get_config(),
-            self.get_push_merged_revisions(), overwrite=False)
+        last_revmeta, mapping = self.last_revmeta()
+        interrepo.push_todo(last_revmeta.get_revision_id(mapping), last_revmeta.get_foreign_revid(), mapping, revid, self.layout, self.project, self.get_branch_path(), self.get_config(),
+                push_merged=None, overwrite=False, push_metadata=True)
 
     def import_last_revision_info_and_tags(self, source, revno, revid):
         self.import_last_revision_info(source.repository, revno, revid)
@@ -884,72 +842,37 @@ class InterOtherSvnBranch(InterBranch):
             self.target.get_branch_path(), self.target.get_revnum())[0]
         return tree_contents == {}
 
-    def _todo(self, graph, stop_revision, overwrite=False):
+    def _push(self, stop_revision, overwrite, push_metadata, push_merged=None):
         old_last_revid = self.target.last_revision()
-        if not graph.is_ancestor(old_last_revid, stop_revision):
-            if graph.is_ancestor(stop_revision, old_last_revid):
-                return []
-            if not overwrite:
-                if self._target_is_empty(graph, old_last_revid):
-                    raise PushToEmptyBranch(self.target, self.source)
-                raise DivergedBranches(self.target, self.source)
-        todo = self.target._missing_revisions(self.source.repository,
-            stop_revision, overwrite)
-        if todo is None:
+        if old_last_revid == stop_revision:
+            return { old_last_revid: (old_last_revid, None) }
+        if push_merged is None:
+            push_merged = self.target.get_push_merged_revisions()
+        interrepo = InterToSvnRepository(
+            self.source.repository, self.target.repository)
+        try:
+            return interrepo.push_branch(self.target.get_branch_path(),
+                    self.target.get_config(), self.target.last_revmeta(),
+                    stop_revision=stop_revision, overwrite=overwrite,
+                    push_metadata=push_metadata, push_merged=push_merged,
+                    layout=self.target.layout, project=self.target.project)
+        except SubversionBranchDiverged, e:
+            if self._target_is_empty(interrepo.get_graph(), e.target_revid):
+                raise PushToEmptyBranch(self.target, self.source)
             raise DivergedBranches(self.target, self.source)
-        return todo
-
-    def _get_interrepo(self, graph):
-        interrepo = InterToSvnRepository(self.source.repository,
-                self.target.repository, graph)
-        # Add the current branch path as a hint, since it's very likely we'll
-        # need it as base for new revisions that will be pushed, and
-        # push should preferably use it over other paths in the
-        # repository that contain the same data.
-        last_branch_path = self.target.get_branch_path()
-        last_revnum = self.target.repository._log.find_latest_change(
-            last_branch_path, self.target.repository.get_latest_revnum())
-        interrepo._add_path_info(self.target.last_revision(),
-            last_branch_path,
-            ((self.target.repository.uuid, last_branch_path, last_revnum), self.target.mapping))
-        return interrepo
 
     def _update_revisions(self, stop_revision=None, overwrite=False,
             graph=None, push_merged=False, override_svn_revprops=None):
         old_last_revid = self.target.last_revision()
         if stop_revision is None:
             stop_revision = ensure_null(self.source.last_revision())
-        if old_last_revid == stop_revision:
-            return old_last_revid, old_last_revid, None
-        # Request graph from other repository, since it's most likely faster
-        # than Subversion
-        graph = self.source.repository.get_graph(self.target.repository)
-        todo = self._todo(graph, stop_revision, overwrite=overwrite)
-        if todo == []:
-            return old_last_revid, old_last_revid, None
-        if push_merged is None:
-            push_merged = self.target.get_push_merged_revisions()
-        if (self.target.mapping.supports_hidden and
-            self.target.repository.has_revision(stop_revision)):
-            # Revision is already present in the repository, so just
-            # copy from there.
-            new_last_revid, new_foreign_info = \
-                create_branch_with_hidden_commit(self.target.repository,
-                    self.target.get_branch_path(), stop_revision,
-                    set_metadata=True, deletefirst=True)
-        else:
-            interrepo = self._get_interrepo(graph)
-            assert todo != []
-            (new_last_revid, new_foreign_info) = interrepo.push_revision_series(
-                todo, self.target.layout, self.target.project,
-                self.target.get_branch_path(), self.target.get_config(),
-                push_merged, overwrite=overwrite)
+        self._push(stop_revision, overwrite=overwrite,
+            push_merged=push_merged, push_metadata=True)
         self.target._clear_cached_state()
-        assert isinstance(new_last_revid, str)
         assert isinstance(old_last_revid, str)
-        return (old_last_revid, new_last_revid, new_foreign_info)
+        return (old_last_revid, self.target.last_revision())
 
-    def _update_revisions_lossy(self, stop_revision=None):
+    def _update_revisions_lossy(self, stop_revision=None, overwrite=False):
         """Push derivatives of the revisions missing from target from source
         into target.
 
@@ -962,43 +885,16 @@ class InterOtherSvnBranch(InterBranch):
         try:
             if stop_revision is None:
                 stop_revision = ensure_null(self.source.last_revision())
-            graph = self.source.repository.get_graph(self.target.repository)
-            todo = self._todo(graph, stop_revision)
-            if todo == []:
-                return { self.source.last_revision(): self.source.last_revision() }
-            revid_map = {}
-            target_branch_path = self.target.get_branch_path()
-            target_config = self.target.get_config()
-            # Request graph from other repository, since it's most likely faster
-            # than Subversion
-            interrepo = self._get_interrepo(graph)
-            pb = ui.ui_factory.nested_progress_bar()
-            try:
-                # FIXME: Call create_branch_with_hidden_commit if the revision
-                # is already present in the target repository ?
-                for rev in self.source.repository.get_revisions(todo):
-                    pb.update("pushing revisions", todo.index(rev.revision_id),
-                              len(todo))
-                    if len(rev.parent_ids) == 0:
-                        base_revid = NULL_REVISION
-                    elif rev.parent_ids[0] in revid_map:
-                        base_revid = revid_map[rev.parent_ids[0]]
-                    else:
-                        base_revid = rev.parent_ids[0]
-                    revid_map[rev.revision_id], _ = interrepo.push_single_revision(
-                        target_branch_path, target_config, rev,
-                        push_metadata=False, base_revid=base_revid,
-                        append_revisions_only=True)
-            finally:
-                pb.finished()
+            revid_map = self._push(stop_revision, overwrite=overwrite,
+                push_metadata=False)
             interrepo = InterFromSvnRepository(self.target.repository,
                                                self.source.repository)
-            interrepo.fetch(revision_id=revid_map[rev.revision_id],
+            interrepo.fetch(revision_id=revid_map[stop_revision][0],
                 mapping=self.target.mapping, project=self.target.project)
             self.target._clear_cached_state()
             assert stop_revision in revid_map
             assert len(revid_map.keys()) > 0
-            return revid_map
+            return dict([(k, v[0]) for (k, v) in revid_map.iteritems()])
         finally:
             self.source.unlock()
 
@@ -1031,7 +927,7 @@ class InterOtherSvnBranch(InterBranch):
         result.source_branch = self.source
         self.source.lock_read()
         try:
-            (result.old_revid, result.new_revid, result.new_foreign_info) = \
+            (result.old_revid, result.new_revid) = \
                 self._update_revisions(stop_revision, overwrite,
                     push_merged=_push_merged,
                     override_svn_revprops=_override_svn_revprops)
@@ -1053,7 +949,7 @@ class InterOtherSvnBranch(InterBranch):
         result.target_branch = self.target
         self.source.lock_read()
         try:
-            (result.old_revid, result.new_revid, result.new_foreign_info) = \
+            (result.old_revid, result.new_revid) = \
                 self._update_revisions(stop_revision, overwrite,
                     push_merged=_push_merged,
                     override_svn_revprops=_override_svn_revprops)
