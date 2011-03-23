@@ -1304,7 +1304,7 @@ class ForeignRevisionInfoTests(InterToSvnRepositoryTestCase):
     def test__target_has_revision(self):
         self.assertTrue(self.interrepo._target_has_revision(NULL_REVISION))
         self.assertFalse(self.interrepo._target_has_revision("foo"))
-        self.interrepo._add_path_info("myrevid", "trunk", ("myuuid", "trunk", 4))
+        self.interrepo._add_path_info("trunk", "myrevid", ("myuuid", "trunk", 4))
         self.assertTrue(self.interrepo._target_has_revision("myrevid"))
 
     def test_foreign_revision_info_null(self):
@@ -1312,21 +1312,21 @@ class ForeignRevisionInfoTests(InterToSvnRepositoryTestCase):
             self.interrepo._get_foreign_revision_info(NULL_REVISION, "apath"))
 
     def test_foreign_revision_info_no_path(self):
-        self.interrepo._add_path_info("myrevid", "trunk", ("myuuid", "trunk", 4))
+        self.interrepo._add_path_info("trunk", "myrevid", ("myuuid", "trunk", 4))
         self.assertEquals(("myuuid", "trunk", 4),
             self.interrepo._get_foreign_revision_info("myrevid"))
 
     def test_foreign_revision_info_available(self):
         # Prefer path if it is available
-        self.interrepo._add_path_info("myrevid", "trunk", ("myuuid", "trunk", 4))
-        self.interrepo._add_path_info("myrevid", "otherpath", ("myuuid", "trunk", 4))
+        self.interrepo._add_path_info("trunk", "myrevid", ("myuuid", "trunk", 4))
+        self.interrepo._add_path_info("otherpath", "myrevid", ("myuuid", "trunk", 4))
         self.assertEquals(("myuuid", "trunk", 4),
             self.interrepo._get_foreign_revision_info("myrevid", "trunk"))
 
     def test_foreign_revision_info_first(self):
         # Prefer path if it is available
-        self.interrepo._add_path_info("myrevid", "anotherpath", ("myuuid", "trunk1", 4))
-        self.interrepo._add_path_info("myrevid", "otherpath", ("myuuid", "trunk2", 4))
+        self.interrepo._add_path_info("anotherpath", "myrevid", ("myuuid", "trunk1", 4))
+        self.interrepo._add_path_info("otherpath", "myrevid", ("myuuid", "trunk2", 4))
         foreign_info = self.interrepo._get_foreign_revision_info("myrevid", "trunk")
         self.assertEquals("myuuid", foreign_info[0])
         self.assertEquals(4, foreign_info[2])

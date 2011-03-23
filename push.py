@@ -356,16 +356,21 @@ class InterToSvnRepository(InterRepository):
             # append_revisions_only=False
             # Revision is already present in the repository, so just
             # copy from there.
-            (revid, foreign_revinfo) = create_branch_with_hidden_commit(
-                self.target, target_branch, stop_revision,
-                set_metadata=push_metadata, deletefirst=True)
-            self._add_path_info(target_branch, revid, foreign_revinfo)
+            (revid, foreign_revinfo) = self.copy_revision(target_branch,
+                stop_revision, set_metadata=push_metadata, deletefirst=True)
             return { stop_revision: (revid, foreign_revinfo) }
         else:
             return self.push_revision_series(
                 todo, layout, project, target_branch, target_config,
                 push_merged, root_action=root_action,
                 push_metadata=push_metadata)
+
+    def copy_revision(self, target_branch, stop_revision, set_metadata, deletefirst):
+        (revid, foreign_revinfo) = create_branch_with_hidden_commit(
+            self.target, target_branch, stop_revision,
+            set_metadata=set_metadata, deletefirst=deletefirst)
+        self._add_path_info(target_branch, revid, foreign_revinfo)
+        return (revid, foreign_revinfo)
 
     def push_revision_series(self, todo, layout, project, target_branch,
             target_config, push_merged, root_action, push_metadata):
@@ -533,10 +538,9 @@ class InterToSvnRepository(InterRepository):
                     revid = start_revid
                 else:
                     revid = start_revid_parent
-                begin_revid, begin_foreign_info = create_branch_with_hidden_commit(
-                    self.target, target_branch_path, revid, set_metadata=push_metadata,
+                begin_revid, begin_foreign_info = self.copy_revision(
+                    target_branch_path, stop_revision=revid, set_metadata=push_metadata,
                     deletefirst=False)
-                self._add_path_info(target_branch_path, begin_revid, begin_foreign_info)
             else:
                 start_parent_foreign_info = self._get_foreign_revision_info(
                     start_revid_parent)
