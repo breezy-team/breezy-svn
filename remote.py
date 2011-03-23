@@ -220,8 +220,6 @@ class SvnRemoteAccess(ControlDir):
         # Create/update the result branch
         result = cloning_format.initialize_on_transport(target_transport)
         source_branch = self.open_branch()
-        if revision_id is None:
-            revision_id = source_branch.last_revision()
         source_repository = self.find_repository()
         try:
             result_repo = result.find_repository()
@@ -238,17 +236,8 @@ class SvnRemoteAccess(ControlDir):
             revision_id=revision_id, repository=result_repo)
         if (create_tree_if_local and isinstance(target_transport, LocalTransport)
             and (result_repo is None or result_repo.make_working_trees())):
-            wt = result.create_workingtree(accelerator_tree=accelerator_tree,
+            result.create_workingtree(accelerator_tree=accelerator_tree,
                 hardlink=hardlink, from_branch=result_branch)
-            wt.lock_write()
-            try:
-                if wt.path2id('') is None:
-                    try:
-                        wt.set_root_id(self.open_workingtree.get_root_id())
-                    except errors.NoWorkingTree:
-                        pass
-            finally:
-                wt.unlock()
         return result
 
     def is_control_filename(self, path):
