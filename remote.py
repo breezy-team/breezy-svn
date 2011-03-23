@@ -185,7 +185,7 @@ class SvnRemoteAccess(ControlDir):
         self.transport = None
         self.root_transport = _transport
 
-        svn_url = bzr_to_svn_url(self.root_transport.base)
+        svn_url, readonly = bzr_to_svn_url(self.root_transport.base)
         self.svn_root_url = _transport.get_svn_repos_root()
         self.root_url = _transport.get_repos_root()
 

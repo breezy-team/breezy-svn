@@ -353,10 +353,10 @@ class SvnBranch(ForeignBranch):
         else:
             revnum = self.get_revnum()
 
-        svn_url = bzr_to_svn_url(self.base)
+        svn_url, readonly = bzr_to_svn_url(self.base)
         os.mkdir(to_location.encode(osutils._fs_enc))
         wc.ensure_adm(to_location.encode("utf-8"), self.repository.uuid, svn_url,
-                      bzr_to_svn_url(self.repository.base), revnum)
+                      bzr_to_svn_url(self.repository.base)[0], revnum)
         adm = wc.WorkingCopy(None, to_location.encode("utf-8"), write_lock=True)
         try:
             conn = self.repository.transport.connections.get(svn_url)

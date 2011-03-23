@@ -80,7 +80,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
 
         repos = Repository.open(self.repos_url)
 
-        self.assertEqual("SvnRepository('%s')" % self.repos_url, repos.__repr__())
+        self.assertEqual("SvnRepository('%s/')" % self.repos_url, repos.__repr__())
 
     def test_gather_stats(self):
         repos = Repository.open(self.repos_url)

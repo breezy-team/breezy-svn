@@ -106,7 +106,6 @@ def get_svn_ra_transport(bzr_transport):
     if ra_transport is not None:
         return ra_transport
 
-    svnbase = bzr_to_svn_url(bzr_transport.external_url())
     # Save _svn_ra transport here so we don't have to connect again next time
     # we try to use bzr svn on this transport
     shared_connection = getattr(bzr_transport, "_shared_connection", None)
@@ -119,8 +118,7 @@ def get_svn_ra_transport(bzr_transport):
             creds = None
     else:
         creds = None
-    ra_transport = SvnRaTransport(svnbase, credentials=creds,
-                                  readonly=bzr_transport.is_readonly())
+    ra_transport = SvnRaTransport(bzr_transport.external_url(), credentials=creds)
     bzr_transport._svn_ra = ra_transport
     return ra_transport
 
@@ -159,6 +157,9 @@ def bzr_to_svn_url(url):
     """
     if url.startswith("readonly+"):
         url = url[len("readonly+"):]
+        readonly = True
+    else:
+        readonly = False
 
     if (url.startswith("svn+http://") or
         url.startswith("svn+https://")):
@@ -169,10 +170,10 @@ def bzr_to_svn_url(url):
     # The SVN libraries don't like trailing slashes...
     url = url.rstrip('/')
 
-    return url
+    return url, readonly
 
 
-def svn_to_bzr_url(url):
+def svn_to_bzr_url(url, readonly=False):
     """Convert a Subversion URL to a URL understood by Bazaar.
 
     This mainly involves fixing file:// URLs on Windows.
@@ -181,6 +182,8 @@ def svn_to_bzr_url(url):
         # Subversion URLs have only two // after file: on Windows
         if url.startswith("file://"):
             url = "file:///" + url[len("file://"):]
+    if readonly:
+        url = "readonly+" + url
     return url
 
 
@@ -328,10 +331,9 @@ class SvnRaTransport(Transport):
     to fool Bazaar. """
 
     @convert_svn_error
-    def __init__(self, url, from_transport=None, credentials=None,
-                 readonly=False):
+    def __init__(self, url, from_transport=None, credentials=None):
         bzr_url = url
-        self.svn_url = bzr_to_svn_url(url)
+        self.svn_url, readonly = bzr_to_svn_url(url)
         Transport.__init__(self, bzr_url)
         host = urlutils.parse_url(bzr_url)[3]
         if host.endswith(".codeplex.com"):
@@ -346,7 +348,8 @@ class SvnRaTransport(Transport):
             self.connections.add(self.connections.get(self.svn_url))
         else:
             if readonly != from_transport.is_readonly():
-                raise AssertionError
+                raise AssertionError("readonly %r != %r (%r)" % (readonly,
+                        from_transport.is_readonly(), from_transport))
             self.connections = from_transport.connections
             if credentials is not None:
                 assert isinstance(credentials, dict)

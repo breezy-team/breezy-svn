@@ -61,9 +61,9 @@ class SvnRaTest(SubversionTestCase):
 
     def test_create_readonly(self):
         repos_url = self.make_repository('a')
-        t = SvnRaTransport(repos_url, readonly=True)
+        t = SvnRaTransport("readonly+"+repos_url)
         self.assertIsInstance(t, SvnRaTransport)
-        self.assertEqual(t.base, repos_url)
+        self.assertEqual(t.base, "readonly+"+repos_url)
         self.assertEqual(t.is_readonly(), True)
 
     def test_lock_read(self):
@@ -145,7 +145,7 @@ class SvnRaTest(SubversionTestCase):
 
     def test_mkdir_readonly(self):
         repos_url = self.make_repository('a')
-        t = SvnRaTransport(repos_url, readonly=True)
+        t = SvnRaTransport("readonly+"+repos_url)
         self.assertRaises(TransportNotPossible, t.mkdir, "bla")
 
     def test_mkdir(self):
@@ -223,15 +223,17 @@ class SvnRaTest(SubversionTestCase):
 class UrlConversionTest(TestCase):
 
     def test_bzr_to_svn_url(self):
-        self.assertEqual("svn://host/location",
+        self.assertEqual(("svn://host/location", False),
                          bzr_to_svn_url("svn://host/location"))
-        self.assertEqual("svn+ssh://host/location",
+        self.assertEqual(("svn+ssh://host/location", False),
                          bzr_to_svn_url("svn+ssh://host/location"))
-        self.assertEqual("http://host/location",
+        self.assertEqual(("http://host/location", False),
                          bzr_to_svn_url("http://host/location"))
-        self.assertEqual("http://host/location",
+        self.assertEqual(("http://host/location", False),
                          bzr_to_svn_url("svn+http://host/location"))
-        self.assertEqual("http://host/gtk+/location",
+        self.assertEqual(("http://host/location", True),
+                         bzr_to_svn_url("readonly+http://host/location"))
+        self.assertEqual(("http://host/gtk+/location", False),
                          bzr_to_svn_url("svn+http://host/gtk%2B/location"))
 
     def test_url_unescape_uri(self):
