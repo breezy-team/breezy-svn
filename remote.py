@@ -207,6 +207,7 @@ class SvnRemoteAccess(ControlDir):
                recurse='down', possible_transports=None,
                accelerator_tree=None, hardlink=False, stacked=False,
                source_branch=None, create_tree_if_local=True):
+        from bzrlib.repository import InterRepository
         from bzrlib.transport.local import LocalTransport
         if self.branch_path == "":
             guessed_layout = self.find_repository().get_guessed_layout()
@@ -230,8 +231,9 @@ class SvnRemoteAccess(ControlDir):
             target_is_empty = None # Unknown
         if stacked:
             raise errors.IncompatibleRepositories(source_repository, result_repo)
-        result_repo.fetch(source_repository, revision_id=revision_id,
-                          project=source_branch.project, mapping=source_branch.mapping)
+        interrepo = InterRepository.get(source_repository, result_repo)
+        interrepo.fetch(revision_id=revision_id,
+            project=source_branch.project, mapping=source_branch.mapping)
         result_branch = source_branch.sprout(result,
             revision_id=revision_id, repository=result_repo)
         if (create_tree_if_local and isinstance(target_transport, LocalTransport)
