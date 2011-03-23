@@ -40,6 +40,7 @@ from bzrlib.push import (
     )
 from bzrlib.transport import (
     do_catching_redirections,
+    get_transport,
     )
 
 
@@ -202,14 +203,49 @@ class SvnRemoteAccess(ControlDir):
         """
         raise NotImplementedError(SvnRemoteAccess.clone)
 
-    def sprout(self, *args, **kwargs):
+    def sprout(self, url, revision_id=None, force_new_repo=False,
+               recurse='down', possible_transports=None,
+               accelerator_tree=None, hardlink=False, stacked=False,
+               source_branch=None, create_tree_if_local=True):
+        from bzrlib.transport.local import LocalTransport
         if self.branch_path == "":
             guessed_layout = self.find_repository().get_guessed_layout()
             if guessed_layout is not None and not guessed_layout.is_branch(""):
                 trace.warning('Cloning Subversion repository as branch. '
                         'To import the individual branches in the repository, '
                         'use "bzr svn-import".')
-        return super(SvnRemoteAccess, self).sprout(*args, **kwargs)
+        target_transport = get_transport(url, possible_transports)
+        target_transport.ensure_base()
+        cloning_format = self.cloning_metadir()
+        # Create/update the result branch
+        result = cloning_format.initialize_on_transport(target_transport)
+        source_branch = self.open_branch()
+        if revision_id is None:
+            revision_id = source_branch.last_revision()
+        source_repository = self.find_repository()
+        try:
+            result_repo = result.find_repository()
+        except errors.NoRepositoryPresent:
+            result_repo = result.create_repository()
+        if stacked:
+            raise errors.IncompatibleRepositories(source_repository, result_repo)
+        result_repo.fetch(source_repository, revision_id=revision_id)
+        result_branch = source_branch.sprout(result,
+            revision_id=revision_id, repository=result_repo)
+        if (create_tree_if_local and isinstance(target_transport, LocalTransport)
+            and (result_repo is None or result_repo.make_working_trees())):
+            wt = result.create_workingtree(accelerator_tree=accelerator_tree,
+                hardlink=hardlink, from_branch=result_branch)
+            wt.lock_write()
+            try:
+                if wt.path2id('') is None:
+                    try:
+                        wt.set_root_id(self.open_workingtree.get_root_id())
+                    except errors.NoWorkingTree:
+                        pass
+            finally:
+                wt.unlock()
+        return result
 
     def is_control_filename(self, path):
         # Bare, so anything is a control file
