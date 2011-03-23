@@ -293,7 +293,7 @@ class SvnRemoteAccess(ControlDir):
                 if type not in ('branch', 'tag') or ip != '':
                     raise errors.NotBranchError(target_branch_path)
                 inter.push_new_branch(layout, project, target_branch_path,
-                        stop_revision, overwrite=overwrite)
+                        stop_revision, push_metadata=True, overwrite=overwrite)
                 return self.open_branch()
             finally:
                 repos.unlock()

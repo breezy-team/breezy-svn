@@ -518,7 +518,7 @@ class SvnBranch(ForeignBranch):
             last_revmeta.get_foreign_revid(), mapping, revid, self.layout,
             self.project, self.get_branch_path(), self.get_config(),
             push_merged=self.get_push_merged_revisions(),
-            overwrite=False, push_metadata=True)
+            overwrite=False, push_metadata=True, append_revisions_only=True)
 
     def import_last_revision_info_and_tags(self, source, revno, revid):
         self.import_last_revision_info(source.repository, revno, revid)
