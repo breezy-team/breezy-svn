@@ -686,8 +686,10 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
         if not mapping.supports_hidden:
             raise AssertionError("mapping format %r doesn't support hidden" %
                 mapping)
+        to_url = urlutils.join(repository.base, branch_path)
+        config = BranchConfig(to_url, repository.uuid)
         (set_custom_revprops,
-            set_custom_fileprops) = repository._properties_to_set(mapping)
+            set_custom_fileprops) = repository._properties_to_set(mapping, config)
         if set_custom_revprops:
             mapping.export_hidden_revprops(branch_path, revprops)
             if (not set_custom_fileprops and

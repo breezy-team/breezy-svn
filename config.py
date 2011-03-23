@@ -369,6 +369,15 @@ class BranchConfig(Config):
                 return value
         return None
 
+    def get_allow_metadata_in_fileprops(self):
+        """Check whether file properties may be used to store bzr-svn metadata.
+
+        """
+        try:
+            return self.get_bool("allow_metadata_in_file_properties")
+        except KeyError:
+            return False
+
     def get_append_revisions_only(self, default=None):
         """Check whether it is possible to remove revisions from the mainline.
         """

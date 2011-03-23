@@ -574,7 +574,7 @@ class SvnRepository(ForeignRepository):
             return mapping_registry.get(config_mapping_name)
         return mapping_registry.get_default()
 
-    def _properties_to_set(self, mapping):
+    def _properties_to_set(self, mapping, target_config):
         """Determine what sort of custom properties to set when
         committing a new round-tripped revision.
 
@@ -583,9 +583,14 @@ class SvnRepository(ForeignRepository):
         """
         supports_custom_revprops = self.transport.has_capability("commit-revprops")
         if supports_custom_revprops and mapping.can_use_revprops:
-            return (True, mapping.must_use_fileprops)
+            use_revprops = True
+            use_fileprops = mapping.must_use_fileprops
         else:
-            return (False, mapping.can_use_fileprops)
+            use_revprops = False
+            use_fileprops = mapping.can_use_fileprops
+        if use_fileprops and not target_config.get_allow_metadata_in_fileprops():
+            raise errors.RequiresMetadataInFileProps()
+        return (use_revprops, use_fileprops)
 
     def get_mapping(self):
         """Get the default mapping that is used for this repository."""
