@@ -492,7 +492,11 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._svn_revprops = {}
         self._svnprops = lazy_dict({}, dict,
             self._base_branch_props.iteritems())
-        (self.set_custom_revprops, self.set_custom_fileprops) = self.repository._properties_to_set(self.mapping)
+        if push_metadata:
+            (self.set_custom_revprops, self.set_custom_fileprops) = self.repository._properties_to_set(self.mapping)
+        else:
+            self.set_custom_revprops = False
+            self.set_custom_fileprops = False
         if self.set_custom_fileprops:
             warn_setting_fileprops(self.repository.uuid)
         if self.supports_custom_revprops:
@@ -512,7 +516,7 @@ class SvnCommitBuilder(RootCommitBuilder):
             self.mapping.export_revision_fileprops(self._svnprops,
                 timestamp, timezone, committer, revprops,
                 revision_id, revno, parents, testament=testament)
-        if self.set_custom_revprops and self.push_metadata:
+        if self.set_custom_revprops:
             self.mapping.export_revision_revprops(
                 self._svn_revprops, self.repository.uuid,
                 self.branch_path, timestamp, timezone, committer, revprops,
@@ -708,11 +712,10 @@ class SvnCommitBuilder(RootCommitBuilder):
                         self._svnprops)
                 self.mapping.export_fileid_map_fileprops(fileids, self._svnprops)
         if self._config.get_log_strip_trailing_newline():
-            if self.push_metadata:
-                if self.set_custom_revprops:
-                    self.mapping.export_message_revprops(message, self._svn_revprops)
-                if self.set_custom_fileprops:
-                    self.mapping.export_message_fileprops(message, self._svnprops)
+            if self.set_custom_revprops:
+                self.mapping.export_message_revprops(message, self._svn_revprops)
+            if self.set_custom_fileprops:
+                self.mapping.export_message_fileprops(message, self._svnprops)
             message = message.rstrip("\n")
         self._svn_revprops[properties.PROP_REVISION_LOG] = message.encode("utf-8")
 
