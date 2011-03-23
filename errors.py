@@ -273,6 +273,11 @@ class PropertyChangeFailed(BzrError):
         BzrError.__init__(self, msg=msg)
 
 
+class RequiresMetadataInFileProps(BzrError):
+
+    _fmt = """This operation requires storing bzr-svn metadata in Subversion file properties. These file properties may cause spurious conflicts for other Subversion users during merges. To allow this, set `allow_metadata_in_file_properties = True` in your configuration and try again."""
+
+
 class TextChecksumMismatch(VersionedFileInvalidChecksum):
 
     _fmt = """checksum mismatch: %(expected_checksum)r != %(actual_checksum)r in %(path)s:%(revnum)d"""

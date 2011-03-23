@@ -493,7 +493,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._svnprops = lazy_dict({}, dict,
             self._base_branch_props.iteritems())
         if push_metadata:
-            (self.set_custom_revprops, self.set_custom_fileprops) = self.repository._properties_to_set(self.mapping)
+            (self.set_custom_revprops, self.set_custom_fileprops) = self.repository._properties_to_set(self.mapping, config)
         else:
             self.set_custom_revprops = False
             self.set_custom_fileprops = False
