@@ -26,6 +26,12 @@ from bzrlib.repository import Repository
 from bzrlib.tests import TestCase
 from bzrlib.workingtree import WorkingTree
 
+from bzrlib.plugins.svn.config import (
+    BranchConfig,
+    )
+from bzrlib.plugins.svn.errors import (
+    RequiresMetadataInFileProps,
+    )
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
@@ -459,6 +465,7 @@ class RepositoryTests(SubversionTestCase):
     def test_commit_revision_id(self):
         self.make_checkout(self.repos_url, "dc")
         wt = WorkingTree.open("dc")
+        wt.branch.get_config().set_user_option("allow_metadata_in_file_properties", "True")
         self.build_tree({'dc/foo/bla': "data", 'dc/bla': "otherdata"})
         wt.add('bla')
         wt.commit(message="data")
@@ -474,13 +481,26 @@ class RepositoryTests(SubversionTestCase):
             self.client_get_prop("dc", 
                 "bzr:revision-id:v3-none", 2))
 
+    def test_commit_metadata_requires_config_change(self):
+        self.make_checkout(self.repos_url, "dc")
+
+        wt = WorkingTree.open("dc")
+        self.build_tree({'dc/foo/bla': "data", 'dc/bla': "otherdata"})
+        wt.add('bla')
+        self.assertRaises(RequiresMetadataInFileProps, wt.commit,
+            message="data")
+        wt.branch.get_config().set_user_option("allow_metadata_in_file_properties", "True")
+        wt.commit(message="data")
+
     def test_commit_metadata(self):
         self.make_checkout(self.repos_url, "dc")
 
         wt = WorkingTree.open("dc")
         self.build_tree({'dc/foo/bla': "data", 'dc/bla': "otherdata"})
         wt.add('bla')
+        wt.branch.get_config().set_user_option("allow_metadata_in_file_properties", "True")
         wt.commit(message="data")
+
         branch = Branch.open(self.repos_url)
         builder = branch.get_commit_builder([branch.last_revision()], 
                 timestamp=4534.0, timezone=2, committer="fry",
@@ -502,6 +522,8 @@ class RepositoryTests(SubversionTestCase):
         self.build_tree({'dc/foo/bla': "data"})
         self.client_add("dc/foo")
         wt = WorkingTree.open("dc")
+        wt.branch.get_config().set_user_option("allow_metadata_in_file_properties", "True")
+
         wt.set_pending_merges(["some-ghost-revision"])
         self.assertEqual(["some-ghost-revision"], wt.get_parent_ids()[1:])
         wt.commit(message="data")
@@ -525,6 +547,9 @@ class RepositoryTests(SubversionTestCase):
 
         # Push first branch into Subversion
         newdir = BzrDir.open(repos_url+"/trunk")
+        config = BranchConfig(repos_url+"/trunk", newdir.find_repository().uuid)
+        config.set_user_option("allow_metadata_in_file_properties", "True")
+
         newbranch = newdir.import_branch(bzrwt.branch)
 
         c = ra.RemoteAccess(repos_url)

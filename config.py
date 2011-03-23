@@ -376,7 +376,7 @@ class BranchConfig(Config):
         try:
             return self.get_bool("allow_metadata_in_file_properties")
         except KeyError:
-            return True
+            return False
 
     def get_append_revisions_only(self, default=None):
         """Check whether it is possible to remove revisions from the mainline.

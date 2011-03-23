@@ -67,6 +67,9 @@ bzr-svn 1.1.0					  UNRELEASED
   * Fix ControlDir.sprout() implementation for newer versions of bzr.
     (Jelmer Vernooij, #717937)
 
+  * bzr-svn no longer uses file properties to store metadata anymore, unless
+    `allow_metadata_in_file_properties`. (Jelmer Vernooij, #704716)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
