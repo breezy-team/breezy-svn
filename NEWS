@@ -64,6 +64,9 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * Transport.is_readonly() is now respected. (Jelmer Vernooij, #731268)
 
+  * Fix ControlDir.sprout() implementation for newer versions of bzr.
+    (Jelmer Vernooij, #717937)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
