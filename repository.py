@@ -583,9 +583,12 @@ class SvnRepository(ForeignRepository):
         """
         supports_custom_revprops = self.transport.has_capability("commit-revprops")
         if supports_custom_revprops and mapping.can_use_revprops:
-            return (True, mapping.must_use_fileprops)
+            use_revprops = True
+            use_fileprops = mapping.must_use_fileprops
         else:
-            return (False, mapping.can_use_fileprops)
+            use_revprops = False
+            use_fileprops = mapping.can_use_fileprops
+        return (use_revprops, use_fileprops)
 
     def get_mapping(self):
         """Get the default mapping that is used for this repository."""
