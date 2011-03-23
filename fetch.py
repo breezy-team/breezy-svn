@@ -1522,7 +1522,8 @@ class InterFromSvnRepository(InterRepository):
         return revisionfinder.get_missing()
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
-              needed=None, mapping=None, project=None, fetch_spec=None):
+              needed=None, mapping=None, project=None, fetch_spec=None,
+              target_is_empty=False):
         """Fetch revisions. """
         if revision_id == NULL_REVISION:
             return
@@ -1539,8 +1540,7 @@ class InterFromSvnRepository(InterRepository):
             if needed is None:
                 nested_pb = ui.ui_factory.nested_progress_bar()
                 try:
-                    # FIXME: Specify target_is_empty
-                    needed = self._get_needed(target_is_empty=False,
+                    needed = self._get_needed(target_is_empty=target_is_empty,
                         revision_id=revision_id, fetch_spec=fetch_spec,
                         find_ghosts=find_ghosts, project=project,
                         pb=nested_pb)
