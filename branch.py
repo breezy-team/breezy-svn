@@ -42,6 +42,7 @@ from bzrlib.branch import (
     GenericInterBranch,
     InterBranch,
     PullResult,
+    format_registry as branch_format_registry,
     )
 from bzrlib.bzrdir import (
     BzrDir,
@@ -679,8 +680,7 @@ class InterFromSvnBranch(GenericInterBranch):
 
     @staticmethod
     def _get_branch_formats_to_test():
-        from bzrlib.branch import format_registry
-        return [(SvnBranchFormat(), format_registry.get_default())]
+        return [(SvnBranchFormat(), branch_format_registry.get_default())]
 
     def update_revisions(self, stop_revision=None, overwrite=False,
                          graph=None):
@@ -829,8 +829,7 @@ class InterToSvnBranch(InterBranch):
 
     @staticmethod
     def _get_branch_formats_to_test():
-        from bzrlib.branch import format_registry
-        return [(format_registry.get_default(), SvnBranchFormat())]
+        return [(branch_format_registry.get_default(), SvnBranchFormat())]
 
     def update_revisions(self, stop_revision=None, overwrite=False, graph=None):
         """See Branch.update_revisions()."""
