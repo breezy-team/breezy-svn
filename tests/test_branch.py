@@ -378,26 +378,6 @@ class WorkingSubversionBranch(SubversionTestCase):
         inter_branch.pull(stop_revision=revid1)
         self.assertEquals(revid1, new_branch.last_revision())
 
-    def test_interbranch_limited_pull(self):
-        svn_branch, (revid1, revid2) = self.make_tworev_branch()
-        new_branch = self.make_branch("b")
-        inter_branch = InterBranch.get(svn_branch, new_branch)
-        inter_branch.pull(limit=1)
-        self.assertEquals(revid1, new_branch.last_revision())
-        inter_branch.pull(limit=1)
-        self.assertEquals(revid2, new_branch.last_revision())
-
-    def test_interbranch_limited_overwrite(self):
-        svn_branch, (revid1, revid2) = self.make_tworev_branch()
-        new_branch = self.make_branch("b")
-        inter_branch = InterBranch.get(svn_branch, new_branch)
-        inter_branch.pull(limit=2)
-        self.assertEquals(revid2, new_branch.last_revision())
-        inter_branch.pull(limit=1, stop_revision=revid1)
-        self.assertEquals(revid2, new_branch.last_revision())
-        inter_branch.pull(limit=1, overwrite=True, stop_revision=revid1)
-        self.assertEquals(revid1, new_branch.last_revision())
-
     def test_get_branch_path_subdir(self):
         repos_url = self.make_repository("a")
 
