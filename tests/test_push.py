@@ -57,7 +57,7 @@ from bzrlib.plugins.svn import (
     transport,
     )
 from bzrlib.plugins.svn.branch import (
-    InterOtherSvnBranch,
+    InterToSvnBranch,
     )
 from bzrlib.plugins.svn.errors import (
     MissingPrefix,
@@ -100,7 +100,7 @@ class TestDPush(SubversionTestCase):
         return self.get_commit_editor(self.repos_url, message)
 
     def dpush(self, source, target):
-        return InterOtherSvnBranch(source, target)._update_revisions_lossy()
+        return InterToSvnBranch(source, target)._update_revisions_lossy()
 
     def test_change_single(self):
         self.build_tree({'dc/foo/bla': 'other data'})
