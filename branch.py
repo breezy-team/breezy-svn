@@ -666,7 +666,7 @@ class SvnBranchFormat(BranchFormat):
             return tag.DisabledTags(branch)
 
 
-class InterSvnOtherBranch(GenericInterBranch):
+class InterFromSvnBranch(GenericInterBranch):
     """InterBranch implementation that is optimized for copying from
     Subversion.
 
@@ -818,10 +818,10 @@ class InterSvnOtherBranch(GenericInterBranch):
         return (isinstance(source, SvnBranch) and
                 not isinstance(target, SvnBranch))
 
-InterBranch.register_optimiser(InterSvnOtherBranch)
+InterBranch.register_optimiser(InterFromSvnBranch)
 
 
-class InterOtherSvnBranch(InterBranch):
+class InterToSvnBranch(InterBranch):
     """InterBranch implementation that is optimized for copying to
     Subversion.
 
@@ -967,4 +967,4 @@ class InterOtherSvnBranch(InterBranch):
         return isinstance(target, SvnBranch)
 
 
-InterBranch.register_optimiser(InterOtherSvnBranch)
+InterBranch.register_optimiser(InterToSvnBranch)
