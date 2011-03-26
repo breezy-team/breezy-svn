@@ -682,18 +682,31 @@ class InterFromSvnBranch(GenericInterBranch):
     def _get_branch_formats_to_test():
         return [(SvnBranchFormat(), branch_format_registry.get_default())]
 
+    def fetch(self, stop_revision=None, fetch_tags=True):
+        """See InterBranch.fetch."""
+        # we fetch here so that we don't process data twice in the
+        # common case of having something to pull, and so that the
+        # check for already merged can operate on the just fetched
+        # graph, which will be cached in memory.
+        revisionfinder = FetchRevisionFinder(self.source.repository,
+            self.target.repository)
+        pb = ui.ui_factory.nested_progress_bar()
+        try:
+            revisionfinder.find_until(
+                self.source.last_revmeta()[0].get_foreign_revid(),
+                self.source.mapping, find_ghosts=False, pb=pb)
+        finally:
+            pb.finished()
+        # FIXME: tags (309682)
+        interrepo = InterFromSvnRepository(self.source.repository,
+            self.target.repository)
+        missing = revisionfinder.get_missing()
+        interrepo.fetch(needed=missing,
+            project=self.source.project, mapping=self.source.mapping)
+
     def update_revisions(self, stop_revision=None, overwrite=False,
                          graph=None):
-        self._update_revisions(stop_revision, overwrite, graph)
-
-    def _update_revisions(self, stop_revision=None, overwrite=False,
-            graph=None, limit=None):
-        """Like InterBranch.update_revisions, but with a few additional
-            parameters.
-
-        :param limit: Optional maximum number of revisions to fetch
-        :return: Last revision
-        """
+        "See InterBranch.update_revisions."""
         self.source.lock_read()
         try:
             other_last_revision = self.source.last_revision()
@@ -706,27 +719,7 @@ class InterFromSvnBranch(GenericInterBranch):
             # what's the current last revision, before we fetch [and
             # change it possibly]
             last_rev = self.target.last_revision()
-            # we fetch here so that we don't process data twice in the
-            # common case of having something to pull, and so that the
-            # check for already merged can operate on the just fetched
-            # graph, which will be cached in memory.
-            revisionfinder = FetchRevisionFinder(self.source.repository,
-                self.target.repository)
-            pb = ui.ui_factory.nested_progress_bar()
-            try:
-                revisionfinder.find_until(
-                    self.source.last_revmeta()[0].get_foreign_revid(),
-                    self.source.mapping,
-                    find_ghosts=False, pb=pb)
-            finally:
-                pb.finished()
-            interrepo = InterFromSvnRepository(self.source.repository,
-                self.target.repository)
-            missing = revisionfinder.get_missing(limit=limit)
-            if limit is not None and len(missing) > 0:
-                stop_revision = missing[-1][0].get_revision_id(missing[-1][1])
-            interrepo.fetch(needed=missing,
-                project=self.source.project, mapping=self.source.mapping)
+            self.fetch(stop_revision=stop_revision, fetch_tags=True)
             # Check to see if one is an ancestor of the other
             if not overwrite:
                 if graph is None:
@@ -758,7 +751,7 @@ class InterFromSvnBranch(GenericInterBranch):
 
     def pull(self, overwrite=False, stop_revision=None,
              _hook_master=None, run_hooks=True, possible_transports=None,
-             _override_hook_target=None, local=False, limit=None):
+             _override_hook_target=None, local=False):
         """See InterBranch.pull()."""
         if local:
             raise LocalRequiresBoundBranch()
@@ -793,8 +786,8 @@ class InterFromSvnBranch(GenericInterBranch):
                     self.source.repository._get_revmeta(stop_revision)
             else:
                 result.new_revmeta = None
-            (result.new_revno, result.new_revid) = self._update_revisions(
-                stop_revision, overwrite, limit=limit)
+            (result.new_revno, result.new_revid) = self.update_revisions(
+                stop_revision, overwrite)
             if self.source.supports_tags():
                 result.tag_conflicts = self.source.tags.merge_to(
                     self.target.tags, overwrite,
@@ -892,11 +885,9 @@ class InterToSvnBranch(InterBranch):
                 stop_revision = ensure_null(self.source.last_revision())
             revid_map = self._push(stop_revision, overwrite=overwrite,
                 push_metadata=False)
-            interrepo = InterFromSvnRepository(self.target.repository,
-                                               self.source.repository)
-            interrepo.fetch(revision_id=revid_map[stop_revision][0],
-                mapping=self.target.mapping, project=self.target.project)
+            reverse_inter = InterFromSvnBranch(self.target, self.source)
             self.target._clear_cached_state()
+            reverse_inter.fetch(stop_revision=revid_map[stop_revision][0])
             assert stop_revision in revid_map
             assert len(revid_map.keys()) > 0
             return dict([(k, v[0]) for (k, v) in revid_map.iteritems()])
