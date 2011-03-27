@@ -57,7 +57,6 @@ def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
     """Determine the revids for tags that were not found in the branch
     ancestry.
     """
-    ret = {}
     # For anything that's not in the branches' ancestry, just use
     # the latest mapping
     for (revmeta, names) in reverse_tag_revmetas.iteritems():
@@ -68,8 +67,7 @@ def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
             continue
         for name in names:
             assert isinstance(name, str)
-            ret[name.decode("utf-8")] = revid
-    return ret
+            yield (name.decode("utf-8"), (revmeta, mapping, revid))
 
 
 def _resolve_tags_svn_ancestry(branch, tag_revmetas):
@@ -101,7 +99,7 @@ def _resolve_tags_svn_ancestry(branch, tag_revmetas):
                 return ret
             for name in reverse_tag_revmetas[revmeta]:
                 assert isinstance(name, str)
-                ret[name.decode("utf-8")] = revmeta.get_revision_id(mapping)
+                ret[name.decode("utf-8")] = (revmeta, mapping, revmeta.get_revision_id(mapping))
             del reverse_tag_revmetas[revmeta]
     finally:
         pb.finished()
@@ -139,11 +137,8 @@ class ReverseTagDict(object):
     def items(self):
         d = _resolve_tags_svn_ancestry(self.branch, self._tags)
         rev = {}
-        for key in d:
-            try:
-                rev[d[key]].append(key)
-            except KeyError:
-                rev[d[key]] = [key]
+        for key, (revmeta, mapping, revid) in d.iteritems():
+            rev.setdefault(revid, []).append(key)
         return rev.items()
 
     def iteritems(self):
@@ -302,7 +297,7 @@ class SubversionTags(BasicTags):
             revmeta = foreign_revid_map[foreign_revid]
             for name in reverse_tag_revmetas[revmeta]:
                 assert isinstance(name, str)
-                ret[name.decode("utf-8")] = revid
+                ret[name.decode("utf-8")] = (revmeta, m, revid)
             del reverse_tag_revmetas[revmeta]
         ret.update(_resolve_reverse_tags_fallback(self.branch,
                                                   reverse_tag_revmetas))
@@ -310,7 +305,8 @@ class SubversionTags(BasicTags):
 
     def get_tag_dict(self):
         tag_revmetas = self._get_tag_dict_revmeta()
-        return _resolve_tags_svn_ancestry(self.branch, tag_revmetas)
+        d = _resolve_tags_svn_ancestry(self.branch, tag_revmetas)
+        return dict([(k, v[2]) for (k, v) in d.iteritems()])
 
     def get_reverse_tag_dict(self):
         """Returns a dict with revisions as keys
@@ -384,8 +380,9 @@ class SubversionTags(BasicTags):
             source_dict = self._resolve_tags_ancestry(tag_revmetas,
                 graph, to_tags.branch.last_revision())
             dest_dict = to_tags.get_tag_dict()
-            result, conflicts = self._reconcile_tags(source_dict, dest_dict,
-                                                     overwrite)
+            result, conflicts = self._reconcile_tags(
+                dict([(k, v[2]) for (k, v) in source_dict.items()]),
+                dest_dict, overwrite)
             if result != dest_dict:
                 to_tags._set_tag_dict(result)
         finally:

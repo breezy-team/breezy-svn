@@ -242,7 +242,8 @@ class SvnBranch(ForeignBranch):
         return self.supports_tags()
 
     def check_path(self):
-        return self.repository.transport.check_path(self._branch_path, self._revnum or self.repository.get_latest_revnum())
+        return self.repository.transport.check_path(self._branch_path,
+            self._revnum or self.repository.get_latest_revnum())
 
     def supports_tags(self):
         """See Branch.supports_tags()."""
