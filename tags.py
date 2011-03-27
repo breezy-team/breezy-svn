@@ -35,7 +35,10 @@ from bzrlib.trace import mutter
 
 from bzrlib.plugins.svn import (
     errors as svn_errors,
-    mapping,
+    )
+from bzrlib.plugins.svn.mapping import (
+    SVN_REVPROP_BZR_SKIP,
+    mapping_registry,
     )
 from bzrlib.plugins.svn.transport import (
     check_dirs_exist,
@@ -237,7 +240,7 @@ class SubversionTags(BasicTags):
         """
         revprops = {properties.PROP_REVISION_LOG: message, }
         if self.repository.transport.has_capability("commit-revprops"):
-            revprops[mapping.SVN_REVPROP_BZR_SKIP] = ""
+            revprops[SVN_REVPROP_BZR_SKIP] = ""
         return revprops
 
     def _lookup_tag_revmeta(self, path):
@@ -275,6 +278,11 @@ class SubversionTags(BasicTags):
 
     def _resolve_tags_ancestry(self, tag_revmetas, graph, last_revid):
         """Resolve a name -> revmeta dictionary using the ancestry of a branch.
+
+        :param tag_revmetas: Dictionary mapping names to revmeta objects
+        :param graph: Graph object
+        :param last_revid: Branch last revid
+        :return: Dictionary mapping unicode tag names to revision ids
         """
         ret = {}
         reverse_tag_revmetas = reverse_dict(tag_revmetas)
@@ -286,8 +294,7 @@ class SubversionTags(BasicTags):
                 # No more tag revmetas to resolve, just return immediately
                 return ret
             try:
-                foreign_revid, m = mapping.mapping_registry.parse_revision_id(
-                        revid)
+                foreign_revid, m = mapping_registry.parse_revision_id(revid)
             except InvalidRevisionId:
                 continue
             if not foreign_revid in foreign_revid_map:

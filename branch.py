@@ -31,7 +31,6 @@ from bzrlib import (
     osutils,
     tag,
     trace,
-    ui,
     urlutils,
     )
 from bzrlib.branch import (
@@ -690,13 +689,9 @@ class InterFromSvnBranch(GenericInterBranch):
         # graph, which will be cached in memory.
         revisionfinder = FetchRevisionFinder(self.source.repository,
             self.target.repository)
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
-            revisionfinder.find_until(
-                self.source.last_revmeta()[0].get_foreign_revid(),
-                self.source.mapping, find_ghosts=False, pb=pb)
-        finally:
-            pb.finished()
+        revisionfinder.find_until(
+            self.source.last_revmeta()[0].get_foreign_revid(),
+            self.source.mapping, find_ghosts=False)
         # FIXME: tags (309682)
         interrepo = InterFromSvnRepository(self.source.repository,
             self.target.repository)
