@@ -233,7 +233,8 @@ class SvnRemoteAccess(ControlDir):
             raise errors.IncompatibleRepositories(source_repository, result_repo)
         interrepo = InterRepository.get(source_repository, result_repo)
         interrepo.fetch(revision_id=revision_id,
-            project=source_branch.project, mapping=source_branch.mapping)
+            project=source_branch.project, mapping=source_branch.mapping,
+            target_is_empty=target_is_empty)
         result_branch = source_branch.sprout(result,
             revision_id=revision_id, repository=result_repo)
         if (create_tree_if_local and isinstance(target_transport, LocalTransport)

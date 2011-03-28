@@ -72,6 +72,8 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * Implement more efficient ``InterFromSvnBranch.fetch``. (Jelmer Vernooij, #741760)
 
+  * Tags are now copied during clone. (Jelmer Vernooij, #309682)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
