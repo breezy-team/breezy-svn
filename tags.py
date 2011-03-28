@@ -70,7 +70,7 @@ def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
             yield (name.decode("utf-8"), (revmeta, mapping, revid))
 
 
-def _resolve_tags_svn_ancestry(branch, tag_revmetas):
+def resolve_tags_svn_ancestry(branch, tag_revmetas):
     """Resolve a name -> revmeta dictionary to a name -> revid dict.
 
     The tricky bit here is figuring out what mapping to use. Preferably,
@@ -135,7 +135,7 @@ class ReverseTagDict(object):
         return self._by_foreign_revid[foreign_revid]
 
     def items(self):
-        d = _resolve_tags_svn_ancestry(self.branch, self._tags)
+        d = resolve_tags_svn_ancestry(self.branch, self._tags)
         rev = {}
         for key, (revmeta, mapping, revid) in d.iteritems():
             rev.setdefault(revid, []).append(key)
@@ -305,7 +305,7 @@ class SubversionTags(BasicTags):
 
     def get_tag_dict(self):
         tag_revmetas = self._get_tag_dict_revmeta()
-        d = _resolve_tags_svn_ancestry(self.branch, tag_revmetas)
+        d = resolve_tags_svn_ancestry(self.branch, tag_revmetas)
         return dict([(k, v[2]) for (k, v) in d.iteritems()])
 
     def get_reverse_tag_dict(self):

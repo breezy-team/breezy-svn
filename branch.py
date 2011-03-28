@@ -92,6 +92,7 @@ from bzrlib.plugins.svn.repository import (
     )
 from bzrlib.plugins.svn.tags import (
     SubversionTags,
+    resolve_tags_svn_ancestry,
     )
 from bzrlib.plugins.svn.transport import (
     bzr_to_svn_url,
@@ -682,32 +683,42 @@ class InterFromSvnBranch(GenericInterBranch):
     def _get_branch_formats_to_test():
         return [(SvnBranchFormat(), branch_format_registry.get_default())]
 
-    def fetch(self, stop_revision=None, fetch_tags=True):
+    def fetch(self, stop_revision=None, fetch_tags=True, find_ghosts=False):
         """See InterBranch.fetch."""
         # we fetch here so that we don't process data twice in the
         # common case of having something to pull, and so that the
         # check for already merged can operate on the just fetched
         # graph, which will be cached in memory.
-        revisionfinder = FetchRevisionFinder(self.source.repository,
-            self.target.repository)
-        revisionfinder.find_until(
-            self.source.last_revmeta()[0].get_foreign_revid(),
-            self.source.mapping, find_ghosts=False)
-        # FIXME: tags (309682)
+        (revmeta, mapping) = self.source.last_revmeta()
+        if stop_revision is None:
+            todo = [self.source.last_revmeta()]
+        else:
+            todo = [self.source.repository._get_revmeta(stop_revision)]
+        if fetch_tags:
+            tag_revmetas = self.source.tags._get_tag_dict_revmeta()
+            d = resolve_tags_svn_ancestry(self.source, tag_revmetas)
+            for name, (revmeta, mapping, revid) in d.iteritems():
+                todo.append((revmeta, mapping))
+        self._fetch_revmetas(todo, find_ghosts=find_ghosts)
+
+    def _fetch_revmetas(self, revmetas, find_ghosts=False):
         interrepo = InterFromSvnRepository(self.source.repository,
             self.target.repository)
-        missing = revisionfinder.get_missing()
-        interrepo.fetch(needed=missing,
+        revisionfinder = FetchRevisionFinder(self.source.repository,
+            self.target.repository)
+        for revmeta, mapping in revmetas:
+            revisionfinder.find_until(revmeta.get_foreign_revid(), mapping,
+                find_ghosts=find_ghosts)
+        interrepo.fetch(needed=revisionfinder.get_missing(),
             project=self.source.project, mapping=self.source.mapping)
 
     def update_revisions(self, stop_revision=None, overwrite=False,
-                         graph=None):
+                         graph=None, fetch_tags=True):
         "See InterBranch.update_revisions."""
         self.source.lock_read()
         try:
-            other_last_revision = self.source.last_revision()
             if stop_revision is None:
-                stop_revision = other_last_revision
+                stop_revision = self.source.last_revision()
                 if is_null(stop_revision):
                     # if there are no commits, we're done.
                     return self.target.last_revision_info()
@@ -715,7 +726,7 @@ class InterFromSvnBranch(GenericInterBranch):
             # what's the current last revision, before we fetch [and
             # change it possibly]
             last_rev = self.target.last_revision()
-            self.fetch(stop_revision=stop_revision, fetch_tags=True)
+            self.fetch(stop_revision=stop_revision, fetch_tags=fetch_tags)
             # Check to see if one is an ancestor of the other
             if not overwrite:
                 if graph is None:

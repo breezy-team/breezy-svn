@@ -847,7 +847,6 @@ foohosts""")
             oldbranch.generate_revision_id(7)])
         newbranch.unlock()
 
-
     def test_fetch_odd(self):
         repos_url = self.make_repository('d')
 
@@ -1097,3 +1096,58 @@ class ForeignTestsBranchFactory(object):
     def make_branch(self, transport):
         subvertpy.repos.create(transport.local_abspath("."))
         return Branch.open(transport.base)
+
+
+class TestInterBranchFetch(SubversionTestCase):
+
+    def make_branch(self, relpath):
+        # The inherited make_branch is broken, thanks to the make_repository
+        # from subvertpy.
+        bzrdir = self.make_bzrdir(relpath)
+        bzrdir._find_or_create_repository(True)
+        return bzrdir.create_branch()
+
+    def make_tworev_branch(self):
+        self.repos_url = self.make_repository("a")
+
+        dc = self.get_commit_editor(self.repos_url)
+        trunk = dc.add_dir("trunk")
+        trunk.add_file('trunk/foo')
+        dc.close()
+
+        b = Branch.open(self.repos_url+"/trunk")
+        mapping = b.repository.get_mapping()
+        uuid = b.repository.uuid
+        revid1 = mapping.revision_id_foreign_to_bzr((uuid, 'trunk', 1))
+        return b, revid1
+
+    def test_fetch_stop_revision(self):
+        svn_branch, revid1 = self.make_tworev_branch()
+        new_branch = self.make_branch("b")
+        inter_branch = InterBranch.get(svn_branch, new_branch)
+        inter_branch.fetch(stop_revision=revid1)
+        self.assertEquals(set([revid1]), set(new_branch.repository.all_revision_ids()))
+
+    def test_fetch_no_stop_revision(self):
+        svn_branch, revid1 = self.make_tworev_branch()
+        new_branch = self.make_branch("b")
+        inter_branch = InterBranch.get(svn_branch, new_branch)
+        inter_branch.fetch()
+        self.assertEquals(set([revid1]), set(new_branch.repository.all_revision_ids()))
+
+    def test_fetch_tags(self):
+        svn_branch, revid1 = self.make_tworev_branch()
+
+        dc = self.get_commit_editor(self.repos_url)
+        tags = dc.add_dir("tags")
+        tags.add_dir("tags/foo")
+        dc.close()
+
+        mapping = svn_branch.repository.get_mapping()
+        uuid = svn_branch.repository.uuid
+        revid2 = mapping.revision_id_foreign_to_bzr((uuid, 'tags/foo', 2))
+
+        new_branch = self.make_branch("b")
+        inter_branch = InterBranch.get(svn_branch, new_branch)
+        inter_branch.fetch(fetch_tags=True)
+        self.assertEquals(set([revid1, revid2]), set(new_branch.repository.all_revision_ids()))
