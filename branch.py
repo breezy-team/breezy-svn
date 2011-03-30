@@ -692,9 +692,11 @@ class InterFromSvnBranch(GenericInterBranch):
         (revmeta, mapping) = self.source.last_revmeta()
         if stop_revision is None:
             todo = [self.source.last_revmeta()]
+        elif stop_revision == NULL_REVISION:
+            todo = []
         else:
             todo = [self.source.repository._get_revmeta(stop_revision)]
-        if fetch_tags:
+        if fetch_tags and self.source.supports_tags():
             tag_revmetas = self.source.tags._get_tag_dict_revmeta()
             d = resolve_tags_svn_ancestry(self.source, tag_revmetas)
             for name, (revmeta, mapping, revid) in d.iteritems():
