@@ -54,6 +54,9 @@ clean::
 check:: build-inplace
 	BZR_PLUGINS_AT=svn@$(shell pwd) $(DEBUGGER) $(PYTHON) $(PYTHON_OPTIONS) $(BZR) $(BZR_OPTIONS) selftest $(TEST_OPTIONS) $(TESTS)
 
+check-all::
+	$(MAKE) check TESTS="^bzrlib.plugins.svn. Subversion Svn"
+
 coverage::
 	$(MAKE) check BZR_OPTIONS="--coverage coverage"
 
