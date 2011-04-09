@@ -172,6 +172,7 @@ class SvnRepositoryFormat(RepositoryFormat):
     supports_full_versioned_files = False
     supports_funky_characters = True
     supports_external_lookups = False
+    revision_graph_can_have_wrong_parents = False
 
     @property
     def _matchingbzrdir(self):
@@ -454,6 +455,7 @@ class SvnRepository(ForeignRepository):
                 self.revinfo_cache is not None)
 
     def revision_graph_can_have_wrong_parents(self):
+        # DEPRECATED in bzr 2.4
         return False
 
     def get_transaction(self):
