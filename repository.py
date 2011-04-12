@@ -392,7 +392,6 @@ class SvnRepository(ForeignRepository):
         assert self.uuid is not None
         self.base = transport.base
         assert self.base is not None
-        self._config = None
         self._serializer = None
         self.get_config().add_location(self.base)
         self._log = logwalker.LogWalker(transport=transport)
@@ -570,12 +569,6 @@ class SvnRepository(ForeignRepository):
         result['svn-last-revnum'] = self.get_latest_revnum()
         return result
 
-    def get_mapping_class(self):
-        config_mapping_name = self.get_config().get_default_mapping()
-        if config_mapping_name is not None:
-            return mapping_registry.get(config_mapping_name)
-        return mapping_registry.get_default()
-
     def _properties_to_set(self, mapping, target_config):
         """Determine what sort of custom properties to set when
         committing a new round-tripped revision.
@@ -594,11 +587,18 @@ class SvnRepository(ForeignRepository):
             raise errors.RequiresMetadataInFileProps()
         return (use_revprops, use_fileprops)
 
+    def get_mapping_class(self):
+        config_mapping_name = self.get_config().get_default_mapping()
+        if config_mapping_name is not None:
+            return mapping_registry.get(config_mapping_name)
+        return mapping_registry.get_default()
+
     def get_mapping(self):
         """Get the default mapping that is used for this repository."""
         if self._default_mapping is None:
             mappingcls = self.get_mapping_class()
-            self._default_mapping = mappingcls.from_repository(self, self._hinted_branch_path)
+            self._default_mapping = mappingcls.from_repository(self,
+                self._hinted_branch_path)
         return self._default_mapping
 
     def _make_parents_provider(self):
@@ -699,7 +699,8 @@ class SvnRepository(ForeignRepository):
         return self._layout, self._layout_source
 
     def _find_guessed_layout(self):
-        # Retrieve guessed-layout from config and see if it accepts self._hinted_branch_path
+        # Retrieve guessed-layout from config and see if it accepts
+        # self._hinted_branch_path
         layoutname = self.get_config().get_guessed_layout()
         if layoutname is not None:
             config_guessed_layout = layout.layout_registry.get(layoutname)()
@@ -710,7 +711,8 @@ class SvnRepository(ForeignRepository):
                 return
         else:
             config_guessed_layout = None
-        # No guessed layout stored yet or it doesn't accept self._hinted_branch_path
+        # No guessed layout stored yet or it doesn't accept
+        # self._hinted_branch_path
         revnum = self.get_latest_revnum()
         (self._guessed_layout, self._guessed_appropriate_layout) = repository_guess_layout(self,
                     revnum, self._hinted_branch_path)
@@ -1080,9 +1082,7 @@ class SvnRepository(ForeignRepository):
         return False
 
     def get_config(self):
-        if self._config is None:
-            self._config = SvnRepositoryConfig(self.base, self.uuid)
-        return self._config
+        return self.bzrdir.get_config()
 
     def has_signature_for_revision_id(self, revision_id):
         """Check whether a signature exists for a particular revision id.

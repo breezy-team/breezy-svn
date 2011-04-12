@@ -1079,6 +1079,7 @@ class SvnCheckout(ControlDir):
         self._transport = transport
         self._format = format
         self._mode_check_done = False
+        self._config = None
         self.local_path = transport.local_abspath(".")
 
         # Open related remote repository + branch
@@ -1264,8 +1265,10 @@ class SvnCheckout(ControlDir):
         return self._dir_mode
 
     def get_config(self):
-        from bzrlib.plugins.svn.config import SubversionControlDirConfig
-        return SubversionControlDirConfig()
+        from bzrlib.plugins.svn.config import SvnRepositoryConfig
+        if self._config is None:
+            self._config = SvnRepositoryConfig(self.entry.url, self.entry.uuid)
+        return self._config
 
 
 class SvnCheckoutConverter(Converter):

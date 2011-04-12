@@ -183,6 +183,7 @@ class SvnRemoteAccess(ControlDir):
         if _format is None:
             _format = SvnRemoteFormat()
         self._format = _format
+        self._config = None
         self.transport = None
         self.root_transport = _transport
 
@@ -421,5 +422,8 @@ class SvnRemoteAccess(ControlDir):
         return False
 
     def get_config(self):
-        from bzrlib.plugins.svn.config import SubversionControlDirConfig
-        return SubversionControlDirConfig()
+        from bzrlib.plugins.svn.config import SvnRepositoryConfig
+        if self._config is None:
+            self._config = SvnRepositoryConfig(self.root_transport.base,
+                self.root_transport.get_uuid())
+        return self._config
