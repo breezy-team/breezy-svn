@@ -749,7 +749,9 @@ class SvnRepository(ForeignRepository):
                     ret.check_revmeta(revmeta)
             else:
                 last_revnum = self.get_latest_revnum()
-                for revmeta in self._revmeta_provider.iter_all_revisions(self.get_layout(), self.get_mapping().is_branch_or_tag, last_revnum):
+                for revmeta in self._revmeta_provider.iter_all_revisions(
+                        self.get_layout(), self.get_mapping().is_branch_or_tag,
+                        last_revnum):
                     pb.update("checking revisions",
                         last_revnum-revmeta.revnum, last_revnum)
                     ret.check_revmeta(revmeta)
@@ -782,7 +784,8 @@ class SvnRepository(ForeignRepository):
             mapping = self.get_mapping()
         if layout is None:
             layout = self.get_layout()
-        for revmeta in self._revmeta_provider.iter_all_revisions(layout, mapping.is_branch_or_tag, self.get_latest_revnum()):
+        for revmeta in self._revmeta_provider.iter_all_revisions(layout,
+                mapping.is_branch_or_tag, self.get_latest_revnum()):
             if revmeta.is_hidden(mapping):
                 continue
             yield revmeta.get_revision_id(mapping)
@@ -828,10 +831,11 @@ class SvnRepository(ForeignRepository):
             yield entry
             for rhs_parent_revid in revmeta.get_rhs_parents(mapping):
                 try:
-                    (_, rhs_parent_bp, rhs_parent_revnum), rhs_parent_mapping = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.get_foreign_revid())
+                    rhs_parent_foreign_revid, rhs_parent_mapping = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.get_foreign_revid())
                 except bzr_errors.NoSuchRevision:
                     pass
                 else:
+                    (_, rhs_parent_bp, rhs_parent_revnum) = rhs_parent_foreign_revid
                     update_todo(todo, self._iter_reverse_revmeta_mapping_history(rhs_parent_bp, rhs_parent_revnum, to_revnum=0, mapping=mapping, pb=pb))
 
     def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum,
@@ -1078,9 +1082,7 @@ class SvnRepository(ForeignRepository):
         return self.revmap.get_branch_revnum(revid, layout, project)
 
     def seen_bzr_revprops(self):
-        """Check whether bzr-specific custom revision properties are present on this
-        repository.
-
+        """Check for the presence of bzr-specific custom revision properties.
         """
         if self.transport.has_capability("commit-revprops") == False:
             return False
@@ -1096,7 +1098,8 @@ class SvnRepository(ForeignRepository):
     def has_signature_for_revision_id(self, revision_id):
         """Check whether a signature exists for a particular revision id.
 
-        :param revision_id: Revision id for which the signatures should be looked up.
+        :param revision_id: Revision id for which the signatures should be
+            looked up.
         :return: False, as no signatures are stored for revisions in Subversion
             at the moment.
         """
