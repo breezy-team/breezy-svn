@@ -319,7 +319,8 @@ class FileTreeEditor(object):
             self.is_symlink = (self.is_special and file_data.startswith("link "))
 
         if self.is_symlink:
-            ie = self.tree._inventory.add_path(self.path, 'symlink', self.file_id)
+            ie = self.tree._inventory.add_path(self.path, 'symlink',
+                self.file_id)
         else:
             ie = self.tree._inventory.add_path(self.path, 'file', self.file_id)
         ie.revision = self.revision_id
@@ -358,7 +359,8 @@ class SvnBasisTree(SubversionTree,RevisionTree):
 
         def add_file_to_inv(relpath, id, revid, adm):
             assert isinstance(relpath, unicode)
-            (propchanges, props) = adm.get_prop_diffs(self.workingtree.abspath(relpath).encode("utf-8"))
+            (propchanges, props) = adm.get_prop_diffs(
+                self.workingtree.abspath(relpath).encode("utf-8"))
             if props.has_key(properties.PROP_SPECIAL):
                 is_symlink = (self.get_file_byname(relpath).read(5) == "link ")
             else:
@@ -383,7 +385,8 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             if entry.schedule in (wc.SCHEDULE_NORMAL,
                                   wc.SCHEDULE_DELETE,
                                   wc.SCHEDULE_REPLACE):
-                return self.lookup_id(workingtree.unprefix(relpath.decode("utf-8")))
+                return self.lookup_id(
+                    workingtree.unprefix(relpath.decode("utf-8")))
             return (None, None)
 
         def add_dir_to_inv(relpath, adm, parent_id):
@@ -434,7 +437,8 @@ class SvnBasisTree(SubversionTree,RevisionTree):
             adm.close()
 
     def lookup_id(self, path):
-        return self.workingtree.basis_idmap.lookup(self.workingtree.branch.mapping, path)[:2]
+        return self.workingtree.basis_idmap.lookup(
+            self.workingtree.branch.mapping, path)[:2]
 
     def get_revision_id(self):
         """See Tree.get_revision_id()."""

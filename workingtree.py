@@ -181,7 +181,7 @@ def generate_ignore_list(ignore_map):
     return ignores
 
 
-class SvnWorkingTree(SubversionTree,WorkingTree):
+class SvnWorkingTree(SubversionTree, WorkingTree):
     """WorkingTree implementation that uses a svn working copy for storage."""
 
     def __init__(self, bzrdir, format, local_path, entry):

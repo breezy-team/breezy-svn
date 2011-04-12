@@ -82,7 +82,8 @@ def idmap_lookup(get, mapping, path):
             try:
                 create_revid = get(base)[2]
                 if create_revid is None:
-                    raise AssertionError("Inconsistency; child %s appeared while parent was never copied" % path)
+                    raise AssertionError("Inconsistency; child %s appeared "
+                            "while parent was never copied" % path)
                 return (mapping.generate_file_id(create_revid, path),
                         mapping.revision_id_foreign_to_bzr(create_revid),
                         create_revid)
@@ -116,7 +117,8 @@ def idmap_reverse_lookup(idmap, mapping, fileid):
             child_create_foreign_revid[2] == revnum and
             path.startswith("%s/" % child_create_foreign_revid[1])):
             inv_p = path[len(child_create_foreign_revid[1]):].strip("/").decode("utf-8")
-            if mapping.generate_file_id((uuid, child_create_foreign_revid[1], revnum), inv_p) == fileid:
+            foreign_revid = (uuid, child_create_foreign_revid[1], revnum)
+            if mapping.generate_file_id(foreign_revid, inv_p) == fileid:
                 return inv_p
 
     raise KeyError(fileid)
@@ -223,28 +225,34 @@ class DictFileIdMap(FileIdMap):
         for p, (action, copy_from) in changes.iteritems():
             if action in ('D', 'R'):
                 for xp in self.data.keys():
-                    if (p == xp or xp.startswith(u"%s/" % p)) and not xp in delta:
+                    if ((p == xp or xp.startswith(u"%s/" % p)) and
+                        not xp in delta):
                         del self.data[xp]
 
         for x in sorted(text_revisions.keys() + delta.keys()):
             assert isinstance(x, unicode)
-            if x in delta and (not x in self.data or self.data[x][0] != delta[x]):
+            if (x in delta and
+                (not x in self.data or self.data[x][0] != delta[x])):
                 if x in changes and changes[x][1] is not None:
                     # if this was a copy from somewhere else there can be
                     # implicit children
                     child_create_revid = foreign_revid
                 else:
                     child_create_revid = None
-                self.data[x] = (delta[x], text_revisions.get(x) or default_revid, child_create_revid)
+                self.data[x] = (delta[x],
+                    text_revisions.get(x) or default_revid, child_create_revid)
             else:
                 try:
                     prev_entry = self.lookup(mapping, x)
                 except KeyError:
-                    raise AssertionError("Unable to find old fileid for %s in %r" % (x, foreign_revid))
-                self.data[x] = (prev_entry[0], text_revisions.get(x) or default_revid, prev_entry[2])
+                    raise AssertionError("Unable to find old fileid for %s "
+                        "in %r" % (x, foreign_revid))
+                self.data[x] = (prev_entry[0],
+                    text_revisions.get(x) or default_revid, prev_entry[2])
 
         if not "" in self.data:
-            raise AssertionError("root no longer exists after %r in %r" % (foreign_revid, self.data))
+            raise AssertionError("root no longer exists after %r in %r" %
+                (foreign_revid, self.data))
 
     def has_fileid(self, fileid):
         for fid, _ in self.data.itervalues():
@@ -304,7 +312,11 @@ class FileIdMapStore(object):
         todo = []
         next_parent_revs = []
         if mapping.is_branch(""):
-            map = DictFileIdMap({u"": (mapping.generate_file_id((uuid, "", 0), u""), mapping.revision_id_foreign_to_bzr((uuid, "", 0)), None)})
+            map = DictFileIdMap({
+                u"": (mapping.generate_file_id((uuid, "", 0), u""),
+                      mapping.revision_id_foreign_to_bzr((uuid, "", 0)),
+                      None)
+                })
         else:
             map = DictFileIdMap({})
 
@@ -348,11 +360,13 @@ class FileIdMapCache(object):
             if created_revid is None:
                 optional_child_create_revid = ""
             else:
-                optional_child_create_revid = "\t%s:%d:%s" % (created_revid[0], created_revid[2], created_revid[1])
-            lines.append("%s\t%s\t%s%s\n" % (urllib.quote(path.encode("utf-8")),
-                                           urllib.quote(id),
-                                           urllib.quote(changed_revid),
-                                           optional_child_create_revid))
+                optional_child_create_revid = "\t%s:%d:%s" % (
+                    created_revid[0], created_revid[2], created_revid[1])
+            lines.append("%s\t%s\t%s%s\n" % (
+                urllib.quote(path.encode("utf-8")),
+                urllib.quote(id),
+                urllib.quote(changed_revid),
+                optional_child_create_revid))
 
         self.idmap_knit.add_lines((revid,), [(r, ) for r in parent_revids],
                                   lines)
@@ -368,7 +382,9 @@ class FileIdMapCache(object):
                 (filename, id, changed_revid, child_create_text) = entries
                 (uuid, revnum, bp) = child_create_text.split(":", 3)
                 child_create_revid = (uuid, bp, int(revnum))
-            map[urllib.unquote(filename).decode("utf-8")] = (urllib.unquote(id), urllib.unquote(changed_revid), child_create_revid)
+            map[urllib.unquote(filename).decode("utf-8")] = (
+                urllib.unquote(id), urllib.unquote(changed_revid),
+                child_create_revid)
             assert isinstance(map[urllib.unquote(filename).decode("utf-8")][0], str)
 
         return map
@@ -394,7 +410,8 @@ class CachingFileIdMapStore(object):
         try:
             pb = ui.ui_factory.nested_progress_bar()
             for revmeta, mapping in self.repos._iter_reverse_revmeta_mapping_history(branch, revnum, to_revnum=0, mapping=mapping):
-                pb.update("fetching changes for file ids", revnum-revmeta.revnum, revnum)
+                pb.update("fetching changes for file ids",
+                    revnum-revmeta.revnum, revnum)
                 if revmeta.is_hidden(mapping):
                     continue
                 revid = revmeta.get_revision_id(mapping)
@@ -414,7 +431,9 @@ class CachingFileIdMapStore(object):
 
         if len(next_parent_revs) == 0:
             if mapping.is_branch(""):
-                map = DictFileIdMap({u"": (mapping.generate_file_id((uuid, "", 0), u""), NULL_REVISION, None)})
+                map = DictFileIdMap({
+                    u"": (mapping.generate_file_id((uuid, "", 0), u""),
+                          NULL_REVISION, None)})
             else:
                 map = DictFileIdMap({})
 
@@ -426,7 +445,8 @@ class CachingFileIdMapStore(object):
                 revid = revmeta.get_revision_id(mapping)
                 self.actual.update_idmap(map, revmeta, mapping)
                 parent_revs = next_parent_revs
-                if revnum % FILEID_MAP_SAVE_INTERVAL == 0 or revnum == revmeta.revnum:
+                if (revnum % FILEID_MAP_SAVE_INTERVAL == 0 or
+                    revnum == revmeta.revnum):
                     self.cache.save(revid, parent_revs, map.as_dict())
                 next_parent_revs = [revid]
         finally:
