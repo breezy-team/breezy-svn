@@ -888,7 +888,9 @@ class SvnRepository(ForeignRepository):
         """
         if revision_id in (None, NULL_REVISION):
             return
-        (uuid, branch_path, revnum), mapping = self.lookup_bzr_revision_id(revision_id, project=project)
+        foreign_revid, mapping = self.lookup_bzr_revision_id(revision_id,
+            project=project)
+        (uuid, branch_path, revnum) = foreign_revid
         assert uuid == self.uuid
         for revmeta, mapping in self._iter_reverse_revmeta_mapping_history(
             branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb,
@@ -936,7 +938,8 @@ class SvnRepository(ForeignRepository):
             return True
 
         try:
-            foreign_revid, _ = self.lookup_bzr_revision_id(revision_id, project=project)
+            foreign_revid, _ = self.lookup_bzr_revision_id(revision_id,
+                project=project)
         except bzr_errors.NoSuchRevision:
             return False
 
@@ -946,7 +949,8 @@ class SvnRepository(ForeignRepository):
         if uuid != self.uuid:
             return False
         try:
-            return (subvertpy.NODE_DIR == self.transport.check_path(path, revnum))
+            kind = self.transport.check_path(path, revnum)
+            return (subvertpy.NODE_DIR == kind)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 return False
@@ -983,17 +987,18 @@ class SvnRepository(ForeignRepository):
         return parent_map
 
     def _get_revmeta(self, revision_id):
-        (uuid, branch, revnum), mapping = self.lookup_bzr_revision_id(revision_id)
+        foreign_revid, mapping = self.lookup_bzr_revision_id(revision_id)
+        (uuid, branch, revnum) = foreign_revid
         revmeta = self._revmeta_provider.lookup_revision(branch, revnum)
         return revmeta, mapping
 
     def get_revision(self, revision_id):
         """See Repository.get_revision."""
         if not revision_id or not isinstance(revision_id, str):
-            raise bzr_errors.InvalidRevisionId(revision_id=revision_id, branch=self)
+            raise bzr_errors.InvalidRevisionId(revision_id=revision_id,
+                branch=self)
 
         revmeta, mapping = self._get_revmeta(revision_id)
-
         return revmeta.get_revision(mapping)
 
     def get_revisions(self, revision_ids):
@@ -1007,7 +1012,8 @@ class SvnRepository(ForeignRepository):
 
     def upgrade_foreign_revision_id(self, foreign_revid, newest_allowed):
         try:
-            return self.lookup_foreign_revision_id(foreign_revid, newest_allowed)
+            return self.lookup_foreign_revision_id(foreign_revid,
+                newest_allowed)
         except errors.DifferentSubversionRepository:
             return None
 
@@ -1033,7 +1039,8 @@ class SvnRepository(ForeignRepository):
         """
         assert isinstance(path, str)
         assert isinstance(revnum, int)
-        return self.lookup_foreign_revision_id((self.uuid, path, revnum), mapping)
+        foreign_revid = (self.uuid, path, revnum)
+        return self.lookup_foreign_revision_id(foreign_revid, mapping)
 
     def lookup_bzr_revision_id(self, revid, layout=None, ancestry=None,
                            project=None, foreign_sibling=None):
@@ -1049,7 +1056,8 @@ class SvnRepository(ForeignRepository):
         # If there is no entry in the map, walk over all branches:
         # Try a simple parse
         try:
-            (uuid, branch_path, revnum), mapping = mapping_registry.parse_revision_id(revid)
+            foreign_revid, mapping = mapping_registry.parse_revision_id(revid)
+            (uuid, branch_path, revnum) = foreign_revid
             assert isinstance(branch_path, str)
             assert isinstance(mapping, BzrSvnMapping)
             if uuid == self.uuid:
@@ -1076,7 +1084,8 @@ class SvnRepository(ForeignRepository):
         """
         if self.transport.has_capability("commit-revprops") == False:
             return False
-        for revmeta in self._revmeta_provider.iter_all_revisions(self.get_layout(), None, self.get_latest_revnum()):
+        for revmeta in self._revmeta_provider.iter_all_revisions(
+                self.get_layout(), None, self.get_latest_revnum()):
             if is_bzr_revision_revprops(revmeta.revprops):
                 return True
         return False
@@ -1116,11 +1125,15 @@ class SvnRepository(ForeignRepository):
 
     def add_signature_text(self, revision_id, signature):
         """Add a signature text to an existing revision."""
-        (uuid, path, revnum), mapping = self.lookup_bzr_revision_id(revision_id)
+        foreign_revid, mapping = self.lookup_bzr_revision_id(revision_id)
+        (uuid, path, revnum) = foreign_revid
         try:
-            self.transport.change_rev_prop(revnum, SVN_REVPROP_BZR_SIGNATURE, signature)
-        except subvertpy.SubversionException, (_, subvertpy.ERR_REPOS_DISABLED_FEATURE):
-            raise errors.RevpropChangeFailed(SVN_REVPROP_BZR_SIGNATURE)
+            self.transport.change_rev_prop(revnum, SVN_REVPROP_BZR_SIGNATURE,
+                signature)
+        except subvertpy.SubversionException, (_, num):
+            if num == subvertpy.ERR_REPOS_DISABLED_FEATURE:
+                raise errors.RevpropChangeFailed(SVN_REVPROP_BZR_SIGNATURE)
+            raise
 
     @needs_read_lock
     def find_branches(self, using=False, layout=None, revnum=None):
@@ -1139,7 +1152,8 @@ class SvnRepository(ForeignRepository):
         branches = []
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for project, bp, nick, has_props in layout.get_branches(self, revnum, pb=pb):
+            for project, bp, nick, has_props in layout.get_branches(self,
+                    revnum, pb=pb):
                 branches.append(SvnBranch(self, bp, _skip_check=True))
         finally:
             pb.finished()
@@ -1156,7 +1170,8 @@ class SvnRepository(ForeignRepository):
             entries = []
             for kind, item in self._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, to_revnum, from_revnum, project=project):
                 if kind == "revision":
-                    pb.update("discovering tags", to_revnum-item.revnum, to_revnum-from_revnum)
+                    pb.update("discovering tags", to_revnum-item.revnum,
+                        to_revnum-from_revnum)
                     if layout.is_tag(item.branch_path):
                         entries.append((kind, (item.branch_path, (item.revnum, item.get_tag_revmeta(mapping)))))
                 else:
@@ -1168,7 +1183,8 @@ class SvnRepository(ForeignRepository):
                 elif kind == "delete":
                     (path, revnum) = item
                     for t, (lastrevnum, tagrevmeta) in tags.items():
-                        if changes.path_is_child(t, path) and revnum > lastrevnum:
+                        if (changes.path_is_child(t, path) and
+                            revnum > lastrevnum):
                             del tags[t]
         finally:
             pb.finished()

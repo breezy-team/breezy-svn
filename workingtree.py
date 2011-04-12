@@ -282,7 +282,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                         continue
                     raise
                 try:
-                    dir_add(subwc, subprefix, urlutils.joinpath(patprefix, entry))
+                    dir_add(subwc, subprefix, urlutils.joinpath(patprefix,
+                        entry))
                 finally:
                     subwc.close()
 
@@ -368,7 +369,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             from_abspath = osutils.safe_utf8(self.abspath(entry))
             to_wc = self._get_wc(osutils.safe_unicode(to_dir), write_lock=True)
             try:
-                to_wc.copy(from_abspath, osutils.safe_utf8(os.path.basename(entry)))
+                to_wc.copy(from_abspath,
+                    osutils.safe_utf8(os.path.basename(entry)))
             finally:
                 to_wc.close()
             from_wc = self._get_wc(write_lock=True)
@@ -376,8 +378,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 from_wc.delete(from_abspath)
             finally:
                 from_wc.close()
-            new_name = osutils.pathjoin(osutils.safe_utf8(to_dir),
-                                        osutils.safe_utf8(os.path.basename(entry)))
+            new_name = osutils.pathjoin(
+                osutils.safe_utf8(to_dir),
+                osutils.safe_utf8(os.path.basename(entry)))
             self._change_fileid_mapping(self.inventory.path2id(entry), new_name)
             self._change_fileid_mapping(None, entry)
 
@@ -469,7 +472,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             try:
                 entries = wc.entries_read(False)
                 for entry in entries.values():
-                    subrelpath = osutils.pathjoin(relpath, entry.name.decode("utf-8"))
+                    subrelpath = osutils.pathjoin(relpath,
+                        entry.name.decode("utf-8"))
                     if entry.name == "" or entry.kind != 'directory':
                         if ((entry.copyfrom_url == url or entry.url == url) and
                             not (entry.schedule in (SCHEDULE_DELETE,
@@ -604,7 +608,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     pass
             if old_svk_merges != svk_merges:
                 adm.prop_set(
-                    svk.SVN_PROP_SVK_MERGE, svk.serialize_svk_features(svk_merges),
+                    svk.SVN_PROP_SVK_MERGE,
+                    svk.serialize_svk_features(svk_merges),
                     self.basedir.encode("utf-8"))
         finally:
             adm.close()
@@ -732,7 +737,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         else:
             wc = self._get_wc(path)
         try:
-            (prop_changes, orig_props) = wc.get_prop_diffs(abspath.encode("utf-8"))
+            (prop_changes, orig_props) = wc.get_prop_diffs(
+                abspath.encode("utf-8"))
         finally:
             wc.close()
         return apply_prop_changes(orig_props, prop_changes)
@@ -768,7 +774,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         wc = self._get_wc()
         try:
             ret = {}
-            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir.encode("utf-8"))
+            (prop_changes, orig_props) = wc.get_prop_diffs(
+                self.basedir.encode("utf-8"))
             for k,v in prop_changes:
                 ret[k] = (orig_props.get(k), v)
             return ret
@@ -785,7 +792,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def _get_base_branch_props(self):
         wc = self._get_wc()
         try:
-            (prop_changes, orig_props) = wc.get_prop_diffs(self.basedir.encode("utf-8"))
+            (prop_changes, orig_props) = wc.get_prop_diffs(
+                self.basedir.encode("utf-8"))
             return orig_props
         finally:
             wc.close()
@@ -806,7 +814,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             old_abspath = osutils.safe_utf8(self.abspath(old_path))
             if not already_there:
                 self.remove([old_path], keep_files=True)
-            copyfrom = (urlutils.join(self.entry.url, old_path), self.base_revnum)
+            copyfrom = (urlutils.join(self.entry.url, old_path),
+                        self.base_revnum)
         else:
             try:
                 old_path = base_tree.id2path(file_id)
@@ -862,7 +871,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         elif kind == 'directory':
             return kind, None, None, None
         elif kind == 'symlink':
-            return ('symlink', None, None, os.readlink(abspath.encode(osutils._fs_enc)).decode(osutils._fs_enc))
+            target = os.readlink(abspath.encode(osutils._fs_enc))
+            return ('symlink', None, None, target.decode(osutils._fs_enc))
         else:
             return (kind, None, None, None)
 
@@ -1134,7 +1144,8 @@ class SvnCheckout(ControlDir):
 
     def open_workingtree(self, _unsupported=False, recommend_upgrade=False):
         try:
-            return SvnWorkingTree(self, SvnWorkingTreeFormat(self._format.version),
+            return SvnWorkingTree(self,
+                    SvnWorkingTreeFormat(self._format.version),
                     self.local_path, self.entry)
         except NotSvnBranchPath, e:
             raise NoWorkingTree(self.local_path)
