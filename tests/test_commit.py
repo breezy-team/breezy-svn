@@ -52,9 +52,6 @@ from bzrlib.plugins.svn.commit import (
     set_svn_revprops,
     _revision_id_to_svk_feature,
     )
-from bzrlib.plugins.svn.config import (
-    SubversionUUIDConfig,
-    )
 from bzrlib.plugins.svn.errors import (
     RevpropChangeFailed,
     )
@@ -171,6 +168,17 @@ class TestNativeCommit(SubversionTestCase):
 
         self.assertEquals(ERR_FS_TXN_OUT_OF_DATE, e.args[1])
 
+    def test_lossy_commit_builder(self):
+        repos_url = self.make_repository('d')
+        branch = Branch.open(repos_url)
+        cb = branch.repository.get_commit_builder(branch,
+            [branch.last_revision()], branch.get_config(),
+            revision_id="foorevid", lossy=True)
+        revid = cb.commit("msg")
+        self.assertEquals(
+            branch.repository.generate_revision_id(1, "", branch.mapping),
+            revid)
+
     def test_commit_update(self):
         self.make_client('d', 'dc')
         self.build_tree({'dc/foo/bla': "data"})
@@ -200,8 +208,9 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEquals('/foo', paths["/bar"][1])
         self.assertEquals(1, paths["/bar"][2])
         svnrepo = Repository.open(repos_url)
+        revmeta = svnrepo._revmeta_provider.get_revision("", 2)
         self.assertEquals({u"bar": oldid},
-                svnrepo._revmeta_provider.get_revision("", 2).get_fileid_overrides(svnrepo.get_mapping()))
+                revmeta.get_fileid_overrides(svnrepo.get_mapping()))
 
     def test_commit_rename_file_from_directory(self):
         repos_url = self.make_client('d', 'dc')
@@ -242,8 +251,9 @@ class TestNativeCommit(SubversionTestCase):
 
         branch = Branch.open(repos_url+"/trunk")
         foobranch = Branch.open(repos_url+"/tags/foo")
-        builder = branch.get_commit_builder([branch.last_revision(), foobranch.last_revision()],
-                revision_id="my-revision-id")
+        builder = branch.get_commit_builder(
+            [branch.last_revision(), foobranch.last_revision()],
+            revision_id="my-revision-id")
         builder.finish_inventory()
         builder.commit("foo")
 
