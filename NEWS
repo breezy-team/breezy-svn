@@ -74,6 +74,9 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * Tags are now copied during clone. (Jelmer Vernooij, #309682)
 
+  * "bzr commit --lossy" can now be used in bound branches.
+    (Jelmer Vernooij, #587721)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is

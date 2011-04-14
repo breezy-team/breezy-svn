@@ -1311,7 +1311,7 @@ class SvnRepository(ForeignRepository):
 
     def get_commit_builder(self, branch, parents, config, timestamp=None,
                            timezone=None, committer=None, revprops=None,
-                           revision_id=None):
+                           revision_id=None, lossy=False):
         """See Repository.get_commit_builder()."""
         from bzrlib.plugins.svn.commit import SvnCommitBuilder
         if branch is None:
@@ -1342,7 +1342,8 @@ class SvnRepository(ForeignRepository):
                                 config, timestamp, timezone, committer,
                                 revprops, revision_id,
                                 base_foreign_revid, base_mapping,
-                                root_action=root_action)
+                                root_action=root_action,
+                                push_metadata=not lossy)
 
     def find_fileprop_paths(self, layout, from_revnum, to_revnum,
                                project=None, check_removed=False):
