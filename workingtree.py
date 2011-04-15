@@ -50,6 +50,7 @@ from bzrlib import (
     urlutils,
     )
 from bzrlib.errors import (
+    BadFilenameEncoding,
     BzrError,
     NotBranchError,
     NoSuchFile,
@@ -586,6 +587,58 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._bzr_inventory = inv
         return inv
 
+    def __iter__(self):
+        # FIXME
+        return iter(self._bzr_inventory)
+
+    def get_root_id(self):
+        # FIXME
+        return self._bzr_inventory.root.file_id
+
+    def path2id(self, path):
+        # FIXME
+        return self._bzr_inventory.path2id(path)
+
+    def id2path(self, file_id):
+        # FIXME
+        return self._bzr_inventory.id2path(file_id)
+
+    def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
+        # FIXME
+        return self._bzr_inventory.iter_entries_by_dir(
+            specific_file_ids=specific_file_ids, yield_parents=yield_parents)
+
+    def extras(self):
+        # FIXME
+        for path, dir_entry in self._bzr_inventory.directories():
+            # mutter("search for unknowns in %r", path)
+            dirabs = self.abspath(path)
+            if not osutils.isdir(dirabs):
+                # e.g. directory deleted
+                continue
+
+            fl = []
+            for subf in os.listdir(dirabs):
+                if self.bzrdir.is_control_filename(subf):
+                    continue
+                if subf not in dir_entry.children:
+                    try:
+                        (subf_norm, can_access) = osutils.normalized_filename(subf)
+                    except UnicodeDecodeError:
+                        path_os_enc = path.encode(osutils._fs_enc)
+                        relpath = path_os_enc + '/' + subf
+                        raise BadFilenameEncoding(relpath, osutils._fs_enc)
+                    if subf_norm != subf and can_access:
+                        if subf_norm not in dir_entry.children:
+                            fl.append(subf_norm)
+                    else:
+                        fl.append(subf)
+
+            fl.sort()
+            for subf in fl:
+                subp = osutils.pathjoin(path, subf)
+                yield subp
+
     def _set_base(self, revid, revnum, tree=None):
         assert revid is None or isinstance(revid, str)
         self.base_revid = revid
@@ -649,7 +702,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             f = self.relpath(file_path)
             wc = self._get_wc(os.path.dirname(f.encode(osutils._fs_enc)).decode(osutils._fs_enc), write_lock=True)
             try:
-                if not self.has_filename(f):
+                if not self._bzr_inventory.has_filename(f):
                     if save:
                         mutter('adding %r', file_path)
                         wc.add(file_path.encode("utf-8"))
