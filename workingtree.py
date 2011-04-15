@@ -352,6 +352,17 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             self._change_fileid_mapping(None, file)
         self.read_working_inventory()
 
+    def unversion(self, file_ids):
+        wc = self._get_wc(write_lock=True)
+        try:
+            for file_id in file_ids:
+                path = self.id2path(file_id)
+                wc.delete(osutils.safe_utf8(self.abspath(path)),
+                          keep_local=True)
+        finally:
+            wc.close()
+        self.read_working_inventory()
+
     @convert_svn_error
     def _get_wc(self, relpath=u"", write_lock=False, depth=0, base=None):
         """Open a working copy handle."""
