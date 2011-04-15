@@ -633,7 +633,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             f = self.relpath(file_path)
             wc = self._get_wc(os.path.dirname(f.encode(osutils._fs_enc)).decode(osutils._fs_enc), write_lock=True)
             try:
-                if not self.inventory.has_filename(f):
+                if not self.has_filename(f):
                     if save:
                         mutter('adding %r', file_path)
                         wc.add(file_path.encode("utf-8"))
@@ -911,9 +911,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     if not osutils.supports_executable():
         def is_executable(self, file_id, path=None):
-            inv = self.basis_tree()._inventory
-            if file_id in inv:
-                return inv[file_id].executable
+            basis_tree = self.basis_tree()
+            if file_id in basis_tree:
+                return basis_tree.is_executable(file_id)
             # Default to not executable
             return False
     else:
