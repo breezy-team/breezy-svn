@@ -308,7 +308,6 @@ class FileTreeEditor(object):
             mutter('unsupported file property %r', name)
 
     def close(self, checksum=None):
-
         if self.file_stream:
             self.file_stream.seek(0)
             file_data = self.file_stream.read()

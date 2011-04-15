@@ -218,6 +218,11 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def _setup_directory_is_tree_reference(self):
         self._directory_is_tree_reference = self._directory_is_never_tree_reference
 
+    def get_file_sha1(self, file_id, path=None, stat_value=None):
+        if not path:
+            path = self.id2path(file_id)
+        return self._hashcache.get_sha1(path, stat_value)
+
     @property
     def basis_idmap(self):
         if self._base_idmap is None:
