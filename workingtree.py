@@ -382,7 +382,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             new_name = osutils.pathjoin(
                 osutils.safe_utf8(to_dir),
                 osutils.safe_utf8(os.path.basename(entry)))
-            self._change_fileid_mapping(self.inventory.path2id(entry), new_name)
+            self._change_fileid_mapping(self.path2id(entry), new_name)
             self._change_fileid_mapping(None, entry)
 
         self.read_working_inventory()
@@ -402,7 +402,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             else:
                 (from_wc, _) = self._get_rel_wc(from_rel, write_lock=True)
             try:
-                from_id = self.inventory.path2id(from_rel)
+                from_id = self.path2id(from_rel)
                 to_wc.copy(self.abspath(from_rel), to_file)
                 from_wc.delete(self.abspath(from_rel))
             finally:
