@@ -21,6 +21,7 @@ except ImportError:
     from bzrlib.plugins.svn.pycompat import defaultdict
 
 import os
+import stat
 import subvertpy
 
 from subvertpy import (
@@ -566,7 +567,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         finally:
             rootwc.close()
 
-        self._set_inventory(inv, dirty=False)
+        self._bzr_inventory = inv
         return inv
 
     def _set_base(self, revid, revnum, tree=None):
@@ -728,7 +729,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def get_file_properties(self, file_id, path=None):
         if path is None:
-            path = self._inventory.id2path(file_id)
+            path = self.id2path(file_id)
         else:
             path = osutils.safe_unicode(path)
         abspath = self.abspath(path)
@@ -904,6 +905,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         finally:
             self.branch.unlock()
 
+    def _is_executable_from_path_and_stat_from_stat(self, path, stat_result):
+        mode = stat_result.st_mode
+        return bool(stat.S_ISREG(mode) and stat.S_IEXEC & mode)
+
     if not osutils.supports_executable():
         def is_executable(self, file_id, path=None):
             inv = self.basis_tree()._inventory
@@ -911,6 +916,15 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 return inv[file_id].executable
             # Default to not executable
             return False
+    else:
+        def is_executable(self, file_id, path=None):
+            if not path:
+                path = self.id2path(file_id)
+            mode = os.lstat(self.abspath(path)).st_mode
+            return bool(stat.S_ISREG(mode) and stat.S_IEXEC & mode)
+
+        _is_executable_from_path_and_stat = \
+            _is_executable_from_path_and_stat_from_stat
 
     def transmit_svn_dir_deltas(self, file_id, editor):
         path = self.id2path(file_id)
