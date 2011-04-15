@@ -55,7 +55,7 @@ class TestBasisTree(SubversionTestCase):
         self.client_update("dc")
 
         tree = SvnBasisTree(WorkingTree.open("dc"))
-        self.assertTrue(tree.inventory[tree.inventory.path2id("file")].executable)
+        self.assertTrue(tree.is_executable(tree.path2id("file")))
 
     def test_executable_changed(self):
         repos_url = self.make_client("d", "dc")
@@ -67,7 +67,7 @@ class TestBasisTree(SubversionTestCase):
         self.client_update("dc")
         self.client_set_prop("dc/file", "svn:executable", "*")
         tree = SvnBasisTree(WorkingTree.open("dc"))
-        self.assertFalse(tree.inventory[tree.inventory.path2id("file")].executable)
+        self.assertFalse(tree.is_executable(tree.path2id("file")))
 
     def test_symlink(self):
         repos_url = self.make_client("d", "dc")
@@ -207,8 +207,8 @@ class TestBasisTree(SubversionTestCase):
 
         wt = WorkingTree.open("dc")
         tree = SvnBasisTree(wt)
-        self.assertFalse(tree.inventory[tree.inventory.path2id("file")].executable)
-        self.assertFalse(wt.inventory[wt.inventory.path2id("file")].executable)
+        self.assertFalse(tree.is_executable(tree.path2id("file")))
+        self.assertFalse(wt.is_executable(wt.path2id("file")))
 
 
 class TestInventoryExternals(SubversionTestCase):
@@ -274,14 +274,8 @@ class TestSvnRevisionTree(SubversionTestCase):
         self.repos = Repository.open(repos_url)
         self.repos.set_layout(RootLayout())
         mapping = self.repos.get_mapping()
-        self.inventory = self.repos.get_inventory(
-                self.repos.generate_revision_id(1, "", mapping))
         self.tree = self.repos.revision_tree(
                 self.repos.generate_revision_id(1, "", mapping))
-
-    def test_inventory(self):
-        self.assertIsInstance(self.tree.inventory, Inventory)
-        self.assertEqual(self.inventory, self.tree.inventory)
 
     def test_get_parent_ids(self):
         mapping = self.repos.get_mapping()
@@ -300,7 +294,7 @@ class TestSvnRevisionTree(SubversionTestCase):
 
     def test_get_file_lines(self):
         self.assertEqual(["data"],
-                self.tree.get_file_lines(self.inventory.path2id("foo/bla")))
+                self.tree.get_file_lines(self.tree.path2id("foo/bla")))
 
     def test_executable(self):
         self.client_set_prop("dc/foo/bla", "svn:executable", "*")
@@ -308,10 +302,10 @@ class TestSvnRevisionTree(SubversionTestCase):
 
         mapping = self.repos.get_mapping()
 
-        inventory = self.repos.get_inventory(
+        tree = self.repos.revision_tree(
                 self.repos.generate_revision_id(2, "", mapping))
 
-        self.assertTrue(inventory[inventory.path2id("foo/bla")].executable)
+        self.assertTrue(tree.is_executable(tree.path2id("foo/bla")))
 
     def test_symlink(self):
         self.requireFeature(SymlinkFeature)
@@ -329,5 +323,4 @@ class TestSvnRevisionTree(SubversionTestCase):
                 inventory[inventory.path2id("bar")].symlink_target)
 
     def test_not_executable(self):
-        self.assertFalse(self.inventory[
-            self.inventory.path2id("foo/bla")].executable)
+        self.assertFalse(self.tree.is_executable(self.tree.path2id("foo/bla")))
