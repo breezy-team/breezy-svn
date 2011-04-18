@@ -452,16 +452,16 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             (propchanges, props) = adm.get_prop_diffs(
                 self.workingtree.abspath(relpath).encode("utf-8"))
             if props.has_key(properties.PROP_SPECIAL):
-                is_symlink = (self.get_file_byname(relpath).read(5) == "link ")
+                is_symlink = (self.get_file_text_by_path(relpath).read(5) == "link ")
             else:
                 is_symlink = False
 
             if is_symlink:
                 ie = self._bzr_inventory.add_path(relpath, 'symlink', id)
-                ie.symlink_target = self.get_file_byname(relpath).read()[len("link "):]
+                ie.symlink_target = self.get_file_text_by_path(relpath).read()[len("link "):]
             else:
                 ie = self._bzr_inventory.add_path(relpath, 'file', id)
-                data = osutils.fingerprint_file(self.get_file_byname(relpath))
+                data = osutils.fingerprint_file(self.get_file_text_by_path(relpath))
                 ie.text_sha1 = data['sha1']
                 ie.text_size = data['size']
                 ie.executable = props.has_key(properties.PROP_EXECUTABLE)
@@ -538,8 +538,8 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         """See Tree.get_revision_id()."""
         return self.workingtree.last_revision()
 
-    def get_file_byname(self, name):
-        """See Tree.get_file_byname()."""
+    def get_file_text_by_path(self, name):
+        """See Tree.get_file_text_by_path()."""
         assert isinstance(name, unicode)
         wt_path = self.workingtree.abspath(name).encode("utf-8")
         return wc.get_pristine_contents(wt_path)
@@ -573,7 +573,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         """See Tree.get_file_text()."""
         if path is None:
             path = self.id2path(file_id)
-        return self.get_file_byname(path).read()
+        return self.get_file_text_by_path(path).read()
 
     def get_file_properties(self, file_id, path=None):
         """See SubversionTree.get_file_properties()."""
