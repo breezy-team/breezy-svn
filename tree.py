@@ -196,7 +196,6 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         self._rules_searcher = None
         self.id_map = repository.get_fileid_map(self._revmeta, self.mapping)
         editor = TreeBuildEditor(self)
-        self.file_data = {}
         self.file_properties = {}
         self.transport = repository.transport.clone(self._revmeta.branch_path)
         root_repos = repository.transport.get_svn_repos_root()
@@ -264,40 +263,28 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         for path, entry in entries:
             yield path, 'V', entry.kind, entry.file_id, entry
 
+    def get_file(self, file_id, path=None):
+        if path is None:
+            path = self.id2path(file_id)
+        stream = StringIO()
+        (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"), stream, self._revmeta.revnum)
+        if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == "link ":
+            return StringIO()
+        stream.seek(0)
+        return stream
+
     def get_file_text(self, file_id, path=None):
-        return self.file_data[file_id]
-
-    def iter_files_bytes(self, desired_files):
-        """Iterate through file contents.
-
-        Files will not necessarily be returned in the order they occur in
-        desired_files.  No specific order is guaranteed.
-
-        Yields pairs of identifier, bytes_iterator.  identifier is an opaque
-        value supplied by the caller as part of desired_files.  It should
-        uniquely identify the file version in the caller's context.  (Examples:
-        an index number or a TreeTransform trans_id.)
-
-        bytes_iterator is an iterable of bytestrings for the file.  The
-        kind of iterable and length of the bytestrings are unspecified, but for
-        this implementation, it is a tuple containing a single bytestring with
-        the complete text of the file.
-
-        :param desired_files: a list of (file_id, identifier) pairs
-        """
-        for file_id, identifier in desired_files:
-            # We wrap the string in a tuple so that we can return an iterable
-            # of bytestrings.  (Technically, a bytestring is also an iterable
-            # of bytestrings, but iterating through each character is not
-            # performant.)
-            cur_file = (self.get_file_text(file_id),)
-            yield identifier, cur_file
+        my_file = self.get_file(file_id, path)
+        try:
+            return my_file.read()
+        finally:
+            my_file.close()
 
     def get_file_properties(self, file_id, path=None):
         return self.file_properties[file_id]
 
     def has_filename(self, path):
-        kind = self.transport.check_path(path, self._revmeta.revnum)
+        kind = self.transport.check_path(path.encode("utf-8"), self._revmeta.revnum)
         return kind in (subvertpy.NODE_DIR, subvertpy.NODE_FILE)
 
 
@@ -421,7 +408,6 @@ class FileTreeEditor(object):
         else:
             ie.text_sha1 = osutils.sha_string(file_data)
             ie.text_size = len(file_data)
-            self.tree.file_data[self.file_id] = file_data
             ie.executable = self.is_executable
 
         self.file_stream = None
