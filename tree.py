@@ -190,16 +190,22 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         self._repository = repository
         self._revision_id = revision_id
         self._revmeta, self.mapping = repository._get_revmeta(revision_id)
-        self._bzr_inventory = Inventory()
-        self._bzr_inventory.revision_id = revision_id
-        self.inventory = self._bzr_inventory #FIXME
+        self._bzr_inventory = None
         self._rules_searcher = None
         self.id_map = repository.get_fileid_map(self._revmeta, self.mapping)
-        editor = TreeBuildEditor(self)
         self.file_properties = {}
         self.transport = repository.transport.clone(self._revmeta.branch_path)
-        root_repos = repository.transport.get_svn_repos_root()
-        conn = repository.transport.get_connection()
+
+    @property
+    def inventory(self):
+        # FIXME
+        if self._bzr_inventory is not None:
+            return self._bzr_inventory
+        self._bzr_inventory = Inventory()
+        self._bzr_inventory.revision_id = self.get_revision_id()
+        root_repos = self._repository.transport.get_svn_repos_root()
+        editor = TreeBuildEditor(self)
+        conn = self._repository.transport.get_connection()
         try:
             reporter = conn.do_switch(
                 self._revmeta.revnum, "", True,
@@ -211,44 +217,52 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
                 reporter.abort()
                 raise
         finally:
-            repository.transport.add_connection(conn)
+            self._repository.transport.add_connection(conn)
+        return self._bzr_inventory
 
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
         # FIXME
-        return self._bzr_inventory.iter_entries_by_dir(
+        return self.inventory.iter_entries_by_dir(
             specific_file_ids=specific_file_ids, yield_parents=yield_parents)
 
-    def kind(self, file_id):
-        # FIXME
-        return self._bzr_inventory[file_id].kind
-
-    def is_executable(self, file_id, path=None):
+    def kind(self, file_id, path=None):
         if path is None:
             path = self.id2path(file_id)
-        # FIXME
-        ie = self._bzr_inventory[file_id]
-        if ie.kind != "file":
-            return False
-        return ie.executable
+        stream = StringIO()
+        try:
+            (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
+                    stream, self._revmeta.revnum)
+        except subvertpy.SubversionException, (_, num):
+            if num == subvertpy.ERR_FS_NOT_FILE:
+                return "directory"
+            raise
+        stream.seek(0)
+        if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == "link ":
+            return "symlink"
+        return "file"
+
+    def is_executable(self, file_id, path=None):
+        props = self.get_file_properties(file_id, path)
+        return props.has_key(properties.PROP_EXECUTABLE)
 
     def get_symlink_target(self, file_id, path=None):
-        # FIXME
-        ie = self._bzr_inventory[file_id]
-        if ie.kind != 'symlink':
-            return False
-        return ie.symlink_target
+        if path is None:
+            path = self.id2path(file_id)
+        stream = StringIO()
+        (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
+                stream, self._revmeta.revnum)
+        stream.seek(0)
+        if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == "link ":
+            return stream.read()
+        return None
 
     def get_file_sha1(self, file_id, path=None, stat_value=None):
-        # FIXME
-        ie = self._bzr_inventory[file_id]
-        if ie.kind == "file":
-            return ie.text_sha1
-        return None
+        return osutils.sha_string(self.get_file_text(file_id, path))
 
     def list_files(self, include_root=False, from_dir=None, recursive=True):
         # FIXME
         # The only files returned by this are those from the version
-        inv = self._bzr_inventory
+        inv = self.inventory
         if from_dir is None:
             from_dir_id = None
         else:
@@ -267,7 +281,8 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         if path is None:
             path = self.id2path(file_id)
         stream = StringIO()
-        (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"), stream, self._revmeta.revnum)
+        (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
+                stream, self._revmeta.revnum)
         if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == "link ":
             return StringIO()
         stream.seek(0)
@@ -281,7 +296,19 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
             my_file.close()
 
     def get_file_properties(self, file_id, path=None):
-        return self.file_properties[file_id]
+        if path is None:
+            path = self.id2path(file_id)
+        encoded_path = path.encode("utf-8")
+        try:
+            (fetched_rev, props) = self.transport.get_file(encoded_path,
+                    StringIO(), self._revmeta.revnum)
+        except subvertpy.SubversionException, (_, num):
+            if num == subvertpy.ERR_FS_NOT_FILE:
+                (dirents, fetched_rev, props) = self.transport.get_dir(
+                    encoded_path, self._revmeta.revnum)
+            else:
+                raise
+        return props
 
     def has_filename(self, path):
         kind = self.transport.check_path(path.encode("utf-8"), self._revmeta.revnum)
