@@ -513,18 +513,21 @@ class SvnBranch(ForeignBranch):
         return (self.layout.push_merged_revisions(self.project) and
                 self.get_config().get_push_merged_revisions())
 
-    def import_last_revision_info(self, source_repo, revno, revid):
+    def import_last_revision_info(self, source_repo, revno, revid, lossy=False):
         interrepo = InterToSvnRepository(source_repo, self.repository)
         last_revmeta, mapping = self.last_revmeta()
-        interrepo.push_todo(last_revmeta.get_revision_id(mapping),
+        revidmap = interrepo.push_todo(last_revmeta.get_revision_id(mapping),
             last_revmeta.get_foreign_revid(), mapping, revid, self.layout,
             self.project, self.get_branch_path(), self.get_config(),
             push_merged=self.get_push_merged_revisions(),
-            overwrite=False, push_metadata=True, append_revisions_only=True)
+            overwrite=False, push_metadata=not lossy, append_revisions_only=True)
+        return (revno, revidmap[revid][0])
 
-    def import_last_revision_info_and_tags(self, source, revno, revid):
-        self.import_last_revision_info(source.repository, revno, revid)
+    def import_last_revision_info_and_tags(self, source, revno, revid, lossy=False):
+        (revno, revid) = self.import_last_revision_info(source.repository,
+            revno, revid, lossy=lossy)
         self.tags.merge_to(source.tags, overwrite=False)
+        return (revno, revid)
 
     def generate_revision_history(self, revision_id, last_rev=None,
         other_branch=None):
