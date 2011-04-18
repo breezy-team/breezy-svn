@@ -1034,9 +1034,12 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         root_adm = self._get_wc(write_lock=True)
         try:
             adm = root_adm.probe_try(encoded_path, True, 1)
-            entry = adm.entry(encoded_path)
-            root_adm.transmit_prop_deltas(encoded_path, entry, editor)
-            root_adm.transmit_text_deltas(encoded_path, True, editor)
+            try:
+                entry = adm.entry(encoded_path)
+                root_adm.transmit_prop_deltas(encoded_path, entry, editor)
+                root_adm.transmit_text_deltas(encoded_path, True, editor)
+            finally:
+                adm.close()
         finally:
             root_adm.close()
 
@@ -1075,14 +1078,17 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             def close(self):
                 pass
 
+        adms_to_close = set()
         def update_entry(cq, path, root_adm, md5sum=None):
             mutter('updating entry for %s'% path)
             adm = root_adm.probe_try(self.abspath(path).encode("utf-8"), True, 1)
             cq.queue(self.abspath(path).rstrip("/").encode("utf-8"), adm,
                 True, None, False, False, md5sum)
+            adms_to_close.add(adm)
 
         cq = CommittedQueue()
         root_adm = self._get_wc(self.abspath("."), write_lock=True, depth=-1)
+        adms_to_close.add(root_adm)
         try:
             for (old_path, new_path, file_id, ie) in delta:
                 if old_path is not None:
@@ -1098,7 +1104,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 rev, svn_revprops[properties.PROP_REVISION_DATE],
                 svn_revprops[properties.PROP_REVISION_AUTHOR])
         finally:
-           root_adm.close()
+            for adm in adms_to_close:
+                adm.close()
         self.set_parent_ids([new_revid])
 
 
