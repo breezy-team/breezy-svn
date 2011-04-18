@@ -65,9 +65,10 @@ from bzrlib.inventory import (
 from bzrlib.revision import (
     NULL_REVISION,
     )
-from bzrlib.revisiontree import (
-    RevisionTree,
-    )
+try:
+    from bzrlib.revisiontree import InventoryRevisionTree
+except ImportError: # bzr < 2.4
+    from bzrlib.revisiontree import RevisionTree as InventoryRevisionTree
 from bzrlib.repository import (
     InterRepository,
     )
@@ -1460,7 +1461,7 @@ class InterFromSvnRepository(InterRepository):
                     except:
                         editor.abort()
                         raise
-                    self._prev_tree = RevisionTree(self.target,
+                    self._prev_tree = InventoryRevisionTree(self.target,
                         editor.inventory, revid)
             except:
                 self.target.abort_write_group()
