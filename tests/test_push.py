@@ -266,15 +266,13 @@ class TestPush(SubversionTestCase):
         repos = self.svndir.find_repository()
         mapping = repos.get_mapping()
         self.assertEquals(newid, svnbranch.last_revision())
-        inv = repos.get_inventory(repos.generate_revision_id(2, "", mapping))
-        self.assertEqual(newid, inv[inv.path2id('foo/bla')].revision)
+        tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
+        self.assertEqual(newid, tree.inventory[tree.path2id('foo/bla')].revision)
         self.assertEqual(wt.branch.last_revision(),
           repos.generate_revision_id(2, "", mapping))
         self.assertEqual(repos.generate_revision_id(2, "", mapping),
                         self.svndir.open_branch().last_revision())
-        self.assertEqual("other data",
-            repos.revision_tree(repos.generate_revision_id(2, "",
-                                mapping)).get_file_text(inv.path2id("foo/bla")))
+        self.assertEqual("other data", tree.get_file_text(tree.path2id("foo/bla")))
 
     def test_simple(self):
         self.build_tree({'dc/file': 'data'})
@@ -286,8 +284,8 @@ class TestPush(SubversionTestCase):
 
         repos = self.svndir.find_repository()
         mapping = repos.get_mapping()
-        inv = repos.get_inventory(repos.generate_revision_id(2, "", mapping))
-        self.assertTrue(inv.has_filename('file'))
+        tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
+        self.assertTrue(tree.has_filename('file'))
         self.assertEquals(wt.branch.last_revision(),
                 repos.generate_revision_id(2, "", mapping))
         self.assertEqual(repos.generate_revision_id(2, "", mapping),
@@ -315,8 +313,8 @@ class TestPush(SubversionTestCase):
 
         repos = self.svndir.find_repository()
         mapping = repos.get_mapping()
-        inv = repos.get_inventory(repos.generate_revision_id(2, "", mapping))
-        self.assertTrue(inv.has_filename('file'))
+        tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
+        self.assertTrue(tree.has_filename('file'))
         self.assertEquals(wt.branch.last_revision(),
                 repos.generate_revision_id(2, "", mapping))
         self.assertEqual(repos.generate_revision_id(2, "", mapping),
@@ -335,10 +333,10 @@ class TestPush(SubversionTestCase):
 
         repos = self.svndir.find_repository()
         mapping = repos.get_mapping()
-        inv = repos.get_inventory(repos.generate_revision_id(2, "", mapping))
-        self.assertTrue(inv.has_filename('south'))
-        self.assertEquals('symlink', inv[inv.path2id('south')].kind)
-        self.assertEquals('bla', inv[inv.path2id('south')].symlink_target)
+        tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
+        self.assertTrue(tree.has_filename('south'))
+        self.assertEquals('symlink', tree.kind(tree.path2id('south')))
+        self.assertEquals('bla', tree.get_symlink_target(tree.path2id('south')))
 
     def test_pull_after_push(self):
         self.build_tree({'dc/file': 'data'})
@@ -350,8 +348,8 @@ class TestPush(SubversionTestCase):
 
         repos = self.svndir.find_repository()
         mapping = repos.get_mapping()
-        inv = repos.get_inventory(repos.generate_revision_id(2, "", mapping))
-        self.assertTrue(inv.has_filename('file'))
+        tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
+        self.assertTrue(tree.has_filename('file'))
         self.assertEquals(wt.branch.last_revision(),
                          repos.generate_revision_id(2, "", mapping))
         self.assertEqual(repos.generate_revision_id(2, "", mapping),
@@ -397,7 +395,7 @@ class TestPush(SubversionTestCase):
                              b.revision_history()[1])
             self.assertEqual(rtree.inventory[rtree.path2id("foo/bla")].revision,
                              revid)
-            self.assertEqual(rtree.inventory.root.revision, b.revision_history()[0])
+            self.assertEqual(rtree.get_revision_id(), b.last_revision())
 
         check_tree_revids(wt.branch.repository.revision_tree(b.last_revision()))
 
@@ -466,13 +464,13 @@ class TestPush(SubversionTestCase):
         self.assertEqual(repos.generate_revision_id(3, "", mapping),
                         self.svndir.open_branch().last_revision())
 
-        inv = repos.get_inventory(repos.generate_revision_id(2, "", mapping))
-        self.assertTrue(inv.has_filename('file'))
-        self.assertFalse(inv.has_filename('adir'))
+        tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
+        self.assertTrue(tree.has_filename('file'))
+        self.assertFalse(tree.has_filename('adir'))
 
-        inv = repos.get_inventory(repos.generate_revision_id(3, "", mapping))
-        self.assertTrue(inv.has_filename('file'))
-        self.assertTrue(inv.has_filename('adir'))
+        tree = repos.revision_tree(repos.generate_revision_id(3, "", mapping))
+        self.assertTrue(tree.has_filename('file'))
+        self.assertTrue(tree.has_filename('adir'))
 
         self.assertEqual(self.svndir.open_branch().revision_history(),
                          self.bzrdir.open_branch().revision_history())
@@ -590,8 +588,8 @@ class PushNewBranchTests(SubversionTestCase):
 
         bzrwt.lock_read()
         try:
-            self.assertEquals(bzrwt.inventory.root.file_id,
-                              newtree.inventory.root.file_id)
+            self.assertEquals(bzrwt.get_root_id(),
+                              newtree.get_root_id())
         finally:
             bzrwt.unlock()
 
@@ -603,8 +601,7 @@ class PushNewBranchTests(SubversionTestCase):
         newtree = newbranch.repository.revision_tree(revid)
         bzrwt.lock_read()
         try:
-            self.assertEquals(bzrwt.inventory.root.file_id,
-                              newtree.inventory.root.file_id)
+            self.assertEquals(bzrwt.get_root_id(), newtree.get_root_id())
         finally:
             bzrwt.unlock()
         self.assertEquals(revid, newbranch.last_revision())
@@ -728,8 +725,10 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_push_merge_unchanged_file(self):
         def check_tree(t):
-            self.assertEquals(base_revid, t.inventory[t.path2id("bar.txt")].revision)
-            self.assertEquals(other_revid, t.inventory[t.path2id("bar2.txt")].revision)
+            self.assertEquals(base_revid,
+                t.inventory[t.path2id("bar.txt")].revision)
+            self.assertEquals(other_revid,
+                t.inventory[t.path2id("bar2.txt")].revision)
         repos_url = self.make_repository("test")
 
         dc = self.get_commit_editor(repos_url)
@@ -977,13 +976,12 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertEquals(revid2, newbranch.last_revision())
         self.assertEquals([revid1, revid2], newbranch.revision_history())
         tree = newbranch.repository.revision_tree(revid2)
-        mutter("inventory: %r" % tree.inventory.entries())
         delta = tree.changes_from(bzrwt)
         self.assertFalse(delta.has_changed())
-        self.assertTrue(tree.inventory.has_filename("registry"))
-        self.assertTrue(tree.inventory.has_filename("registry.moved"))
-        self.assertTrue(tree.inventory.has_filename("registry/generic.c"))
-        self.assertFalse(tree.inventory.has_filename("registry.moved/generic.c"))
+        self.assertTrue(tree.has_filename("registry"))
+        self.assertTrue(tree.has_filename("registry.moved"))
+        self.assertTrue(tree.has_filename("registry/generic.c"))
+        self.assertFalse(tree.has_filename("registry.moved/generic.c"))
         os.mkdir("n")
         BzrDir.open(repos_url+"/trunk").sprout("n")
 
@@ -1187,9 +1185,9 @@ class PushNewBranchTests(SubversionTestCase):
         wt.lock_write()
         try:
             wt.apply_inventory_delta([
-                ("", None, wt.inventory.root.file_id, None),
-                ("mysubdir", "", wt.inventory.path2id("mysubdir"),
-                    InventoryDirectory(wt.inventory.path2id("mysubdir"), "",
+                ("", None, wt.get_root_id(), None),
+                ("mysubdir", "", wt.path2id("mysubdir"),
+                    InventoryDirectory(wt.path2id("mysubdir"), "",
                         None))])
             os.rename("dc/mysubdir/myfile", "dc/myfile")
             osutils.rmtree("dc/mysubdir")

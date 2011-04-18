@@ -400,11 +400,11 @@ Node-copyfrom-path: x
             mapping.revision_id_foreign_to_bzr((uuid, "", 5))))
         self.assertTrue(newrepos.has_revision(
             mapping.revision_id_foreign_to_bzr((uuid, "", 1))))
-        inv1 = newrepos.get_inventory(
+        tree1 = newrepos.revision_tree(
                 mapping.revision_id_foreign_to_bzr((uuid, "", 1)))
-        inv2 = newrepos.get_inventory(
+        tree2 = newrepos.revision_tree(
                 mapping.revision_id_foreign_to_bzr((uuid, "", 5)))
-        self.assertNotEqual(inv1.path2id("y"), inv2.path2id("y"))
+        self.assertNotEqual(tree1.path2id("y"), tree2.path2id("y"))
 
     def test_svn_import_bzr_branch(self):
         self.run_bzr('init foo')

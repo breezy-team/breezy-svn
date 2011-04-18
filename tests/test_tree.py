@@ -81,9 +81,9 @@ class TestBasisTree(SubversionTestCase):
         self.client_update("dc")
         tree = SvnBasisTree(WorkingTree.open("dc"))
         self.assertEqual('symlink',
-                         tree.inventory[tree.inventory.path2id("file")].kind)
+                         tree.kind(tree.path2id("file")))
         self.assertEqual("target",
-                         tree.inventory[tree.inventory.path2id("file")].symlink_target)
+                         tree.get_symlink_target(tree.path2id("file")))
 
     def test_symlink_with_newlines_in_target(self):
         repos_url = self.make_client("d", "dc")
@@ -97,9 +97,9 @@ class TestBasisTree(SubversionTestCase):
         self.client_update("dc")
         tree = SvnBasisTree(WorkingTree.open("dc"))
         self.assertEqual('symlink',
-                         tree.inventory[tree.inventory.path2id("file")].kind)
+                         tree.kind(tree.path2id("file")))
         self.assertEqual("target\nbar\nbla",
-                         tree.inventory[tree.inventory.path2id("file")].symlink_target)
+                         tree.get_symlink_target(tree.path2id("file")))
 
     def test_symlink_not_special(self):
         repos_url = self.make_client("d", "dc")
@@ -120,8 +120,7 @@ class TestBasisTree(SubversionTestCase):
                 raise TestSkipped("Unable to run test with svn 1.4")
             raise
         tree = SvnBasisTree(WorkingTree.open("dc"))
-        self.assertEqual('file',
-                         tree.inventory[tree.inventory.path2id("file")].kind)
+        self.assertEqual('file', tree.kind(tree.path2id("file")))
 
     def test_symlink_next(self):
         repos_url = self.make_client("d", "dc")
@@ -140,10 +139,9 @@ class TestBasisTree(SubversionTestCase):
         self.client_update("dc")
 
         tree = SvnBasisTree(WorkingTree.open("dc"))
-        self.assertEqual('symlink',
-                         tree.inventory[tree.inventory.path2id("file")].kind)
+        self.assertEqual('symlink', tree.kind(tree.path2id("file")))
         self.assertEqual("target",
-                         tree.inventory[tree.inventory.path2id("file")].symlink_target)
+                         tree.get_symlink_target(tree.path2id("file")))
 
     def test_annotate_iter(self):
         repos_url = self.make_client("d", "dc")
@@ -315,12 +313,12 @@ class TestSvnRevisionTree(SubversionTestCase):
 
         mapping = self.repos.get_mapping()
 
-        inventory = self.repos.get_inventory(
+        tree = self.repos.revision_tree(
                 self.repos.generate_revision_id(2, "", mapping))
 
-        self.assertEqual('symlink', inventory[inventory.path2id("bar")].kind)
+        self.assertEqual('symlink', tree.kind(tree.path2id("bar")))
         self.assertEqual('foo/bla',
-                inventory[inventory.path2id("bar")].symlink_target)
+                tree.get_symlink_target(tree.path2id("bar")))
 
     def test_not_executable(self):
         self.assertFalse(self.tree.is_executable(self.tree.path2id("foo/bla")))

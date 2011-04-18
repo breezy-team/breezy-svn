@@ -364,6 +364,11 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             wc.close()
         self.read_working_inventory()
 
+    def all_file_ids(self):
+        """See Tree.all_file_ids"""
+        # FIXME
+        return set(self._bzr_inventory)
+
     @convert_svn_error
     def _get_wc(self, relpath=u"", write_lock=False, depth=0, base=None):
         """Open a working copy handle."""
@@ -585,6 +590,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             rootwc.close()
 
         self._bzr_inventory = inv
+        self.inventory = self._bzr_inventory # FIXME
         return inv
 
     def __iter__(self):
@@ -598,6 +604,21 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def path2id(self, path):
         # FIXME
         return self._bzr_inventory.path2id(path)
+
+    def has_or_had_id(self, file_id):
+        if self.has_id(file_id):
+            return True
+        if self.basis_tree().has_id(file_id):
+            return True
+        return False
+
+    def has_id(self, file_id):
+        try:
+            self.id2path(file_id)
+        except NoSuchId:
+            return False
+        else:
+            return True
 
     def id2path(self, file_id):
         # FIXME
@@ -646,6 +667,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._base_idmap = None
         self.base_revnum = revnum
         self.base_tree = tree
+
+    def merge_modified(self):
+        return {}
 
     def set_last_revision(self, revid):
         mutter('setting last revision to %r', revid)

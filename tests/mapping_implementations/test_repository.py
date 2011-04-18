@@ -745,41 +745,8 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
     def test_get_inventory(self):
         repos_url = self.make_repository('d')
         repository = Repository.open(repos_url)
-        self.assertRaises(NoSuchRevision, repository.get_inventory, 
+        self.assertRaises(NotImplementedError, repository.get_inventory, 
                 "nonexisting")
-
-        dc = self.get_commit_editor(repos_url)
-        dc.add_file("foo").modify("data")
-        dc.add_file("blah").modify("other data")
-        dc.close()
-
-        dc = self.get_commit_editor(repos_url)
-        dc.open_file("foo").modify("data2")
-        bar = dc.add_dir("bar")
-        bar.add_file("bar/foo").modify("data3")
-        dc.close()
-
-        dc = self.get_commit_editor(repos_url)
-        dc.open_file("foo").modify("data3")
-        dc.close()
-
-        repository = Repository.open(repos_url)
-        repository.set_layout(RootLayout())
-        mapping = repository.get_mapping()
-        inv = repository.get_inventory(
-                repository.generate_revision_id(1, "", mapping))
-        self.assertIsInstance(inv, Inventory)
-        self.assertIsInstance(inv.path2id("foo"), basestring)
-        inv = repository.get_inventory(
-            repository.generate_revision_id(2, "", mapping))
-        self.assertEqual(repository.generate_revision_id(2, "", mapping), 
-                         inv[inv.path2id("foo")].revision)
-        self.assertEqual(repository.generate_revision_id(1, "", mapping), 
-                         inv[inv.path2id("blah")].revision)
-        self.assertIsInstance(inv, Inventory)
-        self.assertIsInstance(inv.path2id("foo"), basestring)
-        self.assertIsInstance(inv.path2id("bar"), basestring)
-        self.assertIsInstance(inv.path2id("bar/foo"), basestring)
 
     def test_generate_revision_id(self):
         repos_url = self.make_client('d', 'dc')

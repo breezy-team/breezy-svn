@@ -82,17 +82,15 @@ class TestComplexFileids(SubversionTestCase):
         repository.set_layout(RootLayout())
         mapping = repository.get_mapping()
 
-        inv1 = repository.get_inventory(
+        tree1 = repository.revision_tree(
                 repository.generate_revision_id(1, "", mapping))
-        inv2 = repository.get_inventory(
+        tree2 = repository.revision_tree(
                 repository.generate_revision_id(2, "", mapping))
-        mutter('inv1: %r' % inv1.entries())
-        mutter('inv2: %r' % inv2.entries())
-        self.assertNotEqual(None, inv1.path2id("foo"))
-        self.assertIs(None, inv2.path2id("foo"))
-        self.assertNotEqual(None, inv2.path2id("bar"))
-        self.assertNotEqual(inv1.path2id("foo"), inv2.path2id("blie"))
-        self.assertNotEqual(inv2.path2id("bar"), inv2.path2id("blie"))
+        self.assertNotEqual(None, tree1.path2id("foo"))
+        self.assertIs(None, tree2.path2id("foo"))
+        self.assertNotEqual(None, tree2.path2id("bar"))
+        self.assertNotEqual(tree1.path2id("foo"), tree2.path2id("blie"))
+        self.assertNotEqual(tree2.path2id("bar"), tree2.path2id("blie"))
 
     def test_simplecopy(self):
         repos_url = self.make_repository('d')
@@ -111,14 +109,14 @@ class TestComplexFileids(SubversionTestCase):
 
         mapping = repository.get_mapping()
 
-        inv1 = repository.get_inventory(
+        tree1 = repository.revision_tree(
                 repository.generate_revision_id(1, "", mapping))
-        inv2 = repository.get_inventory(
+        tree2 = repository.revision_tree(
                 repository.generate_revision_id(2, "", mapping))
-        self.assertNotEqual(inv1.path2id("foo"), inv2.path2id("bar"))
-        self.assertNotEqual(inv1.path2id("foo"), inv2.path2id("blie"))
-        self.assertIs(None, inv1.path2id("bar"))
-        self.assertNotEqual(None, inv1.path2id("blie"))
+        self.assertNotEqual(tree1.path2id("foo"), tree2.path2id("bar"))
+        self.assertNotEqual(tree1.path2id("foo"), tree2.path2id("blie"))
+        self.assertIs(None, tree1.path2id("bar"))
+        self.assertNotEqual(None, tree1.path2id("blie"))
 
     def test_simpledelete(self):
         repos_url = self.make_repository('d')
@@ -135,12 +133,12 @@ class TestComplexFileids(SubversionTestCase):
         repository = bzrdir.find_repository()
         mapping = repository.get_mapping()
 
-        inv1 = repository.get_inventory(
+        tree1 = repository.revision_tree(
                 repository.generate_revision_id(1, "", mapping))
-        inv2 = repository.get_inventory(
+        tree2 = repository.revision_tree(
                 repository.generate_revision_id(2, "", mapping))
-        self.assertNotEqual(None, inv1.path2id("foo"))
-        self.assertIs(None, inv2.path2id("foo"))
+        self.assertNotEqual(None, tree1.path2id("foo"))
+        self.assertIs(None, tree2.path2id("foo"))
 
     def test_replace(self):
         repos_url = self.make_repository('d')
@@ -159,11 +157,11 @@ class TestComplexFileids(SubversionTestCase):
 
         mapping = repository.get_mapping()
 
-        inv1 = repository.get_inventory(
+        tree1 = repository.revision_tree(
                 repository.generate_revision_id(1, "", mapping))
-        inv2 = repository.get_inventory(
+        tree2 = repository.revision_tree(
                 repository.generate_revision_id(2, "", mapping))
-        self.assertNotEqual(inv1.path2id("foo"), inv2.path2id("foo"))
+        self.assertNotEqual(tree1.path2id("foo"), tree2.path2id("foo"))
 
     def test_copy_branch(self):
         repos_url = self.make_repository('d')
@@ -185,16 +183,16 @@ class TestComplexFileids(SubversionTestCase):
 
         mapping = repository.get_mapping()
 
-        inv1 = repository.get_inventory(
+        tree1 = repository.revision_tree(
                 repository.generate_revision_id(1, "trunk", mapping))
-        inv2 = repository.get_inventory(
+        tree2 = repository.revision_tree(
                 repository.generate_revision_id(2, "branches/mybranch", mapping))
-        self.assertEqual(inv1.path2id("dir"), inv2.path2id("dir"))
-        self.assertEqual(inv1.path2id("dir/file"), inv2.path2id("dir/file"))
+        self.assertEqual(tree1.path2id("dir"), tree2.path2id("dir"))
+        self.assertEqual(tree1.path2id("dir/file"), tree2.path2id("dir/file"))
 
         rm_provider = repository._revmeta_provider
         fileid, revid, child_create_revid = repository.get_fileid_map(rm_provider.get_revision("branches/mybranch", 2), mapping).as_dict()["dir/file"]
-        self.assertEqual(fileid, inv1.path2id("dir/file"))
+        self.assertEqual(fileid, tree1.path2id("dir/file"))
         self.assertEqual(repository.generate_revision_id(1, "trunk", mapping), revid)
 
 

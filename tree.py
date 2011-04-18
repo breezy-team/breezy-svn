@@ -104,14 +104,6 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
     def get_root_id(self):
         return self.path2id("")
 
-    def has_filename(self, path):
-        try:
-            self.lookup_id(path)
-        except KeyError:
-            return False
-        else:
-            return True
-
     def _comparison_data(self, entry, path):
         # FIXME
         if entry is None:
@@ -200,11 +192,13 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         self._revmeta, self.mapping = repository._get_revmeta(revision_id)
         self._bzr_inventory = Inventory()
         self._bzr_inventory.revision_id = revision_id
+        self.inventory = self._bzr_inventory #FIXME
         self._rules_searcher = None
         self.id_map = repository.get_fileid_map(self._revmeta, self.mapping)
         editor = TreeBuildEditor(self)
         self.file_data = {}
         self.file_properties = {}
+        self.transport = repository.transport.clone(self._revmeta.branch_path)
         root_repos = repository.transport.get_svn_repos_root()
         conn = repository.transport.get_connection()
         try:
@@ -230,10 +224,20 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         return self._bzr_inventory[file_id].kind
 
     def is_executable(self, file_id, path=None):
+        if path is None:
+            path = self.id2path(file_id)
+        # FIXME
         ie = self._bzr_inventory[file_id]
         if ie.kind != "file":
             return False
         return ie.executable
+
+    def get_symlink_target(self, file_id, path=None):
+        # FIXME
+        ie = self._bzr_inventory[file_id]
+        if ie.kind != 'symlink':
+            return False
+        return ie.symlink_target
 
     def get_file_sha1(self, file_id, path=None, stat_value=None):
         # FIXME
@@ -291,6 +295,10 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
 
     def get_file_properties(self, file_id, path=None):
         return self.file_properties[file_id]
+
+    def has_filename(self, path):
+        kind = self.transport.check_path(path, self._revmeta.revnum)
+        return kind in (subvertpy.NODE_DIR, subvertpy.NODE_FILE)
 
 
 class TreeBuildEditor(object):
@@ -434,6 +442,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
                 workingtree, workingtree.base_revnum)
         self.workingtree = workingtree
         self._bzr_inventory = Inventory(root_id=None)
+        self.inventory = self._bzr_inventory # FIXME
         self._repository = workingtree.branch.repository
         self.id_map = self.workingtree.basis_idmap
         self.mapping = self.workingtree.branch.mapping
@@ -517,6 +526,14 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         finally:
             adm.close()
 
+    def has_filename(self, path):
+        try:
+            self.lookup_id(path)
+        except KeyError:
+            return False
+        else:
+            return True
+
     def get_revision_id(self):
         """See Tree.get_revision_id()."""
         return self.workingtree.last_revision()
@@ -526,6 +543,13 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         assert isinstance(name, unicode)
         wt_path = self.workingtree.abspath(name).encode("utf-8")
         return wc.get_pristine_contents(wt_path)
+
+    def get_symlink_target(self, file_id, path=None):
+        # FIXME
+        ie = self._bzr_inventory[file_id]
+        if ie.kind != 'symlink':
+            return False
+        return ie.symlink_target
 
     def get_file_sha1(self, file_id, path=None, stat_value=None):
         # FIXME
