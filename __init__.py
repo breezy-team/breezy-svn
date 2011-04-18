@@ -322,6 +322,7 @@ ControlDirFormat.register_prober(SvnWorkingTreeProber)
 ControlDirFormat._server_probers.insert(0, SvnRemoteProber)
 
 if not getattr(Prober, "known_formats", False): # bzr < 2.4
+    lazy_check_versions()
     from bzrlib.plugins.svn.remote import SvnRemoteFormat
     ControlDirFormat.register_format(SvnRemoteFormat())
     from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
