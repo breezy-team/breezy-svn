@@ -598,8 +598,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return iter(self._bzr_inventory)
 
     def get_root_id(self):
-        # FIXME
-        return self._bzr_inventory.root.file_id
+        return self.path2id("")
 
     def path2id(self, path):
         # FIXME
