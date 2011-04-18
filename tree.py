@@ -454,12 +454,16 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         mutter("opening basistree for %r at %d",
                 workingtree, workingtree.base_revnum)
         self.workingtree = workingtree
-        self._bzr_inventory = Inventory(root_id=None)
-        self.inventory = self._bzr_inventory # FIXME
+        self._bzr_inventory = None
         self._repository = workingtree.branch.repository
         self.id_map = self.workingtree.basis_idmap
         self.mapping = self.workingtree.branch.mapping
 
+    @property
+    def inventory(self):
+        if self._bzr_inventory is not None:
+            return self._bzr_inventory
+        self._bzr_inventory = Inventory(root_id=None)
         def add_file_to_inv(relpath, id, revid, adm):
             assert isinstance(relpath, unicode)
             (propchanges, props) = adm.get_prop_diffs(
@@ -489,7 +493,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
                                   wc.SCHEDULE_DELETE,
                                   wc.SCHEDULE_REPLACE):
                 return self.lookup_id(
-                    workingtree.unprefix(relpath.decode("utf-8")))
+                    self.workingtree.unprefix(relpath.decode("utf-8")))
             return (None, None)
 
         def add_dir_to_inv(relpath, adm, parent_id):
@@ -533,11 +537,12 @@ class SvnBasisTree(SvnRevisionTreeCommon):
                     if subid is not None:
                         add_file_to_inv(subrelpath, subid, subrevid, adm)
 
-        adm = workingtree._get_wc()
+        adm = self.workingtree._get_wc()
         try:
             add_dir_to_inv(u"", adm, None)
         finally:
             adm.close()
+        return self._bzr_inventory
 
     def has_filename(self, path):
         try:
@@ -558,29 +563,32 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         return wc.get_pristine_contents(wt_path)
 
     def get_symlink_target(self, file_id, path=None):
-        # FIXME
-        ie = self._bzr_inventory[file_id]
-        if ie.kind != 'symlink':
-            return False
-        return ie.symlink_target
+        if path is None:
+            path = self.id2path(file_id)
+        props = self.get_file_properties(file_id, path)
+        if not props.has_key(properties.PROP_SPECIAL):
+            return None
+        text = self.get_file_text_by_path(path).read()
+        if not text.startswith("link "):
+            return None
+        return text[len("link "):]
 
     def get_file_sha1(self, file_id, path=None, stat_value=None):
-        # FIXME
-        ie = self._bzr_inventory[file_id]
-        if ie.kind == "file":
-            return ie.text_sha1
-        return None
+        return osutils.sha_string(self.get_file_text(file_id, path))
 
     def kind(self, file_id):
         # FIXME
-        return self._bzr_inventory[file_id].kind
+        return self.inventory[file_id].kind
 
     def is_executable(self, file_id, path=None):
-        # FIXME
-        ie = self._bzr_inventory[file_id]
-        if ie.kind != "file":
-            return False
-        return ie.executable
+        if path is None:
+            path = self.id2path(file_id)
+        props = self.get_file_properties(file_id, path)
+        if props.has_key(properties.PROP_SPECIAL):
+            text = self.get_file_text_by_path(path)
+            if text.read(5) == "link ":
+                return False
+        return props.has_key(properties.PROP_EXECUTABLE)
 
     def get_file_text(self, file_id, path=None):
         """See Tree.get_file_text()."""
@@ -619,5 +627,5 @@ class SvnBasisTree(SvnRevisionTreeCommon):
 
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
         # FIXME
-        return self._bzr_inventory.iter_entries_by_dir(
+        return self.inventory.iter_entries_by_dir(
             specific_file_ids=specific_file_ids, yield_parents=yield_parents)
