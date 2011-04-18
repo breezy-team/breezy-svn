@@ -47,7 +47,6 @@ from bzrlib.errors import (
     NoSuchRevision,
     )
 from bzrlib.inventory import (
-    Inventory,
     entry_factory,
     )
 from bzrlib.repository import (
@@ -164,15 +163,15 @@ def find_suitable_base(parents, ie):
     """
     candidates = []
     # Filter out which parents have this file id
-    for (inv, url, revnum) in parents:
-        if ie.file_id in inv and ie.kind == inv[ie.file_id].kind:
-            candidates.append((inv, url, revnum))
+    for (tree, url, revnum) in parents:
+        if tree.has_id(ie.file_id) and ie.kind == tree.kind(ie.file_id):
+            candidates.append((tree, url, revnum))
     if candidates == []:
         return None
     # Check if there's any candidate that has the *exact* revision we need
-    for (inv, url, revnum) in candidates:
-        if inv[ie.file_id].revision == ie.revision:
-            return (inv, url, revnum)
+    for (tree, url, revnum) in candidates:
+        if tree.inventory[ie.file_id].revision == ie.revision:
+            return (tree, url, revnum)
     # TODO: Ideally we should now pick the candidate with the least changes
     # for now, just pick the first candidate
     return candidates[0]
@@ -223,7 +222,7 @@ def path_join(basepath, name):
         return name
 
 
-def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
+def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
     (iter_children, get_ie), path, file_id, dir_editor, branch_path,
     modified_files, visit_dirs):
     """Pass the changes to a directory to the commit editor.
@@ -245,11 +244,11 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
             return urlutils.join(branch_path, *args)
 
     assert dir_editor is not None
-    # Loop over entries of file_id in base_inv
+    # Loop over entries of file_id in base_tree
     # remove if they no longer exist with the same name
     # or parents
-    if file_id in base_inv and base_inv[file_id].kind == 'directory':
-        for child_name, child_ie in base_inv[file_id].children.iteritems():
+    if file_id in base_tree and base_tree.kind(file_id) == 'directory':
+        for child_name, child_ie in base_tree.inventory[file_id].children.iteritems():
             new_child_ie = get_ie(child_ie.file_id)
             # remove if...
             if (
@@ -276,9 +275,9 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
 
         new_child_path = path_join(path, child_name.encode("utf-8"))
         full_new_child_path = branch_relative_path(new_child_path)
-        # add them if they didn't exist in base_inv or changed kind
-        if (not child_ie.file_id in base_inv or
-            base_inv[child_ie.file_id].kind != child_ie.kind):
+        # add them if they didn't exist in base_tree or changed kind
+        if (not base_tree.has_id(child_ie.file_id) or
+            base_tree.kind(child_ie.file_id) != child_ie.kind):
             trace.mutter('adding %s %r', child_ie.kind, new_child_path)
 
             # Do a copy operation if at all possible, to make
@@ -297,14 +296,14 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
                         copyfrom_url, copyfrom_revnum)
             changed = True
         # copy if they existed at different location
-        elif (base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
-                base_inv[child_ie.file_id].parent_id != child_ie.parent_id):
+        elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
+                base_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
             trace.mutter('copy %s %r -> %r', child_ie.kind,
-                              base_inv.id2path(child_ie.file_id),
+                              base_tree.id2path(child_ie.file_id),
                               new_child_path)
             child_editor = dir_editor.add_file(full_new_child_path,
                 url_join_unescaped_path(base_url,
-                    base_inv.id2path(child_ie.file_id).encode("utf-8")),
+                    base_tree.id2path(child_ie.file_id).encode("utf-8")),
                 base_revnum)
             changed = True
         # open if they existed at the same location
@@ -328,9 +327,9 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
             continue
 
         new_child_path = path_join(path, child_name.encode("utf-8"))
-        # add them if they didn't exist in base_inv or changed kind
-        if (not child_ie.file_id in base_inv or
-            base_inv[child_ie.file_id].kind != child_ie.kind):
+        # add them if they didn't exist in base_tree or changed kind
+        if (not base_tree.has_id(child_ie.file_id) or
+            base_tree.kind(child_ie.file_id) != child_ie.kind):
             trace.mutter('adding dir %r', child_ie.name)
 
             # Do a copy operation if at all possible, to make
@@ -344,7 +343,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
                 copyfrom_revnum = new_base[2]
             else:
                 # No suitable base found
-                child_base = (base_inv, base_url, base_revnum)
+                child_base = (base_tree, base_url, base_revnum)
                 copyfrom_url = None
                 copyfrom_revnum = -1
 
@@ -352,9 +351,9 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
                 branch_relative_path(new_child_path), copyfrom_url, copyfrom_revnum)
             changed = True
         # copy if they existed at different location
-        elif (base_inv.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
-              base_inv[child_ie.file_id].parent_id != child_ie.parent_id):
-            old_child_path = base_inv.id2path(child_ie.file_id).encode("utf-8")
+        elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
+              base_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
+            old_child_path = base_tree.id2path(child_ie.file_id).encode("utf-8")
             trace.mutter('copy dir %r -> %r', old_child_path, new_child_path)
             copyfrom_url = url_join_unescaped_path(base_url, old_child_path)
             copyfrom_revnum = base_revnum
@@ -363,7 +362,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
                 branch_relative_path(new_child_path),
                 copyfrom_url, copyfrom_revnum)
             changed = True
-            child_base = (base_inv, base_url, base_revnum)
+            child_base = (base_tree, base_url, base_revnum)
         # open if they existed at the same location and
         # the directory was touched
         elif new_child_path in visit_dirs:
@@ -373,7 +372,7 @@ def dir_editor_send_changes((base_inv, base_url, base_revnum), parents,
                     branch_relative_path(new_child_path),
                     base_revnum)
 
-            child_base = (base_inv, base_url, base_revnum)
+            child_base = (base_tree, base_url, base_revnum)
         else:
             continue
 
@@ -393,7 +392,7 @@ class SvnCommitBuilder(RootCommitBuilder):
 
     def __init__(self, repository, branch_path, parents, config, timestamp,
                  timezone, committer, revprops, revision_id,
-                 base_foreign_revid, base_mapping, root_action, old_inv=None,
+                 base_foreign_revid, base_mapping, root_action, old_tree=None,
                  push_metadata=True, graph=None, opt_signature=None,
                  texts=None, testament=None):
         """Instantiate a new SvnCommitBuilder.
@@ -407,7 +406,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         :param committer: Optional committer to set for commit.
         :param revprops: Bazaar revision properties to set.
         :param revision_id: Revision id for the new revision.
-        :param old_inv: Optional revision on top of which
+        :param old_tree: Optional revision on top of which
             the commit is happening
         :param push_metadata: Whether or not to push all bazaar metadata
                               (in svn file properties, etc).
@@ -462,18 +461,13 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.mapping = self.repository.get_mapping()
         # FIXME: Check that self.mapping >= self.base_mapping
 
-        self._parent_invs = None
-        if self.base_revid == NULL_REVISION:
-            self.old_inv = Inventory(root_id=None)
-        elif old_inv is None:
-            self.old_inv = self.repository.get_inventory(self.base_revid)
+        self._parent_trees = None
+        if old_tree is None:
+            self.old_tree = self.repository.revision_tree(self.base_revid)
         else:
-            self.old_inv = old_inv
+            self.old_tree = old_tree
 
-        if self.old_inv.root is None:
-            self.new_root_id = None
-        else:
-            self.new_root_id = self.old_inv.root.file_id
+        self.new_root_id = self.old_tree.get_root_id()
 
         # Determine revisions merged in this one
         merges = filter(lambda x: x != self.base_revid, parents)
@@ -604,10 +598,10 @@ class SvnCommitBuilder(RootCommitBuilder):
             ret = []
             for child_name, child_ie in self._iter_new_children(file_id):
                 new_child_path = path_join(path, child_name)
-                if (not child_ie.file_id in self.old_inv or
-                    self.old_inv.id2path(child_ie.file_id) != new_child_path or
-                    self.old_inv[child_ie.file_id].revision != child_ie.revision or
-                    self.old_inv[child_ie.file_id].parent_id != child_ie.parent_id):
+                if (not child_ie.file_id in self.old_tree or
+                    self.old_tree.id2path(child_ie.file_id) != new_child_path or
+                    self.old_tree.inventory[child_ie.file_id].revision != child_ie.revision or
+                    self.old_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
                     ret.append((child_ie.file_id, new_child_path, child_ie.revision))
 
                 if (child_ie.kind == 'directory' and new_child_path in self.visit_dirs):
@@ -618,7 +612,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         text_revisions = {}
         changes = []
 
-        if self.old_inv.root is None or new_root_id != self.old_inv.root.file_id:
+        if new_root_id != self.old_tree.get_root_id():
             changes.append((new_root_id, "", self._get_new_ie(new_root_id).revision))
 
         changes += _dir_process_file_id("", new_root_id)
@@ -632,13 +626,13 @@ class SvnCommitBuilder(RootCommitBuilder):
         return (fileids, text_revisions)
 
     def _get_parents_tuples(self):
-        """Retrieve (inventory, URL, base revnum) tuples for the parents of
+        """Retrieve (tree, URL, base revnum) tuples for the parents of
         this commit.
         """
         ret = []
         for p in self.parents:
-            if p == self.old_inv.revision_id:
-                ret.append((self.old_inv, self.base_url, self.base_revnum))
+            if p == self.old_tree.get_revision_id():
+                ret.append((self.old_tree, self.base_url, self.base_revnum))
                 continue
             try:
                 (uuid, base_path, base_revnum), base_mapping = \
@@ -646,15 +640,15 @@ class SvnCommitBuilder(RootCommitBuilder):
                             foreign_sibling=self.base_foreign_revid)
             except NoSuchRevision:
                 continue
-            inv = None
-            if self._parent_invs is not None:
-                for pinv in self._parent_invs:
-                    if pinv.revision_id == p:
-                        inv = pinv
+            tree = None
+            if self._parent_trees is not None:
+                for ptree in self._parent_trees:
+                    if ptree.get_revision_id() == p:
+                        tree = ptree
                         break
-            if inv is None:
-                inv = self.repository.get_inventory(p)
-            ret.append((inv, urlutils.join(self.repository.transport.svn_url, base_path), base_revnum))
+            if tree is None:
+                tree = self.repository.revision_tree(p)
+            ret.append((tree, urlutils.join(self.repository.transport.svn_url, base_path), base_revnum))
         return ret
 
     def _iter_new_children(self, file_id):
@@ -662,7 +656,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         for child in self._updated_children[file_id]:
             ret.append((self._updated[child].name, self._updated[child]))
         try:
-            old_ie = self.old_inv[file_id]
+            old_ie = self.old_tree.inventory[file_id]
         except NoSuchId:
             pass
         else:
@@ -677,8 +671,8 @@ class SvnCommitBuilder(RootCommitBuilder):
             return None
         if file_id in self._updated:
             return self._updated[file_id]
-        if file_id in self.old_inv:
-            return self.old_inv[file_id]
+        if self.old_tree.has_id(file_id):
+            return self.old_tree.inventory[file_id]
         return None
 
     def _get_author(self):
@@ -744,12 +738,13 @@ class SvnCommitBuilder(RootCommitBuilder):
                     "non-log revision properties set but not supported: %r" %
                     self._svn_revprops.keys())
 
-            if self.new_root_id in self.old_inv:
-                root_from = self.old_inv.id2path(self.new_root_id)
+            if self.new_root_id in self.old_tree:
+                root_from = self.old_tree.id2path(self.new_root_id)
             else:
                 root_from = None
 
-            if self.old_inv.root is not None and self.old_inv.root.file_id != self.new_root_id:
+            if (self.old_tree.get_root_id() is not None and
+                self.old_tree.get_root_id() != self.new_root_id):
                 self.root_action = ("replace", self.base_revnum)
 
             try:
@@ -758,7 +753,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                     self.base_url, self.base_revnum, root_from, self.root_action)
 
                 changed = dir_editor_send_changes(
-                        (self.old_inv, self.base_url, self.base_revnum),
+                        (self.old_tree, self.base_url, self.base_revnum),
                         self._get_parents_tuples(),
                         (self._iter_new_children, self._get_new_ie), "",
                         self.new_root_id, branch_editors[-1],
@@ -850,10 +845,13 @@ class SvnCommitBuilder(RootCommitBuilder):
                 return
             self.visit_dirs.add(path)
 
-    def _get_text_revision(self, file_id, text_sha1, parent_invs):
-        for pinv in parent_invs:
-            if file_id in pinv and pinv[file_id].text_sha1 == text_sha1:
-                return pinv[file_id].revision
+    def _get_text_revision(self, file_id, text_sha1, parent_trees):
+        for ptree in parent_trees:
+            try:
+                if ptree.get_file_sha1(file_id) == text_sha1:
+                    return ptree.inventory[file_id].revision
+            except NoSuchId:
+                continue
         return None
 
     def record_delete(self, path, file_id):
@@ -873,10 +871,10 @@ class SvnCommitBuilder(RootCommitBuilder):
         :return: A generator of (file_id, relpath, fs_hash) tuples for use with
             tree._observed_sha1.
         """
-        parent_invs = [self.old_inv]
+        parent_trees = [self.old_tree]
         for p in self.parents[1:]:
             try:
-                parent_invs.append(self.repository.get_inventory(p))
+                parent_trees.append(self.repository.revision_tree(p))
             except NoSuchRevision:
                 pass
         if self.base_revid != basis_revision_id:
@@ -890,8 +888,8 @@ class SvnCommitBuilder(RootCommitBuilder):
              (old_ver, new_ver), (old_parent_id, new_parent_id),
              (old_name, new_name), (old_kind, new_kind),
              (old_executable, new_executable)) in iter_changes:
-            if file_id in self.old_inv:
-                base_ie = self.old_inv[file_id]
+            if self.old_tree.has_id(file_id):
+                base_ie = self.old_tree.inventory[file_id]
             else:
                 base_ie = None
             if new_path is None:
@@ -903,7 +901,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                     new_ie.executable = new_executable
                     file_obj, stat_val = get_file_with_stat(file_id)
                     new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
-                    new_ie.revision = self._get_text_revision(file_id, new_ie.text_sha1, parent_invs)
+                    new_ie.revision = self._get_text_revision(file_id, new_ie.text_sha1, parent_trees)
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, base_ie, new_ie)
                     yield file_id, new_path, (new_ie.text_sha1, stat_val)
                 elif new_kind == 'symlink':

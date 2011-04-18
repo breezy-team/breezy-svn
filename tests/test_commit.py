@@ -72,10 +72,10 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEqual(wt.branch.generate_revision_id(1),
                 wt.branch.last_revision())
         wt = WorkingTree.open("dc")
-        new_inventory = wt.branch.repository.get_inventory(
+        new_tree = wt.branch.repository.revision_tree(
                             wt.branch.last_revision())
-        self.assertTrue(new_inventory.has_filename("foo"))
-        self.assertTrue(new_inventory.has_filename("foo/bla"))
+        self.assertTrue(new_tree.has_filename("foo"))
+        self.assertTrue(new_tree.has_filename("foo/bla"))
 
     def test_commit_message(self):
         self.make_client('d', 'dc')
@@ -388,15 +388,15 @@ class TestPush(SubversionTestCase):
 
         repos = self.olddir._find_repository()
         mapping = repos.get_mapping()
-        inv = repos.get_inventory(repos.generate_revision_id(2, "", mapping))
+        tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
         self.assertEqual(repos.generate_revision_id(2, "", mapping),
-                         inv[inv.path2id('foo/bla')].revision)
+                         tree.inventory[tree.path2id('foo/bla')].revision)
         self.assertEqual(wt.branch.last_revision(),
           repos.generate_revision_id(2, "", mapping))
         self.assertEqual(wt.branch.last_revision(),
                         self.olddir.open_branch().last_revision())
         self.assertEqual("other data",
-            repos.revision_tree(repos.generate_revision_id(2, "", mapping)).get_file_text( inv.path2id("foo/bla")))
+            repos.revision_tree(repos.generate_revision_id(2, "", mapping)).get_file_text(tree.path2id("foo/bla")))
 
     def test_simple(self):
         self.build_tree({'dc/file': 'data'})
@@ -408,8 +408,8 @@ class TestPush(SubversionTestCase):
 
         repos = self.olddir._find_repository()
         mapping = repos.get_mapping()
-        inv = repos.get_inventory(repos.generate_revision_id(2, "", mapping))
-        self.assertTrue(inv.has_filename('file'))
+        tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
+        self.assertTrue(tree.has_filename('file'))
         self.assertEqual(wt.branch.last_revision(),
                 repos.generate_revision_id(2, "", mapping))
         self.assertEqual(repos.generate_revision_id(2, "", mapping),
@@ -425,8 +425,8 @@ class TestPush(SubversionTestCase):
 
         repos = self.olddir._find_repository()
         mapping = repos.get_mapping()
-        inv = repos.get_inventory(repos.generate_revision_id(2, "", mapping))
-        self.assertTrue(inv.has_filename('file'))
+        tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
+        self.assertTrue(tree.has_filename('file'))
         self.assertEquals(wt.branch.last_revision(),
                          repos.generate_revision_id(2, "", mapping))
 

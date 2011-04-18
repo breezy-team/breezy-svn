@@ -63,17 +63,52 @@ class SubversionTree(object):
         return True
 
     def lookup_id(self, path):
-        """Lookup the idmap data for a path.
+        return self.id_map.lookup(self.mapping, path)[:2]
 
-        :param path: Path to look up.
-        :return: Tuple with file id and text revision
-        """
-        raise NotImplementedError(self.lookup_id)
+    def lookup_path(self, file_id):
+        return self.id_map.reverse_lookup(self.mapping, file_id)
 
     def _get_rules_searcher(self, default_searcher):
         """Get the RulesSearcher for this tree given the default one."""
         return rules._StackedRulesSearcher(
             [SvnRulesSearcher(self), default_searcher])
+
+
+class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
+
+    def has_or_had_id(self, file_id):
+        return self.has_id(file_id)
+
+    def id2path(self, file_id):
+        try:
+            return self.lookup_path(file_id)
+        except KeyError:
+            raise errors.NoSuchId(self, file_id)
+
+    def has_id(self, file_id):
+        try:
+            self.id2path(file_id)
+        except errors.NoSuchId:
+            return False
+        else:
+            return True
+
+    def path2id(self, path):
+        try:
+            file_id, revision_id = self.lookup_id(path)
+        except KeyError:
+            return None
+        else:
+            return file_id
+
+    def get_root_id(self):
+        return self.path2id("")
+
+    def _comparison_data(self, entry, path):
+        # FIXME
+        if entry is None:
+            return None, False, None
+        return entry.kind, entry.executable, None
 
 
 # This maps SVN names for eol-styles to bzr names:
@@ -148,20 +183,22 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     inv.add(ie)
 
 
-class SvnRevisionTree(SubversionTree,RevisionTree):
+class SvnRevisionTree(SvnRevisionTreeCommon):
     """A tree that existed in a historical Subversion revision."""
 
     def __init__(self, repository, revision_id):
         self._repository = repository
         self._revision_id = revision_id
         self._revmeta, self.mapping = repository._get_revmeta(revision_id)
-        self._inventory = Inventory()
-        self._inventory.revision_id = revision_id
+        self._bzr_inventory = Inventory()
+        self._bzr_inventory.revision_id = revision_id
+        self.inventory = self._bzr_inventory #FIXME
         self._rules_searcher = None
         self.id_map = repository.get_fileid_map(self._revmeta, self.mapping)
         editor = TreeBuildEditor(self)
         self.file_data = {}
         self.file_properties = {}
+        self.transport = repository.transport.clone(self._revmeta.branch_path)
         root_repos = repository.transport.get_svn_repos_root()
         conn = repository.transport.get_connection()
         try:
@@ -177,8 +214,55 @@ class SvnRevisionTree(SubversionTree,RevisionTree):
         finally:
             repository.transport.add_connection(conn)
 
-    def lookup_id(self, path):
-        return self.id_map.lookup(self.mapping, path)[:2]
+    def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
+        # FIXME
+        return self._bzr_inventory.iter_entries_by_dir(
+            specific_file_ids=specific_file_ids, yield_parents=yield_parents)
+
+    def kind(self, file_id):
+        # FIXME
+        return self._bzr_inventory[file_id].kind
+
+    def is_executable(self, file_id, path=None):
+        if path is None:
+            path = self.id2path(file_id)
+        # FIXME
+        ie = self._bzr_inventory[file_id]
+        if ie.kind != "file":
+            return False
+        return ie.executable
+
+    def get_symlink_target(self, file_id, path=None):
+        # FIXME
+        ie = self._bzr_inventory[file_id]
+        if ie.kind != 'symlink':
+            return False
+        return ie.symlink_target
+
+    def get_file_sha1(self, file_id, path=None, stat_value=None):
+        # FIXME
+        ie = self._bzr_inventory[file_id]
+        if ie.kind == "file":
+            return ie.text_sha1
+        return None
+
+    def list_files(self, include_root=False, from_dir=None, recursive=True):
+        # FIXME
+        # The only files returned by this are those from the version
+        inv = self._bzr_inventory
+        if from_dir is None:
+            from_dir_id = None
+        else:
+            from_dir_id = inv.path2id(from_dir)
+            if from_dir_id is None:
+                # Directory not versioned
+                return
+        entries = inv.iter_entries(from_dir=from_dir_id, recursive=recursive)
+        if inv.root is not None and not include_root and from_dir is None:
+            # skip the root for compatability with the current apis.
+            entries.next()
+        for path, entry in entries:
+            yield path, 'V', entry.kind, entry.file_id, entry
 
     def get_file_text(self, file_id, path=None):
         return self.file_data[file_id]
@@ -212,6 +296,10 @@ class SvnRevisionTree(SubversionTree,RevisionTree):
     def get_file_properties(self, file_id, path=None):
         return self.file_properties[file_id]
 
+    def has_filename(self, path):
+        kind = self.transport.check_path(path, self._revmeta.revnum)
+        return kind in (subvertpy.NODE_DIR, subvertpy.NODE_FILE)
+
 
 class TreeBuildEditor(object):
     """Builds a tree given Subversion tree transform calls."""
@@ -226,7 +314,7 @@ class TreeBuildEditor(object):
 
     def open_root(self, revnum):
         file_id, revision_id = self.tree.lookup_id("")
-        ie = self.tree._inventory.add_path("", 'directory', file_id)
+        ie = self.tree._bzr_inventory.add_path("", 'directory', file_id)
         ie.revision = revision_id
         return DirectoryTreeEditor(self.tree, file_id)
 
@@ -247,7 +335,7 @@ class DirectoryTreeEditor(object):
     def add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         path = path.decode("utf-8")
         file_id, revision_id = self.tree.lookup_id(path)
-        ie = self.tree._inventory.add_path(path, 'directory', file_id)
+        ie = self.tree._bzr_inventory.add_path(path, 'directory', file_id)
         ie.revision = revision_id
         return DirectoryTreeEditor(self.tree, file_id)
 
@@ -308,7 +396,6 @@ class FileTreeEditor(object):
             mutter('unsupported file property %r', name)
 
     def close(self, checksum=None):
-
         if self.file_stream:
             self.file_stream.seek(0)
             file_data = self.file_stream.read()
@@ -319,10 +406,10 @@ class FileTreeEditor(object):
             self.is_symlink = (self.is_special and file_data.startswith("link "))
 
         if self.is_symlink:
-            ie = self.tree._inventory.add_path(self.path, 'symlink',
+            ie = self.tree._bzr_inventory.add_path(self.path, 'symlink',
                 self.file_id)
         else:
-            ie = self.tree._inventory.add_path(self.path, 'file', self.file_id)
+            ie = self.tree._bzr_inventory.add_path(self.path, 'file', self.file_id)
         ie.revision = self.revision_id
 
         actual_checksum = md5(file_data).hexdigest()
@@ -344,7 +431,7 @@ class FileTreeEditor(object):
         return delta.apply_txdelta_handler("", self.file_stream)
 
 
-class SvnBasisTree(SubversionTree,RevisionTree):
+class SvnBasisTree(SvnRevisionTreeCommon):
     """Optimized version of SvnRevisionTree."""
 
     def __repr__(self):
@@ -354,8 +441,11 @@ class SvnBasisTree(SubversionTree,RevisionTree):
         mutter("opening basistree for %r at %d",
                 workingtree, workingtree.base_revnum)
         self.workingtree = workingtree
-        self._inventory = Inventory(root_id=None)
+        self._bzr_inventory = Inventory(root_id=None)
+        self.inventory = self._bzr_inventory # FIXME
         self._repository = workingtree.branch.repository
+        self.id_map = self.workingtree.basis_idmap
+        self.mapping = self.workingtree.branch.mapping
 
         def add_file_to_inv(relpath, id, revid, adm):
             assert isinstance(relpath, unicode)
@@ -367,10 +457,10 @@ class SvnBasisTree(SubversionTree,RevisionTree):
                 is_symlink = False
 
             if is_symlink:
-                ie = self._inventory.add_path(relpath, 'symlink', id)
+                ie = self._bzr_inventory.add_path(relpath, 'symlink', id)
                 ie.symlink_target = self.get_file_byname(relpath).read()[len("link "):]
             else:
-                ie = self._inventory.add_path(relpath, 'file', id)
+                ie = self._bzr_inventory.add_path(relpath, 'file', id)
                 data = osutils.fingerprint_file(self.get_file_byname(relpath))
                 ie.text_sha1 = data['sha1']
                 ie.text_size = data['size']
@@ -398,10 +488,10 @@ class SvnBasisTree(SubversionTree,RevisionTree):
                 return
 
             # First handle directory itself
-            ie = self._inventory.add_path(relpath, 'directory', id)
+            ie = self._bzr_inventory.add_path(relpath, 'directory', id)
             ie.revision = revid
             if relpath == u"":
-                self._inventory.revision_id = revid
+                self._bzr_inventory.revision_id = revid
 
             for name, entry in entries.iteritems():
                 if name == "":
@@ -436,9 +526,13 @@ class SvnBasisTree(SubversionTree,RevisionTree):
         finally:
             adm.close()
 
-    def lookup_id(self, path):
-        return self.workingtree.basis_idmap.lookup(
-            self.workingtree.branch.mapping, path)[:2]
+    def has_filename(self, path):
+        try:
+            self.lookup_id(path)
+        except KeyError:
+            return False
+        else:
+            return True
 
     def get_revision_id(self):
         """See Tree.get_revision_id()."""
@@ -449,6 +543,31 @@ class SvnBasisTree(SubversionTree,RevisionTree):
         assert isinstance(name, unicode)
         wt_path = self.workingtree.abspath(name).encode("utf-8")
         return wc.get_pristine_contents(wt_path)
+
+    def get_symlink_target(self, file_id, path=None):
+        # FIXME
+        ie = self._bzr_inventory[file_id]
+        if ie.kind != 'symlink':
+            return False
+        return ie.symlink_target
+
+    def get_file_sha1(self, file_id, path=None, stat_value=None):
+        # FIXME
+        ie = self._bzr_inventory[file_id]
+        if ie.kind == "file":
+            return ie.text_sha1
+        return None
+
+    def kind(self, file_id):
+        # FIXME
+        return self._bzr_inventory[file_id].kind
+
+    def is_executable(self, file_id, path=None):
+        # FIXME
+        ie = self._bzr_inventory[file_id]
+        if ie.kind != "file":
+            return False
+        return ie.executable
 
     def get_file_text(self, file_id, path=None):
         """See Tree.get_file_text()."""
@@ -475,7 +594,7 @@ class SvnBasisTree(SubversionTree,RevisionTree):
 
     def annotate_iter(self, file_id, default_revision=CURRENT_REVISION):
         path = urlutils.join(self.workingtree.branch.get_branch_path(),
-                             self.inventory.id2path(file_id).encode("utf-8"))
+                             self.id2path(file_id).encode("utf-8"))
         return self.workingtree.branch.repository._annotate(path.strip("/"),
             self.workingtree.base_revnum,  file_id, self.get_revision_id(),
             self.workingtree.branch.mapping)
@@ -484,3 +603,8 @@ class SvnBasisTree(SubversionTree,RevisionTree):
         for file_id, identifier in file_ids:
             cur_file = (self.get_file_text(file_id),)
             yield identifier, cur_file
+
+    def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
+        # FIXME
+        return self._bzr_inventory.iter_entries_by_dir(
+            specific_file_ids=specific_file_ids, yield_parents=yield_parents)

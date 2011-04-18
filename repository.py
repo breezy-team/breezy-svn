@@ -42,9 +42,10 @@ from bzrlib.repository import (
     RepositoryFormat,
     needs_read_lock,
     )
-from bzrlib.revisiontree import (
-    RevisionTree,
-    )
+try:
+    from bzrlib.revisiontree import InventoryRevisionTree
+except ImportError:# bzr < 2.4
+    from bzrlib.revisiontree import RevisionTree as InventoryRevisionTree
 from bzrlib.revision import (
     NULL_REVISION,
     ensure_null,
@@ -761,12 +762,10 @@ class SvnRepository(ForeignRepository):
 
     def get_inventory(self, revision_id):
         """See Repository.get_inventory()."""
-        assert revision_id != None
-        return self.revision_tree(revision_id).inventory
+        raise NotImplementedError(self.get_inventory)
 
     def _iter_inventories(self, revision_ids, ordering):
-        for revid in revision_ids:
-            yield self.get_inventory(revid)
+        raise NotImplementedError(self._iter_inventories)
 
     def get_fileid_map(self, revmeta, mapping):
         return self.fileid_map.get_map(revmeta.get_foreign_revid(), mapping)
@@ -971,7 +970,7 @@ class SvnRepository(ForeignRepository):
         if revision_id in (NULL_REVISION, None):
             inventory = Inventory(root_id=None)
             inventory.revision_id = revision_id
-            return RevisionTree(self, inventory, revision_id)
+            return InventoryRevisionTree(self, inventory, revision_id)
 
         return SvnRevisionTree(self, revision_id)
 

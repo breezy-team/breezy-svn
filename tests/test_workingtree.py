@@ -237,7 +237,7 @@ class TestWorkingTree(SubversionTestCase):
         self.assertIsInstance(inv, Inventory)
         self.assertTrue(inv.has_filename("bl"))
         self.assertFalse(inv.has_filename("aa"))
-        self.assertEqual("bloe", tree.inventory.path2id("bl"))
+        self.assertEqual("bloe", tree.path2id("bl"))
 
     def test_add_not_recursive(self):
         self.make_client('a', 'dc')
@@ -246,8 +246,8 @@ class TestWorkingTree(SubversionTestCase):
         tree.add(["bl"])
 
         tree = WorkingTree.open("dc")
-        self.assertTrue(tree.inventory.has_filename("bl"))
-        self.assertFalse(tree.inventory.has_filename("bl/file"))
+        self.assertTrue(tree._bzr_inventory.has_filename("bl"))
+        self.assertFalse(tree._bzr_inventory.has_filename("bl/file"))
 
     def test_add_nested(self):
         self.make_client('a', 'dc')
@@ -256,8 +256,8 @@ class TestWorkingTree(SubversionTestCase):
         tree.add(["bl", "bl/file"])
 
         tree = WorkingTree.open("dc")
-        self.assertTrue(tree.inventory.has_filename("bl"))
-        self.assertTrue(tree.inventory.has_filename("bl/file"))
+        self.assertTrue(tree._bzr_inventory.has_filename("bl"))
+        self.assertTrue(tree._bzr_inventory.has_filename("bl/file"))
 
     def test_lock_write(self):
         self.make_client('a', 'dc')
@@ -345,20 +345,20 @@ class TestWorkingTree(SubversionTestCase):
         tree = WorkingTree.open("dc")
         tree.rename_one("bl", "bloe")
 
-        basis_inv = tree.basis_tree().inventory
+        basis_tree = tree.basis_tree()
         inv = tree.read_working_inventory()
         self.assertFalse(inv.has_filename("bl"))
         self.assertTrue(inv.has_filename("bloe"))
-        self.assertEqual(basis_inv.path2id("bl"),
+        self.assertEqual(basis_tree.path2id("bl"),
                          inv.path2id("bloe"))
         self.assertIs(None, inv.path2id("bl"))
-        self.assertIs(None, basis_inv.path2id("bloe"))
+        self.assertIs(None, basis_tree.path2id("bloe"))
 
     def test_empty_basis_tree(self):
         self.make_client('a', 'dc')
         wt = WorkingTree.open("dc")
         self.assertEqual(wt.branch.generate_revision_id(0),
-                         wt.basis_tree().inventory.revision_id)
+                         wt.basis_tree().get_revision_id())
         inv = Inventory()
         root_id = wt.branch.repository.get_mapping().generate_file_id((wt.branch.repository.uuid, "", 0), u"")
         inv.revision_id = wt.branch.generate_revision_id(0)
@@ -506,7 +506,7 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({"dc/bl": None})
 
         tree = WorkingTree.open("dc")
-        self.assertFalse(tree.inventory.has_filename("bl"))
+        self.assertFalse(tree._bzr_inventory.has_filename("bl"))
 
     def test_fileid_missing(self):
         self.make_client("repos", "svn-wc")
@@ -702,9 +702,9 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({'dc/file': 'data'})
         tree = WorkingTree.open("dc")
         tree.add(["file"])
-        oldid = tree.inventory.path2id("file")
+        oldid = tree.path2id("file")
         tree = WorkingTree.open("dc")
-        newid = tree.inventory.path2id("file")
+        newid = tree.path2id("file")
         self.assertEqual(oldid, newid)
 
     def test_file_id_kept(self):
@@ -712,9 +712,9 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({'dc/file': 'data'})
         tree = WorkingTree.open("dc")
         tree.add(["file"], ["fooid"])
-        self.assertEqual("fooid", tree.inventory.path2id("file"))
+        self.assertEqual("fooid", tree.path2id("file"))
         tree = WorkingTree.open("dc")
-        self.assertEqual("fooid", tree.inventory.path2id("file"))
+        self.assertEqual("fooid", tree.path2id("file"))
 
     def test_file_rename_id(self):
         self.make_client('a', 'dc')
@@ -725,18 +725,18 @@ class TestWorkingTree(SubversionTestCase):
         tree.rename_one("file", "file2")
         delta = tree.branch.repository.get_revision_delta(tree.last_revision())
         self.assertEquals([("file", "fooid", "file")], delta.added)
-        self.assertEqual(None, tree.inventory.path2id("file"))
-        self.assertEqual("fooid", tree.inventory.path2id("file2"))
+        self.assertEqual(None, tree.path2id("file"))
+        self.assertEqual("fooid", tree.path2id("file2"))
         tree = WorkingTree.open("dc")
-        self.assertEqual("fooid", tree.inventory.path2id("file2"))
+        self.assertEqual("fooid", tree.path2id("file2"))
 
     def test_file_id_kept_2(self):
         self.make_client('a', 'dc')
         self.build_tree({'dc/file': 'data', 'dc/other': 'blaid'})
         tree = WorkingTree.open("dc")
         tree.add(["file", "other"], ["fooid", "blaid"])
-        self.assertEqual("fooid", tree.inventory.path2id("file"))
-        self.assertEqual("blaid", tree.inventory.path2id("other"))
+        self.assertEqual("fooid", tree.path2id("file"))
+        self.assertEqual("blaid", tree.path2id("other"))
 
     def test_file_remove_id(self):
         self.make_client('a', 'dc')
@@ -745,9 +745,9 @@ class TestWorkingTree(SubversionTestCase):
         tree.add(["file"], ["fooid"])
         tree.commit("msg")
         tree.remove(["file"])
-        self.assertEqual(None, tree.inventory.path2id("file"))
+        self.assertEqual(None, tree.path2id("file"))
         tree = WorkingTree.open("dc")
-        self.assertEqual(None, tree.inventory.path2id("file"))
+        self.assertEqual(None, tree.path2id("file"))
 
     def test_file_move_id(self):
         self.make_client('a', 'dc')
@@ -756,11 +756,11 @@ class TestWorkingTree(SubversionTestCase):
         tree.add(["file", "dir"], ["fooid", "blaid"])
         tree.commit("msg")
         tree.move(["file"], "dir")
-        self.assertEqual(None, tree.inventory.path2id("file"))
-        self.assertEqual("fooid", tree.inventory.path2id("dir/file"))
+        self.assertEqual(None, tree.path2id("file"))
+        self.assertEqual("fooid", tree.path2id("dir/file"))
         tree = WorkingTree.open("dc")
-        self.assertEqual(None, tree.inventory.path2id("file"))
-        self.assertEqual("fooid", tree.inventory.path2id("dir/file"))
+        self.assertEqual(None, tree.path2id("file"))
+        self.assertEqual("fooid", tree.path2id("dir/file"))
 
     def test_escaped_char_filename(self):
         self.make_client('a', 'dc')
@@ -768,7 +768,7 @@ class TestWorkingTree(SubversionTestCase):
         tree = WorkingTree.open("dc")
         tree.add(["file with spaces"], ["fooid"])
         tree.commit("msg")
-        self.assertEqual("fooid", tree.inventory.path2id("file with spaces"))
+        self.assertEqual("fooid", tree.path2id("file with spaces"))
 
     def test_get_branch_nick(self):
         self.make_client('a', 'dc')

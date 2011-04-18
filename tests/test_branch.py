@@ -1070,7 +1070,7 @@ foohosts""")
         newdir = olddir.sprout('dc')
         newdir.find_repository().get_revision(
                 newdir.open_branch().last_revision())
-        newdir.find_repository().get_inventory(
+        newdir.find_repository().revision_tree(
                 newdir.open_branch().last_revision())
 
 
