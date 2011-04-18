@@ -52,6 +52,7 @@ from bzrlib.errors import (
     DivergedBranches,
     IncompatibleFormat,
     LocalRequiresBoundBranch,
+    NoColocatedBranchSupport,
     NoSuchRevision,
     NotBranchError,
     UnstackableBranchFormat,
@@ -645,12 +646,15 @@ class SvnBranchFormat(BranchFormat):
         from bzrlib.plugins.svn.tests.test_branch import ForeignTestsBranchFactory
         return ForeignTestsBranchFactory()
 
-    def initialize(self, to_bzrdir):
+    def initialize(self, to_bzrdir, name=None, repository=None):
         """See BranchFormat.initialize()."""
         from bzrlib.plugins.svn.remote import SvnRemoteAccess
         if not isinstance(to_bzrdir, SvnRemoteAccess):
             raise IncompatibleFormat(self, to_bzrdir._format)
-        repository = to_bzrdir.find_repository()
+        if repository is None:
+            repository = to_bzrdir.find_repository()
+        if name is not None:
+            raise NoColocatedBranchSupport(to_bzrdir)
         try:
             create_branch_with_hidden_commit(repository,
                 to_bzrdir.branch_path, NULL_REVISION, set_metadata=True,
