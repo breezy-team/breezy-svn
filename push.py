@@ -159,7 +159,10 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
         opt_signature = None
 
     if push_metadata:
-        testament = StrictTestament(rev, old_tree.inventory)
+        if getattr(StrictTestament, "from_revision_tree", None):
+            testament = StrictTestament.from_revision_tree(rev)
+        else: # bzr < 2.4
+            testament = StrictTestament(rev, old_tree.inventory)
     else:
         testament = None
 
