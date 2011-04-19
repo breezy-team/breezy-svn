@@ -839,7 +839,7 @@ foohosts""")
         newbranch.lock_read()
         tree = newbranch.repository.revision_tree(oldbranch.generate_revision_id(7))
 
-        host_fileid = tree.inventory.path2id("hosts")
+        host_fileid = tree.path2id("hosts")
 
         self.assertVersionsPresentEquals(newbranch.repository.texts,
                                         host_fileid, [
@@ -896,7 +896,7 @@ foohosts""")
         transaction = newbranch.repository.get_transaction()
         newbranch.repository.lock_read()
         texts = newbranch.repository.texts
-        host_fileid = tree.inventory.path2id("hosts")
+        host_fileid = tree.path2id("hosts")
         mapping = oldbranch.repository.get_mapping()
         self.assertVersionsPresentEquals(texts, host_fileid, [
             mapping.revision_id_foreign_to_bzr((uuid, "trunk", 1)),

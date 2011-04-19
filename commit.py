@@ -600,7 +600,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 new_child_path = path_join(path, child_name)
                 if (not child_ie.file_id in self.old_tree or
                     self.old_tree.id2path(child_ie.file_id) != new_child_path or
-                    self.old_tree.inventory[child_ie.file_id].revision != child_ie.revision or
+                    self.old_tree.get_file_revision(child_ie.file_id) != child_ie.revision or
                     self.old_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
                     ret.append((child_ie.file_id, new_child_path, child_ie.revision))
 
@@ -849,7 +849,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         for ptree in parent_trees:
             try:
                 if ptree.get_file_sha1(file_id) == text_sha1:
-                    return ptree.inventory[file_id].revision
+                    return ptree.get_file_revision(file_id)
             except NoSuchId:
                 continue
         return None

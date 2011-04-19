@@ -355,7 +355,7 @@ class RepositoryTests(SubversionTestCase):
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
-        self.assertEqual("bla", newrepos.get_inventory(
+        self.assertEqual("bla", newrepos.revision_tree(
             oldrepos.generate_revision_id(1, "", mapping)).path2id("test"))
 
     def test_fetch_ghosts(self):

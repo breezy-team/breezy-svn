@@ -1008,7 +1008,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         ret = []
         for tree in self.bzr_parent_trees:
             try:
-                revision = tree.inventory[file_id].revision
+                revision = tree.get_file_revision(file_id)
             except NoSuchId:
                 pass
             else:

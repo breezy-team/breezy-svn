@@ -241,6 +241,12 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
             return "symlink"
         return "file"
 
+    def get_file_revision(self, file_id, path=None):
+        if path is None:
+            path = self.id2path(file_id)
+        file_id, file_revision = self.lookup_id(path)
+        return file_revision
+
     def is_executable(self, file_id, path=None):
         props = self.get_file_properties(file_id, path)
         return props.has_key(properties.PROP_EXECUTABLE)
@@ -579,6 +585,12 @@ class SvnBasisTree(SvnRevisionTreeCommon):
     def kind(self, file_id):
         # FIXME
         return self.inventory[file_id].kind
+
+    def get_file_revision(self, file_id, path=None):
+        if path is None:
+            path = self.id2path(file_id)
+        (file_id, file_revision) = self.id_map.lookup_id(path)
+        return file_revision
 
     def is_executable(self, file_id, path=None):
         if path is None:

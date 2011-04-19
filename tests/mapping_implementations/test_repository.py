@@ -19,7 +19,6 @@ from bzrlib import urlutils
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import NoSuchRevision
-from bzrlib.inventory import Inventory
 from bzrlib.repository import Repository
 from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import TestSkipped, TestNotApplicable

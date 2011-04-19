@@ -327,6 +327,12 @@ if not getattr(Prober, "known_formats", False): # bzr < 2.4
     ControlDirFormat.register_format(SvnRemoteFormat())
     from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
     ControlDirFormat.register_format(SvnWorkingTreeDirFormat())
+    # Provide RevisionTree.get_file_revision, so various parts of bzr-svn
+    # can avoid inventories.
+    from bzrlib.revisiontree import RevisionTree
+    def get_file_revision(tree, file_id, path=None):
+        return tree.inventory[file_id].revision
+    RevisionTree.get_file_revision = get_file_revision
 
 
 network_format_registry.register_lazy("svn-wc",

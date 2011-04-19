@@ -267,7 +267,7 @@ class TestPush(SubversionTestCase):
         mapping = repos.get_mapping()
         self.assertEquals(newid, svnbranch.last_revision())
         tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
-        self.assertEqual(newid, tree.inventory[tree.path2id('foo/bla')].revision)
+        self.assertEqual(newid, tree.get_file_revision(tree.path2id('foo/bla')))
         self.assertEqual(wt.branch.last_revision(),
           repos.generate_revision_id(2, "", mapping))
         self.assertEqual(repos.generate_revision_id(2, "", mapping),
@@ -389,11 +389,11 @@ class TestPush(SubversionTestCase):
         b = Branch.open("b")
 
         def check_tree_revids(rtree):
-            self.assertEqual(rtree.inventory[rtree.path2id("file")].revision,
+            self.assertEqual(rtree.get_file_revision(rtree.path2id("file")),
                              revid)
-            self.assertEqual(rtree.inventory[rtree.path2id("foo")].revision,
+            self.assertEqual(rtree.get_file_revision(rtree.path2id("foo")),
                              b.revision_history()[1])
-            self.assertEqual(rtree.inventory[rtree.path2id("foo/bla")].revision,
+            self.assertEqual(rtree.get_file_revision(rtree.path2id("foo/bla")),
                              revid)
             self.assertEqual(rtree.get_revision_id(), b.last_revision())
 
@@ -726,9 +726,9 @@ class PushNewBranchTests(SubversionTestCase):
     def test_push_merge_unchanged_file(self):
         def check_tree(t):
             self.assertEquals(base_revid,
-                t.inventory[t.path2id("bar.txt")].revision)
+                t.get_file_revision(t.path2id("bar.txt")))
             self.assertEquals(other_revid,
-                t.inventory[t.path2id("bar2.txt")].revision)
+                t.get_file_revision(t.path2id("bar2.txt")))
         repos_url = self.make_repository("test")
 
         dc = self.get_commit_editor(repos_url)

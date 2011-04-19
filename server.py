@@ -164,18 +164,17 @@ class RepositoryBackend(ServerRepositoryBackend):
         if revnum is None:
             revnum = self.get_latest_revnum()
         branch_path, revid = self._get_revid(revnum)
-        inv = self.branch.repository.get_inventory(revid)
-        id = inv.path2id(path[len(branch_path):].strip("/"))
-        if id is None:
+        tree = self.branch.repository.revision_tree(revid)
+        file_id = tree.path2id(path[len(branch_path):].strip("/"))
+        if file_id is None:
             return None
-        ie = inv[id]
         ret = { "name": urlutils.basename(path) }
-        if ie.kind == "directory":
+        if tree.kind(file_id) == "directory":
             ret["kind"] = subvertpy.NODE_DIR
             ret["size"] = 0
         else:
             ret["kind"] = subvertpy.NODE_FILE
-            ret["size"] = ie.text_size
+            ret["size"] = tree.get_file_size(file_id)
         ret["has-props"] = True
         ret["created-rev"] = 0 # FIXME
         ret["created-date"] = "" # FIXME

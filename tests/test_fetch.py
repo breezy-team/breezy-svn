@@ -1740,7 +1740,7 @@ Node-copyfrom-path: x
         self.assertEqual('symlink', tree1.kind(file_id))
         self.assertEqual('bla', tree1.get_symlink_target(file_id))
         self.assertEquals(None, tree1.get_file_sha1(file_id))
-        key = (file_id, tree1.inventory[file_id].revision)
+        key = (file_id, tree1.get_file_revision(file_id))
         newrepos.lock_read()
         try:
             self.assertEquals(sha_string(""),
@@ -1914,7 +1914,7 @@ Node-copyfrom-path: x
                 oldrepos.generate_revision_id(2, "", mapping))
         self.assertTrue(tree2.is_executable(tree2.path2id("bla")))
         self.assertEqual(oldrepos.generate_revision_id(2, "", mapping),
-                         tree2.inventory[tree2.path2id("bla")].revision)
+                         tree2.get_file_revision(tree2.path2id("bla")))
 
     def test_fetch_hidden(self):
         repos_url = self.make_repository('d')
@@ -2227,11 +2227,11 @@ Node-copyfrom-path: x
 
         tree = newrepos.revision_tree(lastrev)
         self.assertEqual(prevrev,
-                         tree.inventory[tree.path2id("bdir/afile")].revision)
+                         tree.get_file_revision(tree.path2id("bdir/afile")))
 
         tree = newrepos.revision_tree(prevrev)
         self.assertEqual(copyrev,
-                         tree.inventory[tree.path2id("bdir/stationary")].revision)
+                         tree.get_file_revision(tree.path2id("bdir/stationary")))
 
     def test_fetch_different_parent_path(self):
         repos_url = self.make_repository('d')

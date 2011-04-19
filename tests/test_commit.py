@@ -390,7 +390,7 @@ class TestPush(SubversionTestCase):
         mapping = repos.get_mapping()
         tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
         self.assertEqual(repos.generate_revision_id(2, "", mapping),
-                         tree.inventory[tree.path2id('foo/bla')].revision)
+                         tree.get_file_revision(tree.path2id('foo/bla')))
         self.assertEqual(wt.branch.last_revision(),
           repos.generate_revision_id(2, "", mapping))
         self.assertEqual(wt.branch.last_revision(),
