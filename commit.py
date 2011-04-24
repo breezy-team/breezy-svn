@@ -477,7 +477,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._updated = {}
         self.visit_dirs = set()
         self.modified_files = {}
-        self.supports_custom_revprops = self.repository.transport.has_capability("commit-revprops")
+        self.supports_custom_revprops = self.repository.transport.has_capability(
+            "commit-revprops")
         if (self.supports_custom_revprops is None and
             self.mapping.can_use_revprops and
             self.repository.seen_bzr_revprops()):
@@ -543,7 +544,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         """See CommitBuilder.finish_inventory()."""
         pass
 
-    def open_branch_editors(self, root, elements, base_url, base_rev, root_from, root_action):
+    def open_branch_editors(self, root, elements, base_url, base_rev,
+                            root_from, root_action):
         """Open a specified directory given an editor for the repository root.
 
         :param root: Editor for the repository root
@@ -621,7 +623,9 @@ class SvnCommitBuilder(RootCommitBuilder):
         # FIXME: This is wrong
         for id, path, revid in changes:
             fileids[path] = id
-            if revid is not None and revid != self.base_revid and revid != self._new_revision_id:
+            if (revid is not None and
+                revid != self.base_revid and
+                revid != self._new_revision_id):
                 text_revisions[path] = revid
         return (fileids, text_revisions)
 
@@ -648,7 +652,9 @@ class SvnCommitBuilder(RootCommitBuilder):
                         break
             if tree is None:
                 tree = self.repository.revision_tree(p)
-            ret.append((tree, urlutils.join(self.repository.transport.svn_url, base_path), base_revnum))
+            ret.append((tree,
+                urlutils.join(self.repository.transport.svn_url, base_path),
+                base_revnum))
         return ret
 
     def _iter_new_children(self, file_id):
@@ -662,7 +668,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         else:
             if old_ie.kind == 'directory':
                 for name, child_ie in old_ie.children.iteritems():
-                    if not child_ie.file_id in self._deleted_fileids and not child_ie.file_id in self._updated:
+                    if (not child_ie.file_id in self._deleted_fileids and
+                        not child_ie.file_id in self._updated):
                         ret.append((name, child_ie))
         return ret
 
@@ -729,7 +736,8 @@ class SvnCommitBuilder(RootCommitBuilder):
             for prop in self._svn_revprops:
                 assert prop.split(":")[0] in ("bzr", "svk", "svn")
                 if not properties.is_valid_property_name(prop):
-                    trace.warning("Setting property %r with invalid characters in name", prop)
+                    trace.warning("Setting property %r with invalid characters in name",
+                        prop)
             if self.supports_custom_revprops:
                 self._svn_revprops[properties.PROP_REVISION_ORIGINAL_DATE] = properties.time_to_cstring(1000000*self._timestamp)
             if (not self.supports_custom_revprops and
@@ -774,9 +782,11 @@ class SvnCommitBuilder(RootCommitBuilder):
 
                 for prop, (oldvalue, newvalue) in self._changed_fileprops.iteritems():
                         if not properties.is_valid_property_name(prop):
-                            trace.warning("Setting property %r with invalid characters in name", prop)
+                            trace.warning("Setting property %r with invalid characters "
+                                "in name", prop)
                         assert isinstance(newvalue, str)
-                        self.mutter("Setting root file property %r -> %r", prop, newvalue)
+                        self.mutter("Setting root file property %r -> %r",
+                            prop, newvalue)
                         branch_editors[-1].change_prop(prop, newvalue)
 
                 for dir_editor in reversed(branch_editors):
@@ -901,12 +911,15 @@ class SvnCommitBuilder(RootCommitBuilder):
                     new_ie.executable = new_executable
                     file_obj, stat_val = get_file_with_stat(file_id)
                     new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
-                    new_ie.revision = self._get_text_revision(file_id, new_ie.text_sha1, parent_trees)
-                    self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, base_ie, new_ie)
+                    new_ie.revision = self._get_text_revision(file_id,
+                        new_ie.text_sha1, parent_trees)
+                    self.modified_files[file_id] = get_svn_file_delta_transmitter(
+                        tree, base_ie, new_ie)
                     yield file_id, new_path, (new_ie.text_sha1, stat_val)
                 elif new_kind == 'symlink':
                     new_ie.symlink_target = tree.get_symlink_target(file_id)
-                    self.modified_files[file_id] = get_svn_file_delta_transmitter(tree, base_ie, new_ie)
+                    self.modified_files[file_id] = get_svn_file_delta_transmitter(
+                        tree, base_ie, new_ie)
                 elif new_kind == 'directory':
                     self.visit_dirs.add(new_path)
                 self._visit_parent_dirs(new_path)
