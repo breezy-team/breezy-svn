@@ -86,7 +86,10 @@ class TrunkLayout(RepositoryLayout):
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
-        return urlutils.join(project, "branches", name).strip("/")
+        if name is None:
+            return urlutils.join(project, "trunk").strip("/")
+        else:
+            return urlutils.join(project, "branches", name).strip("/")
 
     def parse(self, path):
         """Parse a path.
@@ -189,6 +192,8 @@ class RootLayout(RepositoryLayout):
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
+        if name is not None or project:
+            raise svn_errors.NoCustomBranchPaths(self)
         return ""
 
     def parse(self, path):

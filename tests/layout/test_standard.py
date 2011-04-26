@@ -31,7 +31,7 @@ from bzrlib.plugins.svn.layout.standard import (
     )
 
 
-class LayoutTests:
+class LayoutTests(object):
 
     def test_get_tag_path(self):
         path = self.layout.get_tag_path("foo", "")
@@ -52,12 +52,34 @@ class RootLayoutTests(TestCase,LayoutTests):
         TestCase.setUp(self)
         self.layout = RootLayout()
 
+    def test_get_branch_path_default(self):
+        self.assertEquals("", self.layout.get_branch_path(None))
+        self.assertRaises(NoCustomBranchPaths,
+            self.layout.get_branch_path, None, "proh")
+
+    def test_get_branch_path_custom(self):
+        self.assertRaises(NoCustomBranchPaths,
+            self.layout.get_branch_path, "la")
+        self.assertRaises(NoCustomBranchPaths,
+            self.layout.get_branch_path, "la", "proh")
+
 
 class TrunkLayoutTests(TestCase,LayoutTests):
 
     def setUp(self):
         TestCase.setUp(self)
         self.layout = TrunkLayout()
+
+    def test_get_branch_path_default(self):
+        self.assertEquals("trunk", self.layout.get_branch_path(None))
+        self.assertEquals("myproj/trunk",
+            self.layout.get_branch_path(None, "myproj"))
+
+    def test_get_branch_path_somepath(self):
+        self.assertEquals("branches/abranch",
+            self.layout.get_branch_path("abranch"))
+        self.assertEquals("proj/a/branches/abranch",
+            self.layout.get_branch_path("abranch", "proj/a"))
 
     def test_is_branch_parent(self):
         self.assertEquals(True, self.layout.is_branch_parent("foo/bar"))

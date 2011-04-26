@@ -191,7 +191,7 @@ class SvnRemoteAccess(ControlDir):
         self.root_url = _transport.get_repos_root()
 
         assert svn_url.lower().startswith(self.svn_root_url.lower())
-        self.branch_path = urllib.unquote(svn_url[len(self.svn_root_url):])
+        self._branch_path = urllib.unquote(svn_url[len(self.svn_root_url):])
 
     def break_lock(self):
         pass
@@ -209,7 +209,8 @@ class SvnRemoteAccess(ControlDir):
                source_branch=None, create_tree_if_local=True):
         from bzrlib.repository import InterRepository
         from bzrlib.transport.local import LocalTransport
-        if self.branch_path == "":
+        relpath = self._determine_relpath(None)
+        if relpath == "":
             guessed_layout = self.find_repository().get_guessed_layout()
             if guessed_layout is not None and not guessed_layout.is_branch(""):
                 trace.warning('Cloning Subversion repository as branch. '
@@ -254,7 +255,7 @@ class SvnRemoteAccess(ControlDir):
         """
         from bzrlib.plugins.svn.errors import NoSvnRepositoryPresent
         from bzrlib.plugins.svn.repository import SvnRepository
-        if self.branch_path == "":
+        if self._branch_path == "":
             return SvnRepository(self, self.root_transport)
         raise NoSvnRepositoryPresent(self.root_transport.base)
 
@@ -270,7 +271,7 @@ class SvnRemoteAccess(ControlDir):
         if _ignore_branch_path:
             return SvnRepository(self, transport)
         else:
-            return SvnRepository(self, transport, self.branch_path)
+            return SvnRepository(self, transport, self._branch_path)
 
     def cloning_metadir(self, require_stacking=False):
         """Produce a metadir suitable for cloning with."""
@@ -312,7 +313,7 @@ class SvnRemoteAccess(ControlDir):
         try:
             if stop_revision is None:
                 stop_revision = source.last_revision()
-            target_branch_path = self.branch_path.strip("/")
+            target_branch_path = self._branch_path.strip("/")
             repos = self.find_repository()
             repos.lock_write()
             try:
@@ -332,33 +333,38 @@ class SvnRemoteAccess(ControlDir):
         finally:
             source.unlock()
 
+    def _determine_relpath(self, branch_name):
+        from bzrlib.plugins.svn.errors import NoCustomBranchPaths
+        repos = self.find_repository()
+        layout = repos.get_layout()
+        if branch_name is None and layout.is_branch_or_tag(self._branch_path):
+            return self._branch_path
+        try:
+            return layout.get_branch_path(branch_name, self._branch_path)
+        except NoCustomBranchPaths:
+            raise errors.NoColocatedBranchSupport(self)
+
     def create_branch(self, branch_name=None, repository=None):
         """See ControlDir.create_branch()."""
-        if branch_name is not None:
-            raise errors.NoColocatedBranchSupport(self)
         from bzrlib.plugins.svn.branch import SvnBranch
         if repository is None:
             repository = self.find_repository()
 
-        if self.branch_path != "":
+        relpath = self._determine_relpath(branch_name)
+        if relpath != "":
             # TODO: Set NULL_REVISION in SVN_PROP_BZR_BRANCHING_SCHEME
-            repository.transport.mkdir(self.branch_path.strip("/"))
+            repository.transport.mkdir(relpath.strip("/"))
         elif repository.get_latest_revnum() > 0:
             # Bail out if there are already revisions in this repository
             raise errors.AlreadyBranchError(self.root_transport.base)
-        branch = SvnBranch(repository, self, self.branch_path)
-        branch.bzrdir = self
-        return branch
+        return SvnBranch(repository, self, relpath)
 
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
         """See ControlDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
-        if name is not None:
-            raise errors.NoColocatedBranchSupport(self)
+        relpath = self._determine_relpath(name)
         repos = self.find_repository()
-        branch = SvnBranch(repos, self, self.branch_path)
-        branch.bzrdir = self
-        return branch
+        return SvnBranch(repos, self, relpath)
 
     def create_repository(self, shared=False, format=None):
         """See ControlDir.create_repository."""
@@ -384,7 +390,8 @@ class SvnRemoteAccess(ControlDir):
             finally:
                 target_branch.unlock()
         except errors.NotBranchError:
-            ret.target_branch_path = "/%s" % self.branch_path.lstrip("/")
+            relpath = self._determine_relpath(None)
+            ret.target_branch_path = "/%s" % relpath.lstrip("/")
             if create_prefix:
                 self.root_transport.create_prefix()
             ret.target_branch = self.import_branch(source, revision_id,
@@ -396,9 +403,8 @@ class SvnRemoteAccess(ControlDir):
         return ret
 
     def destroy_branch(self, branch_name=None):
-        if branch_name is not None:
-            raise errors.NoColocatedBranchSupport(self)
-        if self.branch_path == "":
+        relpath = self._determine_relpath(branch_name)
+        if relpath == "":
             raise errors.UnsupportedOperation(self.destroy_branch, self)
         conn = self.root_transport.get_connection()
         try:

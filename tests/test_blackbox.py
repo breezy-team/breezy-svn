@@ -604,5 +604,10 @@ if len(sys.argv) == 2:
         dc.add_dir("trunk")
         dc.close()
 
-        self.assertEquals('Repository root: %s\nLayout: root\nBranch path: \nPush merged revisions: False\n' % svn_url,
+        self.assertEquals(
+            'Repository root: %s\n'
+            'Layout: root\n'
+            'Branch path: \n'
+            'No custom branch support\n'
+            'Push merged revisions: False\n' % svn_url,
                 self.run_bzr('svn-layout %s' % svn_url)[0])
