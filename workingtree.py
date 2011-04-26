@@ -1332,7 +1332,7 @@ class SvnCheckout(ControlDir):
         repos = self._find_repository()
 
         try:
-            branch = SvnBranch(repos, self.get_branch_path())
+            branch = SvnBranch(repos, self, self.get_branch_path())
         except RepositoryRootUnknown:
             return self.get_remote_bzrdir().open_branch()
         except subvertpy.SubversionException, (_, num):

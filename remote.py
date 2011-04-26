@@ -346,7 +346,7 @@ class SvnRemoteAccess(ControlDir):
         elif repository.get_latest_revnum() > 0:
             # Bail out if there are already revisions in this repository
             raise errors.AlreadyBranchError(self.root_transport.base)
-        branch = SvnBranch(repository, self.branch_path)
+        branch = SvnBranch(repository, self, self.branch_path)
         branch.bzrdir = self
         return branch
 
@@ -356,7 +356,7 @@ class SvnRemoteAccess(ControlDir):
         if name is not None:
             raise errors.NoColocatedBranchSupport(self)
         repos = self.find_repository()
-        branch = SvnBranch(repos, self.branch_path)
+        branch = SvnBranch(repos, self, self.branch_path)
         branch.bzrdir = self
         return branch
 

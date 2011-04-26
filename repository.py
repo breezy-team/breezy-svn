@@ -1164,7 +1164,7 @@ class SvnRepository(ForeignRepository):
         try:
             for project, bp, nick, has_props in layout.get_branches(self,
                     revnum, pb=pb):
-                branches.append(SvnBranch(self, bp, _skip_check=True))
+                branches.append(SvnBranch(self, None, bp, _skip_check=True))
         finally:
             pb.finished()
         return branches

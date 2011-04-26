@@ -219,7 +219,7 @@ class RepositoryConverter(object):
                             layout.is_branch(item.branch_path) and
                             not contains_parent_path(deleted, item.branch_path)):
                             existing_branches[item.branch_path] = SvnBranch(
-                                source_repos, item.branch_path,
+                                source_repos, None, item.branch_path,
                                 revnum=item.revnum, _skip_check=True,
                                 mapping=mapping)
                             if heads is not None:

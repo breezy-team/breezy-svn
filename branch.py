@@ -199,11 +199,12 @@ class SubversionTargetPullResult(PullResult):
 class SvnBranch(ForeignBranch):
     """Maps to a Branch in a Subversion repository """
 
-    def __init__(self, repository, branch_path, revnum=None, _skip_check=False,
-                 mapping=None):
+    def __init__(self, repository, controldir, branch_path, revnum=None,
+            _skip_check=False, mapping=None):
         """Instantiate a new SvnBranch.
 
-        :param repos: SvnRepository this branch is part of.
+        :param repository: SvnRepository this branch is part of.
+        :param controldir: Control dir this branch was opened on
         :param branch_path: Relative path inside the repository this
             branch is located at.
         :param revnum: Subversion revision number of the branch to
@@ -211,7 +212,7 @@ class SvnBranch(ForeignBranch):
         :param _skip_check: If True, don't check if the branch actually exists.
         """
         self.repository = repository
-        self.bzrdir = repository.bzrdir
+        self.bzrdir = controldir
         self._format = SvnBranchFormat()
         self.layout = self.repository.get_layout()
         assert isinstance(self.repository, SvnRepository)
