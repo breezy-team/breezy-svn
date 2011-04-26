@@ -427,6 +427,9 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.push_metadata = push_metadata
         self.root_action = root_action
         self._texts = texts
+        self._override_file_ids = {}
+        self._override_text_revisions = {}
+        self._override_text_parents = {}
 
         # Gather information about revision on top of which the commit is
         # happening
@@ -488,7 +491,9 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._svnprops = lazy_dict({}, dict,
             self._base_branch_props.iteritems())
         if push_metadata:
-            (self.set_custom_revprops, self.set_custom_fileprops) = self.repository._properties_to_set(self.mapping, config)
+            (self.set_custom_revprops,
+                self.set_custom_fileprops) = self.repository._properties_to_set(
+                    self.mapping, config)
         else:
             self.set_custom_revprops = False
             self.set_custom_fileprops = False
@@ -594,41 +599,6 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         return ret
 
-    def _determine_texts_identity(self, new_root_id):
-        # Store file ids
-        def _dir_process_file_id(path, file_id):
-            ret = []
-            for child_name, child_ie in self._iter_new_children(file_id):
-                new_child_path = path_join(path, child_name)
-                if (not child_ie.file_id in self.old_tree or
-                    self.old_tree.id2path(child_ie.file_id) != new_child_path or
-                    self.old_tree.get_file_revision(child_ie.file_id) != child_ie.revision or
-                    self.old_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
-                    ret.append((child_ie.file_id, new_child_path, child_ie.revision))
-
-                if (child_ie.kind == 'directory' and new_child_path in self.visit_dirs):
-                    ret += _dir_process_file_id(new_child_path, child_ie.file_id)
-            return ret
-
-        fileids = {}
-        text_revisions = {}
-        changes = []
-
-        if new_root_id != self.old_tree.get_root_id():
-            changes.append((new_root_id, "", self._get_new_ie(new_root_id).revision))
-
-        changes += _dir_process_file_id("", new_root_id)
-
-        # Find the "unusual" text revisions
-        # FIXME: This is wrong
-        for id, path, revid in changes:
-            fileids[path] = id
-            if (revid is not None and
-                revid != self.base_revid and
-                revid != self._new_revision_id):
-                text_revisions[path] = revid
-        return (fileids, text_revisions)
-
     def _get_parents_tuples(self):
         """Retrieve (tree, URL, base revnum) tuples for the parents of
         this commit.
@@ -702,16 +672,16 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._changed_fileprops = {}
 
         if self.push_metadata:
-            (fileids, text_revisions) = self._determine_texts_identity(self.new_root_id)
             if self.set_custom_revprops:
-                self.mapping.export_text_revisions_revprops(text_revisions,
-                        self._svn_revprops)
-                self.mapping.export_fileid_map_revprops(fileids,
-                        self._svn_revprops)
+                self.mapping.export_text_revisions_revprops(
+                    self._override_text_revisions, self._svn_revprops)
+                self.mapping.export_fileid_map_revprops(self._override_file_ids,
+                    self._svn_revprops)
             if self.set_custom_fileprops:
-                self.mapping.export_text_revisions_fileprops(text_revisions,
-                        self._svnprops)
-                self.mapping.export_fileid_map_fileprops(fileids, self._svnprops)
+                self.mapping.export_text_revisions_fileprops(
+                    self._override_text_revisions, self._svnprops)
+                self.mapping.export_fileid_map_fileprops(self._override_file_ids,
+                    self._svnprops)
         if self._config.get_log_strip_trailing_newline():
             if self.set_custom_revprops:
                 self.mapping.export_message_revprops(message, self._svn_revprops)
@@ -739,7 +709,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                     trace.warning("Setting property %r with invalid characters in name",
                         prop)
             if self.supports_custom_revprops:
-                self._svn_revprops[properties.PROP_REVISION_ORIGINAL_DATE] = properties.time_to_cstring(1000000*self._timestamp)
+                timeval = properties.time_to_cstring(1000000 * self._timestamp)
+                self._svn_revprops[properties.PROP_REVISION_ORIGINAL_DATE] = timeval
             if (not self.supports_custom_revprops and
                 self._svn_revprops.keys() != [properties.PROP_REVISION_LOG]):
                 raise AssertionError(
@@ -819,7 +790,8 @@ class SvnCommitBuilder(RootCommitBuilder):
             new_revprops = {}
             if (("%s=committer" % properties.PROP_REVISION_AUTHOR) in override_svn_revprops or
                 properties.PROP_REVISION_AUTHOR in override_svn_revprops):
-                new_revprops[properties.PROP_REVISION_AUTHOR] = self._committer.encode("utf-8")
+                new_revprops[properties.PROP_REVISION_AUTHOR] = self._committer.encode(
+                    "utf-8")
             if "%s=author" % properties.PROP_REVISION_AUTHOR in override_svn_revprops:
                 new_revprops[properties.PROP_REVISION_AUTHOR] = self._get_author()
             if properties.PROP_REVISION_DATE in override_svn_revprops:
@@ -906,6 +878,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self._basis_delta.append((old_path, None, file_id, None))
                 self._deleted_fileids.add(file_id)
             else:
+                self._override_file_ids[new_path] = file_id
+                trace.mutter('file ids: %r' % self._override_file_ids)
                 new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
                 if new_kind == 'file':
                     new_ie.executable = new_executable
@@ -1004,6 +978,3 @@ def file_editor_send_prop_changes(base_ie, ie, editor):
         else:
             value = None
         editor.change_prop(properties.PROP_SPECIAL, value)
-
-
-

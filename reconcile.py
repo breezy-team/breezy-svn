@@ -53,7 +53,8 @@ class RepoReconciler(bzrlib.reconcile.RepoReconciler):
         assert from_revnum <= to_revnum
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for (paths, revnum, revprops) in self.repo._log.iter_changes(None, to_revnum, from_revnum, pb=pb):
+            for (paths, revnum, revprops) in self.repo._log.iter_changes(None,
+                    to_revnum, from_revnum, pb=pb):
                 if revnum == 0:
                     # Never a bzr-svn revision
                     continue
@@ -63,9 +64,11 @@ class RepoReconciler(bzrlib.reconcile.RepoReconciler):
                     # (fileproperties) nor a bzr:root revision property
                     num_changed += self._set_skip_revprop(revnum, revprops)
                     continue
-                revmeta = self.repo._revmeta_provider.get_revision(bp, revnum, paths, revprops)
+                revmeta = self.repo._revmeta_provider.get_revision(bp, revnum,
+                        paths, revprops)
                 try:
-                    old_mapping = mapping.find_mapping_fileprops(revmeta.get_changed_fileprops())
+                    old_mapping = mapping.find_mapping_fileprops(
+                        revmeta.get_changed_fileprops())
                 except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                     num_changed += self._set_skip_revprop(revnum, revprops)
                     continue
@@ -74,8 +77,11 @@ class RepoReconciler(bzrlib.reconcile.RepoReconciler):
                     continue
                 assert old_mapping.can_use_revprops or bp is not None
                 assert bp is not None
-                new_revprops = export_as_mapping(revmeta, graph, old_mapping, old_mapping)
-                changed_revprops = dict(((k,v) for k,v in new_revprops.iteritems() if k not in revprops or revprops[k] != v))
+                new_revprops = export_as_mapping(revmeta, graph, old_mapping,
+                        old_mapping)
+                changed_revprops = dict(((k,v) for k,v in
+                    new_revprops.iteritems() if k not in revprops or
+                    revprops[k] != v))
                 set_svn_revprops(self.repo, revnum, changed_revprops)
                 if changed_revprops != {}:
                     num_changed += 1
@@ -97,9 +103,15 @@ def export_as_mapping(revmeta, graph, old_mapping, new_mapping):
     new_revprops = dict(revmeta.revprops.iteritems())
     rev = revmeta.get_revision(old_mapping)
     revno = graph.find_distance_to_null(rev.revision_id, [])
-    new_mapping.export_revision_revprops(new_revprops, revmeta.uuid, revmeta.branch_path, rev.timestamp, rev.timezone, rev.committer, rev.properties, rev.revision_id, revno, rev.parent_ids, testament=None)
-    new_mapping.export_fileid_map_revprops(revmeta.get_fileid_overrides(new_mapping), new_revprops)
-    new_mapping.export_text_revisions_revprops(revmeta.get_text_revisions(new_mapping), new_revprops)
-    if rev.message != mapping.parse_svn_log(revmeta.revprops.get(properties.PROP_REVISION_LOG)):
+    new_mapping.export_revision_revprops(new_revprops, revmeta.uuid,
+            revmeta.branch_path, rev.timestamp, rev.timezone, rev.committer,
+            rev.properties, rev.revision_id, revno, rev.parent_ids,
+            testament=None)
+    new_mapping.export_fileid_map_revprops(revmeta.get_fileid_overrides(new_mapping),
+            new_revprops)
+    new_mapping.export_text_revisions_revprops(revmeta.get_text_revisions(new_mapping),
+            new_revprops)
+    log_message = revmeta.revprops.get(properties.PROP_REVISION_LOG)
+    if rev.message != mapping.parse_svn_log(log_message):
         new_mapping.export_message_revprops(rev.message, new_revprops)
     return new_revprops
