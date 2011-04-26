@@ -320,6 +320,10 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         kind = self.transport.check_path(path.encode("utf-8"), self._revmeta.revnum)
         return kind in (subvertpy.NODE_DIR, subvertpy.NODE_FILE)
 
+    def __repr__(self):
+        return "<%s for %r, revision_id=%s>" % (self.__class__.__name__, 
+            self._revmeta, self.get_revision_id())
+
 
 class TreeBuildEditor(object):
     """Builds a tree given Subversion tree transform calls."""
