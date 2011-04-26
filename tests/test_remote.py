@@ -32,11 +32,13 @@ from bzrlib.errors import (
     UnsupportedOperation,
     )
 
+from bzrlib.plugins.svn.layout.standard import TrunkLayout
 from bzrlib.plugins.svn.remote import SvnRemoteFormat
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.transport import SvnRaTransport
 
 class TestRemoteAccess(SubversionTestCase):
+
     def test_clone(self):
         repos_url = self.make_client("d", "dc")
 
@@ -68,7 +70,8 @@ class TestRemoteAccess(SubversionTestCase):
     def test_open_workingtree_recommend_arg(self):
         repos_url = self.make_repository("d")
         x = BzrDir.open(repos_url)
-        self.assertRaises(NoWorkingTree, lambda: x.open_workingtree(recommend_upgrade=True))
+        self.assertRaises(NoWorkingTree,
+                x.open_workingtree, recommend_upgrade=True)
 
     def test_create_workingtree(self):
         repos_url = self.make_repository("d")
@@ -172,7 +175,8 @@ class TestRemoteAccess(SubversionTestCase):
     def test_needs_format_upgrade_default(self):
         repos_url = self.make_repository("d")
         x = BzrDir.open(repos_url+"/trunk")
-        self.assertTrue(x.needs_format_conversion(format_registry.make_bzrdir("default")))
+        self.assertTrue(x.needs_format_conversion(
+            format_registry.make_bzrdir("default")))
 
     def test_needs_format_upgrade_self(self):
         repos_url = self.make_repository("d")

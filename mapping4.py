@@ -33,7 +33,8 @@ from bzrlib.plugins.svn.errors import (
 supported_features = set()
 
 
-class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevProps, mapping.BzrSvnMapping):
+class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps,
+        mapping.BzrSvnMappingRevProps, mapping.BzrSvnMapping):
     """Mapping between Subversion and Bazaar, introduced in bzr-svn 0.5.
 
     Tries to use revision properties when possible.
@@ -85,7 +86,8 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
         return "svn-v4:%s:%s:%d" % (uuid, urllib.quote(path), revnum)
 
     def generate_file_id(self, (uuid, branch, revnum), inv_path):
-        return "%d@%s:%s" % (revnum, uuid, mapping.escape_svn_path("%s/%s" % (branch, inv_path.encode("utf-8"))))
+        return "%d@%s:%s" % (revnum, uuid, mapping.escape_svn_path("%s/%s" %
+            (branch, inv_path.encode("utf-8"))))
 
     def parse_file_id(self, fileid):
         try:
@@ -114,15 +116,19 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
 
     def import_revision_revprops(self, svn_revprops, rev):
         if svn_revprops.has_key(mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES):
-            features = mapping.parse_required_features_property(svn_revprops[mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES])
+            features = mapping.parse_required_features_property(
+                svn_revprops[mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES])
             assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
-        return mapping.BzrSvnMappingRevProps.import_revision_revprops(self, svn_revprops, rev)
+        return mapping.BzrSvnMappingRevProps.import_revision_revprops(self,
+            svn_revprops, rev)
 
     def import_revision_fileprops(self, fileprops, rev):
         if fileprops.has_key(mapping.SVN_PROP_BZR_REQUIRED_FEATURES):
-            features = mapping.parse_required_features_property(fileprops[mapping.SVN_PROP_BZR_REQUIRED_FEATURES])
+            features = mapping.parse_required_features_property(
+                fileprops[mapping.SVN_PROP_BZR_REQUIRED_FEATURES])
             assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
-        return mapping.BzrSvnMappingFileProps.import_revision_fileprops(self, fileprops, rev)
+        return mapping.BzrSvnMappingFileProps.import_revision_fileprops(self,
+            fileprops, rev)
 
     def get_mandated_layout(self, repository):
         return None

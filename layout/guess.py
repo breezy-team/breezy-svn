@@ -85,8 +85,8 @@ def guess_layout_from_path(relpath):
 def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
     """Try to determine the best fitting layout.
 
-    :param changed_paths: Iterator over (branch_path, changes, revnum, revprops)
-        as returned from LogWalker.iter_changes().
+    :param changed_paths: Iterator over (branch_path, changes, revnum,
+        revprops) as returned from LogWalker.iter_changes().
     :param last_revnum: Number of entries in changed_paths.
     :param relpath: Branch path that should be accepted by the branching
                     scheme as a branch.

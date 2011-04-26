@@ -25,7 +25,10 @@ from bzrlib import (
     )
 from bzrlib.trace import mutter
 
-from bzrlib.plugins.svn.errors import NotSvnBranchPath, NoCustomBranchPaths
+from bzrlib.plugins.svn.errors import (
+    NotSvnBranchPath,
+    NoCustomBranchPaths,
+    )
 
 class RepositoryLayout(object):
     """Describes a repository layout."""
@@ -40,7 +43,8 @@ class RepositoryLayout(object):
         """Return the path at which the tag with specified name should be found.
 
         :param name: Name of the tag.
-        :param project: Optional name of the project the tag is for. Can include slashes.
+        :param project: Optional string identifier for the project the tag is
+            for. Can include slashes.
         :return: Path of the tag.
         """
         raise NotImplementedError
@@ -53,7 +57,7 @@ class RepositoryLayout(object):
         raise NotImplementedError
 
     def push_merged_revisions(self, project=""):
-        """Determine whether or not right hand side (merged) revisions should be pushed.
+        """Determine whether or not right hand side revisions should be pushed.
 
         Defaults to False.
 
@@ -62,10 +66,12 @@ class RepositoryLayout(object):
         return False
 
     def get_branch_path(self, name, project=""):
-        """Return the path at which the branch with specified name should be found.
+        """Return the path at which the branch with specified name should be
+        found.
 
-        :param name: Name of the branch.
-        :param project: Optional name of the project the branch is for. Can include slashes.
+        :param name: Name of the branch, None for the default branch.
+        :param project: Optional name of the project the branch is for. Can
+            include slashes.
         :return: Path of the branch.
         """
         raise NoCustomBranchPaths(self)
@@ -119,7 +125,8 @@ class RepositoryLayout(object):
         return self.is_branch(path, project) or self.is_tag(path, project)
 
     def is_branch_or_tag_parent(self, path, project=None):
-        return self.is_branch_parent(path, project) or self.is_tag_parent(path, project)
+        return (self.is_branch_parent(path, project) or
+                self.is_tag_parent(path, project))
 
     def get_branches(self, repository, revnum, project="", pb=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
@@ -197,12 +204,14 @@ class RootPathFinder(object):
         self.revnum = revnum
 
     def check_path(self, path):
-        return self.repository.transport.check_path(path, self.revnum) == subvertpy.NODE_DIR
+        kind = self.repository.transport.check_path(path, self.revnum)
+        return (kind == subvertpy.NODE_DIR)
 
     def find_children(self, path):
         try:
             assert not path.startswith("/")
-            dirents = self.repository.transport.get_dir(path, self.revnum, DIRENT_KIND|DIRENT_HAS_PROPS)[0]
+            dirents = self.repository.transport.get_dir(path, self.revnum,
+                DIRENT_KIND|DIRENT_HAS_PROPS)[0]
         except subvertpy.SubversionException, (msg, num):
             if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
                        subvertpy.ERR_FS_NOT_FOUND,
@@ -210,11 +219,13 @@ class RootPathFinder(object):
                        subvertpy.ERR_RA_DAV_FORBIDDEN):
                 return None
             raise
-        return [(d, dirents[d]['has_props']) for d in dirents if dirents[d]['kind'] == subvertpy.NODE_DIR]
+        return [(d, dirents[d]['has_props']) for d in dirents if
+                dirents[d]['kind'] == subvertpy.NODE_DIR]
 
 
 
-def get_root_paths(repository, itemlist, revnum, verify_fn, project=None, pb=None):
+def get_root_paths(repository, itemlist, revnum, verify_fn, project=None,
+        pb=None):
     """Find all the paths in the repository matching a list of items.
 
     :param repository: Repository to search in.
@@ -276,12 +287,17 @@ or "bzr info -v <url>".
 
 
 layout_registry = registry.Registry()
-layout_registry.register_lazy("root", "bzrlib.plugins.svn.layout.standard", "RootLayout")
-layout_registry.register_lazy("none", "bzrlib.plugins.svn.layout.standard", "RootLayout")
-layout_registry.register_lazy("trunk", "bzrlib.plugins.svn.layout.standard", "TrunkLayout0")
+layout_registry.register_lazy("root", "bzrlib.plugins.svn.layout.standard",
+    "RootLayout")
+layout_registry.register_lazy("none", "bzrlib.plugins.svn.layout.standard",
+    "RootLayout")
+layout_registry.register_lazy("trunk", "bzrlib.plugins.svn.layout.standard",
+    "TrunkLayout0")
 for i in range(10):
-    layout_registry.register_lazy("trunk%d" % i, "bzrlib.plugins.svn.layout.standard", "TrunkLayout%d" % i)
-layout_registry.register_lazy("trunk-variable", "bzrlib.plugins.svn.layout.standard", "TrunkLayoutVariable")
+    layout_registry.register_lazy("trunk%d" % i,
+        "bzrlib.plugins.svn.layout.standard", "TrunkLayout%d" % i)
+layout_registry.register_lazy("trunk-variable",
+    "bzrlib.plugins.svn.layout.standard", "TrunkLayoutVariable")
 
 layout_registry.register_lazy("itrunk1", "bzrlib.plugins.svn.layout.standard",
     "InverseTrunkLayout1")

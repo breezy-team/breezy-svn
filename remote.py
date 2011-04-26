@@ -22,7 +22,6 @@ import urllib
 from bzrlib import (
     errors,
     trace,
-    version_info as bzrlib_version,
     )
 from bzrlib.controldir import (
     ControlDirFormat,

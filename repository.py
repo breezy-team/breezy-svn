@@ -68,9 +68,6 @@ from bzrlib.plugins.svn import (
 from bzrlib.plugins.svn.branchprops import (
     PathPropertyProvider,
     )
-from bzrlib.plugins.svn.config import (
-    SvnRepositoryConfig,
-    )
 from bzrlib.plugins.svn.fileids import (
     CachingFileIdMapStore,
     FileIdMapStore,
@@ -491,7 +488,8 @@ class SvnRepository(ForeignRepository):
         self._cached_revnum = revnum
         self._layout = None
         self._layout_source = None
-        self._parents_provider = graph.CachingParentsProvider(self._real_parents_provider)
+        self._parents_provider = graph.CachingParentsProvider(
+            self._real_parents_provider)
 
     def lock_write(self):
         """See Branch.lock_write()."""
@@ -555,7 +553,8 @@ class SvnRepository(ForeignRepository):
         """See Repository.gather_stats()."""
         result = {}
         def revdate(revnum):
-            return parse_svn_dateprop(self._log.revprop_list(revnum)[subvertpy.properties.PROP_REVISION_DATE])
+            revprops = self._log.revprop_list(revnum)
+            return parse_svn_dateprop(revprops[subvertpy.properties.PROP_REVISION_DATE])
         if committers is not None and revid is not None:
             all_committers = set()
             for rev in self.get_revisions(filter(lambda r: r is not None and r != NULL_REVISION, self.has_revisions(self.get_ancestry(revid)))):
@@ -577,14 +576,16 @@ class SvnRepository(ForeignRepository):
         :return: tuple with two booleans: whether to use revision properties
             and whether to use file properties.
         """
-        supports_custom_revprops = self.transport.has_capability("commit-revprops")
+        supports_custom_revprops = self.transport.has_capability(
+            "commit-revprops")
         if supports_custom_revprops and mapping.can_use_revprops:
             use_revprops = True
             use_fileprops = mapping.must_use_fileprops
         else:
             use_revprops = False
             use_fileprops = mapping.can_use_fileprops
-        if use_fileprops and not target_config.get_allow_metadata_in_fileprops():
+        if (use_fileprops and
+            not target_config.get_allow_metadata_in_fileprops()):
             raise errors.RequiresMetadataInFileProps()
         return (use_revprops, use_fileprops)
 
@@ -632,11 +633,14 @@ class SvnRepository(ForeignRepository):
             parentrevnum = parentrevmeta.revnum
             start_empty = False
         editor = TreeDeltaBuildEditor(revision.svn_meta, revision.mapping,
-                                      self.get_fileid_map(revision.svn_meta, revision.mapping),
-                                      parentfileidmap)
+            self.get_fileid_map(revision.svn_meta, revision.mapping),
+            parentfileidmap)
         conn = self.transport.get_connection(parent_branch_path)
         try:
-            reporter = conn.do_diff(revision.svn_meta.revnum, "", urlutils.join(self.transport.get_svn_repos_root(), revision.svn_meta.branch_path).rstrip("/"), editor, True, True, False)
+            reporter = conn.do_diff(revision.svn_meta.revnum, "",
+                    urlutils.join(self.transport.get_svn_repos_root(),
+                        revision.svn_meta.branch_path).rstrip("/"), editor,
+                    True, True, False)
             try:
                 reporter.set_path("", parentrevnum, start_empty)
                 reporter.finish()
@@ -715,7 +719,8 @@ class SvnRepository(ForeignRepository):
         # No guessed layout stored yet or it doesn't accept
         # self._hinted_branch_path
         revnum = self.get_latest_revnum()
-        (self._guessed_layout, self._guessed_appropriate_layout) = repository_guess_layout(self,
+        (self._guessed_layout,
+            self._guessed_appropriate_layout) = repository_guess_layout(self,
                     revnum, self._hinted_branch_path)
         if self._guessed_layout != config_guessed_layout and revnum > 200:
             self.get_config().set_guessed_layout(self._guessed_layout)
@@ -871,7 +876,9 @@ class SvnRepository(ForeignRepository):
                 # Need to restart, branch root has changed
                 if expected_revid == NULL_REVISION:
                     break
-                (_, branch_path, revnum), mapping = self.lookup_bzr_revision_id(expected_revid, foreign_sibling=foreign_sibling)
+                foreign_revid, mapping = self.lookup_bzr_revision_id(
+                    expected_revid, foreign_sibling=foreign_sibling)
+                (_, branch_path, revnum) = foreign_revid
                 it = get_iter(branch_path, revnum)
             elif revid is not None:
                 if not mapping.is_branch_or_tag(revmeta.branch_path):
@@ -953,11 +960,12 @@ class SvnRepository(ForeignRepository):
             return False
         try:
             kind = self.transport.check_path(path, revnum)
-            return (subvertpy.NODE_DIR == kind)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 return False
             raise
+        else:
+            return (kind == subvertpy.NODE_DIR)
 
     def revision_trees(self, revids):
         """See Repository.revision_trees()."""
@@ -1170,7 +1178,9 @@ class SvnRepository(ForeignRepository):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             entries = []
-            for kind, item in self._revmeta_provider.iter_all_changes(layout, mapping.is_branch_or_tag, to_revnum, from_revnum, project=project):
+            for kind, item in self._revmeta_provider.iter_all_changes(layout,
+                    mapping.is_branch_or_tag, to_revnum, from_revnum,
+                    project=project):
                 if kind == "revision":
                     pb.update("discovering tags", to_revnum-item.revnum,
                         to_revnum-from_revnum)
@@ -1254,8 +1264,10 @@ class SvnRepository(ForeignRepository):
 
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for (paths, i, revprops) in self._log.iter_changes(prefixes, from_revnum, to_revnum):
-                if (isinstance(revprops, dict) or revprops.is_loaded) and is_bzr_revision_revprops(revprops):
+            for (paths, i, revprops) in self._log.iter_changes(prefixes,
+                    from_revnum, to_revnum):
+                if ((isinstance(revprops, dict) or revprops.is_loaded) and 
+                    is_bzr_revision_revprops(revprops)):
                     continue
                 pb.update("finding branches", i, to_revnum)
                 for p in sorted(paths.keys()):
@@ -1273,7 +1285,8 @@ class SvnRepository(ForeignRepository):
                         if action in ('R', 'D'):
                             k = created_branches.keys()
                             for c in k:
-                                if c.startswith(p+"/") and c in created_branches:
+                                if (c.startswith(p+"/") and
+                                    c in created_branches):
                                     ret.append((c, created_branches[c], False))
                                     del created_branches[c]
                         if action in ('A', 'R') and copyfrom_path is not None:

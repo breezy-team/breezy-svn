@@ -71,10 +71,12 @@ class SchemeDerivedLayout(RepositoryLayout):
         return (self.scheme.tag_list != [])
 
     def get_branches(self, repository, revnum, project=None, pb=None):
-        return get_root_paths(repository, self.scheme.branch_list, revnum, self.scheme.is_branch, project, pb)
+        return get_root_paths(repository, self.scheme.branch_list, revnum,
+                self.scheme.is_branch, project, pb)
 
     def get_tags(self, repository, revnum, project=None, pb=None):
-        return get_root_paths(repository, self.scheme.tag_list, revnum, self.scheme.is_tag, project, pb)
+        return get_root_paths(repository, self.scheme.tag_list, revnum,
+                self.scheme.is_tag, project, pb)
 
     def get_tag_path(self, name, project=""):
         return self.scheme.get_tag_path(name, project)
@@ -155,7 +157,8 @@ def config_set_scheme(repository, scheme, guessed_scheme, mandatory=False):
                             guessed_scheme_str, mandatory=mandatory)
 
 
-class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevProps, mapping.BzrSvnMapping):
+class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
+        mapping.BzrSvnMappingRevProps, mapping.BzrSvnMapping):
     """The third version of the mappings as used in the 0.4.x series.
 
     Relies exclusively on file properties, though
@@ -195,7 +198,8 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
         return SchemeDerivedLayout(repository, self.scheme)
 
     def get_guessed_layout(self, repository):
-        return SchemeDerivedLayout(repository, self.guessed_scheme or self.scheme)
+        return SchemeDerivedLayout(repository,
+            self.guessed_scheme or self.scheme)
 
     def check_layout(self, repository, layout):
         self.scheme = scheme_from_layout(layout)
@@ -203,7 +207,8 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
 
     @classmethod
     def from_repository(cls, repository, _hinted_branch_path=None):
-        (actual_scheme, guessed_scheme, mandatory) = get_stored_scheme(repository)
+        (actual_scheme, guessed_scheme, mandatory) = get_stored_scheme(
+            repository)
         if mandatory:
             return cls(actual_scheme, guessed_scheme)
 
@@ -213,9 +218,11 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
                 return cls(actual_scheme, guessed_scheme)
 
         last_revnum = repository.get_latest_revnum()
-        (guessed_scheme, actual_scheme) = repository_guess_scheme(repository, last_revnum, _hinted_branch_path)
+        (guessed_scheme, actual_scheme) = repository_guess_scheme(repository,
+            last_revnum, _hinted_branch_path)
         if last_revnum > 20:
-            config_set_scheme(repository, actual_scheme, guessed_scheme, mandatory=False)
+            config_set_scheme(repository, actual_scheme, guessed_scheme,
+                mandatory=False)
 
         return cls(actual_scheme, guessed_scheme)
 
@@ -244,7 +251,8 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
             (uuid, bp, ip) = rest.split(":", 2)
         except ValueError:
             raise errors.InvalidFileId(file_id)
-        return (uuid, revnum, ("%s/%s" % (mapping.unescape_svn_path(bp), mapping.unescape_svn_path(ip))).strip("/"))
+        return (uuid, revnum, ("%s/%s" % (mapping.unescape_svn_path(bp),
+            mapping.unescape_svn_path(ip))).strip("/"))
 
     @classmethod
     def _parse_revision_id(cls, revid):
@@ -296,7 +304,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps, mapping.BzrSvnMappingRevPr
         assert revnum >= 0
         assert revnum > 0 or path == "", \
                 "Trying to generate revid for (%r,%r)" % (path, revnum)
-        return "%s%s:%s:%s:%d" % (cls.revid_prefix, scheme, uuid, \
+        return "%s%s:%s:%s:%d" % (cls.revid_prefix, scheme, uuid,
                        mapping.escape_svn_path(path.strip("/")), revnum)
 
     def revision_id_foreign_to_bzr(self, (uuid, path, revnum)):

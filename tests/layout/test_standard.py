@@ -20,6 +20,7 @@ from bzrlib.tests import (
     )
 
 from bzrlib.plugins.svn.errors import (
+    NoCustomBranchPaths,
     NotSvnBranchPath,
     )
 from bzrlib.plugins.svn.layout.standard import (

@@ -122,7 +122,7 @@ def test_suite():
             'test_mapping',
             'test_parents',
             'test_push',
-            'test_radir',
+            'test_remote',
             'test_repository',
             'test_revmeta',
             'test_revspec',
