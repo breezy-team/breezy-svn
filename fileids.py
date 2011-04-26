@@ -240,7 +240,7 @@ class DictFileIdMap(FileIdMap):
                 else:
                     child_create_revid = None
                 self.data[x] = (delta[x],
-                    text_revisions.get(x) or default_revid, child_create_revid)
+                    text_revisions.get(x, default_revid), child_create_revid)
             else:
                 try:
                     prev_entry = self.lookup(mapping, x)
@@ -248,7 +248,7 @@ class DictFileIdMap(FileIdMap):
                     raise AssertionError("Unable to find old fileid for %s "
                         "in %r" % (x, foreign_revid))
                 self.data[x] = (prev_entry[0],
-                    text_revisions.get(x) or default_revid, prev_entry[2])
+                    text_revisions.get(x, default_revid), prev_entry[2])
 
         if not "" in self.data:
             raise AssertionError("root no longer exists after %r in %r" %
