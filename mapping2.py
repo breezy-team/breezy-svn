@@ -103,6 +103,9 @@ class BzrSvnMappingv1(BzrSvnMapping):
     def import_fileid_map_fileprops(self, fileprops):
         return {}
 
+    def import_text_parents_fileprops(self, fileprops):
+        return {}
+
     def import_text_revisions_fileprops(self, fileprops):
         return {}
 

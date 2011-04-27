@@ -677,11 +677,15 @@ class SvnCommitBuilder(RootCommitBuilder):
                     self._override_text_revisions, self._svn_revprops)
                 self.mapping.export_fileid_map_revprops(self._override_file_ids,
                     self._svn_revprops)
+                self.mapping.export_text_parents_revprops(
+                    self._override_text_parents, self._svn_revprops)
             if self.set_custom_fileprops:
                 self.mapping.export_text_revisions_fileprops(
                     self._override_text_revisions, self._svnprops)
                 self.mapping.export_fileid_map_fileprops(self._override_file_ids,
                     self._svnprops)
+                self.mapping.export_text_parents_fileprops(
+                    self._override_text_parents, self._svnprops)
         if self._config.get_log_strip_trailing_newline():
             if self.set_custom_revprops:
                 self.mapping.export_message_revprops(message, self._svn_revprops)
@@ -882,7 +886,6 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self._deleted_fileids.add(file_id)
             else:
                 self._override_file_ids[new_path] = file_id
-                trace.mutter('file ids: %r' % self._override_file_ids)
                 new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
                 if new_kind == 'file':
                     new_ie.executable = new_executable
@@ -903,6 +906,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                         self._override_text_revisions[new_path] = new_ie.revision
                 elif new_kind == 'directory':
                     self.visit_dirs.add(new_path)
+                    # FIXME: need to update the file ids for all children recursively
                 self._visit_parent_dirs(new_path)
                 self._updated[file_id] = new_ie
                 self._updated_children[new_parent_id].add(file_id)

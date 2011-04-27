@@ -109,6 +109,8 @@ def export_as_mapping(revmeta, graph, old_mapping, new_mapping):
             testament=None)
     new_mapping.export_fileid_map_revprops(revmeta.get_fileid_overrides(new_mapping),
             new_revprops)
+    new_mapping.export_text_parents_revprops(revmeta.get_text_parents(new_mapping),
+            new_revprops)
     new_mapping.export_text_revisions_revprops(revmeta.get_text_revisions(new_mapping),
             new_revprops)
     log_message = revmeta.revprops.get(properties.PROP_REVISION_LOG)

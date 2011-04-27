@@ -103,6 +103,12 @@ class SvnTexts(VersionedFiles):
         except KeyError:
             return None
 
+        text_parents = revmeta.get_text_parents(mapping)
+        if path in text_parents:
+            return text_parents[path]
+
+        # Not explicitly recorded - so just return the text revisions 
+        # present in the parents of the mentioned revision.
         ret = []
         rev_parent_revids = revmeta.get_parent_ids(mapping)
         for revid in rev_parent_revids:

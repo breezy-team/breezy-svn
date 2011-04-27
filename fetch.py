@@ -814,8 +814,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 if parent_ie.revision != base_ie.revision:
                     new_ie = base_ie.copy()
                     new_ie.revision = self.revid
-                    record = self.texts.get_record_stream([(base_ie.file_id, base_ie.revision)],
-                                                            'unordered', True).next()
+                    record = self.texts.get_record_stream([
+                        (base_ie.file_id, base_ie.revision)], 'unordered', True).next()
                     self.texts.insert_record_stream(
                             [FulltextContentFactory(
                                 (new_ie.file_id, new_ie.revision),
