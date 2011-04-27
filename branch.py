@@ -721,7 +721,7 @@ class InterFromSvnBranch(GenericInterBranch):
         interrepo.fetch(needed=revisionfinder.get_missing(),
             project=self.source.project, mapping=self.source.mapping)
 
-    def update_revisions(self, stop_revision=None, overwrite=False,
+    def _update_revisions(self, stop_revision=None, overwrite=False,
                          graph=None, fetch_tags=True):
         "See InterBranch.update_revisions."""
         self.source.lock_read()
@@ -760,7 +760,7 @@ class InterFromSvnBranch(GenericInterBranch):
         result.target_branch = self.target
         graph = self.target.repository.get_graph(self.source.repository)
         result.old_revno, result.old_revid = self.target.last_revision_info()
-        self.update_revisions(stop_revision, overwrite=overwrite, graph=graph)
+        self._update_revisions(stop_revision, overwrite=overwrite, graph=graph)
         # FIXME: Tags
         result.new_revno, result.new_revid = self.target.last_revision_info()
         return result
@@ -802,7 +802,7 @@ class InterFromSvnBranch(GenericInterBranch):
                     self.source.repository._get_revmeta(stop_revision)
             else:
                 result.new_revmeta = None
-            (result.new_revno, result.new_revid) = self.update_revisions(
+            (result.new_revno, result.new_revid) = self._update_revisions(
                 stop_revision, overwrite)
             if self.source.supports_tags():
                 result.tag_conflicts = self.source.tags.merge_to(
@@ -840,11 +840,6 @@ class InterToSvnBranch(InterBranch):
     def _get_branch_formats_to_test():
         from bzrlib.branch import format_registry as branch_format_registry
         return [(branch_format_registry.get_default(), SvnBranchFormat())]
-
-    def update_revisions(self, stop_revision=None, overwrite=False, graph=None):
-        """See Branch.update_revisions()."""
-        self._update_revisions(stop_revision=stop_revision,
-            overwrite=overwrite, graph=graph)
 
     def _target_is_empty(self, graph, revid):
         parent_revids = tuple(graph.get_parent_map([revid])[revid])
