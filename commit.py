@@ -832,16 +832,23 @@ class SvnCommitBuilder(RootCommitBuilder):
             self.visit_dirs.add(path)
 
     def _get_text_revision(self, new_ie, parent_trees):
+        parent_revisions = []
         for ptree in parent_trees:
             try:
-                if ((new_ie.kind == 'file' and
-                     ptree.get_file_sha1(new_ie.file_id) == new_ie.text_sha1) or
-                    (new_ie.kind == 'symlink' and
-                     ptree.get_symlink_target(new_ie.file_id) == new_ie.symlink_target)):
-                    return ptree.get_file_revision(new_ie.file_id)
+                prevision = ptree.get_file_revision(new_ie.file_id)
             except NoSuchId:
                 continue
-        return None
+            if ((new_ie.kind == 'file' and
+                 ptree.get_file_sha1(new_ie.file_id) == new_ie.text_sha1) or
+                (new_ie.kind == 'symlink' and
+                 ptree.get_symlink_target(new_ie.file_id) == new_ie.symlink_target)):
+                # FIXME: return actual text parents
+                return prevision, None
+            parent_revisions.append(prevision)
+        if (parent_revisions == [] or
+            parent_revisions == [parent_trees[0].get_revision_id()]):
+            parent_revisions = None
+        return None, parent_revisions
 
     def record_delete(self, path, file_id):
         raise NotImplementedError(self.record_delete)
@@ -891,19 +898,25 @@ class SvnCommitBuilder(RootCommitBuilder):
                     new_ie.executable = new_executable
                     file_obj, stat_val = get_file_with_stat(file_id)
                     new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
-                    new_ie.revision = self._get_text_revision(new_ie, parent_trees)
+                    (new_ie.revision, unusual_text_parents) = self._get_text_revision(
+                        new_ie, parent_trees)
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(
                         tree, base_ie, new_ie)
                     if new_ie.revision is not None:
                         self._override_text_revisions[new_path] = new_ie.revision
+                    if unusual_text_parents is not None:
+                        self._override_text_parents[new_path] = unusual_text_parents
                     yield file_id, new_path, (new_ie.text_sha1, stat_val)
                 elif new_kind == 'symlink':
                     new_ie.symlink_target = tree.get_symlink_target(file_id)
-                    new_ie.revision = self._get_text_revision(new_ie, parent_trees)
+                    new_ie.revision, unusual_text_parents = self._get_text_revision(
+                        new_ie, parent_trees)
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(
                         tree, base_ie, new_ie)
                     if new_ie.revision is not None:
                         self._override_text_revisions[new_path] = new_ie.revision
+                    if unusual_text_parents is not None:
+                        self._override_text_parents[new_path] = unusual_text_parents
                 elif new_kind == 'directory':
                     self.visit_dirs.add(new_path)
                     # FIXME: need to update the file ids for all children recursively
