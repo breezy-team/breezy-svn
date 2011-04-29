@@ -245,14 +245,6 @@ class SvnRepositoryConfig(Config):
             return BranchingScheme.find_scheme(schemename.encode('ascii'))
         return None
 
-    def get_supports_change_revprop(self):
-        """Check whether or not the repository supports changing existing
-        revision properties."""
-        try:
-            return self.get_bool("supports-change-revprop")
-        except KeyError:
-            return None
-
     def get_use_cache(self):
         try:
             if self.get_bool("use-cache"):

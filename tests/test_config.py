@@ -90,14 +90,6 @@ class ReposConfigTests(SubversionTestCase):
         c.set_branching_scheme(TrunkBranchingScheme(), None, mandatory=False)
         self.assertEquals(False, c.branching_scheme_is_mandatory())
 
-    def test_supports_change_revprop(self):
-        c = self.config
-        self.assertEquals(None, c.get_supports_change_revprop())
-        c.set_user_option("supports-change-revprop", "True")
-        self.assertEquals(True, c.get_supports_change_revprop())
-        c.set_user_option("supports-change-revprop", "False")
-        self.assertEquals(False, c.get_supports_change_revprop())
-
     def test_default_mapping(self):
         c = self.config
         self.assertEquals(None, c.get_default_mapping())

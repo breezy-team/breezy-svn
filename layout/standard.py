@@ -86,7 +86,10 @@ class TrunkLayout(RepositoryLayout):
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
-        return urlutils.join(project, "branches", name).strip("/")
+        if name is None:
+            return urlutils.join(project, "trunk").strip("/")
+        else:
+            return urlutils.join(project, "branches", name).strip("/")
 
     def parse(self, path):
         """Parse a path.
@@ -189,6 +192,8 @@ class RootLayout(RepositoryLayout):
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
+        if name is not None or project:
+            raise svn_errors.NoCustomBranchPaths(self)
         return ""
 
     def parse(self, path):
@@ -426,7 +431,10 @@ class InverseTrunkLayout(RepositoryLayout):
         if parts[0] == "trunk":
             if len(parts) < (self.level + 1):
                 raise svn_errors.NotSvnBranchPath(path)
-            return ("branch", "/".join(parts[1:self.level+2]), "/".join(parts[:self.level+1]), "/".join(parts[self.level+1:]))
+            return ("branch",
+                    "/".join(parts[1:self.level+2]),
+                    "/".join(parts[:self.level+1]),
+                    "/".join(parts[self.level+1:]))
         elif parts[0] in ("branches", "tags"):
             if len(parts) < (self.level + 2):
                 raise svn_errors.NotSvnBranchPath(path)
@@ -434,7 +442,10 @@ class InverseTrunkLayout(RepositoryLayout):
                 t = "branch"
             else:
                 t = "tag"
-            return (t, "/".join(parts[1:self.level+1]), "/".join(parts[:self.level+2]), "/".join(parts[self.level+2:]))
+            return (t,
+                    "/".join(parts[1:self.level+1]),
+                    "/".join(parts[:self.level+2]),
+                    "/".join(parts[self.level+2:]))
         raise svn_errors.NotSvnBranchPath(path)
 
     def _add_project(self, path, project=None):
@@ -446,7 +457,7 @@ class InverseTrunkLayout(RepositoryLayout):
             return urlutils.join(urlutils.join(path, project), "*")
 
     def get_branches(self, repository, revnum, project=None, pb=None):
-        """Retrieve a list of paths that refer to branches in a specific revision.
+        """Return a list of paths that refer to branches in a specific revision.
 
         :return: Iterator over tuples with (project, branch path)
         """
@@ -459,7 +470,9 @@ class InverseTrunkLayout(RepositoryLayout):
 
         :return: Iterator over tuples with (project, branch path)
         """
-        return get_root_paths(repository, [self._add_project("tags", project)], revnum, self.is_tag, project)
+        return get_root_paths(repository,
+                [self._add_project("tags", project)], revnum, self.is_tag,
+                project)
 
     def __repr__(self):
         return "%s(%d)" % (self.__class__.__name__, self.level)

@@ -184,13 +184,15 @@ class ListBranchingScheme(BranchingScheme):
         """
         assert isinstance(branch_list, list) or isinstance(branch_list, str)
         if isinstance(branch_list, str):
-            branch_list = bz2.decompress(prop_name_unquote(branch_list.encode("ascii"))).splitlines()
+            branch_list = bz2.decompress(prop_name_unquote(
+                branch_list.encode("ascii"))).splitlines()
         self.branch_list = [p.strip("/") for p in branch_list]
         self.tag_list = tag_list
         self.split_branch_list = [p.split("/") for p in self.branch_list]
 
     def __str__(self):
-        return "list-%s" % prop_name_quote(bz2.compress("".join(map(lambda x:x+"\n", self.branch_list))))
+        return "list-%s" % prop_name_quote(
+            bz2.compress("".join(map(lambda x:x+"\n", self.branch_list))))
 
     def is_tag(self, path, project=None):
         """See BranchingScheme.is_tag()."""
@@ -225,7 +227,7 @@ class ListBranchingScheme(BranchingScheme):
         raise InvalidSvnBranchPath(path, self)
 
     def __eq__(self, other):
-        return (self.branch_list == getattr(other, "branch_list", None) and \
+        return (self.branch_list == getattr(other, "branch_list", None) and
                 self.tag_list == getattr(other, "tag_list", None))
 
     def __ne__(self, other):
@@ -257,7 +259,7 @@ class NoBranchingScheme(ListBranchingScheme):
     def is_branch(self, path, project=None):
         """See BranchingScheme.is_branch()."""
         if project is None or project == "":
-            return path.strip("/") == ""
+            return (path.strip("/") == "")
         return False
 
     def is_tag(self, path, project=None):
@@ -351,7 +353,8 @@ class TrunkBranchingScheme(ListBranchingScheme):
             return ("/".join(parts[0:self.level]).strip("/"),
                     "/".join(parts[0:self.level+1]).strip("/"),
                     "/".join(parts[self.level+1:]).strip("/"))
-        elif ((parts[self.level] == "tags" or parts[self.level] == "branches") and
+        elif ((parts[self.level] == "tags" or
+               parts[self.level] == "branches") and
               len(parts) >= self.level+2):
             return ("/".join(parts[0:self.level]).strip("/"),
                     "/".join(parts[0:self.level+2]).strip("/"),
@@ -561,10 +564,11 @@ def repository_guess_scheme(repository, last_revnum, branch_path=None):
     pb = ui.ui_factory.nested_progress_bar()
     try:
         (guessed_scheme, scheme) = guess_scheme_from_history(
-            repository._log.iter_changes(None, last_revnum, max(0, last_revnum-GUESS_SAMPLE_SIZE)), last_revnum, branch_path)
+            repository._log.iter_changes(None, last_revnum,
+                max(0, last_revnum-GUESS_SAMPLE_SIZE)),
+            last_revnum, branch_path)
     finally:
         pb.finished()
     mutter("Guessed branching scheme: %r, guess scheme to use: %r" %
             (guessed_scheme, scheme))
     return (guessed_scheme, scheme)
-

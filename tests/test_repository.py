@@ -38,9 +38,6 @@ from bzrlib.tests import TestCase
 from bzrlib.plugins.svn.tests import (
     SubversionTestCase,
     )
-from bzrlib.plugins.svn.branch import (
-    SvnBranch,
-    )
 from bzrlib.plugins.svn.layout.standard import TrunkLayout
 from bzrlib.plugins.svn.repository import (
     SvnRepositoryFormat,

@@ -211,11 +211,15 @@ class TrunkLegacyLayout(LegacyLayout):
             raise NotSvnBranchPath(path, self)
 
         if parts[self.level] == "trunk" or parts[self.level] == "hooks":
-            return ("branch", "/".join(parts[0:self.level]), "/".join(parts[0:self.level+1]).strip("/"),
+            return ("branch",
+                    "/".join(parts[0:self.level]),
+                    "/".join(parts[0:self.level+1]).strip("/"),
                     "/".join(parts[self.level+1:]).strip("/"))
         elif ((parts[self.level] == "tags" or parts[self.level] == "branches") and
               len(parts) >= self.level+2):
-            return ("branch", "/".join(parts[0:self.level]), "/".join(parts[0:self.level+2]).strip("/"),
+            return ("branch",
+                    "/".join(parts[0:self.level]),
+                    "/".join(parts[0:self.level+2]).strip("/"),
                     "/".join(parts[self.level+2:]).strip("/"))
         else:
             raise NotSvnBranchPath(path, self)
