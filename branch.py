@@ -897,20 +897,16 @@ class InterToSvnBranch(InterBranch):
         :param stop_revision: If not None, stop at this revision.
         :return: Map of old revids to new revids.
         """
-        self.source.lock_write()
-        try:
-            if stop_revision is None:
-                stop_revision = ensure_null(self.source.last_revision())
-            revid_map = self._push(stop_revision, overwrite=overwrite,
-                push_metadata=False)
-            reverse_inter = InterFromSvnBranch(self.target, self.source)
-            self.target._clear_cached_state()
-            reverse_inter.fetch(stop_revision=revid_map[stop_revision][0])
-            assert stop_revision in revid_map
-            assert len(revid_map.keys()) > 0
-            return dict([(k, v[0]) for (k, v) in revid_map.iteritems()])
-        finally:
-            self.source.unlock()
+        if stop_revision is None:
+            stop_revision = ensure_null(self.source.last_revision())
+        revid_map = self._push(stop_revision, overwrite=overwrite,
+            push_metadata=False)
+        reverse_inter = InterFromSvnBranch(self.target, self.source)
+        self.target._clear_cached_state()
+        reverse_inter.fetch(stop_revision=revid_map[stop_revision][0])
+        assert stop_revision in revid_map
+        assert len(revid_map.keys()) > 0
+        return dict([(k, v[0]) for (k, v) in revid_map.iteritems()])
 
     def lossy_push(self, stop_revision=None):
         """See InterBranch.lossy_push()."""
