@@ -199,8 +199,8 @@ class SubversionTargetPullResult(PullResult):
 class SvnBranch(ForeignBranch):
     """Maps to a Branch in a Subversion repository """
 
-    def __init__(self, repository, controldir, branch_path, revnum=None,
-            _skip_check=False, mapping=None):
+    def __init__(self, repository, controldir, branch_path, mapping, revnum=None,
+            _skip_check=False):
         """Instantiate a new SvnBranch.
 
         :param repository: SvnRepository this branch is part of.
@@ -216,7 +216,7 @@ class SvnBranch(ForeignBranch):
         self._format = SvnBranchFormat()
         self.layout = self.repository.get_layout()
         assert isinstance(self.repository, SvnRepository)
-        super(SvnBranch, self).__init__(mapping or self.repository.get_mapping())
+        super(SvnBranch, self).__init__(mapping)
         self._lock_mode = None
         self._lock_count = 0
         self._branch_path = branch_path.strip("/")
@@ -897,20 +897,16 @@ class InterToSvnBranch(InterBranch):
         :param stop_revision: If not None, stop at this revision.
         :return: Map of old revids to new revids.
         """
-        self.source.lock_write()
-        try:
-            if stop_revision is None:
-                stop_revision = ensure_null(self.source.last_revision())
-            revid_map = self._push(stop_revision, overwrite=overwrite,
-                push_metadata=False)
-            reverse_inter = InterFromSvnBranch(self.target, self.source)
-            self.target._clear_cached_state()
-            reverse_inter.fetch(stop_revision=revid_map[stop_revision][0])
-            assert stop_revision in revid_map
-            assert len(revid_map.keys()) > 0
-            return dict([(k, v[0]) for (k, v) in revid_map.iteritems()])
-        finally:
-            self.source.unlock()
+        if stop_revision is None:
+            stop_revision = ensure_null(self.source.last_revision())
+        revid_map = self._push(stop_revision, overwrite=overwrite,
+            push_metadata=False)
+        reverse_inter = InterFromSvnBranch(self.target, self.source)
+        self.target._clear_cached_state()
+        reverse_inter.fetch(stop_revision=revid_map[stop_revision][0])
+        assert stop_revision in revid_map
+        assert len(revid_map.keys()) > 0
+        return dict([(k, v[0]) for (k, v) in revid_map.iteritems()])
 
     def lossy_push(self, stop_revision=None):
         """See InterBranch.lossy_push()."""
