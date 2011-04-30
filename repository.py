@@ -1146,7 +1146,7 @@ class SvnRepository(ForeignRepository):
             raise
 
     @needs_read_lock
-    def find_branches(self, using=False, layout=None, revnum=None):
+    def find_branches(self, using=False, layout=None, revnum=None, mapping=None):
         """Find branches underneath this repository.
 
         This will include branches inside other branches.
@@ -1160,11 +1160,13 @@ class SvnRepository(ForeignRepository):
             revnum = self.get_latest_revnum()
 
         branches = []
+        if mapping is None:
+            mapping = self.get_mapping()
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for project, bp, nick, has_props in layout.get_branches(self,
                     revnum, pb=pb):
-                branches.append(SvnBranch(self, None, bp, _skip_check=True))
+                branches.append(SvnBranch(self, None, bp, mapping, _skip_check=True))
         finally:
             pb.finished()
         return branches

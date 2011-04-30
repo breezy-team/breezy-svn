@@ -344,7 +344,7 @@ class SvnRemoteAccess(ControlDir):
         except NoCustomBranchPaths:
             raise errors.NoColocatedBranchSupport(self)
 
-    def create_branch(self, branch_name=None, repository=None):
+    def create_branch(self, branch_name=None, repository=None, mapping=None):
         """See ControlDir.create_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         if repository is None:
@@ -357,14 +357,19 @@ class SvnRemoteAccess(ControlDir):
         elif repository.get_latest_revnum() > 0:
             # Bail out if there are already revisions in this repository
             raise errors.AlreadyBranchError(self.root_transport.base)
-        return SvnBranch(repository, self, relpath)
+        if mapping is None:
+            mapping = repository.get_mapping()
+        return SvnBranch(repository, self, relpath, mapping)
 
-    def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
+    def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
+            mapping=None):
         """See ControlDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         relpath = self._determine_relpath(name)
         repos = self.find_repository()
-        return SvnBranch(repos, self, relpath)
+        if mapping is None:
+            mapping = repos.get_mapping()
+        return SvnBranch(repos, self, relpath, mapping)
 
     def create_repository(self, shared=False, format=None):
         """See ControlDir.create_repository."""
