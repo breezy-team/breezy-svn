@@ -630,7 +630,8 @@ class SvnCommitBuilder(RootCommitBuilder):
     def _iter_new_children(self, file_id):
         ret = []
         for child in self._updated_children[file_id]:
-            ret.append((self._updated[child].name, self._updated[child]))
+            (child_path, child_ie) = self._updated[child]
+            ret.append((child_ie.name, child_ie))
         try:
             old_ie = self.old_tree.inventory[file_id]
         except NoSuchId:
@@ -646,11 +647,14 @@ class SvnCommitBuilder(RootCommitBuilder):
     def _get_new_ie(self, file_id):
         if file_id in self._deleted_fileids:
             return None
-        if file_id in self._updated:
-            return self._updated[file_id]
-        if self.old_tree.has_id(file_id):
+        try:
+            return self._updated[file_id][1]
+        except KeyError:
+            pass
+        try:
             return self.old_tree.inventory[file_id]
-        return None
+        except NoSuchId:
+            return None
 
     def _get_author(self):
         try:
@@ -921,7 +925,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                     self.visit_dirs.add(new_path)
                     # FIXME: need to update the file ids for all children recursively
                 self._visit_parent_dirs(new_path)
-                self._updated[file_id] = new_ie
+                self._updated[file_id] = (new_path, new_ie)
                 self._updated_children[new_parent_id].add(file_id)
                 self._basis_delta.append((old_path, new_path, file_id, new_ie))
                 if new_path == "":
