@@ -478,7 +478,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._deleted_fileids = set()
         self._updated_children = defaultdict(set)
         self._updated = {}
-        self.visit_dirs = set()
+        self._visit_dirs = set()
+        self._touched_dirs = set()
         self.modified_files = {}
         self.supports_custom_revprops = self.repository.transport.has_capability(
             "commit-revprops")
@@ -628,10 +629,9 @@ class SvnCommitBuilder(RootCommitBuilder):
         return ret
 
     def _iter_new_children(self, file_id):
-        ret = []
         for child in self._updated_children[file_id]:
             (child_path, child_ie) = self._updated[child]
-            ret.append((child_ie.name, child_ie))
+            yield (child_ie.name, child_ie)
         try:
             old_ie = self.old_tree.inventory[file_id]
         except NoSuchId:
@@ -641,8 +641,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                 for name, child_ie in old_ie.children.iteritems():
                     if (not child_ie.file_id in self._deleted_fileids and
                         not child_ie.file_id in self._updated):
-                        ret.append((name, child_ie))
-        return ret
+                        yield (name, child_ie)
 
     def _get_new_ie(self, file_id):
         if file_id in self._deleted_fileids:
@@ -665,6 +664,9 @@ class SvnCommitBuilder(RootCommitBuilder):
             except KeyError:
                 return self._committer
 
+    def _update_moved_dir_child_file_ids(self):
+        pass # FIXME
+
     @convert_svn_error
     def commit(self, message):
         """Finish the commit.
@@ -676,6 +678,7 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._changed_fileprops = {}
 
         if self.push_metadata:
+            self._update_moved_dir_child_file_ids()
             if self.set_custom_revprops:
                 self.mapping.export_text_revisions_revprops(
                     self._override_text_revisions, self._svn_revprops)
@@ -744,7 +747,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                         self._get_parents_tuples(),
                         (self._iter_new_children, self._get_new_ie), "",
                         self.new_root_id, branch_editors[-1],
-                        self.branch_path, self.modified_files, self.visit_dirs)
+                        self.branch_path, self.modified_files, self._visit_dirs)
 
                 # Set all the revprops
                 if self.push_metadata and self._svnprops.is_loaded:
@@ -831,9 +834,9 @@ class SvnCommitBuilder(RootCommitBuilder):
                 path, _ = path.rsplit("/", 1)
             else:
                 path = ""
-            if path in self.visit_dirs:
+            if path in self._visit_dirs:
                 return
-            self.visit_dirs.add(path)
+            self._visit_dirs.add(path)
 
     def _get_text_revision(self, new_ie, parent_trees):
         parent_revisions = []
@@ -922,8 +925,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                     if unusual_text_parents is not None:
                         self._override_text_parents[new_path] = unusual_text_parents
                 elif new_kind == 'directory':
-                    self.visit_dirs.add(new_path)
-                    # FIXME: need to update the file ids for all children recursively
+                    self._visit_dirs.add(new_path)
+                    self._touched_dirs.add((new_path, file_id))
                 self._visit_parent_dirs(new_path)
                 self._updated[file_id] = (new_path, new_ie)
                 self._updated_children[new_parent_id].add(file_id)
