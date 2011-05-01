@@ -25,6 +25,7 @@ except ImportError:
 from cStringIO import (
     StringIO,
     )
+import posixpath
 from subvertpy import (
     ERR_FS_NOT_DIRECTORY,
     ERR_REPOS_DISABLED_FEATURE,
@@ -664,8 +665,14 @@ class SvnCommitBuilder(RootCommitBuilder):
             except KeyError:
                 return self._committer
 
-    def _update_moved_dir_child_file_ids(self):
-        pass # FIXME
+    def _update_moved_dir_child_file_ids(self, path, file_id):
+        for (child_name, child_ie) in self._iter_new_children(file_id):
+            child_path = posixpath.join(path, child_name)
+            if self._override_file_ids.get(child_path) not in (None, child_ie.file_id):
+                raise AssertionError
+            self._override_file_ids[child_path] = child_ie.file_id
+            if child_ie.kind == 'directory':
+                self._update_moved_dir_child_file_ids(child_path, child_ie.file_id)
 
     @convert_svn_error
     def commit(self, message):
@@ -678,7 +685,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._changed_fileprops = {}
 
         if self.push_metadata:
-            self._update_moved_dir_child_file_ids()
+            for (path, file_id) in self._touched_dirs:
+                self._update_moved_dir_child_file_ids(path, file_id)
             if self.set_custom_revprops:
                 self.mapping.export_text_revisions_revprops(
                     self._override_text_revisions, self._svn_revprops)
