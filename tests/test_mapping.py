@@ -40,6 +40,7 @@ from bzrlib.plugins.svn.mapping import (
     escape_svn_path,
     foreign_vcs_svn,
     generate_revision_metadata,
+    generate_text_parents_property,
     get_roundtrip_ancestor_revids,
     is_bzr_revision_fileprops,
     is_bzr_revision_revprops,
@@ -47,6 +48,7 @@ from bzrlib.plugins.svn.mapping import (
     parse_merge_property,
     parse_revision_metadata,
     parse_revid_property,
+    parse_text_parents_property,
     unescape_svn_path,
     )
 from bzrlib.plugins.svn.mapping2 import (
@@ -165,6 +167,23 @@ class MetadataMarshallerTests(TestCase):
     def test_parse_revid_property_newline(self):
         self.assertRaises(InvalidPropertyValue,
                 lambda: parse_revid_property("foo\nbar"))
+
+
+class ParseTextParentsTestCase(TestCase):
+    def test_text_parents(self):
+        self.assertEquals({"bla": ["bloe"]}, parse_text_parents_property("bla\tbloe\n"))
+
+    def test_text_parents_empty(self):
+        self.assertEquals({}, parse_text_parents_property(""))
+
+
+class GenerateTextParentsTestCase(TestCase):
+    def test_generate_empty(self):
+        self.assertEquals("", generate_text_parents_property({}))
+
+    def test_generate_simple(self):
+        self.assertEquals("bla\tbloe\n",
+            generate_text_parents_property({"bla": ["bloe"]}))
 
 
 class ParseMergePropertyTestCase(TestCase):

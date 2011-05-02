@@ -1326,23 +1326,23 @@ class SvnCheckout(ControlDir):
         """See ControlDir.create_branch()."""
         raise NotImplementedError(self.create_branch)
 
-    def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False):
+    def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
+            mapping=None):
         """See ControlDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         repos = self._find_repository()
+        if mapping is None:
+            mapping = repos.get_mapping()
 
         try:
-            branch = SvnBranch(repos, self, self.get_branch_path())
+            return SvnBranch(repos, self.get_remote_bzrdir(),
+                self.get_branch_path(), mapping)
         except RepositoryRootUnknown:
             return self.get_remote_bzrdir().open_branch()
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_WC_NOT_DIRECTORY:
                 raise NotBranchError(path=self.base)
             raise
-
-        branch.bzrdir = self.get_remote_bzrdir()
-
-        return branch
 
     def _find_creation_modes(self):
         """Determine the appropriate modes for files and directories.

@@ -25,6 +25,7 @@ except ImportError:
 from cStringIO import (
     StringIO,
     )
+import posixpath
 from subvertpy import (
     ERR_FS_NOT_DIRECTORY,
     ERR_REPOS_DISABLED_FEATURE,
@@ -427,6 +428,9 @@ class SvnCommitBuilder(RootCommitBuilder):
         self.push_metadata = push_metadata
         self.root_action = root_action
         self._texts = texts
+        self._override_file_ids = {}
+        self._override_text_revisions = {}
+        self._override_text_parents = {}
 
         # Gather information about revision on top of which the commit is
         # happening
@@ -475,7 +479,8 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._deleted_fileids = set()
         self._updated_children = defaultdict(set)
         self._updated = {}
-        self.visit_dirs = set()
+        self._visit_dirs = set()
+        self._touched_dirs = set()
         self.modified_files = {}
         self.supports_custom_revprops = self.repository.transport.has_capability(
             "commit-revprops")
@@ -488,7 +493,9 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._svnprops = lazy_dict({}, dict,
             self._base_branch_props.iteritems())
         if push_metadata:
-            (self.set_custom_revprops, self.set_custom_fileprops) = self.repository._properties_to_set(self.mapping, config)
+            (self.set_custom_revprops,
+                self.set_custom_fileprops) = self.repository._properties_to_set(
+                    self.mapping, config)
         else:
             self.set_custom_revprops = False
             self.set_custom_fileprops = False
@@ -594,41 +601,6 @@ class SvnCommitBuilder(RootCommitBuilder):
 
         return ret
 
-    def _determine_texts_identity(self, new_root_id):
-        # Store file ids
-        def _dir_process_file_id(path, file_id):
-            ret = []
-            for child_name, child_ie in self._iter_new_children(file_id):
-                new_child_path = path_join(path, child_name)
-                if (not child_ie.file_id in self.old_tree or
-                    self.old_tree.id2path(child_ie.file_id) != new_child_path or
-                    self.old_tree.get_file_revision(child_ie.file_id) != child_ie.revision or
-                    self.old_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
-                    ret.append((child_ie.file_id, new_child_path, child_ie.revision))
-
-                if (child_ie.kind == 'directory' and new_child_path in self.visit_dirs):
-                    ret += _dir_process_file_id(new_child_path, child_ie.file_id)
-            return ret
-
-        fileids = {}
-        text_revisions = {}
-        changes = []
-
-        if new_root_id != self.old_tree.get_root_id():
-            changes.append((new_root_id, "", self._get_new_ie(new_root_id).revision))
-
-        changes += _dir_process_file_id("", new_root_id)
-
-        # Find the "unusual" text revisions
-        # FIXME: This is wrong
-        for id, path, revid in changes:
-            fileids[path] = id
-            if (revid is not None and
-                revid != self.base_revid and
-                revid != self._new_revision_id):
-                text_revisions[path] = revid
-        return (fileids, text_revisions)
-
     def _get_parents_tuples(self):
         """Retrieve (tree, URL, base revnum) tuples for the parents of
         this commit.
@@ -658,9 +630,9 @@ class SvnCommitBuilder(RootCommitBuilder):
         return ret
 
     def _iter_new_children(self, file_id):
-        ret = []
         for child in self._updated_children[file_id]:
-            ret.append((self._updated[child].name, self._updated[child]))
+            (child_path, child_ie) = self._updated[child]
+            yield (child_ie.name, child_ie)
         try:
             old_ie = self.old_tree.inventory[file_id]
         except NoSuchId:
@@ -670,17 +642,19 @@ class SvnCommitBuilder(RootCommitBuilder):
                 for name, child_ie in old_ie.children.iteritems():
                     if (not child_ie.file_id in self._deleted_fileids and
                         not child_ie.file_id in self._updated):
-                        ret.append((name, child_ie))
-        return ret
+                        yield (name, child_ie)
 
     def _get_new_ie(self, file_id):
         if file_id in self._deleted_fileids:
             return None
-        if file_id in self._updated:
-            return self._updated[file_id]
-        if self.old_tree.has_id(file_id):
+        try:
+            return self._updated[file_id][1]
+        except KeyError:
+            pass
+        try:
             return self.old_tree.inventory[file_id]
-        return None
+        except NoSuchId:
+            return None
 
     def _get_author(self):
         try:
@@ -690,6 +664,15 @@ class SvnCommitBuilder(RootCommitBuilder):
                 return self._revprops["author"].encode("utf-8")
             except KeyError:
                 return self._committer
+
+    def _update_moved_dir_child_file_ids(self, path, file_id):
+        for (child_name, child_ie) in self._iter_new_children(file_id):
+            child_path = posixpath.join(path, child_name)
+            if self._override_file_ids.get(child_path) not in (None, child_ie.file_id):
+                raise AssertionError
+            self._override_file_ids[child_path] = child_ie.file_id
+            if child_ie.kind == 'directory':
+                self._update_moved_dir_child_file_ids(child_path, child_ie.file_id)
 
     @convert_svn_error
     def commit(self, message):
@@ -702,16 +685,22 @@ class SvnCommitBuilder(RootCommitBuilder):
         self._changed_fileprops = {}
 
         if self.push_metadata:
-            (fileids, text_revisions) = self._determine_texts_identity(self.new_root_id)
+            for (path, file_id) in self._touched_dirs:
+                self._update_moved_dir_child_file_ids(path, file_id)
             if self.set_custom_revprops:
-                self.mapping.export_text_revisions_revprops(text_revisions,
-                        self._svn_revprops)
-                self.mapping.export_fileid_map_revprops(fileids,
-                        self._svn_revprops)
+                self.mapping.export_text_revisions_revprops(
+                    self._override_text_revisions, self._svn_revprops)
+                self.mapping.export_fileid_map_revprops(self._override_file_ids,
+                    self._svn_revprops)
+                self.mapping.export_text_parents_revprops(
+                    self._override_text_parents, self._svn_revprops)
             if self.set_custom_fileprops:
-                self.mapping.export_text_revisions_fileprops(text_revisions,
-                        self._svnprops)
-                self.mapping.export_fileid_map_fileprops(fileids, self._svnprops)
+                self.mapping.export_text_revisions_fileprops(
+                    self._override_text_revisions, self._svnprops)
+                self.mapping.export_fileid_map_fileprops(self._override_file_ids,
+                    self._svnprops)
+                self.mapping.export_text_parents_fileprops(
+                    self._override_text_parents, self._svnprops)
         if self._config.get_log_strip_trailing_newline():
             if self.set_custom_revprops:
                 self.mapping.export_message_revprops(message, self._svn_revprops)
@@ -739,7 +728,8 @@ class SvnCommitBuilder(RootCommitBuilder):
                     trace.warning("Setting property %r with invalid characters in name",
                         prop)
             if self.supports_custom_revprops:
-                self._svn_revprops[properties.PROP_REVISION_ORIGINAL_DATE] = properties.time_to_cstring(1000000*self._timestamp)
+                timeval = properties.time_to_cstring(1000000 * self._timestamp)
+                self._svn_revprops[properties.PROP_REVISION_ORIGINAL_DATE] = timeval
             if (not self.supports_custom_revprops and
                 self._svn_revprops.keys() != [properties.PROP_REVISION_LOG]):
                 raise AssertionError(
@@ -765,7 +755,7 @@ class SvnCommitBuilder(RootCommitBuilder):
                         self._get_parents_tuples(),
                         (self._iter_new_children, self._get_new_ie), "",
                         self.new_root_id, branch_editors[-1],
-                        self.branch_path, self.modified_files, self.visit_dirs)
+                        self.branch_path, self.modified_files, self._visit_dirs)
 
                 # Set all the revprops
                 if self.push_metadata and self._svnprops.is_loaded:
@@ -819,7 +809,8 @@ class SvnCommitBuilder(RootCommitBuilder):
             new_revprops = {}
             if (("%s=committer" % properties.PROP_REVISION_AUTHOR) in override_svn_revprops or
                 properties.PROP_REVISION_AUTHOR in override_svn_revprops):
-                new_revprops[properties.PROP_REVISION_AUTHOR] = self._committer.encode("utf-8")
+                new_revprops[properties.PROP_REVISION_AUTHOR] = self._committer.encode(
+                    "utf-8")
             if "%s=author" % properties.PROP_REVISION_AUTHOR in override_svn_revprops:
                 new_revprops[properties.PROP_REVISION_AUTHOR] = self._get_author()
             if properties.PROP_REVISION_DATE in override_svn_revprops:
@@ -851,18 +842,28 @@ class SvnCommitBuilder(RootCommitBuilder):
                 path, _ = path.rsplit("/", 1)
             else:
                 path = ""
-            if path in self.visit_dirs:
+            if path in self._visit_dirs:
                 return
-            self.visit_dirs.add(path)
+            self._visit_dirs.add(path)
 
-    def _get_text_revision(self, file_id, text_sha1, parent_trees):
+    def _get_text_revision(self, new_ie, parent_trees):
+        parent_revisions = []
         for ptree in parent_trees:
             try:
-                if ptree.get_file_sha1(file_id) == text_sha1:
-                    return ptree.get_file_revision(file_id)
+                prevision = ptree.get_file_revision(new_ie.file_id)
             except NoSuchId:
                 continue
-        return None
+            if ((new_ie.kind == 'file' and
+                 ptree.get_file_sha1(new_ie.file_id) == new_ie.text_sha1) or
+                (new_ie.kind == 'symlink' and
+                 ptree.get_symlink_target(new_ie.file_id) == new_ie.symlink_target)):
+                # FIXME: return actual text parents
+                return prevision, None
+            parent_revisions.append(prevision)
+        if (parent_revisions == [] or
+            parent_revisions == [parent_trees[0].get_revision_id()]):
+            parent_revisions = None
+        return None, parent_revisions
 
     def record_delete(self, path, file_id):
         raise NotImplementedError(self.record_delete)
@@ -906,24 +907,36 @@ class SvnCommitBuilder(RootCommitBuilder):
                 self._basis_delta.append((old_path, None, file_id, None))
                 self._deleted_fileids.add(file_id)
             else:
+                self._override_file_ids[new_path] = file_id
                 new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
                 if new_kind == 'file':
                     new_ie.executable = new_executable
                     file_obj, stat_val = get_file_with_stat(file_id)
                     new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
-                    new_ie.revision = self._get_text_revision(file_id,
-                        new_ie.text_sha1, parent_trees)
+                    (new_ie.revision, unusual_text_parents) = self._get_text_revision(
+                        new_ie, parent_trees)
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(
                         tree, base_ie, new_ie)
+                    if new_ie.revision is not None:
+                        self._override_text_revisions[new_path] = new_ie.revision
+                    if unusual_text_parents is not None:
+                        self._override_text_parents[new_path] = unusual_text_parents
                     yield file_id, new_path, (new_ie.text_sha1, stat_val)
                 elif new_kind == 'symlink':
                     new_ie.symlink_target = tree.get_symlink_target(file_id)
+                    new_ie.revision, unusual_text_parents = self._get_text_revision(
+                        new_ie, parent_trees)
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(
                         tree, base_ie, new_ie)
+                    if new_ie.revision is not None:
+                        self._override_text_revisions[new_path] = new_ie.revision
+                    if unusual_text_parents is not None:
+                        self._override_text_parents[new_path] = unusual_text_parents
                 elif new_kind == 'directory':
-                    self.visit_dirs.add(new_path)
+                    self._visit_dirs.add(new_path)
+                    self._touched_dirs.add((new_path, file_id))
                 self._visit_parent_dirs(new_path)
-                self._updated[file_id] = new_ie
+                self._updated[file_id] = (new_path, new_ie)
                 self._updated_children[new_parent_id].add(file_id)
                 self._basis_delta.append((old_path, new_path, file_id, new_ie))
                 if new_path == "":
@@ -1004,6 +1017,3 @@ def file_editor_send_prop_changes(base_ie, ie, editor):
         else:
             value = None
         editor.change_prop(properties.PROP_SPECIAL, value)
-
-
-
