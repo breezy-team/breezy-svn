@@ -17,7 +17,6 @@
 
 """Handles branch-specific operations."""
 
-
 import os
 from subvertpy import (
     ERR_FS_ALREADY_EXISTS,
@@ -657,7 +656,7 @@ class SvnBranchFormat(BranchFormat):
             raise NoColocatedBranchSupport(to_bzrdir)
         try:
             create_branch_with_hidden_commit(repository,
-                to_bzrdir.branch_path, NULL_REVISION, set_metadata=True,
+                to_bzrdir._branch_path, NULL_REVISION, set_metadata=True,
                 deletefirst=False)
         except SubversionException, (_, num):
             if num == ERR_FS_ALREADY_EXISTS:
