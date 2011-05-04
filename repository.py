@@ -128,10 +128,10 @@ class DummyLockableFiles(object):
         pass
 
     def lock_write(self, token=None):
-        pass
+        return self
 
     def lock_read(self):
-        pass
+        return self
 
     def unlock(self):
         pass
@@ -466,6 +466,7 @@ class SvnRepository(ForeignRepository):
         else:
             self._lock_mode = 'r'
             self._lock_count = 1
+        return self
 
     def unlock(self):
         """See Branch.unlock()."""
@@ -499,6 +500,7 @@ class SvnRepository(ForeignRepository):
         else:
             self._lock_mode = 'w'
             self._lock_count = 1
+        return self
 
     def is_write_locked(self):
         return (self._lock_mode == 'w')
