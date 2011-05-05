@@ -641,7 +641,9 @@ class InterToSvnRepository(InterRepository):
     @staticmethod
     def is_compatible(source, target):
         """Be compatible with SvnRepository."""
-        return isinstance(target, SvnRepository)
+        if not isinstance(target, SvnRepository):
+            return False
+        return True
 
 
 def determine_branch_path(rev, layout, project=None):

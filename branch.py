@@ -824,8 +824,11 @@ class InterFromSvnBranch(GenericInterBranch):
 
     @classmethod
     def is_compatible(self, source, target):
-        return (isinstance(source, SvnBranch) and
-                not isinstance(target, SvnBranch))
+        if not isinstance(source, SvnBranch):
+            return False
+        if isinstance(target, SvnBranch):
+            return False
+        return True
 
 InterBranch.register_optimiser(InterFromSvnBranch)
 
@@ -962,7 +965,9 @@ class InterToSvnBranch(InterBranch):
 
     @classmethod
     def is_compatible(self, source, target):
-        return isinstance(target, SvnBranch)
+        if not isinstance(target, SvnBranch):
+            return False
+        return True
 
 
 InterBranch.register_optimiser(InterToSvnBranch)
