@@ -71,7 +71,6 @@ from bzrlib.plugins.svn import (
     util,
     )
 from bzrlib.plugins.svn.fetch import (
-    FetchRevisionFinder,
     InterFromSvnRepository,
     )
 from bzrlib.plugins.svn.push import (
@@ -85,9 +84,6 @@ from bzrlib.plugins.svn.config import (
 from bzrlib.plugins.svn.errors import (
     NotSvnBranchPath,
     PushToEmptyBranch,
-    )
-from bzrlib.plugins.svn.repository import (
-    SvnRepository,
     )
 from bzrlib.plugins.svn.tags import (
     SubversionTags,
@@ -214,7 +210,6 @@ class SvnBranch(ForeignBranch):
         self.bzrdir = controldir
         self._format = SvnBranchFormat()
         self.layout = self.repository.get_layout()
-        assert isinstance(self.repository, SvnRepository)
         super(SvnBranch, self).__init__(mapping)
         self._lock_mode = None
         self._lock_count = 0
