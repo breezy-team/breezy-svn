@@ -289,6 +289,18 @@ class TextChecksumMismatch(VersionedFileInvalidChecksum):
         self.revnum = revnum
 
 
+class SubversionBranchDiverged(DivergedBranches):
+
+    _fmt = "Subversion branch at %(branch_path)s has diverged from %(source_repo)r."
+
+    def __init__(self, source_repo, source_revid, target_repo, branch_path, target_revid):
+        self.branch_path = branch_path
+        self.target_repo = target_repo
+        self.source_repo = source_repo
+        self.source_revid = source_revid
+        self.target_revid = target_revid
+
+
 _reuse_uuids_warned = set()
 def warn_uuid_reuse(uuid, location):
     """Warn that a UUID is being reused for different repositories."""

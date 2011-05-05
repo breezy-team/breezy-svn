@@ -60,6 +60,7 @@ from bzrlib.plugins.svn.config import (
 from bzrlib.plugins.svn.errors import (
     ChangesRootLHSHistory,
     MissingPrefix,
+    SubversionBranchDiverged,
     convert_svn_error,
     )
 from bzrlib.plugins.svn.mapping import (
@@ -74,18 +75,6 @@ from bzrlib.plugins.svn.transport import (
     create_branch_prefix,
     url_join_unescaped_path,
     )
-
-
-class SubversionBranchDiverged(DivergedBranches):
-
-    _fmt = "Subversion branch at %(branch_path)s has diverged from %(source_repo)r."
-
-    def __init__(self, source_repo, source_revid, target_repo, branch_path, target_revid):
-        self.branch_path = branch_path
-        self.target_repo = target_repo
-        self.source_repo = source_repo
-        self.source_revid = source_revid
-        self.target_revid = target_revid
 
 
 def create_branch_container(transport, prefix, already_present):

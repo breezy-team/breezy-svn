@@ -75,7 +75,6 @@ from bzrlib.plugins.svn.fetch import (
     )
 from bzrlib.plugins.svn.push import (
     InterToSvnRepository,
-    SubversionBranchDiverged,
     create_branch_with_hidden_commit,
     )
 from bzrlib.plugins.svn.config import (
@@ -84,6 +83,7 @@ from bzrlib.plugins.svn.config import (
 from bzrlib.plugins.svn.errors import (
     NotSvnBranchPath,
     PushToEmptyBranch,
+    SubversionBranchDiverged,
     )
 from bzrlib.plugins.svn.tags import (
     SubversionTags,
