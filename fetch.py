@@ -1485,6 +1485,9 @@ class InterFromSvnRepository(InterRepository):
             return self._fetch_revisions_nochunks(needed, pb,
                 use_replay=self._use_replay)
 
+    def get_revision_finder(self, target_is_empty=False):
+        return FetchRevisionFinder(self.source, self.target, target_is_empty)
+
     def _get_needed(self, revision_id=None, fetch_spec=None, project=None,
                     target_is_empty=False, pb=None, find_ghosts=False):
         """Find the set of revisions that is missing.
@@ -1500,8 +1503,7 @@ class InterFromSvnRepository(InterRepository):
         :param find_ghosts: Whether to find ghosts
         :return: Iterable over missing revision ids
         """
-        revisionfinder = FetchRevisionFinder(self.source, self.target,
-                                             target_is_empty)
+        revisionfinder = self.get_revision_finder(target_is_empty)
         if revision_id is not None:
             foreign_revid, mapping = self.source.lookup_bzr_revision_id(
                 revision_id, project=project)

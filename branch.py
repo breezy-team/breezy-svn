@@ -713,8 +713,7 @@ class InterFromSvnBranch(GenericInterBranch):
     def _fetch_revmetas(self, revmetas, find_ghosts=False):
         interrepo = InterFromSvnRepository(self.source.repository,
             self.target.repository)
-        revisionfinder = FetchRevisionFinder(self.source.repository,
-            self.target.repository)
+        revisionfinder = interrepo.get_revision_finder()
         for revmeta, mapping in revmetas:
             revisionfinder.find_until(revmeta.get_foreign_revid(), mapping,
                 find_ghosts=find_ghosts)
