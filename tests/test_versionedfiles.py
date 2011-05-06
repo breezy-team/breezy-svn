@@ -33,7 +33,7 @@ class SvnTextsTests(TestCase):
                 self.texts.add_mpdiffs, [])
 
     def test_check(self):
-        self.assertTrue(self.texts.check())
+        self.assertRaises(NotImplementedError, self.texts.check)
 
     def test_insert_record_stream(self):
         self.assertRaises(NotImplementedError, self.texts.insert_record_stream,

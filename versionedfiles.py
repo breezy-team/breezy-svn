@@ -15,33 +15,13 @@
 
 """Fake versionedfiles implementation for Subversion."""
 
-from cStringIO import StringIO
-import subvertpy
-
 from bzrlib import (
-    annotate,
-    osutils,
     urlutils,
     )
 from bzrlib.revision import NULL_REVISION
-from bzrlib.trace import warning
 from bzrlib.versionedfile import (
-    AbsentContentFactory,
-    FulltextContentFactory,
     VersionedFiles,
     )
-
-from bzrlib.plugins.svn.errors import (
-    convert_svn_error,
-    )
-
-_warned_experimental = False
-
-def warn_stacking_experimental():
-    global _warned_experimental
-    if not _warned_experimental:
-        warning("stacking support in bzr-svn is experimental.")
-        _warned_experimental = True
 
 
 class SvnTexts(VersionedFiles):
@@ -51,10 +31,10 @@ class SvnTexts(VersionedFiles):
         self.repository = repository
 
     def get_annotator(self):
-        return annotate.Annotator(self)
+        raise NotImplementedError(self.get_annotator)
 
     def check(self, progressbar=None):
-        return True
+        raise NotImplementedError(self.check)
 
     def add_mpdiffs(self, records):
         raise NotImplementedError(self.add_mpdiffs)
@@ -68,32 +48,8 @@ class SvnTexts(VersionedFiles):
         return (urlutils.join(revmeta.branch_path, path).strip("/"),
                 revmeta.revnum, mapping)
 
-    @convert_svn_error
     def get_record_stream(self, keys, ordering, include_delta_closure):
-        warn_stacking_experimental()
-        # TODO: there may be valid text revisions that only exist as
-        # ghosts in the repository itself. This function will
-        # not be able to find them.
-        # TODO: Sort keys by file id and issue just one get_file_revs() call
-        # per file-id ?
-        for k in list(keys):
-            if len(k) != 2:
-                yield AbsentContentFactory(k)
-            else:
-                path, revnum, mapping = self._lookup_key(k)
-                try:
-                    stream = StringIO()
-                    self.repository.transport.get_file(path, stream, revnum)
-                    stream.seek(0)
-                    lines = stream.readlines()
-                except subvertpy.SubversionException, (_, num):
-                    if num == subvertpy.ERR_FS_NOT_FILE:
-                        lines = []
-                    else:
-                        raise
-                yield FulltextContentFactory(k, None,
-                            sha1=osutils.sha_strings(lines),
-                            text=''.join(lines))
+        raise NotImplementedError(self.get_record_stream)
 
     def _get_parent(self, fileid, revid):
         revmeta, mapping = self.repository._get_revmeta(revid)
@@ -143,7 +99,13 @@ class SvnTexts(VersionedFiles):
         return ret
 
     def annotate(self, key):
-        path, revnum, mapping = self._lookup_key(key)
-        return self.repository._annotate(path, revnum, key[0], key[1], mapping)
+        raise NotImplementedError(self.annotate)
 
-    # TODO: get_sha1s, iter_lines_added_or_present_in_keys, keys
+    def keys(self):
+        raise NotImplementedError(self.keys)
+
+    def get_sha1s(self, keys):
+        raise NotImplementedError(self.get_sha1s)
+
+    def iter_lines_added_or_present_in_keys(self, keys, pb=None):
+        raise NotImplementedError(self.iter_lines_added_or_present_in_keys)
