@@ -51,7 +51,7 @@ from bzrlib.inventory import (
     entry_factory,
     )
 from bzrlib.repository import (
-    RootCommitBuilder,
+    CommitBuilder,
     )
 from bzrlib.revision import (
     NULL_REVISION,
@@ -386,7 +386,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
     return changed
 
 
-class SvnCommitBuilder(RootCommitBuilder):
+class SvnCommitBuilder(CommitBuilder):
     """Commit Builder implementation wrapped around svn_delta_editor. """
 
     support_use_record_entry_contents = False
