@@ -365,8 +365,6 @@ class SvnRepository(ForeignRepository):
     by using the RA (remote access) API from subversion
     """
 
-    chk_bytes = None
-
     def __init__(self, bzrdir, transport, branch_path=None):
         from bzrlib.plugins.svn import lazy_register_optimizers
         lazy_register_optimizers()
@@ -518,40 +516,6 @@ class SvnRepository(ForeignRepository):
             return self._cached_revnum
         self._cached_revnum = self.transport.get_latest_revnum()
         return self._cached_revnum
-
-    def item_keys_introduced_by(self, revision_ids, _files_pb=None):
-        """See Repository.item_keys_introduced_by()."""
-        fileids = defaultdict(set)
-
-        for count, (revid, d) in enumerate(zip(revision_ids,
-            self.get_deltas_for_revisions(self.get_revisions(revision_ids)))):
-            if _files_pb is not None:
-                _files_pb.update("fetch revisions for texts", count,
-                    len(revision_ids))
-            for c in d.added + d.modified:
-                fileids[c[1]].add(revid)
-            for c in d.renamed:
-                fileids[c[2]].add(revid)
-
-        for fileid, altered_versions in fileids.iteritems():
-            yield ("file", fileid, altered_versions)
-
-        # We're done with the files_pb.  Note that it finished by the caller,
-        # just as it was created by the caller.
-        del _files_pb
-
-        yield ("inventory", None, revision_ids)
-
-        # signatures
-        # XXX: Note ATM no callers actually pay attention to this return
-        #      instead they just use the list of revision ids and ignore
-        #      missing sigs. Consider removing this work entirely
-        revisions_with_signatures = set()
-        for revid in revision_ids:
-            if self.has_signature_for_revision_id(revid):
-                revisions_with_signatures.add(revid)
-        yield ("signatures", None, revisions_with_signatures)
-        yield ("revisions", None, revision_ids)
 
     @needs_read_lock
     def gather_stats(self, revid=None, committers=None):
