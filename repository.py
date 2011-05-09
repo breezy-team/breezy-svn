@@ -31,6 +31,7 @@ from bzrlib import (
     ui,
     urlutils,
     )
+from bzrlib.decorators import only_raises
 from bzrlib.foreign import (
     ForeignRepository,
     )
@@ -458,7 +459,10 @@ class SvnRepository(ForeignRepository):
 
     def get_transaction(self):
         """See Repository.get_transaction()."""
-        raise NotImplementedError(self.get_transaction)
+        if self._write_group is None:
+            return transactions.PassThroughTransaction()
+        else:
+            return self._write_group
 
     def lock_read(self):
         if self._lock_mode:
@@ -469,12 +473,19 @@ class SvnRepository(ForeignRepository):
             self._lock_count = 1
         return self
 
+    @only_raises(bzr_errors.LockNotHeld, bzr_errors.LockBroken)
     def unlock(self):
-        """See Branch.unlock()."""
+        if self._lock_count == 0:
+            raise bzr_errors.LockNotHeld(self)
+        if self._lock_count == 1 and self._lock_mode == 'w':
+            if self._write_group is not None:
+                self.abort_write_group()
+                self._lock_count -= 1
+                self._lock_mode = None
+                raise bzr_errors.BzrError(
+                    'Must end write groups before releasing write locks.')
         self._lock_count -= 1
         if self._lock_count == 0:
-            if self._cache_obj is not None:
-                self._cache_obj.commit()
             self._lock_mode = None
             self._clear_cached_state()
 
@@ -492,6 +503,8 @@ class SvnRepository(ForeignRepository):
         self._layout_source = None
         self._parents_provider = graph.CachingParentsProvider(
             self._real_parents_provider)
+        if self._cache_obj is not None:
+            self._cache_obj.commit()
 
     def lock_write(self):
         """See Branch.lock_write()."""
@@ -1338,19 +1351,3 @@ class SvnRepository(ForeignRepository):
             return iter(((branch, from_revnum, True) for (project, branch, nick, has_props) in it if has_props in (True, None)))
         else:
             return iter(self.find_branchpaths(layout, from_revnum, to_revnum, project))
-
-    def abort_write_group(self, suppress_errors=False):
-        """See Repository.abort_write_group()."""
-        self._write_group = None
-
-    def commit_write_group(self):
-        """See Repository.commit_write_group()."""
-        self._write_group = None
-
-    def start_write_group(self):
-        """See Repository.commit_write_group()."""
-        if not self.is_write_locked():
-            raise bzr_errors.NotWriteLocked(self)
-        if self._write_group is not None:
-            raise bzr_errors.BzrError("A write group is already active")
-        self._write_group = "active"
