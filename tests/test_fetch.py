@@ -377,9 +377,9 @@ class TestFetchWorks(FetchTestCase):
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         tree = newrepos.revision_tree(oldrepos.generate_revision_id(1, "", mapping))
-        self.assertEquals(3, len(list(tree)))
+        self.assertEquals(3, len(tree.all_file_ids()))
         tree = newrepos.revision_tree(oldrepos.generate_revision_id(2, "", mapping))
-        self.assertEquals(1, len(list(tree)))
+        self.assertEquals(1, len(tree.all_file_ids()))
 
     def test_fetch_local(self):
         repos_url = self.make_repository('d')

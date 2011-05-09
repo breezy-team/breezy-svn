@@ -802,7 +802,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 return urlutils.join(parent_path, base_ie.name)
 
         # Add dummy merge text revisions
-        for file_id in self.bzr_base_tree:
+        for file_id in self.bzr_base_tree.all_file_ids():
             if file_id in self._new_file_paths:
                 continue
             base_ie = self.bzr_base_tree.inventory[file_id]
