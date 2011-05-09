@@ -420,6 +420,7 @@ class SvnCommitBuilder(CommitBuilder):
             config, timestamp, timezone, committer, revprops, revision_id)
         self._basis_delta = []
         self.new_inventory = None
+        self._any_changes = False
 
         self.conn = self.repository.transport.get_connection()
 
@@ -956,6 +957,9 @@ class SvnCommitBuilder(CommitBuilder):
             if old_path not in (None, new_path):
                 self._visit_parent_dirs(old_path)
             self._any_changes = True
+
+    def any_changes(self):
+        return self._any_changes
 
     def record_entry_contents(self, ie, parent_invs, path, tree,
                               content_summary):
