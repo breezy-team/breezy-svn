@@ -366,6 +366,8 @@ class SvnRepository(ForeignRepository):
     by using the RA (remote access) API from subversion
     """
 
+    chk_bytes = None
+
     def __init__(self, bzrdir, transport, branch_path=None):
         from bzrlib.plugins.svn import lazy_register_optimizers
         lazy_register_optimizers()
@@ -451,7 +453,7 @@ class SvnRepository(ForeignRepository):
                 self.revinfo_cache is not None)
 
     def add_fallback_repository(self, basis_url):
-        raise bzr_errors.UnstackableRepositoryFormat(self._format)
+        raise bzr_errors.UnstackableRepositoryFormat(self._format, self.base)
 
     def revision_graph_can_have_wrong_parents(self):
         # DEPRECATED in bzr 2.4
