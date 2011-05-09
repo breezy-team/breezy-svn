@@ -451,6 +451,9 @@ class SvnRepository(ForeignRepository):
         self._revmeta_provider = revmeta.RevisionMetadataProvider(self,
                 self.revinfo_cache is not None)
 
+    def add_fallback_repository(self, basis_url):
+        raise bzr_errors.UnstackableRepositoryFormat(self._format)
+
     def revision_graph_can_have_wrong_parents(self):
         # DEPRECATED in bzr 2.4
         return False
