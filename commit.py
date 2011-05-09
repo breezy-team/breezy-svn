@@ -418,6 +418,7 @@ class SvnCommitBuilder(CommitBuilder):
         """
         super(SvnCommitBuilder, self).__init__(repository, parents,
             config, timestamp, timezone, committer, revprops, revision_id)
+        self._basis_delta = []
         self.new_inventory = None
 
         self.conn = self.repository.transport.get_connection()
@@ -543,6 +544,12 @@ class SvnCommitBuilder(CommitBuilder):
     def mutter(text, *args):
         if 'commit' in debug.debug_flags:
             trace.mutter(text, *args)
+
+    def get_basis_delta(self):
+        return self._basis_delta
+
+    def will_record_deletes(self):
+        pass
 
     def _generate_revision_if_needed(self):
         """See CommitBuilder._generate_revision_if_needed()."""
@@ -717,8 +724,7 @@ class SvnCommitBuilder(CommitBuilder):
             """
             self.revision_metadata = args
 
-        conn = self.conn
-        self.editor = convert_svn_error(conn.get_commit_editor)(
+        self.editor = convert_svn_error(self.conn.get_commit_editor)(
                 self._svn_revprops, done)
         try:
             self.revision_metadata = None
@@ -783,12 +789,10 @@ class SvnCommitBuilder(CommitBuilder):
                     dir_editor.close()
             except:
                 self.editor.abort()
-                self.repository.transport.add_connection(conn)
                 raise
-
             self.editor.close()
-            self.repository.transport.add_connection(conn)
         finally:
+            self.repository.transport.add_connection(self.conn)
             lock.unlock()
 
         (result_revision, result_date, result_author) = self.revision_metadata
@@ -834,6 +838,12 @@ class SvnCommitBuilder(CommitBuilder):
             raise AssertionError("Unexpected revision id %s != %s" %
                     (revid, self._new_revision_id))
         return revid
+
+    def abort(self):
+        self.repository.transport.add_connection(self.conn)
+
+    def will_record_deletes(self):
+        pass
 
     def _visit_parent_dirs(self, path):
         """Add the parents of path to the list of paths to visit."""
