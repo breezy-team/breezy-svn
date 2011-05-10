@@ -1032,27 +1032,6 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertEquals(repos.generate_revision_id(1, "py/trunk", mapping),
             repos._revmeta_provider.get_revision("de/trunk", 3).get_lhs_parent_revid(mapping))
 
-    def test_item_keys_introduced_by(self):
-        repos_url = self.make_repository('d')
-
-        cb = self.get_commit_editor(repos_url)
-        cb.add_file("foo").modify()
-        cb.close()
-
-        cb = self.get_commit_editor(repos_url)
-        cb.open_file("foo").modify()
-        cb.close()
-
-        b = Branch.open(repos_url)
-        mapping = b.repository.get_mapping()
-        ch = list(b.repository.item_keys_introduced_by([b.last_revision()]))
-        revid = b.last_revision()
-        self.assertEquals([
-            ('file', mapping.generate_file_id((b.repository.uuid, "", 1), u"foo"), set([revid])),
-            ('inventory', None, [revid]),
-            ('signatures', None, set([])),
-            ('revisions', None, [revid])], ch)
-
     def test_fetch_file_from_non_branch(self):
         repos_url = self.make_repository('d')
 
