@@ -18,11 +18,6 @@
 
 from subvertpy import NODE_DIR
 
-try:
-    any
-except NameError:
-    from bzrlib.plugins.svn.pycompat import any
-
 REV0_CHANGES = {"": ('A', None, -1, NODE_DIR)}
 
 

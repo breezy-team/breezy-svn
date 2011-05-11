@@ -15,10 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Checkouts and working trees (working copies)."""
 
-try:
-    from collections import defaultdict
-except ImportError:
-    from bzrlib.plugins.svn.pycompat import defaultdict
+from collections import defaultdict
 
 import os
 import stat

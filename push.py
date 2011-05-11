@@ -15,10 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Pushing to Subversion repositories."""
 
-try:
-    from collections import defaultdict
-except ImportError:
-    from bzrlib.plugins.svn.pycompat import defaultdict
+from collections import defaultdict
 
 import subvertpy
 from subvertpy import (

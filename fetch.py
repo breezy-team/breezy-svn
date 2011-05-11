@@ -27,11 +27,7 @@ of the inventory delta.
 """
 
 
-from collections import deque
-try:
-    from collections import defaultdict
-except ImportError:
-    from bzrlib.plugins.svn.pycompat import defaultdict
+from collections import defaultdict, deque
 
 import subvertpy
 from subvertpy import (

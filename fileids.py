@@ -17,12 +17,6 @@
 
 """Generation of file-ids."""
 
-
-try:
-    from collections import defaultdict
-except ImportError:
-    from bzrlib.plugins.svn.pycompat import defaultdict
-
 import urllib
 
 from bzrlib import (

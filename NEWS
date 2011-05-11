@@ -96,6 +96,10 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * Push is now record_iter_changes() based. (Jelmer Vernooij, #387623)
 
+ CHANGES
+
+  * bzr-svn now requires Python 2.5. (Jelmer Vernooij)
+
 bzr-svn 1.0.4					  2010-08-30
 
  BUG FIXES

@@ -15,10 +15,7 @@
 
 """Subversion Meta-Revisions. This is where all the magic happens. """
 
-try:
-    from collections import defaultdict
-except ImportError:
-    from bzrlib.plugins.svn.pycompat import defaultdict
+from collections import defaultdict
 
 import bisect
 from itertools import (
