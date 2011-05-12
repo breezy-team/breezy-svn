@@ -480,6 +480,7 @@ class SvnCommitBuilder(CommitBuilder):
         self._updated = {}
         self._visit_dirs = set()
         self._touched_dirs = set()
+        self._will_record_deletes = False
         self.modified_files = {}
         self.supports_custom_revprops = self.repository.transport.has_capability(
             "commit-revprops")
@@ -544,10 +545,12 @@ class SvnCommitBuilder(CommitBuilder):
             trace.mutter(text, *args)
 
     def get_basis_delta(self):
+        if not self._will_record_deletes:
+            raise AssertionError
         return self._basis_delta
 
     def will_record_deletes(self):
-        pass
+        self._will_record_deletes = True
 
     def _generate_revision_if_needed(self):
         """See CommitBuilder._generate_revision_if_needed()."""
@@ -839,9 +842,6 @@ class SvnCommitBuilder(CommitBuilder):
 
     def abort(self):
         self.repository.transport.add_connection(self.conn)
-
-    def will_record_deletes(self):
-        pass
 
     def _visit_parent_dirs(self, path):
         """Add the parents of path to the list of paths to visit."""
