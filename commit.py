@@ -794,6 +794,7 @@ class SvnCommitBuilder(CommitBuilder):
             self.editor.close()
         finally:
             self.repository.transport.add_connection(self.conn)
+            self.conn = None
             lock.unlock()
 
         (result_revision, result_date, result_author) = self.revision_metadata
@@ -841,7 +842,8 @@ class SvnCommitBuilder(CommitBuilder):
         return revid
 
     def abort(self):
-        self.repository.transport.add_connection(self.conn)
+        if self.conn is not None:
+            self.repository.transport.add_connection(self.conn)
 
     def _visit_parent_dirs(self, path):
         """Add the parents of path to the list of paths to visit."""
