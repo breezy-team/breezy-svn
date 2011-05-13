@@ -106,6 +106,14 @@ LAYOUT_SOURCE_REGISTRY = 'registry'
 LAYOUT_SOURCE_OVERRIDDEN = 'overridden'
 LAYOUT_SOURCE_MAPPING_MANDATED = 'mapping-mandated'
 
+
+class SubversionRepositoryLock(object):
+    """Subversion lock."""
+
+    def __init__(self):
+        self.repository_token = None
+
+
 class DummyLockableFiles(object):
 
     def __init__(self, transport):
@@ -115,7 +123,7 @@ class DummyLockableFiles(object):
         pass
 
     def break_lock(self):
-        pass
+        raise NotImplementedError(self.break_lock)
 
     def leave_in_place(self):
         pass
@@ -124,10 +132,10 @@ class DummyLockableFiles(object):
         pass
 
     def lock_write(self, token=None):
-        return self
+        return SubversionRepositoryLock()
 
     def lock_read(self):
-        return self
+        return SubversionRepositoryLock()
 
     def unlock(self):
         pass
