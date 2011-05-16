@@ -524,6 +524,9 @@ class SvnRepository(ForeignRepository):
     def is_write_locked(self):
         return (self._lock_mode == 'w')
 
+    def is_locked(self):
+        return (self._lock_mode is not None)
+
     @errors.convert_svn_error
     def get_latest_revnum(self):
         """Return the youngest revnum in the Subversion repository.
