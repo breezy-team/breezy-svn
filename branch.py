@@ -901,25 +901,14 @@ class InterToSvnBranch(InterBranch):
 
     def lossy_push(self, stop_revision=None):
         """See InterBranch.lossy_push()."""
-        result = SubversionTargetBranchPushResult()
-        result.target_branch = self.target
-        result.master_branch = None
-        result.source_branch = self.source
-        self.source.lock_write()
-        try:
-            result.old_revid = self.target.last_revision()
-            result.revidmap = self._update_revisions_lossy(stop_revision)
-            result.new_revid = self.target.last_revision()
-            # FIXME: Tags ?
-            return result
-        finally:
-            self.source.unlock()
+        # For compatibility with bzr < 2.4
+        return self.push(lossy=True, stop_revision=stop_revision)
 
     def update_tags(self, overwrite=False):
         return self.source.tags.merge_to(self.target.tags, overwrite)
 
     def push(self, overwrite=False, stop_revision=None,
-            _override_svn_revprops=None,
+            lossy=False, _override_svn_revprops=None,
             _override_hook_source_branch=None):
         """See InterBranch.push()."""
         result = SubversionTargetBranchPushResult()
@@ -928,9 +917,14 @@ class InterToSvnBranch(InterBranch):
         result.source_branch = self.source
         self.source.lock_read()
         try:
-            (result.old_revid, result.new_revid) = \
-                self._update_revisions(stop_revision, overwrite,
-                    override_svn_revprops=_override_svn_revprops)
+            if lossy:
+                result.old_revid = self.target.last_revision()
+                result.revidmap = self._update_revisions_lossy(stop_revision)
+                result.new_revid = self.target.last_revision()
+            else:
+                (result.old_revid, result.new_revid) = \
+                    self._update_revisions(stop_revision, overwrite,
+                        override_svn_revprops=_override_svn_revprops)
             result.tag_conflicts = self.update_tags(overwrite)
             return result
         finally:
