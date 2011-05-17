@@ -870,7 +870,7 @@ class InterToSvnBranch(InterBranch):
             raise DivergedBranches(self.target, self.source)
 
     def _update_revisions(self, stop_revision=None, overwrite=False,
-            graph=None, override_svn_revprops=None):
+            graph=None):
         old_last_revid = self.target.last_revision()
         if stop_revision is None:
             stop_revision = ensure_null(self.source.last_revision())
@@ -908,14 +908,16 @@ class InterToSvnBranch(InterBranch):
         return self.source.tags.merge_to(self.target.tags, overwrite)
 
     def push(self, overwrite=False, stop_revision=None,
-            lossy=False, _override_svn_revprops=None,
-            _override_hook_source_branch=None):
+            lossy=False, _override_hook_source_branch=None):
         """See InterBranch.push()."""
         result = SubversionTargetBranchPushResult()
         result.target_branch = self.target
         result.master_branch = None
         result.source_branch = self.source
-        self.source.lock_read()
+        if lossy:
+            self.source.lock_write()
+        else:
+            self.source.lock_read()
         try:
             if lossy:
                 result.old_revid = self.target.last_revision()
@@ -923,8 +925,7 @@ class InterToSvnBranch(InterBranch):
                 result.new_revid = self.target.last_revision()
             else:
                 (result.old_revid, result.new_revid) = \
-                    self._update_revisions(stop_revision, overwrite,
-                        override_svn_revprops=_override_svn_revprops)
+                    self._update_revisions(stop_revision, overwrite)
             result.tag_conflicts = self.update_tags(overwrite)
             return result
         finally:
@@ -932,8 +933,7 @@ class InterToSvnBranch(InterBranch):
 
     def pull(self, overwrite=False, stop_revision=None,
              _hook_master=None, run_hooks=True, possible_transports=None,
-             _override_svn_revprops=None, local=False,
-             limit=None):
+             local=False, limit=None):
         """See InterBranch.pull()."""
         if local:
             raise LocalRequiresBoundBranch()
@@ -944,8 +944,7 @@ class InterToSvnBranch(InterBranch):
         self.source.lock_read()
         try:
             (result.old_revid, result.new_revid) = \
-                self._update_revisions(stop_revision, overwrite,
-                    override_svn_revprops=_override_svn_revprops)
+                self._update_revisions(stop_revision, overwrite)
             result.tag_conflicts = self.update_tags(overwrite)
             return result
         finally:
