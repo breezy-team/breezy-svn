@@ -685,7 +685,7 @@ class InterFromSvnBranch(GenericInterBranch):
         from bzrlib.branch import format_registry as branch_format_registry
         return [(SvnBranchFormat(), branch_format_registry.get_default())]
 
-    def fetch(self, stop_revision=None, fetch_tags=True, find_ghosts=False):
+    def fetch(self, stop_revision=None, fetch_tags=True, find_ghosts=False, limit=None):
         """See InterBranch.fetch."""
         # we fetch here so that we don't process data twice in the
         # common case of having something to pull, and so that the
@@ -698,11 +698,17 @@ class InterFromSvnBranch(GenericInterBranch):
             todo = []
         else:
             todo = [self.source.repository._get_revmeta(stop_revision)]
+        if limit is not None and len(todo) > limit:
+            # No need to fetch tags if there are already up to 'limit' revisions
+            # missing in mainline.
+            fetch_tags = False
         if fetch_tags and self.source.supports_tags():
             tag_revmetas = self.source.tags._get_tag_dict_revmeta()
             d = resolve_tags_svn_ancestry(self.source, tag_revmetas)
             for name, (revmeta, mapping, revid) in d.iteritems():
                 todo.append((revmeta, mapping))
+        if limit is not None:
+            todo = todo[:limit]
         self._fetch_revmetas(todo, find_ghosts=find_ghosts)
 
     def _fetch_revmetas(self, revmetas, find_ghosts=False):
@@ -933,7 +939,7 @@ class InterToSvnBranch(InterBranch):
 
     def pull(self, overwrite=False, stop_revision=None,
              _hook_master=None, run_hooks=True, possible_transports=None,
-             local=False, limit=None):
+             local=False):
         """See InterBranch.pull()."""
         if local:
             raise LocalRequiresBoundBranch()
