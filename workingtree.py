@@ -587,7 +587,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             rootwc.close()
 
         self._bzr_inventory = inv
-        self.inventory = self._bzr_inventory # FIXME
+        self._inventory = self._bzr_inventory # FIXME
         return inv
 
     def __iter__(self):
