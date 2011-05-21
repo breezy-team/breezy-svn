@@ -128,9 +128,11 @@ def init_subvertpy():
 
     check_subversion_version()
 
+    def get_ssh_vendor():
+        import bzrlib.transport.ssh
+        return bzrlib.transport.ssh._get_ssh_vendor()
     import subvertpy.ra_svn
-    import bzrlib.transport.ssh
-    subvertpy.ra_svn.get_ssh_vendor = bzrlib.transport.ssh._get_ssh_vendor
+    subvertpy.ra_svn.get_ssh_vendor = get_ssh_vendor
 
 _versions_checked = False
 def lazy_check_versions():
