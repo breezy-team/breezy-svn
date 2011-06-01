@@ -707,18 +707,16 @@ class InterFromSvnBranch(GenericInterBranch):
             d = resolve_tags_svn_ancestry(self.source, tag_revmetas)
             for name, (revmeta, mapping, revid) in d.iteritems():
                 todo.append((revmeta, mapping))
-        if limit is not None:
-            todo = todo[:limit]
-        self._fetch_revmetas(todo, find_ghosts=find_ghosts)
+        self._fetch_revmetas(todo, find_ghosts=find_ghosts, limit=limit)
 
-    def _fetch_revmetas(self, revmetas, find_ghosts=False):
+    def _fetch_revmetas(self, revmetas, find_ghosts=False, limit=None):
         interrepo = InterFromSvnRepository(self.source.repository,
             self.target.repository)
         revisionfinder = interrepo.get_revision_finder()
         for revmeta, mapping in revmetas:
             revisionfinder.find_until(revmeta.get_foreign_revid(), mapping,
                 find_ghosts=find_ghosts)
-        interrepo.fetch(needed=revisionfinder.get_missing(),
+        interrepo.fetch(needed=revisionfinder.get_missing(limit=limit),
             project=self.source.project, mapping=self.source.mapping)
 
     def _update_revisions(self, stop_revision=None, overwrite=False,
