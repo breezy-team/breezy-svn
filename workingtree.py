@@ -213,6 +213,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._control_files = LockableFiles(control_transport, 'lock', LockDir)
         self.views = self._make_views()
 
+    @property
+    def inventory(self):
+        raise NotImplementedError
+
     def _setup_directory_is_tree_reference(self):
         self._directory_is_tree_reference = self._directory_is_never_tree_reference
 
