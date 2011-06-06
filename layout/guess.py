@@ -13,6 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from subvertpy import SubversionException, ERR_FS_NOT_FOUND
+import urllib
+
 from bzrlib import ui
 from bzrlib.trace import mutter
 
@@ -137,10 +140,13 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
 
 
 def repository_guess_layout(repository, revnum, branch_path=None):
+    return logwalker_guess_layout(repository._log, revnum, branch_path=branch_path)
+
+def logwalker_guess_layout(logwalker, revnum, branch_path=None):
     pb = ui.ui_factory.nested_progress_bar()
     try:
         (guessed_layout, layout) = guess_layout_from_history(
-            repository._log.iter_changes(None, revnum, max(0, revnum-GUESS_SAMPLE_SIZE)), revnum, branch_path)
+            logwalker.iter_changes(None, revnum, max(0, revnum-GUESS_SAMPLE_SIZE)), revnum, branch_path)
     finally:
         pb.finished()
     mutter("Guessed repository layout: %r, guess layout to use: %r" %
@@ -148,4 +154,20 @@ def repository_guess_layout(repository, revnum, branch_path=None):
     return (guessed_layout, layout)
 
 
+def is_likely_branch_url(url):
+    """Check whether url refers to a likely branch URL.
 
+    """
+    from bzrlib.plugins.svn.transport import SvnRaTransport
+    from bzrlib.plugins.svn.logwalker import LogWalker
+    transport = SvnRaTransport(url)
+    lw = LogWalker(transport=transport)
+    svn_root_url = transport.get_repos_root()
+    branch_path = urllib.unquote(url[len(svn_root_url):])
+    try:
+        (guessed_layout, _) = logwalker_guess_layout(lw, transport.get_latest_revnum())
+    except SubversionException, (msg, num):
+        if num == ERR_FS_NOT_FOUND:
+            return False # path doesn't exist
+        raise
+    return guessed_layout.is_branch(branch_path)
