@@ -116,7 +116,6 @@ def test_suite():
             'test_fetch',
             'test_fileids',
             'test_keywords',
-            'layout.test_custom',
             'layout.test_guess',
             'layout.test_standard',
             'test_logwalker',
