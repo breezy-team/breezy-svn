@@ -102,7 +102,6 @@ from bzrlib.plugins.svn.versionedfiles import (
 
 LAYOUT_SOURCE_GUESSED = 'guess'
 LAYOUT_SOURCE_CONFIG = 'config'
-LAYOUT_SOURCE_REGISTRY = 'registry'
 LAYOUT_SOURCE_OVERRIDDEN = 'overridden'
 LAYOUT_SOURCE_MAPPING_MANDATED = 'mapping-mandated'
 
@@ -684,19 +683,16 @@ class SvnRepository(ForeignRepository):
                 self._layout_source = LAYOUT_SOURCE_CONFIG
                 self._layout = WildcardLayout(branches, tags or [])
         if self._layout is None:
-            self._layout = layout.repository_registry.get(self.uuid)
-            self._layout_source = LAYOUT_SOURCE_REGISTRY
-        if self._layout is None:
             if self._guessed_appropriate_layout is None:
-                self._find_guessed_layout()
+                self._find_guessed_layout(self.get_config())
             self._layout_source = LAYOUT_SOURCE_GUESSED
             self._layout = self._guessed_appropriate_layout
         return self._layout, self._layout_source
 
-    def _find_guessed_layout(self):
+    def _find_guessed_layout(self, config):
         # Retrieve guessed-layout from config and see if it accepts
         # self._hinted_branch_path
-        layoutname = self.get_config().get_guessed_layout()
+        layoutname = config.get_guessed_layout()
         if layoutname is not None:
             config_guessed_layout = layout.layout_registry.get(layoutname)()
             if (self._hinted_branch_path is None or
@@ -724,7 +720,7 @@ class SvnRepository(ForeignRepository):
         if self._guessed_layout is None:
             self._guessed_layout = self.get_mapping().get_guessed_layout(self)
         if self._guessed_layout is None:
-            self._find_guessed_layout()
+            self._find_guessed_layout(self.get_config())
         return self._guessed_layout
 
     def _warn_if_deprecated(self): # for bzr < 2.4
@@ -1177,7 +1173,10 @@ class SvnRepository(ForeignRepository):
                     pb.update("discovering tags", to_revnum-item.revnum,
                         to_revnum-from_revnum)
                     if layout.is_tag(item.branch_path):
-                        entries.append((kind, (item.branch_path, (item.revnum, item.get_tag_revmeta(mapping)))))
+                        entries.append((
+                            kind,
+                            (item.branch_path,
+                            (item.revnum, item.get_tag_revmeta(mapping)))))
                 else:
                     entries.append((kind, item))
             for kind, item in reversed(entries):

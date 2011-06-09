@@ -77,6 +77,9 @@ bzr-svn 1.1.0					  UNRELEASED
   * "bzr commit --lossy" can now be used in bound branches.
     (Jelmer Vernooij, #587721)
 
+  * Directories that are not considered branches by the standard apache layout
+    can now be fetched. (Jelmer Vernooij, #794984)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
