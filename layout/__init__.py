@@ -306,6 +306,9 @@ layout_registry.register_lazy("itrunk2", "bzrlib.plugins.svn.layout.standard",
 layout_registry.register_lazy("itrunk3", "bzrlib.plugins.svn.layout.standard",
     "InverseTrunkLayout3")
 
+layout_registry.register_lazy("perfect", "bzrlib.plugins.svn.layout.perfect",
+    "PerfectLayout")
+
 class RepositoryRegistry(registry.Registry):
 
     def get(self, name):
