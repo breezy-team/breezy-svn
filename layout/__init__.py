@@ -131,7 +131,7 @@ class RepositoryLayout(object):
     def get_branches(self, repository, revnum, project="", pb=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
-        :return: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path, branch name, has_props)
         """
         raise NotImplementedError(self.get_branches)
 

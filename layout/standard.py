@@ -129,7 +129,8 @@ class TrunkLayout(RepositoryLayout):
 
         :return: Iterator over tuples with (project, branch path)
         """
-        return get_root_paths(repository, [self._add_project("tags/*", project)], revnum, self.is_tag, project)
+        return get_root_paths(repository, [self._add_project("tags/*", project)],
+                revnum, self.is_tag, project)
 
     def __repr__(self):
         if self.level is None:
@@ -212,7 +213,7 @@ class RootLayout(RepositoryLayout):
     def get_tags(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
-        :return: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path, branch name, has_props)
         """
         return []
 
