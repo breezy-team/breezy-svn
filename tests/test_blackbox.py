@@ -611,3 +611,26 @@ if len(sys.argv) == 2:
             'No custom branch support\n'
             'Push merged revisions: False\n' % svn_url,
                 self.run_bzr('svn-layout %s' % svn_url)[0])
+
+    def test_svn_branches(self):
+        svn_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(svn_url)
+        dc.add_dir("trunk")
+        dc.close()
+
+        dc = self.get_commit_editor(svn_url)
+        branches = dc.add_dir("branches")
+        branches.add_dir("branches/somebranch", "trunk")
+        tags = dc.add_dir("tags")
+        tags.add_dir("tags/release-1.0", "trunk")
+        dc.close()
+
+        self.assertEquals(
+            'Branches:\n'
+            'branches/somebranch (somebranch)\n'
+            'trunk (trunk)\n'
+            'Tags:\n'
+            'tags/release-1.0 (release-1.0)\n',
+            self.run_bzr('svn-branches --layout trunk %s' % svn_url)[0])
+

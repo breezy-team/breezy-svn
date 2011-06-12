@@ -417,6 +417,9 @@ plugin_cmds.register_lazy('cmd_svn_branching_scheme', [],
                           'bzrlib.plugins.svn.mapping3.commands')
 plugin_cmds.register_lazy('cmd_svn_layout', [],
                           'bzrlib.plugins.svn.commands')
+plugin_cmds.register_lazy('cmd_svn_branches', [],
+                          'bzrlib.plugins.svn.commands')
+
 
 lazy_register_filter_stack_map("svn-keywords",
         "bzrlib.plugins.svn.keywords", "create_svn_keywords_filter")

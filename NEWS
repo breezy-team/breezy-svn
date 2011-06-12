@@ -89,6 +89,10 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * `bzr rmbranch` was implemented.  (Jelmer Vernooij, #731305)
 
+  * New hidden ``bzr svn-branches`` command which can display the
+    branches found by bzr-svn in a svn repository.
+    (Jelmer Vernooij)
+
  INTERNALS
 
   * Switch to using record_iter_changes style committing everywhere.

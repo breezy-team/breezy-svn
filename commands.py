@@ -248,4 +248,50 @@ class cmd_svn_layout(Command):
                     branch.get_push_merged_revisions())
 
 
+class cmd_svn_branches(Command):
+    """Print the branches and tags in a repository.
 
+    """
+
+    takes_args = ["location"]
+
+    takes_options = [
+        Option('layout', type=get_layout,
+               help='Repository layout (none, trunk, etc). '
+                    'Default: auto.')]
+
+    hidden = True
+
+    def run(self, location, layout=None):
+        from bzrlib import errors
+        from bzrlib.bzrdir import BzrDir
+        from bzrlib.plugins.svn.remote import SvnRemoteAccess
+        from bzrlib.plugins.svn.workingtree import SvnCheckout
+
+        dir = BzrDir.open(location)
+
+        if not (isinstance(dir, SvnRemoteAccess) or
+                isinstance(dir, SvnCheckout)):
+            raise errors.BzrCommandError(
+                "Source repository is not a Subversion repository.")
+
+        try:
+            repository = dir.open_repository()
+        except errors.NoRepositoryPresent, e:
+            repository = dir.find_repository(_ignore_branch_path=True)
+            assert dir.root_transport.base.startswith(repository.base)
+            prefix = dir.root_transport.base[len(repository.base):].strip("/")
+            prefix = prefix.encode("utf-8")
+        else:
+            prefix = None
+
+        revnum = repository.get_latest_revnum()
+        if layout is None:
+            layout = repository.get_guessed_layout()
+
+        self.outf.write("Branches:\n")
+        for (project, path, name, _) in layout.get_branches(repository, revnum, prefix):
+            self.outf.write("%s (%s)\n" % (path, name))
+        self.outf.write("Tags:\n")
+        for (project, path, name, _) in layout.get_tags(repository, revnum, prefix):
+            self.outf.write("%s (%s)\n" % (path, name))
