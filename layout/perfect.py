@@ -9,8 +9,11 @@ from bzrlib.plugins.svn.layout import (
     )
 
 class PerfectLayout(RepositoryLayout):
-    def __init__(self):
-        self.log = None
+    def __init__(self, _log = None):
+        if (_log is None):
+            return
+        print('PerfectLayout with log', _log )
+        self.log = _log
 
     def supports_tags(self):
         return True
@@ -37,14 +40,6 @@ class PerfectLayout(RepositoryLayout):
         :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
-        path = path.strip("/")
-        for bp in sorted(self.branches):
-            if path.startswith("%s/" % bp) or bp == path:
-                return ("branch", bp, bp, path[len(bp):].strip("/"))
-
-        for tp in sorted(self.tags):
-            if path.startswith("%s/" % tp) or tp == path:
-                return ("tag", tp, tp, path[len(tp):].strip("/"))
 
         raise svn_errors.NotSvnBranchPath(path)
 
@@ -53,14 +48,12 @@ class PerfectLayout(RepositoryLayout):
 
         :return: Iterator over tuples with (project, branch path)
         """
-        return [(project, b, b.split("/")[-1], None) for b in self.branches if repository.transport.check_path(b, revnum) == NODE_DIR]
 
     def get_tags(self, repository, revnum, project=None, pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
         :return: Iterator over tuples with (project, branch path)
         """
-        return [(project, t, t.split("/")[-1], None) for t in self.tags if repository.transport.check_path(t, revnum) == NODE_DIR]
 
     def __repr__(self):
         return "%s" % (self.__class__.__name__)
@@ -73,9 +66,15 @@ class PerfectLayout(RepositoryLayout):
             if branch.startswith("%s/" % path):
                 return True
         return False
+    
+    def _get_branches(self):
+        return []
+
+    def _get_tags(self):
+        return []
 
     def is_branch_parent(self, path, project=None):
-        return self._is_prefix(self.branches, path, project)
+        return self._is_prefix(self._get_branches(), path, project)
 
     def is_tag_parent(self, path, project=None):
-        return self._is_prefix(self.tags, path, project)
+        return self._is_prefix(self._get_tags(), path, project)

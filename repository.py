@@ -673,7 +673,10 @@ class SvnRepository(ForeignRepository):
             self._layout = self.get_mapping().get_mandated_layout(self)
         if self._layout is None:
             layoutname = self.get_config().get_layout()
-            if layoutname is not None:
+            if layoutname == 'perfect':
+                self._layout_source = LAYOUT_SOURCE_CONFIG
+                self._layout = layout.perfect.PerfectLayout(self._log)
+            elif layoutname is not None:
                 self._layout_source = LAYOUT_SOURCE_CONFIG
                 self._layout = layout.layout_registry.get(layoutname)()
         if self._layout is None:
