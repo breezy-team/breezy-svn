@@ -330,7 +330,7 @@ class WildcardLayout(RepositoryLayout):
 
     def is_branch(self, path, project=None):
         for bp in self.branches:
-           if wildcard_matches(path, bp):
+            if wildcard_matches(path, bp):
                 return True
         return False
 
