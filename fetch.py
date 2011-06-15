@@ -837,7 +837,6 @@ class RevisionBuildEditor(DeltaBuildEditor):
             basis_id = NULL_REVISION
             basis_inv = None
         present_parent_ids = self.target.has_revisions(rev.parent_ids)
-        trace.mutter("Inventory delta: %r", self._inv_delta)
         rev.inventory_sha1, self.inventory = \
             self.target.add_inventory_by_delta(basis_id, self._inv_delta,
             rev.revision_id,
