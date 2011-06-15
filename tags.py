@@ -257,10 +257,11 @@ class SubversionTags(BasicTags):
     def _get_tag_dict_revmeta(self, from_revnum=None, to_revnum=None):
         """Get a name -> revmeta dictionary."""
         if from_revnum is None or from_revnum == 0:
-            return self.repository.find_tags(project=self.branch.project,
+            return self.repository.find_tags(
+                    project=self.branch.project,
                     layout=self.branch.layout,
                     mapping=self.branch.mapping,
-                    revnum=self.branch._revnum)
+                    revnum=to_revnum)
         elif from_revnum <= to_revnum:
             return self.repository.find_tags_between(
                     project=self.branch.project,

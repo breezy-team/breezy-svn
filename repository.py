@@ -1228,82 +1228,6 @@ class SvnRepository(ForeignRepository):
                     to_revnum=revnum)
         return self._cached_tags[layout]
 
-    def find_branchpaths(self, layout, from_revnum, to_revnum, project=None):
-        """Find all branch paths that were changed in the specified revision
-        range.
-
-        :note: This ignores forbidden paths.
-
-        :param revnum: Revision to search for branches.
-        :return: iterator that returns tuples with (path, revision number,
-            still exists). The revision number is the revision in which the
-            branch last existed.
-        """
-        assert from_revnum >= to_revnum
-        if to_revnum is None:
-            to_revnum = self.get_latest_revnum()
-
-        created_branches = {}
-
-        ret = []
-
-        if project is not None:
-            prefixes = filter(self.transport.has,
-                              layout.get_project_prefixes(project))
-        else:
-            prefixes = [""]
-
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
-            for (paths, i, revprops) in self._log.iter_changes(prefixes,
-                    from_revnum, to_revnum):
-                if ((isinstance(revprops, dict) or revprops.is_loaded) and 
-                    is_bzr_revision_revprops(revprops)):
-                    continue
-                pb.update("finding branches", i, to_revnum)
-                for p in sorted(paths.keys()):
-                    (action, copyfrom_path, copyfrom_rev, kind) = paths[p]
-                    if kind not in (subvertpy.NODE_DIR, subvertpy.NODE_UNKNOWN):
-                        continue
-                    if layout.is_branch_or_tag(p, project):
-                        if action in ('R', 'D') and p in created_branches:
-                            ret.append((p, created_branches[p], False))
-                            del created_branches[p]
-
-                        if action in ('A', 'R', 'M'):
-                            created_branches[p] = i
-                    elif layout.is_branch_or_tag_parent(p, project):
-                        if action in ('R', 'D'):
-                            k = created_branches.keys()
-                            for c in k:
-                                if (c.startswith(p+"/") and
-                                    c in created_branches):
-                                    ret.append((c, created_branches[c], False))
-                                    del created_branches[c]
-                        if action in ('A', 'R') and copyfrom_path is not None:
-                            parents = [p]
-                            while parents:
-                                p = parents.pop()
-                                try:
-                                    for c in self.transport.get_dir(p, i)[0].keys():
-                                        n = p+"/"+c
-                                        if layout.is_branch_or_tag(n, project):
-                                            created_branches[n] = i
-                                        elif layout.is_branch_or_tag_parent(n, project):
-                                            parents.append(n)
-                                except subvertpy.SubversionException, (_, num):
-                                    if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
-                                               subvertpy.ERR_RA_DAV_FORBIDDEN):
-                                        continue
-                                    raise
-        finally:
-            pb.finished()
-
-        for p, i in created_branches.iteritems():
-            ret.append((p, i, True))
-
-        return ret
-
     def is_shared(self):
         """Return True if this repository is flagged as a shared repository."""
         return True
@@ -1357,4 +1281,78 @@ class SvnRepository(ForeignRepository):
             it = chain(it, layout.get_tags(self, from_revnum, project))
             return iter(((branch, from_revnum, True) for (project, branch, nick, has_props) in it if has_props in (True, None)))
         else:
-            return iter(self.find_branchpaths(layout, from_revnum, to_revnum, project))
+            return iter(find_branchpaths(self._log, self.transport, layout, from_revnum, to_revnum, project))
+
+
+def find_branchpaths(logwalker, transport, layout, from_revnum, to_revnum,
+        project=None):
+    """Find all branch paths that were changed in the specified revision range.
+
+    :note: This ignores forbidden paths.
+
+    :param revnum: Revision to search for branches.
+    :return: iterator that returns tuples with (path, revision number,
+        still exists). The revision number is the revision in which the
+        branch last existed.
+    """
+    assert from_revnum >= to_revnum
+    if project is not None:
+        prefixes = filter(
+            lambda p: transport.check_path(p, from_revnum),
+            layout.get_project_prefixes(project))
+    else:
+        prefixes = [""]
+
+    created_branches = {}
+    ret = []
+
+    pb = ui.ui_factory.nested_progress_bar()
+    try:
+        for (paths, i, revprops) in logwalker.iter_changes(prefixes,
+                from_revnum, to_revnum):
+            if ((isinstance(revprops, dict) or revprops.is_loaded) and 
+                is_bzr_revision_revprops(revprops)):
+                continue
+            pb.update("finding branches", i, to_revnum)
+            for p in sorted(paths.keys()):
+                (action, copyfrom_path, copyfrom_rev, kind) = paths[p]
+                if kind not in (subvertpy.NODE_DIR, subvertpy.NODE_UNKNOWN):
+                    continue
+                if layout.is_branch_or_tag(p, project):
+                    if action in ('R', 'D') and p in created_branches:
+                        ret.append((p, created_branches[p], False))
+                        del created_branches[p]
+
+                    if action in ('A', 'R', 'M'):
+                        created_branches[p] = i
+                elif layout.is_branch_or_tag_parent(p, project):
+                    if action in ('R', 'D'):
+                        k = created_branches.keys()
+                        for c in k:
+                            if (c.startswith(p+"/") and
+                                c in created_branches):
+                                ret.append((c, created_branches[c], False))
+                                del created_branches[c]
+                    if action in ('A', 'R') and copyfrom_path is not None:
+                        parents = [p]
+                        while parents:
+                            p = parents.pop()
+                            try:
+                                for c in transport.get_dir(p, i)[0].keys():
+                                    n = p+"/"+c
+                                    if layout.is_branch_or_tag(n, project):
+                                        created_branches[n] = i
+                                    elif layout.is_branch_or_tag_parent(n, project):
+                                        parents.append(n)
+                            except subvertpy.SubversionException, (_, num):
+                                if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
+                                           subvertpy.ERR_RA_DAV_FORBIDDEN):
+                                    continue
+                                raise
+    finally:
+        pb.finished()
+
+    for p, i in created_branches.iteritems():
+        ret.append((p, i, True))
+
+    return ret
