@@ -1222,11 +1222,19 @@ class SvnRepository(ForeignRepository):
         if not layout.supports_tags():
             return {}
 
-        if not layout in self._cached_tags:
-            self._cached_tags[layout] = self.find_tags_between(project=project,
-                    layout=layout, mapping=mapping, from_revnum=0,
-                    to_revnum=revnum)
-        return self._cached_tags[layout]
+        if layout in self._cached_tags and revnum == self.get_latest_revnum():
+            # Use the cache, if it's there
+            return self._cached_tags[layout]
+
+        ret = self.find_tags_between(project=project,
+            layout=layout, mapping=mapping, from_revnum=0,
+            to_revnum=revnum)
+
+        if revnum == self.get_latest_revnum():
+            # Cache
+            self._cached_tags[layout] = ret
+
+        return ret
 
     def is_shared(self):
         """Return True if this repository is flagged as a shared repository."""
