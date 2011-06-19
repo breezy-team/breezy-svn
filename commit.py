@@ -23,6 +23,7 @@ from cStringIO import (
     StringIO,
     )
 import posixpath
+import subvertpy
 from subvertpy import (
     ERR_FS_NOT_DIRECTORY,
     ERR_REPOS_DISABLED_FEATURE,
@@ -77,6 +78,8 @@ from bzrlib.plugins.svn.util import (
     )
 
 DUMMY_ROOT_PROPERTY_NAME = "bzr:svn:dummy"
+
+ERR_BAD_PROPERTY_VALUE = getattr(subvertpy, "ERR_BAD_PROPERTY_VALUE", 125005)
 
 _fileprops_warned_repos = set()
 
@@ -753,7 +756,12 @@ class SvnCommitBuilder(CommitBuilder):
                 self.root_action = ("replace", self.base_revnum)
 
             try:
-                root = self.editor.open_root(self.base_revnum)
+                try:
+                    root = self.editor.open_root(self.base_revnum)
+                except SubversionException, (msg, num):
+                    if num == ERR_BAD_PROPERTY_VALUE:
+                        raise ValueError("Invalid property contents: %r" % msg)
+                    raise
                 branch_editors = self.open_branch_editors(root, bp_parts,
                     self.base_url, self.base_revnum, root_from, self.root_action)
 
