@@ -263,7 +263,7 @@ class RepositoryTests(SubversionTestCase):
                 repository.get_ancestry(
                     repository.generate_revision_id(1, "", mapping)))
         self.assertEqual([None, 
-            repository.generate_revision_id(0, "", mapping), "a-parent", 
+            repository.generate_revision_id(0, "", mapping), 
             repository.generate_revision_id(1, "", mapping), 
                   repository.generate_revision_id(2, "", mapping)], 
                 repository.get_ancestry(
