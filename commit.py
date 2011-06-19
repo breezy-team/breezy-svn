@@ -425,7 +425,8 @@ class SvnCommitBuilder(CommitBuilder):
         self.conn = self.repository.transport.get_connection()
 
         # revision ids are either specified or predictable
-        self.random_revid = False
+        self.revmeta = None
+        self.random_revid = (self._new_revision_id is None)
         self.branch_path = branch_path
         self.push_metadata = push_metadata
         self.root_action = root_action
@@ -851,8 +852,18 @@ class SvnCommitBuilder(CommitBuilder):
         return revid
 
     def revision_tree(self):
-        return self.repository.revision_tree(
-            self.revmeta.get_revision_id(self.mapping))
+        from bzrlib.inventory import mutable_inventory_from_tree
+        from bzrlib.revisiontree import InventoryRevisionTree
+        inv = mutable_inventory_from_tree(self.old_tree)
+        inv.apply_delta(self._basis_delta)
+        if not self.random_revid:
+            revid = self._new_revision_id
+        elif self.revmeta is not None:
+            revid = self.revmeta.get_revision_id(self.mapping)
+        else:
+            revid = "new:"
+        return InventoryRevisionTree(self.repository, inv,
+            revid)
 
     def abort(self):
         if self.conn is not None:
@@ -992,7 +1003,6 @@ class SvnCommitBuilder(CommitBuilder):
                 it is a candidate to commit.
         """
         raise NotImplementedError(self.record_entry_contents)
-
 
 
 def send_svn_file_text_delta(tree, base_ie, ie, editor):

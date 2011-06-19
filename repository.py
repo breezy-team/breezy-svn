@@ -99,8 +99,8 @@ from bzrlib.plugins.svn.revids import (
 from bzrlib.plugins.svn.tree import (
     SvnRevisionTree,
     )
-from bzrlib.plugins.svn.versionedfiles import (
-    SvnTexts,
+from bzrlib.plugins.svn.filegraph import (
+    PerFileParentProvider,
     )
 
 LAYOUT_SOURCE_GUESSED = 'guess'
@@ -447,7 +447,7 @@ class SvnRepository(ForeignRepository):
 
         self._parents_provider = graph.CachingParentsProvider(
             self._real_parents_provider)
-        self.texts = SvnTexts(self)
+        self.texts = None
         self.revisions = None
         self.inventories = None
         self.signatures = None
@@ -456,6 +456,12 @@ class SvnRepository(ForeignRepository):
 
         self._revmeta_provider = revmeta.RevisionMetadataProvider(self,
                 self.revinfo_cache is not None)
+
+    @needs_read_lock
+    def get_file_graph(self):
+        """Return the graph walker for text revisions."""
+        return graph.Graph(graph.CachingParentsProvider(
+            PerFileParentProvider(self)))
 
     def get_graph(self, other_repository=None):
         """Return the graph walker for this repository format"""

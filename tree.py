@@ -593,7 +593,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
     def get_file_revision(self, file_id, path=None):
         if path is None:
             path = self.id2path(file_id)
-        (file_id, file_revision) = self.id_map.lookup(path)
+        (file_id, file_revision) = self.id_map.lookup(self.mapping, path)[:2]
         return file_revision
 
     def is_executable(self, file_id, path=None):

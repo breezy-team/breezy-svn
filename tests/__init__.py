@@ -130,7 +130,6 @@ def test_suite():
             'test_svk',
             'test_transport',
             'test_tree',
-            'test_versionedfiles',
             'test_workingtree',
             'test_blackbox',
             'mapping_implementations',
