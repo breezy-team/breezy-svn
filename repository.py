@@ -69,6 +69,9 @@ from bzrlib.plugins.svn.fileids import (
     FileIdMapStore,
     simple_apply_changes,
     )
+from bzrlib.plugins.svn.graph import (
+    SubversionGraph,
+    )
 from bzrlib.plugins.svn.layout.standard import (
     WildcardLayout,
     )
@@ -453,6 +456,15 @@ class SvnRepository(ForeignRepository):
 
         self._revmeta_provider = revmeta.RevisionMetadataProvider(self,
                 self.revinfo_cache is not None)
+
+    def get_graph(self, other_repository=None):
+        """Return the graph walker for this repository format"""
+        parents_provider = self._make_parents_provider()
+        if (other_repository is not None and
+            not self.has_same_location(other_repository)):
+            parents_provider = graph.StackedParentsProvider(
+                [parents_provider, other_repository._make_parents_provider()])
+        return SubversionGraph(self, parents_provider)
 
     def add_fallback_repository(self, basis_url):
         raise bzr_errors.UnstackableRepositoryFormat(self._format, self.base)
@@ -874,38 +886,6 @@ class SvnRepository(ForeignRepository):
                 mapping = lhs_mapping
             else:
                 break
-
-    def iter_reverse_revision_history(self, revision_id, pb=None, limit=0,
-                                      project=None):
-        """Iterate backwards through revision ids in the lefthand history
-
-        :param revision_id: The revision id to start with.  All its lefthand
-            ancestors will be traversed.
-        """
-        if revision_id in (None, NULL_REVISION):
-            return
-        foreign_revid, mapping = self.lookup_bzr_revision_id(revision_id,
-            project=project)
-        (uuid, branch_path, revnum) = foreign_revid
-        assert uuid == self.uuid
-        for revmeta, mapping in self._iter_reverse_revmeta_mapping_history(
-            branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb,
-            limit=limit):
-            if revmeta.is_hidden(mapping):
-                continue
-            yield revmeta.get_revision_id(mapping)
-
-    def get_ancestry(self, revision_id, topo_sorted=True):
-        """See Repository.get_ancestry().
-        """
-        ancestry = []
-        graph = self.get_graph()
-        for rev, parents in graph.iter_ancestry([revision_id]):
-            if rev == NULL_REVISION:
-                rev = None
-            ancestry.append(rev)
-        ancestry.reverse()
-        return ancestry
 
     def get_known_graph_ancestry(self, keys):
         """Get a KnownGraph instance with the ancestry of keys."""

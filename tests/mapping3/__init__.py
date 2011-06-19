@@ -23,7 +23,10 @@ from bzrlib.errors import (
     NoSuchRevision,
     )
 from bzrlib.repository import Repository
-from bzrlib.tests import TestCase
+from bzrlib.tests import (
+    TestCase,
+    TestNotApplicable,
+    )
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn.config import (

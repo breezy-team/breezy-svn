@@ -1463,7 +1463,8 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
             rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
             push_metadata=True, root_action=("open", ),
-            base_foreign_info=self.interrepo._get_foreign_revision_info(rev_merged.parent_ids[0]))
+            base_foreign_info=self.interrepo._get_foreign_revision_info(
+                rev_merged.parent_ids[0]))
         log = self.client_log(self.svn_repo_url, 4, 0)
         self.assertEquals(log[1][0],
             {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
