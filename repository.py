@@ -1235,30 +1235,37 @@ class SvnRepository(ForeignRepository):
         append_revisions_only = branch.get_config().get_append_revisions_only()
         if append_revisions_only is None:
             append_revisions_only = True
-        branch_last_revid = branch.last_revision()
-        bp = branch.get_branch_path()
-        if parents == [] or parents == [NULL_REVISION]:
+        last_revmeta, last_mapping = branch.last_revmeta()
+        if len(parents) == 0 or tuple(parents) == (NULL_REVISION,):
             base_foreign_revid = None
             base_mapping = None
-            root_action = ("replace", branch.get_revnum())
+            if last_revmeta is None:
+                root_action = ("create", )
+                branch_path = branch._branch_path
+            else:
+                root_action = ("replace", last_revmeta.revnum)
+                branch_path = last_revmeta.branch_path
         else:
             base_foreign_revid, base_mapping = \
                 self.lookup_bzr_revision_id(parents[0], project=branch.project)
-            if ((base_foreign_revid[2] != branch.get_revnum() or
-                base_foreign_revid[1] != bp)):
-                root_action = ("replace", branch.get_revnum())
+            branch_path = last_revmeta.branch_path
+            if ((base_foreign_revid[2] != last_revmeta.revnum or
+                base_foreign_revid[1] != last_revmeta.branch_path)):
+                root_action = ("replace", last_revmeta.revnum)
             else:
                 root_action = ("open", )
 
         if root_action[0] == "replace" and append_revisions_only:
             raise bzr_errors.AppendRevisionsOnlyViolation(branch.base)
 
-        return SvnCommitBuilder(self, bp, parents,
+        result = SvnCommitBuilder(self, branch_path, parents,
                                 config, timestamp, timezone, committer,
                                 revprops, revision_id,
                                 base_foreign_revid, base_mapping,
                                 root_action=root_action,
                                 push_metadata=not lossy)
+        self.start_write_group()
+        return result
 
     def find_fileprop_paths(self, layout, from_revnum, to_revnum,
                                project=None, check_removed=False):
