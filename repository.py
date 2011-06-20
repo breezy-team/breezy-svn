@@ -1264,14 +1264,12 @@ class SvnRepository(ForeignRepository):
         if root_action[0] == "replace" and append_revisions_only:
             raise bzr_errors.AppendRevisionsOnlyViolation(branch.base)
 
-        result = SvnCommitBuilder(self, branch_path, parents,
+        return SvnCommitBuilder(self, branch_path, parents,
                                 config, timestamp, timezone, committer,
                                 revprops, revision_id,
                                 base_foreign_revid, base_mapping,
                                 root_action=root_action,
                                 push_metadata=not lossy)
-        self.start_write_group()
-        return result
 
     def find_fileprop_paths(self, layout, from_revnum, to_revnum,
                                project=None, check_removed=False):

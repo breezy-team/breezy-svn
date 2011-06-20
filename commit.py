@@ -848,7 +848,6 @@ class SvnCommitBuilder(CommitBuilder):
         if self.push_metadata and self._new_revision_id not in (revid, None):
             raise AssertionError("Unexpected revision id %s != %s" %
                     (revid, self._new_revision_id))
-        self.repository.commit_write_group()
         return revid
 
     def revision_tree(self):
@@ -868,7 +867,6 @@ class SvnCommitBuilder(CommitBuilder):
     def abort(self):
         if self.conn is not None:
             self.repository.transport.add_connection(self.conn)
-        self.repository.abort_write_group()
 
     def _visit_parent_dirs(self, path):
         """Add the parents of path to the list of paths to visit."""
