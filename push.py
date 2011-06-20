@@ -511,9 +511,11 @@ class InterToSvnRepository(InterRepository):
         push_merged = (layout.push_merged_revisions(project) and
             target_config.get_push_merged_revisions())
 
+        graph = self.source.get_graph()
         start_revid_parent = NULL_REVISION
         start_revid = stop_revision
-        for revid in self.source.iter_reverse_revision_history(stop_revision):
+        for revid in graph.iter_lefthand_ancestry(stop_revision,
+                (NULL_REVISION,)):
             if self._target_has_revision(revid):
                 start_revid_parent = revid
                 break

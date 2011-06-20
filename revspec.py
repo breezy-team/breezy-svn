@@ -20,6 +20,9 @@ from bzrlib.errors import (
     InvalidRevisionSpec,
     NoSuchRevision,
     )
+from bzrlib.revision import (
+    NULL_REVISION,
+    )
 from bzrlib.revisionspec import (
     RevisionSpec,
     RevisionInfo,
@@ -64,7 +67,8 @@ class RevisionSpec_svn(RevisionSpec):
                     continue
             if len(ret) == 1:
                 revid = ret.pop()
-                history = list(branch.repository.iter_reverse_revision_history(revid))
+                history = list(graph.iter_lefthand_ancestry(
+                    revid, (NULL_REVISION,)))
                 history.reverse()
                 return RevisionInfo.from_revision_id(branch, revid, history)
             elif len(ret) == 0:
