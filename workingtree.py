@@ -217,6 +217,12 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def inventory(self):
         raise NotImplementedError
 
+    def get_file_mtime(self, file_id, path=None):
+        """See Tree.get_file_mtime."""
+        if not path:
+            path = self.id2path(file_id)
+        return os.lstat(self.abspath(path)).st_mtime
+
     def _setup_directory_is_tree_reference(self):
         self._directory_is_tree_reference = self._directory_is_never_tree_reference
 
