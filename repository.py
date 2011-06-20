@@ -564,7 +564,10 @@ class SvnRepository(ForeignRepository):
             return parse_svn_dateprop(revprops[subvertpy.properties.PROP_REVISION_DATE])
         if committers is not None and revid is not None:
             all_committers = set()
-            for rev in self.get_revisions(filter(lambda r: r is not None and r != NULL_REVISION, self.has_revisions(self.get_ancestry(revid)))):
+            graph = self.get_graph()
+            revids = [r for (r,ps) in graph.iter_ancestry([revid]) if r !=
+                    NULL_REVISION and ps is not None]
+            for rev in self.get_revisions(revids):
                 if rev.committer != '':
                     all_committers.add(rev.committer)
             result['committers'] = len(all_committers)
