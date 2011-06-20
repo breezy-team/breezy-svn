@@ -1448,7 +1448,9 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.assertEquals(log[1][0],
             {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
         self.assertEquals(log[2][0],
-            {'/trunk': ('M', None, -1), '/trunk/b': ('A', None, -1)})
+            {'/trunk': ('R', None, -1),
+             '/trunk/a': ('A', '/trunk/a', 1),
+             '/trunk/b': ('A', None, -1)})
 
     def test_push_merged(self):
         config = self.interrepo._get_branch_config("trunk")
@@ -1474,7 +1476,9 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.assertEquals(log[3][0],
             {'/branches/tree2': ('A', None, -1), '/branches/tree2/b': ('A', None, -1)})
         self.assertEquals(log[4][0],
-            {'/trunk': ('M', None, -1), '/trunk/b': ('A', '/branches/tree2/b', 3)})
+            {'/trunk': ('R', None, -1),
+             '/trunk/a': ('A', '/trunk/a', 1),
+             '/trunk/b': ('A', '/branches/tree2/b', 3)})
         self.assertEquals(log[4][3], 'merge')
 
     def test_push_merged_again(self):
