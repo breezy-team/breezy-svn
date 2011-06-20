@@ -91,14 +91,18 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         rm_provider = repos._revmeta_provider
         ret = repos.get_fileid_map(rm_provider.get_revision("", 0), mapping).as_dict()
         if mapping.is_branch(""):
-            self.assertEqual({u"": (mapping.generate_file_id((repos.uuid, "", 0), u""), mapping.revision_id_foreign_to_bzr((repos.uuid, "", 0)), None)}, ret)
+            self.assertEqual(
+                {u"": (mapping.generate_file_id((repos.uuid, "", 0), u""),
+                       mapping.revision_id_foreign_to_bzr((repos.uuid, "", 0)),
+                       None)},
+                ret)
         else:
             self.assertEquals({}, ret)
 
     def test_add_revision(self):
         repos_url = self.make_repository("a")
         repos = Repository.open(repos_url)
-        self.assertRaises(NotImplementedError, repos.add_revision, "revid", 
+        self.assertRaises(NotImplementedError, repos.add_revision, "revid",
                 None)
 
     def test_has_signature_for_revision_id_no(self):
@@ -132,7 +136,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         trunk = pykleur.add_dir("pykleur/trunk")
         nested = trunk.add_dir("pykleur/trunk/pykleur")
         cb.close() #1
-        
+
         cb = self.get_commit_editor(repos_url)
         pykleur = cb.open_dir("pykleur")
         trunk = pykleur.open_dir("pykleur/trunk")
@@ -216,8 +220,8 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout())
 
-        self.assertEqual(1, 
-                   len(set(repos.all_revision_ids(TrunkLayout()))))
+        self.assertEqual(1,
+               len(set(repos.all_revision_ids(TrunkLayout()))))
 
     def test_all_revs_empty(self):
         repos_url = self.make_repository("a")
@@ -250,7 +254,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos.set_layout(TrunkLayout(0))
         mapping = repos.get_mapping()
         self.assertEqual(set([
-            repos.generate_revision_id(1, "trunk", mapping), 
+            repos.generate_revision_id(1, "trunk", mapping),
             repos.generate_revision_id(2, "branches/somebranch", mapping)]),
             set(repos.all_revision_ids()))
 
