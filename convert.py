@@ -126,6 +126,9 @@ def load_dumpfile(dumpfile, outputdir):
 
 
 def contains_parent_path(s, p):
+    """See if one of the parent paths of p exists in s.
+
+    """
     while p != "":
         if p in s:
             return p
@@ -175,7 +178,8 @@ class RepositoryConverter(object):
                 if not layout.is_branch("") and not target_repos.is_shared():
                     raise BzrError("Repository %r is not shared." % target_repos)
             except NoRepositoryPresent:
-                target_repos = self.get_dir(prefix, prefix).create_repository(shared=True)
+                target_dir = self.get_dir(prefix, prefix)
+                target_repos = target_dir.create_repository(shared=True)
                 target_repos_is_empty = True
             target_repos.set_make_working_trees(working_trees)
         else:

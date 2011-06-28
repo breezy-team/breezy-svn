@@ -39,6 +39,7 @@ from bzrlib.repository import (
     )
 from bzrlib.tests import (
     TestCaseInTempDir,
+    TestCase,
     )
 
 from bzrlib.plugins.svn.layout.standard import (
@@ -47,6 +48,7 @@ from bzrlib.plugins.svn.layout.standard import (
     )
 from bzrlib.plugins.svn.convert import (
     NotDumpFile,
+    contains_parent_path,
     convert_repository,
     load_dumpfile,
     )
@@ -485,3 +487,13 @@ class TestPrefixed(SubversionTestCase):
         self.assertTrue(os.path.exists("e/branches/abranch"))
         self.assertFalse(os.path.exists("e/base"))
 
+
+class TestContainsParentPath(TestCase):
+
+    def test_doesnexist(self):
+        self.assertFalse(contains_parent_path([], "foo"))
+
+    def test_exists(self):
+        self.assertTrue(contains_parent_path(["foo"], "foo"))
+        self.assertTrue(contains_parent_path(["foo"], "foo/bar/blla"))
+        self.assertTrue(contains_parent_path(["bar", "foo"], "foo/bar/blla"))
