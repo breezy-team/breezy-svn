@@ -477,9 +477,6 @@ class TestPush(SubversionTestCase):
 
         self.assertEqual(wt.branch.last_revision(),
                 repos.generate_revision_id(3, "", mapping))
-        self.assertEqual(
-                wt.branch.repository.get_ancestry(wt.branch.last_revision()),
-                repos.get_ancestry(wt.branch.last_revision()))
 
     def test_multiple_diverged(self):
         oc_url = self.make_repository("o")

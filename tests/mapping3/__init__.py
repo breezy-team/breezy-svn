@@ -244,31 +244,6 @@ class RepositoryTests(SubversionTestCase):
         self.assertEqual(author, rev.committer)
         self.assertIsInstance(rev.properties, dict)
 
-    def test_get_ancestry_merged(self):
-        self.make_checkout(self.repos_url, 'dc')
-        self.build_tree({'dc/foo': "data"})
-        self.client_add("dc/foo")
-        self.client_commit("dc", "My Message")
-        self.client_update("dc")
-        self.client_set_prop("dc", "bzr:ancestry:v3-none", "a-parent\n")
-        self.build_tree({'dc/foo': "data2"})
-        self.client_commit("dc", "Second Message")
-        repository = Repository.open(self.repos_url)
-        mapping = repository.get_mapping()
-        self.assertEqual([None, repository.generate_revision_id(0, "", mapping)],
-                repository.get_ancestry(
-                    repository.generate_revision_id(0, "", mapping)))
-        self.assertEqual([None, repository.generate_revision_id(0, "", mapping),
-            repository.generate_revision_id(1, "", mapping)],
-                repository.get_ancestry(
-                    repository.generate_revision_id(1, "", mapping)))
-        self.assertEqual([None, 
-            repository.generate_revision_id(0, "", mapping), 
-            repository.generate_revision_id(1, "", mapping), 
-                  repository.generate_revision_id(2, "", mapping)], 
-                repository.get_ancestry(
-                    repository.generate_revision_id(2, "", mapping)))
-
     def test_lookup_revision_id_overridden(self):
         dc = self.get_commit_editor(self.repos_url)
         dc.add_dir("bloe")
