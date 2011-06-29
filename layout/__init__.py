@@ -154,47 +154,56 @@ def wildcard_matches(path, pattern):
     return True
 
 
-def expand_branch_pattern(begin, todo, check_path, get_children, project=None):
+class BranchPatternExpander(object):
     """Find the paths in the repository that match the expected branch pattern.
-
-    :param begin: List of path elements currently opened.
-    :param todo: List of path elements to still evaluate (including wildcards)
-    :param check_path: Function for checking a path exists
-    :param get_children: Function for retrieving the children of a path
     """
-    mutter('expand branches: %r, %r', begin, todo)
-    path = "/".join(begin)
-    if (project is not None and
-        not project.startswith(path) and
-        not path.startswith(project)):
-        return []
-    # If all elements have already been handled, just check the path exists
-    if len(todo) == 0:
-        if check_path(path):
-            return [(path, None)]
-        else:
+
+    def __init__(self, check_path, get_children, project=None):
+        """
+        :param check_path: Function for checking a path exists
+        :param get_children: Function for retrieving the children of a path
+        """
+        self.check_path = check_path
+        self.get_children = get_children
+        self.project = project
+
+    def expand(self, begin, todo):
+        """Expand
+
+        :param begin: List of path elements currently opened.
+        :param todo: List of path elements to still evaluate (including wildcards)
+        """
+        mutter('expand branches: %r, %r', begin, todo)
+        path = "/".join(begin)
+        if (self.project is not None and
+            not self.project.startswith(path) and
+            not path.startswith(self.project)):
             return []
-    # Not a wildcard? Just expand next bits
-    if todo[0] != "*":
-        return expand_branch_pattern(begin+[todo[0]], todo[1:], check_path,
-                                     get_children, project)
-    children = get_children(path)
-    if children is None:
-        return []
-    ret = []
-    pb = ui.ui_factory.nested_progress_bar()
-    try:
-        for idx, (c, has_props) in enumerate(children):
-            pb.update("browsing branches", idx, len(children))
-            if len(todo) == 1:
-                # Last path element, so return directly
-                ret.append(("/".join(begin+[c]), has_props))
+        # If all elements have already been handled, just check the path exists
+        if len(todo) == 0:
+            if self.check_path(path):
+                return [(path, None)]
             else:
-                ret += expand_branch_pattern(begin+[c], todo[1:], check_path,
-                                             get_children, project)
-    finally:
-        pb.finished()
-    return ret
+                return []
+        # Not a wildcard? Just expand next bits
+        if todo[0] != "*":
+            return self.expand(begin+[todo[0]], todo[1:])
+        children = self.get_children(path)
+        if children is None:
+            return []
+        ret = []
+        pb = ui.ui_factory.nested_progress_bar()
+        try:
+            for idx, (c, has_props) in enumerate(children):
+                pb.update("browsing branches", idx, len(children))
+                if len(todo) == 1:
+                    # Last path element, so return directly
+                    ret.append(("/".join(begin+[c]), has_props))
+                else:
+                    ret += self.expand(begin+[c], todo[1:])
+        finally:
+            pb.finished()
+        return ret
 
 
 class RootPathFinder(object):
@@ -238,13 +247,15 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None,
     """
     rpf = RootPathFinder(repository, revnum)
 
+    expander = BranchPatternExpander(rpf.check_path,
+        rpf.find_children, project)
+
     for idx, pattern in enumerate(itemlist):
         assert isinstance(pattern, str)
         if pb is not None:
             pb.update("finding branches", idx, len(itemlist))
-        for bp, has_props in expand_branch_pattern([],
-                pattern.strip("/").split("/"), rpf.check_path,
-                rpf.find_children, project):
+        for bp, has_props in expander.expand([],
+                pattern.strip("/").split("/")):
             if verify_fn(bp, project):
                 yield project, bp, bp.split("/")[-1], has_props
 
