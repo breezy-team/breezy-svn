@@ -290,8 +290,8 @@ class cmd_svn_branches(Command):
             layout = repository.get_guessed_layout()
 
         self.outf.write("Branches:\n")
-        for (project, path, name, _) in layout.get_branches(repository, revnum, prefix):
+        for (project, path, name, has_props, revnum) in layout.get_branches(repository, revnum, prefix):
             self.outf.write("%s (%s)\n" % (path, name))
         self.outf.write("Tags:\n")
-        for (project, path, name, _) in layout.get_tags(repository, revnum, prefix):
+        for (project, path, name, has_props, revnum) in layout.get_tags(repository, revnum, prefix):
             self.outf.write("%s (%s)\n" % (path, name))

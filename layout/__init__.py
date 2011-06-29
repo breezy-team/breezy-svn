@@ -167,9 +167,16 @@ class BranchPatternExpander(object):
         self.revnum = revnum
         self.project = project
 
-    def check_path(self, path):
-        kind = self.transport.check_path(path, self.revnum)
-        return (kind == subvertpy.NODE_DIR)
+    def get_latest_change(self, path):
+        try:
+            return self.transport.get_dir(path, self.revnum, 0)[1]
+        except subvertpy.SubversionException, (msg, num):
+            if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
+                       subvertpy.ERR_FS_NOT_FOUND,
+                       subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
+                       subvertpy.ERR_RA_DAV_FORBIDDEN):
+                return None
+            raise
 
     def get_children(self, path):
         try:
@@ -200,8 +207,9 @@ class BranchPatternExpander(object):
             return []
         # If all elements have already been handled, just check the path exists
         if len(todo) == 0:
-            if self.check_path(path):
-                return [(path, None)]
+            revnum = self.get_latest_change(path)
+            if revnum is not None:
+                return [(path, None, int(revnum))]
             else:
                 return []
         # Not a wildcard? Just expand next bits

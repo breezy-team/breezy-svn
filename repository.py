@@ -1139,9 +1139,10 @@ class SvnRepository(ForeignRepository):
             mapping = self.get_mapping()
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for project, bp, nick, has_props in layout.get_branches(self,
+            for project, bp, nick, has_props, revnum in layout.get_branches(self,
                     revnum, pb=pb):
-                branches.append(SvnBranch(self, None, bp, mapping, _skip_check=True))
+                branches.append(SvnBranch(self, None, bp, mapping,
+                    _skip_check=True, revnum=revnum))
         finally:
             pb.finished()
         return branches
