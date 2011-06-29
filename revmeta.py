@@ -98,7 +98,7 @@ class MetaHistoryIncomplete(Exception):
         self.msg = msg
 
 
-class BzrRevisionMetadata(MetaRevision):
+class BzrMetaRevision(MetaRevision):
     """Object describing a revision with bzr semantics in a Subversion
     repository.
 
@@ -117,7 +117,7 @@ class BzrRevisionMetadata(MetaRevision):
                  branch_path, logwalker, revnum, paths, revprops,
                  changed_fileprops=None, fileprops=None,
                  metaiterator=None):
-        super(BzrRevisionMetadata, self).__init__(logwalker,
+        super(BzrMetaRevision, self).__init__(logwalker,
             repository.uuid, branch_path, revnum, paths=paths,
             revprops=revprops)
         self.repository = repository
@@ -748,15 +748,15 @@ class BzrRevisionMetadata(MetaRevision):
         return iter(get_roundtrip_ancestor_revids(self.get_fileprops()))
 
 
-class CachingBzrRevisionMetadata(BzrRevisionMetadata):
-    """Wrapper around BzrRevisionMetadata that stores some results in a cache."""
+class CachingBzrMetaRevision(BzrMetaRevision):
+    """Wrapper around BzrMetaRevision that stores some results in a cache."""
 
     __slots__ = ('base', '_revid_cache', '_revinfo_cache', '_revision_info',
                  '_original_mapping', '_original_mapping_set',
                  '_stored_lhs_parent_revid', '_parents_cache')
 
     def __init__(self, repository, *args, **kwargs):
-        self.base = super(CachingBzrRevisionMetadata, self)
+        self.base = super(CachingBzrMetaRevision, self)
         self.base.__init__(repository, *args, **kwargs)
         self._parents_cache = getattr(
             self.repository._real_parents_provider, "_cache", None)
@@ -1206,9 +1206,9 @@ class RevisionMetadataProvider(object):
         self._log = repository._log
         self._open_metaiterators = []
         if cache:
-            self._revmeta_cls = CachingBzrRevisionMetadata
+            self._revmeta_cls = CachingBzrMetaRevision
         else:
-            self._revmeta_cls = BzrRevisionMetadata
+            self._revmeta_cls = BzrMetaRevision
 
     def create_revision(self, path, revnum, changes=None, revprops=None,
                         changed_fileprops=None, fileprops=None,
