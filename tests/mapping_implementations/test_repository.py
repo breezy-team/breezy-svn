@@ -25,7 +25,7 @@ from bzrlib.tests import TestSkipped, TestNotApplicable
 
 from bzrlib.plugins.svn import errors as svn_errors
 from subvertpy import ra
-from bzrlib.plugins.svn.repository import find_branchpaths
+from bzrlib.plugins.svn.repository import find_branches_between
 from bzrlib.plugins.svn.layout.standard import (
     TrunkLayout, RootLayout, CustomLayout,)
 from bzrlib.plugins.svn.mapping import mapping_registry
@@ -415,7 +415,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         rm_provider = repos._revmeta_provider
         self.assertEquals({"brancha": rm_provider.get_revision("tags/brancha", 3)}, tags)
 
-    def test_find_branchpaths_moved(self):
+    def test_find_branches_between_moved(self):
         repos_url = self.make_client("a", "dc")
         self.build_tree({
             'dc/tmp/branches/brancha': None,
@@ -432,9 +432,9 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         self.assertEqual([("tags/branchab", 2, True), 
                           ("tags/brancha", 2, True)], 
-                list(find_branchpaths(repos._log, repos.transport, TrunkLayout(0), from_revnum=2, to_revnum=0)))
+                list(find_branches_between(repos._log, repos.transport, TrunkLayout(0), from_revnum=2, to_revnum=0)))
 
-    def test_find_branchpaths_start_revno(self):
+    def test_find_branches_between_start_revno(self):
         repos_url = self.make_repository("a")
 
         dc = self.get_commit_editor(repos_url)
@@ -451,9 +451,9 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos.set_layout(TrunkLayout(0))
 
         self.assertEqual([("branches/branchb", 2, True)],
-                list(find_branchpaths(repos._log, repos.transport, TrunkLayout(0), from_revnum=2, to_revnum=2)))
+                list(find_branches_between(repos._log, repos.transport, TrunkLayout(0), from_revnum=2, to_revnum=2)))
 
-    def test_find_branchpaths_file_moved_from_nobranch(self):
+    def test_find_branches_between_file_moved_from_nobranch(self):
         repos_url = self.make_client("a", "dc")
         self.build_tree({
             'dc/tmp/trunk': None,
@@ -466,9 +466,9 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.client_commit("dc", "My Message 2")
 
         repos = Repository.open(repos_url)
-        find_branchpaths(repos._log, repos.transport, TrunkLayout(2), from_revnum=2, to_revnum=0)
+        find_branches_between(repos._log, repos.transport, TrunkLayout(2), from_revnum=2, to_revnum=0)
 
-    def test_find_branchpaths_deleted_from_nobranch(self):
+    def test_find_branches_between_deleted_from_nobranch(self):
         repos_url = self.make_client("a", "dc")
         self.build_tree({
             'dc/tmp/trunk': None,
@@ -481,9 +481,9 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.client_commit("dc", "My Message 2")
 
         repos = Repository.open(repos_url)
-        find_branchpaths(repos._log, repos.transport, TrunkLayout(1), from_revnum=2, to_revnum=0)
+        find_branches_between(repos._log, repos.transport, TrunkLayout(1), from_revnum=2, to_revnum=0)
 
-    def test_find_branchpaths_moved_nobranch(self):
+    def test_find_branches_between_moved_nobranch(self):
         repos_url = self.make_client("a", "dc")
         self.build_tree({
             'dc/tmp/nested/foobar': None,
@@ -501,36 +501,36 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         self.assertEqual([("t2/branches/brancha", 2, True), 
                           ("t2/branches/branchab", 2, True)], 
-                list(find_branchpaths(repos._log, repos.transport, TrunkLayout(1), to_revnum=2, from_revnum=2)))
+                list(find_branches_between(repos._log, repos.transport, TrunkLayout(1), to_revnum=2, from_revnum=2)))
 
-    def test_find_branchpaths_root(self):
+    def test_find_branches_between_root(self):
         repos_url = self.make_repository("a")
 
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
 
         self.assertEqual([("", 0, True)], 
-                list(find_branchpaths(repos._log, repos.transport, RootLayout(), to_revnum=0, from_revnum=0)))
+                list(find_branches_between(repos._log, repos.transport, RootLayout(), to_revnum=0, from_revnum=0)))
 
-    def test_find_branchpaths_no_later(self):
+    def test_find_branches_between_no_later(self):
         repos_url = self.make_repository("a")
 
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
 
         self.assertEqual([("", 0, True)], 
-                list(find_branchpaths(repos._log, repos.transport, RootLayout(), to_revnum=0, from_revnum=0)))
+                list(find_branches_between(repos._log, repos.transport, RootLayout(), to_revnum=0, from_revnum=0)))
 
-    def test_find_branchpaths_trunk_empty(self):
+    def test_find_branches_between_trunk_empty(self):
         repos_url = self.make_repository("a")
 
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(0))
 
         self.assertEqual([], 
-                list(find_branchpaths(repos._log, repos.transport, TrunkLayout(0), to_revnum=0, from_revnum=0)))
+                list(find_branches_between(repos._log, repos.transport, TrunkLayout(0), to_revnum=0, from_revnum=0)))
 
-    def test_find_branchpaths_trunk_one(self):
+    def test_find_branches_between_trunk_one(self):
         repos_url = self.make_repository("a")
 
         repos = Repository.open(repos_url)
@@ -542,9 +542,9 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         dc.close()
 
         self.assertEqual([("trunk", 1, True)], 
-                list(find_branchpaths(repos._log, repos.transport, TrunkLayout(0), from_revnum=1, to_revnum=0)))
+                list(find_branches_between(repos._log, repos.transport, TrunkLayout(0), from_revnum=1, to_revnum=0)))
 
-    def test_find_branchpaths_removed(self):
+    def test_find_branches_between_removed(self):
         repos_url = self.make_repository("a")
 
         repos = Repository.open(repos_url)
@@ -560,9 +560,9 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         dc.close()
 
         self.assertEqual([("trunk", 1, True)], 
-                list(find_branchpaths(repos._log, repos.transport, TrunkLayout(0), from_revnum=2, to_revnum=0)))
+                list(find_branches_between(repos._log, repos.transport, TrunkLayout(0), from_revnum=2, to_revnum=0)))
         self.assertEqual([("trunk", 1, True)], 
-                list(find_branchpaths(repos._log, repos.transport, TrunkLayout(0), from_revnum=1, to_revnum=0)))
+                list(find_branches_between(repos._log, repos.transport, TrunkLayout(0), from_revnum=1, to_revnum=0)))
 
     def test_has_revision(self):
         bzrdir = self.make_client_and_bzrdir('d', 'dc')

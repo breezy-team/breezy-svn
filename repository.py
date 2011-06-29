@@ -1171,9 +1171,11 @@ class SvnRepository(ForeignRepository):
             # Use the cache, if it's there
             return self._cached_tags[layout]
 
-        ret = self.find_tags_between(project=project,
-            layout=layout, mapping=mapping, from_revnum=0,
-            to_revnum=revnum)
+        ret = {}
+        for (project, branch_path, name, has_props, revnum) in layout.get_tags(self,
+                revnum, project=project):
+            base_revmeta = self._revmeta_provider.lookup_revision(branch_path, revnum)
+            ret[name] = base_revmeta.get_tag_revmeta(mapping)
 
         if revnum == self.get_latest_revnum():
             # Cache
@@ -1243,12 +1245,14 @@ class SvnRepository(ForeignRepository):
             it = iter([])
             it = chain(it, layout.get_branches(self, from_revnum, project))
             it = chain(it, layout.get_tags(self, from_revnum, project))
-            return iter(((branch, from_revnum, True) for (project, branch, nick, has_props) in it if has_props in (True, None)))
+            return iter(((branch, revnum, True) for
+                (project, branch, nick, has_props, revnum) in it if has_props
+                in (True, None)))
         else:
-            return iter(find_branchpaths(self._log, self.transport, layout, from_revnum, to_revnum, project))
+            return iter(find_branches_between(self._log, self.transport, layout, from_revnum, to_revnum, project))
 
 
-def find_branchpaths(logwalker, transport, layout, from_revnum, to_revnum,
+def find_branches_between(logwalker, transport, layout, from_revnum, to_revnum,
         project=None):
     """Find all branch paths that were changed in the specified revision range.
 
