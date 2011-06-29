@@ -16,7 +16,11 @@
 """Repository layouts."""
 
 import subvertpy
-from subvertpy.ra import DIRENT_KIND, DIRENT_HAS_PROPS
+from subvertpy.ra import (
+    DIRENT_KIND,
+    DIRENT_HAS_PROPS,
+    DIRENT_CREATED_REV,
+    )
 
 from bzrlib import (
     registry,
@@ -131,14 +135,14 @@ class RepositoryLayout(object):
     def get_branches(self, repository, revnum, project="", pb=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
-        :return: Iterator over tuples with (project, branch path, branch name, has_props)
+        :return: Iterator over tuples with (project, branch path, branch name, has_props, revnum)
         """
         raise NotImplementedError(self.get_branches)
 
     def get_tags(self, repository, revnum, project="", pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
-        :return: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path, branch name, has_props, revnum)
         """
         raise NotImplementedError(self.get_tags)
 
@@ -158,14 +162,36 @@ class BranchPatternExpander(object):
     """Find the paths in the repository that match the expected branch pattern.
     """
 
-    def __init__(self, check_path, get_children, project=None):
-        """
-        :param check_path: Function for checking a path exists
-        :param get_children: Function for retrieving the children of a path
-        """
-        self.check_path = check_path
-        self.get_children = get_children
+    def __init__(self, transport, revnum, project=None):
+        self.transport = transport
+        self.revnum = revnum
         self.project = project
+
+    def get_latest_change(self, path):
+        try:
+            return self.transport.get_dir(path, self.revnum, 0)[1]
+        except subvertpy.SubversionException, (msg, num):
+            if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
+                       subvertpy.ERR_FS_NOT_FOUND,
+                       subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
+                       subvertpy.ERR_RA_DAV_FORBIDDEN):
+                return None
+            raise
+
+    def get_children(self, path):
+        try:
+            assert not path.startswith("/")
+            dirents = self.transport.get_dir(path, self.revnum,
+                DIRENT_KIND|DIRENT_HAS_PROPS|DIRENT_CREATED_REV)[0]
+        except subvertpy.SubversionException, (msg, num):
+            if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
+                       subvertpy.ERR_FS_NOT_FOUND,
+                       subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
+                       subvertpy.ERR_RA_DAV_FORBIDDEN):
+                return None
+            raise
+        return [(d, dirents[d]['has_props'], int(dirents[d]['created_rev']))
+            for d in dirents if dirents[d]['kind'] == subvertpy.NODE_DIR]
 
     def expand(self, begin, todo):
         """Expand
@@ -181,8 +207,9 @@ class BranchPatternExpander(object):
             return []
         # If all elements have already been handled, just check the path exists
         if len(todo) == 0:
-            if self.check_path(path):
-                return [(path, None)]
+            revnum = self.get_latest_change(path)
+            if revnum is not None:
+                return [(path, None, int(revnum))]
             else:
                 return []
         # Not a wildcard? Just expand next bits
@@ -194,11 +221,11 @@ class BranchPatternExpander(object):
         ret = []
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for idx, (c, has_props) in enumerate(children):
+            for idx, (c, has_props, revnum) in enumerate(children):
                 pb.update("browsing branches", idx, len(children))
                 if len(todo) == 1:
                     # Last path element, so return directly
-                    ret.append(("/".join(begin+[c]), has_props))
+                    ret.append(("/".join(begin+[c]), has_props, revnum))
                 else:
                     ret += self.expand(begin+[c], todo[1:])
         finally:
@@ -206,35 +233,7 @@ class BranchPatternExpander(object):
         return ret
 
 
-class RootPathFinder(object):
-
-    def __init__(self, repository, revnum):
-        self.repository = repository
-        self.revnum = revnum
-
-    def check_path(self, path):
-        kind = self.repository.transport.check_path(path, self.revnum)
-        return (kind == subvertpy.NODE_DIR)
-
-    def find_children(self, path):
-        try:
-            assert not path.startswith("/")
-            dirents = self.repository.transport.get_dir(path, self.revnum,
-                DIRENT_KIND|DIRENT_HAS_PROPS)[0]
-        except subvertpy.SubversionException, (msg, num):
-            if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
-                       subvertpy.ERR_FS_NOT_FOUND,
-                       subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
-                       subvertpy.ERR_RA_DAV_FORBIDDEN):
-                return None
-            raise
-        return [(d, dirents[d]['has_props']) for d in dirents if
-                dirents[d]['kind'] == subvertpy.NODE_DIR]
-
-
-
-def get_root_paths(repository, itemlist, revnum, verify_fn, project=None,
-        pb=None):
+def get_root_paths(repository, itemlist, revnum, verify_fn, project=None):
     """Find all the paths in the repository matching a list of items.
 
     :param repository: Repository to search in.
@@ -243,21 +242,22 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None,
     :param verify_fn: Function that checks if a path is acceptable.
     :param project: Optional project branch/tag should be in.
     :param pb: Optional progress bar.
-    :return: Iterator over project, branch path, nick, has_props
+    :return: Iterator over project, branch path, nick, has_props, revnum
     """
-    rpf = RootPathFinder(repository, revnum)
+    expander = BranchPatternExpander(repository.transport, revnum, project)
 
-    expander = BranchPatternExpander(rpf.check_path,
-        rpf.find_children, project)
-
-    for idx, pattern in enumerate(itemlist):
-        assert isinstance(pattern, str)
-        if pb is not None:
-            pb.update("finding branches", idx, len(itemlist))
-        for bp, has_props in expander.expand([],
-                pattern.strip("/").split("/")):
-            if verify_fn(bp, project):
-                yield project, bp, bp.split("/")[-1], has_props
+    pb = ui.ui_factory.nested_progress_bar()
+    try:
+        for idx, pattern in enumerate(itemlist):
+            assert isinstance(pattern, str)
+            if pb is not None:
+                pb.update("finding branches", idx, len(itemlist))
+            for bp, has_props, revnum in expander.expand([],
+                    pattern.strip("/").split("/")):
+                if verify_fn(bp, project):
+                    yield project, bp, bp.split("/")[-1], has_props, revnum
+    finally:
+        pb.finished()
 
 
 help_layout = """Subversion repository layouts.

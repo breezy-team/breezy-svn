@@ -70,13 +70,13 @@ class SchemeDerivedLayout(RepositoryLayout):
     def supports_tags(self):
         return (self.scheme.tag_list != [])
 
-    def get_branches(self, repository, revnum, project=None, pb=None):
+    def get_branches(self, repository, revnum, project=None):
         return get_root_paths(repository, self.scheme.branch_list, revnum,
-                self.scheme.is_branch, project, pb)
+                self.scheme.is_branch, project)
 
-    def get_tags(self, repository, revnum, project=None, pb=None):
+    def get_tags(self, repository, revnum, project=None):
         return get_root_paths(repository, self.scheme.tag_list, revnum,
-                self.scheme.is_tag, project, pb)
+                self.scheme.is_tag, project)
 
     def get_tag_path(self, name, project=""):
         return self.scheme.get_tag_path(name, project)

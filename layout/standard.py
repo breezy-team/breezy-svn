@@ -15,7 +15,7 @@
 
 from functools import partial
 
-from subvertpy import NODE_DIR
+import subvertpy
 
 from bzrlib import urlutils
 from bzrlib.plugins.svn import errors as svn_errors
@@ -115,19 +115,19 @@ class TrunkLayout(RepositoryLayout):
             return path
         return urlutils.join(project, path)
 
-    def get_branches(self, repository, revnum, project=None, pb=None):
+    def get_branches(self, repository, revnum, project=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
-        :return: Iterator over tuples with (project, branch path, has_props)
+        :return: Iterator over tuples with (project, branch path, has_props, revnum)
         """
         return get_root_paths(repository,
              [self._add_project(x, project) for x in "branches/*", "trunk"],
              revnum, self.is_branch, project)
 
-    def get_tags(self, repository, revnum, project=None, pb=None):
+    def get_tags(self, repository, revnum, project=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
-        :return: Iterator over tuples with (project, branch path)
+        :return: Iterator over tuples with (project, branch path, has_props, revnum)
         """
         return get_root_paths(repository, [self._add_project("tags/*", project)],
                 revnum, self.is_tag, project)
@@ -203,14 +203,14 @@ class RootLayout(RepositoryLayout):
     def is_tag_path(self, tp, project=None):
         return False
 
-    def get_branches(self, repository, revnum, project=None, pb=None):
+    def get_branches(self, repository, revnum, project=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
         :return: Iterator over tuples with (project, branch path)
         """
-        return [("", "", "trunk", None)]
+        return [("", "", "trunk", None, revnum)]
 
-    def get_tags(self, repository, revnum, project=None, pb=None):
+    def get_tags(self, repository, revnum, project=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
         :return: Iterator over tuples with (project, branch path, branch name, has_props)
@@ -266,19 +266,34 @@ class CustomLayout(RepositoryLayout):
 
         raise svn_errors.NotSvnBranchPath(path)
 
-    def get_branches(self, repository, revnum, project=None, pb=None):
+    def _get_paths(self, entries, project, repository, revnum):
+        ret = []
+        for b in entries:
+            try:
+                r = repository.transport.get_dir(b, revnum)[1]
+            except subvertpy.SubversionException, (msg, num):
+                if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
+                           subvertpy.ERR_FS_NOT_FOUND,
+                           subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
+                           subvertpy.ERR_RA_DAV_FORBIDDEN):
+                    continue
+                raise
+            ret.append((project, b, b.split("/")[-1], None, r))
+        return ret
+
+    def get_branches(self, repository, revnum, project=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
         :return: Iterator over tuples with (project, branch path)
         """
-        return [(project, b, b.split("/")[-1], None) for b in self.branches if repository.transport.check_path(b, revnum) == NODE_DIR]
+        return self._get_paths(self.branches, project, repository, revnum)
 
-    def get_tags(self, repository, revnum, project=None, pb=None):
+    def get_tags(self, repository, revnum, project=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
         :return: Iterator over tuples with (project, branch path)
         """
-        return [(project, t, t.split("/")[-1], None) for t in self.tags if repository.transport.check_path(t, revnum) == NODE_DIR]
+        return self._get_paths(self.tags, project, repository, revnum)
 
     def __repr__(self):
         return "%s(%r,%r)" % (self.__class__.__name__, self.branches, self.tags)
@@ -358,7 +373,7 @@ class WildcardLayout(RepositoryLayout):
 
         raise svn_errors.NotSvnBranchPath(path)
 
-    def get_branches(self, repository, revnum, project=None, pb=None):
+    def get_branches(self, repository, revnum, project=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
         :return: Iterator over tuples with (project, branch path)
@@ -366,7 +381,7 @@ class WildcardLayout(RepositoryLayout):
         return get_root_paths(repository, self.branches,
              revnum, self.is_branch, project)
 
-    def get_tags(self, repository, revnum, project=None, pb=None):
+    def get_tags(self, repository, revnum, project=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
         :return: Iterator over tuples with (project, branch path)
@@ -449,7 +464,7 @@ class InverseTrunkLayout(RepositoryLayout):
         else:
             return urlutils.join(urlutils.join(path, project), "*")
 
-    def get_branches(self, repository, revnum, project=None, pb=None):
+    def get_branches(self, repository, revnum, project=None):
         """Return a list of paths that refer to branches in a specific revision.
 
         :return: Iterator over tuples with (project, branch path)
@@ -458,7 +473,7 @@ class InverseTrunkLayout(RepositoryLayout):
              [self._add_project(x, project) for x in "branches", "trunk"],
              revnum, self.is_branch, project)
 
-    def get_tags(self, repository, revnum, project=None, pb=None):
+    def get_tags(self, repository, revnum, project=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
         :return: Iterator over tuples with (project, branch path)

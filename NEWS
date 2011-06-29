@@ -80,6 +80,8 @@ bzr-svn 1.1.0					  UNRELEASED
   * Directories that are not considered branches by the standard apache layout
     can now be fetched. (Jelmer Vernooij, #794984)
 
+  * More efficient discovery of tags. (Jelmer Vernooij, #797915)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is

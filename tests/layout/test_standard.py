@@ -211,13 +211,17 @@ class CustomLayoutTests(TestCase):
             def __init__(self, available_paths):
                 self._paths = available_paths
 
-            def check_path(self, path, revnum):
-                return self._paths.get(path, subvertpy.NODE_NONE)
+            def get_dir(self, path, revnum):
+                try:
+                    return (None, self._paths[path], None)
+                except KeyError:
+                    raise subvertpy.SubversionException("foo",
+                            subvertpy.ERR_FS_NOT_FOUND)
 
         class MockRepository(object):
 
             def __init__(self, available_paths):
                 self.transport = MockTransport(available_paths)
 
-        self.assertEquals([(None, "foo/bar", "bar", None)],
-            x.get_branches(MockRepository({"foo/bar": subvertpy.NODE_DIR}), 3))
+        self.assertEquals([(None, "foo/bar", "bar", None, 3)],
+            x.get_branches(MockRepository({"foo/bar": 3}), 3))
