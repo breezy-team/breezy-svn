@@ -1147,50 +1147,6 @@ class SvnRepository(ForeignRepository):
         return branches
 
     @needs_read_lock
-    def find_tags_between(self, project, layout, mapping, from_revnum,
-                          to_revnum, tags=None):
-        if tags is None:
-            tags = {}
-        assert from_revnum <= to_revnum
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
-            entries = []
-            for kind, item in self._revmeta_provider.iter_all_changes(layout,
-                    mapping.is_branch_or_tag, to_revnum, from_revnum,
-                    project=project):
-                if kind == "revision":
-                    pb.update("discovering tags", to_revnum-item.revnum,
-                        to_revnum-from_revnum)
-                    if layout.is_tag(item.branch_path):
-                        entries.append((
-                            kind,
-                            (item.branch_path,
-                            (item.revnum, item.get_tag_revmeta(mapping)))))
-                else:
-                    entries.append((kind, item))
-            for kind, item in reversed(entries):
-                if kind == "revision":
-                    (branch_path, tag) = item
-                    tags[branch_path] = tag
-                elif kind == "delete":
-                    (path, revnum) = item
-                    for t, (lastrevnum, tagrevmeta) in tags.items():
-                        if (changes.path_is_child(t, path) and
-                            revnum > lastrevnum):
-                            del tags[t]
-        finally:
-            pb.finished()
-
-        ret = {}
-        for path, (lastrevnum, revmeta) in tags.iteritems():
-            name = layout.get_tag_name(path, project)
-            # Layout wasn't able to determine tag name from path
-            if name is None:
-                continue
-            ret[name] = revmeta
-        return ret
-
-    @needs_read_lock
     def find_tags(self, project, layout=None, mapping=None, revnum=None):
         """Find tags underneath this repository for the specified project.
 
@@ -1224,6 +1180,12 @@ class SvnRepository(ForeignRepository):
             self._cached_tags[layout] = ret
 
         return ret
+
+    @needs_read_lock
+    def find_tags_between(self, project, layout, mapping, from_revnum,
+                          to_revnum, tags=None):
+        return find_tags_between(self._revmeta_provider, project, layout,
+            mapping, from_revnum, to_revnum, tags)
 
     def is_shared(self):
         """Return True if this repository is flagged as a shared repository."""
@@ -1357,4 +1319,48 @@ def find_branchpaths(logwalker, transport, layout, from_revnum, to_revnum,
     for p, i in created_branches.iteritems():
         ret.append((p, i, True))
 
+    return ret
+
+
+def find_tags_between(revmeta_provider, project, layout, mapping, from_revnum,
+                      to_revnum, tags=None):
+    if tags is None:
+        tags = {}
+    assert from_revnum <= to_revnum
+    pb = ui.ui_factory.nested_progress_bar()
+    try:
+        entries = []
+        for kind, item in revmeta_provider.iter_all_changes(layout,
+                mapping.is_branch_or_tag, to_revnum, from_revnum,
+                project=project):
+            if kind == "revision":
+                pb.update("discovering tags", to_revnum-item.revnum,
+                    to_revnum-from_revnum)
+                if layout.is_tag(item.branch_path):
+                    entries.append((
+                        kind,
+                        (item.branch_path,
+                        (item.revnum, item.get_tag_revmeta(mapping)))))
+            else:
+                entries.append((kind, item))
+        for kind, item in reversed(entries):
+            if kind == "revision":
+                (branch_path, tag) = item
+                tags[branch_path] = tag
+            elif kind == "delete":
+                (path, revnum) = item
+                for t, (lastrevnum, tagrevmeta) in tags.items():
+                    if (changes.path_is_child(t, path) and
+                        revnum > lastrevnum):
+                        del tags[t]
+    finally:
+        pb.finished()
+
+    ret = {}
+    for path, (lastrevnum, revmeta) in tags.iteritems():
+        name = layout.get_tag_name(path, project)
+        # Layout wasn't able to determine tag name from path
+        if name is None:
+            continue
+        ret[name] = revmeta
     return ret
