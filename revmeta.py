@@ -977,10 +977,11 @@ class RevisionMetadataBranch(object):
 
     def __repr__(self):
         if len(self._revs) == 0:
-            return "<Empty RevisionMetadataBranch>"
+            return "<Empty %s>" % (self.__class__.__name__)
         else:
-            return "<RevisionMetadataBranch starting at %s revision %d>" % (
-                    self._revs[0].branch_path, self._revs[0].revnum)
+            return "<%s starting at %s revision %d>" % (
+                self.__class__.__name__, self._revs[0].branch_path,
+                self._revs[0].revnum)
 
     def __iter__(self):
         return ListBuildingIterator(self._revs, self.next)
@@ -1081,8 +1082,9 @@ class RevisionMetadataBrowser(object):
         return ListBuildingIterator(self._actions, self.next)
 
     def __repr__(self):
-        return "<RevisionMetadataBrowser from %d to %d, layout: %r>" % (
-                self.from_revnum, self.to_revnum, self.layout)
+        return "<%s from %d to %d, layout: %r>" % (
+                self.__class__.__name__, self.from_revnum, self.to_revnum,
+                self.layout)
 
     def __eq__(self, other):
         return (type(self) == type(other) and

@@ -1204,21 +1204,24 @@ class FetchRevisionFinder(object):
                     needs_checking.append((revmeta, m))
         self.needed.extend(reversed(self.check_revmetas(needs_checking)))
 
-    def find_all(self, mapping, pb=None):
+    def find_all(self, mapping):
         """Find all revisions from the source repository that are not
         yet in the target repository.
 
         :return: List with revmeta, mapping tuples to fetch
         """
         from_revnum = self.source.get_latest_revnum()
-        all_revs = self.source._revmeta_provider.iter_all_revisions(
-                self.source.get_layout(),
-                check_unusual_path=mapping.is_branch_or_tag,
-                from_revnum=from_revnum, pb=pb)
-        return self.find_iter_revisions(all_revs, mapping, lambda x: False)
+        pb = ui.ui_factory.nested_progress_bar()
+        try:
+            all_revs = self.source._revmeta_provider.iter_all_revisions(
+                    self.source.get_layout(),
+                    check_unusual_path=mapping.is_branch_or_tag,
+                    from_revnum=from_revnum, pb=pb)
+            return self.find_iter_revisions(all_revs, mapping, lambda x: False)
+        finally:
+            pb.finished()
 
-    def find_mainline(self, foreign_revid, mapping, find_ghosts=False,
-                      pb=None):
+    def find_mainline(self, foreign_revid, mapping, find_ghosts=False):
         if (foreign_revid, mapping) in self.checked:
             return []
         revmetas = deque()
@@ -1226,27 +1229,31 @@ class FetchRevisionFinder(object):
         # TODO: Do binary search to find first revision to fetch if
         # fetch_ghosts=False ?
         needs_checking = []
-        for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(
-            branch_path, revnum, to_revnum=0, mapping=mapping):
-            if pb:
-                pb.update("determining revisions to fetch",
-                          revnum-revmeta.revnum, revnum)
-            if (revmeta.get_foreign_revid(), mapping) in self.checked:
-                # This revision (and its ancestry) has already been checked
-                break
-            needs_checking.append((revmeta, mapping))
-            if (not find_ghosts and not self.target_is_empty and
-                len(needs_checking) == self._check_present_interval):
-                missing_revmetas = self.check_revmetas(needs_checking)
-                for r in missing_revmetas:
-                    revmetas.appendleft(r)
-                done = (len(missing_revmetas) != len(needs_checking))
-                needs_checking = []
-                if done:
+        pb = ui.ui_factory.nested_progress_bar()
+        try:
+            for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(
+                branch_path, revnum, to_revnum=0, mapping=mapping):
+                if pb:
+                    pb.update("determining revisions to fetch",
+                              revnum-revmeta.revnum, revnum)
+                if (revmeta.get_foreign_revid(), mapping) in self.checked:
+                    # This revision (and its ancestry) has already been checked
                     break
-                self._check_present_interval = min(
-                    self._check_present_interval*2, MAX_CHECK_PRESENT_INTERVAL)
-            self.checked.add((revmeta.get_foreign_revid(), mapping))
+                needs_checking.append((revmeta, mapping))
+                if (not find_ghosts and not self.target_is_empty and
+                    len(needs_checking) == self._check_present_interval):
+                    missing_revmetas = self.check_revmetas(needs_checking)
+                    for r in missing_revmetas:
+                        revmetas.appendleft(r)
+                    done = (len(missing_revmetas) != len(needs_checking))
+                    needs_checking = []
+                    if done:
+                        break
+                    self._check_present_interval = min(
+                        self._check_present_interval*2, MAX_CHECK_PRESENT_INTERVAL)
+                self.checked.add((revmeta.get_foreign_revid(), mapping))
+        finally:
+            pb.finished()
         for r in self.check_revmetas(needs_checking):
             revmetas.appendleft(r)
         # Determine if there are any RHS parents to fetch
@@ -1264,8 +1271,7 @@ class FetchRevisionFinder(object):
                     if self.source.has_foreign_revision(foreign_revid):
                         yield (foreign_revid, rhs_mapping)
 
-    def find_until(self, foreign_revid, mapping, find_ghosts=False,
-                   pb=None):
+    def find_until(self, foreign_revid, mapping, find_ghosts=False):
         """Find all missing revisions until revision_id
 
         :param revision_id: Stop revision
@@ -1276,7 +1282,7 @@ class FetchRevisionFinder(object):
         while len(self.extra) > 0:
             foreign_revid, mapping = self.extra.pop()
             self.needed.extend(self.find_mainline(foreign_revid, mapping,
-                find_ghosts=find_ghosts, pb=pb))
+                find_ghosts=find_ghosts))
 
 
 class InterFromSvnRepository(InterRepository):
@@ -1484,7 +1490,7 @@ class InterFromSvnRepository(InterRepository):
         return FetchRevisionFinder(self.source, self.target, target_is_empty)
 
     def _get_needed(self, revision_id=None, fetch_spec=None, project=None,
-                    target_is_empty=False, pb=None, find_ghosts=False):
+                    target_is_empty=False, find_ghosts=False):
         """Find the set of revisions that is missing.
 
         :note: revision_id and fetch_spec are mutually exclusive
@@ -1503,7 +1509,7 @@ class InterFromSvnRepository(InterRepository):
             foreign_revid, mapping = self.source.lookup_bzr_revision_id(
                 revision_id, project=project)
             revisionfinder.find_until(foreign_revid, mapping,
-                                      find_ghosts=find_ghosts, pb=pb)
+                                      find_ghosts=find_ghosts)
         elif fetch_spec is not None:
             recipe = fetch_spec.get_recipe()
             if recipe[0] in ("search", "proxy-search"):
@@ -1514,9 +1520,9 @@ class InterFromSvnRepository(InterRepository):
                 foreign_revid, mapping = self.source.lookup_bzr_revision_id(
                     head, project=project)
                 revisionfinder.find_until(foreign_revid, mapping,
-                    find_ghosts=find_ghosts, pb=pb)
+                    find_ghosts=find_ghosts)
         else:
-            revisionfinder.find_all(self.source.get_mapping(), pb=pb)
+            revisionfinder.find_all(self.source.get_mapping())
         return revisionfinder.get_missing()
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
@@ -1536,14 +1542,9 @@ class InterFromSvnRepository(InterRepository):
         self.target.lock_write()
         try:
             if needed is None:
-                nested_pb = ui.ui_factory.nested_progress_bar()
-                try:
-                    needed = self._get_needed(target_is_empty=target_is_empty,
-                        revision_id=revision_id, fetch_spec=fetch_spec,
-                        find_ghosts=find_ghosts, project=project,
-                        pb=nested_pb)
-                finally:
-                    nested_pb.finished()
+                needed = self._get_needed(target_is_empty=target_is_empty,
+                    revision_id=revision_id, fetch_spec=fetch_spec,
+                    find_ghosts=find_ghosts, project=project)
 
             if len(needed) == 0:
                 # Nothing to fetch
