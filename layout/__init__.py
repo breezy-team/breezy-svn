@@ -250,8 +250,7 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None):
     try:
         for idx, pattern in enumerate(itemlist):
             assert isinstance(pattern, str)
-            if pb is not None:
-                pb.update("finding branches", idx, len(itemlist))
+            pb.update("finding branches", idx, len(itemlist))
             for bp, has_props, revnum in expander.expand([],
                     pattern.strip("/").split("/")):
                 if verify_fn(bp, project):
