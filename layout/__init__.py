@@ -162,14 +162,29 @@ class BranchPatternExpander(object):
     """Find the paths in the repository that match the expected branch pattern.
     """
 
-    def __init__(self, check_path, get_children, project=None):
-        """
-        :param check_path: Function for checking a path exists
-        :param get_children: Function for retrieving the children of a path
-        """
-        self.check_path = check_path
-        self.get_children = get_children
+    def __init__(self, transport, revnum, project=None):
+        self.transport = transport
+        self.revnum = revnum
         self.project = project
+
+    def check_path(self, path):
+        kind = self.transport.check_path(path, self.revnum)
+        return (kind == subvertpy.NODE_DIR)
+
+    def get_children(self, path):
+        try:
+            assert not path.startswith("/")
+            dirents = self.transport.get_dir(path, self.revnum,
+                DIRENT_KIND|DIRENT_HAS_PROPS|DIRENT_CREATED_REV)[0]
+        except subvertpy.SubversionException, (msg, num):
+            if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
+                       subvertpy.ERR_FS_NOT_FOUND,
+                       subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
+                       subvertpy.ERR_RA_DAV_FORBIDDEN):
+                return None
+            raise
+        return [(d, dirents[d]['has_props'], int(dirents[d]['created_rev']))
+            for d in dirents if dirents[d]['kind'] == subvertpy.NODE_DIR]
 
     def expand(self, begin, todo):
         """Expand
@@ -210,32 +225,6 @@ class BranchPatternExpander(object):
         return ret
 
 
-class RootPathFinder(object):
-
-    def __init__(self, repository, revnum):
-        self.repository = repository
-        self.revnum = revnum
-
-    def check_path(self, path):
-        kind = self.repository.transport.check_path(path, self.revnum)
-        return (kind == subvertpy.NODE_DIR)
-
-    def find_children(self, path):
-        try:
-            assert not path.startswith("/")
-            dirents = self.repository.transport.get_dir(path, self.revnum,
-                DIRENT_KIND|DIRENT_HAS_PROPS|DIRENT_CREATED_REV)[0]
-        except subvertpy.SubversionException, (msg, num):
-            if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
-                       subvertpy.ERR_FS_NOT_FOUND,
-                       subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
-                       subvertpy.ERR_RA_DAV_FORBIDDEN):
-                return None
-            raise
-        return [(d, dirents[d]['has_props'], int(dirents[d]['created_rev']))
-            for d in dirents if dirents[d]['kind'] == subvertpy.NODE_DIR]
-
-
 def get_root_paths(repository, itemlist, revnum, verify_fn, project=None,
         pb=None):
     """Find all the paths in the repository matching a list of items.
@@ -248,10 +237,7 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None,
     :param pb: Optional progress bar.
     :return: Iterator over project, branch path, nick, has_props, revnum
     """
-    rpf = RootPathFinder(repository, revnum)
-
-    expander = BranchPatternExpander(rpf.check_path,
-        rpf.find_children, project)
+    expander = BranchPatternExpander(repository.transport, revnum, project)
 
     for idx, pattern in enumerate(itemlist):
         assert isinstance(pattern, str)
