@@ -780,7 +780,7 @@ class SvnRepository(ForeignRepository):
         raise NotImplementedError(self._iter_inventories)
 
     def get_fileid_map(self, revmeta, mapping):
-        return self.fileid_map.get_map(revmeta.get_foreign_revid(), mapping)
+        return self.fileid_map.get_map(revmeta.metarev.get_foreign_revid(), mapping)
 
     def all_revision_ids(self, layout=None, mapping=None):
         """Find all revision ids in this repository, using the specified or
@@ -842,7 +842,7 @@ class SvnRepository(ForeignRepository):
             yield entry
             for rhs_parent_revid in revmeta.get_rhs_parents(mapping):
                 try:
-                    rhs_parent_foreign_revid, rhs_parent_mapping = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.get_foreign_revid())
+                    rhs_parent_foreign_revid, rhs_parent_mapping = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.metarev.get_foreign_revid())
                 except bzr_errors.NoSuchRevision:
                     pass
                 else:
@@ -878,7 +878,7 @@ class SvnRepository(ForeignRepository):
                     mapping = lhs_mapping
                     continue
                 revid = revmeta.get_revision_id(mapping)
-                foreign_sibling = revmeta.get_foreign_revid()
+                foreign_sibling = revmeta.metarev.get_foreign_revid()
             if expected_revid is not None and revid != expected_revid:
                 # Need to restart, branch root has changed
                 if expected_revid == NULL_REVISION:
@@ -1070,7 +1070,7 @@ class SvnRepository(ForeignRepository):
             return False
         for revmeta in self._revmeta_provider.iter_all_revisions(
                 self.get_layout(), None, self.get_latest_revnum()):
-            if is_bzr_revision_revprops(revmeta.revprops):
+            if is_bzr_revision_revprops(revmeta.metarev.revprops):
                 return True
         return False
 
@@ -1090,7 +1090,7 @@ class SvnRepository(ForeignRepository):
         except bzr_errors.NoSuchRevision:
             return False
         # Make sure revprops are fresh, not cached:
-        revmeta._revprops = self.transport.revprop_list(revmeta.revnum)
+        revmeta.metarev.refresh_revprops()
         return revmeta.get_signature() is not None
 
     def get_signature_text(self, revision_id):
@@ -1102,7 +1102,7 @@ class SvnRepository(ForeignRepository):
         """
         revmeta, mapping = self._get_revmeta(revision_id)
         # Make sure revprops are fresh, not cached:
-        revmeta._revprops = self.transport.revprop_list(revmeta.revnum)
+        revmeta.metarev.refresh_revprops()
         signature = revmeta.get_signature()
         if signature is None:
             raise bzr_errors.NoSuchRevision(self, revision_id)

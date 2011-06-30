@@ -733,7 +733,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 self.mapping)
             if lhs_parent_revmeta is not None:
                 try:
-                    (action, copyfrom_path, copyfrom_revnum, kind) = self.revmeta.paths.get(
+                    (action, copyfrom_path, copyfrom_revnum, kind) = self.revmeta.metarev.paths.get(
                         self.revmeta.branch_path)
                 except TypeError:
                     copyfrom_path = None
@@ -925,7 +925,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         if self._id_map is not None:
             return self._id_map
 
-        local_changes = get_local_changes(self.revmeta.paths,
+        local_changes = get_local_changes(self.revmeta.metarev.paths,
             self.revmeta.branch_path)
         self._id_map = self.source.fileid_map.get_idmap_delta(local_changes,
             self.revmeta, self.mapping)
@@ -964,7 +964,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         if ret is not None:
             return ret
         return self.mapping.generate_file_id(
-            self.revmeta.get_foreign_revid(), new_path)
+            self.revmeta.metarev.get_foreign_revid(), new_path)
 
     def _get_directory_revision(self, file_id):
         return self.revid # FIXME: For now
@@ -1197,7 +1197,7 @@ class FetchRevisionFinder(object):
                 if (lhs_parent_revmeta is not None and
                     needs_manual_check(lhs_parent_revmeta)):
                     self.needed.extend(self.find_mainline(
-                        lhs_parent_revmeta.get_foreign_revid(), lhsm))
+                        lhs_parent_revmeta.metarev.get_foreign_revid(), lhsm))
                 if lhsm != master_mapping or heads is not None:
                     needed_mappings[lhs_parent_revmeta].add(lhsm)
                 if not revmeta.is_hidden(m):
@@ -1236,7 +1236,7 @@ class FetchRevisionFinder(object):
                 if pb:
                     pb.update("determining revisions to fetch",
                               revnum-revmeta.revnum, revnum)
-                if (revmeta.get_foreign_revid(), mapping) in self.checked:
+                if (revmeta.metarev.get_foreign_revid(), mapping) in self.checked:
                     # This revision (and its ancestry) has already been checked
                     break
                 needs_checking.append((revmeta, mapping))
@@ -1251,7 +1251,7 @@ class FetchRevisionFinder(object):
                         break
                     self._check_present_interval = min(
                         self._check_present_interval*2, MAX_CHECK_PRESENT_INTERVAL)
-                self.checked.add((revmeta.get_foreign_revid(), mapping))
+                self.checked.add((revmeta.metarev.get_foreign_revid(), mapping))
         finally:
             pb.finished()
         for r in self.check_revmetas(needs_checking):
@@ -1264,7 +1264,7 @@ class FetchRevisionFinder(object):
         for revmeta, mapping in revmetas:
             for p in revmeta.get_rhs_parents(mapping):
                 try:
-                    foreign_revid, rhs_mapping = self.source.lookup_bzr_revision_id(p, foreign_sibling=revmeta.get_foreign_revid())
+                    foreign_revid, rhs_mapping = self.source.lookup_bzr_revision_id(p, foreign_sibling=revmeta.metarev.get_foreign_revid())
                 except NoSuchRevision:
                     pass # Ghost
                 else:

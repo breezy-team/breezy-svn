@@ -59,7 +59,7 @@ class Annotater(object):
 
     def _get_ids(self, path, rev, revprops):
         revmeta, mapping = self._related_revs[rev]
-        revmeta._revprops = revprops
+        revmeta.metarev._revprops = revprops
         path = path.strip("/")
         if not changes.path_is_child(revmeta.branch_path, path):
             raise KeyError(path)

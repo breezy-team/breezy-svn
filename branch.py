@@ -510,7 +510,7 @@ class SvnBranch(ForeignBranch):
         interrepo = InterToSvnRepository(source_repo, self.repository)
         last_revmeta, mapping = self.last_revmeta()
         revidmap = interrepo.push_todo(last_revmeta.get_revision_id(mapping),
-            last_revmeta.get_foreign_revid(), mapping, revid, self.layout,
+            last_revmeta.metarev.get_foreign_revid(), mapping, revid, self.layout,
             self.project, self.get_branch_path(), self.get_config(),
             push_merged=self.get_push_merged_revisions(),
             overwrite=False, push_metadata=not lossy, append_revisions_only=True)
@@ -712,7 +712,7 @@ class InterFromSvnBranch(GenericInterBranch):
             self.target.repository)
         revisionfinder = interrepo.get_revision_finder()
         for revmeta, mapping in revmetas:
-            revisionfinder.find_until(revmeta.get_foreign_revid(), mapping,
+            revisionfinder.find_until(revmeta.metarev.get_foreign_revid(), mapping,
                 find_ghosts=find_ghosts)
         interrepo.fetch(needed=revisionfinder.get_missing(limit=limit),
             project=self.source.project, mapping=self.source.mapping)

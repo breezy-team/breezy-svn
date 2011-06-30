@@ -27,7 +27,7 @@ class MetaRevision(object):
     from other known data before contacting the Subversions server.
     """
 
-    __slots__ = ('repository', 'branch_path', 'revnum', 'uuid',
+    __slots__ = ('branch_path', 'revnum', 'uuid',
                  '_paths', '_revprops', '_log')
 
     def __init__(self, logwalker, uuid, branch_path, revnum, paths=None,
@@ -55,6 +55,9 @@ class MetaRevision(object):
     def __repr__(self):
         return "<%s for revision %d, path %s in repository %r>" % (
             self.__class__.__name__, self.revnum, self.branch_path, self.uuid)
+
+    def refresh_revprops(self):
+        self._revprops = self._log._transport.revprop_list(self.revnum)
 
     @property
     def paths(self):

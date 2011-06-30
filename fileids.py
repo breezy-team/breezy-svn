@@ -283,7 +283,7 @@ class FileIdMapStore(object):
         :param revmeta: RevisionMetadata object for revision with changes
         :param mapping: Mapping
         """
-        foreign_revid = revmeta.get_foreign_revid()
+        foreign_revid = revmeta.metarev.get_foreign_revid()
         def new_file_id(x):
             return mapping.generate_file_id(foreign_revid, x)
 
@@ -292,13 +292,14 @@ class FileIdMapStore(object):
         return idmap
 
     def update_idmap(self, map, revmeta, mapping):
-        local_changes = get_local_changes(revmeta.paths, revmeta.branch_path)
+        local_changes = get_local_changes(revmeta.metarev.paths,
+                revmeta.metarev.branch_path)
         idmap = self.get_idmap_delta(local_changes, revmeta, mapping)
         revid = revmeta.get_revision_id(mapping)
         text_revisions = determine_text_revisions(local_changes, revid,
                 revmeta.get_text_revisions(mapping))
         map.apply_delta(text_revisions, idmap, local_changes, revid,
-                          mapping, revmeta.get_foreign_revid())
+                          mapping, revmeta.metarev.get_foreign_revid())
 
     def get_map(self, foreign_revid, mapping):
         """Make sure the map is up to date until revnum."""

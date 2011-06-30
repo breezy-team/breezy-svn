@@ -98,7 +98,7 @@ class MetaHistoryIncomplete(Exception):
         self.msg = msg
 
 
-class BzrMetaRevision(MetaRevision):
+class BzrMetaRevision(object):
     """Object describing a revision with bzr semantics in a Subversion
     repository.
 
@@ -110,14 +110,14 @@ class BzrMetaRevision(MetaRevision):
                  '_changed_fileprops', '_fileprops',
                  '_direct_lhs_parent_known', '_consider_bzr_fileprops',
                  '_consider_bzr_revprops', '_estimated_fileprop_ancestors',
-                 'metaiterators', 'children',
+                 'metaiterators', 'children', 'metarev', 'repository',
                  '_direct_lhs_parent_revmeta', '_revprop_redirect_revnum')
 
     def __init__(self, repository, get_fileprops_fn,
                  branch_path, logwalker, revnum, paths, revprops,
                  changed_fileprops=None, fileprops=None,
                  metaiterator=None):
-        super(BzrMetaRevision, self).__init__(logwalker,
+        self.metarev = MetaRevision(logwalker,
             repository.uuid, branch_path, revnum, paths=paths,
             revprops=revprops)
         self.repository = repository
@@ -133,12 +133,24 @@ class BzrMetaRevision(MetaRevision):
             self.metaiterators.add(metaiterator)
         self.children = set()
 
+    @property
+    def uuid(self):
+        return self.metarev.uuid
+
+    @property
+    def revnum(self):
+        return self.metarev.revnum
+
+    @property
+    def branch_path(self):
+        return self.metarev.branch_path
+
     def changes_branch_root(self):
         """Check whether the branch root was modified in this revision.
         """
         if self.knows_changed_fileprops():
             return self.get_changed_fileprops() != {}
-        return self.branch_path in self.paths
+        return self.branch_path in self.metarev.paths
 
     def get_revision_info(self, mapping):
         return self._import_from_props(mapping,
@@ -157,7 +169,7 @@ class BzrMetaRevision(MetaRevision):
 
         # Or generate it
         if revid is None:
-            revid = mapping.revision_id_foreign_to_bzr(self.get_foreign_revid())
+            revid = mapping.revision_id_foreign_to_bzr(self.metarev.get_foreign_revid())
 
         return revid
 
@@ -174,7 +186,7 @@ class BzrMetaRevision(MetaRevision):
         if self.changes_branch_root():
             # This tag was (recreated) here, so unless anything else under this
             # tag changed
-            if not changes.changes_children(self.paths, self.branch_path):
+            if not changes.changes_children(self.metarev.paths, self.branch_path):
                 lhs_parent_revmeta = self.get_lhs_parent_revmeta(mapping)
                 if lhs_parent_revmeta is not None:
                     return lhs_parent_revmeta
@@ -547,10 +559,10 @@ class BzrMetaRevision(MetaRevision):
         :note: Will use the cached revision properties, which
                may not necessarily be up to date.
         """
-        return self.revprops.get(SVN_REVPROP_BZR_SIGNATURE)
+        return self.metarev.revprops.get(SVN_REVPROP_BZR_SIGNATURE)
 
     def get_testament(self):
-        return self.revprops.get(SVN_REVPROP_BZR_TESTAMENT)
+        return self.metarev.revprops.get(SVN_REVPROP_BZR_TESTAMENT)
 
     def get_revision(self, mapping):
         """Create a revision object for this revision.
@@ -561,12 +573,12 @@ class BzrMetaRevision(MetaRevision):
 
         if parent_ids == (NULL_REVISION,):
             parent_ids = ()
-        rev = ForeignRevision(foreign_revid=self.get_foreign_revid(),
+        rev = ForeignRevision(foreign_revid=self.metarev.get_foreign_revid(),
                               mapping=mapping,
                               revision_id=self.get_revision_id(mapping),
                               parent_ids=parent_ids)
 
-        parse_svn_revprops(self.revprops, rev)
+        parse_svn_revprops(self.metarev.revprops, rev)
         self._import_from_props(mapping,
             lambda changed_fileprops: mapping.import_revision_fileprops(changed_fileprops, rev),
             lambda revprops: mapping.import_revision_revprops(revprops, rev),
@@ -605,15 +617,15 @@ class BzrMetaRevision(MetaRevision):
             revprops_sufficient = revprops_complete
 
         # Check revprops if self.knows_revprops() and can_use_revprops
-        if can_use_revprops and self.knows_revprops():
-            revprops = self.revprops
+        if can_use_revprops and self.metarev.knows_revprops():
+            revprops = self.metarev.revprops
             if revprops_acceptable(revprops):
                 ret = revprop_fn(revprops)
                 if revprops_sufficient(revprops):
                     return ret
             can_use_revprops = False
 
-        can_use_fileprops = can_use_fileprops and self.is_changes_root()
+        can_use_fileprops = can_use_fileprops and self.metarev.is_changes_root()
 
         # Check changed_fileprops if self.knows_changed_fileprops() and
         # can_use_fileprops
@@ -630,13 +642,14 @@ class BzrMetaRevision(MetaRevision):
 
         # Check revprops if the last descendant has bzr:check-revprops set;
         #   if it has and the revnum there is < self.revnum
-        if (can_use_revprops and not self.knows_revprops() and
+        if (can_use_revprops and not self.metarev.knows_revprops() and
             self.consider_bzr_revprops()):
-            log_revprops_capab = self._log._transport.has_capability("log-revprops")
+            log_revprops_capab = self.metarev._log._transport.has_capability(
+                "log-revprops")
             if log_revprops_capab in (None, False):
                 warn_slow_revprops(self.repository.get_config(),
                                    log_revprops_capab == False)
-            revprops = self.revprops
+            revprops = self.metarev.revprops
             if revprops_acceptable(revprops):
                 ret = revprop_fn(revprops)
                 if revprops_sufficient(revprops):
@@ -684,12 +697,12 @@ class BzrMetaRevision(MetaRevision):
         """
         if self._consider_bzr_revprops is not None:
             return self._consider_bzr_revprops
-        if self._log._transport.has_capability("commit-revprops") == False:
+        if self.metarev._log._transport.has_capability("commit-revprops") == False:
             # Server doesn't support setting revision properties
             self._consider_bzr_revprops = False
-        elif self._log._transport.has_capability("log-revprops") == True:
+        elif self.metarev._log._transport.has_capability("log-revprops") == True:
             self._consider_bzr_revprops = True
-        elif self._log._transport.has_capability("log-revprops") is None:
+        elif self.metarev._log._transport.has_capability("log-revprops") is None:
             # Client doesn't know log-revprops capability
             self._consider_bzr_revprops = True
         elif self.changes_outside_root():
@@ -772,7 +785,7 @@ class CachingBzrMetaRevision(BzrMetaRevision):
             self._revision_info[mapping][1] is not None):
             self._revid_cache.insert_revid(self._revision_info[mapping][1],
                 self.branch_path, self.revnum, self.revnum, mapping.name)
-        self._revinfo_cache.insert_revision(self.get_foreign_revid(), mapping,
+        self._revinfo_cache.insert_revision(self.metarev.get_foreign_revid(), mapping,
             self._revision_info[mapping],
             self._stored_lhs_parent_revid[mapping])
 
@@ -784,7 +797,7 @@ class CachingBzrMetaRevision(BzrMetaRevision):
         assert mapping is not None
         (self._revision_info[mapping],
                 self._stored_lhs_parent_revid[mapping]) = \
-                 self._revinfo_cache.get_revision(self.get_foreign_revid(),
+                 self._revinfo_cache.get_revision(self.metarev.get_foreign_revid(),
                                                   mapping)
 
     def get_original_mapping(self):
@@ -792,10 +805,10 @@ class CachingBzrMetaRevision(BzrMetaRevision):
             return self._original_mapping
         try:
             self._original_mapping = self._revinfo_cache.get_original_mapping(
-                self.get_foreign_revid())
+                self.metarev.get_foreign_revid())
         except KeyError:
             self._original_mapping = self.base.get_original_mapping()
-            self._revinfo_cache.set_original_mapping(self.get_foreign_revid(),
+            self._revinfo_cache.set_original_mapping(self.metarev.get_foreign_revid(),
                     self._original_mapping)
         self._original_mapping_set = True
         return self._original_mapping
@@ -1253,7 +1266,7 @@ class RevisionMetadataProvider(object):
         if self.in_cache(path, revnum):
             cached = self._revmeta_cache[path,revnum]
             if changes is not None:
-                cached._paths = changes
+                cached.metarev._paths = changes
             if cached._changed_fileprops is None:
                 cached._changed_fileprops = changed_fileprops
             if cached._fileprops is None:
