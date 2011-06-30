@@ -110,6 +110,17 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
             return None, False, None
         return entry.kind, entry.executable, None
 
+    def get_file_mtime(self, file_id, path=None):
+        """See Tree.get_file_mtime."""
+        if not path:
+            path = self.id2path(file_id)
+        revid = self.get_file_revision(file_id, path)
+        try:
+            rev = self._repository.get_revision(revid)
+        except errors.NoSuchRevision:
+            raise errors.FileTimestampUnavailable(path)
+        return rev.timestamp
+
 
 # This maps SVN names for eol-styles to bzr names:
 eol_style = {
@@ -468,17 +479,6 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         self._repository = workingtree.branch.repository
         self.id_map = self.workingtree.basis_idmap
         self.mapping = self.workingtree.branch.mapping
-
-    def get_file_mtime(self, file_id, path=None):
-        """See Tree.get_file_mtime."""
-        if not path:
-            path = self.id2path(file_id)
-        revid = self.get_file_revision(file_id, path)
-        try:
-            rev = self.workingtree.branch.repository.get_revision(revid)
-        except errors.NoSuchRevision:
-            raise errors.FileTimestampUnavailable(path)
-        return rev.timestamp
 
     @property
     def inventory(self):
