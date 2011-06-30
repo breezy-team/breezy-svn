@@ -767,8 +767,8 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         if len(expected) != len(got):
             self.assertEquals(expected, got, msg)
         for (branch_path, changes, revnum), g in zip(expected, got):
-            self.assertEquals(revnum, g.revnum)
-            self.assertEquals(branch_path, g.branch_path)
+            self.assertEquals(revnum, g.metarev.revnum)
+            self.assertEquals(branch_path, g.metarev.branch_path)
             self.assertChangedPathsEquals(changes, g.metarev.paths)
 
     def test_fetch_property_change_only_trunk(self):

@@ -133,24 +133,12 @@ class BzrMetaRevision(object):
             self.metaiterators.add(metaiterator)
         self.children = set()
 
-    @property
-    def uuid(self):
-        return self.metarev.uuid
-
-    @property
-    def revnum(self):
-        return self.metarev.revnum
-
-    @property
-    def branch_path(self):
-        return self.metarev.branch_path
-
     def changes_branch_root(self):
         """Check whether the branch root was modified in this revision.
         """
         if self.knows_changed_fileprops():
             return self.get_changed_fileprops() != {}
-        return self.branch_path in self.metarev.paths
+        return self.metarev.branch_path in self.metarev.paths
 
     def get_revision_info(self, mapping):
         return self._import_from_props(mapping,
@@ -186,7 +174,7 @@ class BzrMetaRevision(object):
         if self.changes_branch_root():
             # This tag was (recreated) here, so unless anything else under this
             # tag changed
-            if not changes.changes_children(self.metarev.paths, self.branch_path):
+            if not changes.changes_children(self.metarev.paths, self.metarev.branch_path):
                 lhs_parent_revmeta = self.get_lhs_parent_revmeta(mapping)
                 if lhs_parent_revmeta is not None:
                     return lhs_parent_revmeta
@@ -208,8 +196,8 @@ class BzrMetaRevision(object):
                         "no lhs parent revmeta found for %r" % lm
                 lm = nlm
             if lm._fileprops is None:
-                lm._fileprops = self._get_fileprops_fn(lm.branch_path,
-                    lm.revnum)
+                lm._fileprops = self._get_fileprops_fn(lm.metarev.branch_path,
+                    lm.metarev.revnum)
             for r in todo:
                 r._fileprops = lm._fileprops
         return self._fileprops
@@ -282,7 +270,7 @@ class BzrMetaRevision(object):
             except MetaHistoryIncomplete:
                 pass
         iterator = self.repository._revmeta_provider.iter_reverse_branch_changes(
-                self.branch_path, self.revnum, to_revnum=0, limit=0)
+                self.metarev.branch_path, self.metarev.revnum, to_revnum=0, limit=0)
         firstrevmeta = iterator.next()
         assert self == firstrevmeta, "Expected %r got %r" % (self, firstrevmeta)
         try:
@@ -297,11 +285,11 @@ class BzrMetaRevision(object):
 
         :note: Returns None when there is no parent (parent is NULL_REVISION)
         """
-        assert mapping.is_branch_or_tag(self.branch_path), \
-                "%s not valid in %r" % (self.branch_path, mapping)
+        assert mapping.is_branch_or_tag(self.metarev.branch_path), \
+                "%s not valid in %r" % (self.metarev.branch_path, mapping)
         def get_next_parent(nm):
             pm = nm.get_direct_lhs_parent_revmeta()
-            if pm is None or mapping.is_branch_or_tag(pm.branch_path):
+            if pm is None or mapping.is_branch_or_tag(pm.metarev.branch_path):
                 return pm
             else:
                 return None
@@ -340,7 +328,7 @@ class BzrMetaRevision(object):
         or None if it is not a bzr-svn revision.
         """
         def revprops_acceptable(revprops):
-            return revprops.get(SVN_REVPROP_BZR_ROOT) == self.branch_path
+            return revprops.get(SVN_REVPROP_BZR_ROOT) == self.metarev.branch_path
         return self._import_from_props(None,
                 find_mapping_fileprops,
                 find_mapping_revprops,
@@ -490,9 +478,9 @@ class BzrMetaRevision(object):
         lm = self
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            while lm and mapping.is_branch_or_tag(lm.branch_path):
-                pb.update("determining revno", self.revnum-lm.revnum,
-                          self.revnum)
+            while lm and mapping.is_branch_or_tag(lm.metarev.branch_path):
+                pb.update("determining revno", self.metarev.revnum-lm.metarev.revnum,
+                          self.metarev.revnum)
                 (mapping, lhs_mapping) = lm.get_appropriate_mappings(mapping)
                 ret = lm.get_distance_to_null(mapping)
                 if ret is not None:
@@ -611,8 +599,8 @@ class BzrMetaRevision(object):
         can_use_fileprops = (mapping is None or mapping.can_use_fileprops)
         if revprops_acceptable is None:
             def revprops_acceptable(revprops):
-                return (mapping.get_branch_root(revprops) == self.branch_path and
-                        mapping.get_repository_uuid(revprops) in (None, self.uuid))
+                return (mapping.get_branch_root(revprops) == self.metarev.branch_path and
+                        mapping.get_repository_uuid(revprops) in (None, self.metarev.uuid))
         if revprops_sufficient is None:
             revprops_sufficient = revprops_complete
 
@@ -942,7 +930,7 @@ class RevisionMetadataBranch(object):
     def _index(self, revmeta):
         """Find the location of a revmeta object, counted from the
         most recent revision."""
-        i = len(self._revs) - bisect.bisect_right(self._revnums, revmeta.revnum)
+        i = len(self._revs) - bisect.bisect_right(self._revnums, revmeta.metarev.revnum)
         assert i == len(self._revs) or self._revs[i] == revmeta
         return i
 
@@ -960,10 +948,10 @@ class RevisionMetadataBranch(object):
 
     def append(self, revmeta):
         """Append a revision metadata object to this branch."""
-        assert len(self._revs) == 0 or self._revs[-1].revnum > revmeta.revnum,\
-                "%r > %r" % (self._revs[-1].revnum, revmeta.revnum)
+        assert len(self._revs) == 0 or self._revs[-1].metarev.revnum > revmeta.metarev.revnum,\
+                "%r > %r" % (self._revs[-1].metarev.revnum, revmeta.metarev.revnum)
         self._revs.append(revmeta)
-        self._revnums.insert(0, revmeta.revnum)
+        self._revnums.insert(0, revmeta.metarev.revnum)
 
 
 class RevisionMetadataBrowser(object):
@@ -1371,7 +1359,7 @@ class RevisionMetadataProvider(object):
                                           layout, self, project, pb=pb)
         self.add_metaiterator(browser)
         for kind, item in browser:
-            if kind != "revision" or check_unusual_path(item.branch_path):
+            if kind != "revision" or check_unusual_path(item.metarev.branch_path):
                 yield kind, item
 
 

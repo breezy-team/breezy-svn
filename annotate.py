@@ -47,7 +47,7 @@ class Annotater(object):
         # FIXME: Cope with restarts
         for (revmeta, mapping) in self._repository._iter_reverse_revmeta_mapping_history(branch_path, revnum,
                 to_revnum=0, mapping=mapping):
-            self._related_revs[revmeta.revnum] = revmeta, mapping
+            self._related_revs[revmeta.metarev.revnum] = revmeta, mapping
 
     def get_annotated(self):
         return self._annotated
@@ -61,9 +61,9 @@ class Annotater(object):
         revmeta, mapping = self._related_revs[rev]
         revmeta.metarev._revprops = revprops
         path = path.strip("/")
-        if not changes.path_is_child(revmeta.branch_path, path):
+        if not changes.path_is_child(revmeta.metarev.branch_path, path):
             raise KeyError(path)
-        ip = path[len(revmeta.branch_path):].strip("/")
+        ip = path[len(revmeta.metarev.branch_path):].strip("/")
         idmap = self._repository.get_fileid_map(revmeta, mapping)
         return idmap.lookup(mapping, ip)
 

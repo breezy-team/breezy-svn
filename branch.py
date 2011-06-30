@@ -263,12 +263,12 @@ class SvnBranch(ForeignBranch):
         assert revnum >= 0
 
         last_revmeta, _ = self.last_revmeta()
-        if revnum == last_revmeta.revnum:
-            return last_revmeta.branch_path
+        if revnum == last_revmeta.metarev.revnum:
+            return last_revmeta.metarev.branch_path
 
         # Use revnum - this branch may have been moved in the past
         return self.repository.transport.get_locations(
-                    last_revmeta.branch_path, last_revmeta.revnum,
+                    last_revmeta.metarev.branch_path, last_revmeta.metarev.revnum,
                     [revnum])[revnum].strip("/")
 
     def get_revnum(self):
@@ -277,7 +277,7 @@ class SvnBranch(ForeignBranch):
 
         :return: Revision number
         """
-        return self.last_revmeta()[0].revnum
+        return self.last_revmeta()[0].metarev.revnum
 
     def get_child_submit_format(self):
         """Return the preferred format of submissions to this branch."""
@@ -379,9 +379,9 @@ class SvnBranch(ForeignBranch):
         assert isinstance(revnum, int)
         revmeta_history = self._revision_meta_history()
         for revmeta, mapping in revmeta_history:
-            if revmeta.revnum == revnum:
+            if revmeta.metarev.revnum == revnum:
                 return revmeta.get_revision_id(mapping)
-            if revmeta.revnum < revnum:
+            if revmeta.metarev.revnum < revnum:
                 break
         raise NoSuchRevision(self, revnum)
 
@@ -786,7 +786,7 @@ class InterFromSvnBranch(GenericInterBranch):
                 try:
                     result.old_revmeta, _ = \
                         self.source.repository._get_revmeta(result.old_revid)
-                    tags_since_revnum = result.old_revmeta.revnum
+                    tags_since_revnum = result.old_revmeta.metarev.revnum
                 except NoSuchRevision:
                     result.old_revmeta = None
                     tags_since_revnum = None

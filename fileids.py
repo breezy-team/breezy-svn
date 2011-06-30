@@ -402,11 +402,11 @@ class CachingFileIdMapStore(object):
         next_parent_revs = []
 
         # No history -> empty map
+        pb = ui.ui_factory.nested_progress_bar()
         try:
-            pb = ui.ui_factory.nested_progress_bar()
             for revmeta, mapping in self.repos._iter_reverse_revmeta_mapping_history(branch, revnum, to_revnum=0, mapping=mapping):
                 pb.update("fetching changes for file ids",
-                    revnum-revmeta.revnum, revnum)
+                    revnum-revmeta.metarev.revnum, revnum)
                 if revmeta.is_hidden(mapping):
                     continue
                 revid = revmeta.get_revision_id(mapping)
@@ -441,7 +441,7 @@ class CachingFileIdMapStore(object):
                 self.actual.update_idmap(map, revmeta, mapping)
                 parent_revs = next_parent_revs
                 if (revnum % FILEID_MAP_SAVE_INTERVAL == 0 or
-                    revnum == revmeta.revnum):
+                    revnum == revmeta.metarev.revnum):
                     self.cache.save(revid, parent_revs, map.as_dict())
                 next_parent_revs = [revid]
         finally:
