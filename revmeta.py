@@ -18,9 +18,6 @@
 from collections import defaultdict
 
 import bisect
-from itertools import (
-    imap,
-    )
 from subvertpy import (
     NODE_DIR,
     properties,
