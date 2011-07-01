@@ -57,27 +57,6 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
             ('', {'': ('A', None, -1, NODE_DIR)}, 0)],
             repos._revmeta_provider.iter_reverse_branch_changes("", 1, 0))
 
-    def test_iter_changes_parent_rename(self):
-        repos_url = self.make_repository("a")
-
-        dc = self.get_commit_editor(repos_url)
-        foo = dc.add_dir("foo")
-        foo.add_dir("foo/bar")
-        dc.close()
-
-        dc = self.get_commit_editor(repos_url)
-        dc.add_dir("bla", "foo", 1)
-        dc.close()
-
-        repos = Repository.open(repos_url)
-        try:
-            repos.set_layout(CustomLayout(["bla/bar"]))
-        except svn_errors.LayoutUnusable:
-            raise TestNotApplicable
-        ret = list(repos._revmeta_provider.iter_changes('bla/bar', 2, 0))
-        self.assertEquals(1, len(ret))
-        self.assertEquals("foo/bar", ret[0][0])
-
     def test_set_make_working_trees(self):
         repos_url = self.make_repository("a")
         repos = Repository.open(repos_url)

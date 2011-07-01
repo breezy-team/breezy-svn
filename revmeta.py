@@ -1270,38 +1270,6 @@ class RevisionMetadataProvider(object):
         self._revmeta_cache[path,revnum] = ret
         return ret
 
-    def iter_changes(self, branch_path, from_revnum, to_revnum, pb=None,
-                     limit=0):
-        """Iterate over all revisions backwards.
-
-        :return: iterator that returns tuples with branch path,
-            changed paths, revision number, changed file properties and
-        """
-        assert isinstance(branch_path, str)
-        assert from_revnum >= to_revnum
-
-        bp = branch_path
-        i = 0
-
-        # Limit can't be passed on directly to LogWalker.iter_changes()
-        # because we're skipping some revs
-        # TODO: Rather than fetching everything if limit == 2, maybe just
-        # set specify an extra X revs just to be sure?
-        for (paths, revnum, revprops) in self._log.iter_changes([branch_path],
-            from_revnum, to_revnum, pb=pb):
-            assert bp is not None
-            next = changes.find_prev_location(paths, bp, revnum)
-            assert revnum > 0 or bp == ""
-
-            if changes.changes_path(paths, bp, False):
-                yield (bp, paths, revnum, revprops)
-                i += 1
-
-            if next is None:
-                bp = None
-            else:
-                bp = next[0]
-
     def iter_reverse_branch_changes(self, branch_path, from_revnum, to_revnum,
                                     pb=None, limit=0):
         """Return all the changes that happened in a branch
@@ -1309,7 +1277,7 @@ class RevisionMetadataProvider(object):
 
         :return: iterator that returns RevisionMetadata objects.
         """
-        history_iter = self.iter_changes(branch_path, from_revnum,
+        history_iter = self._graph.iter_changes(branch_path, from_revnum,
                                          to_revnum, pb=pb, limit=limit)
         def convert((bp, paths, revnum, revprops)):
             ret = self.get_revision(bp, revnum, paths, revprops,
