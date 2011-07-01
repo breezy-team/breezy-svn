@@ -871,14 +871,23 @@ class RevisionMetadataBranch(object):
     """Describes a Bazaar-like branch in a Subversion repository."""
 
     __slots__ = ('_revs', '_revnums', '_history_limit', '_revmeta_provider',
-                 '_get_next')
+                 '_history_iter')
 
-    def __init__(self, revmeta_provider=None, history_limit=None):
+    def __init__(self, history_iter, revmeta_provider, history_limit=None):
         self._revs = []
         self._revnums = []
+        self._history_iter = history_iter
         self._history_limit = history_limit
         self._revmeta_provider = revmeta_provider
-        self._get_next = None
+
+    def _get_next(self):
+        (bp, paths, revnum, revprops) = self._history_iter.next()
+        ret = self._revmeta_provider.get_revision(bp, revnum, paths, revprops,
+                                metaiterator=self)
+        if self._revs:
+            self._revs[-1]._set_direct_lhs_parent_revmeta(ret)
+        self.append(ret)
+        return ret
 
     def __eq__(self, other):
         return (type(self) == type(other) and
@@ -917,15 +926,9 @@ class RevisionMetadataBranch(object):
                 return
 
     def next(self):
-        if self._get_next is None:
-            raise MetaHistoryIncomplete("No function to retrieve next revision")
         if self._history_limit and len(self._revs) >= self._history_limit:
             raise MetaHistoryIncomplete("Limited to %d revisions" % self._history_limit)
-        try:
-            ret = self._get_next()
-        except StopIteration:
-            raise
-        return ret
+        return self._get_next()
 
     def _index(self, revmeta):
         """Find the location of a revmeta object, counted from the
@@ -1258,15 +1261,8 @@ class RevisionMetadataProvider(object):
         """
         history_iter = self._graph.iter_changes(branch_path, from_revnum,
                                          to_revnum, pb=pb, limit=limit)
-        def convert((bp, paths, revnum, revprops)):
-            ret = self.get_revision(bp, revnum, paths, revprops,
-                                    metaiterator=metabranch)
-            if metabranch._revs:
-                metabranch._revs[-1]._set_direct_lhs_parent_revmeta(ret)
-            metabranch.append(ret)
-            return ret
-        metabranch = RevisionMetadataBranch(self, limit)
-        metabranch._get_next = imap(convert, history_iter).next
+
+        metabranch = RevisionMetadataBranch(history_iter, self, limit)
         self.add_metaiterator(metabranch)
         return metabranch
 
