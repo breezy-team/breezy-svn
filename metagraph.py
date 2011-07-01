@@ -105,3 +105,9 @@ class MetaRevision(object):
         :return: Tuple with uuid, branch path and revision number.
         """
         return (self.uuid, self.branch_path, self.revnum)
+
+
+class MetaRevisionGraph(object):
+
+    def __init__(self, logwalker):
+        self._log = logwalker

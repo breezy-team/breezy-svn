@@ -57,6 +57,7 @@ from bzrlib.plugins.svn.mapping import (
     )
 from bzrlib.plugins.svn.metagraph import (
     MetaRevision,
+    MetaRevisionGraph,
     )
 from bzrlib.plugins.svn.svk import (
     estimate_svk_ancestors,
@@ -114,12 +115,9 @@ class BzrMetaRevision(object):
                  '_direct_lhs_parent_revmeta', '_revprop_redirect_revnum')
 
     def __init__(self, repository, get_fileprops_fn,
-                 branch_path, logwalker, revnum, paths, revprops,
-                 changed_fileprops=None, fileprops=None,
+                 metarev, changed_fileprops=None, fileprops=None,
                  metaiterator=None):
-        self.metarev = MetaRevision(logwalker,
-            repository.uuid, branch_path, revnum, paths=paths,
-            revprops=revprops)
+        self.metarev = metarev
         self.repository = repository
         self._get_fileprops_fn = get_fileprops_fn
         self._changed_fileprops = changed_fileprops
@@ -1205,6 +1203,7 @@ class RevisionMetadataProvider(object):
         self.repository = repository
         self._get_fileprops_fn = self.repository.branchprop_list.get_properties
         self._log = repository._log
+        self._graph = MetaRevisionGraph(self._log)
         self._open_metaiterators = []
         if cache:
             self._revmeta_cls = CachingBzrMetaRevision
@@ -1217,9 +1216,12 @@ class RevisionMetadataProvider(object):
         """Create a new RevisionMetadata instance, assuming this
         revision isn't cached yet.
         """
+        metarev = MetaRevision(self._log,
+            self.repository.uuid, path, revnum, paths=changes,
+            revprops=revprops)
         return self._revmeta_cls(self.repository,
                                  self._get_fileprops_fn,
-                                 path, self._log, revnum, changes, revprops,
+                                 metarev,
                                  changed_fileprops=changed_fileprops,
                                  fileprops=fileprops, metaiterator=metaiterator)
 
