@@ -20,6 +20,13 @@ from bzrlib.plugins.svn import (
     )
 
 
+class MetaHistoryIncomplete(Exception):
+    """No revision metadata branch: %(msg)s"""
+
+    def __init__(self, msg):
+        self.msg = msg
+
+
 def filter_revisions(it):
     """Filter out all revisions out of a stream with changes."""
     for kind, rev in it:

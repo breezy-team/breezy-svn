@@ -53,6 +53,7 @@ from bzrlib.plugins.svn.mapping import (
     revprops_complete,
     )
 from bzrlib.plugins.svn.metagraph import (
+    MetaHistoryIncomplete,
     MetaRevision,
     MetaRevisionGraph,
     filter_revisions,
@@ -89,13 +90,6 @@ def warn_slow_revprops(config, server):
         else:
             trace.warning("Upgrade to svn 1.5 or higher for faster retrieving of revision properties.")
         _warned_slow_revprops = True
-
-
-class MetaHistoryIncomplete(Exception):
-    """No revision metadata branch: %(msg)s"""
-
-    def __init__(self, msg):
-        self.msg = msg
 
 
 class BzrMetaRevision(object):
