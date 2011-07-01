@@ -58,6 +58,8 @@ from bzrlib.plugins.svn.mapping import (
 from bzrlib.plugins.svn.metagraph import (
     MetaRevision,
     MetaRevisionGraph,
+    filter_revisions,
+    restrict_prefixes,
     )
 from bzrlib.plugins.svn.svk import (
     estimate_svk_ancestors,
@@ -1170,29 +1172,6 @@ class RevisionMetadataBrowser(object):
                         self._pending_prefixes[old_rev].add(old_name)
 
             self._last_revnum = revnum
-
-
-def filter_revisions(it):
-    """Filter out all revisions out of a stream with changes."""
-    for kind, rev in it:
-        if kind == "revision":
-            yield rev
-
-
-def restrict_prefixes(prefixes, prefix):
-    """Trim a list of prefixes down as much as possible.
-
-    :param prefixes: List of prefixes to check
-    :param prefix: Prefix to restrict to
-    :return: Set with the remaining prefixes
-    """
-    ret = set()
-    for p in prefixes:
-        if prefix == "" or p == prefix or p.startswith(prefix+"/"):
-            ret.add(p)
-        elif prefix.startswith(p+"/") or p == "":
-            ret.add(prefix)
-    return ret
 
 
 class RevisionMetadataProvider(object):

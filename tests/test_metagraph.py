@@ -17,10 +17,15 @@
 
 from bzrlib.repository import Repository
 
-from bzrlib.plugins.svn import errors as svn_errors
+from bzrlib.tests import TestCase
+
 from bzrlib.plugins.svn.layout.standard import (
     CustomLayout,)
 from bzrlib.plugins.svn.tests import SubversionTestCase
+from bzrlib.plugins.svn.metagraph import (
+    filter_revisions,
+    restrict_prefixes,
+    )
 
 
 class TestMetaRevisionGraph(SubversionTestCase):
@@ -43,3 +48,25 @@ class TestMetaRevisionGraph(SubversionTestCase):
         ret = list(repos._revmeta_provider._graph.iter_changes('bla/bar', 2, 0))
         self.assertEquals(1, len(ret))
         self.assertEquals("foo/bar", ret[0][0])
+
+
+class FilterRevisionsTests(TestCase):
+
+    def test_simple(self):
+        self.assertEquals([1, 5],
+                list(filter_revisions(iter([("revision", 1), ("branch", None), ("revision", 5)]))))
+
+
+class RestrictPrefixesTests(TestCase):
+
+    def test_root(self):
+        self.assertEquals(set(["a", "b/c"]), restrict_prefixes(["a", "b/c"], ""))
+
+    def test_prefix_cuts_off(self):
+        self.assertEquals(set(["a"]), restrict_prefixes(["a", "b/c"], "a"))
+
+    def test_prefix_restricts(self):
+        self.assertEquals(set(["a/d"]), restrict_prefixes(["a", "b/c"], "a/d"))
+
+
+

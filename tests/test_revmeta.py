@@ -45,8 +45,6 @@ from bzrlib.plugins.svn.mapping import (
     SVN_REVPROP_BZR_TESTAMENT,
     )
 from bzrlib.plugins.svn.revmeta import (
-    filter_revisions,
-    restrict_prefixes,
     RevisionMetadataBrowser,
     )
 from bzrlib.plugins.svn.tests import SubversionTestCase
@@ -252,25 +250,6 @@ class TestWithRepository(SubversionTestCase):
         self.assertFalse(revmeta1.metarev.is_changes_root())
         revmeta1 = provider.get_revision("bloe", 1)
         self.assertTrue(revmeta1.metarev.is_changes_root())
-
-
-class FilterRevisionsTests(TestCase):
-
-    def test_simple(self):
-        self.assertEquals([1, 5],
-                list(filter_revisions(iter([("revision", 1), ("branch", None), ("revision", 5)]))))
-
-
-class RestrictPrefixesTests(TestCase):
-
-    def test_root(self):
-        self.assertEquals(set(["a", "b/c"]), restrict_prefixes(["a", "b/c"], ""))
-
-    def test_prefix_cuts_off(self):
-        self.assertEquals(set(["a"]), restrict_prefixes(["a", "b/c"], "a"))
-
-    def test_prefix_restricts(self):
-        self.assertEquals(set(["a/d"]), restrict_prefixes(["a", "b/c"], "a/d"))
 
 
 class FakeRevision(object):
