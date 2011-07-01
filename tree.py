@@ -258,6 +258,12 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         file_id, file_revision = self.lookup_id(path)
         return file_revision
 
+    def get_file_size(self, file_id, path=None):
+        if not path:
+            path = self.id2path(file_id)
+        # FIXME: More efficient implementation?
+        return self.inventory[file_id].text_size
+
     def is_executable(self, file_id, path=None):
         props = self.get_file_properties(file_id, path)
         return props.has_key(properties.PROP_EXECUTABLE)
