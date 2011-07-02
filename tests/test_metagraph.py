@@ -35,6 +35,7 @@ from bzrlib.plugins.svn.logwalker import (
     DictBasedLogWalker,
     )
 from bzrlib.plugins.svn.metagraph import (
+    MetaRevision,
     filter_revisions,
     restrict_prefixes,
     )
@@ -85,9 +86,10 @@ class RestrictPrefixesTests(TestCase):
         self.assertEquals(set(["a/d"]), restrict_prefixes(["a", "b/c"], "a/d"))
 
 
-class FakeRevision(object):
+class FakeRevision(MetaRevision):
 
     def __init__(self, path, revnum):
+        super(FakeRevision, self).__init__(None, "mock-uuid", path, revnum)
         self.branch_path = path
         self.revnum = revnum
         self._parent_revmeta_set = False
@@ -128,6 +130,10 @@ class MetadataBrowserTests(TestCase):
         for revnum in paths:
             revprops[revnum] = { "svn:log": "Revision %d" % revnum }
         self._log = DictBasedLogWalker(paths, revprops)
+        class MockTransport(object):
+            def get_uuid(self):
+                return "mock-uuid"
+        self._log._transport = MockTransport()
         return RevisionMetadataBrowser(prefixes, from_revnum, to_revnum, layout, self)
 
     def test_root_layout_simple(self):

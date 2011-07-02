@@ -163,6 +163,3 @@ class ListBuildingIterator(object):
             return self.base_list[self.i]
         except IndexError:
             return self.it()
-
-
-

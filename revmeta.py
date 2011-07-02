@@ -940,12 +940,15 @@ class RevisionMetadataProvider(object):
             yield entry
             for rhs_parent_revid in revmeta.get_rhs_parents(mapping):
                 try:
-                    rhs_parent_foreign_revid, rhs_parent_mapping = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.metarev.get_foreign_revid())
+                    (rhs_parent_foreign_revid, rhs_parent_mapping) = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.metarev.get_foreign_revid())
                 except bzr_errors.NoSuchRevision:
                     pass
                 else:
                     (_, rhs_parent_bp, rhs_parent_revnum) = rhs_parent_foreign_revid
-                    update_todo(todo, self._iter_reverse_revmeta_mapping_history(rhs_parent_bp, rhs_parent_revnum, to_revnum=0, mapping=mapping, pb=pb))
+                    update_todo(todo,
+                            self._iter_reverse_revmeta_mapping_history(rhs_parent_bp,
+                                rhs_parent_revnum, to_revnum=0,
+                                mapping=mapping, pb=pb))
 
     def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum,
         to_revnum, mapping, pb=None, limit=0):
@@ -958,7 +961,7 @@ class RevisionMetadataProvider(object):
                 branch_path, revnum, to_revnum=to_revnum, pb=pb, limit=limit)
         assert mapping is not None
         expected_revid = None
-        it = iter(get_iter(branch_path, revnum))
+        it = get_iter(branch_path, revnum)
         while it:
             try:
                 revmeta = it.next()
