@@ -458,7 +458,7 @@ class SvnBranch(ForeignBranch):
         return None
 
     def _iter_revision_meta_ancestry(self, pb=None):
-        return self.repository._iter_reverse_revmeta_mapping_ancestry(
+        return self.repository._revmeta_provider._iter_reverse_revmeta_mapping_ancestry(
             self.get_branch_path(),
             self._revnum or self.repository.get_latest_revnum(), self.mapping,
             lhs_history=self._revision_meta_history(), pb=pb)
@@ -466,7 +466,7 @@ class SvnBranch(ForeignBranch):
     def _revision_meta_history(self):
         if self._revmeta_cache is None:
             self._revmeta_cache = util.lazy_readonly_list(
-                self.repository._iter_reverse_revmeta_mapping_history(
+                self.repository._revmeta_provider._iter_reverse_revmeta_mapping_history(
                     self.get_branch_path(),
                     self._revnum or self.repository.get_latest_revnum(),
                     to_revnum=0, mapping=self.mapping))

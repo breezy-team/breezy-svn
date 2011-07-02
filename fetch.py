@@ -1231,7 +1231,7 @@ class FetchRevisionFinder(object):
         needs_checking = []
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(
+            for revmeta, mapping in self.source._revmeta_provider._iter_reverse_revmeta_mapping_history(
                 branch_path, revnum, to_revnum=0, mapping=mapping):
                 if pb:
                     pb.update("determining revisions to fetch",

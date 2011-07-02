@@ -15,11 +15,7 @@
 
 """Subversion Meta-Revisions. This is where all the magic happens. """
 
-from collections import defaultdict
-
-import bisect
 from subvertpy import (
-    NODE_DIR,
     properties,
     )
 
@@ -53,20 +49,14 @@ from bzrlib.plugins.svn.mapping import (
     revprops_complete,
     )
 from bzrlib.plugins.svn.metagraph import (
-    MetaHistoryIncomplete,
     MetaRevision,
     MetaRevisionGraph,
-    filter_revisions,
-    restrict_prefixes,
     )
 from bzrlib.plugins.svn.svk import (
     estimate_svk_ancestors,
     parse_svk_feature,
     svk_features_merged_since,
     SVN_PROP_SVK_MERGE,
-    )
-from bzrlib.plugins.svn.util import (
-    ListBuildingIterator,
     )
 
 # Maximum number of revisions to browse for a cached copy of the branch
@@ -102,27 +92,24 @@ class BzrMetaRevision(object):
 
     __slots__ = ('_get_fileprops_fn',
                  '_changed_fileprops', '_fileprops',
-                 '_direct_lhs_parent_known', '_consider_bzr_fileprops',
+                 '_consider_bzr_fileprops',
                  '_consider_bzr_revprops', '_estimated_fileprop_ancestors',
-                 'metaiterators', 'children', 'metarev', 'repository',
-                 '_direct_lhs_parent_revmeta', '_revprop_redirect_revnum')
+                 'children', 'metarev', 'provider',
+                 '_revprop_redirect_revnum')
 
-    def __init__(self, repository, get_fileprops_fn,
-                 metarev, changed_fileprops=None, fileprops=None,
-                 metaiterator=None):
+    def __init__(self, provider, get_fileprops_fn,
+                 metarev, changed_fileprops=None, fileprops=None):
         self.metarev = metarev
-        self.repository = repository
+        self.provider = provider
         self._get_fileprops_fn = get_fileprops_fn
         self._changed_fileprops = changed_fileprops
         self._fileprops = fileprops
-        self._direct_lhs_parent_known = False
         self._consider_bzr_fileprops = None
         self._consider_bzr_revprops = None
         self._estimated_fileprop_ancestors = {}
-        self.metaiterators = set()
-        if metaiterator is not None:
-            self.metaiterators.add(metaiterator)
-        self.children = set()
+
+    def __eq__(self, other):
+        return isinstance(other, BzrMetaRevision) and self.metarev == other.metarev
 
     def changes_branch_root(self):
         """Check whether the branch root was modified in this revision.
@@ -226,50 +213,17 @@ class BzrMetaRevision(object):
                 self._changed_fileprops = {}
         return self._changed_fileprops
 
-    def _set_direct_lhs_parent_revmeta(self, parent_revmeta):
-        """Set the direct left-hand side parent.
-
-        :note: Should only be called once, later callers are only allowed
-            to specify the same lhs parent.
-        """
-        if (self._direct_lhs_parent_known and
-            self._direct_lhs_parent_revmeta != parent_revmeta):
-            raise AssertionError("Tried registering %r as parent while %r already was parent for %r" % (
-                parent_revmeta, self._direct_lhs_parent_revmeta, self))
-        self._direct_lhs_parent_known = True
-        self._direct_lhs_parent_revmeta = parent_revmeta
-        if parent_revmeta is not None:
-            parent_revmeta.children.add(self)
-
     def get_direct_lhs_parent_revmeta(self):
         """Find the direct left hand side parent of this revision.
 
         This ignores mapping restrictions (invalid paths, hidden revisions).
         """
-        if self._direct_lhs_parent_known:
-            return self._direct_lhs_parent_revmeta
-        for metaiterator in self.metaiterators:
-            # Perhaps the metaiterator already has the parent?
-            try:
-                self._direct_lhs_parent_revmeta = metaiterator.get_lhs_parent(self)
-                self._direct_lhs_parent_known = True
-                return self._direct_lhs_parent_revmeta
-            except StopIteration:
-                self._direct_lhs_parent_revmeta = None
-                self._direct_lhs_parent_known = True
-                return self._direct_lhs_parent_revmeta
-            except MetaHistoryIncomplete:
-                pass
-        iterator = self.repository._revmeta_provider.iter_reverse_branch_changes(
-                self.metarev.branch_path, self.metarev.revnum, to_revnum=0, limit=0)
-        firstrevmeta = iterator.next()
-        assert self == firstrevmeta, "Expected %r got %r" % (self, firstrevmeta)
-        try:
-            self._direct_lhs_parent_revmeta = iterator.next()
-        except StopIteration:
-            self._direct_lhs_parent_revmeta = None
-        self._direct_lhs_parent_known = True
-        return self._direct_lhs_parent_revmeta
+        metarev = self.metarev.get_lhs_parent()
+        if metarev is None:
+            return None
+        return self.provider._revmeta_cls(self.provider,
+                                 self._get_fileprops_fn,
+                                 metarev)
 
     def get_lhs_parent_revmeta(self, mapping):
         """Get the revmeta object for the left hand side parent.
@@ -355,6 +309,15 @@ class BzrMetaRevision(object):
         if lhs_parent is not None:
             return lhs_parent
         return self.get_implicit_lhs_parent_revid(mapping)
+
+    @property
+    def children(self):
+        ret = set()
+        for metarev in self.metarev.children:
+            ret.add(self.provider._revmeta_cls(self.provider,
+                             self._get_fileprops_fn,
+                             metarev))
+        return ret
 
     def _fold_children_fileprops(self, get_memoized, calc_from_child,
                                  calc_final, memoize):
@@ -623,10 +586,10 @@ class BzrMetaRevision(object):
         #   if it has and the revnum there is < self.revnum
         if (can_use_revprops and not self.metarev.knows_revprops() and
             self.consider_bzr_revprops()):
-            log_revprops_capab = self.metarev._log._transport.has_capability(
+            log_revprops_capab = self.provider._log._transport.has_capability(
                 "log-revprops")
             if log_revprops_capab in (None, False):
-                warn_slow_revprops(self.repository.get_config(),
+                warn_slow_revprops(self.provider.repository.get_config(),
                                    log_revprops_capab == False)
             revprops = self.metarev.revprops
             if revprops_acceptable(revprops):
@@ -676,12 +639,12 @@ class BzrMetaRevision(object):
         """
         if self._consider_bzr_revprops is not None:
             return self._consider_bzr_revprops
-        if self.metarev._log._transport.has_capability("commit-revprops") == False:
+        if self.provider._log._transport.has_capability("commit-revprops") == False:
             # Server doesn't support setting revision properties
             self._consider_bzr_revprops = False
-        elif self.metarev._log._transport.has_capability("log-revprops") == True:
+        elif self.provider._log._transport.has_capability("log-revprops") == True:
             self._consider_bzr_revprops = True
-        elif self.metarev._log._transport.has_capability("log-revprops") is None:
+        elif self.provider._log._transport.has_capability("log-revprops") is None:
             # Client doesn't know log-revprops capability
             self._consider_bzr_revprops = True
         elif self.changes_outside_root():
@@ -747,13 +710,13 @@ class CachingBzrMetaRevision(BzrMetaRevision):
                  '_original_mapping', '_original_mapping_set',
                  '_stored_lhs_parent_revid', '_parents_cache')
 
-    def __init__(self, repository, *args, **kwargs):
+    def __init__(self, provider, *args, **kwargs):
         self.base = super(CachingBzrMetaRevision, self)
-        self.base.__init__(repository, *args, **kwargs)
+        self.base.__init__(provider, *args, **kwargs)
         self._parents_cache = getattr(
-            self.repository._real_parents_provider, "_cache", None)
-        self._revid_cache = self.repository.revmap.cache
-        self._revinfo_cache = self.repository.revinfo_cache
+            self.provider.repository._real_parents_provider, "_cache", None)
+        self._revid_cache = self.provider.repository.revmap.cache
+        self._revinfo_cache = self.provider.repository.revinfo_cache
         self._revision_info = {}
         self._original_mapping = None
         self._original_mapping_set = False
@@ -858,316 +821,6 @@ def svk_feature_to_revision_id(feature, mapping):
     return mapping.revision_id_foreign_to_bzr((uuid, bp, revnum))
 
 
-class RevisionMetadataBranch(object):
-    """Describes a Bazaar-like branch in a Subversion repository."""
-
-    __slots__ = ('_revs', '_revnums', '_history_limit', '_revmeta_provider',
-                 '_history_iter')
-
-    def __init__(self, history_iter, revmeta_provider, history_limit=None):
-        self._revs = []
-        self._revnums = []
-        self._history_iter = history_iter
-        self._history_limit = history_limit
-        self._revmeta_provider = revmeta_provider
-
-    def _get_next(self):
-        (bp, paths, revnum, revprops) = self._history_iter.next()
-        ret = self._revmeta_provider.get_revision(bp, revnum, paths, revprops,
-                                metaiterator=self)
-        if self._revs:
-            self._revs[-1]._set_direct_lhs_parent_revmeta(ret)
-        self.append(ret)
-        return ret
-
-    def __eq__(self, other):
-        return (type(self) == type(other) and
-                self._history_limit == other._history_limit and
-                ((self._revs == [] and other._revs == []) or
-                 (self._revs != [] and other._revs != [] and
-                  self._revs[0] == other._revs[0])))
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        if len(self._revs) == 0:
-            return hash((type(self), self._history_limit))
-        return hash((type(self), self._history_limit, self._revs[0]))
-
-    def __repr__(self):
-        if len(self._revs) == 0:
-            return "<Empty %s>" % (self.__class__.__name__)
-        else:
-            return "<%s starting at %s revision %d>" % (
-                self.__class__.__name__, self._revs[0].branch_path,
-                self._revs[0].revnum)
-
-    def __iter__(self):
-        return ListBuildingIterator(self._revs, self.next)
-
-    def fetch_until(self, revnum):
-        """Fetch at least all revisions until revnum."""
-        while len(self._revnums) == 0 or self._revnums[0] > revnum:
-            try:
-                self.next()
-            except MetaHistoryIncomplete:
-                return
-            except StopIteration:
-                return
-
-    def next(self):
-        if self._history_limit and len(self._revs) >= self._history_limit:
-            raise MetaHistoryIncomplete("Limited to %d revisions" % self._history_limit)
-        return self._get_next()
-
-    def _index(self, revmeta):
-        """Find the location of a revmeta object, counted from the
-        most recent revision."""
-        i = len(self._revs) - bisect.bisect_right(self._revnums, revmeta.metarev.revnum)
-        assert i == len(self._revs) or self._revs[i] == revmeta
-        return i
-
-    def get_lhs_parent(self, revmeta):
-        """Find the left hand side of a revision using revision metadata.
-
-        :note: Will return None if no LHS parent can be found, this
-            doesn't necessarily mean there is no LHS parent.
-        """
-        i = self._index(revmeta)
-        try:
-            return self._revs[i+1]
-        except IndexError:
-            return self.next()
-
-    def append(self, revmeta):
-        """Append a revision metadata object to this branch."""
-        assert len(self._revs) == 0 or self._revs[-1].metarev.revnum > revmeta.metarev.revnum,\
-                "%r > %r" % (self._revs[-1].metarev.revnum, revmeta.metarev.revnum)
-        self._revs.append(revmeta)
-        self._revnums.insert(0, revmeta.metarev.revnum)
-
-
-class RevisionMetadataBrowser(object):
-    """Object can that can iterate over the meta revisions in a
-    revision range, under a specific path.
-
-    """
-
-    def __init__(self, prefixes, from_revnum, to_revnum, layout, provider,
-            project=None, pb=None):
-        """Create a new browser
-
-        :param prefixes: Prefixes of branches over which to iterate
-        :param from_revnum: Start side of revnum
-        :param to_revnum: Stop side of revnum
-        :param layout: Layout
-        :param provider: Object with get_revision and iter_changes functions
-        :param project: Project name
-        :param pb: Optional progress bar
-        """
-        if prefixes in ([""], None):
-            self.from_prefixes = None
-            self._pending_prefixes = None
-            self._prefixes = None
-        else:
-            self.from_prefixes = [prefix.strip("/") for prefix in prefixes]
-            self._pending_prefixes = defaultdict(set)
-            self._prefixes = set(self.from_prefixes)
-        self.from_revnum = from_revnum
-        self.to_revnum = to_revnum
-        self._last_revnum = None
-        self.layout = layout
-        # Two-dimensional dictionary for each set of revision meta
-        # branches that exist *after* a revision
-        self._pending_ancestors = defaultdict(lambda: defaultdict(set))
-        self._ancestors = defaultdict(set)
-        self._unusual = set()
-        self._unusual_history = defaultdict(set)
-        self._provider = provider
-        self._actions = []
-        self._iter_log = self._provider._log.iter_changes(self.from_prefixes,
-                self.from_revnum, self.to_revnum, pb=pb)
-        self._project = project
-        self._pb = pb
-        self._iter = self.do()
-
-    def __iter__(self):
-        return ListBuildingIterator(self._actions, self.next)
-
-    def __repr__(self):
-        return "<%s from %d to %d, layout: %r>" % (
-                self.__class__.__name__, self.from_revnum, self.to_revnum,
-                self.layout)
-
-    def __eq__(self, other):
-        return (type(self) == type(other) and
-                self.from_revnum == other.from_revnum and
-                self.to_revnum == other.to_revnum and
-                self.from_prefixes == other.from_prefixes and
-                self.layout == other.layout)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        if self.from_prefixes is None:
-            prefixes = None
-        else:
-            prefixes = tuple(self.from_prefixes)
-        return hash((type(self), self.from_revnum, self.to_revnum, prefixes,
-            hash(self.layout)))
-
-    def get_lhs_parent(self, revmeta):
-        """Find the *direct* left hand side parent of a revision metadata object.
-
-        :param revmeta: RevisionMetadata object
-        :return: RevisionMetadata object for the *direct* left hand side parent
-        """
-        while not revmeta._direct_lhs_parent_known:
-            try:
-                self.next()
-            except StopIteration:
-                if self.to_revnum > 0 or self.from_prefixes:
-                    raise MetaHistoryIncomplete("Reached revision 0 or outside of prefixes.")
-                raise AssertionError("Unable to find direct lhs parent for %r" % revmeta)
-        return revmeta._direct_lhs_parent_revmeta
-
-    def fetch_until(self, revnum):
-        """Fetch at least all revisions until revnum.
-
-        :param revnum: Revision until which to fetch.
-        """
-        try:
-            while self._last_revnum is None or self._last_revnum > revnum:
-                self.next()
-        except StopIteration:
-            return
-
-    def next(self):
-        """Return the next action.
-
-        :return: Tuple with action string and object.
-        """
-        ret = self._iter.next()
-        self._actions.append(ret)
-        return ret
-
-    def do(self):
-        """Yield revisions and deleted branches.
-
-        This is where the *real* magic happens.
-        """
-        assert self.from_revnum >= self.to_revnum
-        count = self.from_revnum-self.to_revnum
-        for (paths, revnum, revprops) in self._iter_log:
-            assert revnum <= self.from_revnum
-            if self._pb:
-                self._pb.update("discovering revisions",
-                        abs(self.from_revnum-revnum), count)
-
-            if self._last_revnum is not None:
-                # Import all metabranches_history where key > revnum
-                for x in xrange(self._last_revnum, revnum-1, -1):
-                    for bp in self._pending_ancestors[x].keys():
-                        self._ancestors[bp].update(self._pending_ancestors[x][bp])
-                    del self._pending_ancestors[x]
-                    self._unusual.update(self._unusual_history[x])
-                    del self._unusual_history[x]
-                    if self._prefixes is not None:
-                        self._prefixes.update(self._pending_prefixes[x])
-
-            # Eliminate anything that's not under prefixes/
-            if self._prefixes is not None:
-                for bp in self._ancestors.keys():
-                    if not changes.under_prefixes(bp, self._prefixes):
-                        del self._ancestors[bp]
-                        self._unusual.discard(bp)
-
-            changed_bps = set()
-            deletes = []
-
-            if paths == {}:
-                paths = {"": ("M", None, -1, NODE_DIR)}
-
-            # Find out what branches have changed
-            for p in sorted(paths):
-                if (self._prefixes is not None and
-                    not changes.under_prefixes(p, self._prefixes)):
-                    continue
-                action = paths[p][0]
-                try:
-                    (_, bp, ip) = self.layout.split_project_path(p, self._project)
-                except svn_errors.NotSvnBranchPath:
-                    pass
-                else:
-                    # Did something change inside a branch?
-                    if action != 'D' or ip != "":
-                        changed_bps.add(bp)
-                for u in self._unusual:
-                    if (p == u and not action in ('D', 'R')) or changes.path_is_child(u, p):
-                        changed_bps.add(u)
-                if action in ('R', 'D') and (
-                    self.layout.is_branch_or_tag(p, self._project) or
-                    self.layout.is_branch_or_tag_parent(p, self._project)):
-                    deletes.append(p)
-
-            # Mention deletes
-            for d in deletes:
-                yield ("delete", (p, revnum))
-
-            # Dictionary with the last revision known for each branch
-            # Report the new revisions
-            for bp in changed_bps:
-                revmeta = self._provider.get_revision(bp, revnum, paths,
-                    revprops, metaiterator=self)
-                assert revmeta is not None
-                for c in self._ancestors[bp]:
-                    c._set_direct_lhs_parent_revmeta(revmeta)
-                del self._ancestors[bp]
-                self._ancestors[bp] = set([revmeta])
-                # If this branch was started here, terminate it
-                if (bp in paths and paths[bp][0] in ('A', 'R') and
-                    paths[bp][1] is None):
-                    revmeta._set_direct_lhs_parent_revmeta(None)
-                    del self._ancestors[bp]
-                yield "revision", revmeta
-
-            # Apply reverse renames and the like for the next round
-            for new_name, old_name, old_rev, kind in changes.apply_reverse_changes(
-                self._ancestors.keys(), paths):
-                self._unusual.discard(new_name)
-                if old_name is None:
-                    # Didn't exist previously, mark as beginning and remove.
-                    for rev in self._ancestors[new_name]:
-                        if rev.branch_path != new_name:
-                            raise AssertionError("Revision %d has invalid branch path %s, expected %s" % (revnum, rev.branch_path, new_name))
-                        rev._set_direct_lhs_parent_revmeta(None)
-                    del self._ancestors[new_name]
-                else:
-                    # was originated somewhere else
-                    data = self._ancestors[new_name]
-                    del self._ancestors[new_name]
-                    self._pending_ancestors[old_rev][old_name].update(data)
-                    if not self.layout.is_branch_or_tag(old_name, self._project):
-                        self._unusual_history[old_rev].add(old_name)
-
-            # Update the prefixes, if necessary
-            if self._prefixes:
-                for new_name, old_name, old_rev, kind in changes.apply_reverse_changes(
-                    self._prefixes, paths):
-                    if old_name is None:
-                        # Didn't exist previously, terminate prefix
-                        self._prefixes.discard(new_name)
-                        if len(self._prefixes) == 0:
-                            return
-                    else:
-                        self._prefixes.discard(new_name)
-                        self._pending_prefixes[old_rev].add(old_name)
-
-            self._last_revnum = revnum
-
-
 class RevisionMetadataProvider(object):
     """A RevisionMetadata provider."""
 
@@ -1175,9 +828,9 @@ class RevisionMetadataProvider(object):
         self._revmeta_cache = {}
         self.repository = repository
         self._get_fileprops_fn = self.repository.branchprop_list.get_properties
+        self.lookup_bzr_revision_id = repository.lookup_bzr_revision_id
         self._log = repository._log
         self._graph = MetaRevisionGraph(self._log)
-        self._open_metaiterators = []
         if cache:
             self._revmeta_cls = CachingBzrMetaRevision
         else:
@@ -1189,17 +842,14 @@ class RevisionMetadataProvider(object):
         """Create a new RevisionMetadata instance, assuming this
         revision isn't cached yet.
         """
-        metarev = MetaRevision(self._log,
+        metarev = MetaRevision(self._graph,
             self.repository.uuid, path, revnum, paths=changes,
             revprops=revprops)
-        return self._revmeta_cls(self.repository,
+        return self._revmeta_cls(self,
                                  self._get_fileprops_fn,
                                  metarev,
                                  changed_fileprops=changed_fileprops,
-                                 fileprops=fileprops, metaiterator=metaiterator)
-
-    def add_metaiterator(self, iterator):
-        self._open_metaiterators.append(iterator)
+                                 fileprops=fileprops)
 
     def lookup_revision(self, path, revnum, revprops=None):
         """Lookup a revision, optionally checking whether there are any
@@ -1207,15 +857,11 @@ class RevisionMetadataProvider(object):
         if not getattr(self._log, "cache", False):
             # finish fetching any open revisionmetadata branches for
             # which the latest fetched revnum > revnum
-            for mb in self._open_metaiterators:
+            for mb in self._graph._open_metaiterators:
                 if self.in_cache(path, revnum):
                     break
                 mb.fetch_until(revnum)
         return self.get_revision(path, revnum, revprops=revprops)
-
-    def finish_metaiterators(self):
-        for mb in self._open_metaiterators:
-            mb.fetch_until(0)
 
     def in_cache(self, path, revnum):
         return (path, revnum) in self._revmeta_cache
@@ -1235,7 +881,7 @@ class RevisionMetadataProvider(object):
             if cached._fileprops is None:
                 cached._fileprops = fileprops
             if metaiterator is not None:
-                cached.metaiterators.add(metaiterator)
+                cached.metarev.metaiterators.add(metaiterator)
             return self._revmeta_cache[path,revnum]
 
         ret = self.create_revision(path, revnum, changes, revprops,
@@ -1245,58 +891,112 @@ class RevisionMetadataProvider(object):
 
     def iter_reverse_branch_changes(self, branch_path, from_revnum, to_revnum,
                                     pb=None, limit=0):
-        """Return all the changes that happened in a branch
-        until branch_path,revnum.
-
-        :return: iterator that returns RevisionMetadata objects.
-        """
-        history_iter = self._graph.iter_changes(branch_path, from_revnum,
-                                         to_revnum, pb=pb, limit=limit)
-
-        metabranch = RevisionMetadataBranch(history_iter, self, limit)
-        self.add_metaiterator(metabranch)
-        return metabranch
+        for metarev in self._graph.iter_reverse_branch_changes(
+                branch_path, from_revnum, to_revnum, pb=pb, limit=limit):
+            yield self._revmeta_cls(self,
+                                 self._get_fileprops_fn,
+                                 metarev)
 
     def iter_all_revisions(self, layout, check_unusual_path, from_revnum,
                            to_revnum=0, project=None, pb=None):
-        """Iterate over all RevisionMetadata objects in a repository.
-
-        :param layout: Repository layout to use
-        :param check_unusual_path: Check whether to keep branch
-
-        Layout decides which ones to pick up.
-        """
-        return filter_revisions(self.iter_all_changes(layout,
-            check_unusual_path, from_revnum, to_revnum, project, pb))
+        for metarev in self._graph.iter_all_revisions(
+            layout, check_unusual_path, from_revnum, to_revnum, project, pb):
+            yield self._revmeta_cls(self,
+                                 self._get_fileprops_fn,
+                                 metarev)
 
     def iter_all_changes(self, layout, check_unusual_path, from_revnum,
                          to_revnum=0, project=None, pb=None, prefix=None):
-        """Iterate over all RevisionMetadata objects and branch removals
-        in a repository.
-
-        :param layout: Repository layout to use
-        :param check_unusual_path: Check whether to keep branch
-
-        Layout decides which ones to pick up.
-        """
-        assert from_revnum >= to_revnum
-        if check_unusual_path is None:
-            check_unusual_path = lambda x: True
-        if project is not None:
-            prefixes = filter(self.repository.transport.has,
-                              layout.get_project_prefixes(project))
-        else:
-            prefixes = [""]
-
-        if prefix is not None:
-            prefixes = list(restrict_prefixes(prefixes, prefix))
-
-        browser = RevisionMetadataBrowser(prefixes, from_revnum, to_revnum,
-                                          layout, self, project, pb=pb)
-        self.add_metaiterator(browser)
-        for kind, item in browser:
-            if kind != "revision" or check_unusual_path(item.metarev.branch_path):
+        for kind, item in self._graph.iter_all_changes(layout,
+            check_unusual_path, from_revnum, to_revnum, project, pb, prefix):
+            if kind == "revision":
+                yield "revision", self._revmeta_cls(self,
+                    self._get_fileprops_fn, item)
+            else:
                 yield kind, item
+
+    def _iter_reverse_revmeta_mapping_ancestry(self, branch_path, revnum,
+            mapping, lhs_history=None, pb=None):
+        """Iterate over the (revmeta, mapping) entries for the ancestry
+        of a specified path.
+
+        """
+        todo = []
+        processed = set()
+        def update_todo(todo, it):
+            for entry in it:
+                if entry in processed:
+                    return
+                todo.append(entry)
+                processed.add(entry)
+        if lhs_history is None:
+            update_todo(todo, self._iter_reverse_revmeta_mapping_history(
+                branch_path, revnum, to_revnum=0, mapping=mapping, pb=pb))
+        else:
+            update_todo(todo, lhs_history)
+        i = 0
+        while todo:
+            entry = todo.pop()
+            if pb is not None:
+                pb.update("finding rhs ancestors", i, i+len(todo))
+            i += 1
+            (revmeta, mapping) = entry
+            yield entry
+            for rhs_parent_revid in revmeta.get_rhs_parents(mapping):
+                try:
+                    rhs_parent_foreign_revid, rhs_parent_mapping = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.metarev.get_foreign_revid())
+                except bzr_errors.NoSuchRevision:
+                    pass
+                else:
+                    (_, rhs_parent_bp, rhs_parent_revnum) = rhs_parent_foreign_revid
+                    update_todo(todo, self._iter_reverse_revmeta_mapping_history(rhs_parent_bp, rhs_parent_revnum, to_revnum=0, mapping=mapping, pb=pb))
+
+    def _iter_reverse_revmeta_mapping_history(self, branch_path, revnum,
+        to_revnum, mapping, pb=None, limit=0):
+        """Iterate over the history of a RevisionMetadata object.
+
+        This will skip hidden revisions.
+        """
+        def get_iter(branch_path, revnum):
+            return self.iter_reverse_branch_changes(
+                branch_path, revnum, to_revnum=to_revnum, pb=pb, limit=limit)
+        assert mapping is not None
+        expected_revid = None
+        it = iter(get_iter(branch_path, revnum))
+        while it:
+            try:
+                revmeta = it.next()
+            except StopIteration:
+                revid = None
+                foreign_sibling = None
+            else:
+                (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(
+                    mapping)
+                if lhs_mapping.newer_than(mapping):
+                    raise AssertionError(
+                        "LHS mapping %r newer than %r" %
+                            (lhs_mapping, mapping))
+                if revmeta.is_hidden(mapping):
+                    mapping = lhs_mapping
+                    continue
+                revid = revmeta.get_revision_id(mapping)
+                foreign_sibling = revmeta.metarev.get_foreign_revid()
+            if expected_revid is not None and revid != expected_revid:
+                # Need to restart, branch root has changed
+                if expected_revid == NULL_REVISION:
+                    break
+                foreign_revid, mapping = self.lookup_bzr_revision_id(
+                    expected_revid, foreign_sibling=foreign_sibling)
+                (_, branch_path, revnum) = foreign_revid
+                it = get_iter(branch_path, revnum)
+            elif revid is not None:
+                if not mapping.is_branch_or_tag(revmeta.metarev.branch_path):
+                    return
+                yield revmeta, mapping
+                expected_revid = revmeta._get_stored_lhs_parent_revid(mapping)
+                mapping = lhs_mapping
+            else:
+                break
 
 
 class RevisionInfoCache(object):

@@ -37,7 +37,6 @@ from bzrlib import (
     )
 from bzrlib.errors import (
     BzrError,
-    DependencyNotPresent,
     FileExists,
     InvalidURL,
     NoSuchFile,
