@@ -90,28 +90,6 @@ class FakeRevision(MetaRevision):
 
     def __init__(self, path, revnum):
         super(FakeRevision, self).__init__(None, "mock-uuid", path, revnum)
-        self.branch_path = path
-        self.revnum = revnum
-        self._parent_revmeta_set = False
-        self._direct_lhs_parent_incomplete = None
-        self.parent_revmeta = None
-        self.children = set()
-
-    def _set_direct_lhs_parent_revmeta(self, revmeta):
-        assert not self._parent_revmeta_set or revmeta == self.parent_revmeta, \
-                "%r != %r for %r" % (self.parent_revmeta, revmeta, self)
-        self._parent_revmeta_set = True
-        self.parent_revmeta = revmeta
-        if revmeta is not None:
-            revmeta.children.add(self)
-
-    def __repr__(self):
-        return "FakeRevision(%r,%r)" % (self.branch_path, self.revnum)
-
-    def __eq__(self, other):
-        return (type(self) == type(other) and
-                self.branch_path == other.branch_path and
-                self.revnum == other.revnum)
 
 
 class MetadataBrowserTests(TestCase):
@@ -143,8 +121,8 @@ class MetadataBrowserTests(TestCase):
         self.assertEquals(('revision', FakeRevision('',1)), rev1)
         rev2 = browser.next()
         self.assertEquals(('revision', FakeRevision('',0)), rev2)
-        self.assertTrue(rev1[1]._parent_revmeta_set)
-        self.assertTrue(rev2[1]._parent_revmeta_set)
+        self.assertTrue(rev1[1]._lhs_parent_known)
+        self.assertTrue(rev2[1]._lhs_parent_known)
         self.assertRaises(StopIteration, browser.next)
 
     def test_trunk_layout_simple(self):
@@ -155,8 +133,8 @@ class MetadataBrowserTests(TestCase):
         self.assertEquals(('revision', FakeRevision('trunk',2)), rev1)
         rev2 = browser.next()
         self.assertEquals(('revision', FakeRevision('trunk',1)), rev2)
-        self.assertTrue(rev1[1]._parent_revmeta_set)
-        self.assertTrue(rev2[1]._parent_revmeta_set)
+        self.assertTrue(rev1[1]._lhs_parent_known)
+        self.assertTrue(rev2[1]._lhs_parent_known)
         self.assertRaises(StopIteration, browser.next)
 
     def test_trunk_layout_movefrom_non_branch(self):
@@ -167,8 +145,8 @@ class MetadataBrowserTests(TestCase):
         self.assertEquals(('revision', FakeRevision('trunk',2)), rev1)
         rev2 = browser.next()
         self.assertEquals(('revision', FakeRevision('old-trunk',1)), rev2)
-        self.assertTrue(rev1[1]._parent_revmeta_set)
-        self.assertTrue(rev2[1]._parent_revmeta_set)
+        self.assertTrue(rev1[1]._lhs_parent_known)
+        self.assertTrue(rev2[1]._lhs_parent_known)
         self.assertRaises(StopIteration, browser.next)
 
     def test_trunk_layout_movefrom_oldbranch(self):
@@ -181,8 +159,8 @@ class MetadataBrowserTests(TestCase):
         self.assertEquals(('delete', ("old-trunk", 2)), browser.next())
         rev2 = browser.next()
         self.assertEquals(('revision', FakeRevision('old-trunk',1)), rev2)
-        self.assertTrue(rev1[1]._parent_revmeta_set)
-        self.assertTrue(rev2[1]._parent_revmeta_set)
+        self.assertTrue(rev1[1]._lhs_parent_known)
+        self.assertTrue(rev2[1]._lhs_parent_known)
         self.assertRaises(StopIteration, browser.next)
 
     def test_trunk_layout_copiedbranch(self):
@@ -194,8 +172,8 @@ class MetadataBrowserTests(TestCase):
         self.assertEquals(('revision', FakeRevision('branches/foo',2)), rev1)
         rev2 = browser.next()
         self.assertEquals(('revision', FakeRevision('trunk',1)), rev2)
-        self.assertTrue(rev1[1]._parent_revmeta_set)
-        self.assertTrue(rev2[1]._parent_revmeta_set)
+        self.assertTrue(rev1[1]._lhs_parent_known)
+        self.assertTrue(rev2[1]._lhs_parent_known)
         self.assertRaises(StopIteration, browser.next)
 
     def test_subdir_becomes_branch_root(self):
@@ -211,9 +189,9 @@ class MetadataBrowserTests(TestCase):
         self.assertEquals(('revision', FakeRevision('trunk/mysubdir',1)), rev2)
         rev3 = browser.next()
         self.assertEquals(('revision', FakeRevision('trunk',1)), rev3)
-        self.assertTrue(rev1[1]._parent_revmeta_set)
-        self.assertTrue(rev2[1]._parent_revmeta_set)
-        self.assertTrue(rev3[1]._parent_revmeta_set)
+        self.assertTrue(rev1[1]._lhs_parent_known)
+        self.assertTrue(rev2[1]._lhs_parent_known)
+        self.assertTrue(rev3[1]._lhs_parent_known)
         self.assertRaises(StopIteration, browser.next)
 
     def test_copyfrom_revnum_skipped(self):
@@ -229,7 +207,7 @@ class MetadataBrowserTests(TestCase):
         rev2 = browser.next()
         self.assertEquals(('revision', FakeRevision('python/trunk',1)), rev2)
         self.assertRaises(StopIteration, browser.next)
-        self.assertTrue(rev1[1]._parent_revmeta_set)
+        self.assertTrue(rev1[1]._lhs_parent_known)
 
     def test_chaco(self):
         rev3 = { "packages/chaco2/trunk/debian/rules": ("M", None, -1, NODE_FILE)}
@@ -250,8 +228,8 @@ class MetadataBrowserTests(TestCase):
         rev4 = browser.next()
         self.assertEquals(('revision', FakeRevision('packages/chaco2/trunk',3)), rev4)
         self.assertRaises(StopIteration, browser.next)
-        self.assertTrue(rev1[1]._parent_revmeta_set)
-        self.assertFalse(rev4[1]._parent_revmeta_set)
+        self.assertTrue(rev1[1]._lhs_parent_known)
+        self.assertFalse(rev4[1]._lhs_parent_known)
 
     def test_follow_prefixes(self):
         rev1 = { "foo": ('A', None, -1, NODE_DIR),
@@ -265,8 +243,8 @@ class MetadataBrowserTests(TestCase):
         rev2 = browser.next()
         self.assertEquals(('revision', FakeRevision('foo/trunk', 1)), rev2)
         self.assertRaises(StopIteration, browser.next)
-        self.assertTrue(rev1[1]._parent_revmeta_set)
-        self.assertTrue(rev2[1]._parent_revmeta_set)
+        self.assertTrue(rev1[1]._lhs_parent_known)
+        self.assertTrue(rev2[1]._lhs_parent_known)
 
     def test_pointless_root_commit(self):
         rev1 = { "foo": ('A', None, -1, NODE_DIR) }
@@ -299,7 +277,9 @@ class MetadataBrowserTests(TestCase):
         rev3 = browser.next()
         self.assertEquals(('revision', FakeRevision('python/trunk',1)), rev3)
         self.assertRaises(StopIteration, browser.next)
-        self.assertFalse(rev1[1]._parent_revmeta_set)
-        self.assertTrue(rev2[1]._parent_revmeta_set)
-        self.assertTrue(rev3[1]._parent_revmeta_set)
-        self.assertEquals([('python/branches/bla', 6), ('python/trunk', 5), ('python/trunk', 1)], self._get_revs)
+        self.assertFalse(rev1[1]._lhs_parent_known)
+        self.assertTrue(rev2[1]._lhs_parent_known)
+        self.assertTrue(rev3[1]._lhs_parent_known)
+        self.assertEquals(
+            [('python/branches/bla', 6), ('python/trunk', 5), ('python/trunk', 1)],
+            self._get_revs)

@@ -87,7 +87,7 @@ class MetaRevision(object):
         self.metaiterators = []
 
     def __eq__(self, other):
-        return (type(self) == type(other) and
+        return (isinstance(other, MetaRevision) and
                 self.revnum == other.revnum and
                 self.branch_path == other.branch_path and
                 self.uuid == other.uuid)
