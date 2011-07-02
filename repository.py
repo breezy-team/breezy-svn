@@ -1167,7 +1167,8 @@ class SvnRepository(ForeignRepository):
                 (project, branch, nick, has_props, revnum) in it if has_props
                 in (True, None)))
         else:
-            return iter(find_branches_between(self._log, self.transport, layout, from_revnum, to_revnum, project))
+            return iter(find_branches_between(self._log, self.transport,
+                layout, from_revnum, to_revnum, project))
 
 
 def find_branches_between(logwalker, transport, layout, from_revnum, to_revnum,
@@ -1196,7 +1197,7 @@ def find_branches_between(logwalker, transport, layout, from_revnum, to_revnum,
     try:
         for (paths, i, revprops) in logwalker.iter_changes(prefixes,
                 from_revnum, to_revnum):
-            if ((isinstance(revprops, dict) or revprops.is_loaded) and 
+            if ((isinstance(revprops, dict) or revprops.is_loaded) and
                 is_bzr_revision_revprops(revprops)):
                 continue
             pb.update("finding branches", i, to_revnum)

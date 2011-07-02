@@ -201,8 +201,8 @@ class RepositoryConverter(object):
             existing_branches = {}
             deleted = set()
             it = source_repos._revmeta_provider.iter_all_changes(layout,
-                    mapping.is_branch_or_tag, to_revnum, from_revnum,
-                    prefix=prefix)
+                mapping.is_branch_or_tag, to_revnum, from_revnum,
+                prefix=prefix)
             if create_shared_repo:
                 revfinder = FetchRevisionFinder(source_repos, target_repos,
                                                 target_repos_is_empty)

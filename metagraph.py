@@ -154,7 +154,7 @@ class MetaRevision(object):
         return (self.uuid, self.branch_path, self.revnum)
 
     def _set_lhs_parent(self, parent_metarev):
-        """Set the direct left-hand side parent.
+        """Set the left-hand side parent.
 
         :note: Should only be called once, later callers are only allowed
             to specify the same lhs parent.
@@ -170,9 +170,7 @@ class MetaRevision(object):
             parent_metarev.children.add(self)
 
     def get_lhs_parent(self):
-        """Find the direct left hand side parent of this revision.
-
-        This ignores mapping restrictions (invalid paths, hidden revisions).
+        """Find the left hand side parent of this revision.
         """
         if self._lhs_parent_known:
             return self._lhs_parent
@@ -363,10 +361,10 @@ class RevisionMetadataBrowser(object):
             hash(self.layout)))
 
     def get_lhs_parent(self, metarev):
-        """Find the *direct* left hand side parent of a revision metadata object.
+        """Find the left hand side parent of a metarevision object.
 
         :param metarev: RevisionMetadata object
-        :return: RevisionMetadata object for the *direct* left hand side parent
+        :return: MetaRevision object for the left hand side parent
         """
         assert isinstance(metarev, MetaRevision)
         while not metarev._lhs_parent_known:
@@ -374,9 +372,10 @@ class RevisionMetadataBrowser(object):
                 self.next()
             except StopIteration:
                 if self.to_revnum > 0 or self.from_prefixes:
-                    raise MetaHistoryIncomplete("Reached revision 0 or outside of prefixes.")
-                raise AssertionError("Unable to find direct lhs parent for %r" % metarev)
-        return metarev._direct_lhs_parent_revmeta
+                    raise MetaHistoryIncomplete(
+                        "Reached revision 0 or outside of prefixes.")
+                raise AssertionError("Unable to find lhs parent for %r" % metarev)
+        return metarev._lhs_parent
 
     def fetch_until(self, revnum):
         """Fetch at least all revisions until revnum.

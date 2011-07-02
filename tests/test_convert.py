@@ -481,8 +481,7 @@ class TestPrefixed(SubversionTestCase):
     def test_convert_simple(self):
         oldrepos = Repository.open(self.repos_url)
         convert_repository(oldrepos, "e", TrunkLayout(1),
-                prefix="base",
-            create_shared_repo=True)
+                prefix="base", create_shared_repo=True)
         self.assertTrue(os.path.exists("e/trunk"))
         self.assertTrue(os.path.exists("e/branches/abranch"))
         self.assertFalse(os.path.exists("e/base"))

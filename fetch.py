@@ -1264,7 +1264,8 @@ class FetchRevisionFinder(object):
         for revmeta, mapping in revmetas:
             for p in revmeta.get_rhs_parents(mapping):
                 try:
-                    foreign_revid, rhs_mapping = self.source.lookup_bzr_revision_id(p, foreign_sibling=revmeta.metarev.get_foreign_revid())
+                    foreign_revid, rhs_mapping = self.source.lookup_bzr_revision_id(
+                        p, foreign_sibling=revmeta.metarev.get_foreign_revid())
                 except NoSuchRevision:
                     pass # Ghost
                 else:

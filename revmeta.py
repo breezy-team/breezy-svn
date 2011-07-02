@@ -478,10 +478,8 @@ class BzrMetaRevision(object):
             return (mapping.get_rhs_parents_fileprops(fileprops) or
                     get_svk_merges(fileprops))
 
-        return self._import_from_props(mapping,
-            get_fileprops,
-            mapping.get_rhs_parents_revprops, (),
-            consider_fileprops)
+        return self._import_from_props(mapping, get_fileprops,
+            mapping.get_rhs_parents_revprops, (), consider_fileprops)
 
     def get_parent_ids(self, mapping):
         """Return the parent ids for this revision.
@@ -901,9 +899,7 @@ class RevisionMetadataProvider(object):
                            to_revnum=0, project=None, pb=None):
         for metarev in self._graph.iter_all_revisions(
             layout, check_unusual_path, from_revnum, to_revnum, project, pb):
-            yield self._revmeta_cls(self,
-                                 self._get_fileprops_fn,
-                                 metarev)
+            yield self._revmeta_cls(self, self._get_fileprops_fn, metarev)
 
     def iter_all_changes(self, layout, check_unusual_path, from_revnum,
                          to_revnum=0, project=None, pb=None, prefix=None):
