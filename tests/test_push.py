@@ -176,7 +176,7 @@ class TestDPush(SubversionTestCase):
         repos = self.svndir.find_repository()
         revmeta = repos._revmeta_provider.get_revision("", 3)
         self.assertChangedPathsEquals(
-                {'': ('M', None, -1, 2), "foo/bliel": ('A', None, -1, NODE_FILE)}, revmeta.paths)
+                {'': ('M', None, -1, 2), "foo/bliel": ('A', None, -1, NODE_FILE)}, revmeta.metarev.paths)
 
     def test_diverged(self):
         dc = self.commit_editor()
@@ -552,7 +552,7 @@ class TestPush(SubversionTestCase):
 
         self.svndir.open_branch().pull(wt.branch)
 
-        paths = self.svndir.find_repository()._revmeta_provider.get_revision("", 3).paths
+        paths = self.svndir.find_repository()._revmeta_provider.get_revision("", 3).metarev.paths
         self.assertChangedPathsEquals({
             'trunk': ('M', None, -1, NODE_DIR),
             'trunk/comics': (u'R', None, -1, NODE_DIR),
@@ -1037,7 +1037,7 @@ class PushNewBranchTests(SubversionTestCase):
         newbranch = newdir.import_branch(bzrwt.branch)
         self.assertChangedPathsEquals({"trunk": ("R", None, -1, NODE_DIR),
                            "trunk/foo": ("A", "trunk/foo", 1, NODE_FILE)},
-            newbranch.repository._revmeta_provider.get_revision("trunk", 2).paths)
+            newbranch.repository._revmeta_provider.get_revision("trunk", 2).metarev.paths)
         tree1 = newbranch.repository.revision_tree(revid1)
         tree2 = newbranch.repository.revision_tree(revid2)
         self.assertEquals(tree1.path2id(""), old_ie.file_id)

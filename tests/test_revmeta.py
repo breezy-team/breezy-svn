@@ -45,8 +45,6 @@ from bzrlib.plugins.svn.mapping import (
     SVN_REVPROP_BZR_TESTAMENT,
     )
 from bzrlib.plugins.svn.revmeta import (
-    filter_revisions,
-    restrict_prefixes,
     RevisionMetadataBrowser,
     )
 from bzrlib.plugins.svn.tests import SubversionTestCase
@@ -210,9 +208,9 @@ class TestWithRepository(SubversionTestCase):
         revmeta2 = repos._revmeta_provider.get_revision("", 2)
 
         self.assertChangedPathsEquals({"": ("M", None, -1, NODE_DIR)}, 
-                          revmeta1.paths)
+                          revmeta1.metarev.paths)
         self.assertChangedPathsEquals({"bar": ("A", None, -1, NODE_FILE)},
-                          revmeta2.paths)
+                          revmeta2.metarev.paths)
 
     def test_foreign_revid(self):
         repos_url = self.make_repository('d')
@@ -226,7 +224,7 @@ class TestWithRepository(SubversionTestCase):
         revmeta1 = provider.get_revision("", 1)
 
         self.assertEquals((provider.repository.uuid, "", 1),
-                revmeta1.get_foreign_revid())
+                revmeta1.metarev.get_foreign_revid())
 
     def test_revprops(self):
         repos_url = self.make_repository('d')
@@ -238,7 +236,7 @@ class TestWithRepository(SubversionTestCase):
         provider = self.make_provider(repos_url)
         revmeta1 = provider.get_revision("", 1)
         self.assertEquals(set(["svn:date", "svn:author", "svn:log"]),
-                          set(revmeta1.revprops.keys()))
+                          set(revmeta1.metarev.revprops.keys()))
 
     def test_is_changes_root(self):
         repos_url = self.make_repository('d')
@@ -249,28 +247,9 @@ class TestWithRepository(SubversionTestCase):
 
         provider = self.make_provider(repos_url)
         revmeta1 = provider.get_revision("", 1)
-        self.assertFalse(revmeta1.is_changes_root())
+        self.assertFalse(revmeta1.metarev.is_changes_root())
         revmeta1 = provider.get_revision("bloe", 1)
-        self.assertTrue(revmeta1.is_changes_root())
-
-
-class FilterRevisionsTests(TestCase):
-
-    def test_simple(self):
-        self.assertEquals([1, 5],
-                list(filter_revisions(iter([("revision", 1), ("branch", None), ("revision", 5)]))))
-
-
-class RestrictPrefixesTests(TestCase):
-
-    def test_root(self):
-        self.assertEquals(set(["a", "b/c"]), restrict_prefixes(["a", "b/c"], ""))
-
-    def test_prefix_cuts_off(self):
-        self.assertEquals(set(["a"]), restrict_prefixes(["a", "b/c"], "a"))
-
-    def test_prefix_restricts(self):
-        self.assertEquals(set(["a/d"]), restrict_prefixes(["a", "b/c"], "a/d"))
+        self.assertTrue(revmeta1.metarev.is_changes_root())
 
 
 class FakeRevision(object):

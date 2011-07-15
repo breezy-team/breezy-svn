@@ -120,6 +120,7 @@ def test_suite():
             'layout.test_standard',
             'test_logwalker',
             'test_mapping',
+            'test_metagraph',
             'test_parents',
             'test_push',
             'test_remote',

@@ -217,14 +217,14 @@ class RepositoryConverter(object):
             try:
                 for kind, item in it:
                     if kind == "revision":
-                        pb.update("finding branches", to_revnum-item.revnum,
+                        pb.update("finding branches", to_revnum-item.metarev.revnum,
                                   to_revnum-from_revnum)
-                        if (not item.branch_path in existing_branches and
-                            layout.is_branch(item.branch_path) and
-                            not contains_parent_path(deleted, item.branch_path)):
-                            existing_branches[item.branch_path] = SvnBranch(
-                                source_repos, None, item.branch_path,
-                                revnum=item.revnum, _skip_check=True,
+                        if (not item.metarev.branch_path in existing_branches and
+                            layout.is_branch(item.metarev.branch_path) and
+                            not contains_parent_path(deleted, item.metarev.branch_path)):
+                            existing_branches[item.metarev.branch_path] = SvnBranch(
+                                source_repos, None, item.metarev.branch_path,
+                                revnum=item.metarev.revnum, _skip_check=True,
                                 mapping=mapping)
                             if heads is not None:
                                 heads.add(item)
@@ -262,11 +262,11 @@ class RepositoryConverter(object):
                               revfinder, mapping, heads):
         def needs_manual_check(revmeta):
             if (prefix is not None and
-                not changes.path_is_child(prefix, revmeta.branch_path)):
+                not changes.path_is_child(prefix, revmeta.metarev.branch_path)):
                 # Parent branch path is outside of prefix; we need to
                 # check manually
                 return True
-            if revmeta.revnum < from_revnum:
+            if revmeta.metarev.revnum < from_revnum:
                 return True
             return False
 

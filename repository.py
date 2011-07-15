@@ -639,17 +639,17 @@ class SvnRepository(ForeignRepository):
         else:
             parentfileidmap = self.get_fileid_map(parentrevmeta,
                 revision.mapping)
-            parent_branch_path = parentrevmeta.branch_path
-            parentrevnum = parentrevmeta.revnum
+            parent_branch_path = parentrevmeta.metarev.branch_path
+            parentrevnum = parentrevmeta.metarev.revnum
             start_empty = False
         editor = TreeDeltaBuildEditor(revision.svn_meta, revision.mapping,
             self.get_fileid_map(revision.svn_meta, revision.mapping),
             parentfileidmap)
         conn = self.transport.get_connection(parent_branch_path)
         try:
-            reporter = conn.do_diff(revision.svn_meta.revnum, "",
+            reporter = conn.do_diff(revision.svn_meta.metarev.revnum, "",
                     urlutils.join(self.transport.get_svn_repos_root(),
-                        revision.svn_meta.branch_path).rstrip("/"), editor,
+                        revision.svn_meta.metarev.branch_path).rstrip("/"), editor,
                     True, True, False)
             try:
                 reporter.set_path("", parentrevnum, start_empty)
@@ -780,7 +780,7 @@ class SvnRepository(ForeignRepository):
         raise NotImplementedError(self._iter_inventories)
 
     def get_fileid_map(self, revmeta, mapping):
-        return self.fileid_map.get_map(revmeta.get_foreign_revid(), mapping)
+        return self.fileid_map.get_map(revmeta.metarev.get_foreign_revid(), mapping)
 
     def all_revision_ids(self, layout=None, mapping=None):
         """Find all revision ids in this repository, using the specified or
@@ -842,7 +842,7 @@ class SvnRepository(ForeignRepository):
             yield entry
             for rhs_parent_revid in revmeta.get_rhs_parents(mapping):
                 try:
-                    rhs_parent_foreign_revid, rhs_parent_mapping = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.get_foreign_revid())
+                    rhs_parent_foreign_revid, rhs_parent_mapping = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.metarev.get_foreign_revid())
                 except bzr_errors.NoSuchRevision:
                     pass
                 else:
@@ -878,7 +878,7 @@ class SvnRepository(ForeignRepository):
                     mapping = lhs_mapping
                     continue
                 revid = revmeta.get_revision_id(mapping)
-                foreign_sibling = revmeta.get_foreign_revid()
+                foreign_sibling = revmeta.metarev.get_foreign_revid()
             if expected_revid is not None and revid != expected_revid:
                 # Need to restart, branch root has changed
                 if expected_revid == NULL_REVISION:
@@ -888,7 +888,7 @@ class SvnRepository(ForeignRepository):
                 (_, branch_path, revnum) = foreign_revid
                 it = get_iter(branch_path, revnum)
             elif revid is not None:
-                if not mapping.is_branch_or_tag(revmeta.branch_path):
+                if not mapping.is_branch_or_tag(revmeta.metarev.branch_path):
                     return
                 yield revmeta, mapping
                 expected_revid = revmeta._get_stored_lhs_parent_revid(mapping)
@@ -1070,7 +1070,7 @@ class SvnRepository(ForeignRepository):
             return False
         for revmeta in self._revmeta_provider.iter_all_revisions(
                 self.get_layout(), None, self.get_latest_revnum()):
-            if is_bzr_revision_revprops(revmeta.revprops):
+            if is_bzr_revision_revprops(revmeta.metarev.revprops):
                 return True
         return False
 
@@ -1090,7 +1090,7 @@ class SvnRepository(ForeignRepository):
         except bzr_errors.NoSuchRevision:
             return False
         # Make sure revprops are fresh, not cached:
-        revmeta._revprops = self.transport.revprop_list(revmeta.revnum)
+        revmeta.metarev.refresh_revprops()
         return revmeta.get_signature() is not None
 
     def get_signature_text(self, revision_id):
@@ -1102,7 +1102,7 @@ class SvnRepository(ForeignRepository):
         """
         revmeta, mapping = self._get_revmeta(revision_id)
         # Make sure revprops are fresh, not cached:
-        revmeta._revprops = self.transport.revprop_list(revmeta.revnum)
+        revmeta.metarev.refresh_revprops()
         signature = revmeta.get_signature()
         if signature is None:
             raise bzr_errors.NoSuchRevision(self, revision_id)
@@ -1217,15 +1217,15 @@ class SvnRepository(ForeignRepository):
                 root_action = ("create", )
                 branch_path = branch._branch_path
             else:
-                root_action = ("replace", last_revmeta.revnum)
-                branch_path = last_revmeta.branch_path
+                root_action = ("replace", last_revmeta.metarev.revnum)
+                branch_path = last_revmeta.metarev.branch_path
         else:
             base_foreign_revid, base_mapping = \
                 self.lookup_bzr_revision_id(parents[0], project=branch.project)
-            branch_path = last_revmeta.branch_path
-            if ((base_foreign_revid[2] != last_revmeta.revnum or
-                base_foreign_revid[1] != last_revmeta.branch_path)):
-                root_action = ("replace", last_revmeta.revnum)
+            branch_path = last_revmeta.metarev.branch_path
+            if ((base_foreign_revid[2] != last_revmeta.metarev.revnum or
+                base_foreign_revid[1] != last_revmeta.metarev.branch_path)):
+                root_action = ("replace", last_revmeta.metarev.revnum)
             else:
                 root_action = ("open", )
 
@@ -1339,13 +1339,13 @@ def find_tags_between(revmeta_provider, project, layout, mapping, from_revnum,
                 mapping.is_branch_or_tag, to_revnum, from_revnum,
                 project=project):
             if kind == "revision":
-                pb.update("discovering tags", to_revnum-item.revnum,
+                pb.update("discovering tags", to_revnum-item.metarev.revnum,
                     to_revnum-from_revnum)
-                if layout.is_tag(item.branch_path):
+                if layout.is_tag(item.metarev.branch_path):
                     entries.append((
                         kind,
-                        (item.branch_path,
-                        (item.revnum, item.get_tag_revmeta(mapping)))))
+                        (item.metarev.branch_path,
+                        (item.metarev.revnum, item.get_tag_revmeta(mapping)))))
             else:
                 entries.append((kind, item))
         for kind, item in reversed(entries):

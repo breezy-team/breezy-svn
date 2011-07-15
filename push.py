@@ -327,7 +327,7 @@ class InterToSvnRepository(InterRepository):
                         self.target, target_branch_path, old_last_revid)
         append_revisions_only = target_config.get_append_revisions_only(
             not overwrite)
-        return self.push_todo(old_last_revid, last_revmeta.get_foreign_revid(),
+        return self.push_todo(old_last_revid, last_revmeta.metarev.get_foreign_revid(),
             mapping, stop_revision, layout, project,
             target_branch_path, target_config, push_merged=push_merged,
             overwrite=overwrite, push_metadata=push_metadata,
@@ -673,8 +673,8 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
         old_fileprops = revmeta.get_fileprops()
         fileprops = dict(old_fileprops.iteritems())
         from_url = url_join_unescaped_path(repository.base,
-            revmeta.branch_path)
-        from_revnum = revmeta.revnum
+            revmeta.metarev.branch_path)
+        from_revnum = revmeta.metarev.revnum
     if set_metadata:
         if not mapping.supports_hidden:
             raise AssertionError("mapping format %r doesn't support hidden" %

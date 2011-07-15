@@ -116,7 +116,7 @@ class ReverseTagDict(object):
         self._by_foreign_revid = {}
         self._tags = tags
         for name, revmeta in tags.iteritems():
-            self._by_foreign_revid.setdefault(revmeta.get_foreign_revid(), []).append(name)
+            self._by_foreign_revid.setdefault(revmeta.metarev.get_foreign_revid(), []).append(name)
 
     def _lookup_revid(self, revid):
         return self.repository.lookup_bzr_revision_id(revid,
@@ -197,7 +197,7 @@ class SubversionTags(BasicTags):
             return
         self._ensure_tag_parent_exists(parent)
         try:
-            current_from_foreign_revid = self._lookup_tag_revmeta(path).get_foreign_revid()
+            current_from_foreign_revid = self._lookup_tag_revmeta(path).metarev.get_foreign_revid()
             deletefirst = True
         except KeyError:
             current_from_foreign_revid = None
@@ -284,7 +284,7 @@ class SubversionTags(BasicTags):
         reverse_tag_revmetas = reverse_dict(tag_revmetas)
         foreign_revid_map = {}
         for revmeta in reverse_tag_revmetas:
-            foreign_revid_map[revmeta.get_foreign_revid()] = revmeta
+            foreign_revid_map[revmeta.metarev.get_foreign_revid()] = revmeta
         for revid, _ in graph.iter_ancestry([last_revid]):
             if len(reverse_tag_revmetas) == 0:
                 # No more tag revmetas to resolve, just return immediately

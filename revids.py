@@ -110,7 +110,7 @@ class RevidMap(object):
                                              project):
             if pb is not None:
                 pb.update("finding fileprop revids",
-                    from_revnum-revmeta.revnum, from_revnum-to_revnum)
+                    from_revnum-revmeta.metarev.revnum, from_revnum-to_revnum)
             # Look at their bzr:revision-id-vX
             revids = set()
             try:
@@ -131,8 +131,8 @@ class RevidMap(object):
                 except KeyError:
                     pass
                 else:
-                    yield (entry_revid, revmeta.branch_path, 0,
-                           revmeta.revnum, mapping)
+                    yield (entry_revid, revmeta.metarev.branch_path, 0,
+                           revmeta.metarev.revnum, mapping)
 
     def bisect_fileprop_revid_revnum(self, revid, branch_path, min_revnum, max_revnum):
         """Find out what the actual revnum was that corresponds to a revid.
@@ -169,8 +169,8 @@ class RevidMap(object):
                 if entry_revid == revid:
                     mapping_name = propname[len(SVN_PROP_BZR_REVISION_ID):]
                     mapping = mapping_registry.parse_mapping_name("svn-" + mapping_name)
-                    assert mapping.is_branch_or_tag(revmeta.branch_path)
-                    return (revmeta.get_foreign_revid(), mapping)
+                    assert mapping.is_branch_or_tag(revmeta.metarev.branch_path)
+                    return (revmeta.metarev.get_foreign_revid(), mapping)
         raise InvalidBzrSvnRevision(revid)
 
 

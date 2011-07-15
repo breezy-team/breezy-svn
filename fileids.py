@@ -283,7 +283,7 @@ class FileIdMapStore(object):
         :param revmeta: RevisionMetadata object for revision with changes
         :param mapping: Mapping
         """
-        foreign_revid = revmeta.get_foreign_revid()
+        foreign_revid = revmeta.metarev.get_foreign_revid()
         def new_file_id(x):
             return mapping.generate_file_id(foreign_revid, x)
 
@@ -292,13 +292,14 @@ class FileIdMapStore(object):
         return idmap
 
     def update_idmap(self, map, revmeta, mapping):
-        local_changes = get_local_changes(revmeta.paths, revmeta.branch_path)
+        local_changes = get_local_changes(revmeta.metarev.paths,
+                revmeta.metarev.branch_path)
         idmap = self.get_idmap_delta(local_changes, revmeta, mapping)
         revid = revmeta.get_revision_id(mapping)
         text_revisions = determine_text_revisions(local_changes, revid,
                 revmeta.get_text_revisions(mapping))
         map.apply_delta(text_revisions, idmap, local_changes, revid,
-                          mapping, revmeta.get_foreign_revid())
+                          mapping, revmeta.metarev.get_foreign_revid())
 
     def get_map(self, foreign_revid, mapping):
         """Make sure the map is up to date until revnum."""
@@ -401,11 +402,11 @@ class CachingFileIdMapStore(object):
         next_parent_revs = []
 
         # No history -> empty map
+        pb = ui.ui_factory.nested_progress_bar()
         try:
-            pb = ui.ui_factory.nested_progress_bar()
             for revmeta, mapping in self.repos._iter_reverse_revmeta_mapping_history(branch, revnum, to_revnum=0, mapping=mapping):
                 pb.update("fetching changes for file ids",
-                    revnum-revmeta.revnum, revnum)
+                    revnum-revmeta.metarev.revnum, revnum)
                 if revmeta.is_hidden(mapping):
                     continue
                 revid = revmeta.get_revision_id(mapping)
@@ -440,7 +441,7 @@ class CachingFileIdMapStore(object):
                 self.actual.update_idmap(map, revmeta, mapping)
                 parent_revs = next_parent_revs
                 if (revnum % FILEID_MAP_SAVE_INTERVAL == 0 or
-                    revnum == revmeta.revnum):
+                    revnum == revmeta.metarev.revnum):
                     self.cache.save(revid, parent_revs, map.as_dict())
                 next_parent_revs = [revid]
         finally:

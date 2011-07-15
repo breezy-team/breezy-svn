@@ -205,7 +205,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         self._rules_searcher = None
         self.id_map = repository.get_fileid_map(self._revmeta, self.mapping)
         self.file_properties = {}
-        self.transport = repository.transport.clone(self._revmeta.branch_path)
+        self.transport = repository.transport.clone(self._revmeta.metarev.branch_path)
 
     @property
     def inventory(self):
@@ -219,8 +219,8 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         conn = self._repository.transport.get_connection()
         try:
             reporter = conn.do_switch(
-                self._revmeta.revnum, "", True,
-                urlutils.join(root_repos, self._revmeta.branch_path).rstrip("/"), editor)
+                self._revmeta.metarev.revnum, "", True,
+                urlutils.join(root_repos, self._revmeta.metarev.branch_path).rstrip("/"), editor)
             try:
                 reporter.set_path("", 0, True, None)
                 reporter.finish()
@@ -242,7 +242,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         stream = StringIO()
         try:
             (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
-                    stream, self._revmeta.revnum)
+                    stream, self._revmeta.metarev.revnum)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NOT_FILE:
                 return "directory"
@@ -273,7 +273,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
             path = self.id2path(file_id)
         stream = StringIO()
         (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
-                stream, self._revmeta.revnum)
+                stream, self._revmeta.metarev.revnum)
         stream.seek(0)
         if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == "link ":
             return stream.read()
@@ -305,7 +305,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
             path = self.id2path(file_id)
         stream = StringIO()
         (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
-                stream, self._revmeta.revnum)
+                stream, self._revmeta.metarev.revnum)
         if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == "link ":
             return StringIO()
         stream.seek(0)
@@ -324,21 +324,21 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         encoded_path = path.encode("utf-8")
         try:
             (fetched_rev, props) = self.transport.get_file(encoded_path,
-                    StringIO(), self._revmeta.revnum)
+                    StringIO(), self._revmeta.metarev.revnum)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NOT_FILE:
                 (dirents, fetched_rev, props) = self.transport.get_dir(
-                    encoded_path, self._revmeta.revnum)
+                    encoded_path, self._revmeta.metarev.revnum)
             else:
                 raise
         return props
 
     def has_filename(self, path):
-        kind = self.transport.check_path(path.encode("utf-8"), self._revmeta.revnum)
+        kind = self.transport.check_path(path.encode("utf-8"), self._revmeta.metarev.revnum)
         return kind in (subvertpy.NODE_DIR, subvertpy.NODE_FILE)
 
     def __repr__(self):
-        return "<%s for %r, revision_id=%s>" % (self.__class__.__name__, 
+        return "<%s for %r, revision_id=%s>" % (self.__class__.__name__,
             self._revmeta, self.get_revision_id())
 
 

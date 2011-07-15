@@ -299,9 +299,9 @@ class DeltaBuildEditor(object):
         self.mapping = mapping
 
     def set_target_revision(self, revnum):
-        if self.revmeta.revnum != revnum:
+        if self.revmeta.metarev.revnum != revnum:
             raise AssertionError("Expected %d, got %d" % (
-                self.revmeta.revnum, revnum))
+                self.revmeta.metarev.revnum, revnum))
 
     def open_root(self, base_revnum=None):
         return self._open_root(base_revnum)
@@ -733,8 +733,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 self.mapping)
             if lhs_parent_revmeta is not None:
                 try:
-                    (action, copyfrom_path, copyfrom_revnum, kind) = self.revmeta.paths.get(
-                        self.revmeta.branch_path)
+                    (action, copyfrom_path, copyfrom_revnum, kind) = self.revmeta.metarev.paths.get(
+                        self.revmeta.metarev.branch_path)
                 except TypeError:
                     copyfrom_path = None
                 if copyfrom_path is None:
@@ -742,10 +742,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 else:
                     # Map copyfrom_path to the path that's related to the lhs parent branch path.
                     prev_locations = self.source.transport.get_locations(
-                        copyfrom_path, copyfrom_revnum, [lhs_parent_revmeta.revnum])
-                    copyfrom_path = prev_locations[lhs_parent_revmeta.revnum].strip("/")
+                        copyfrom_path, copyfrom_revnum, [lhs_parent_revmeta.metarev.revnum])
+                    copyfrom_path = prev_locations[lhs_parent_revmeta.metarev.revnum].strip("/")
                     svn_base_path = urlutils.determine_relative_path(
-                        lhs_parent_revmeta.branch_path, copyfrom_path)
+                        lhs_parent_revmeta.metarev.branch_path, copyfrom_path)
                 if svn_base_path == ".":
                     svn_base_path = ""
             else:
@@ -766,9 +766,9 @@ class RevisionBuildEditor(DeltaBuildEditor):
         # Find the ancestor of self.revmeta with revnum revnum
         last_revmeta = None
         for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(
-            self.revmeta.branch_path, self.revmeta.revnum, revnum, self.mapping):
+            self.revmeta.branch_path, self.revmeta.metarev.revnum, revnum, self.mapping):
             last_revmeta = revmeta
-        assert last_revmeta is not None and last_revmeta.revnum == revnum
+        assert last_revmeta is not None and last_revmeta.metarev.revnum == revnum
         revid = last_revmeta.get_revision_id(mapping)
         # TODO: Use InterRepository._get_tree() for better performance,
         # as it does (some) caching ?
@@ -925,8 +925,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
         if self._id_map is not None:
             return self._id_map
 
-        local_changes = get_local_changes(self.revmeta.paths,
-            self.revmeta.branch_path)
+        local_changes = get_local_changes(self.revmeta.metarev.paths,
+            self.revmeta.metarev.branch_path)
         self._id_map = self.source.fileid_map.get_idmap_delta(local_changes,
             self.revmeta, self.mapping)
 
@@ -964,7 +964,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         if ret is not None:
             return ret
         return self.mapping.generate_file_id(
-            self.revmeta.get_foreign_revid(), new_path)
+            self.revmeta.metarev.get_foreign_revid(), new_path)
 
     def _get_directory_revision(self, file_id):
         return self.revid # FIXME: For now
@@ -1197,7 +1197,7 @@ class FetchRevisionFinder(object):
                 if (lhs_parent_revmeta is not None and
                     needs_manual_check(lhs_parent_revmeta)):
                     self.needed.extend(self.find_mainline(
-                        lhs_parent_revmeta.get_foreign_revid(), lhsm))
+                        lhs_parent_revmeta.metarev.get_foreign_revid(), lhsm))
                 if lhsm != master_mapping or heads is not None:
                     needed_mappings[lhs_parent_revmeta].add(lhsm)
                 if not revmeta.is_hidden(m):
@@ -1235,8 +1235,8 @@ class FetchRevisionFinder(object):
                 branch_path, revnum, to_revnum=0, mapping=mapping):
                 if pb:
                     pb.update("determining revisions to fetch",
-                              revnum-revmeta.revnum, revnum)
-                if (revmeta.get_foreign_revid(), mapping) in self.checked:
+                              revnum-revmeta.metarev.revnum, revnum)
+                if (revmeta.metarev.get_foreign_revid(), mapping) in self.checked:
                     # This revision (and its ancestry) has already been checked
                     break
                 needs_checking.append((revmeta, mapping))
@@ -1251,7 +1251,7 @@ class FetchRevisionFinder(object):
                         break
                     self._check_present_interval = min(
                         self._check_present_interval*2, MAX_CHECK_PRESENT_INTERVAL)
-                self.checked.add((revmeta.get_foreign_revid(), mapping))
+                self.checked.add((revmeta.metarev.get_foreign_revid(), mapping))
         finally:
             pb.finished()
         for r in self.check_revmetas(needs_checking):
@@ -1264,7 +1264,7 @@ class FetchRevisionFinder(object):
         for revmeta, mapping in revmetas:
             for p in revmeta.get_rhs_parents(mapping):
                 try:
-                    foreign_revid, rhs_mapping = self.source.lookup_bzr_revision_id(p, foreign_sibling=revmeta.get_foreign_revid())
+                    foreign_revid, rhs_mapping = self.source.lookup_bzr_revision_id(p, foreign_sibling=revmeta.metarev.get_foreign_revid())
                 except NoSuchRevision:
                     pass # Ghost
                 else:
@@ -1374,24 +1374,24 @@ class InterFromSvnRepository(InterRepository):
         :param parent_revmeta: RevisionMetadata object for the parent revision.
         """
         if parent_revmeta is None:
-            parent_branch = revmeta.branch_path
-            parent_revnum = revmeta.revnum
+            parent_branch = revmeta.metarev.branch_path
+            parent_revnum = revmeta.metarev.revnum
             start_empty = True
         else:
-            parent_branch = parent_revmeta.branch_path
-            parent_revnum = parent_revmeta.revnum
+            parent_branch = parent_revmeta.metarev.branch_path
+            parent_revnum = parent_revmeta.metarev.revnum
             start_empty = False
 
         conn = self.source.transport.get_connection(parent_branch)
         try:
-            assert revmeta.revnum > parent_revnum or start_empty
+            assert revmeta.metarev.revnum > parent_revnum or start_empty
 
-            if parent_branch != revmeta.branch_path:
-                reporter = conn.do_switch(revmeta.revnum, "", True,
-                    url_join_unescaped_path(conn.get_repos_root(), revmeta.branch_path),
+            if parent_branch != revmeta.metarev.branch_path:
+                reporter = conn.do_switch(revmeta.metarev.revnum, "", True,
+                    url_join_unescaped_path(conn.get_repos_root(), revmeta.metarev.branch_path),
                     editor)
             else:
-                reporter = conn.do_update(revmeta.revnum, "", True, editor)
+                reporter = conn.do_update(revmeta.metarev.revnum, "", True, editor)
 
             try:
                 report_inventory_contents(reporter, parent_revnum, start_empty)
@@ -1400,7 +1400,7 @@ class InterFromSvnRepository(InterRepository):
                     raise
                 # This seems to occur sometimes when we try to accidently
                 # import a file over HTTP
-                if conn.check_path("", revmeta.revnum) == NODE_FILE:
+                if conn.check_path("", revmeta.metarev.revnum) == NODE_FILE:
                     raise SubversionException("path is a file", ERR_FS_NOT_DIRECTORY)
                 raise
         finally:

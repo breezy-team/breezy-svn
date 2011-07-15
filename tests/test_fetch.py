@@ -268,7 +268,7 @@ class TestFetchWorks(FetchTestCase):
         rf = FetchRevisionFinder(oldrepos, newrepos)
         rm = oldrepos._revmeta_provider.get_revision("trunk", 3)
         mapping = oldrepos.get_mapping()
-        self.assertEquals((uuid, "trunk", 3), rm.get_foreign_revid())
+        self.assertEquals((uuid, "trunk", 3), rm.metarev.get_foreign_revid())
         self.assertEquals((mapping.revision_id_foreign_to_bzr((uuid, "branches/trunk", 1)), ), rm.get_rhs_parents(mapping))
         self.assertEquals([], list(rf.find_rhs_parents([(rm, mapping)])))
 
@@ -2141,7 +2141,7 @@ Node-copyfrom-path: x
         self.assertChangedPathsEquals({
             'trunk/adir': (u'R', 'trunk/adir', 2, NODE_DIR),
             'trunk/adir/foofile': (u'A', None, -1, NODE_FILE)},
-              oldrepos._revmeta_provider.get_revision("trunk", 3).paths)
+              oldrepos._revmeta_provider.get_revision("trunk", 3).metarev.paths)
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f")
         newrepos = dir.create_repository()
@@ -2178,7 +2178,7 @@ Node-copyfrom-path: x
         self.assertChangedPathsEquals({
             'trunk/adir': (u'R', 'trunk/adir', 1, NODE_DIR),
             'trunk/adir/foofile': (u'A', None, -1, NODE_FILE)},
-              oldrepos._revmeta_provider.get_revision("trunk", 3).paths)
+              oldrepos._revmeta_provider.get_revision("trunk", 3).metarev.paths)
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f")
         newrepos = dir.create_repository()
