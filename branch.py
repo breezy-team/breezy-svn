@@ -112,7 +112,7 @@ class SubversionSourcePullResult(PullResult):
                 if self.new_revmeta is None:
                     self.new_revmeta, _ = self.source_branch.repository._get_revmeta(self.new_revid)
                 to_file.write('Now on revision %d (svn revno: %d).\n' %
-                        (self.new_revno, self.new_revmeta.revnum))
+                        (self.new_revno, self.new_revmeta.metarev.revnum))
         self._show_tag_conficts(to_file)
 
 
