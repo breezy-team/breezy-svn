@@ -970,7 +970,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         return self.revid # FIXME: For now
 
     def _get_file_revision(self, ie):
-        if (ie.file_id in self.bzr_base_tree.inventory or
+        if (self.bzr_base_tree.has_id(ie.file_id) or
             len(self.bzr_parent_trees) <= 1):
             # File was touched but not newly introduced since base so it has
             # changed somehow.
