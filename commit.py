@@ -248,7 +248,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
     # Loop over entries of file_id in base_tree
     # remove if they no longer exist with the same name
     # or parents
-    if file_id in base_tree and base_tree.kind(file_id) == 'directory':
+    if base_tree.has_id(file_id) and base_tree.kind(file_id) == 'directory':
         for child_name, child_ie in base_tree.inventory[file_id].children.iteritems():
             new_child_ie = get_ie(child_ie.file_id)
             # remove if...
@@ -747,7 +747,7 @@ class SvnCommitBuilder(CommitBuilder):
                     "non-log revision properties set but not supported: %r" %
                     self._svn_revprops.keys())
 
-            if self.new_root_id in self.old_tree:
+            if self.old_tree.has_id(self.new_root_id):
                 root_from = self.old_tree.id2path(self.new_root_id)
             else:
                 root_from = None

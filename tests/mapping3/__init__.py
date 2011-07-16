@@ -438,7 +438,7 @@ class RepositoryTests(SubversionTestCase):
         repository.set_layout(RootLayout())
         tree = repository.revision_tree(Branch.open(self.repos_url).last_revision())
         self.assertEqual("someid", tree.path2id("foo"))
-        self.assertFalse("1@%s::foo" % repository.uuid in tree)
+        self.assertFalse(tree.has_id("1@%s::foo" % repository.uuid))
 
     def test_commit_revision_id(self):
         self.make_checkout(self.repos_url, "dc")
