@@ -514,6 +514,7 @@ class RevisionMetadataBrowser(object):
 
 
 class MetaRevisionGraph(object):
+    """Meta revision graph."""
 
     def __init__(self, logwalker):
         self._log = logwalker

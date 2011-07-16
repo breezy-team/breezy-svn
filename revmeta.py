@@ -724,7 +724,8 @@ class CachingBzrMetaRevision(BzrMetaRevision):
         if (self.get_original_mapping() is not None and
             self._revision_info[mapping][1] is not None):
             self._revid_cache.insert_revid(self._revision_info[mapping][1],
-                self.branch_path, self.revnum, self.revnum, mapping.name)
+                self.metarev.branch_path, self.metarev.revnum,
+                self.metarev.revnum, mapping.name)
         self._revinfo_cache.insert_revision(self.metarev.get_foreign_revid(), mapping,
             self._revision_info[mapping],
             self._stored_lhs_parent_revid[mapping])
