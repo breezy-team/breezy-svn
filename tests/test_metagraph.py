@@ -96,12 +96,6 @@ class MetadataBrowserTests(TestCase):
 
     def setUp(self):
         TestCase.setUp(self)
-        self._get_revs = []
-
-    def get_revision(self, path, revnum, changes=None, revprops=None,
-                     changed_fileprops=None, fileprops=None, metaiterator=None):
-        self._get_revs.append((path, revnum))
-        return FakeRevision(path, revnum)
 
     def get_browser(self, prefixes, from_revnum, to_revnum, layout, paths):
         revprops = {}
@@ -280,6 +274,3 @@ class MetadataBrowserTests(TestCase):
         self.assertFalse(rev1[1]._lhs_parent_known)
         self.assertTrue(rev2[1]._lhs_parent_known)
         self.assertTrue(rev3[1]._lhs_parent_known)
-        self.assertEquals(
-            [('python/branches/bla', 6), ('python/trunk', 5), ('python/trunk', 1)],
-            self._get_revs)
