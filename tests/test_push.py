@@ -1409,6 +1409,10 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
 
 class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
 
+    # revid1    revid2
+    #   \       /
+    #  revid_merge
+
     def setUp(self):
         super(PushRevisionInclusiveTests, self).setUp()
         branch = BzrDir.create_branch_convenience('bzrrepo/tree1')
@@ -1436,18 +1440,18 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
             config, rev1, push_metadata=True, root_action=("create", ),
             base_foreign_info=(None, None))
         rev_merged = self.from_repo.get_revision(self.revid_merge)
+        foreign_rev_info = self.interrepo._get_foreign_revision_info(
+            rev_merged.parent_ids[0])
         self.interrepo.push_revision_inclusive("trunk", config,
             rev_merged, push_merged=False,
             layout=TrunkLayout0(), project="",
             push_metadata=True, root_action=("open",),
-            base_foreign_info=self.interrepo._get_foreign_revision_info(rev_merged.parent_ids[0]))
+            base_foreign_info=foreign_rev_info)
         log = self.client_log(self.svn_repo_url, 2, 0)
         self.assertEquals(log[1][0],
             {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
         self.assertEquals(log[2][0],
-            {'/trunk': ('R', None, -1),
-             '/trunk/a': ('A', '/trunk/a', 1),
-             '/trunk/b': ('A', None, -1)})
+            {'/trunk': ('M', None, -1), '/trunk/b': ('A', None, -1)})
 
     def test_push_merged(self):
         config = self.interrepo._get_branch_config("trunk")
@@ -1473,8 +1477,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.assertEquals(log[3][0],
             {'/branches/tree2': ('A', None, -1), '/branches/tree2/b': ('A', None, -1)})
         self.assertEquals(log[4][0],
-            {'/trunk': ('R', None, -1),
-             '/trunk/a': ('A', '/trunk/a', 1),
+            {'/trunk': ('M', None, -1),
              '/trunk/b': ('A', '/branches/tree2/b', 3)})
         self.assertEquals(log[4][3], 'merge')
 
