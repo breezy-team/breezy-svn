@@ -208,12 +208,12 @@ class SvnBranch(ForeignBranch):
         self.bzrdir = controldir
         self._format = SvnBranchFormat()
         self.layout = self.repository.get_layout()
-        super(SvnBranch, self).__init__(mapping)
-        self._lock_mode = None
-        self._lock_count = 0
         self._branch_path = branch_path.strip("/")
         self.base = urlutils.join(self.repository.base,
                         self._branch_path).rstrip("/")
+        super(SvnBranch, self).__init__(mapping)
+        self._lock_mode = None
+        self._lock_count = 0
         self._revmeta_cache = None
         self._revnum = revnum
         assert isinstance(self._branch_path, str)
