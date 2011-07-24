@@ -213,7 +213,6 @@ def file_editor_send_content_changes(reader, file_editor):
         assert digest == md5_string(contents)
     else:
         delta.send_stream(reader, txdelta)
-    file_editor.close()
 
 
 def path_join(basepath, name):
