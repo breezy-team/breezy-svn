@@ -102,6 +102,9 @@ class BzrMetaRevision(object):
             self.__class__.__name__, self.metarev.revnum, self.metarev.branch_path,
             self.metarev.uuid)
 
+    def __hash__(self):
+        return hash((self.__class__, self.metarev.get_foreign_revid()))
+
     def __init__(self, provider, get_fileprops_fn,
                  metarev, changed_fileprops=None, fileprops=None):
         self.metarev = metarev

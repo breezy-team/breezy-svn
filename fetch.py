@@ -1171,6 +1171,11 @@ class FetchRevisionFinder(object):
 
         :param iter: Iterator over RevisionMetadata objects
         :param master_mapping: Mapping to use
+        :param needs_manual_check: Callback to request further analysis of a
+            particular metarevision
+        :param heads: Revisions to care about and to always fetch
+            (defaults to all revisions returned by iter)
+        :param pb: Optional progress bar to use
         """
         if heads is None:
             needed_mappings = defaultdict(lambda: set([master_mapping]))

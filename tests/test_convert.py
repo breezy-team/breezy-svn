@@ -151,7 +151,9 @@ class TestConversion(SubversionTestCase):
                            all=False, create_shared_repo=True)
         newrepos = Repository.open("e")
         oldrepos.set_layout(TrunkLayout(0))
-        self.assertFalse(newrepos.has_revision(oldrepos.generate_revision_id(2, "branches/somebranch", oldrepos.get_mapping())))
+        revid = oldrepos.generate_revision_id(2, "branches/somebranch",
+            oldrepos.get_mapping())
+        self.assertFalse(newrepos.has_revision(revid))
 
     def test_fetch_filebranch(self):
         dc = self.get_commit_editor()

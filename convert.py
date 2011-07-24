@@ -279,7 +279,8 @@ class RepositoryConverter(object):
                 needs_manual_check, pb=pb, heads=heads)
         finally:
             pb.finished()
-        inter.fetch(needed=revfinder.get_missing())
+        missing = revfinder.get_missing()
+        inter.fetch(needed=missing)
 
     def _create_branches(self, existing_branches, prefix, shared,
                          working_trees):
