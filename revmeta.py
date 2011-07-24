@@ -97,6 +97,11 @@ class BzrMetaRevision(object):
                  'children', 'metarev', 'provider',
                  '_revprop_redirect_revnum')
 
+    def __repr__(self):
+        return "<%s for revision %d, path %s in repository %r>" % (
+            self.__class__.__name__, self.metarev.revnum, self.metarev.branch_path,
+            self.metarev.uuid)
+
     def __init__(self, provider, get_fileprops_fn,
                  metarev, changed_fileprops=None, fileprops=None):
         self.metarev = metarev
