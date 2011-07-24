@@ -45,7 +45,7 @@ class Annotater(object):
         (_, branch_path, revnum), mapping = self._repository.lookup_bzr_revision_id(
             revid)
         # FIXME: Cope with restarts
-        for (revmeta, mapping) in self._repository._iter_reverse_revmeta_mapping_history(branch_path, revnum,
+        for (revmeta, mapping) in self._repository._revmeta_provider._iter_reverse_revmeta_mapping_history(branch_path, revnum,
                 to_revnum=0, mapping=mapping):
             self._related_revs[revmeta.metarev.revnum] = revmeta, mapping
 

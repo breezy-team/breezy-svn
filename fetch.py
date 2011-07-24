@@ -1171,6 +1171,11 @@ class FetchRevisionFinder(object):
 
         :param iter: Iterator over RevisionMetadata objects
         :param master_mapping: Mapping to use
+        :param needs_manual_check: Callback to request further analysis of a
+            particular metarevision
+        :param heads: Revisions to care about and to always fetch
+            (defaults to all revisions returned by iter)
+        :param pb: Optional progress bar to use
         """
         if heads is None:
             needed_mappings = defaultdict(lambda: set([master_mapping]))
@@ -1231,7 +1236,7 @@ class FetchRevisionFinder(object):
         needs_checking = []
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for revmeta, mapping in self.source._iter_reverse_revmeta_mapping_history(
+            for revmeta, mapping in self.source._revmeta_provider._iter_reverse_revmeta_mapping_history(
                 branch_path, revnum, to_revnum=0, mapping=mapping):
                 if pb:
                     pb.update("determining revisions to fetch",
@@ -1264,7 +1269,8 @@ class FetchRevisionFinder(object):
         for revmeta, mapping in revmetas:
             for p in revmeta.get_rhs_parents(mapping):
                 try:
-                    foreign_revid, rhs_mapping = self.source.lookup_bzr_revision_id(p, foreign_sibling=revmeta.metarev.get_foreign_revid())
+                    foreign_revid, rhs_mapping = self.source.lookup_bzr_revision_id(
+                        p, foreign_sibling=revmeta.metarev.get_foreign_revid())
                 except NoSuchRevision:
                     pass # Ghost
                 else:

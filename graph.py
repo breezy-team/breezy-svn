@@ -26,7 +26,7 @@ class SubversionGraph(_mod_graph.Graph):
 
     def __init__(self, repository, parents_provider):
         super(SubversionGraph, self).__init__(parents_provider)
-        self._repository = repository
+        self._revmeta_provider = repository._revmeta_provider
 
     def iter_lefthand_ancestry(self, start_key, stop_keys=None):
         """Iterate backwards through revision ids in the lefthand history
@@ -39,14 +39,14 @@ class SubversionGraph(_mod_graph.Graph):
         if _mod_revision.is_null(start_key):
             return
         try:
-            foreign_revid, mapping = self._repository.lookup_bzr_revision_id(start_key)
+            foreign_revid, mapping = self._revmeta_provider.lookup_bzr_revision_id(start_key)
         except _mod_errors.NoSuchRevision:
             for key in super(SubversionGraph, self).iter_lefthand_ancestry(start_key,
                     stop_keys):
                 yield key
             return
         (uuid, branch_path, revnum) = foreign_revid
-        for revmeta, mapping in self._repository._iter_reverse_revmeta_mapping_history(
+        for revmeta, mapping in self._revmeta_provider._iter_reverse_revmeta_mapping_history(
                 branch_path, revnum, to_revnum=0, mapping=mapping):
             if revmeta.is_hidden(mapping):
                 continue
