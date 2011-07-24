@@ -76,9 +76,11 @@ def warn_slow_revprops(config, server):
         warn_upgrade = True
     if warn_upgrade:
         if server:
-            trace.warning("Upgrade server to svn 1.5 or higher for faster retrieving of revision properties.")
+            trace.warning("Upgrade server to svn 1.5 or higher for faster retrieving "
+                          "of revision properties.")
         else:
-            trace.warning("Upgrade to svn 1.5 or higher for faster retrieving of revision properties.")
+            trace.warning("Upgrade to svn 1.5 or higher for faster retrieving of "
+                          "revision properties.")
         _warned_slow_revprops = True
 
 
