@@ -20,10 +20,12 @@ from bzrlib.errors import (
     NoSuchRevision,
     )
 from bzrlib.tests import (
-    Feature,
     TestCase,
     TestCaseInTempDir,
     TestSkipped,
+    )
+from bzrlib.tests.features import (
+    Feature,
     )
 
 from bzrlib.plugins.svn.mapping4 import (
