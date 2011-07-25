@@ -24,9 +24,10 @@ from bzrlib.tests import (
     TestCaseInTempDir,
     TestSkipped,
     )
-from bzrlib.tests.features import (
-    Feature,
-    )
+try:
+    from bzrlib.tests.features import Feature
+except ImportError: # bzr < 2.5
+    from bzrlib.tests import Feature
 
 from bzrlib.plugins.svn.mapping4 import (
     BzrSvnMappingv4,
