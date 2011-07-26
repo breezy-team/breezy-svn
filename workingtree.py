@@ -44,6 +44,7 @@ from bzrlib import (
     conflicts as _mod_conflicts,
     hashcache,
     osutils,
+    transport as _mod_transport,
     urlutils,
     )
 from bzrlib.errors import (
@@ -73,7 +74,6 @@ from bzrlib.revision import (
     NULL_REVISION,
     )
 from bzrlib.trace import mutter
-from bzrlib.transport import get_transport
 from bzrlib.workingtree import (
     WorkingTree,
     WorkingTreeFormat,
@@ -103,6 +103,11 @@ from bzrlib.plugins.svn.tree import (
     SvnBasisTree,
     SubversionTree,
     )
+
+# Compatibility with bzr < 2.5
+get_transport_from_path = getattr(_mod_transport, "get_transport_from_path",
+        _mod_transport.get_transport)
+
 
 try:
     from bzrlib.controldir import Converter
@@ -1319,7 +1324,7 @@ class SvnCheckout(ControlDir):
 
     def get_workingtree_transport(self, format):
         assert format is None
-        return get_transport(self.svn_controldir)
+        return get_transport_from_path(self.svn_controldir)
 
     def create_workingtree(self, revision_id=None, hardlink=None):
         """See ControlDir.create_workingtree().
