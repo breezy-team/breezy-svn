@@ -258,13 +258,13 @@ class InterToSvnRepository(InterRepository):
             path, self.target.get_latest_revnum(), to_revnum=0,
             mapping=self.target.get_mapping()).next()
         if parent_ids == [] or parent_ids == [NULL_REVISION]:
-            return ("replace", revmeta.revnum)
+            return ("replace", revmeta.metarev.revnum)
         else:
             if revmeta.get_revision_id(mapping) != parent_ids[0]:
                 if append_revisions_only:
                     raise AppendRevisionsOnlyViolation(
                         urlutils.join(self.target.base, path))
-                return ("replace", revmeta.revnum)
+                return ("replace", revmeta.metarev.revnum)
             else:
                 return ("open", )
 
