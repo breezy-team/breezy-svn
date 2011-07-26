@@ -22,6 +22,7 @@ from bzrlib.tests import (
 from bzrlib.plugins.svn.errors import (
     NoCustomBranchPaths,
     NotSvnBranchPath,
+    NoLayoutTagSetSupport,
     )
 from bzrlib.plugins.svn.layout.standard import (
     CustomLayout,
@@ -34,14 +35,16 @@ from bzrlib.plugins.svn.layout.standard import (
 class LayoutTests(object):
 
     def test_get_tag_path(self):
-        path = self.layout.get_tag_path("foo", "")
-        if path is None:
+        try:
+            path = self.layout.get_tag_path("foo", "")
+        except NoLayoutTagSetSupport:
             return
         self.assertIsInstance(path, str)
 
     def test_tag_path_is_tag(self):
-        path = self.layout.get_tag_path("foo", "")
-        if path is None:
+        try:
+            path = self.layout.get_tag_path("foo", "")
+        except NoLayoutTagSetSupport:
             return
         self.assertTrue(self.layout.is_tag(path))
 
@@ -190,6 +193,12 @@ class WildcardLayoutTests(TestCase):
         self.assertEquals("bla", x.get_tag_name("tags/bla"))
         x = WildcardLayout(["trunk"], ["tags/bla"])
         self.assertEquals(None, x.get_tag_name("bla"))
+
+    def test_get_tag_path(self):
+        x = WildcardLayout(["trunk"], ["tags/*"])
+        self.assertEquals("tags/bla", x.get_tag_path("bla"))
+        x = WildcardLayout(["trunk"], [])
+        self.assertRaises(NoLayoutTagSetSupport, x.get_tag_path, "bla")
 
 
 class CustomLayoutTests(TestCase):

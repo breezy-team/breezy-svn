@@ -608,6 +608,7 @@ if len(sys.argv) == 2:
             'Repository root: %s\n'
             'Layout: root\n'
             'Branch path: \n'
+            'No tag support\n'
             'No custom branch support\n'
             'Push merged revisions: False\n' % svn_url,
                 self.run_bzr('svn-layout %s' % svn_url)[0])

@@ -25,6 +25,7 @@ from bzrlib.inventory import (
 from bzrlib.plugins.svn.errors import (
     LayoutUnusable,
     NotSvnBranchPath,
+    NoLayoutTagSetSupport,
     )
 from bzrlib.plugins.svn.layout import (
     RepositoryLayout,
@@ -182,7 +183,7 @@ class BzrSvnMappingv2(BzrSvnMappingv1):
 class LegacyLayout(RepositoryLayout):
 
     def get_tag_path(self, name, project=""):
-        return None
+        raise NoLayoutTagSetSupport(self)
 
     def get_branch_path(self, name, project=""):
         return None

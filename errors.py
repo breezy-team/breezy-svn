@@ -35,6 +35,7 @@ from bzrlib.errors import (
     PermissionDenied,
     NoRepositoryPresent,
     NoSuchRevision,
+    TagsNotSupported,
     TipChangeRejected,
     TransportError,
     UnexpectedEndOfContainerError,
@@ -299,6 +300,18 @@ class SubversionBranchDiverged(DivergedBranches):
         self.source_repo = source_repo
         self.source_revid = source_revid
         self.target_revid = target_revid
+
+
+class NoLayoutTagSetSupport(TagsNotSupported):
+
+    _fmt = "Creating tags is not possible with the current layout %(layout)r%(extra)s"
+
+    def __init__(self, layout, extra=None):
+        self.layout = layout
+        if extra is None:
+            self.extra = ""
+        else:
+            self.extra = ": %s" % extra
 
 
 _reuse_uuids_warned = set()

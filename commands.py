@@ -230,7 +230,7 @@ class cmd_svn_layout(Command):
                 self.outf.write("Project: %s\n" % branch.project)
             try:
                 test_tag_path = layout.get_tag_path("test", branch.project)
-            except NotImplementedError:
+            except bzrsvn_errors.NoLayoutTagSetSupport:
                 self.outf.write("No tag support\n")
             else:
                 if test_tag_path:

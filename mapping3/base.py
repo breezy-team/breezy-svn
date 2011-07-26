@@ -29,6 +29,7 @@ from bzrlib.plugins.svn import (
     )
 from bzrlib.plugins.svn.errors import (
     NoCustomBranchPaths,
+    NoLayoutTagSetSupport,
     )
 from bzrlib.plugins.svn.layout import (
     RepositoryLayout,
@@ -79,7 +80,10 @@ class SchemeDerivedLayout(RepositoryLayout):
                 self.scheme.is_tag, project)
 
     def get_tag_path(self, name, project=""):
-        return self.scheme.get_tag_path(name, project)
+        try:
+            return self.scheme.get_tag_path(name, project)
+        except NotImplementedError:
+            raise NoLayoutTagSetSupport(self)
 
     def get_branch_path(self, name, project=""):
         try:

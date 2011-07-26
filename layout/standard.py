@@ -169,7 +169,8 @@ class RootLayout(RepositoryLayout):
         :param project: Optional name of the project the tag is for. Can include slashes.
         :return: Path of the tag."
         """
-        return None
+        raise svn_errors.NoLayoutTagSetSupport(self,
+            "the root layout does not support tags")
 
     def get_tag_name(self, path, project=""):
         """Determine the tag name from a tag path.
@@ -240,7 +241,7 @@ class CustomLayout(RepositoryLayout):
         :param project: Optional name of the project the tag is for. Can include slashes.
         :return: Path of the tag.
         """
-        return None
+        raise svn_errors.NoLayoutTagSetSupport(self)
 
     def get_tag_name(self, path, project=""):
         """Determine the tag name from a tag path.
@@ -328,8 +329,18 @@ class WildcardLayout(RepositoryLayout):
         :param project: Optional name of the project the tag is for. Can include slashes.
         :return: Path of the tag."
         """
-        # FIXME
-        return None
+        if project:
+            raise svn_errors.NoLayoutTagSetSupport(self)
+        if len(self.tags) == 0:
+            raise svn_errors.NoLayoutTagSetSupport(self,
+                "no tag paths set")
+        if self.tags[0].count("*") == 0:
+            raise svn_errors.NoLayoutTagSetSupport(self,
+                "no asterisk in tag path")
+        if self.tags[0].count("*") > 1:
+            raise svn_errors.NoLayoutTagSetSupport(self,
+                "can only handle a single asterisk in tag path")
+        return self.tags[0].replace("*", name)
 
     def get_tag_name(self, path, project=""):
         """Determine the tag name from a tag path.
