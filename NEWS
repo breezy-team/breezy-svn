@@ -84,6 +84,9 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * Support tag setting for simple wildcard layouts. (Jelmer Vernooij, #816338)
 
+  * Fix handling of NULL_REVISION in per-file revision graphs.
+    (Jelmer Vernooij, #795700)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is

@@ -46,7 +46,7 @@ class PerFileParentProvider(object):
 
         text_parents = revmeta.get_text_parents(mapping)
         if path in text_parents:
-            return text_parents[path]
+            return filter(lambda x: x[1] != NULL_REVISION, text_parents[path])
 
         # Not explicitly recorded - so just return the text revisions 
         # present in the parents of the mentioned revision.
@@ -64,7 +64,7 @@ class PerFileParentProvider(object):
             else:
                 text_parent = fileidmap.lookup(mapping, path)[:2]
                 assert len(text_parent) == 2
-                if text_parent not in ret:
+                if text_parent not in ret and text_parent[1] != NULL_REVISION:
                     ret.append(text_parent)
 
         return tuple(ret)
@@ -78,7 +78,10 @@ class PerFileParentProvider(object):
             if k == NULL_REVISION:
                 ret[k] = ()
             elif len(k) == 2: # We only know how to handle this
-                ret[k] = self._get_parent(*k)
+                if k[1] == NULL_REVISION:
+                    ret[k] = None
+                else:
+                    ret[k] = self._get_parent(*k)
             else:
                 ret[k] = None
         return ret
