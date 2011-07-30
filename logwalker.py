@@ -200,7 +200,7 @@ class CachingLogWalkerUpdater(object):
         self.logwalker.cache.insert_paths(revision, orig_paths)
         self.logwalker.cache.insert_revprops(revision, revprops,
                                              self.all_revprops)
-        self.logwalker.saved_revnum = max(revision, self.logwalker.saved_revnum)
+        self.logwalker.saved_maxrevnum = max(revision, self.logwalker.saved_maxrevnum)
         self.logwalker.saved_minrevnum = min(revision,
             self.logwalker.saved_minrevnum)
 
@@ -216,7 +216,7 @@ class CachingLogWalker(object):
         self.actual = actual
         self.quick_revprops = actual.quick_revprops
         self._transport = actual._transport
-        self.saved_revnum = self.cache.last_revnum()
+        self.saved_maxrevnum = self.cache.last_revnum()
         self.saved_minrevnum = self.cache.min_revnum()
         self._latest_revnum = None
 
@@ -245,10 +245,10 @@ class CachingLogWalker(object):
         return revnum
 
     def iter_changes(self, prefixes, from_revnum, to_revnum=0, limit=0, pb=None):
-        """Return iterator over all the revisions between from_revnum and to_revnum named path or inside path.
+        """Return iterator over all the revisions in a range.
 
-        :param prefixes:    Prefixes of paths to report about
-        :param from_revnum:  Start revision.
+        :param prefixes: Prefixes of paths to report about
+        :param from_revnum: Start revision.
         :param to_revnum: End revision.
         :return: An iterator that yields tuples with (paths, revnum, revprops)
             where paths is a dictionary with all changes that happened
@@ -264,7 +264,6 @@ class CachingLogWalker(object):
         if revnum == 0:
             return changes.REV0_CHANGES
         self._fetch_revisions(revnum)
-
         return self.cache.get_revision_paths(revnum)
 
     def revprop_list(self, revnum):
@@ -294,9 +293,9 @@ class CachingLogWalker(object):
 
         :param to_revnum: End of range to fetch information for
         """
-        assert isinstance(self.saved_revnum, int)
+        assert isinstance(self.saved_maxrevnum, int)
 
-        if to_revnum <= self.saved_revnum and self.saved_minrevnum == 0:
+        if to_revnum <= self.saved_maxrevnum and self.saved_minrevnum == 0:
             return
 
         # Try to fetch log data in lumps, if possible.
@@ -306,7 +305,7 @@ class CachingLogWalker(object):
         to_revnum = max(min(self._latest_revnum, to_revnum+MAX_OVERHEAD_FETCH),
                         to_revnum)
 
-        if to_revnum <= self.saved_revnum:
+        if to_revnum <= self.saved_maxrevnum:
             return
 
         # Subversion 1.4 clients and servers can only deliver a limited set of
@@ -321,7 +320,7 @@ class CachingLogWalker(object):
             try:
                 # The get_log bounds are inclusive at both ends, so the total
                 # number of revisions requested is A - B.
-                rcvr.total = to_revnum - self.saved_revnum
+                rcvr.total = to_revnum - self.saved_maxrevnum
                 # Try to keep the cache consistent by closing any holes early
                 # in the history
                 if self.saved_minrevnum:
@@ -330,9 +329,9 @@ class CachingLogWalker(object):
                     self.actual._transport.get_log(rcvr, [""],
                         self.saved_minrevnum - 1, 0, 0, True, True, False,
                         todo_revprops)
-                self.mutter("get_log %d->%d", to_revnum, self.saved_revnum+1)
+                self.mutter("get_log %d->%d", to_revnum, self.saved_maxrevnum+1)
                 self.actual._transport.get_log(rcvr, [""], to_revnum,
-                    self.saved_revnum+1, 0, True, True, False, todo_revprops)
+                    self.saved_maxrevnum+1, 0, True, True, False, todo_revprops)
             except subvertpy.SubversionException, (_, num):
                 if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                     raise NoSuchRevision(branch=self,
