@@ -54,9 +54,19 @@ tdb_feature = _TdbFeature()
 
 class LogCacheTests(object):
 
-    def test_last_revnum(self):
+    def test_max_revnum(self):
         self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_FILE)})
-        self.assertEquals(42, self.cache.last_revnum())
+        self.cache.insert_revprops(42, {"some": "data"}, True)
+        self.cache.insert_paths(41, {"foo": ("A", None, -1, NODE_FILE)})
+        self.cache.insert_revprops(41, {"some": "data"}, True)
+        self.assertEquals(42, self.cache.max_revnum())
+
+    def test_min_revnum(self):
+        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_FILE)})
+        self.cache.insert_revprops(42, {"some": "data"}, True)
+        self.cache.insert_paths(41, {"foo": ("A", None, -1, NODE_FILE)})
+        self.cache.insert_revprops(41, {"some": "data"}, True)
+        self.assertEquals(41, self.cache.min_revnum())
 
     def test_insert_paths(self):
         self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_DIR)})

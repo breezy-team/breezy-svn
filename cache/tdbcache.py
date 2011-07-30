@@ -213,7 +213,7 @@ class TdbLogCache(LogCache, CacheTable):
                 kind = NODE_UNKNOWN
             new_paths[p.strip("/")] = (v[0], copyfrom_path, v[2], kind)
         self.db["paths/%d" % rev] = bencode.bencode(new_paths)
-        self.db["log-last"] = "%d" % max(self.last_revnum(), rev)
+        self.db["log-last"] = "%d" % max(self.max_revnum(), rev)
 
     def drop_revprops(self, revnum):
         """See LogCache.drop_revprops."""
@@ -240,7 +240,7 @@ class TdbLogCache(LogCache, CacheTable):
             min_revnum = revision
         self.db["log-min"] = str(min_revnum)
 
-    def last_revnum(self):
+    def max_revnum(self):
         """See LogCache.last_revnum."""
 
         try:

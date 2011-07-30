@@ -180,8 +180,11 @@ class LogCache(object):
     def insert_revprops(self, revision, revprops, all):
         raise NotImplementedError(self.insert_revprops)
 
-    def last_revnum(self):
-        raise NotImplementedError(self.last_revnum)
+    def max_revnum(self):
+        raise NotImplementedError(self.max_revnum)
+
+    def min_revnum(self):
+        raise NotImplementedError(self.min_revnum)
 
 
 class CachingLogWalkerUpdater(object):
@@ -200,7 +203,8 @@ class CachingLogWalkerUpdater(object):
         self.logwalker.cache.insert_paths(revision, orig_paths)
         self.logwalker.cache.insert_revprops(revision, revprops,
                                              self.all_revprops)
-        self.logwalker.saved_maxrevnum = max(revision, self.logwalker.saved_maxrevnum)
+        self.logwalker.saved_maxrevnum = max(revision,
+            self.logwalker.saved_maxrevnum)
         self.logwalker.saved_minrevnum = min(revision,
             self.logwalker.saved_minrevnum)
 
@@ -216,7 +220,7 @@ class CachingLogWalker(object):
         self.actual = actual
         self.quick_revprops = actual.quick_revprops
         self._transport = actual._transport
-        self.saved_maxrevnum = self.cache.last_revnum()
+        self.saved_maxrevnum = self.cache.max_revnum()
         self.saved_minrevnum = self.cache.min_revnum()
         self._latest_revnum = None
 
@@ -329,9 +333,11 @@ class CachingLogWalker(object):
                     self.actual._transport.get_log(rcvr, [""],
                         self.saved_minrevnum - 1, 0, 0, True, True, False,
                         todo_revprops)
-                self.mutter("get_log %d->%d", to_revnum, self.saved_maxrevnum+1)
+                self.mutter("get_log %d->%d", to_revnum,
+                        self.saved_maxrevnum+1)
                 self.actual._transport.get_log(rcvr, [""], to_revnum,
-                    self.saved_maxrevnum+1, 0, True, True, False, todo_revprops)
+                    self.saved_maxrevnum+1, 0, True, True, False,
+                    todo_revprops)
             except subvertpy.SubversionException, (_, num):
                 if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                     raise NoSuchRevision(branch=self,

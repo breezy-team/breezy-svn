@@ -381,10 +381,10 @@ class SqliteLogCache(LogCache, CacheTable):
             replace into revinfo (rev, all_revprops) values (?, ?)
         """, (revision, all_revprops))
 
-    def last_revnum(self):
+    def max_revnum(self):
         """See LogCache.last_revnum."""
 
-        saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM changed_path").fetchone()[0]
+        saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM revprop").fetchone()[0]
         if saved_revnum is None:
             return 0
         return saved_revnum
