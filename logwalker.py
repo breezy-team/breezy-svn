@@ -159,7 +159,7 @@ class LogCache(object):
         """
         raise NotImplementedError(self.get_revision_paths)
 
-    def insert_paths(self, rev, orig_paths):
+    def insert_paths(self, rev, orig_paths, revprops, all_revprops):
         """Insert new history information into the cache.
 
         :param rev: Revision number of the revision
@@ -200,9 +200,8 @@ class CachingLogWalkerUpdater(object):
     def __call__(self, orig_paths, revision, revprops, has_children=None):
         self.count += 1
         self.pb.update('fetching svn revision info', self.count, self.total)
-        self.logwalker.cache.insert_paths(revision, orig_paths)
-        self.logwalker.cache.insert_revprops(revision, revprops,
-                                             self.all_revprops)
+        self.logwalker.cache.insert_paths(revision, orig_paths,
+            revprops, self.all_revprops)
         self.logwalker.saved_maxrevnum = max(revision,
             self.logwalker.saved_maxrevnum)
         self.logwalker.saved_minrevnum = min(revision,

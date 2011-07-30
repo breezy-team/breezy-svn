@@ -87,6 +87,9 @@ bzr-svn 1.1.0					  UNRELEASED
   * Fix handling of NULL_REVISION in per-file revision graphs.
     (Jelmer Vernooij, #795700)
 
+  * Prevent "holes" in the tdb cache when the process is aborted while
+    updating the cache. (Jelmer Vernooij, #664085)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is

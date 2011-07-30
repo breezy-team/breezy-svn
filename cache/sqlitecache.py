@@ -335,8 +335,9 @@ class SqliteLogCache(LogCache, CacheTable):
             paths[p.encode("utf-8")] = (act, cf, cr, kind)
         return paths
 
-    def insert_paths(self, rev, orig_paths):
+    def insert_paths(self, rev, orig_paths, revprops, all_revprops):
         """See LogCache.insert_paths."""
+        self.insert_revprops(rev, revprops, all_revprops)
 
         if orig_paths is None or orig_paths == {}:
             return
@@ -384,7 +385,7 @@ class SqliteLogCache(LogCache, CacheTable):
     def max_revnum(self):
         """See LogCache.last_revnum."""
 
-        saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM revprop").fetchone()[0]
+        saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM changed_path").fetchone()[0]
         if saved_revnum is None:
             return 0
         return saved_revnum
@@ -392,7 +393,7 @@ class SqliteLogCache(LogCache, CacheTable):
     def min_revnum(self):
         """See LogCache.min_revnum."""
 
-        return self.cachedb.execute("SELECT MIN(rev) FROM revprop").fetchone()[0]
+        return self.cachedb.execute("SELECT MIN(rev) FROM changed_path").fetchone()[0]
 
 
 class SqliteParentsCache(ParentsCache, CacheTable):

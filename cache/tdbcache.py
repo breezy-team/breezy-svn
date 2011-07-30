@@ -193,27 +193,40 @@ class TdbLogCache(LogCache, CacheTable):
             ret[key] = (action, cp, cr, kind)
         return ret
 
-    def insert_paths(self, rev, orig_paths):
+    def insert_paths(self, rev, orig_paths, revprops, all_revprops):
         """See LogCache.insert_paths."""
-
-        if orig_paths is None:
-            orig_paths = {}
-        new_paths = {}
-        for p in orig_paths:
-            v = orig_paths[p]
-            copyfrom_path = v[1]
-            if copyfrom_path is not None:
-                copyfrom_path = copyfrom_path.strip("/")
+        self.db.transaction_start()
+        try:
+            self.insert_revprops(rev, revprops, all_revprops)
+            if orig_paths is None:
+                orig_paths = {}
+            new_paths = {}
+            for p in orig_paths:
+                v = orig_paths[p]
+                copyfrom_path = v[1]
+                if copyfrom_path is not None:
+                    copyfrom_path = copyfrom_path.strip("/")
+                else:
+                    copyfrom_path = ""
+                    assert orig_paths[p][2] == -1
+                try:
+                    kind = v[3]
+                except IndexError:
+                    kind = NODE_UNKNOWN
+                new_paths[p.strip("/")] = (v[0], copyfrom_path, v[2], kind)
+            self.db["paths/%d" % rev] = bencode.bencode(new_paths)
+            min_revnum = self.min_revnum()
+            if min_revnum is None:
+                min_revnum = rev
             else:
-                copyfrom_path = ""
-                assert orig_paths[p][2] == -1
-            try:
-                kind = v[3]
-            except IndexError:
-                kind = NODE_UNKNOWN
-            new_paths[p.strip("/")] = (v[0], copyfrom_path, v[2], kind)
-        self.db["paths/%d" % rev] = bencode.bencode(new_paths)
-        self.db["log-last"] = "%d" % max(self.max_revnum(), rev)
+                min_revnum = min(min_revnum, rev)
+            self.db["log-min"] = str(min_revnum)
+            self.db["log-last"] = str(max(self.max_revnum(), rev))
+        except:
+            self.db.transaction_cancel()
+            raise
+        else:
+            self.db.transaction_commit()
 
     def drop_revprops(self, revnum):
         """See LogCache.drop_revprops."""
@@ -233,12 +246,6 @@ class TdbLogCache(LogCache, CacheTable):
         if revprops is None:
             revprops = {}
         self.db["revprops/%d" % revision] = bencode.bencode((revprops, all_revprops))
-        min_revnum = self.min_revnum()
-        if min_revnum is not None:
-            min_revnum = min(min_revnum, revision)
-        else:
-            min_revnum = revision
-        self.db["log-min"] = str(min_revnum)
 
     def max_revnum(self):
         """See LogCache.last_revnum."""

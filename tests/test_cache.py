@@ -55,21 +55,24 @@ tdb_feature = _TdbFeature()
 class LogCacheTests(object):
 
     def test_max_revnum(self):
-        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_FILE)})
-        self.cache.insert_revprops(42, {"some": "data"}, True)
-        self.cache.insert_paths(41, {"foo": ("A", None, -1, NODE_FILE)})
-        self.cache.insert_revprops(41, {"some": "data"}, True)
+        self.assertEquals(0, self.cache.max_revnum())
+        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_FILE)},
+                {"some": "data"}, True)
+        self.cache.insert_paths(41, {"foo": ("A", None, -1, NODE_FILE)},
+                {"some": "data"}, True)
         self.assertEquals(42, self.cache.max_revnum())
 
     def test_min_revnum(self):
-        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_FILE)})
-        self.cache.insert_revprops(42, {"some": "data"}, True)
-        self.cache.insert_paths(41, {"foo": ("A", None, -1, NODE_FILE)})
-        self.cache.insert_revprops(41, {"some": "data"}, True)
+        self.assertIs(None, self.cache.min_revnum())
+        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_FILE)},
+            {"some": "data"}, True)
+        self.cache.insert_paths(41, {"foo": ("A", None, -1, NODE_FILE)},
+            {"some": "data"}, True)
         self.assertEquals(41, self.cache.min_revnum())
 
     def test_insert_paths(self):
-        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_DIR)})
+        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_DIR)},
+                {}, True)
         self.assertEquals({"foo": ("A", None, -1, NODE_DIR)},
                 self.cache.get_revision_paths(42))
 
@@ -85,7 +88,8 @@ class LogCacheTests(object):
         self.assertEquals(({"some": "data"}, False), self.cache.get_revprops(42))
 
     def test_find_latest_change(self):
-        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_DIR)})
+        self.cache.insert_paths(42, {"foo": ("A", None, -1, NODE_DIR)},
+                {}, True)
         try:
             self.assertEquals(42, self.cache.find_latest_change("foo", 42))
             self.assertEquals(42, self.cache.find_latest_change("foo", 45))
