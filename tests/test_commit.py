@@ -42,8 +42,15 @@ from bzrlib.inventory import (
 from bzrlib.repository import Repository
 from bzrlib.tests import (
     TestCase,
-    UnicodeFilenameFeature,
     )
+try:
+    from bzrlib.tests.features import (
+        UnicodeFilenameFeature
+        )
+except ImportError: # bzr < 2.5
+    from bzrlib.tests import (
+        UnicodeFilenameFeature
+        )
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 

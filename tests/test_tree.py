@@ -28,9 +28,16 @@ from bzrlib.revision import (
     CURRENT_REVISION,
     )
 from bzrlib.tests import (
-    SymlinkFeature,
     TestSkipped,
     )
+try:
+    from bzrlib.tests.features import (
+        SymlinkFeature,
+        )
+except ImportError: # bzr < 2.5
+    from bzrlib.tests import (
+        SymlinkFeature,
+        )
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn.layout.standard import RootLayout

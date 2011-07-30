@@ -38,9 +38,17 @@ from bzrlib.osutils import (
 from bzrlib.repository import Repository
 from bzrlib.tests import (
     TestCase,
-    SymlinkFeature,
-    UnicodeFilenameFeature,
     )
+try:
+    from bzrlib.tests.features import (
+        SymlinkFeature,
+        UnicodeFilenameFeature,
+        )
+except ImportError: # bzr < 2.5
+    from bzrlib.tests import (
+        SymlinkFeature,
+        UnicodeFilenameFeature,
+        )
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 

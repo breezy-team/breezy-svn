@@ -44,8 +44,15 @@ from bzrlib.tests import (
     KnownFailure,
     TestCase,
     TestSkipped,
-    SymlinkFeature,
     )
+try:
+    from bzrlib.tests.features import (
+        SymlinkFeature,
+        )
+except ImportError: # bzr < 2.5
+    from bzrlib.tests import (
+        SymlinkFeature,
+        )
 from bzrlib.trace import (
     mutter,
     )

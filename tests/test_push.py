@@ -49,9 +49,16 @@ from bzrlib.revision import (
     )
 from bzrlib.trace import mutter
 from bzrlib.tests import (
-    SymlinkFeature,
     TestCase,
     )
+try:
+    from bzrlib.tests.features import (
+        SymlinkFeature,
+        )
+except ImportError: # bzr < 2.5
+    from bzrlib.tests import (
+        SymlinkFeature,
+        )
 
 from bzrlib.plugins.svn import (
     transport,
