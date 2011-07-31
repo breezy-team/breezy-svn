@@ -135,7 +135,7 @@ class DummyLockableFiles(object):
         raise NotImplementedError(self.leave_in_place)
 
     def dont_leave_in_place(self):
-        pass
+        raise NotImplementedError(self.dont_leave_in_place)
 
     def lock_write(self, token=None):
         if token is not None:
