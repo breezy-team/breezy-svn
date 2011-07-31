@@ -490,12 +490,11 @@ class BzrMetaRevision(object):
         return self._import_from_props(mapping, get_fileprops,
             mapping.get_rhs_parents_revprops, (), consider_fileprops)
 
-    def get_parent_ids(self, mapping):
+    def get_parent_ids(self, mapping, parentrevmeta):
         """Return the parent ids for this revision.
 
         :param mapping: Mapping to use.
         """
-        parentrevmeta = self.get_lhs_parent_revmeta(mapping)
         lhs_parent = self.get_lhs_parent_revid(mapping, parentrevmeta)
 
         if lhs_parent == NULL_REVISION:
@@ -519,7 +518,8 @@ class BzrMetaRevision(object):
 
         :param mapping: Mapping to use
         """
-        parent_ids = self.get_parent_ids(mapping)
+        parentrevmeta = self.get_lhs_parent_revmeta(mapping)
+        parent_ids = self.get_parent_ids(mapping, parentrevmeta)
 
         if parent_ids == (NULL_REVISION,):
             parent_ids = ()
@@ -801,9 +801,10 @@ class CachingBzrMetaRevision(BzrMetaRevision):
         return self._revision_info[mapping]
 
     def get_rhs_parents(self, mapping):
-        return self.get_parent_ids(mapping)[1:]
+        parentrevmeta = self.get_lhs_parent_revmeta(mapping)
+        return self.get_parent_ids(mapping, parentrevmeta)[1:]
 
-    def get_parent_ids(self, mapping):
+    def get_parent_ids(self, mapping, parentrevmeta):
         """Find the parent ids of a revision."""
         myrevid = self.get_revision_id(mapping)
         if self._parents_cache is not None:

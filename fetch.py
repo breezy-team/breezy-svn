@@ -1338,8 +1338,8 @@ class InterFromSvnRepository(InterRepository):
             "%s.", revid, stored_lhs_parent_revid, found_lhs_parent_revid)
         self.fetch(found_lhs_parent_revid)
 
-    def _get_parent_trees(self, revmeta, mapping):
-        parent_revids = revmeta.get_parent_ids(mapping)
+    def _get_parent_trees(self, revmeta, mapping, parentrevmeta):
+        parent_revids = revmeta.get_parent_ids(mapping, parentrevmeta)
         if not parent_revids:
             parent_revids = (NULL_REVISION,)
         # We always need the base inventory for the first parent
@@ -1360,7 +1360,8 @@ class InterFromSvnRepository(InterRepository):
         svn_base_revid = revmeta.get_implicit_lhs_parent_revid(mapping,
             lhs_parent_revmeta)
         try:
-            bzr_parent_trees = self._get_parent_trees(revmeta, mapping)
+            bzr_parent_trees = self._get_parent_trees(revmeta, mapping,
+                lhs_parent_revmeta)
             svn_base_tree = bzr_parent_trees[0]
             return RevisionBuildEditor(self.source, self.target, revid,
                 bzr_parent_trees, svn_base_tree,
