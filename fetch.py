@@ -1268,7 +1268,8 @@ class FetchRevisionFinder(object):
 
     def find_rhs_parents(self, revmetas):
         for revmeta, mapping in revmetas:
-            for p in revmeta.get_rhs_parents(mapping):
+            parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
+            for p in revmeta.get_rhs_parents(mapping, parentrevmeta):
                 try:
                     foreign_revid, rhs_mapping = self.source.lookup_bzr_revision_id(
                         p, foreign_sibling=revmeta.metarev.get_foreign_revid())

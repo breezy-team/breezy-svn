@@ -457,14 +457,14 @@ class BzrMetaRevision(object):
             pb.finished()
         return extra - (total_hidden or 0)
 
-    def get_rhs_parents(self, mapping):
+    def get_rhs_parents(self, mapping, parentrevmeta):
         """Determine the right hand side parent ids for this revision.
 
         :param mapping:
         """
-        return self._get_rhs_parents(mapping)
+        return self._get_rhs_parents(mapping, parentrevmeta)
 
-    def _get_rhs_parents(self, mapping):
+    def _get_rhs_parents(self, mapping, parentrevmeta):
         def consider_fileprops():
             return (self.consider_bzr_fileprops() or
                     self.consider_svk_fileprops())
@@ -500,7 +500,7 @@ class BzrMetaRevision(object):
         if lhs_parent == NULL_REVISION:
             return (NULL_REVISION,)
         else:
-            return (lhs_parent,) + self._get_rhs_parents(mapping)
+            return (lhs_parent,) + self._get_rhs_parents(mapping, parentrevmeta)
 
     def get_signature(self):
         """Obtain the signature text for this revision, if any.
@@ -799,8 +799,7 @@ class CachingBzrMetaRevision(BzrMetaRevision):
             self._update_cache(mapping)
         return self._revision_info[mapping]
 
-    def get_rhs_parents(self, mapping):
-        parentrevmeta = self.get_lhs_parent_revmeta(mapping)
+    def get_rhs_parents(self, mapping, parentrevmeta):
         return self.get_parent_ids(mapping, parentrevmeta)[1:]
 
     def get_parent_ids(self, mapping, parentrevmeta):
@@ -810,7 +809,7 @@ class CachingBzrMetaRevision(BzrMetaRevision):
             parent_ids = self._parents_cache.lookup_parents(myrevid)
             if parent_ids is not None:
                 return parent_ids
-        parent_ids = self.base.get_parent_ids(mapping)
+        parent_ids = self.base.get_parent_ids(mapping, parentrevmeta)
         self._parents_cache.insert_parents(myrevid, parent_ids)
         return parent_ids
 
@@ -949,7 +948,8 @@ class RevisionMetadataProvider(object):
             i += 1
             (revmeta, mapping) = entry
             yield entry
-            for rhs_parent_revid in revmeta.get_rhs_parents(mapping):
+            parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
+            for rhs_parent_revid in revmeta.get_rhs_parents(mapping, parentrevmeta):
                 try:
                     (rhs_parent_foreign_revid, rhs_parent_mapping) = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.metarev.get_foreign_revid())
                 except bzr_errors.NoSuchRevision:
