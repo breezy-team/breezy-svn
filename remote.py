@@ -196,12 +196,34 @@ class SvnRemoteAccess(ControlDir):
     def break_lock(self):
         pass
 
-    def clone(self, url, revision_id=None, force_new_repo=False):
-        """See ControlDir.clone().
+    def clone_on_transport(self, transport, revision_id=None,
+        force_new_repo=False, preserve_stacking=False, stacked_on=None,
+        create_prefix=False, use_existing_dir=True, no_tree=False):
+        """Clone this bzrdir and its contents to transport verbatim.
 
-        Not supported on Subversion connections.
+        :param transport: The transport for the location to produce the clone
+            at.  If the target directory does not exist, it will be created.
+        :param revision_id: The tip revision-id to use for any branch or
+            working tree.  If not None, then the clone operation may tune
+            itself to download less data.
+        :param force_new_repo: Do not use a shared repository for the target,
+                               even if one is available.
+        :param preserve_stacking: When cloning a stacked branch, stack the
+            new branch on top of the other branch's stacked-on branch.
+        :param create_prefix: Create any missing directories leading up to
+            to_transport.
+        :param use_existing_dir: Use an existing directory if one exists.
+        :param no_tree: If set to true prevents creation of a working tree.
         """
-        raise NotImplementedError(SvnRemoteAccess.clone)
+        if create_prefix:
+            transport.create_prefix()
+        if not use_existing_dir:
+            transport.mkdir(".")
+        target = SvnRemoteFormat.initialize_on_transport(transport)
+        target_repo = target.open_repository()
+        source_repo = self.open_repository()
+        target_repo.fetch(source_repo, revision_id=revision_id)
+        return target
 
     def sprout(self, url, revision_id=None, force_new_repo=False,
                recurse='down', possible_transports=None,
