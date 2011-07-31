@@ -1356,7 +1356,9 @@ class InterFromSvnRepository(InterRepository):
     def _get_editor(self, revmeta, mapping):
         revid = revmeta.get_revision_id(mapping)
         assert revid is not None
-        svn_base_revid = revmeta.get_implicit_lhs_parent_revid(mapping)
+        lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
+        svn_base_revid = revmeta.get_implicit_lhs_parent_revid(mapping,
+            lhs_parent_revmeta)
         try:
             bzr_parent_trees = self._get_parent_trees(revmeta, mapping)
             svn_base_tree = bzr_parent_trees[0]

@@ -290,8 +290,7 @@ class BzrMetaRevision(object):
                 None, self.consider_bzr_fileprops,
                 revprops_acceptable=revprops_acceptable)
 
-    def get_implicit_lhs_parent_revid(self, mapping):
-        parentrevmeta = self.get_lhs_parent_revmeta(mapping)
+    def get_implicit_lhs_parent_revid(self, mapping, parentrevmeta):
         if parentrevmeta is None:
             return NULL_REVISION
         lhs_mapping = parentrevmeta.get_original_mapping()
@@ -318,7 +317,8 @@ class BzrMetaRevision(object):
         lhs_parent = self.get_stored_lhs_parent_revid(mapping)
         if lhs_parent is not None:
             return lhs_parent
-        return self.get_implicit_lhs_parent_revid(mapping)
+        parentrevmeta = self.get_lhs_parent_revmeta(mapping)
+        return self.get_implicit_lhs_parent_revid(mapping, parentrevmeta)
 
     @property
     def children(self):
