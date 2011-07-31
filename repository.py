@@ -886,7 +886,8 @@ class SvnRepository(ForeignRepository):
             except bzr_errors.NoSuchRevision:
                 continue
             else:
-                parent_map[revision_id] = revmeta.get_parent_ids(mapping)
+                parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
+                parent_map[revision_id] = revmeta.get_parent_ids(mapping, parentrevmeta)
         return parent_map
 
     def _get_revmeta(self, revision_id):
@@ -902,7 +903,8 @@ class SvnRepository(ForeignRepository):
                 branch=self)
 
         revmeta, mapping = self._get_revmeta(revision_id)
-        return revmeta.get_revision(mapping)
+        parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
+        return revmeta.get_revision(mapping, parentrevmeta)
 
     def get_revisions(self, revision_ids):
         """See Repository.get_revisions()."""

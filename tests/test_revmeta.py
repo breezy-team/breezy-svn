@@ -67,10 +67,12 @@ class TestWithRepository(SubversionTestCase):
 
         repos = Repository.open(repos_url)
 
+        revmeta1 = repos._revmeta_provider.get_revision("bp", 1)
         revmeta2 = repos._revmeta_provider.get_revision("bp", 2)
 
-        self.assertEquals(mapping.revision_id_foreign_to_bzr(
-            (repos.uuid, "bp", 1)), revmeta2.get_lhs_parent_revid(mapping))
+        self.assertEquals(
+            mapping.revision_id_foreign_to_bzr((repos.uuid, "bp", 1)),
+            revmeta2.get_lhs_parent_revid(mapping, revmeta1))
 
     def test_get_testament(self):
         repos_url = self.make_repository('d')

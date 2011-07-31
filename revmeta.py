@@ -163,7 +163,7 @@ class BzrMetaRevision(object):
             # This tag was (recreated) here, so unless anything else under this
             # tag changed
             if not changes.changes_children(self.metarev.paths, self.metarev.branch_path):
-                lhs_parent_revmeta = self.get_lhs_parent_revmeta(mapping)
+                lhs_parent_revmeta = self.get_direct_lhs_parent_revmeta()
                 if lhs_parent_revmeta is not None:
                     return lhs_parent_revmeta
         return self
@@ -290,8 +290,7 @@ class BzrMetaRevision(object):
                 None, self.consider_bzr_fileprops,
                 revprops_acceptable=revprops_acceptable)
 
-    def get_implicit_lhs_parent_revid(self, mapping):
-        parentrevmeta = self.get_lhs_parent_revmeta(mapping)
+    def get_implicit_lhs_parent_revid(self, mapping, parentrevmeta):
         if parentrevmeta is None:
             return NULL_REVISION
         lhs_mapping = parentrevmeta.get_original_mapping()
@@ -312,13 +311,13 @@ class BzrMetaRevision(object):
                 mapping.get_lhs_parent_revprops,
                 None, self.consider_bzr_fileprops)
 
-    def get_lhs_parent_revid(self, mapping):
+    def get_lhs_parent_revid(self, mapping, parentrevmeta):
         """Find the revid of the left hand side parent of this revision."""
         # Sometimes we can retrieve the lhs parent from the revprop data
         lhs_parent = self.get_stored_lhs_parent_revid(mapping)
         if lhs_parent is not None:
             return lhs_parent
-        return self.get_implicit_lhs_parent_revid(mapping)
+        return self.get_implicit_lhs_parent_revid(mapping, parentrevmeta)
 
     @property
     def children(self):
@@ -458,14 +457,14 @@ class BzrMetaRevision(object):
             pb.finished()
         return extra - (total_hidden or 0)
 
-    def get_rhs_parents(self, mapping):
+    def get_rhs_parents(self, mapping, parentrevmeta):
         """Determine the right hand side parent ids for this revision.
 
         :param mapping:
         """
-        return self._get_rhs_parents(mapping)
+        return self._get_rhs_parents(mapping, parentrevmeta)
 
-    def _get_rhs_parents(self, mapping):
+    def _get_rhs_parents(self, mapping, parentrevmeta):
         def consider_fileprops():
             return (self.consider_bzr_fileprops() or
                     self.consider_svk_fileprops())
@@ -491,17 +490,17 @@ class BzrMetaRevision(object):
         return self._import_from_props(mapping, get_fileprops,
             mapping.get_rhs_parents_revprops, (), consider_fileprops)
 
-    def get_parent_ids(self, mapping):
+    def get_parent_ids(self, mapping, parentrevmeta):
         """Return the parent ids for this revision.
 
         :param mapping: Mapping to use.
         """
-        lhs_parent = self.get_lhs_parent_revid(mapping)
+        lhs_parent = self.get_lhs_parent_revid(mapping, parentrevmeta)
 
         if lhs_parent == NULL_REVISION:
             return (NULL_REVISION,)
         else:
-            return (lhs_parent,) + self._get_rhs_parents(mapping)
+            return (lhs_parent,) + self._get_rhs_parents(mapping, parentrevmeta)
 
     def get_signature(self):
         """Obtain the signature text for this revision, if any.
@@ -514,12 +513,12 @@ class BzrMetaRevision(object):
     def get_testament(self):
         return self.metarev.revprops.get(SVN_REVPROP_BZR_TESTAMENT)
 
-    def get_revision(self, mapping):
+    def get_revision(self, mapping, parentrevmeta):
         """Create a revision object for this revision.
 
         :param mapping: Mapping to use
         """
-        parent_ids = self.get_parent_ids(mapping)
+        parent_ids = self.get_parent_ids(mapping, parentrevmeta)
 
         if parent_ids == (NULL_REVISION,):
             parent_ids = ()
@@ -800,17 +799,17 @@ class CachingBzrMetaRevision(BzrMetaRevision):
             self._update_cache(mapping)
         return self._revision_info[mapping]
 
-    def get_rhs_parents(self, mapping):
-        return self.get_parent_ids(mapping)[1:]
+    def get_rhs_parents(self, mapping, parentrevmeta):
+        return self.get_parent_ids(mapping, parentrevmeta)[1:]
 
-    def get_parent_ids(self, mapping):
+    def get_parent_ids(self, mapping, parentrevmeta):
         """Find the parent ids of a revision."""
         myrevid = self.get_revision_id(mapping)
         if self._parents_cache is not None:
             parent_ids = self._parents_cache.lookup_parents(myrevid)
             if parent_ids is not None:
                 return parent_ids
-        parent_ids = self.base.get_parent_ids(mapping)
+        parent_ids = self.base.get_parent_ids(mapping, parentrevmeta)
         self._parents_cache.insert_parents(myrevid, parent_ids)
         return parent_ids
 
@@ -949,7 +948,8 @@ class RevisionMetadataProvider(object):
             i += 1
             (revmeta, mapping) = entry
             yield entry
-            for rhs_parent_revid in revmeta.get_rhs_parents(mapping):
+            parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
+            for rhs_parent_revid in revmeta.get_rhs_parents(mapping, parentrevmeta):
                 try:
                     (rhs_parent_foreign_revid, rhs_parent_mapping) = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.metarev.get_foreign_revid())
                 except bzr_errors.NoSuchRevision:

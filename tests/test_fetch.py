@@ -276,7 +276,9 @@ class TestFetchWorks(FetchTestCase):
         rm = oldrepos._revmeta_provider.get_revision("trunk", 3)
         mapping = oldrepos.get_mapping()
         self.assertEquals((uuid, "trunk", 3), rm.metarev.get_foreign_revid())
-        self.assertEquals((mapping.revision_id_foreign_to_bzr((uuid, "branches/trunk", 1)), ), rm.get_rhs_parents(mapping))
+        self.assertEquals(
+            (mapping.revision_id_foreign_to_bzr((uuid, "branches/trunk", 1)), ),
+            rm.get_rhs_parents(mapping, rm.get_lhs_parent_revmeta(mapping)))
         self.assertEquals([], list(rf.find_rhs_parents([(rm, mapping)])))
 
     def test_fetch_file_branch(self):

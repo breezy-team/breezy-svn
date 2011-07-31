@@ -680,7 +680,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             self.revid, self.target, self.source)
 
     def __init__(self, source, target, revid, bzr_parent_trees, svn_base_tree,
-            revmeta, mapping, text_cache):
+            revmeta, lhs_parent_revmeta, mapping, text_cache):
         self.target = target
         self.source = source
         self.texts = target.texts
@@ -696,6 +696,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self._explicitly_deleted = set()
         self.inventory = None
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
+        self.lhs_parent_revmeta = lhs_parent_revmeta
 
     def _inv_delta_append(self, old_path, new_path, file_id, ie):
         self._new_file_paths[file_id] = new_path
@@ -729,9 +730,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         assert type(path) is unicode
         assert (type(parent_id) is str or (parent_id is None and path == ""))
         if path == u"":
-            lhs_parent_revmeta = self.revmeta.get_lhs_parent_revmeta(
-                self.mapping)
-            if lhs_parent_revmeta is not None:
+            if self.lhs_parent_revmeta is not None:
                 try:
                     (action, copyfrom_path, copyfrom_revnum, kind) = self.revmeta.metarev.paths.get(
                         self.revmeta.metarev.branch_path)
@@ -742,10 +741,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 else:
                     # Map copyfrom_path to the path that's related to the lhs parent branch path.
                     prev_locations = self.source.transport.get_locations(
-                        copyfrom_path, copyfrom_revnum, [lhs_parent_revmeta.metarev.revnum])
-                    copyfrom_path = prev_locations[lhs_parent_revmeta.metarev.revnum].strip("/")
+                        copyfrom_path, copyfrom_revnum, [self.lhs_parent_revmeta.metarev.revnum])
+                    copyfrom_path = prev_locations[self.lhs_parent_revmeta.metarev.revnum].strip("/")
                     svn_base_path = urlutils.determine_relative_path(
-                        lhs_parent_revmeta.metarev.branch_path, copyfrom_path)
+                        self.lhs_parent_revmeta.metarev.branch_path, copyfrom_path)
                 if svn_base_path == ".":
                     svn_base_path = ""
             else:
@@ -824,7 +823,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _finish_commit(self):
         if len(self.bzr_parent_trees) > 1:
             self._add_merge_texts()
-        rev = self.revmeta.get_revision(self.mapping)
+        rev = self.revmeta.get_revision(self.mapping, self.lhs_parent_revmeta)
         assert rev.revision_id != NULL_REVISION
         try:
             assert rev.parent_ids[0] != NULL_REVISION
@@ -1267,7 +1266,8 @@ class FetchRevisionFinder(object):
 
     def find_rhs_parents(self, revmetas):
         for revmeta, mapping in revmetas:
-            for p in revmeta.get_rhs_parents(mapping):
+            parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
+            for p in revmeta.get_rhs_parents(mapping, parentrevmeta):
                 try:
                     foreign_revid, rhs_mapping = self.source.lookup_bzr_revision_id(
                         p, foreign_sibling=revmeta.metarev.get_foreign_revid())
@@ -1338,8 +1338,8 @@ class InterFromSvnRepository(InterRepository):
             "%s.", revid, stored_lhs_parent_revid, found_lhs_parent_revid)
         self.fetch(found_lhs_parent_revid)
 
-    def _get_parent_trees(self, revmeta, mapping):
-        parent_revids = revmeta.get_parent_ids(mapping)
+    def _get_parent_trees(self, revmeta, mapping, parentrevmeta):
+        parent_revids = revmeta.get_parent_ids(mapping, parentrevmeta)
         if not parent_revids:
             parent_revids = (NULL_REVISION,)
         # We always need the base inventory for the first parent
@@ -1356,15 +1356,17 @@ class InterFromSvnRepository(InterRepository):
     def _get_editor(self, revmeta, mapping):
         revid = revmeta.get_revision_id(mapping)
         assert revid is not None
-        svn_base_revid = revmeta.get_implicit_lhs_parent_revid(mapping)
+        lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
+        svn_base_revid = revmeta.get_implicit_lhs_parent_revid(mapping,
+            lhs_parent_revmeta)
         try:
-            bzr_parent_trees = self._get_parent_trees(revmeta, mapping)
+            bzr_parent_trees = self._get_parent_trees(revmeta, mapping,
+                lhs_parent_revmeta)
             svn_base_tree = bzr_parent_trees[0]
             return RevisionBuildEditor(self.source, self.target, revid,
                 bzr_parent_trees, svn_base_tree,
-                revmeta, mapping, self._text_cache)
+                revmeta, lhs_parent_revmeta, mapping, self._text_cache)
         except NoSuchRevision:
-            lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
             if revmeta.get_stored_lhs_parent_revid(mapping) not in (
                 None, svn_base_revid):
                 self._inconsistent_lhs_parent(revmeta.get_revision_id(mapping),
