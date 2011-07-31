@@ -27,9 +27,121 @@ from bzrlib.tests import (
     TestCaseInTempDir,
     )
 
-from bzrlib.plugins.svn.transport import (
-    svn_to_bzr_url,
+from bzrlib.plugins.svn import (
+    transport as _mod_svn_transport,
     )
+
+from subvertpy.ra import RemoteAccess
+
+
+class RecordingRemoteAccess(object):
+    """Trivial RemoteAccess wrapper that records all activity."""
+
+    busy = property(lambda self: self.actual.busy)
+    url = property(lambda self: self.actual.url)
+
+    def __init__(self, *args, **kwargs):
+        self.actual = RemoteAccess(*args, **kwargs)
+
+    def check_path(self, path, revnum):
+        self.__class__.calls.append(("check-path", (revnum, path)))
+        return self.actual.check_path(path, revnum)
+
+    def stat(self, path, revnum):
+        self.__class__.calls.append(("stat", (revnum, path)))
+        return self.actual.stat(path, revnum)
+
+    def has_capability(self, cap):
+        self.__class__.calls.append(("has-capability", (cap,)))
+        return self.actual.has_capability(cap)
+
+    def get_uuid(self):
+        self.__class__.calls.append(("get-uuid", ()))
+        return self.actual.get_uuid()
+
+    def get_repos_root(self):
+        self.__class__.calls.append(("get-repos", ()))
+        return self.actual.get_repos_root()
+
+    def get_latest_revnum(self):
+        self.__class__.calls.append(("get-latest-revnum", ()))
+        return self.actual.get_latest_revnum()
+
+    def get_log(self, callback, paths, from_revnum, to_revnum, limit, *args, **kwargs):
+        self.__class__.calls.append(("log", (from_revnum, to_revnum, paths, limit)))
+        return self.actual.get_log(callback, paths,
+                    from_revnum, to_revnum, limit, *args, **kwargs)
+
+    def iter_log(self, paths, from_revnum, to_revnum, limit, *args, **kwargs):
+        self.__class__.calls.append(("log", (from_revnum, to_revnum, paths, limit)))
+        return self.actual.iter_log(paths,
+                    from_revnum, to_revnum, limit, *args, **kwargs)
+
+    def change_rev_prop(self, revnum, name, value):
+        self.__class__.calls.append(("change-revprop", (revnum, name, value)))
+        return self.actual.change_rev_prop(revnum, name, value)
+
+    def get_dir(self, path, revnum=-1, fields=0):
+        self.__class__.calls.append(("get-dir", (path, revnum, fields)))
+        return self.actual.get_dir(path, revnum, fields)
+
+    def get_file(self, path, stream, revnum):
+        self.__class__.calls.append(("get-file", (path, revnum)))
+        return self.actual.get_file(path, stream, revnum)
+
+    def get_file_revs(self, path, start_revnum, end_revnum, handler):
+        self.__class__.calls.append(("get-file-revs", (path, start_revnum, end_revnum)))
+        return self.actual.get_file_revs(path, start_revnum, end_revnum,
+            handler)
+
+    def revprop_list(self, revnum):
+        self.__class__.calls.append(("revprop-list", (revnum,)))
+        return self.actual.revprop_list(revnum)
+
+    def get_locations(self, path, peg_revnum, revnums):
+        self.__class__.calls.append(("get-locations", (path, peg_revnum, revnums)))
+        return self.actual.get_locations(path, peg_revnum, revnums)
+
+    def do_update(self, revnum, path, start_empty, editor):
+        self.__class__.calls.append(("do-update", (revnum, path, start_empty)))
+        return self.actual.do_update(revnum, path, start_empty, editor)
+
+    def do_diff(self, revision_to_update, diff_target, versus_url,
+                diff_editor, recurse=True, ignore_ancestry=False, text_deltas=False,
+                depth=None):
+        self.__class__.calls.append(("diff", (revision_to_update, diff_target,
+            versus_url, text_deltas, depth)))
+        return self.actual.do_diff(revision_to_update, diff_target, versus_url,
+                diff_editor, recurse, ignore_ancestry, text_deltas)
+
+    def do_switch(self, revnum, path, start_empty, to_url, editor):
+        self.__class__.calls.append(("switch", (revnum, path, start_empty, to_url)))
+        return self.actual.do_switch(revnum, path, start_empty, to_url, editor)
+
+    def reparent(self, url):
+        self.__class__.calls.append(("reparent", (url,)))
+        return self.actual.reparent(url)
+
+    def get_commit_editor(self, *args, **kwargs):
+        self.__class__.calls.append(("commit", ()))
+        return self.actual.get_commit_editor(*args, **kwargs)
+
+    def rev_proplist(self, revnum):
+        self.__class__.calls.append(("rev-proplist", (revnum,)))
+        return self.actual.rev_proplist(revnum)
+
+    def replay_range(self, start_revision, end_revision, low_water_mark, cbs,
+                     send_deltas=True):
+        self.__class__.calls.append(("replay-range", (start_revision,
+            end_revision, low_water_mark, send_deltas)))
+        mutter("svn replay-range %d -> %d (low water mark: %d)" % (start_revision, end_revision, low_water_mark))
+        return self.actual.replay_range(start_revision, end_revision, low_water_mark, cbs,
+                   send_deltas)
+
+    def replay(self, revision, low_water_mark, editor, send_deltas=True):
+        self.__class__.calls.append(("replay", (revision, low_water_mark, send_deltas)))
+        return self.actual.replay(revision, low_water_mark, editor, send_deltas)
+
 
 
 class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
@@ -42,7 +154,7 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
             properties.
         :return: A bzr-friendly URL for the created repository.
         """
-        return svn_to_bzr_url(
+        return _mod_svn_transport.svn_to_bzr_url(
             subvertpy.tests.SubversionTestCase.make_repository(self,
                 relpath, allow_revprop_changes))
 
@@ -93,6 +205,14 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
             self.assertEquals(revnum1, revnum2)
             self.assertEquals(root1, root2)
             self.assertChangedPathsEquals(changes1, changes2, msg)
+
+    def recordRemoteAccessCalls(self):
+        RecordingRemoteAccess.calls = []
+        self.overrideAttr(_mod_svn_transport, "RemoteAccess",
+                          RecordingRemoteAccess)
+
+    def assertRemoteAccessCalls(self, expected):
+        self.assertEquals(RecordingRemoteAccess.calls, expected)
 
 
 def test_suite():

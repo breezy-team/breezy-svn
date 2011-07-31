@@ -1150,4 +1150,5 @@ class TestInterBranchFetch(SubversionTestCase):
         new_branch = self.make_branch("b")
         inter_branch = InterBranch.get(svn_branch, new_branch)
         inter_branch.fetch(fetch_tags=True)
-        self.assertEquals(set([revid1, revid2]), set(new_branch.repository.all_revision_ids()))
+        self.assertEquals(set([revid1, revid2]),
+                set(new_branch.repository.all_revision_ids()))

@@ -284,7 +284,8 @@ class TestSvnRevisionTree(SubversionTestCase):
 
     def test_get_parent_ids(self):
         mapping = self.repos.get_mapping()
-        self.assertEqual((self.repos.generate_revision_id(0, "", mapping),), self.tree.get_parent_ids())
+        self.assertEqual((self.repos.generate_revision_id(0, "", mapping),),
+                self.tree.get_parent_ids())
 
     def test_get_parent_ids_zero(self):
         mapping = self.repos.get_mapping()

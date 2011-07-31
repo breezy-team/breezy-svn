@@ -274,15 +274,21 @@ class ReadonlyConnectionTests(SubversionTestCase):
         self.repos_url = self.make_repository("d")
 
     def test_get_latest_revnum(self):
+        self.recordRemoteAccessCalls()
         conn = Connection(self.repos_url, readonly=True)
         self.assertEquals(0, conn.get_latest_revnum())
+        self.assertRemoteAccessCalls([('get-latest-revnum', ())])
 
     def test_change_rev_prop(self):
         conn = Connection(self.repos_url, readonly=True)
+        self.recordRemoteAccessCalls()
         self.assertRaises(TransportNotPossible, conn.change_rev_prop,
              3, "foo", "bar")
+        self.assertRemoteAccessCalls([])
 
     def test_get_commit_editor(self):
         conn = Connection(self.repos_url, readonly=True)
+        self.recordRemoteAccessCalls()
         self.assertRaises(TransportNotPossible, conn.get_commit_editor,
                 { "svn:log": "msg" } )
+        self.assertRemoteAccessCalls([])

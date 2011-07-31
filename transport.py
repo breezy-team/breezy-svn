@@ -24,6 +24,7 @@ from subvertpy import (
     ERR_FS_NOT_DIRECTORY,
     )
 from subvertpy.client import get_config
+from subvertpy.ra import RemoteAccess
 import sys
 import urlparse
 urlparse.uses_netloc.extend(['svn+http', 'svn+https'])
@@ -216,7 +217,7 @@ def Connection(url, auth=None, config=None, readonly=False):
         progress_cb = None
     assert type(url) == str, "URL not string: %r" % url
     try:
-        ret = subvertpy.ra.RemoteAccess(_url_escape_uri(url), auth=auth,
+        ret = RemoteAccess(_url_escape_uri(url), auth=auth,
                 client_string_func=bzrlib.plugins.svn.get_client_string,
                 progress_cb=progress_cb,
                 config=config)
