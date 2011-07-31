@@ -903,7 +903,8 @@ class SvnRepository(ForeignRepository):
                 branch=self)
 
         revmeta, mapping = self._get_revmeta(revision_id)
-        return revmeta.get_revision(mapping)
+        parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
+        return revmeta.get_revision(mapping, parentrevmeta)
 
     def get_revisions(self, revision_ids):
         """See Repository.get_revisions()."""

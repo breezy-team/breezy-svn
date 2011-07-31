@@ -513,12 +513,11 @@ class BzrMetaRevision(object):
     def get_testament(self):
         return self.metarev.revprops.get(SVN_REVPROP_BZR_TESTAMENT)
 
-    def get_revision(self, mapping):
+    def get_revision(self, mapping, parentrevmeta):
         """Create a revision object for this revision.
 
         :param mapping: Mapping to use
         """
-        parentrevmeta = self.get_lhs_parent_revmeta(mapping)
         parent_ids = self.get_parent_ids(mapping, parentrevmeta)
 
         if parent_ids == (NULL_REVISION,):

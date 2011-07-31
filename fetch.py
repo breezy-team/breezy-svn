@@ -824,7 +824,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _finish_commit(self):
         if len(self.bzr_parent_trees) > 1:
             self._add_merge_texts()
-        rev = self.revmeta.get_revision(self.mapping)
+        parentrevmeta = self.revmeta.get_lhs_parent_revmeta(self.mapping)
+        rev = self.revmeta.get_revision(self.mapping, parentrevmeta)
         assert rev.revision_id != NULL_REVISION
         try:
             assert rev.parent_ids[0] != NULL_REVISION
