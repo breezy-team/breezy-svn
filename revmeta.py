@@ -163,7 +163,7 @@ class BzrMetaRevision(object):
             # This tag was (recreated) here, so unless anything else under this
             # tag changed
             if not changes.changes_children(self.metarev.paths, self.metarev.branch_path):
-                lhs_parent_revmeta = self.get_lhs_parent_revmeta(mapping)
+                lhs_parent_revmeta = self.get_direct_lhs_parent_revmeta()
                 if lhs_parent_revmeta is not None:
                     return lhs_parent_revmeta
         return self
