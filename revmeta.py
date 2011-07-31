@@ -311,13 +311,12 @@ class BzrMetaRevision(object):
                 mapping.get_lhs_parent_revprops,
                 None, self.consider_bzr_fileprops)
 
-    def get_lhs_parent_revid(self, mapping):
+    def get_lhs_parent_revid(self, mapping, parentrevmeta):
         """Find the revid of the left hand side parent of this revision."""
         # Sometimes we can retrieve the lhs parent from the revprop data
         lhs_parent = self.get_stored_lhs_parent_revid(mapping)
         if lhs_parent is not None:
             return lhs_parent
-        parentrevmeta = self.get_lhs_parent_revmeta(mapping)
         return self.get_implicit_lhs_parent_revid(mapping, parentrevmeta)
 
     @property
@@ -496,7 +495,8 @@ class BzrMetaRevision(object):
 
         :param mapping: Mapping to use.
         """
-        lhs_parent = self.get_lhs_parent_revid(mapping)
+        parentrevmeta = self.get_lhs_parent_revmeta(mapping)
+        lhs_parent = self.get_lhs_parent_revid(mapping, parentrevmeta)
 
         if lhs_parent == NULL_REVISION:
             return (NULL_REVISION,)
