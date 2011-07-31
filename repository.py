@@ -132,7 +132,7 @@ class DummyLockableFiles(object):
         raise NotImplementedError(self.break_lock)
 
     def leave_in_place(self):
-        pass
+        raise NotImplementedError(self.leave_in_place)
 
     def dont_leave_in_place(self):
         pass
