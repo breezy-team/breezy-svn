@@ -112,8 +112,12 @@ LAYOUT_SOURCE_MAPPING_MANDATED = 'mapping-mandated'
 class SubversionRepositoryLock(object):
     """Subversion lock."""
 
-    def __init__(self):
+    def __init__(self, repository):
         self.repository_token = None
+        self.repository = repository
+
+    def unlock(self):
+        self.repository.unlock()
 
 
 class DummyLockableFiles(object):
@@ -134,6 +138,8 @@ class DummyLockableFiles(object):
         pass
 
     def lock_write(self, token=None):
+        if token is not None:
+            raise errors.TokenLockingNotSupported(self)
         return SubversionRepositoryLock()
 
     def lock_read(self):
@@ -536,7 +542,7 @@ class SvnRepository(ForeignRepository):
         else:
             self._lock_mode = 'w'
             self._lock_count = 1
-        return self
+        return SubversionRepositoryLock(self)
 
     def is_write_locked(self):
         return (self._lock_mode == 'w')
