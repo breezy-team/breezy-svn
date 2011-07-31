@@ -423,7 +423,7 @@ class SvnRepository(ForeignRepository):
 
         if "log" in use_cache:
             log_cache = self._cache_obj.open_logwalker()
-            if log_cache.last_revnum() > self.get_latest_revnum():
+            if log_cache.max_revnum() > self.get_latest_revnum():
                 errors.warn_uuid_reuse(self.uuid, self.base)
             self._log = logwalker.CachingLogWalker(self._log,
                 log_cache)
