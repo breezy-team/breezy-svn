@@ -365,7 +365,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
             child_base = (base_tree, base_url, base_revnum)
         # open if they existed at the same location and
         # the directory was touched
-        elif new_child_path in visit_dirs:
+        elif new_child_path.decode('utf-8') in visit_dirs:
             trace.mutter('open dir %r', new_child_path)
 
             child_editor = dir_editor.open_directory(
