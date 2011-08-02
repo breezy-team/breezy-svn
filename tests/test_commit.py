@@ -367,6 +367,22 @@ class TestPush(SubversionTestCase):
         self.assertEqual(2, result.old_revno)
         self.assertEquals(3, result.new_revno)
 
+    def test_add_file_to_unicode_folder(self):
+        self.requireFeature(UnicodeFilenameFeature)
+        self.build_tree({u'dc/I²C/': None})
+        wt = self.newdir.open_workingtree()
+        wt.add(u'I²C')
+        wt.commit(message="Commit from Bzr")
+        self.build_tree({u'dc/I²C/file': 'data'})
+        wt.add(u'I²C/file')
+        wt.commit(message="Commit from Bzr2")
+        result = self.olddir.open_branch().pull(self.newdir.open_branch())
+        self.assertEquals(2, result.old_revno)
+        self.assertEquals(4, result.new_revno)
+        owt = self.olddir.open_workingtree()
+        owt.update()
+        self.assertTrue(owt.has_filename(u'I²C/file'))
+
     def test_rename_from_unicode_filename(self):
         self.requireFeature(UnicodeFilenameFeature)
         self.build_tree({u'dc/I²C': 'other data'})
@@ -795,3 +811,4 @@ class SendPropChangesTests(TestCase):
         editor = SendPropChangesTests.RecordingFileEditor()
         file_editor_send_prop_changes(ie1, ie2, editor)
         self.assertEquals(editor._props, {})
+
