@@ -92,6 +92,9 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * Fix handling of non-ascii directories when pushed to svn. (IWATA Hidetaka, #795994)
 
+  * Fix importing of non-ascii characters in bzr:revprop: values.
+    (Jelmer Vernooij, #821168)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is

@@ -367,7 +367,7 @@ class TestParseSvnProps(TestCase):
         rev = Revision(None)
         revprops = {"svn:log": "A log msg", "svn:author": "Somebody",
                 "svn:date": "2008-11-03T09:33:00.716938Z"}
-        mapping.parse_svn_revprops(revprops,  rev)
+        mapping.parse_svn_revprops(revprops, rev)
         self.assertEquals("Somebody", rev.committer)
         self.assertEquals("A log msg", rev.message)
         self.assertEquals({}, rev.properties)

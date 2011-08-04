@@ -324,7 +324,7 @@ def parse_bzr_svn_revprops(props, rev):
 
     for name, value in props.iteritems():
         if name.startswith(SVN_REVPROP_BZR_REVPROP_PREFIX):
-            rev.properties[name[len(SVN_REVPROP_BZR_REVPROP_PREFIX):]] = value
+            rev.properties[name[len(SVN_REVPROP_BZR_REVPROP_PREFIX):]] = value.decode("utf-8")
         changed = True
 
     return changed

@@ -1,4 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
+# -*- coding: utf-8 -*-
  
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -172,6 +173,23 @@ class RoundtripMappingTests(TestCase):
         self.mapping.import_revision_revprops(revprops, targetrev)
         self.assertEquals(targetrev.committer, "somebody")
         self.assertEquals(targetrev.properties, {"arevprop": "val"})
+        self.assertEquals(targetrev.timestamp, 432432432.0)
+        self.assertEquals(targetrev.timezone, 0)
+
+    def test_revision_revprops_unicode(self):
+        if not self.mapping.roundtripping:
+            raise TestNotApplicable
+        if not self.mapping.can_use_revprops:
+            raise TestNotApplicable
+        revprops = {}
+        self.mapping.export_revision_revprops(revprops, "someuuid", "branchp", 432432432.0, 0, "somebody", 
+             {"arevprop": u"vól" }, "arevid", 4, ["parent", "merge1"], testament=None)
+        targetrev = Revision(None)
+        revprops["svn:date"] = "2008-11-03T09:33:00.716938Z"
+        parse_svn_revprops(revprops, targetrev)
+        self.mapping.import_revision_revprops(revprops, targetrev)
+        self.assertEquals(targetrev.committer, "somebody")
+        self.assertEquals(targetrev.properties, {"arevprop": u"vól"})
         self.assertEquals(targetrev.timestamp, 432432432.0)
         self.assertEquals(targetrev.timezone, 0)
 
