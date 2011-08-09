@@ -72,7 +72,8 @@ bzr-svn 1.1.0					  UNRELEASED
 
   * Implement more efficient ``InterFromSvnBranch.fetch``. (Jelmer Vernooij, #741760)
 
-  * Tags are now copied during clone. (Jelmer Vernooij, #309682)
+  * Tags are now copied during clone if enabled ("branch.fetch_tags = True").
+    (Jelmer Vernooij, #309682)
 
   * "bzr commit --lossy" can now be used in bound branches.
     (Jelmer Vernooij, #587721)

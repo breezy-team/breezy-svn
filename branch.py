@@ -683,7 +683,7 @@ class InterFromSvnBranch(GenericInterBranch):
         from bzrlib.branch import format_registry as branch_format_registry
         return [(SvnBranchFormat(), branch_format_registry.get_default())]
 
-    def fetch(self, stop_revision=None, fetch_tags=True, find_ghosts=False, limit=None):
+    def fetch(self, stop_revision=None, fetch_tags=None, find_ghosts=False, limit=None):
         """See InterBranch.fetch."""
         # we fetch here so that we don't process data twice in the
         # common case of having something to pull, and so that the
@@ -700,6 +700,10 @@ class InterFromSvnBranch(GenericInterBranch):
             # No need to fetch tags if there are already up to 'limit' revisions
             # missing in mainline.
             fetch_tags = False
+        if fetch_tags is None:
+            c = self.source.get_config()
+            fetch_tags = c.get_user_option_as_bool('branch.fetch_tags',
+                default=False)
         if fetch_tags and self.source.supports_tags():
             tag_revmetas = self.source.tags._get_tag_dict_revmeta()
             d = resolve_tags_svn_ancestry(self.source, tag_revmetas)
@@ -718,7 +722,7 @@ class InterFromSvnBranch(GenericInterBranch):
             project=self.source.project, mapping=self.source.mapping)
 
     def _update_revisions(self, stop_revision=None, overwrite=False,
-                         graph=None, fetch_tags=True):
+                         graph=None, fetch_tags=None):
         "See InterBranch.update_revisions."""
         self.source.lock_read()
         try:
