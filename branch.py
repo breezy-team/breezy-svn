@@ -702,8 +702,7 @@ class InterFromSvnBranch(GenericInterBranch):
             fetch_tags = False
         if fetch_tags is None:
             c = self.source.get_config()
-            fetch_tags = c.get_user_option_as_bool('branch.fetch_tags',
-                default=False)
+            fetch_tags = c.get_user_option_as_bool('branch.fetch_tags')
         if fetch_tags and self.source.supports_tags():
             tag_revmetas = self.source.tags._get_tag_dict_revmeta()
             d = resolve_tags_svn_ancestry(self.source, tag_revmetas)
