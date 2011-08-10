@@ -1025,7 +1025,8 @@ def get_svn_file_delta_transmitter(tree, base_ie, ie):
     try:
         transmit_svn_file_deltas = getattr(tree, "transmit_svn_file_deltas")
     except AttributeError:
-        return lambda editor: send_svn_file_text_delta(tree, base_ie, ie, editor)
+        return lambda editor: send_svn_file_text_delta(tree, base_ie, ie,
+            editor)
     else:
         return lambda editor: transmit_svn_file_deltas(ie.file_id, editor)
 

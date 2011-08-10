@@ -205,7 +205,9 @@ class SvnRepositoryFormat(RepositoryFormat):
         return controldir.open_repository()
 
     def get_foreign_tests_repository_factory(self):
-        from bzrlib.plugins.svn.tests.test_repository import ForeignTestsRepositoryFactory
+        from bzrlib.plugins.svn.tests.test_repository import (
+            ForeignTestsRepositoryFactory,
+            )
         return ForeignTestsRepositoryFactory()
 
     def check_conversion_target(self, target_repo_format):
@@ -328,7 +330,8 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
                 lhs_parent_mapping = mapping
             expected_lhs_parent_revid = lhs_parent_revmeta.get_revision_id(
                 lhs_parent_mapping)
-            if revmeta.get_stored_lhs_parent_revid(mapping) not in (None, expected_lhs_parent_revid):
+            if revmeta.get_stored_lhs_parent_revid(mapping) not in (
+                    None, expected_lhs_parent_revid):
                 self.inconsistent_stored_lhs_parent += 1
         self.check_texts(revmeta, mapping)
 
@@ -363,8 +366,10 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             # in one of the parents.
             fileid = fileid_map.lookup(mapping, path)[0]
             parent_text_revisions = []
-            for parent_fileid_map, parent_mapping in zip(parent_fileid_maps, parent_mappings):
-                parent_text_revisions.append(parent_fileid_map.reverse_lookup(parent_mapping, fileid))
+            for parent_fileid_map, parent_mapping in zip(parent_fileid_maps,
+                    parent_mappings):
+                parent_text_revisions.append(
+                    parent_fileid_map.reverse_lookup(parent_mapping, fileid))
             if (text_revision != revmeta.get_revision_id(mapping) and
                     not ghost_parents and
                     not text_revision in parent_text_revisions):
