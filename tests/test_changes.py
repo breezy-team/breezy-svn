@@ -48,28 +48,36 @@ class PathIsChildTests(TestCase):
 class FindPrevLocationTests(TestCase):
 
     def test_simple_prev_changed(self):
-        self.assertEquals(("foo", 1), find_prev_location({"foo": ("M", None, -1)}, "foo", 2))
+        self.assertEquals(("foo", 1),
+            find_prev_location({"foo": ("M", None, -1)}, "foo", 2))
 
     def test_simple_prev_notchanged(self):
-        self.assertEquals(("foo", 1), find_prev_location({}, "foo", 2))
+        self.assertEquals(("foo", 1),
+            find_prev_location({}, "foo", 2))
 
     def test_simple_prev_copied(self):
-        self.assertEquals(("bar", 1), find_prev_location({"foo": ("A", "bar", 1)}, "foo", 2))
+        self.assertEquals(("bar", 1),
+            find_prev_location({"foo": ("A", "bar", 1)}, "foo", 2))
 
     def test_simple_prev_replaced(self):
-        self.assertEquals(("bar", 1), find_prev_location({"foo": ("R", "bar", 1)}, "foo", 2))
+        self.assertEquals(("bar", 1),
+            find_prev_location({"foo": ("R", "bar", 1)}, "foo", 2))
 
     def test_endofhistory(self):
-        self.assertEquals(None, find_prev_location({}, "", 0))
+        self.assertEquals(None,
+            find_prev_location({}, "", 0))
 
     def test_rootchange(self):
-        self.assertEquals(("", 4), find_prev_location({}, "", 5))
+        self.assertEquals(("", 4),
+            find_prev_location({}, "", 5))
 
     def test_parentcopy(self):
-        self.assertEquals(("foo/bla", 3), find_prev_location({"bar": ("A", "foo", 3)}, "bar/bla", 5))
+        self.assertEquals(("foo/bla", 3),
+            find_prev_location({"bar": ("A", "foo", 3)}, "bar/bla", 5))
 
     def test_from_root(self):
-        self.assertEquals(("tools", 3), find_prev_location({"trunk": ("A", "", 3)}, "trunk/tools", 5))
+        self.assertEquals(("tools", 3),
+            find_prev_location({"trunk": ("A", "", 3)}, "trunk/tools", 5))
 
 
 class ChangesRootTests(TestCase):
