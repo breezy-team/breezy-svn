@@ -58,7 +58,7 @@ See http://bazaar-vcs.org/BzrForeignBranches/Subversion for details.
 def create_cache_dir():
     """Create the top-level bzr-svn cache directory.
 
-    :return: Path to cache directory.
+    :return: Path to cache directory, as byte string.
     """
     ensure_config_dir_exists()
     if version_info[3] == 'exp':
@@ -79,16 +79,15 @@ def create_cache_dir():
         base_cache_dir = config_dir()
         cache_dir = os.path.join(base_cache_dir, name)
         # Check and use old location if possible
-        if os.path.exists(cache_dir):
-            return cache_dir
-        try:
-            from xdg.BaseDirectory import xdg_cache_home
-        except ImportError:
-            pass
-        else:
-            cache_dir = os.path.join(xdg_cache_home, "bazaar", "svn")
-            if type(cache_dir) == unicode:
-                cache_dir = cache_dir.encode(osutils._fs_enc)
+        if not os.path.exists(cache_dir):
+            try:
+                from xdg.BaseDirectory import xdg_cache_home
+            except ImportError:
+                pass
+            else:
+                cache_dir = os.path.join(xdg_cache_home, "bazaar", "svn")
+        if type(cache_dir) == unicode:
+            cache_dir = cache_dir.encode(osutils._fs_enc)
 
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
