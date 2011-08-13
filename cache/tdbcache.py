@@ -266,6 +266,7 @@ class TdbLogCache(LogCache, CacheTable):
         except KeyError:
             return None
 
+
 class TdbParentsCache(ParentsCache, CacheTable):
 
     def insert_parents(self, revid, parents):
@@ -278,7 +279,9 @@ class TdbParentsCache(ParentsCache, CacheTable):
 
         self.mutter("lookup-parents %s", revid)
         try:
-            return tuple([p for p in self.db["parents/%s" % revid].split(" ") if p != ""])
+            return tuple(
+                [p for p in self.db["parents/%s" % revid].split(" ")
+                    if p != ""])
         except KeyError:
             return None
 
