@@ -646,22 +646,27 @@ class BzrMetaRevision(object):
         """
         if self._consider_bzr_revprops is not None:
             return self._consider_bzr_revprops
-        if self.provider._log._transport.has_capability("commit-revprops") == False:
+        commit_revprops_capab = self.provider._log._transport.has_capability(
+            "commit-revprops")
+        log_revprops_capab = self.provider._log._transport.has_capability(
+            "log-revprops")
+        if commit_revprops_capab == False:
             # Server doesn't support setting revision properties
             self._consider_bzr_revprops = False
-        elif self.provider._log._transport.has_capability("log-revprops") == True:
+        elif log_revprops_capab == True:
             self._consider_bzr_revprops = True
-        elif self.provider._log._transport.has_capability("log-revprops") is None:
+        elif log_revprops_capab is None:
             # Client doesn't know log-revprops capability
             self._consider_bzr_revprops = True
-        elif self.changes_outside_root():
+        elif self.metarev.changes_outside_root():
             self._consider_bzr_revprops = False
         else:
             # Check nearest descendant with bzr:see-revprops set
             # and return True if revnum in that property < self.revnum
             revprop_redirect = self._get_revprop_redirect_revnum()
-            self._consider_bzr_revprops = (revprop_redirect >= 0 and
-                                          revprop_redirect <= self.revnum)
+            self._consider_bzr_revprops = (
+                revprop_redirect >= 0 and
+                revprop_redirect <= self.metarev.revnum)
         return self._consider_bzr_revprops
 
     def _get_revprop_redirect_revnum(self):
