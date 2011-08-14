@@ -204,8 +204,11 @@ class CachingLogWalkerUpdater(object):
             revprops, self.all_revprops)
         self.logwalker.saved_maxrevnum = max(revision,
             self.logwalker.saved_maxrevnum)
-        self.logwalker.saved_minrevnum = min(revision,
-            self.logwalker.saved_minrevnum)
+        if self.logwalker.saved_minrevnum is None:
+            self.logwalker.saved_minrevnum = revision
+        else:
+            self.logwalker.saved_minrevnum = min(revision,
+                self.logwalker.saved_minrevnum)
 
     def finished(self):
         self.pb.finished()
@@ -308,9 +311,6 @@ class CachingLogWalker(object):
         to_revnum = max(min(self._latest_revnum, to_revnum+MAX_OVERHEAD_FETCH),
                         to_revnum)
 
-        if to_revnum <= self.saved_maxrevnum:
-            return
-
         # Subversion 1.4 clients and servers can only deliver a limited set of
         # revprops
         if self._transport.has_capability("log-revprops"):
@@ -335,12 +335,12 @@ class CachingLogWalker(object):
                 self.mutter("get_log %d->%d", to_revnum,
                         self.saved_maxrevnum+1)
                 self.actual._transport.get_log(rcvr, [""], to_revnum,
-                    self.saved_maxrevnum+1, 0, True, True, False,
+                    self.saved_maxrevnum, 0, True, True, False,
                     todo_revprops)
-            except subvertpy.SubversionException, (_, num):
+            except subvertpy.SubversionException, (msg, num):
                 if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                     raise NoSuchRevision(branch=self,
-                        revision="Revision number %d" % to_revnum)
+                        revision="Revision number %d: %s" % (to_revnum, msg))
                 raise
         finally:
             rcvr.finished()

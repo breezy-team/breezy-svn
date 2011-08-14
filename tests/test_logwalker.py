@@ -587,6 +587,48 @@ class TestCachingLogWalker(TestLogWalker):
 
         logwalker.cache_dir = os.path.join(self.test_dir, "cache-dir")
 
+    def test_fetch_revisions(self):
+        repos_url = self.make_repository('d')
+
+        cb = self.get_commit_editor(repos_url)
+        cb.close()
+
+        cb = self.get_commit_editor(repos_url)
+        cb.close()
+
+        walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
+        self.assertEquals(0, walker.saved_maxrevnum)
+        self.assertEquals(None, walker.saved_minrevnum)
+
+        updater = logwalker.CachingLogWalkerUpdater(walker, True)
+        updater({"trunk": ("A", None, -1)}, 2, {"svn:author": "author"})
+
+        self.assertEquals(2, walker.saved_maxrevnum)
+        self.assertEquals(2, walker.saved_minrevnum)
+
+        walker._fetch_revisions(2)
+
+        self.assertEquals(2, walker.saved_maxrevnum)
+        self.assertEquals(0, walker.saved_minrevnum)
+
+    def test_fetch_revisions_fill_in(self):
+        repos_url = self.make_repository('d')
+
+        cb = self.get_commit_editor(repos_url)
+        cb.close()
+
+        cb = self.get_commit_editor(repos_url)
+        cb.close()
+
+        walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
+        self.assertEquals(0, walker.saved_maxrevnum)
+        self.assertEquals(None, walker.saved_minrevnum)
+
+        walker._fetch_revisions(2)
+
+        self.assertEquals(2, walker.saved_maxrevnum)
+        self.assertEquals(0, walker.saved_minrevnum)
+
     def get_log_walker(self, transport):
         from bzrlib.plugins.svn.cache.sqlitecache import SqliteLogCache
         return logwalker.CachingLogWalker(super(TestCachingLogWalker, self).get_log_walker(transport), SqliteLogCache())
