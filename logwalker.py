@@ -26,6 +26,7 @@ from bzrlib import (
     trace,
     )
 from bzrlib.errors import (
+    BzrError,
     NoSuchRevision,
     )
 
@@ -332,12 +333,18 @@ class CachingLogWalker(object):
                     self.actual._transport.get_log(rcvr, [""],
                         self.saved_minrevnum - 1, 0, 0, True, True, False,
                         todo_revprops)
+                    if self.saved_minrevnum:
+                        raise BzrError("Unable to fetch revision info; first "
+                            "available revision: %d" % self.saved_minrevnum)
                 if to_revnum > self.saved_maxrevnum:
                     self.mutter("get_log %d->%d", to_revnum,
                             self.saved_maxrevnum)
                     self.actual._transport.get_log(rcvr, [""], to_revnum,
                         self.saved_maxrevnum, 0, True, True, False,
                         todo_revprops)
+                    if to_revnum > self.saved_maxrevnum:
+                        raise BzrError("Unable to fetch revision info; last "
+                            "available revision: %d" % self.saved_maxrevnum)
             except subvertpy.SubversionException, (msg, num):
                 if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                     raise NoSuchRevision(branch=self,
