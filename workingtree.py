@@ -552,18 +552,31 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return self.path2id("")
 
     def path2id(self, path):
-        # FIXME
-        return self._bzr_inventory.path2id(path)
+        wc = self._get_wc()
+        try:
+            try:
+                entry = self._get_entry(wc, path)
+            except KeyError:
+                return None
+            (file_id, revision) = self._find_ids(path, entry)
+            return file_id
+        finally:
+            wc.close()
+
+    def _get_entry(self, wc, relpath):
+        parent = os.path.dirname(relpath)
+        parent_wc = wc.probe_try(parent)
+        if parent_wc is None:
+            raise KeyError
+        return parent_wc.entry(relpath[len(parent_wc.access_path()):].strip("/"))
 
     def filter_unversioned_files(self, paths):
         wc = self._get_wc()
         try:
             ret = set()
             for p in paths:
-                parent = os.path.dirname(p)
-                parent_wc = wc.probe_try(parent)
                 try:
-                    entry = parent_wc.entry(p[len(parent_wc.access_path()):].strip("/"))
+                    entry = self._get_entry(wc, p)
                 except KeyError:
                     ret.add(p)
                 else:
@@ -629,8 +642,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     path = self.id2path(file_id)
                     parent = os.path.dirname(path)
                     parent_id = self.lookup_id(parent)
-                    parent_wc = wc.probe_try(parent)
-                    entry = parent_wc.entry(path[len(parent_wc.access_path()):].strip("/"))
+                    entry = self._get_entry(wc, path)
                     yield path, self._ie_from_entry(path, entry, parent_id)
             finally:
                 wc.close()
