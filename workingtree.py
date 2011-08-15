@@ -612,6 +612,14 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         # FIXME
         return self._bzr_inventory.path2id(path)
 
+    def filter_unversioned_files(self, paths):
+        # FIXME
+        ret = set()
+        for p in paths:
+            if not self._bzr_inventory.has_filename(p):
+                ret.add(p)
+        return ret
+
     def has_or_had_id(self, file_id):
         if self.has_id(file_id):
             return True
@@ -733,7 +741,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             f = self.relpath(file_path)
             wc = self._get_wc(os.path.dirname(f.encode(osutils._fs_enc)).decode(osutils._fs_enc), write_lock=True)
             try:
-                if not self._bzr_inventory.has_filename(f):
+                if self.filter_unversioned_files([f]):
                     if save:
                         mutter('adding %r', file_path)
                         wc.add(file_path.encode("utf-8"))
