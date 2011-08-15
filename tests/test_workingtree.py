@@ -254,8 +254,8 @@ class TestWorkingTree(SubversionTestCase):
         tree.add(["bl"])
 
         tree = WorkingTree.open("dc")
-        self.assertTrue(tree._bzr_inventory.has_filename("bl"))
-        self.assertFalse(tree._bzr_inventory.has_filename("bl/file"))
+        self.assertEquals(set(["bl/file"]),
+            tree.filter_unversioned_files(["bl/file", "bl"]))
 
     def test_add_nested(self):
         self.make_client('a', 'dc')
@@ -264,8 +264,8 @@ class TestWorkingTree(SubversionTestCase):
         tree.add(["bl", "bl/file"])
 
         tree = WorkingTree.open("dc")
-        self.assertTrue(tree._bzr_inventory.has_filename("bl"))
-        self.assertTrue(tree._bzr_inventory.has_filename("bl/file"))
+        self.assertEquals(set(),
+            tree.filter_unversioned_files(["bl", "bl/file"]))
 
     def test_lock_write(self):
         self.make_client('a', 'dc')
@@ -514,7 +514,8 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({"dc/bl": None})
 
         tree = WorkingTree.open("dc")
-        self.assertFalse(tree._bzr_inventory.has_filename("bl"))
+        self.assertEquals(set(["bl"]),
+            tree.filter_unversioned_files(["bl"]))
 
     def test_fileid_missing(self):
         self.make_client("repos", "svn-wc")
