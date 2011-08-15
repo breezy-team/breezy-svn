@@ -72,7 +72,7 @@ except:
 
 
 def _connect_sqlite3_file(path):
-    return sqlite3.connect(path, timeout=20.0)
+    return sqlite3.connect(path, timeout=20.0, isolation_level=None)
 
 
 connect_cachefile = _connect_sqlite3_file
@@ -88,8 +88,7 @@ class CacheTable(object):
             self.cachedb = cache_db
         self._commit_interval = 500
         self._create_table()
-        self.cachedb.commit()
-        self._commit_countdown = self._commit_interval
+        self.commit()
 
     @classmethod
     def _convert_operational_errors(cls, e):
