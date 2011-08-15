@@ -32,6 +32,7 @@ from bzrlib.errors import (
 
 from bzrlib.plugins.svn import (
     changes,
+    errors as bzrsvn_errors,
     )
 from bzrlib.plugins.svn.transport import (
     SvnRaTransport,
@@ -334,8 +335,8 @@ class CachingLogWalker(object):
                         self.saved_minrevnum - 1, 0, 0, True, True, False,
                         todo_revprops)
                     if self.saved_minrevnum:
-                        raise BzrError("Unable to fetch revision info; first "
-                            "available revision: %d" % self.saved_minrevnum)
+                        raise bzrsvn_errors.IncompleteRepositoryHistory(
+                            "first available revision: %d" % self.saved_minrevnum)
                 if to_revnum > self.saved_maxrevnum:
                     self.mutter("get_log %d->%d", to_revnum,
                             self.saved_maxrevnum)
@@ -343,8 +344,8 @@ class CachingLogWalker(object):
                         self.saved_maxrevnum, 0, True, True, False,
                         todo_revprops)
                     if to_revnum > self.saved_maxrevnum and to_revnum > 0:
-                        raise BzrError("Unable to fetch revision info; last "
-                            "available revision: %d" % self.saved_maxrevnum)
+                        raise bzrsvn_errors.IncompleteRepositoryHistory(
+                            "last available revision: %d" % self.saved_maxrevnum)
             except subvertpy.SubversionException, (msg, num):
                 if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                     raise NoSuchRevision(branch=self,
@@ -469,8 +470,9 @@ class LogWalker(object):
             return changes.REV0_CHANGES
 
         try:
-            return strip_slashes(
-                self._transport.iter_log([""], revnum, revnum, 1, True, True, False, []).next()[0])
+            log_iter = self._transport.iter_log([""], revnum, revnum, 1, True,
+                True, False, [])
+            return strip_slashes(log_iter.next()[0])
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 raise NoSuchRevision(branch=self,

@@ -314,6 +314,14 @@ class NoLayoutTagSetSupport(TagsNotSupported):
             self.extra = ": %s" % extra
 
 
+class IncompleteRepositoryHistory(BzrError):
+
+    _fmt = "Unable to fetch revision info; %(msg)s"
+
+    def __init__(self, msg):
+        self.msg = msg
+
+
 _reuse_uuids_warned = set()
 def warn_uuid_reuse(uuid, location):
     """Warn that a UUID is being reused for different repositories."""
