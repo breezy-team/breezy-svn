@@ -35,6 +35,9 @@ from bzrlib.plugins.svn import (
     errors as svn_errors,
     util,
     )
+from bzrlib.plugins.svn.cache import (
+    CacheConcurrencyError,
+    )
 from bzrlib.plugins.svn.mapping import (
     SVN_PROP_BZR_HIDDEN,
     SVN_PROP_BZR_REVPROP_REDIRECT,
@@ -735,14 +738,19 @@ class CachingBzrMetaRevision(BzrMetaRevision):
         self._stored_lhs_parent_revid = {}
 
     def _update_cache(self, mapping):
-        if (self.get_original_mapping() is not None and
-            self._revision_info[mapping][1] is not None):
-            self._revid_cache.insert_revid(self._revision_info[mapping][1],
-                self.metarev.branch_path, self.metarev.revnum,
-                self.metarev.revnum, mapping.name)
-        self._revinfo_cache.insert_revision(self.metarev.get_foreign_revid(), mapping,
-            self._revision_info[mapping],
-            self._stored_lhs_parent_revid[mapping])
+        try:
+            if (self.get_original_mapping() is not None and
+                self._revision_info[mapping][1] is not None):
+                self._revid_cache.insert_revid(self._revision_info[mapping][1],
+                    self.metarev.branch_path, self.metarev.revnum,
+                    self.metarev.revnum, mapping.name)
+            self._revinfo_cache.insert_revision(
+                self.metarev.get_foreign_revid(),
+                mapping,
+                self._revision_info[mapping],
+                self._stored_lhs_parent_revid[mapping])
+        except CacheConcurrencyError:
+            pass
 
     def _determine(self, mapping):
         self._revision_info[mapping] = self.base.get_revision_info(mapping)
@@ -752,8 +760,8 @@ class CachingBzrMetaRevision(BzrMetaRevision):
         assert mapping is not None
         (self._revision_info[mapping],
                 self._stored_lhs_parent_revid[mapping]) = \
-                 self._revinfo_cache.get_revision(self.metarev.get_foreign_revid(),
-                                                  mapping)
+                 self._revinfo_cache.get_revision(
+                         self.metarev.get_foreign_revid(), mapping)
 
     def get_original_mapping(self):
         if self._original_mapping_set:
@@ -763,8 +771,12 @@ class CachingBzrMetaRevision(BzrMetaRevision):
                 self.metarev.get_foreign_revid())
         except KeyError:
             self._original_mapping = self.base.get_original_mapping()
-            self._revinfo_cache.set_original_mapping(self.metarev.get_foreign_revid(),
+            try:
+                self._revinfo_cache.set_original_mapping(
+                    self.metarev.get_foreign_revid(),
                     self._original_mapping)
+            except CacheConcurrencyError:
+                pass
         self._original_mapping_set = True
         return self._original_mapping
 
@@ -815,7 +827,10 @@ class CachingBzrMetaRevision(BzrMetaRevision):
             if parent_ids is not None:
                 return parent_ids
         parent_ids = self.base.get_parent_ids(mapping, parentrevmeta)
-        self._parents_cache.insert_parents(myrevid, parent_ids)
+        try:
+            self._parents_cache.insert_parents(myrevid, parent_ids)
+        except CacheConcurrencyError:
+            pass
         return parent_ids
 
 

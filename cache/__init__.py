@@ -38,6 +38,10 @@ get_transport_from_path = getattr(_mod_transport, "get_transport_from_path",
 from bzrlib.plugins.svn import version_info
 
 
+class CacheConcurrencyError(Exception):
+    """Unable to access cache while write is in progress."""
+
+
 def write_cache_readme(path):
     f = open(path, 'w')
     try:
@@ -146,6 +150,7 @@ class RepositoryCache(object):
 try:
     from bzrlib.plugins.svn.cache.tdbcache import TdbRepositoryCache
     cache_cls = TdbRepositoryCache
+    raise ImportError
 except ImportError:
     from bzrlib.plugins.svn.cache.sqlitecache import SqliteRepositoryCache
     cache_cls = SqliteRepositoryCache

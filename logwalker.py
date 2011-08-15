@@ -33,6 +33,9 @@ from bzrlib.errors import (
 from bzrlib.plugins.svn import (
     changes,
     )
+from bzrlib.plugins.svn.cache import (
+    CacheConcurrencyError,
+    )
 from bzrlib.plugins.svn.transport import (
     SvnRaTransport,
     )
@@ -231,6 +234,9 @@ class CachingLogWalker(object):
         if "logwalker" in debug.debug_flags:
             trace.mutter(text, *args, **kwargs)
 
+    def _warn_busy_cache(self):
+        trace.warning("Cache for repository %s busy, ignoring")
+
     def find_latest_change(self, path, revnum):
         """Find latest revision that touched path.
 
@@ -239,7 +245,11 @@ class CachingLogWalker(object):
         """
         assert isinstance(path, str)
         assert isinstance(revnum, int) and revnum >= 0
-        self._fetch_revisions(revnum)
+        try:
+            self._fetch_revisions(revnum)
+        except CacheConcurrencyError:
+            self._warn_busy_cache()
+            return self.actual.find_latest_change(path, revnum)
 
         self.mutter("latest change: %r:%r", path, revnum)
         try:
@@ -263,19 +273,33 @@ class CachingLogWalker(object):
         """
         assert from_revnum >= 0 and to_revnum >= 0, "%r -> %r" % (from_revnum, to_revnum)
         self.mutter("iter changes %r->%r (%r)", from_revnum, to_revnum, prefixes)
-        self._fetch_revisions(max(from_revnum, to_revnum), pb=pb)
+        try:
+            self._fetch_revisions(max(from_revnum, to_revnum), pb=pb)
+        except CacheConcurrencyError:
+            self._warn_busy_cache()
+            return self.actual.iter_changes(prefixes, from_revnum, to_revnum,
+                    limit, pb)
         return iter(iter_changes(prefixes, from_revnum, to_revnum,
             self.get_revision_paths, self.revprop_list, limit))
 
     def get_revision_paths(self, revnum):
         if revnum == 0:
             return changes.REV0_CHANGES
-        self._fetch_revisions(revnum)
-        return self.cache.get_revision_paths(revnum)
+        try:
+            self._fetch_revisions(revnum)
+        except CacheConcurrencyError:
+            self._warn_busy_cache()
+            return self.actual.get_revision_paths(revnum)
+        else:
+            return self.cache.get_revision_paths(revnum)
 
     def revprop_list(self, revnum):
         self.mutter('revprop list: %d' % revnum)
-        self._fetch_revisions(revnum)
+        try:
+            self._fetch_revisions(revnum)
+        except CacheConcurrencyError:
+            self._warn_busy_cache()
+            return self.actual.revprop_list(revnum)
 
         if revnum > 0:
             (known_revprops, has_all_revprops) = self.cache.get_revprops(revnum)
@@ -290,8 +314,11 @@ class CachingLogWalker(object):
 
     def _caching_revprop_list(self, revnum):
         revprops = self._transport.revprop_list(revnum)
-        self.cache.insert_revprops(revnum, revprops, True)
-        self.cache.commit()
+        try:
+            self.cache.insert_revprops(revnum, revprops, True)
+            self.cache.commit()
+        except CacheConcurrencyError:
+            pass
         return revprops
 
     def _fetch_revisions(self, to_revnum, pb=None):

@@ -27,6 +27,7 @@ from bzrlib import (
     )
 
 from bzrlib.plugins.svn.cache import (
+    CacheConcurrencyError,
     RepositoryCache,
     )
 from bzrlib.plugins.svn.mapping import (
@@ -90,6 +91,31 @@ class CacheTable(object):
         self.cachedb.commit()
         self._commit_countdown = self._commit_interval
 
+    @classmethod
+    def _convert_operational_errors(cls, e):
+        if "database is locked" in e:
+            return CacheConcurrencyError()
+        else:
+            return e
+
+    def execute(self, *args, **kwargs):
+        try:
+            return self.cachedb.execute(*args, **kwargs)
+        except sqlite3.OperationalError, e:
+            raise self._convert_operational_errors(e)
+
+    def executemany(self, *args, **kwargs):
+        try:
+            return self.cachedb.executemany(*args, **kwargs)
+        except sqlite3.OperationalError, e:
+            raise self._convert_operational_errors(e)
+
+    def executescript(self, *args, **kwargs):
+        try:
+            return self.cachedb.executescript(*args, **kwargs)
+        except sqlite3.OperationalError, e:
+            raise self._convert_operational_errors(e)
+
     def commit(self):
         """Commit the changes to the database."""
         self.cachedb.commit()
@@ -140,13 +166,13 @@ class SqliteRevisionIdMapCache(RevisionIdMapCache, CacheTable):
         """See RevisionIdMapCache.set_last_revnum_checked."""
 
         self.mutter("set last revnum checked for %r to %r", layout, revnum)
-        self.cachedb.execute("replace into revids_seen (layout, max_revnum) VALUES (?, ?)", (layout, revnum))
+        self.execute("replace into revids_seen (layout, max_revnum) VALUES (?, ?)", (layout, revnum))
         self.commit()
 
     def last_revnum_checked(self, layout):
         """See RevisionIdMapCache.last_revnum_checked."""
 
-        ret = self.cachedb.execute(
+        ret = self.execute(
             "select max_revnum from revids_seen where layout = ?", (layout,)).fetchone()
         if ret is None:
             revnum = 0
@@ -160,7 +186,7 @@ class SqliteRevisionIdMapCache(RevisionIdMapCache, CacheTable):
 
         assert isinstance(revid, str)
         self.mutter("lookup revid %r", revid)
-        ret = self.cachedb.execute(
+        ret = self.execute(
             "select path, min_revnum, max_revnum, mapping from revmap where revid=? order by abs(min_revnum-max_revnum) asc", (revid,)).fetchone()
         if ret is None:
             raise errors.NoSuchRevision(self, revid)
@@ -176,7 +202,7 @@ class SqliteRevisionIdMapCache(RevisionIdMapCache, CacheTable):
         assert isinstance(revnum, int)
         assert isinstance(path, str)
         assert isinstance(mapping, str)
-        row = self.cachedb.execute(
+        row = self.execute(
                 "select revid from revmap where max_revnum=? and min_revnum=? and path=? and mapping=?", (revnum, revnum, path, mapping)).fetchone()
         if row is not None:
             ret = str(row[0])
@@ -195,16 +221,16 @@ class SqliteRevisionIdMapCache(RevisionIdMapCache, CacheTable):
         assert min_revnum <= max_revnum
         self.mutter("insert revid %r:%r-%r -> %r", branch, min_revnum, max_revnum, revid)
         if min_revnum == max_revnum:
-            cursor = self.cachedb.execute(
+            cursor = self.execute(
                 "update revmap set min_revnum = ?, max_revnum = ? WHERE revid=? AND path=? AND mapping=?",
                 (min_revnum, max_revnum, revid, branch, mapping))
         else:
-            cursor = self.cachedb.execute(
+            cursor = self.execute(
                 "update revmap set min_revnum = MAX(min_revnum,?), max_revnum = MIN(max_revnum, ?) WHERE revid=? AND path=? AND mapping=?",
                 (min_revnum, max_revnum, revid, branch, mapping))
         if cursor.rowcount == 0:
-            self.cachedb.execute(
-                "insert into revmap (revid,path,min_revnum,max_revnum,mapping) VALUES (?,?,?,?,?)",
+            self.execute(
+                "replace into revmap (revid,path,min_revnum,max_revnum,mapping) VALUES (?,?,?,?,?)",
                 (revid, branch, min_revnum, max_revnum, mapping))
         self._commit_conditionally()
 
@@ -212,7 +238,7 @@ class SqliteRevisionIdMapCache(RevisionIdMapCache, CacheTable):
 class SqliteRevisionInfoCache(RevisionInfoCache, CacheTable):
 
     def _create_table(self):
-        self.cachedb.executescript("""
+        self.executescript("""
         create table if not exists revmetainfo (
             path text not null,
             revnum integer,
@@ -240,20 +266,20 @@ class SqliteRevisionInfoCache(RevisionInfoCache, CacheTable):
             orig_mapping_name = original_mapping.name
         else:
             orig_mapping_name = None
-        self.cachedb.execute("insert into original_mapping (path, revnum, original_mapping) values (?, ?, ?)", (foreign_revid[1].decode("utf-8"), foreign_revid[2], orig_mapping_name))
+        self.execute("replace into original_mapping (path, revnum, original_mapping) values (?, ?, ?)", (foreign_revid[1].decode("utf-8"), foreign_revid[2], orig_mapping_name))
 
     def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden),
             stored_lhs_parent_revid):
         """See RevisionInfoCache.insert_revision."""
 
-        self.cachedb.execute("insert into revmetainfo (path, revnum, mapping, revid, revno, hidden, stored_lhs_parent_revid) values (?, ?, ?, ?, ?, ?, ?)", (foreign_revid[1], foreign_revid[2], mapping.name, revid, revno, hidden, stored_lhs_parent_revid))
+        self.execute("replace into revmetainfo (path, revnum, mapping, revid, revno, hidden, stored_lhs_parent_revid) values (?, ?, ?, ?, ?, ?, ?)", (foreign_revid[1], foreign_revid[2], mapping.name, revid, revno, hidden, stored_lhs_parent_revid))
         self._commit_conditionally()
 
     def get_revision(self, foreign_revid, mapping):
         """See RevisionInfoCache.get_revision."""
 
         # Will raise KeyError if not present
-        row = self.cachedb.execute("select revno, revid, hidden, stored_lhs_parent_revid from revmetainfo where path = ? and revnum = ? and mapping = ?", (foreign_revid[1], foreign_revid[2], mapping.name)).fetchone()
+        row = self.execute("select revno, revid, hidden, stored_lhs_parent_revid from revmetainfo where path = ? and revnum = ? and mapping = ?", (foreign_revid[1], foreign_revid[2], mapping.name)).fetchone()
         if row is None:
             raise KeyError((foreign_revid, mapping))
         else:
@@ -270,7 +296,7 @@ class SqliteRevisionInfoCache(RevisionInfoCache, CacheTable):
     def get_original_mapping(self, foreign_revid):
         """See RevisionInfoCache.get_original_mapping."""
 
-        row = self.cachedb.execute("select original_mapping from original_mapping where path = ? and revnum = ?", (foreign_revid[1].decode("utf-8"), foreign_revid[2])).fetchone()
+        row = self.execute("select original_mapping from original_mapping where path = ? and revnum = ?", (foreign_revid[1].decode("utf-8"), foreign_revid[2])).fetchone()
         if row is None:
             raise KeyError(foreign_revid)
         if row[0] is None:
@@ -282,7 +308,7 @@ class SqliteRevisionInfoCache(RevisionInfoCache, CacheTable):
 class SqliteLogCache(LogCache, CacheTable):
 
     def _create_table(self):
-        self.cachedb.executescript("""
+        self.executescript("""
             create table if not exists changed_path(
                 rev integer,
                 action text not null check(action in ('A', 'D', 'M', 'R')),
@@ -305,7 +331,7 @@ class SqliteLogCache(LogCache, CacheTable):
             create unique index if not exists revinfo_rev on revinfo(rev);
         """ % NODE_UNKNOWN)
         try:
-            self.cachedb.executescript(
+            self.executescript(
                 "alter table changed_path ADD kind INT DEFAULT %d;" % NODE_UNKNOWN)
         except sqlite3.OperationalError:
             pass # Column already exists.
@@ -314,8 +340,8 @@ class SqliteLogCache(LogCache, CacheTable):
         """See LogCache.find_latest_change."""
 
         if path == "":
-            return self.cachedb.execute("select max(rev) from changed_path where rev <= ?", (revnum,)).fetchone()[0]
-        return self.cachedb.execute("""
+            return self.execute("select max(rev) from changed_path where rev <= ?", (revnum,)).fetchone()[0]
+        return self.execute("""
             select max(rev) from changed_path
             where rev <= ?
             and (path=?
@@ -327,7 +353,7 @@ class SqliteLogCache(LogCache, CacheTable):
     def get_revision_paths(self, revnum):
         """See LogCache.get_revision_paths."""
 
-        result = self.cachedb.execute("select path, action, copyfrom_path, copyfrom_rev, kind from changed_path where rev=?", (revnum,))
+        result = self.execute("select path, action, copyfrom_path, copyfrom_rev, kind from changed_path where rev=?", (revnum,))
         paths = {}
         for p, act, cf, cr, kind in result:
             if cf is not None:
@@ -353,19 +379,19 @@ class SqliteLogCache(LogCache, CacheTable):
                 kind = NODE_UNKNOWN
             new_paths.append((rev, p.strip("/").decode("utf-8"), v[0], copyfrom_path, v[2], kind))
 
-        self.cachedb.executemany("replace into changed_path (rev, path, action, copyfrom_path, copyfrom_rev, kind) values (?, ?, ?, ?, ?, ?)", new_paths)
+        self.executemany("replace into changed_path (rev, path, action, copyfrom_path, copyfrom_rev, kind) values (?, ?, ?, ?, ?, ?)", new_paths)
 
     def drop_revprops(self, revnum):
         """See LogCache.drop_revprops."""
 
-        self.cachedb.execute("update revinfo set all_revprops = 0 where rev = ?", (revnum,))
+        self.execute("update revinfo set all_revprops = 0 where rev = ?", (revnum,))
 
     def get_revprops(self, revnum):
         """See LogCache.get_revprops."""
 
-        result = self.cachedb.execute("select name, value from revprop where rev = ?", (revnum,))
+        result = self.execute("select name, value from revprop where rev = ?", (revnum,))
         revprops = dict((k.encode("utf-8"), v.encode("utf-8")) for (k, v) in result)
-        result = self.cachedb.execute("select all_revprops from revinfo where rev = ?", (revnum,)).fetchone()
+        result = self.execute("select all_revprops from revinfo where rev = ?", (revnum,)).fetchone()
         if result is None:
             all_revprops = False
         else:
@@ -377,15 +403,15 @@ class SqliteLogCache(LogCache, CacheTable):
 
         if revprops is None:
             return
-        self.cachedb.executemany("replace into revprop (rev, name, value) values (?, ?, ?)", [(revision, name.decode("utf-8", "replace"), value.decode("utf-8", "replace")) for (name, value) in revprops.iteritems()])
-        self.cachedb.execute("""
+        self.executemany("replace into revprop (rev, name, value) values (?, ?, ?)", [(revision, name.decode("utf-8", "replace"), value.decode("utf-8", "replace")) for (name, value) in revprops.iteritems()])
+        self.execute("""
             replace into revinfo (rev, all_revprops) values (?, ?)
         """, (revision, all_revprops))
 
     def max_revnum(self):
         """See LogCache.last_revnum."""
 
-        saved_revnum = self.cachedb.execute("SELECT MAX(rev) FROM changed_path").fetchone()[0]
+        saved_revnum = self.execute("SELECT MAX(rev) FROM changed_path").fetchone()[0]
         if saved_revnum is None:
             return 0
         return saved_revnum
@@ -393,13 +419,13 @@ class SqliteLogCache(LogCache, CacheTable):
     def min_revnum(self):
         """See LogCache.min_revnum."""
 
-        return self.cachedb.execute("SELECT MIN(rev) FROM changed_path").fetchone()[0]
+        return self.execute("SELECT MIN(rev) FROM changed_path").fetchone()[0]
 
 
 class SqliteParentsCache(ParentsCache, CacheTable):
 
     def _create_table(self):
-        self.cachedb.executescript("""
+        self.executescript("""
         create table if not exists parent (
             rev text not null,
             parent text,
@@ -415,17 +441,17 @@ class SqliteParentsCache(ParentsCache, CacheTable):
 
         self.mutter('insert parents: %r -> %r', revid, parents)
         if len(parents) == 0:
-            self.cachedb.execute("replace into parent (rev, parent, idx) values (?, NULL, -1)", (revid,))
+            self.execute("replace into parent (rev, parent, idx) values (?, NULL, -1)", (revid,))
         else:
             for i, p in enumerate(parents):
-                self.cachedb.execute("replace into parent (rev, parent, idx) values (?, ?, ?)", (revid, p, i))
+                self.execute("replace into parent (rev, parent, idx) values (?, ?, ?)", (revid, p, i))
         self._commit_conditionally()
 
     def lookup_parents(self, revid):
         """See ParentsCache.lookup_parents."""
 
         self.mutter('lookup parents: %r', revid)
-        rows = self.cachedb.execute("select parent from parent where rev = ? order by idx", (revid, )).fetchall()
+        rows = self.execute("select parent from parent where rev = ? order by idx", (revid, )).fetchall()
         if len(rows) == 0:
             return None
         return tuple([row[0].encode("utf-8") for row in rows if row[0] is not None])
