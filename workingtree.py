@@ -210,16 +210,14 @@ class Walker(object):
                 raise
             try:
                 for name, entry in wc.entries_read(False).iteritems():
-                    if name == "":
-                        continue
-                    subp = osutils.pathjoin(p, name)
-                    self.pending[subp] = entry
-                    if entry.kind == subvertpy.NODE_DIR:
+                    subp = osutils.pathjoin(p, name.decode("utf-8")).rstrip("/")
+                    if entry.kind == subvertpy.NODE_DIR and name != "":
                         self.todo.add(subp)
+                    else:
+                        self.pending[subp] = entry
             finally:
                 wc.close()
-        (path, entry) = self.pending.popitem()
-        return (path, entry)
+        return self.pending.popitem()
 
 
 class SvnWorkingTree(SubversionTree, WorkingTree):
@@ -540,14 +538,15 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             # See if the file this file was copied from disappeared
             # and has no other copies -> in that case, take id of other file
             if (entry.copyfrom_url and
-                list(find_copies(entry.copyfrom_url)) == [relpath.encode("utf-8")]):
+                list(self._find_copies(entry.copyfrom_url)) == [relpath.encode("utf-8")]):
                 return self.path_to_file_id(entry.copyfrom_rev,
                     entry.revision, self.unprefix(urllib.unquote(entry.copyfrom_url[len(entry.repos):])).decode("utf-8"))
             ids = self._get_new_file_ids()
             if ids.has_key(relpath):
                 return (ids[relpath], None)
             # FIXME: Generate more random but consistent file ids
-            return ("NEW-" + escape_svn_path(entry.url[len(entry.repos):].strip("/")), None)
+            return ("NEW-" + escape_svn_path(entry.url[len(entry.repos):].strip("/")),
+                    None)
 
     def get_root_id(self):
         return self.path2id("")
@@ -557,11 +556,21 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return self._bzr_inventory.path2id(path)
 
     def filter_unversioned_files(self, paths):
-        # FIXME
-        ret = set()
-        for p in paths:
-            if not self._bzr_inventory.has_filename(p):
-                ret.add(p)
+        wc = self._get_wc()
+        try:
+            ret = set()
+            for p in paths:
+                parent = os.path.dirname(p)
+                parent_wc = wc.probe_try(parent)
+                try:
+                    entry = parent_wc.entry(p[len(parent_wc.access_path()):].strip("/"))
+                except KeyError:
+                    ret.add(p)
+                else:
+                    if entry.schedule == SCHEDULE_DELETE:
+                        ret.add(p)
+        finally:
+            wc.close()
         return ret
 
     def has_or_had_id(self, file_id):
@@ -583,12 +592,50 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         # FIXME
         return self._bzr_inventory.id2path(file_id)
 
+    def _ie_from_entry(self, relpath, entry, parent_id):
+        (file_id, revid) = self._find_ids(relpath, entry)
+        abspath = self.abspath(relpath)
+        if entry.kind == subvertpy.NODE_DIR:
+            ie = InventoryDirectory(file_id, os.path.basename(relpath),
+                    parent_id)
+            ie.revision = revid
+            return ie
+        elif os.path.islink(abspath):
+            ie = InventoryLink(file_id, os.path.basename(relpath), parent_id)
+            ie.revision = revid
+            target_path = os.readlink(abspath.encode(osutils._fs_enc))
+            ie.symlink_target = target_path.decode(osutils._fs_enc)
+            return ie
+        else:
+            ie = InventoryFile(file_id, os.path.basename(relpath), parent_id)
+            ie.revision = revid
+            try:
+                data = osutils.fingerprint_file(
+                    open(abspath.encode(osutils._fs_enc)))
+            except IOError:
+                # Ignore non-existing files
+                return None
+            else:
+                ie.text_sha1 = data['sha1']
+                ie.text_size = data['size']
+                ie.executable = self.is_executable(id, relpath)
+                return ie
+
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
         if specific_file_ids:
-            for name, ie in self._bzr_inventory.iter_entries_by_dir(
-                    specific_file_ids=specific_file_ids, yield_parents=yield_parents):
-                yield name, ie
+            wc = self._get_wc()
+            try:
+                for file_id in specific_file_ids:
+                    path = self.id2path(file_id)
+                    parent = os.path.dirname(path)
+                    parent_id = self.lookup_id(parent)
+                    parent_wc = wc.probe_try(parent)
+                    entry = parent_wc.entry(path[len(parent_wc.access_path()):].strip("/"))
+                    yield path, self._ie_from_entry(path, entry, parent_id)
+            finally:
+                wc.close()
         else:
+            fileids = {}
             w = Walker(self)
             for relpath, entry in w:
                 if entry.schedule == SCHEDULE_DELETE:
@@ -597,31 +644,11 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 if relpath == u"":
                     parent_id = None
                 else:
-                    parent_id = self.lookup_id(osutils.dirname(relpath))[0]
-                abspath = self.abspath(relpath)
-                (file_id, revid) = self._find_ids(relpath, entry)
-                if entry.kind == subvertpy.NODE_DIR:
-                    ie = InventoryDirectory(file_id, osutils.basename(relpath), parent_id)
-                    ie.revision = revid
+                    parent_id = fileids[os.path.dirname(relpath)]
+                ie = self._ie_from_entry(relpath, entry, parent_id)
+                if ie is not None:
+                    fileids[relpath] = ie.file_id
                     yield relpath, ie
-                elif os.path.islink(abspath):
-                    ie = InventoryLink(file_id, osutils.basename(relpath), parent_id)
-                    ie.revision = revid
-                    ie.symlink_target = os.readlink(abspath.encode(osutils._fs_enc)).decode(osutils._fs_enc)
-                    yield relpath, ie
-                else:
-                    ie = InventoryFile(file_id, osutils.basename(relpath), parent_id)
-                    ie.revision = revid
-                    try:
-                        data = osutils.fingerprint_file(open(abspath.encode(osutils._fs_enc)))
-                    except IOError:
-                        # Ignore non-existing files
-                        pass
-                    else:
-                        ie.text_sha1 = data['sha1']
-                        ie.text_size = data['size']
-                        ie.executable = self.is_executable(id, relpath)
-                        yield relpath, ie
 
     def extras(self):
         w = Walker(self)
