@@ -62,6 +62,7 @@ from bzrlib.errors import (
     )
 from bzrlib.inventory import (
     Inventory,
+    InventoryDirectory,
     InventoryFile,
     InventoryLink,
     )
@@ -201,7 +202,12 @@ class Walker(object):
                 p = self.todo.pop()
             except KeyError:
                 return None
-            wc = self.workingtree._get_wc(p)
+            try:
+                wc = self.workingtree._get_wc(p)
+            except subvertpy.SubversionException, (_, num):
+                if num == subvertpy.ERR_WC_NOT_DIRECTORY:
+                    continue
+                raise
             try:
                 for name, entry in wc.entries_read(False).iteritems():
                     if name == "":
@@ -394,7 +400,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
         for file in files:
             self._change_fileid_mapping(None, file)
-        self.read_working_inventory()
 
     def unversion(self, file_ids):
         wc = self._get_wc(write_lock=True)
@@ -405,7 +410,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                           keep_local=True)
         finally:
             wc.close()
-        self.read_working_inventory()
 
     def all_file_ids(self):
         """See Tree.all_file_ids"""
@@ -453,8 +457,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             self._change_fileid_mapping(self.path2id(entry), new_name)
             self._change_fileid_mapping(None, entry)
 
-        self.read_working_inventory()
-
     def rename_one(self, from_rel, to_rel, after=False):
         from_rel = osutils.safe_unicode(from_rel)
         to_rel = osutils.safe_unicode(to_rel)
@@ -480,7 +482,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 to_wc.close()
         self._change_fileid_mapping(None, from_rel)
         self._change_fileid_mapping(from_id, to_rel)
-        self.read_working_inventory()
 
     def path_to_file_id(self, revnum, current_revnum, path):
         """Generate a bzr file id from a Subversion file name.
@@ -495,149 +496,58 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             path = u""
         return self.lookup_id(path)
 
-    def read_working_inventory(self):
-        """'Read' the working inventory.
+    def _find_copies(self, url, relpath=u""):
+        """Find copies of the specified path
 
+        :param url: URL of which to find copies
+        :param relpath: Optional subpath to search in
+        :return: Yields all copies
         """
-        inv = Inventory()
-
-        def add_file_to_inv(relpath, id, revid, parent_id):
-            """Add a file to the inventory.
-
-            :param relpath: Path relative to working tree root
-            :param id: File id of current directory
-            :param revid: Revision id
-            :param parent_id: File id of parent directory
-            """
-            assert isinstance(relpath, unicode)
-            abspath = self.abspath(relpath)
-            if os.path.islink(abspath):
-                file = InventoryLink(id, os.path.basename(relpath), parent_id)
-                file.revision = revid
-                file.symlink_target = os.readlink(abspath.encode(osutils._fs_enc)).decode(osutils._fs_enc)
-                inv.add(file)
-            else:
-                file = InventoryFile(id, os.path.basename(relpath), parent_id)
-                file.revision = revid
-                try:
-                    data = osutils.fingerprint_file(open(abspath.encode(osutils._fs_enc)))
-                    file.text_sha1 = data['sha1']
-                    file.text_size = data['size']
-                    file.executable = self.is_executable(id, relpath)
-                    inv.add(file)
-                except IOError:
-                    # Ignore non-existing files
-                    pass
-
-        def find_copies(url, relpath=u""):
-            """Find copies of the specified path
-
-            :param url: URL of which to find copies
-            :param relpath: Optional subpath to search in
-            :return: Yields all copies
-            """
-            ret = []
-            wc = self._get_wc(relpath)
-            try:
-                entries = wc.entries_read(False)
-                for entry in entries.values():
-                    subrelpath = osutils.pathjoin(relpath,
-                        entry.name.decode("utf-8"))
-                    if entry.name == "" or entry.kind != 'directory':
-                        if ((entry.copyfrom_url == url or entry.url == url) and
-                            not (entry.schedule in (SCHEDULE_DELETE,
-                                                    SCHEDULE_REPLACE))):
-                            ret.append(osutils.pathjoin(
-                                    self.get_branch_path().strip("/").decode("utf-8"),
-                                    subrelpath))
-                    else:
-                        find_copies(url, subrelpath)
-            finally:
-                wc.close()
-            return ret
-
-        def find_ids(relpath, entry, rootwc):
-            assert entry.schedule in (SCHEDULE_NORMAL,
-                                      SCHEDULE_DELETE,
-                                      SCHEDULE_ADD,
-                                      SCHEDULE_REPLACE)
-            if entry.schedule == SCHEDULE_NORMAL:
-                assert entry.revision >= 0
-                # Keep old id
-                return self.path_to_file_id(entry.cmt_rev, entry.revision,
-                        relpath)
-            elif entry.schedule == SCHEDULE_DELETE:
-                return (None, None)
-            elif (entry.schedule == SCHEDULE_ADD or
-                  entry.schedule == SCHEDULE_REPLACE):
-                # See if the file this file was copied from disappeared
-                # and has no other copies -> in that case, take id of other file
-                if (entry.copyfrom_url and
-                    list(find_copies(entry.copyfrom_url)) == [relpath.encode("utf-8")]):
-                    return self.path_to_file_id(entry.copyfrom_rev,
-                        entry.revision, self.unprefix(urllib.unquote(entry.copyfrom_url[len(entry.repos):])).decode("utf-8"))
-                ids = self._get_new_file_ids()
-                if ids.has_key(relpath):
-                    return (ids[relpath], None)
-                # FIXME: Generate more random but consistent file ids
-                return ("NEW-" + escape_svn_path(entry.url[len(entry.repos):].strip("/")), None)
-
-        def add_dir_to_inv(relpath, wc, parent_id):
-            assert isinstance(relpath, unicode)
-            entries = wc.entries_read(False)
-            entry = entries[""]
-            assert parent_id is None or isinstance(parent_id, str), \
-                    "%r is not a string" % parent_id
-            (id, revid) = find_ids(relpath, entry, rootwc)
-            if id is None:
-                mutter('no id for %r', entry.url)
-                return
-            assert revid is None or isinstance(revid, str), "%r is not a string" % revid
-            assert isinstance(id, str), "%r is not a string" % id
-
-            # First handle directory itself
-            inv.add_path(relpath, 'directory', id, parent_id).revision = revid
-            if relpath == u"":
-                inv.revision_id = revid
-
-            for name in entries:
-                if name == "":
-                    continue
-
-                subrelpath = os.path.join(relpath, name.decode("utf-8"))
-
-                entry = entries[name]
-                assert entry
-
-                if entry.kind == subvertpy.NODE_DIR:
-                    try:
-                        subwc = self._get_wc(subrelpath, base=wc)
-                    except subvertpy.SubversionException, (_, num):
-                        if num == subvertpy.ERR_WC_NOT_DIRECTORY:
-                            continue
-                        raise
-                    try:
-                        assert isinstance(subrelpath, unicode)
-                        add_dir_to_inv(subrelpath, subwc, id)
-                    finally:
-                        subwc.close()
-                else:
-                    (subid, subrevid) = find_ids(subrelpath, entry, rootwc)
-                    if subid:
-                        assert isinstance(subrelpath, unicode)
-                        add_file_to_inv(subrelpath, subid, subrevid, id)
-                    else:
-                        mutter('no id for %r', entry.url)
-
-        rootwc = self._get_wc()
+        ret = []
+        wc = self._get_wc(relpath)
         try:
-            add_dir_to_inv(u"", rootwc, None)
+            entries = wc.entries_read(False)
+            for entry in entries.values():
+                subrelpath = osutils.pathjoin(relpath,
+                    entry.name.decode("utf-8"))
+                if entry.name == "" or entry.kind != 'directory':
+                    if ((entry.copyfrom_url == url or entry.url == url) and
+                        not (entry.schedule in (SCHEDULE_DELETE,
+                                                SCHEDULE_REPLACE))):
+                        ret.append(osutils.pathjoin(
+                                self.get_branch_path().strip("/").decode("utf-8"),
+                                subrelpath))
+                else:
+                    self._find_copies(url, subrelpath)
         finally:
-            rootwc.close()
+            wc.close()
+        return ret
 
-        self._bzr_inventory = inv
-        self._inventory = self._bzr_inventory # FIXME
-        return inv
+    def _find_ids(self, relpath, entry):
+        assert entry.schedule in (SCHEDULE_NORMAL,
+                                  SCHEDULE_DELETE,
+                                  SCHEDULE_ADD,
+                                  SCHEDULE_REPLACE)
+        if entry.schedule == SCHEDULE_NORMAL:
+            assert entry.revision >= 0
+            # Keep old id
+            return self.path_to_file_id(entry.cmt_rev, entry.revision,
+                    relpath)
+        elif entry.schedule == SCHEDULE_DELETE:
+            return (None, None)
+        elif (entry.schedule == SCHEDULE_ADD or
+              entry.schedule == SCHEDULE_REPLACE):
+            # See if the file this file was copied from disappeared
+            # and has no other copies -> in that case, take id of other file
+            if (entry.copyfrom_url and
+                list(find_copies(entry.copyfrom_url)) == [relpath.encode("utf-8")]):
+                return self.path_to_file_id(entry.copyfrom_rev,
+                    entry.revision, self.unprefix(urllib.unquote(entry.copyfrom_url[len(entry.repos):])).decode("utf-8"))
+            ids = self._get_new_file_ids()
+            if ids.has_key(relpath):
+                return (ids[relpath], None)
+            # FIXME: Generate more random but consistent file ids
+            return ("NEW-" + escape_svn_path(entry.url[len(entry.repos):].strip("/")), None)
 
     def get_root_id(self):
         return self.path2id("")
@@ -674,13 +584,48 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return self._bzr_inventory.id2path(file_id)
 
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
-        # FIXME
-        return self._bzr_inventory.iter_entries_by_dir(
-            specific_file_ids=specific_file_ids, yield_parents=yield_parents)
+        if specific_file_ids:
+            for name, ie in self._bzr_inventory.iter_entries_by_dir(
+                    specific_file_ids=specific_file_ids, yield_parents=yield_parents):
+                yield name, ie
+        else:
+            w = Walker(self)
+            for relpath, entry in w:
+                if entry.schedule == SCHEDULE_DELETE:
+                    continue
+                assert isinstance(relpath, unicode)
+                if relpath == u"":
+                    parent_id = None
+                else:
+                    parent_id = self.lookup_id(osutils.dirname(relpath))[0]
+                abspath = self.abspath(relpath)
+                (file_id, revid) = self._find_ids(relpath, entry)
+                if entry.kind == subvertpy.NODE_DIR:
+                    ie = InventoryDirectory(file_id, osutils.basename(relpath), parent_id)
+                    ie.revision = revid
+                    yield relpath, ie
+                elif os.path.islink(abspath):
+                    ie = InventoryLink(file_id, osutils.basename(relpath), parent_id)
+                    ie.revision = revid
+                    ie.symlink_target = os.readlink(abspath.encode(osutils._fs_enc)).decode(osutils._fs_enc)
+                    yield relpath, ie
+                else:
+                    ie = InventoryFile(file_id, osutils.basename(relpath), parent_id)
+                    ie.revision = revid
+                    try:
+                        data = osutils.fingerprint_file(open(abspath.encode(osutils._fs_enc)))
+                    except IOError:
+                        # Ignore non-existing files
+                        pass
+                    else:
+                        ie.text_sha1 = data['sha1']
+                        ie.text_size = data['size']
+                        ie.executable = self.is_executable(id, relpath)
+                        yield relpath, ie
 
     def extras(self):
-        # FIXME
-        for path, dir_entry in self._bzr_inventory.directories():
+        w = Walker(self)
+        for path, dir_entry in w:
             # mutter("search for unknowns in %r", path)
             dirabs = self.abspath(path)
             if not osutils.isdir(dirabs):
@@ -832,7 +777,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 wc.close()
             if file_id is not None:
                 self._change_fileid_mapping(file_id, f)
-        self.read_working_inventory()
 
     def basis_tree(self):
         """Return the basis tree for a working tree."""
@@ -855,7 +799,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def _update_base_revnum(self, fetched):
         self._set_base(None, fetched)
-        self.read_working_inventory()
 
     def pull(self, source, overwrite=False, stop_revision=None,
              delta_reporter=None, possible_transports=None, local=False):
