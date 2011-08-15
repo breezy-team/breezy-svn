@@ -342,7 +342,7 @@ class CachingLogWalker(object):
                     self.actual._transport.get_log(rcvr, [""], to_revnum,
                         self.saved_maxrevnum, 0, True, True, False,
                         todo_revprops)
-                    if to_revnum > self.saved_maxrevnum:
+                    if to_revnum > self.saved_maxrevnum and to_revnum > 0:
                         raise BzrError("Unable to fetch revision info; last "
                             "available revision: %d" % self.saved_maxrevnum)
             except subvertpy.SubversionException, (msg, num):
