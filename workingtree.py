@@ -185,6 +185,37 @@ def generate_ignore_list(ignore_map):
     return ignores
 
 
+class Walker(object):
+
+    def __init__(self, workingtree, start=u""):
+        self.workingtree = workingtree
+        self.todo = set([start])
+        self.pending = {}
+
+    def __iter__(self):
+        return iter(self.next, None)
+
+    def next(self):
+        while not self.pending:
+            try:
+                p = self.todo.pop()
+            except KeyError:
+                return None
+            wc = self.workingtree._get_wc(p)
+            try:
+                for name, entry in wc.entries_read(False).iteritems():
+                    if name == "":
+                        continue
+                    subp = osutils.pathjoin(p, name)
+                    self.pending[subp] = entry
+                    if entry.kind == subvertpy.NODE_DIR:
+                        self.todo.add(subp)
+            finally:
+                wc.close()
+        (path, entry) = self.pending.popitem()
+        return (path, entry)
+
+
 class SvnWorkingTree(SubversionTree, WorkingTree):
     """WorkingTree implementation that uses a svn working copy for storage."""
 
@@ -378,8 +409,11 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def all_file_ids(self):
         """See Tree.all_file_ids"""
-        # FIXME
-        return set(self._bzr_inventory)
+        ret = set()
+        w = Walker(self)
+        for path, entry in w:
+            ret.add(self.lookup_id(path))
+        return ret
 
     @convert_svn_error
     def _get_wc(self, relpath=u"", write_lock=False, depth=0, base=None):
