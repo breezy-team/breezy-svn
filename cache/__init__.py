@@ -38,6 +38,10 @@ get_transport_from_path = getattr(_mod_transport, "get_transport_from_path",
 from bzrlib.plugins.svn import version_info
 
 
+class CacheConcurrencyError(Exception):
+    """Unable to access cache while write is in progress."""
+
+
 def write_cache_readme(path):
     f = open(path, 'w')
     try:

@@ -96,6 +96,9 @@ bzr-svn 1.1.0					  UNRELEASED
   * Fix importing of non-ascii characters in bzr:revprop: values.
     (Jelmer Vernooij, #821168)
 
+  * Allow concurrent access of SQLite cache, rather than aborting.
+    (Jelmer Vernooij, #685251)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
