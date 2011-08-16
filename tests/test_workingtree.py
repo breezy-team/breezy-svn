@@ -700,6 +700,7 @@ class TestWorkingTree(SubversionTestCase):
         tree = WorkingTree.open("dc")
         tree.add(["file", "dir"], ["fooid", "blaid"])
         tree.commit("msg")
+        self.assertEqual("fooid", tree.path2id("file"))
         tree.move(["file"], "dir")
         self.assertEqual(None, tree.path2id("file"))
         self.assertEqual("fooid", tree.path2id("dir/file"))

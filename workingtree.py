@@ -430,17 +430,31 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         file = os.path.basename(relpath)
         return (self._get_wc(dir, write_lock), file)
 
+    def _rename_fileid(self, old_path, new_path, wc=None):
+        self._change_fileid_mapping(self.path2id(old_path), new_path, wc)
+        self._change_fileid_mapping(None, old_path, wc)
+        if not os.path.isdir(self.abspath(new_path)):
+            return
+        for from_subpath, entry in Walker(self, old_path):
+            to_subpath = osutils.pathjoin(new_path, from_subpath[len(old_path):])
+            self._change_fileid_mapping(self.path2id(from_subpath), new_path, wc)
+            self._change_fileid_mapping(None, from_subpath, wc)
+
     def move(self, from_paths, to_dir=None, after=False, **kwargs):
         """Move files to a new location."""
         # FIXME: Use after argument
         if after:
             raise NotImplementedError("move after not supported")
-        for entry in from_paths:
-            from_abspath = osutils.safe_utf8(self.abspath(entry))
+        for from_path in from_paths:
+            from_abspath = osutils.safe_utf8(self.abspath(from_path))
+            new_path = osutils.pathjoin(
+                osutils.safe_utf8(to_dir),
+                osutils.safe_utf8(os.path.basename(from_path)))
+            self._rename_fileid(from_path, new_path)
             to_wc = self._get_wc(osutils.safe_unicode(to_dir), write_lock=True)
             try:
                 to_wc.copy(from_abspath,
-                    osutils.safe_utf8(os.path.basename(entry)))
+                    osutils.safe_utf8(os.path.basename(from_path)))
             finally:
                 to_wc.close()
             from_wc = self._get_wc(write_lock=True)
@@ -448,11 +462,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 from_wc.delete(from_abspath)
             finally:
                 from_wc.close()
-            new_name = osutils.pathjoin(
-                osutils.safe_utf8(to_dir),
-                osutils.safe_utf8(os.path.basename(entry)))
-            self._change_fileid_mapping(self.path2id(entry), new_name)
-            self._change_fileid_mapping(None, entry)
 
     def rename_one(self, from_rel, to_rel, after=False):
         from_rel = osutils.safe_unicode(from_rel)
@@ -461,6 +470,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         if after:
             raise NotImplementedError("rename_one after not supported")
         from_wc = None
+        from_id = self.path2id(from_rel)
+        self._rename_fileid(from_rel, to_rel)
         (to_wc, to_file) = self._get_rel_wc(to_rel, write_lock=True)
         try:
             if os.path.dirname(from_rel) == os.path.dirname(to_rel):
@@ -469,7 +480,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             else:
                 (from_wc, _) = self._get_rel_wc(from_rel, write_lock=True)
             try:
-                from_id = self.path2id(from_rel)
                 to_wc.copy(self.abspath(from_rel), to_file)
                 from_wc.delete(self.abspath(from_rel))
             finally:
@@ -477,8 +487,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         finally:
             if from_wc != to_wc:
                 to_wc.close()
-        self._change_fileid_mapping(None, from_rel)
-        self._change_fileid_mapping(from_id, to_rel)
 
     def path_to_file_id(self, revnum, current_revnum, path):
         """Generate a bzr file id from a Subversion file name.
@@ -492,33 +500,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         if path == u".":
             path = u""
         return self.lookup_id(path)
-
-    def _find_copies(self, url, relpath=u""):
-        """Find copies of the specified path
-
-        :param url: URL of which to find copies
-        :param relpath: Optional subpath to search in
-        :return: Yields all copies
-        """
-        ret = []
-        wc = self._get_wc(relpath)
-        try:
-            entries = wc.entries_read(False)
-            for entry in entries.values():
-                subrelpath = osutils.pathjoin(relpath,
-                    entry.name.decode("utf-8"))
-                if entry.name == "" or entry.kind != 'directory':
-                    if ((entry.copyfrom_url == url or entry.url == url) and
-                        not (entry.schedule in (SCHEDULE_DELETE,
-                                                SCHEDULE_REPLACE))):
-                        ret.append(osutils.pathjoin(
-                                self.get_branch_path().strip("/").decode("utf-8"),
-                                subrelpath))
-                else:
-                    self._find_copies(url, subrelpath)
-        finally:
-            wc.close()
-        return ret
 
     def _find_ids(self, relpath, entry):
         assert type(relpath) == unicode
@@ -535,17 +516,11 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             return (None, None)
         elif (entry.schedule == SCHEDULE_ADD or
               entry.schedule == SCHEDULE_REPLACE):
-            # See if the file this file was copied from disappeared
-            # and has no other copies -> in that case, take id of other file
-            if (entry.copyfrom_url and
-                list(self._find_copies(entry.copyfrom_url)) == [relpath.encode("utf-8")]):
-                return self.path_to_file_id(entry.copyfrom_rev,
-                    entry.revision, self.unprefix(urllib.unquote(entry.copyfrom_url[len(entry.repos):])).decode("utf-8"))
             ids = self._get_new_file_ids()
             if ids.has_key(relpath):
                 return (ids[relpath], None)
             # FIXME: Generate more random but consistent file ids
-            return ("NEW-" + escape_svn_path(entry.url[len(entry.repos):].strip("/")),
+            return ("NEW-" + escape_svn_path(osutils.safe_utf8(relpath).strip("/")),
                     None)
 
     def get_root_id(self):
