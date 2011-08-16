@@ -61,7 +61,6 @@ from bzrlib.errors import (
     UninitializableFormat,
     )
 from bzrlib.inventory import (
-    Inventory,
     InventoryDirectory,
     InventoryFile,
     InventoryLink,
@@ -488,7 +487,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         :param path: Path of the file
         :return: Tuple with file id and revision id.
         """
-        assert isinstance(path, unicode)
+        assert type(path) == unicode
         path = osutils.normpath(path)
         if path == u".":
             path = u""
@@ -522,6 +521,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return ret
 
     def _find_ids(self, relpath, entry):
+        assert type(relpath) == unicode
         assert entry.schedule in (SCHEDULE_NORMAL,
                                   SCHEDULE_DELETE,
                                   SCHEDULE_ADD,
@@ -555,28 +555,30 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         wc = self._get_wc()
         try:
             try:
-                entry = self._get_entry(wc, path)
+                entry = self._get_entry(wc, osutils.safe_utf8(self.abspath(path)))
+                (file_id, revision) = self._find_ids(osutils.safe_unicode(path), entry)
             except KeyError:
                 return None
-            (file_id, revision) = self._find_ids(path, entry)
-            return file_id
+            else:
+                return file_id
         finally:
             wc.close()
 
-    def _get_entry(self, wc, relpath):
-        parent = os.path.dirname(relpath)
+    def _get_entry(self, wc, path):
+        assert type(path) == str
+        parent = os.path.dirname(path)
         parent_wc = wc.probe_try(parent)
         if parent_wc is None:
             raise KeyError
-        return parent_wc.entry(relpath[len(parent_wc.access_path()):].strip("/"))
+        return parent_wc.entry(path)
 
     def filter_unversioned_files(self, paths):
+        ret = set()
         wc = self._get_wc()
         try:
-            ret = set()
             for p in paths:
                 try:
-                    entry = self._get_entry(wc, p)
+                    entry = self._get_entry(wc, self.abspath(p).encode("utf-8"))
                 except KeyError:
                     ret.add(p)
                 else:
@@ -602,8 +604,17 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             return True
 
     def id2path(self, file_id):
-        # FIXME
-        return self._bzr_inventory.id2path(file_id)
+        ids = self._get_new_file_ids()
+        for path, fid in ids.iteritems():
+            if file_id == fid:
+                return path
+        try:
+            return self.basis_idmap.reverse_lookup(self.mapping, file_id)
+        except KeyError:
+            pass
+        if file_id.startswith("NEW-"):
+            return urllib.unquote(file_id[4:])
+        raise NoSuchId(file_id)
 
     def _ie_from_entry(self, relpath, entry, parent_id):
         (file_id, revid) = self._find_ids(relpath, entry)
@@ -642,8 +653,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     path = self.id2path(file_id)
                     parent = os.path.dirname(path)
                     parent_id = self.lookup_id(parent)
-                    entry = self._get_entry(wc, path)
-                    yield path, self._ie_from_entry(path, entry, parent_id)
+                    entry = self._get_entry(wc, osutils.safe_utf8(self.abspath(path)))
+                    ie = self._ie_from_entry(path, entry, parent_id)
+                    if ie is not None:
+                        yield path, ie
             finally:
                 wc.close()
         else:
@@ -675,7 +688,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             for subf in os.listdir(dirabs):
                 if self.bzrdir.is_control_filename(subf):
                     continue
-                if subf not in dir_entry.children:
+                if subf not in dir_entry.entries_read(False):
                     try:
                         (subf_norm, can_access) = osutils.normalized_filename(subf)
                     except UnicodeDecodeError:
