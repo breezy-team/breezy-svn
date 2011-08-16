@@ -588,7 +588,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         except KeyError:
             pass
         if file_id.startswith("NEW-"):
-            return urllib.unquote(file_id[4:])
+            return urlutils.unescape(file_id[4:])
         raise NoSuchId(file_id)
 
     def _ie_from_entry(self, relpath, entry, parent_id):
