@@ -126,7 +126,7 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
             path = self.id2path(file_id)
         props = self.get_file_properties(file_id, path)
         if props.has_key(properties.PROP_SPECIAL):
-            text = self.get_file_text_by_path(path)
+            text = self.get_file_stream_by_path(path)
             if text.read(5) == "link ":
                 return False
         return props.has_key(properties.PROP_EXECUTABLE)
@@ -137,7 +137,7 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
         props = self.get_file_properties(file_id, path)
         if not props.has_key(properties.PROP_SPECIAL):
             return None
-        text = self.get_file_text_by_path(path).read()
+        text = self.get_file_stream_by_path(path).read()
         if not text.startswith("link "):
             return None
         return text[len("link "):]
@@ -155,6 +155,9 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
         for file_id, identifier in file_ids:
             cur_file = (self.get_file_text(file_id),)
             yield identifier, cur_file
+
+    def get_file_stream_by_path(self, path):
+        raise NotImplementedError(self.get_file_stream_by_path)
 
 
 # This maps SVN names for eol-styles to bzr names:
@@ -319,6 +322,13 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
                 stream, self._revmeta.metarev.revnum)
         if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == "link ":
             return StringIO()
+        stream.seek(0)
+        return stream
+
+    def get_file_stream_by_path(self, path):
+        stream = StringIO()
+        (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
+                stream, self._revmeta.metarev.revnum)
         stream.seek(0)
         return stream
 
@@ -507,16 +517,16 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             (propchanges, props) = adm.get_prop_diffs(
                 self.workingtree.abspath(relpath).encode("utf-8"))
             if props.has_key(properties.PROP_SPECIAL):
-                is_symlink = (self.get_file_text_by_path(relpath).read(5) == "link ")
+                is_symlink = (self.get_file_stream_by_path(relpath).read(5) == "link ")
             else:
                 is_symlink = False
 
             if is_symlink:
                 ie = self._bzr_inventory.add_path(relpath, 'symlink', id)
-                ie.symlink_target = self.get_file_text_by_path(relpath).read()[len("link "):]
+                ie.symlink_target = self.get_file_stream_by_path(relpath).read()[len("link "):]
             else:
                 ie = self._bzr_inventory.add_path(relpath, 'file', id)
-                data = osutils.fingerprint_file(self.get_file_text_by_path(relpath))
+                data = osutils.fingerprint_file(self.get_file_stream_by_path(relpath))
                 ie.text_sha1 = data['sha1']
                 ie.text_size = data['size']
                 ie.executable = props.has_key(properties.PROP_EXECUTABLE)
@@ -594,8 +604,8 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         """See Tree.get_revision_id()."""
         return self.workingtree.last_revision()
 
-    def get_file_text_by_path(self, name):
-        """See Tree.get_file_text_by_path()."""
+    def get_file_stream_by_path(self, name):
+        """See Tree.get_file_stream_by_path()."""
         assert isinstance(name, unicode)
         wt_path = self.workingtree.abspath(name).encode("utf-8")
         return wc.get_pristine_contents(wt_path)
@@ -608,7 +618,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         """See Tree.get_file_text()."""
         if path is None:
             path = self.id2path(file_id)
-        return self.get_file_text_by_path(path).read()
+        return self.get_file_stream_by_path(path).read()
 
     def get_file_properties(self, file_id, path=None):
         """See SubversionTree.get_file_properties()."""
