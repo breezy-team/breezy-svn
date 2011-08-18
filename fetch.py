@@ -434,7 +434,7 @@ class FileBuildEditor(object):
 class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     __slots__ = ('new_id', 'bzr_base_path',
-                 '_metadata_changed', '_renew_fileids', 'new_ie',
+                 '_renew_fileids', 'new_ie',
                  'svn_base_ie', 'bzr_base_ie')
 
     def __repr__(self):
@@ -446,7 +446,6 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         assert isinstance(new_id, str)
         self.new_id = new_id
         self.bzr_base_path = bzr_base_path
-        self._metadata_changed = False
         self._renew_fileids = renew_fileids
         self.bzr_base_ie = bzr_base_ie
         self.svn_base_ie = svn_base_ie
@@ -460,7 +459,6 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _close(self):
         if (not self.editor.bzr_base_tree.has_id(self.new_id) or
-            (self._metadata_changed and self.path != u"") or
             self.new_ie != self.editor.bzr_base_tree.inventory[self.new_id] or
             self.bzr_base_path != self.path):
             self.new_ie.revision = self.editor._get_directory_revision(self.new_id)

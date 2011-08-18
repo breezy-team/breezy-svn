@@ -99,6 +99,9 @@ bzr-svn 1.1.0					  UNRELEASED
   * Allow concurrent access of SQLite cache, rather than aborting.
     (Jelmer Vernooij, #685251)
 
+  * Remove pointless _metadata_changed attribute which could not always
+    be accessed. (Jelmer Vernooij, #771536)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
