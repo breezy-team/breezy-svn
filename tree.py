@@ -145,6 +145,12 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
     def get_file_sha1(self, file_id, path=None, stat_value=None):
         return osutils.sha_string(self.get_file_text(file_id, path))
 
+    def get_file_revision(self, file_id, path=None):
+        if path is None:
+            path = self.id2path(file_id)
+        file_id, file_revision = self.lookup_id(path)
+        return file_revision
+
 
 # This maps SVN names for eol-styles to bzr names:
 eol_style = {
@@ -275,12 +281,6 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == "link ":
             return "symlink"
         return "file"
-
-    def get_file_revision(self, file_id, path=None):
-        if path is None:
-            path = self.id2path(file_id)
-        file_id, file_revision = self.lookup_id(path)
-        return file_revision
 
     def get_file_size(self, file_id, path=None):
         if not path:
@@ -616,12 +616,6 @@ class SvnBasisTree(SvnRevisionTreeCommon):
     def kind(self, file_id):
         # FIXME
         return self.inventory[file_id].kind
-
-    def get_file_revision(self, file_id, path=None):
-        if path is None:
-            path = self.id2path(file_id)
-        (file_id, file_revision) = self.id_map.lookup(self.mapping, path)[:2]
-        return file_revision
 
     def get_file_text(self, file_id, path=None):
         """See Tree.get_file_text()."""
