@@ -69,6 +69,7 @@ class SvnRemoteFormat(ControlDirFormat):
     """Format for the Subversion smart server."""
 
     supports_workingtrees = False
+    fixed_components = True
     _lock_class = TransportLock
 
     @property
