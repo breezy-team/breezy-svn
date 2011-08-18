@@ -121,6 +121,30 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
             raise errors.FileTimestampUnavailable(path)
         return rev.timestamp
 
+    def is_executable(self, file_id, path=None):
+        if path is None:
+            path = self.id2path(file_id)
+        props = self.get_file_properties(file_id, path)
+        if props.has_key(properties.PROP_SPECIAL):
+            text = self.get_file_text_by_path(path)
+            if text.read(5) == "link ":
+                return False
+        return props.has_key(properties.PROP_EXECUTABLE)
+
+    def get_symlink_target(self, file_id, path=None):
+        if path is None:
+            path = self.id2path(file_id)
+        props = self.get_file_properties(file_id, path)
+        if not props.has_key(properties.PROP_SPECIAL):
+            return None
+        text = self.get_file_text_by_path(path).read()
+        if not text.startswith("link "):
+            return None
+        return text[len("link "):]
+
+    def get_file_sha1(self, file_id, path=None, stat_value=None):
+        return osutils.sha_string(self.get_file_text(file_id, path))
+
 
 # This maps SVN names for eol-styles to bzr names:
 eol_style = {
@@ -589,20 +613,6 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         wt_path = self.workingtree.abspath(name).encode("utf-8")
         return wc.get_pristine_contents(wt_path)
 
-    def get_symlink_target(self, file_id, path=None):
-        if path is None:
-            path = self.id2path(file_id)
-        props = self.get_file_properties(file_id, path)
-        if not props.has_key(properties.PROP_SPECIAL):
-            return None
-        text = self.get_file_text_by_path(path).read()
-        if not text.startswith("link "):
-            return None
-        return text[len("link "):]
-
-    def get_file_sha1(self, file_id, path=None, stat_value=None):
-        return osutils.sha_string(self.get_file_text(file_id, path))
-
     def kind(self, file_id):
         # FIXME
         return self.inventory[file_id].kind
@@ -612,16 +622,6 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             path = self.id2path(file_id)
         (file_id, file_revision) = self.id_map.lookup(self.mapping, path)[:2]
         return file_revision
-
-    def is_executable(self, file_id, path=None):
-        if path is None:
-            path = self.id2path(file_id)
-        props = self.get_file_properties(file_id, path)
-        if props.has_key(properties.PROP_SPECIAL):
-            text = self.get_file_text_by_path(path)
-            if text.read(5) == "link ":
-                return False
-        return props.has_key(properties.PROP_EXECUTABLE)
 
     def get_file_text(self, file_id, path=None):
         """See Tree.get_file_text()."""
