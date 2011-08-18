@@ -151,6 +151,11 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
         file_id, file_revision = self.lookup_id(path)
         return file_revision
 
+    def iter_files_bytes(self, file_ids):
+        for file_id, identifier in file_ids:
+            cur_file = (self.get_file_text(file_id),)
+            yield identifier, cur_file
+
 
 # This maps SVN names for eol-styles to bzr names:
 eol_style = {
@@ -283,28 +288,10 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         return "file"
 
     def get_file_size(self, file_id, path=None):
-        if not path:
+        if path is None:
             path = self.id2path(file_id)
         # FIXME: More efficient implementation?
         return self.inventory[file_id].text_size
-
-    def is_executable(self, file_id, path=None):
-        props = self.get_file_properties(file_id, path)
-        return props.has_key(properties.PROP_EXECUTABLE)
-
-    def get_symlink_target(self, file_id, path=None):
-        if path is None:
-            path = self.id2path(file_id)
-        stream = StringIO()
-        (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
-                stream, self._revmeta.metarev.revnum)
-        stream.seek(0)
-        if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == "link ":
-            return stream.read()
-        return None
-
-    def get_file_sha1(self, file_id, path=None, stat_value=None):
-        return osutils.sha_string(self.get_file_text(file_id, path))
 
     def list_files(self, include_root=False, from_dir=None, recursive=True):
         # FIXME
@@ -646,11 +633,6 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         return self.workingtree.branch.repository._annotate(path.strip("/"),
             self.workingtree.base_revnum,  file_id, self.get_revision_id(),
             self.workingtree.branch.mapping)
-
-    def iter_files_bytes(self, file_ids):
-        for file_id, identifier in file_ids:
-            cur_file = (self.get_file_text(file_id),)
-            yield identifier, cur_file
 
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
         # FIXME
