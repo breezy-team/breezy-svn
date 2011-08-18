@@ -37,7 +37,6 @@ from subvertpy.wc import (
     is_adm_dir,
     revision_status,
     )
-import urllib
 
 import bzrlib.add
 from bzrlib import (
@@ -651,35 +650,28 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     yield relpath, ie
 
     def extras(self):
+        """Return the extras."""
         w = Walker(self)
+        versioned_files = set()
+        all_files = set()
         for path, dir_entry in w:
-            # mutter("search for unknowns in %r", path)
+            versioned_files.add(path)
             dirabs = self.abspath(path)
             if not osutils.isdir(dirabs):
                 # e.g. directory deleted
                 continue
-
-            fl = []
             for subf in os.listdir(dirabs):
                 if self.bzrdir.is_control_filename(subf):
                     continue
-                if subf not in dir_entry.entries_read(False):
-                    try:
-                        (subf_norm, can_access) = osutils.normalized_filename(subf)
-                    except UnicodeDecodeError:
-                        path_os_enc = path.encode(osutils._fs_enc)
-                        relpath = path_os_enc + '/' + subf
-                        raise BadFilenameEncoding(relpath, osutils._fs_enc)
-                    if subf_norm != subf and can_access:
-                        if subf_norm not in dir_entry.children:
-                            fl.append(subf_norm)
-                    else:
-                        fl.append(subf)
-
-            fl.sort()
-            for subf in fl:
-                subp = osutils.pathjoin(path, subf)
-                yield subp
+                try:
+                    (subf_norm, can_access) = osutils.normalized_filename(subf)
+                except UnicodeDecodeError:
+                    path_os_enc = path.encode(osutils._fs_enc)
+                    relpath = path_os_enc + '/' + subf
+                    raise BadFilenameEncoding(relpath, osutils._fs_enc)
+                subp = os.path.join(path, subf_norm)
+                all_files.add(subp)
+        return iter(all_files - versioned_files)
 
     def _set_base(self, revid, revnum, tree=None):
         assert revid is None or isinstance(revid, str)
