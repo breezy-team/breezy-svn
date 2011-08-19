@@ -263,13 +263,19 @@ class SvnBranch(ForeignBranch):
         assert revnum >= 0
 
         last_revmeta, _ = self.last_revmeta()
+        if revnum > last_revmeta.metarev.revnum:
+            # Apparently a commit happened in the mean time
+            self._clear_cached_state()
+            last_revmeta, _ = self.last_revmeta()
         if revnum == last_revmeta.metarev.revnum:
             return last_revmeta.metarev.branch_path
 
+        locations = self.repository.transport.get_locations(
+                last_revmeta.metarev.branch_path, last_revmeta.metarev.revnum,
+                [revnum])
+
         # Use revnum - this branch may have been moved in the past
-        return self.repository.transport.get_locations(
-                    last_revmeta.metarev.branch_path, last_revmeta.metarev.revnum,
-                    [revnum])[revnum].strip("/")
+        return locations[revnum].strip("/")
 
     def get_revnum(self):
         """Obtain the Subversion revision number this branch was
@@ -421,7 +427,8 @@ class SvnBranch(ForeignBranch):
         else:
             base_revid = NULL_REVISION
         interrepo = InterToSvnRepository(self.repository, self.repository)
-        base_foreign_info = interrepo._get_foreign_revision_info(base_revid, self.get_branch_path())
+        base_foreign_info = interrepo._get_foreign_revision_info(base_revid,
+            self.get_branch_path())
         interrepo.push_single_revision(self.get_branch_path(), self.get_config(), rev,
             push_metadata=True, root_action=("replace", self.get_revnum()),
             base_foreign_info=base_foreign_info)
