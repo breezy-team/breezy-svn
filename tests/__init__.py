@@ -230,6 +230,7 @@ def test_suite():
             'test_changes',
             'test_checkout',
             'test_commit',
+            'test_commit_ids',
             'test_config',
             'test_convert',
             'test_errors',
