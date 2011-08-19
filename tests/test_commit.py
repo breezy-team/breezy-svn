@@ -40,10 +40,10 @@ from bzrlib.inventory import (
     InventoryLink,
     )
 from bzrlib.repository import Repository
-from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import (
     TestCase,
     TestCaseWithTransport,
+    treeshape,
     )
 try:
     from bzrlib.tests.features import (
@@ -847,7 +847,7 @@ class CommitIdTesting:
     def prepare_wt(self, path):
         raise NotImplementedError(self.prepare_wt)
 
-    def test_add_file(self):
+    def test_set_root(self):
         tree = self.prepare_wt('.')
         tree.lock_write()
         self.addCleanup(tree.unlock)
@@ -856,6 +856,20 @@ class CommitIdTesting:
             "reva")
         self.assertEquals({
             "": ("THEROOTID", "reva")}, items)
+
+    def test_add_file(self):
+        tree = self.prepare_wt('.')
+        tree.lock_write()
+        self.addCleanup(tree.unlock)
+        tree.set_root_id("THEROOTID")
+        self.build_tree_contents([('afile/', 'contents')])
+        tree.add(["afile"], ['THEFILEID'])
+        items = self.commit_tree_items(tree, [tree.last_revision()],
+            "reva")
+        self.assertEquals({
+            "": ("THEROOTID", "reva"),
+            "afile": ("THEFILEID", "reva"),
+            }, items)
 
 
 class BzrCommitIdTesting(TestCaseWithTransport,CommitIdTesting):
@@ -871,6 +885,8 @@ class SvnCommitIdTesting(SubversionTestCase,CommitIdTesting):
     def setUp(self):
         SubversionTestCase.setUp(self)
         os.mkdir("repo")
+
+    build_tree_contents = staticmethod(treeshape.build_tree_contents)
 
     def prepare_wt(self, path):
         repo_url = self.make_repository(os.path.join("repo", path))
