@@ -325,6 +325,13 @@ class TestWorkingTree(SubversionTestCase):
         self.assertIs(None, tree.path2id("bl"))
         self.assertIs(None, basis_tree.path2id("bloe"))
 
+    def test_set_root_id(self):
+        self.make_client('a', 'dc')
+        wt = WorkingTree.open("dc")
+        wt.set_root_id("somefileid")
+        self.assertEquals("somefileid", wt.path2id(""))
+        self.assertEquals("somefileid", wt.get_root_id())
+
     def test_empty_basis_tree(self):
         self.make_client('a', 'dc')
         wt = WorkingTree.open("dc")

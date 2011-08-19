@@ -251,9 +251,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._control_files = LockableFiles(control_transport, 'lock', LockDir)
         self.views = self._make_views()
 
-    @property
-    def inventory(self):
-        raise NotImplementedError
+    def _set_root_id(self, file_id):
+        self._change_fileid_mapping(file_id, u"")
 
     def get_file_mtime(self, file_id, path=None):
         """See Tree.get_file_mtime."""
