@@ -40,8 +40,10 @@ from bzrlib.inventory import (
     InventoryLink,
     )
 from bzrlib.repository import Repository
+from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import (
     TestCase,
+    TestCaseWithTransport,
     )
 try:
     from bzrlib.tests.features import (
@@ -818,3 +820,63 @@ class SendPropChangesTests(TestCase):
         editor = SendPropChangesTests.RecordingFileEditor()
         file_editor_send_prop_changes(ie1, ie2, editor)
         self.assertEquals(editor._props, {})
+
+
+class CommitIdTesting:
+    """Test that file ids and file revisions are appropriately recorded."""
+
+    def commit_tree(self, tree, parents, revision_id=None):
+        builder = tree.branch.get_commit_builder(parents=parents,
+            revision_id=revision_id)
+        list(builder.record_iter_changes(tree, tree.last_revision(),
+            tree.iter_changes(tree.basis_tree())))
+        builder.finish_inventory()
+        revid = builder.commit("This is a message")
+        return tree.branch.repository.revision_tree(revid)
+
+    def tree_items(self, tree):
+        ret = {}
+        for (path, versioned, kind, file_id, ie) in tree.list_files(
+                include_root=True, recursive=True):
+            ret[path] = (ie.file_id, ie.revision)
+        return ret
+
+    def commit_tree_items(self, tree, parents, revision_id=None):
+        return self.tree_items(self.commit_tree(tree, parents, revision_id))
+
+    def prepare_wt(self, path):
+        raise NotImplementedError(self.prepare_wt)
+
+    def test_add_file(self):
+        tree = self.prepare_wt('.')
+        tree.lock_write()
+        self.addCleanup(tree.unlock)
+        tree.set_root_id("THEROOTID")
+        items = self.commit_tree_items(tree, [tree.last_revision()],
+            "reva")
+        self.assertEquals({
+            "": ("THEROOTID", "reva")}, items)
+
+
+class BzrCommitIdTesting(TestCaseWithTransport,CommitIdTesting):
+
+    def prepare_wt(self, path):
+        tree = self.make_branch_and_tree(path)
+        tree.commit("Add root")
+        return tree
+
+
+class SvnCommitIdTesting(SubversionTestCase,CommitIdTesting):
+
+    def setUp(self):
+        SubversionTestCase.setUp(self)
+        os.mkdir("repo")
+
+    def prepare_wt(self, path):
+        repo_url = self.make_repository(os.path.join("repo", path))
+        dc = self.get_commit_editor(repo_url)
+        trunk = dc.add_dir("trunk")
+        dc.close()
+
+        self.make_checkout(repo_url+"/trunk", path)
+        return WorkingTree.open(path)
