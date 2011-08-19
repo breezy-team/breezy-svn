@@ -935,7 +935,7 @@ class SvnCommitBuilder(CommitBuilder):
                 base_ie = self.old_tree.inventory[file_id]
             else:
                 base_ie = None
-            if new_path is None:
+            if new_kind is None:
                 self._basis_delta.append((old_path, None, file_id, None))
                 self._deleted_fileids.add(file_id)
             else:
