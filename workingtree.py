@@ -15,7 +15,10 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Checkouts and working trees (working copies)."""
 
-from collections import defaultdict
+from collections import (
+    defaultdict,
+    deque,
+    )
 
 import os
 import stat
@@ -188,8 +191,8 @@ class Walker(object):
 
     def __init__(self, workingtree, start=u""):
         self.workingtree = workingtree
-        self.todo = set([start])
-        self.pending = {}
+        self.todo = list([start])
+        self.pending = deque()
 
     def __iter__(self):
         return iter(self.next, None)
@@ -198,7 +201,7 @@ class Walker(object):
         while not self.pending:
             try:
                 p = self.todo.pop()
-            except KeyError:
+            except IndexError:
                 return None
             try:
                 wc = self.workingtree._get_wc(p)
@@ -207,15 +210,15 @@ class Walker(object):
                     continue
                 raise
             try:
-                for name, entry in wc.entries_read(False).iteritems():
+                for name, entry in wc.entries_read(True).iteritems():
                     subp = osutils.pathjoin(p, name.decode("utf-8")).rstrip("/")
                     if entry.kind == subvertpy.NODE_DIR and name != "":
-                        self.todo.add(subp)
+                        self.todo.append(subp)
                     else:
-                        self.pending[subp] = entry
+                        self.pending.append((subp, entry))
             finally:
                 wc.close()
-        return self.pending.popitem()
+        return self.pending.popleft()
 
 
 class SvnWorkingTree(SubversionTree, WorkingTree):
