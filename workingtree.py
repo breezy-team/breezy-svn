@@ -437,7 +437,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         if not os.path.isdir(self.abspath(old_path)):
             return
         for from_subpath, entry in Walker(self, old_path):
-            import pdb; pdb.set_trace()
             from_subpath = from_subpath.strip("/")
             to_subpath = osutils.pathjoin(new_path, from_subpath[len(old_path):].strip("/"))
             self._change_fileid_mapping(self.path2id(from_subpath), to_subpath, wc)

@@ -19,7 +19,10 @@
 """Tests for the file id/revision generation in commit."""
 
 import os
+import shutil
 
+from bzrlib import osutils
+from bzrlib.bzrdir import BzrDir
 from bzrlib.inventory import (
     InventoryFile,
     )
@@ -170,6 +173,7 @@ class CommitIdTesting:
 
 
 class BzrCommitIdTesting(TestCaseWithTransport,CommitIdTesting):
+    """Test ids from a revision tree after committing to bzr."""
 
     def prepare_wt(self, path):
         tree = self.make_branch_and_tree(path)
@@ -177,13 +181,42 @@ class BzrCommitIdTesting(TestCaseWithTransport,CommitIdTesting):
         return tree
 
 
-class SvnCommitIdTesting(SubversionTestCase,CommitIdTesting):
+class SvnRevisionTreeCommitIdTesting(SubversionTestCase,CommitIdTesting):
+    """Test ids from a svn revision tree after committing to svn."""
 
     def setUp(self):
         SubversionTestCase.setUp(self)
         os.mkdir("repo")
 
     build_tree_contents = staticmethod(treeshape.build_tree_contents)
+
+    def prepare_wt(self, path):
+        repo_url = self.make_repository(os.path.join("repo", path))
+        dc = self.get_commit_editor(repo_url)
+        trunk = dc.add_dir("trunk")
+        dc.close()
+
+        self.make_checkout(repo_url+"/trunk", path)
+        return WorkingTree.open(path)
+
+
+class SvnFetchCommitIdTesting(SubversionTestCase,CommitIdTesting):
+    """Test ids from a bzr revision tree after committing to svn and fetching
+    back into bzr."""
+
+    def setUp(self):
+        SubversionTestCase.setUp(self)
+        os.mkdir("repo")
+
+    build_tree_contents = staticmethod(treeshape.build_tree_contents)
+
+    def commit_tree(self, tree, revision_id=None):
+        revid = tree.commit("This is a message", rev_id=revision_id)
+        tempdir = osutils.mkdtemp(prefix='testbzrsvn-', suffix='.tmp', dir=self.test_dir)
+        self.addCleanup(shutil.rmtree, tempdir)
+        to_branch = BzrDir.create_branch_and_repo(os.path.join(tempdir, 'branch'))
+        tree.branch.push(to_branch)
+        return to_branch.basis_tree()
 
     def prepare_wt(self, path):
         repo_url = self.make_repository(os.path.join("repo", path))
