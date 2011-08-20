@@ -20,13 +20,17 @@
 
 import os
 
+from bzrlib.inventory import (
+    InventoryFile,
+    )
 from bzrlib.tests import (
     TestCaseWithTransport,
+    TestCase,
     treeshape,
     )
 from bzrlib.workingtree import WorkingTree
 
-
+from bzrlib.plugins.svn.commit import SvnCommitBuilder
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 class CommitIdTesting:
@@ -89,6 +93,81 @@ class CommitIdTesting:
             "unchanged": ("unchangedid", "reva"),
             }, items)
 
+    def test_rename_unmodified(self):
+        tree = self.prepare_wt('.')
+        tree.lock_write()
+        self.addCleanup(tree.unlock)
+        tree.set_root_id("therootid")
+        self.build_tree_contents([
+            ('afile', 'contents'),
+            ('cdir/', ),
+            ('adir/', )])
+        tree.add(["afile", "adir", "cdir"],
+                 ['thefileid', "thedirid", 'cdirid'])
+        self.commit_tree(tree, "reva")
+        tree.rename_one("afile", "adir/afile")
+        tree.rename_one("cdir", "ddir")
+        items = self.commit_tree_items(tree, "revb")
+        self.assertEquals({
+            "": ("therootid", "reva"),
+            "adir": ("thedirid", "reva"),
+            "adir/afile": ("thefileid", "revb"),
+            "ddir": ("cdirid", "revb"),
+            }, items)
+
+    def test_change_mode(self):
+        tree = self.prepare_wt('.')
+        tree.lock_write()
+        self.addCleanup(tree.unlock)
+        tree.set_root_id("therootid")
+        self.build_tree_contents([
+            ('afile', 'contents')])
+        tree.add(["afile"], ['thefileid'])
+        self.commit_tree(tree, "reva")
+        os.chmod("afile", 0755)
+        items = self.commit_tree_items(tree, "revb")
+        self.assertEquals({
+            "": ("therootid", "reva"),
+            "afile": ("thefileid", "revb"),
+            }, items)
+
+    def test_rename_parent(self):
+        tree = self.prepare_wt('.')
+        tree.lock_write()
+        self.addCleanup(tree.unlock)
+        tree.set_root_id("therootid")
+        self.build_tree_contents([
+            ('adir/', ),
+            ('adir/afile', 'contents')])
+        tree.add(["adir", "adir/afile"], ['thedirid', 'thefileid'])
+        self.commit_tree(tree, "reva")
+        tree.rename_one('adir', 'bdir')
+        items = self.commit_tree_items(tree, "revb")
+        self.assertEquals({
+            "": ("therootid", "reva"),
+            "bdir": ("thedirid", "revb"),
+            "bdir/afile": ("thefileid", "reva"),
+            }, items)
+
+    def test_new_child(self):
+        tree = self.prepare_wt('.')
+        tree.lock_write()
+        self.addCleanup(tree.unlock)
+        tree.set_root_id("therootid")
+        self.build_tree_contents([
+            ('adir/', )])
+        tree.add(["adir"], ['thedirid'])
+        self.commit_tree(tree, "reva")
+        self.build_tree_contents([
+            ('adir/afile', 'contents')])
+        tree.add(['adir/afile'], ['thefileid'])
+        items = self.commit_tree_items(tree, "revb")
+        self.assertEquals({
+            "": ("therootid", "reva"),
+            "adir": ("thedirid", "reva"),
+            "adir/afile": ("thefileid", "revb"),
+            }, items)
+
 
 class BzrCommitIdTesting(TestCaseWithTransport,CommitIdTesting):
 
@@ -114,3 +193,13 @@ class SvnCommitIdTesting(SubversionTestCase,CommitIdTesting):
 
         self.make_checkout(repo_url+"/trunk", path)
         return WorkingTree.open(path)
+
+
+class GetTextRevisionTests(TestCase):
+    """Tests for SvnCommitBuilder._get_text_revision."""
+
+    def test_new_no_parents(self):
+        self.assertEquals((None, None),
+            SvnCommitBuilder._get_text_revision(
+                InventoryFile("fileid", "name", "root"), "dir/name",
+                []))

@@ -434,11 +434,13 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def _rename_fileid(self, old_path, new_path, wc=None):
         self._change_fileid_mapping(self.path2id(old_path), new_path, wc)
         self._change_fileid_mapping(None, old_path, wc)
-        if not os.path.isdir(self.abspath(new_path)):
+        if not os.path.isdir(self.abspath(old_path)):
             return
         for from_subpath, entry in Walker(self, old_path):
-            to_subpath = osutils.pathjoin(new_path, from_subpath[len(old_path):])
-            self._change_fileid_mapping(self.path2id(from_subpath), new_path, wc)
+            import pdb; pdb.set_trace()
+            from_subpath = from_subpath.strip("/")
+            to_subpath = osutils.pathjoin(new_path, from_subpath[len(old_path):].strip("/"))
+            self._change_fileid_mapping(self.path2id(from_subpath), to_subpath, wc)
             self._change_fileid_mapping(None, from_subpath, wc)
 
     def move(self, from_paths, to_dir=None, after=False, **kwargs):
@@ -542,11 +544,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def _get_entry(self, wc, path):
         assert type(path) == str
-        parent = os.path.dirname(path)
-        parent_wc = wc.probe_try(parent)
-        if parent_wc is None:
+        related_wc = wc.probe_try(path)
+        if related_wc is None:
             raise KeyError
-        return parent_wc.entry(path)
+        return related_wc.entry(path)
 
     def filter_unversioned_files(self, paths):
         ret = set()
@@ -875,7 +876,11 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         ids = self._get_new_file_ids()
         if path in ids:
             return (ids[path], None)
-        return self.basis_idmap.lookup(self.mapping, path)[:2]
+        try:
+            return self.basis_idmap.lookup(self.mapping, path)[:2]
+        except KeyError:
+            mutter("FILEID MAP: %r", self._get_new_file_ids())
+            raise
 
     def _get_changed_branch_props(self):
         wc = self._get_wc()
