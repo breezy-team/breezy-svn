@@ -23,6 +23,7 @@ import shutil
 
 from bzrlib import osutils
 from bzrlib.bzrdir import BzrDir
+from bzrlib.conflicts import ConflictList
 from bzrlib.inventory import (
     InventoryFile,
     )
@@ -44,10 +45,14 @@ class CommitIdTesting:
         return tree.branch.repository.revision_tree(revid)
 
     def tree_items(self, tree):
-        ret = {}
-        for (path, versioned, kind, file_id, ie) in tree.list_files(
-                include_root=True, recursive=True):
-            ret[path] = (ie.file_id, ie.revision)
+        tree.lock_read()
+        try:
+            ret = {}
+            for (path, versioned, kind, file_id, ie) in tree.list_files(
+                    include_root=True, recursive=True):
+                ret[path] = (ie.file_id, ie.revision)
+        finally:
+            tree.unlock()
         return ret
 
     def commit_tree_items(self, tree, revision_id=None):
@@ -169,6 +174,64 @@ class CommitIdTesting:
             "": ("therootid", "reva"),
             "adir": ("thedirid", "reva"),
             "adir/afile": ("thefileid", "revb"),
+            }, items)
+
+    def test_merge(self):
+        # reva
+        #  |  \
+        # revb revc
+        #  |   /
+        # revd
+        tree = self.prepare_wt('main')
+        tree.lock_write()
+        self.addCleanup(tree.unlock)
+        tree.set_root_id("therootid")
+        self.build_tree_contents([
+            ('main/afile', 'contents'),
+            ('main/bfile', 'contents'),
+            ('main/cfile', 'contents')])
+        tree.add(["afile", "bfile", "cfile"],
+                 ['thefileid', 'bfileid', 'cfileid'])
+        self.commit_tree(tree, "reva")
+
+        os.mkdir('feature')
+        other_dir = tree.bzrdir.sprout('feature')
+
+        self.build_tree_contents([
+            ('main/bfile', 'contents-a'),
+            ('main/cfile', 'contents-a')])
+        self.commit_tree(tree, "revb")
+
+        other_tree = other_dir.open_workingtree()
+
+        self.build_tree_contents([
+            ('feature/afile', 'contents-2'),
+            ('feature/bfile', 'contents-b'),
+            ('feature/cfile', 'contents-b')])
+        self.commit_tree(other_tree, "revc")
+
+        conflicts = other_tree.merge_from_branch(tree.branch)
+        self.assertEquals(2, conflicts)
+        bconflict = other_tree.conflicts()[0]
+        self.assertEquals(bconflict.path, "bfile")
+        cconflict = other_tree.conflicts()[1]
+        self.assertEquals(cconflict.path, "cfile")
+        self.build_tree_contents({"feature/bfile": "contents-resolved"})
+        bconflict._do("done", other_tree)
+        bconflict.cleanup(other_tree)
+        cconflict._do("take_other", other_tree)
+        cconflict.cleanup(other_tree)
+        other_tree.set_conflicts(ConflictList())
+        self.assertEquals(0, len(other_tree.conflicts()))
+        self.commit_tree(other_tree, "merge")
+        tree.branch.get_config().set_user_option("append_revisions_only", "False")
+        tree.pull(other_tree.branch)
+        items = self.tree_items(tree.revision_tree("merge"))
+        self.assertEquals({
+            "": ("therootid", "reva"),
+            "afile": ("thefileid", "revc"),
+            "bfile": ("bfileid", "merge"),
+            "cfile": ("cfileid", "merge"),
             }, items)
 
 
