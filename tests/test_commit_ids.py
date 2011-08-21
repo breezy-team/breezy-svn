@@ -289,13 +289,3 @@ class SvnFetchCommitIdTesting(SubversionTestCase,CommitIdTesting):
 
         self.make_checkout(repo_url+"/trunk", path)
         return WorkingTree.open(path)
-
-
-class GetTextRevisionTests(TestCase):
-    """Tests for SvnCommitBuilder._get_text_revision."""
-
-    def test_new_no_parents(self):
-        self.assertEquals((None, None),
-            SvnCommitBuilder._get_text_revision(
-                InventoryFile("fileid", "name", "root"), "dir/name",
-                []))

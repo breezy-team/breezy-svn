@@ -35,6 +35,7 @@ from subvertpy import (
 
 from bzrlib import (
     debug,
+    graph as _mod_graph,
     osutils,
     urlutils,
     trace,
@@ -433,6 +434,7 @@ class SvnCommitBuilder(CommitBuilder):
         self._override_file_ids = {}
         self._override_text_revisions = {}
         self._override_text_parents = {}
+        self._heads = _mod_graph.HeadsCache(repository.get_graph()).heads
 
         # Gather information about revision on top of which the commit is
         # happening
@@ -878,9 +880,9 @@ class SvnCommitBuilder(CommitBuilder):
                 return
             self._visit_dirs.add(path)
 
-    @classmethod
-    def _get_text_revision(cls, new_ie, new_path, parent_trees):
-        parent_revisions = []
+    def _get_text_revision(self, new_ie, new_path, parent_trees):
+        parent_text_revisions = []
+        carry_over_candidates = {}
         for ptree in parent_trees:
             try:
                 prevision = ptree.get_file_revision(new_ie.file_id)
@@ -893,13 +895,26 @@ class SvnCommitBuilder(CommitBuilder):
                   ptree.is_executable(new_ie.file_id) == new_ie.executable) or
                  (new_ie.kind == 'symlink' and
                   ptree.get_symlink_target(new_ie.file_id) == new_ie.symlink_target))):
-                # FIXME: return actual text parents
-                return prevision, None
-            parent_revisions.append(prevision)
-        if (parent_revisions == [] or
-            parent_revisions == [parent_trees[0].get_revision_id()]):
-            parent_revisions = None
-        return None, parent_revisions
+                carry_over_candidates[prevision] = ptree
+            parent_text_revisions.append(prevision)
+        heads_set = self._heads(parent_text_revisions)
+        heads = []
+        # Preserve order
+        for p in parent_text_revisions:
+            if p in heads_set:
+                heads.append(p)
+                heads_set.remove(p)
+        if len(heads) == 1 and heads[0] in carry_over_candidates:
+            # carry over situation
+            parent_tree = carry_over_candidates[heads[0]]
+            return parent_tree.get_file_revision(new_ie.file_id), None
+        if (len(heads) == 0 or
+            heads == [parent_trees[0].get_file_revision(new_ie.file_id)]):
+            # No need to explicitly store file ids
+            text_parents = None
+        else:
+            text_parents = heads
+        return None, heads
 
     def record_delete(self, path, file_id):
         raise NotImplementedError(self.record_delete)
