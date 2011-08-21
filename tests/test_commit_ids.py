@@ -24,17 +24,12 @@ import shutil
 from bzrlib import osutils
 from bzrlib.bzrdir import BzrDir
 from bzrlib.conflicts import ConflictList
-from bzrlib.inventory import (
-    InventoryFile,
-    )
 from bzrlib.tests import (
     TestCaseWithTransport,
-    TestCase,
     treeshape,
     )
 from bzrlib.workingtree import WorkingTree
 
-from bzrlib.plugins.svn.commit import SvnCommitBuilder
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 class CommitIdTesting:
