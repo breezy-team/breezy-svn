@@ -809,6 +809,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
         return self.base_tree
 
+    def revision_tree(self, revid):
+        return self.branch.repository.revision_tree(revid)
+
     def unprefix(self, relpath):
         """Remove the branch path from a relpath.
 
@@ -918,7 +921,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                                       file_id, ie):
         already_there = (
             old_path == new_path and
-            base_tree._inventory[file_id].kind == ie.kind)
+            base_tree.kind(file_id) == ie.kind)
         if old_path is not None:
             old_abspath = osutils.safe_utf8(self.abspath(old_path))
             if not already_there:

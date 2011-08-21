@@ -805,6 +805,15 @@ class TestWorkingTree(SubversionTestCase):
                                         'Another change\n'})
         self.client_commit('dc', "Commit via svn")
 
+    def test_revision_tree(self):
+        repos_url = self.make_client('a', 'dc')
+        # md5sum: a31b9ad28573e11e3e653a0c038c49b5
+        self.build_tree({'dc/file.txt': 'Foo'})
+        self.client_add('dc/file.txt')
+        wt = WorkingTree.open('dc')
+        revid = wt.commit("Initial commit")
+        self.assertEquals(revid, wt.revision_tree(revid).get_revision_id())
+
 
 class IgnoreListTests(TestCase):
 
