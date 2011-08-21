@@ -171,7 +171,7 @@ def find_suitable_base(parents, ie):
         return None
     # Check if there's any candidate that has the *exact* revision we need
     for (tree, url, revnum) in candidates:
-        if tree.inventory[ie.file_id].revision == ie.revision:
+        if tree.get_file_revision(ie.file_id) == ie.revision:
             return (tree, url, revnum)
     # TODO: Ideally we should now pick the candidate with the least changes
     # for now, just pick the first candidate
