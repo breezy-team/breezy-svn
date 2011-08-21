@@ -909,7 +909,8 @@ class SvnCommitBuilder(CommitBuilder):
             parent_tree = carry_over_candidates[heads[0]]
             return parent_tree.get_file_revision(new_ie.file_id), None
         if (len(heads) == 0 or
-            heads == [parent_trees[0].get_file_revision(new_ie.file_id)]):
+            (parent_trees[0].has_id(new_ie.file_id) and
+            heads == [parent_trees[0].get_file_revision(new_ie.file_id)])):
             # No need to explicitly store file ids
             text_parents = None
         else:
