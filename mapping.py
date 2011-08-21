@@ -683,7 +683,10 @@ def parse_text_revisions_property(text):
 
 
 def generate_text_parents_property(text_parents):
-    return "".join(["%s\t%s\n" % (urllib.quote(path.encode("utf-8")), "\t".join(text_parents[path])) for path in sorted(text_parents.keys())])
+    return "".join(["%s\t%s\n" % (
+        urllib.quote(path.encode("utf-8")), "\t".join(text_parents[path]))
+        for path in sorted(text_parents.keys())
+        if text_parents[path] is not None])
 
 
 def generate_text_revisions_property(text_revisions):
