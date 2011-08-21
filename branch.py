@@ -916,6 +916,22 @@ class InterToSvnBranch(InterBranch):
         # For compatibility with bzr < 2.4
         return self.push(lossy=True, stop_revision=stop_revision)
 
+    def fetch(self, stop_revision=None, fetch_tags=None, find_ghosts=False,
+            limit=None):
+        """Fetch into a subversion repository."""
+        # For the moment, this method is disabled. Merge uses it to fetch
+        # revisions before doing its work, but then fails later on.
+        # Having this method fail means the user won't end up with
+        # spurious revisions in their repository for an operation that's
+        # not going to work anyway.
+        raise NotImplementedError(self.fetch)
+        # FIXME: Handle limit
+        # FIXME: Handle fetch_tags
+        # FIXME: Handle find_ghosts
+        interrepo = InterToSvnRepository(
+            self.source.repository, self.target.repository)
+        interrepo.fetch(revision_id=stop_revision)
+
     def update_tags(self, overwrite=False):
         return self.source.tags.merge_to(self.target.tags, overwrite)
 
