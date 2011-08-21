@@ -655,13 +655,11 @@ class FileRevisionBuildEditor(FileBuildEditor):
             assert ie.text_size is not None
             ie.executable = self.is_executable
 
-        text_revision = self.editor._get_file_revision(ie)
-
+        text_revision = self.editor._get_file_revision(ie, self.path)
         file_key = (self.file_id, text_revision)
         cf = ChunkedContentFactory(file_key, parent_keys, text_sha1, chunks)
 
         self.editor._text_cache[file_key] = orig_chunks
-
         self.editor.texts.insert_record_stream([cf])
         ie.revision = text_revision
         self.editor._inv_delta_append(
@@ -695,6 +693,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self.inventory = None
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
         self.lhs_parent_revmeta = lhs_parent_revmeta
+        self._text_revisions_overrides = revmeta.get_text_revisions(mapping)
+        self._text_parents_overrides = revmeta.get_text_parents(mapping)
 
     def _inv_delta_append(self, old_path, new_path, file_id, ie):
         self._new_file_paths[file_id] = new_path
@@ -806,16 +806,21 @@ class RevisionBuildEditor(DeltaBuildEditor):
                     continue
                 if parent_ie.revision != base_ie.revision:
                     new_ie = base_ie.copy()
-                    new_ie.revision = self.revid
+                    new_path = get_new_file_path(file_id)
+                    new_ie.revision = self._text_revisions_overrides.get(
+                        new_path, self.revid)
                     record = self.texts.get_record_stream([
-                        (base_ie.file_id, base_ie.revision)], 'unordered', True).next()
+                        (base_ie.file_id, base_ie.revision)], 'unordered',
+                        True).next()
                     self.texts.insert_record_stream(
                             [FulltextContentFactory(
                                 (new_ie.file_id, new_ie.revision),
                                 self._get_text_parents(file_id),
                                 record.sha1,
                                 record.get_bytes_as('fulltext'))])
-                    self._inv_delta_append(self.bzr_base_tree.id2path(file_id), get_new_file_path(file_id), file_id, new_ie)
+                    self._inv_delta_append(
+                        self.bzr_base_tree.id2path(file_id), new_path,
+                        file_id, new_ie)
                     break
 
     def _finish_commit(self):
@@ -904,10 +909,11 @@ class RevisionBuildEditor(DeltaBuildEditor):
         new_ie = old_ie.copy()
         new_ie.file_id = self._get_new_file_id(path)
         new_ie.parent_id = self._get_new_file_id(urlutils.dirname(path))
-        new_ie.revision = self.revid
+        new_ie.revision = self._text_revisions_overrides.get(path, self.revid)
         # FIXME: Use self._text_cache
-        record = self.texts.get_record_stream([(old_ie.file_id, old_ie.revision)],
-                                                'unordered', True).next()
+        record = self.texts.get_record_stream(
+                [(old_ie.file_id, old_ie.revision)],
+                'unordered', True).next()
         self.texts.insert_record_stream(
                 [FulltextContentFactory(
                     (new_ie.file_id, new_ie.revision),
@@ -964,9 +970,16 @@ class RevisionBuildEditor(DeltaBuildEditor):
             self.revmeta.metarev.get_foreign_revid(), new_path)
 
     def _get_directory_revision(self, file_id):
-        return self.revid # FIXME: For now
+        try:
+            return self._text_revisions_overrides[file_id]
+        except KeyError:
+            return self.revid
 
-    def _get_file_revision(self, ie):
+    def _get_file_revision(self, ie, path):
+        try:
+            return self._text_revisions_overrides[path]
+        except KeyError:
+            pass
         if (self.bzr_base_tree.has_id(ie.file_id) or
             len(self.bzr_parent_trees) <= 1):
             # File was touched but not newly introduced since base so it has
@@ -997,6 +1010,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
     def _get_text_parents(self, file_id):
         assert isinstance(file_id, str)
+        try:
+            return self._text_parents_overrides[file_id]
+        except KeyError:
+            pass
         ret = []
         for tree in self.bzr_parent_trees:
             try:
