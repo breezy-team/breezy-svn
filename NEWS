@@ -104,6 +104,9 @@ bzr-svn 1.1.0					  UNRELEASED
   * Remove pointless _metadata_changed attribute which could not always
     be accessed. (Jelmer Vernooij, #771536)
 
+  * Store correct file graph information in bzr-svn metadata.
+    (Jelmer Vernooij, #485601)
+
  FEATURES
 
   * When roundtripping revisions a revision property with the Bazaar testament is
