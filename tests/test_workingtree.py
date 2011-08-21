@@ -23,7 +23,10 @@ from subvertpy.wc import (
     check_wc,
     )
 
-from bzrlib import osutils
+from bzrlib import (
+    osutils,
+    version_info as bzrlib_version,
+    )
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import (
@@ -37,6 +40,7 @@ from bzrlib.osutils import (
     )
 from bzrlib.repository import Repository
 from bzrlib.tests import (
+    KnownFailure,
     TestCase,
     )
 try:
@@ -307,6 +311,8 @@ class TestWorkingTree(SubversionTestCase):
         self.client_update("dc")
         tree = WorkingTree.open("dc")
         os.remove("dc/bl")
+        if bzrlib_version < (2, 4, 0):
+            raise KnownFailure("revert is known broken with bzr 2.3")
         tree.revert(["bl"])
         self.assertCleanTree(tree)
         self.assertEqual("data", open('dc/bl').read())

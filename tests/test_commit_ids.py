@@ -42,7 +42,10 @@ class CommitIdTesting:
     def tree_items(self, tree):
         tree.lock_read()
         try:
-            graph = tree._repository.get_file_graph()
+            try:
+                graph = tree._repository.get_file_graph()
+            except AttributeError: # bzr < 2.4
+                graph = tree._repository.texts
             ret = {}
             for (path, versioned, kind, file_id, ie) in tree.list_files(
                     include_root=True, recursive=True):

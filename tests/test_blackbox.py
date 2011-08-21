@@ -19,7 +19,9 @@ import os
 import sys
 
 import bzrlib.gpg
+from bzrlib import version_info as bzrlib_version
 from bzrlib.repository import Repository
+from bzrlib.tests import KnownFailure
 from bzrlib.tests.blackbox import ExternalBase
 
 from bzrlib.plugins.svn.convert import load_dumpfile
@@ -236,6 +238,10 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_info_workingtree(self):
         repos_url = self.make_client('d', 'dc')
+        # Info is broken against bzr 2.3
+        if bzrlib_version < (2, 4, 0):
+            raise KnownFailure("bzr info against svn repositories is "
+                "known broken against 2.3")
         self.run_bzr('info -v dc')
 
     def test_dumpfile(self):

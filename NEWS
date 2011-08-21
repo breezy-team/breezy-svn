@@ -15,7 +15,7 @@ bzr-svn 1.1.0					  UNRELEASED
   * Support non-ascii paths in SqliteCache when retrieving mappings. (#643737,
         Jelmer Vernooij)
 
-  * Mark as compatible with bzr 2.3. (Jelmer Vernooij)
+  * Mark as compatible with bzr 2.3. (Jelmer Vernooij, #717475)
 
   * Remove reference to edge.launchpad.net, which is going away. (Jelmer
         Vernooij, #666021)
