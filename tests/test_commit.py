@@ -32,8 +32,9 @@ from bzrlib.branch import (
     )
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import (
-    DivergedBranches,
     BzrError,
+    DivergedBranches,
+    NoSuchId,
     )
 from bzrlib.inventory import (
     InventoryFile,
@@ -778,6 +779,27 @@ class SvkTestCase(TestCase):
 
 class SendPropChangesTests(TestCase):
 
+    class MockTree(object):
+
+        def __init__(self, file_id, kind, name, executable):
+            self._file_id = file_id
+            self._name = name
+            self._executable = executable
+            self._kind = kind
+
+        def has_id(self, file_id):
+            return (self._file_id == file_id)
+
+        def is_executable(self, file_id):
+            if self._file_id == file_id:
+                return self._executable
+            raise NoSuchId
+
+        def kind(self, file_id):
+            if self._file_id == file_id:
+                return self._kind
+            raise NoSuchId
+
     class RecordingFileEditor(object):
 
         def __init__(self):
@@ -787,35 +809,34 @@ class SendPropChangesTests(TestCase):
             self._props[name] = value
 
     def test_become_symlink(self):
-        ie1 = InventoryFile("myfileid", "name", "theroot")
-        ie1.executable = True
         ie2 = InventoryLink("myfileid", "name", "theroot")
         editor = SendPropChangesTests.RecordingFileEditor()
-        file_editor_send_prop_changes(ie1, ie2, editor)
-        self.assertEquals(editor._props, {"svn:special": "*", "svn:executable": None})
+        file_editor_send_prop_changes(
+            self.MockTree("myfileid", "file", "name", True), "myfileid",
+            ie2, editor)
+        self.assertEquals(editor._props,
+            {"svn:special": "*", "svn:executable": None})
 
     def test_become_executable(self):
-        ie1 = InventoryFile("myfileid", "name", "theroot")
-        ie1.executable = False
+        tree = self.MockTree("myfileid", "file", "name", False)
         ie2 = InventoryFile("myfileid", "name", "theroot")
         ie2.executable = True
         editor = SendPropChangesTests.RecordingFileEditor()
-        file_editor_send_prop_changes(ie1, ie2, editor)
+        file_editor_send_prop_changes(tree, "myfileid",ie2, editor)
         self.assertEquals(editor._props, {"svn:executable": "*"})
 
     def test_unbecome_executable(self):
-        ie1 = InventoryFile("myfileid", "name", "theroot")
-        ie1.executable = True
+        tree = self.MockTree("myfileid", "file", "name", True)
         ie2 = InventoryFile("myfileid", "name", "theroot")
         ie2.executable = False
         editor = SendPropChangesTests.RecordingFileEditor()
-        file_editor_send_prop_changes(ie1, ie2, editor)
+        file_editor_send_prop_changes(tree, "myfileid", ie2, editor)
         self.assertEquals(editor._props, {"svn:executable": None})
 
     def test_nothing_changes(self):
-        ie1 = InventoryFile("myfileid", "name", "theroot")
+        tree = self.MockTree("myfileid", "file", "name", False)
         ie2 = InventoryFile("myfileid", "name", "theroot")
         editor = SendPropChangesTests.RecordingFileEditor()
-        file_editor_send_prop_changes(ie1, ie2, editor)
+        file_editor_send_prop_changes(tree, "myfileid",ie2, editor)
         self.assertEquals(editor._props, {})
 

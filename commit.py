@@ -972,10 +972,6 @@ class SvnCommitBuilder(CommitBuilder):
              (old_ver, new_ver), (old_parent_id, new_parent_id),
              (old_name, new_name), (old_kind, new_kind),
              (old_executable, new_executable)) in iter_changes:
-            if self.old_tree.has_id(file_id):
-                base_ie = self.old_tree.inventory[file_id]
-            else:
-                base_ie = None
             if new_kind is None:
                 self._basis_delta.append((old_path, None, file_id, None))
                 self._deleted_fileids.add(file_id)
@@ -990,7 +986,7 @@ class SvnCommitBuilder(CommitBuilder):
                     (new_ie.revision, unusual_text_parents) = self._get_text_revision(
                         new_ie, new_path, parent_trees)
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(
-                        tree, base_ie, new_ie)
+                        tree, self.old_tree, file_id, new_ie)
                     self._override_text_revisions[new_path] = new_ie.revision
                     self._override_text_parents[new_path] = unusual_text_parents
                     yield file_id, new_path, (new_ie.text_sha1, stat_val)
@@ -999,7 +995,7 @@ class SvnCommitBuilder(CommitBuilder):
                     new_ie.revision, unusual_text_parents = self._get_text_revision(
                         new_ie, new_path, parent_trees)
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(
-                        tree, base_ie, new_ie)
+                        tree, self.old_tree, file_id, new_ie)
                     self._override_text_revisions[new_path] = new_ie.revision
                     self._override_text_parents[new_path] = unusual_text_parents
                 elif new_kind == 'directory':
@@ -1040,7 +1036,7 @@ class SvnCommitBuilder(CommitBuilder):
         raise NotImplementedError(self.record_entry_contents)
 
 
-def send_svn_file_text_delta(tree, base_ie, ie, editor):
+def send_svn_file_text_delta(tree, old_tree, file_id, ie, editor):
     """Send the file text delta to a Subversion editor object.
 
     Tree can either be a native Subversion tree of some sort,
@@ -1048,31 +1044,32 @@ def send_svn_file_text_delta(tree, base_ie, ie, editor):
     or another tree.
 
     :param tree: Tree
-    :param base_ie: Base inventory entry
+    :param old_tree: Base tree
+    :param file_id: File id
     :param editor: Editor to report changes to
     """
     contents = mapping.get_svn_file_contents(tree, ie.kind, ie.file_id)
     try:
         file_editor_send_content_changes(contents, editor)
-        file_editor_send_prop_changes(base_ie, ie, editor)
+        file_editor_send_prop_changes(old_tree, file_id, ie, editor)
     finally:
         contents.close()
 
 
-def get_svn_file_delta_transmitter(tree, base_ie, ie):
+def get_svn_file_delta_transmitter(tree, old_tree, file_id, ie):
     try:
         transmit_svn_file_deltas = getattr(tree, "transmit_svn_file_deltas")
     except AttributeError:
-        return lambda editor: send_svn_file_text_delta(tree, base_ie, ie,
-            editor)
+        return lambda editor: send_svn_file_text_delta(tree, old_tree,
+            file_id, ie, editor)
     else:
         return lambda editor: transmit_svn_file_deltas(ie.file_id, editor)
 
 
-def file_editor_send_prop_changes(base_ie, ie, editor):
-    if base_ie:
-        old_executable = base_ie.executable
-        old_special = (base_ie.kind == 'symlink')
+def file_editor_send_prop_changes(old_tree, file_id, ie, editor):
+    if old_tree.has_id(file_id):
+        old_executable = old_tree.is_executable(file_id)
+        old_special = (old_tree.kind(file_id) == 'symlink')
     else:
         old_special = False
         old_executable = False
