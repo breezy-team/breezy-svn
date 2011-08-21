@@ -968,8 +968,7 @@ class SvnCommitBuilder(CommitBuilder):
                         new_ie, new_path, parent_trees)
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(
                         tree, base_ie, new_ie)
-                    if new_ie.revision is not None:
-                        self._override_text_revisions[new_path] = new_ie.revision
+                    self._override_text_revisions[new_path] = new_ie.revision
                     if unusual_text_parents is not None:
                         self._override_text_parents[new_path] = unusual_text_parents
                     yield file_id, new_path, (new_ie.text_sha1, stat_val)
@@ -979,8 +978,7 @@ class SvnCommitBuilder(CommitBuilder):
                         new_ie, new_path, parent_trees)
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(
                         tree, base_ie, new_ie)
-                    if new_ie.revision is not None:
-                        self._override_text_revisions[new_path] = new_ie.revision
+                    self._override_text_revisions[new_path] = new_ie.revision
                     if unusual_text_parents is not None:
                         self._override_text_parents[new_path] = unusual_text_parents
                 elif new_kind == 'directory':

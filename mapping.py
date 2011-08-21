@@ -687,8 +687,11 @@ def generate_text_parents_property(text_parents):
 
 
 def generate_text_revisions_property(text_revisions):
-    return "".join(["%s\t%s\n" % (urllib.quote(path.encode("utf-8")),
-        text_revisions[path]) for path in sorted(text_revisions.keys())])
+    return "".join([
+        "%s\t%s\n" % (urllib.quote(path.encode("utf-8")), text_revisions[path])
+        for path in sorted(text_revisions.keys())
+        if text_revisions[path] is not None
+        ])
 
 
 class BzrSvnMappingFileProps(object):
