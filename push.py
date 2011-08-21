@@ -159,7 +159,6 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                                root_action, base_tree,
                                push_metadata=push_metadata,
                                graph=graph, opt_signature=opt_signature,
-                               texts=source_repo.texts,
                                testament=testament)
     try:
         builder.will_record_deletes()

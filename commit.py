@@ -394,7 +394,7 @@ class SvnCommitBuilder(CommitBuilder):
                  timezone, committer, revprops, revision_id,
                  base_foreign_revid, base_mapping, root_action, old_tree=None,
                  push_metadata=True, graph=None, opt_signature=None,
-                 texts=None, testament=None):
+                 testament=None):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -429,7 +429,6 @@ class SvnCommitBuilder(CommitBuilder):
         self.branch_path = branch_path
         self.push_metadata = push_metadata
         self.root_action = root_action
-        self._texts = texts
         self._override_file_ids = {}
         self._override_text_revisions = {}
         self._override_text_parents = {}
