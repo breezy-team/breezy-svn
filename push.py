@@ -604,10 +604,10 @@ class InterToSvnRepository(InterRepository):
                 root_action = self._get_root_action(bp, rev.parent_ids, overwrite=False,
                     append_revisions_only=target_config.get_append_revisions_only(True),
                     create_prefix=True)
-                (pushed_revid, base_foreign_info) = self.push_revision_inclusive(bp,
-                    target_config, rev, push_metadata=True,
-                    root_action=root_action, layout=layout,
-                    project=target_project,
+                (pushed_revid, base_foreign_info) = self.push_revision_inclusive(
+                    bp, target_config, rev, push_metadata=True,
+                    push_merged=push_merged, root_action=root_action,
+                    layout=layout, project=target_project,
                     base_foreign_info=base_foreign_info)
         finally:
             self.source.unlock()

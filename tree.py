@@ -549,7 +549,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             entries = adm.entries_read(False)
             entry = entries[""]
             (id, revid) = find_ids(entry)
-            if id == None:
+            if id is None:
                 return
 
             # First handle directory itself

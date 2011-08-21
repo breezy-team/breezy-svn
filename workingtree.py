@@ -629,7 +629,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     path = self.id2path(file_id)
                     parent = os.path.dirname(path)
                     parent_id = self.lookup_id(parent)
-                    entry = self._get_entry(wc, osutils.safe_utf8(self.abspath(path)))
+                    entry = self._get_entry(wc,
+                            osutils.safe_utf8(self.abspath(path)))
                     ie = self._ie_from_entry(path, entry, parent_id)
                     if ie is not None:
                         yield path, ie
