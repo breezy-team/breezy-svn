@@ -63,6 +63,12 @@ class SubversionTree(object):
         return True
 
     def lookup_id(self, path):
+        """Lookup the file id and text revision for a path.
+
+        :param path: Unicode path
+        :raises KeyError: raised if path was not found
+        :return: tuple with file id and text revision
+        """
         return self.id_map.lookup(self.mapping, path)[:2]
 
     def lookup_path(self, file_id):
@@ -243,7 +249,8 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         self._rules_searcher = None
         self.id_map = repository.get_fileid_map(self._revmeta, self.mapping)
         self.file_properties = {}
-        self.transport = repository.transport.clone(self._revmeta.metarev.branch_path)
+        self.transport = repository.transport.clone(
+            self._revmeta.metarev.branch_path)
 
     @property
     def inventory(self):
@@ -471,7 +478,8 @@ class FileTreeEditor(object):
             ie = self.tree._bzr_inventory.add_path(self.path, 'symlink',
                 self.file_id)
         else:
-            ie = self.tree._bzr_inventory.add_path(self.path, 'file', self.file_id)
+            ie = self.tree._bzr_inventory.add_path(self.path, 'file',
+                self.file_id)
         ie.revision = self.revision_id
 
         actual_checksum = md5(file_data).hexdigest()
