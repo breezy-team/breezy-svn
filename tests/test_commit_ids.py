@@ -42,10 +42,17 @@ class CommitIdTesting:
     def tree_items(self, tree):
         tree.lock_read()
         try:
+            graph = tree._repository.get_file_graph()
             ret = {}
             for (path, versioned, kind, file_id, ie) in tree.list_files(
                     include_root=True, recursive=True):
-                ret[path] = (ie.file_id, ie.revision)
+                key = (ie.file_id, ie.revision)
+                pkeys = graph.get_parent_map([key])
+                parents = []
+                for pf, pr in pkeys[key]:
+                    assert pf == ie.file_id
+                    parents.append(pr)
+                ret[path] = (ie.file_id, ie.revision, parents)
         finally:
             tree.unlock()
         return ret
@@ -63,7 +70,7 @@ class CommitIdTesting:
         tree.set_root_id("THEROOTID")
         items = self.commit_tree_items(tree, "reva")
         self.assertEquals({
-            "": ("THEROOTID", "reva")}, items)
+            "": ("THEROOTID", "reva", [])}, items)
 
     def test_add_file(self):
         tree = self.prepare_wt('.')
@@ -74,8 +81,8 @@ class CommitIdTesting:
         tree.add(["afile"], ['THEFILEID'])
         items = self.commit_tree_items(tree, "reva")
         self.assertEquals({
-            "": ("THEROOTID", "reva"),
-            "afile": ("THEFILEID", "reva"),
+            "": ("THEROOTID", "reva", []),
+            "afile": ("THEFILEID", "reva", []),
             }, items)
 
     def test_modify_file(self):
@@ -91,9 +98,9 @@ class CommitIdTesting:
         self.build_tree_contents([('afile', 'contents2')])
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
-            "": ("therootid", "reva"),
-            "afile": ("thefileid", "revb"),
-            "unchanged": ("unchangedid", "reva"),
+            "": ("therootid", "reva", []),
+            "afile": ("thefileid", "revb", ["reva"]),
+            "unchanged": ("unchangedid", "reva", []),
             }, items)
 
     def test_rename_unmodified(self):
@@ -112,10 +119,10 @@ class CommitIdTesting:
         tree.rename_one("cdir", "ddir")
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
-            "": ("therootid", "reva"),
-            "adir": ("thedirid", "reva"),
-            "adir/afile": ("thefileid", "revb"),
-            "ddir": ("cdirid", "revb"),
+            "": ("therootid", "reva", []),
+            "adir": ("thedirid", "reva", []),
+            "adir/afile": ("thefileid", "revb", ["reva"]),
+            "ddir": ("cdirid", "revb", ["reva"]),
             }, items)
 
     def test_change_mode(self):
@@ -130,8 +137,8 @@ class CommitIdTesting:
         os.chmod("afile", 0755)
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
-            "": ("therootid", "reva"),
-            "afile": ("thefileid", "revb"),
+            "": ("therootid", "reva", []),
+            "afile": ("thefileid", "revb", ["reva"]),
             }, items)
 
     def test_rename_parent(self):
@@ -147,9 +154,9 @@ class CommitIdTesting:
         tree.rename_one('adir', 'bdir')
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
-            "": ("therootid", "reva"),
-            "bdir": ("thedirid", "revb"),
-            "bdir/afile": ("thefileid", "reva"),
+            "": ("therootid", "reva", []),
+            "bdir": ("thedirid", "revb", ["reva"]),
+            "bdir/afile": ("thefileid", "reva", []),
             }, items)
 
     def test_new_child(self):
@@ -166,9 +173,9 @@ class CommitIdTesting:
         tree.add(['adir/afile'], ['thefileid'])
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
-            "": ("therootid", "reva"),
-            "adir": ("thedirid", "reva"),
-            "adir/afile": ("thefileid", "revb"),
+            "": ("therootid", "reva", []),
+            "adir": ("thedirid", "reva", []),
+            "adir/afile": ("thefileid", "revb", []),
             }, items)
 
     def test_merge(self):
@@ -223,10 +230,10 @@ class CommitIdTesting:
         tree.pull(other_tree.branch)
         items = self.tree_items(tree.revision_tree("merge"))
         self.assertEquals({
-            "": ("therootid", "reva"),
-            "afile": ("thefileid", "revc"),
-            "bfile": ("bfileid", "merge"),
-            "cfile": ("cfileid", "merge"),
+            "": ("therootid", "reva", []),
+            "afile": ("thefileid", "revc", ["reva"]),
+            "bfile": ("bfileid", "merge", ["revc", "revb"]),
+            "cfile": ("cfileid", "merge", ["revc", "revb"]),
             }, items)
 
 

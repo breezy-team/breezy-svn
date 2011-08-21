@@ -38,6 +38,7 @@ class PerFileParentProvider(object):
 
     def _get_parent(self, fileid, revid):
         revmeta, mapping = self.repository._get_revmeta(revid)
+        parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
         fileidmap = self.repository.get_fileid_map(revmeta, mapping)
         try:
             path = fileidmap.reverse_lookup(mapping, fileid)
@@ -46,12 +47,14 @@ class PerFileParentProvider(object):
 
         text_parents = revmeta.get_text_parents(mapping)
         if path in text_parents:
-            return filter(lambda x: x[1] != NULL_REVISION, text_parents[path])
+            return tuple([
+                (fileid, tp) for tp in text_parents[path]
+                if tp != NULL_REVISION])
 
         # Not explicitly recorded - so just return the text revisions 
         # present in the parents of the mentioned revision.
         ret = []
-        rev_parent_revids = revmeta.get_parent_ids(mapping)
+        rev_parent_revids = revmeta.get_parent_ids(mapping, parentrevmeta)
         for revid in rev_parent_revids:
             if revid == NULL_REVISION:
                 continue # Nothing exists in NULL_REVISION
