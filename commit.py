@@ -22,7 +22,6 @@ from collections import defaultdict
 from cStringIO import (
     StringIO,
     )
-import posixpath
 import subvertpy
 from subvertpy import (
     ERR_FS_NOT_DIRECTORY,
@@ -643,9 +642,11 @@ class SvnCommitBuilder(CommitBuilder):
         return ret
 
     def _iter_new_children(self, file_id):
+        # Iterate over the children that were added during the commit
         for child in self._updated_children[file_id]:
             (child_path, child_ie) = self._updated[child]
             yield (child_ie.name, child_ie)
+        # Iterate over the children that were present previously
         try:
             old_ie = self.old_tree.inventory[file_id]
         except NoSuchId:
@@ -679,13 +680,27 @@ class SvnCommitBuilder(CommitBuilder):
                 return self._committer
 
     def _update_moved_dir_child_file_ids(self, path, file_id):
-        for (child_name, child_ie) in self._iter_new_children(file_id):
-            child_path = posixpath.join(path, child_name)
-            if self._override_file_ids.get(child_path) not in (None, child_ie.file_id):
-                raise AssertionError
-            self._override_file_ids[child_path] = child_ie.file_id
-            if child_ie.kind == 'directory':
-                self._update_moved_dir_child_file_ids(child_path, child_ie.file_id)
+        """Update file id map for children of directories that were moved.
+
+        This only considers children that were not in any other way
+        modified in this commit.
+        """
+        try:
+            from_path = self.old_tree.id2path(file_id)
+        except NoSuchId:
+            return
+        for (p, v, k, fid, ie) in self.old_tree.list_files(include_root=False,
+                from_dir=from_path, recursive=True):
+            assert v
+            if fid in self._updated or fid in self._deleted_fileids:
+                # File was already changed in some other way this commit
+                # No need to set fid
+                continue
+            child_path = osutils.pathjoin(path, ie.name)
+            self._override_file_ids[child_path] = fid
+            self._override_text_revisions[child_path] = self.old_tree.get_file_revision(fid)
+            if ie.kind == 'directory':
+                self._update_moved_dir_child_file_ids(child_path, fid)
 
     @convert_svn_error
     def commit(self, message):
@@ -970,8 +985,7 @@ class SvnCommitBuilder(CommitBuilder):
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(
                         tree, base_ie, new_ie)
                     self._override_text_revisions[new_path] = new_ie.revision
-                    if unusual_text_parents is not None:
-                        self._override_text_parents[new_path] = unusual_text_parents
+                    self._override_text_parents[new_path] = unusual_text_parents
                     yield file_id, new_path, (new_ie.text_sha1, stat_val)
                 elif new_kind == 'symlink':
                     new_ie.symlink_target = tree.get_symlink_target(file_id)
@@ -980,8 +994,7 @@ class SvnCommitBuilder(CommitBuilder):
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(
                         tree, base_ie, new_ie)
                     self._override_text_revisions[new_path] = new_ie.revision
-                    if unusual_text_parents is not None:
-                        self._override_text_parents[new_path] = unusual_text_parents
+                    self._override_text_parents[new_path] = unusual_text_parents
                 elif new_kind == 'directory':
                     self._visit_dirs.add(new_path)
                     self._touched_dirs.add((new_path, file_id))
