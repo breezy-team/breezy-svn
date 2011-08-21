@@ -168,15 +168,24 @@ class CommitIdTesting:
             ('adir/', )])
         tree.add(["adir"], ['thedirid'])
         self.commit_tree(tree, "reva")
+        self.assertOverrideTextRevisions(tree, "reva", {})
+        self.assertOverrideFileIds(tree, "reva", {
+            "": "therootid",
+            "adir": "thedirid"})
         self.build_tree_contents([
             ('adir/afile', 'contents')])
         tree.add(['adir/afile'], ['thefileid'])
         items = self.commit_tree_items(tree, "revb")
+        self.assertOverrideFileIds(tree, "revb", {
+            "adir/afile": "thefileid"})
         self.assertEquals({
             "": ("therootid", "reva", []),
             "adir": ("thedirid", "reva", []),
             "adir/afile": ("thefileid", "revb", []),
             }, items)
+        self.assertOverrideTextRevisions(tree, "revb", {})
+        self.assertOverrideFileIds(tree, "revb", {
+            "adir/afile": "thefileid"})
 
     def test_merge(self):
         # reva
@@ -235,6 +244,8 @@ class CommitIdTesting:
             "bfile": ("bfileid", "merge", ["revc", "revb"]),
             "cfile": ("cfileid", "merge", ["revc", "revb"]),
             }, items)
+        self.assertOverrideTextRevisions(tree, "merge", {
+            })
 
 
 class BzrCommitIdTesting(TestCaseWithTransport,CommitIdTesting):
@@ -244,6 +255,12 @@ class BzrCommitIdTesting(TestCaseWithTransport,CommitIdTesting):
         tree = self.make_branch_and_tree(path)
         tree.commit("Add root")
         return tree
+
+    def assertOverrideTextRevisions(self, tree, revid, expected):
+        pass
+
+    def assertOverrideFileIds(self, tree, revid, expected):
+        pass
 
 
 class SvnRevisionTreeCommitIdTesting(SubversionTestCase,CommitIdTesting):
@@ -263,6 +280,14 @@ class SvnRevisionTreeCommitIdTesting(SubversionTestCase,CommitIdTesting):
 
         self.make_checkout(repo_url+"/trunk", path)
         return WorkingTree.open(path)
+
+    def assertOverrideTextRevisions(self, tree, revid, expected):
+        (revmeta, mapping) = tree.branch.repository._get_revmeta(revid)
+        self.assertEquals(expected, revmeta.get_text_revisions(mapping))
+
+    def assertOverrideFileIds(self, tree, revid, expected):
+        (revmeta, mapping) = tree.branch.repository._get_revmeta(revid)
+        self.assertEquals(expected, revmeta.get_fileid_overrides(mapping))
 
 
 class SvnFetchCommitIdTesting(SubversionTestCase,CommitIdTesting):
@@ -291,3 +316,11 @@ class SvnFetchCommitIdTesting(SubversionTestCase,CommitIdTesting):
 
         self.make_checkout(repo_url+"/trunk", path)
         return WorkingTree.open(path)
+
+    def assertOverrideTextRevisions(self, tree, revid, expected):
+        (revmeta, mapping) = tree.branch.repository._get_revmeta(revid)
+        self.assertEquals(expected, revmeta.get_text_revisions(mapping))
+
+    def assertOverrideFileIds(self, tree, revid, expected):
+        (revmeta, mapping) = tree.branch.repository._get_revmeta(revid)
+        self.assertEquals(expected, revmeta.get_fileid_overrides(mapping))
