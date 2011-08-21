@@ -41,7 +41,6 @@ from bzrlib.revision import (
     NULL_REVISION,
     )
 from bzrlib.tests import (
-    KnownFailure,
     TestCase,
     TestSkipped,
     )
@@ -1759,7 +1758,6 @@ Node-copyfrom-path: x
 
     def test_fetch_symlink_with_newlines(self):
         self.requireFeature(SymlinkFeature)
-        raise KnownFailure("Bazaar doesn't support newlines in symlink targets (#219832)")
         repos_url = self.make_repository('d')
 
         dc = self.get_commit_editor(repos_url)
@@ -1772,7 +1770,9 @@ Node-copyfrom-path: x
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f")
         newrepos = dir.create_repository()
-        self.copy_content(oldrepos, newrepos)
+        self.expectFailure(
+            "Bazaar doesn't support newlines in symlink targets (#219832)",
+            self.copy_content, oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))
@@ -1867,8 +1867,11 @@ Node-copyfrom-path: x
             oldrepos.generate_revision_id(2, "", mapping)))
         tree1 = newrepos.revision_tree(
                 oldrepos.generate_revision_id(2, "", mapping))
-        raise KnownFailure("not allowing svn:special invalid files to be restored to symlinks yet")
-        self.assertEqual('symlink', tree1.kind(tree1.path2id("mylink")))
+        self.expectFailure(
+            "not allowing svn:special invalid files to be restored to symlinks "
+            "yet",
+            self.assertEqual,
+            'symlink', tree1.kind(tree1.path2id("mylink")))
 
     def test_fetch_symlink_kind_change(self):
         repos_url = self.make_repository('d')
