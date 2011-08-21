@@ -158,6 +158,11 @@ class CommitIdTesting:
             "bdir": ("thedirid", "revb", ["reva"]),
             "bdir/afile": ("thefileid", "reva", []),
             }, items)
+        self.assertOverrideTextRevisions(tree, "revb", {
+            "bdir/afile": "reva"})
+        self.assertOverrideFileIds(tree, "revb", {
+            "bdir/afile": "thefileid",
+            "bdir": "thedirid"})
 
     def test_new_child(self):
         tree = self.prepare_wt('.')
