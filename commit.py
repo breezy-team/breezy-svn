@@ -689,6 +689,8 @@ class SvnCommitBuilder(CommitBuilder):
             from_path = self.old_tree.id2path(file_id)
         except NoSuchId:
             return
+        if self.old_tree.kind(file_id) != 'directory':
+            return
         for (p, v, k, fid, ie) in self.old_tree.list_files(include_root=False,
                 from_dir=from_path, recursive=True):
             assert v
