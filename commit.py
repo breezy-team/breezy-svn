@@ -720,20 +720,21 @@ class SvnCommitBuilder(CommitBuilder):
             if self.set_custom_revprops:
                 self.mapping.export_text_revisions_revprops(
                     self._override_text_revisions, self._svn_revprops)
-                self.mapping.export_fileid_map_revprops(self._override_file_ids,
-                    self._svn_revprops)
+                self.mapping.export_fileid_map_revprops(
+                    self._override_file_ids, self._svn_revprops)
                 self.mapping.export_text_parents_revprops(
                     self._override_text_parents, self._svn_revprops)
             if self.set_custom_fileprops:
                 self.mapping.export_text_revisions_fileprops(
                     self._override_text_revisions, self._svnprops)
-                self.mapping.export_fileid_map_fileprops(self._override_file_ids,
-                    self._svnprops)
+                self.mapping.export_fileid_map_fileprops(
+                    self._override_file_ids, self._svnprops)
                 self.mapping.export_text_parents_fileprops(
                     self._override_text_parents, self._svnprops)
         if self._config.get_log_strip_trailing_newline():
             if self.set_custom_revprops:
-                self.mapping.export_message_revprops(message, self._svn_revprops)
+                self.mapping.export_message_revprops(message,
+                    self._svn_revprops)
             if self.set_custom_fileprops:
                 self.mapping.export_message_fileprops(message, self._svnprops)
             message = message.rstrip("\n")
@@ -754,7 +755,8 @@ class SvnCommitBuilder(CommitBuilder):
             for prop in self._svn_revprops:
                 assert prop.split(":")[0] in ("bzr", "svk", "svn")
                 if not properties.is_valid_property_name(prop):
-                    trace.warning("Setting property %r with invalid characters in name",
+                    trace.warning(
+                        "Setting property %r with invalid characters in name",
                         prop)
             if self.supports_custom_revprops:
                 timeval = properties.time_to_cstring(1000000 * self._timestamp)
@@ -782,7 +784,8 @@ class SvnCommitBuilder(CommitBuilder):
                         raise ValueError("Invalid property contents: %r" % msg)
                     raise
                 branch_editors = self.open_branch_editors(root, bp_parts,
-                    self.base_url, self.base_revnum, root_from, self.root_action)
+                    self.base_url, self.base_revnum, root_from,
+                    self.root_action)
 
                 changed = dir_editor_send_changes(
                         (self.old_tree, self.base_url, self.base_revnum),
@@ -802,11 +805,13 @@ class SvnCommitBuilder(CommitBuilder):
                 if self._changed_fileprops == {}:
                     # Set dummy property, so Subversion will raise an error in case of
                     # clashes.
-                    branch_editors[-1].change_prop(DUMMY_ROOT_PROPERTY_NAME, None)
+                    branch_editors[-1].change_prop(DUMMY_ROOT_PROPERTY_NAME,
+                        None)
 
                 for prop, (oldvalue, newvalue) in self._changed_fileprops.iteritems():
                         if not properties.is_valid_property_name(prop):
-                            trace.warning("Setting property %r with invalid characters "
+                            trace.warning(
+                                "Setting property %r with invalid characters "
                                 "in name", prop)
                         assert isinstance(newvalue, str)
                         self.mutter("Setting root file property %r -> %r",
@@ -977,7 +982,8 @@ class SvnCommitBuilder(CommitBuilder):
                 self._deleted_fileids.add(file_id)
             else:
                 self._override_file_ids[new_path] = file_id
-                new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
+                new_ie = entry_factory[new_kind](file_id, new_name,
+                        new_parent_id)
                 if new_kind == 'file':
                     new_ie.executable = new_executable
                     file_obj, stat_val = get_file_with_stat(file_id)
