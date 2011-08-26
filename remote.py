@@ -149,14 +149,22 @@ class SvnRemoteFormat(ControlDirFormat):
         lazy_check_versions()
         from bzrlib.transport.local import LocalTransport
         import os
+        import subvertpy
         from subvertpy import repos
+        # For subvertpy < 0.8.6
+        ERR_DIR_NOT_EMPTY = getattr(subvertpy, "ERR_DIR_NOT_EMPTY", 200011)
 
         if not isinstance(transport, LocalTransport):
             raise UninitializableOnRemoteTransports(self)
 
         local_path = transport.local_abspath(".").rstrip("/").encode(osutils._fs_enc)
         assert type(local_path) == str
-        repos.create(local_path)
+        try:
+            repos.create(local_path)
+        except subvertpy.SubversionException, (_, num):
+            if num == ERR_DIR_NOT_EMPTY:
+                raise errors.BzrError("Directory is not empty")
+            raise
         # All revision property changes
         revprop_hook = os.path.join(local_path, "hooks", "pre-revprop-change")
         open(revprop_hook, 'w').write("#!/bin/sh")
