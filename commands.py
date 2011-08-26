@@ -220,7 +220,8 @@ class cmd_svn_layout(Command):
             repos = Repository.open(path)
             branch = None
         if getattr(repos, "uuid", None) is None:
-            raise errors.BzrCommandError("Not a Subversion branch or repository.")
+            raise errors.BzrCommandError(
+                "Not a Subversion branch or repository.")
         layout = repos.get_layout()
         self.outf.write("Repository root: %s\n" % repos.base)
         self.outf.write("Layout: %s\n" % str(layout))
@@ -237,7 +238,8 @@ class cmd_svn_layout(Command):
                     self.outf.write("Tag container directory: %s\n" %
                             urlutils.dirname(test_tag_path))
             try:
-                test_branch_path = layout.get_branch_path("test", branch.project)
+                test_branch_path = layout.get_branch_path("test",
+                    branch.project)
             except bzrsvn_errors.NoCustomBranchPaths:
                 self.outf.write("No custom branch support\n")
             else:
