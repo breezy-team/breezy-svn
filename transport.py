@@ -362,11 +362,6 @@ class SvnRaTransport(Transport):
         from bzrlib.plugins.svn import lazy_check_versions
         lazy_check_versions()
 
-    def get_segment_parameters(self):
-        """Return the segment parameters for the top segment of the URL.
-        """
-        return self._segment_parameters
-
     def is_readonly(self):
         return self.connections.readonly
 
