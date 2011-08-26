@@ -269,7 +269,7 @@ class SvnRemoteAccess(ControlDir):
         else:
             target_is_empty = None # Unknown
         if stacked:
-            raise errors.IncompatibleRepositories(source_repository, result_repo)
+            raise errors.UnstackableRepositoryFormat(self._format, self.root_transport.base)
         interrepo = InterRepository.get(source_repository, result_repo)
         if revision_id is None:
             revision_id = source_branch.last_revision()
