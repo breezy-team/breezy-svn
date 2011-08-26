@@ -200,6 +200,8 @@ class TestRemoteAccess(SubversionTestCase):
         repos_url = self.make_repository("d")
         x = BzrDir.open(repos_url)
         x.open_repository().store_layout(TrunkLayout())
-        x.create_branch("foo")
-        x.create_branch("bar")
-        self.assertEquals([], x.list_branches())
+        b1 = x.create_branch("foo")
+        b2 = x.create_branch("bar")
+        self.assertEquals(
+            set([b1.base, b2.base]),
+            set([b.base for b in x.list_branches()]))
