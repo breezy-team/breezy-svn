@@ -232,6 +232,14 @@ class SvnBranch(ForeignBranch):
         if type not in ('branch', 'tag') or ip != '':
             raise NotBranchError(branch_path)
 
+    @property
+    def control_url(self):
+        return self.base
+
+    @property
+    def user_url(self):
+        return self.base
+
     def leave_lock_in_place(self):
         raise NotImplementedError(self.leave_lock_in_place)
 
