@@ -21,6 +21,7 @@ import urllib
 
 from bzrlib import (
     errors,
+    osutils,
     trace,
     )
 from bzrlib.controldir import (
@@ -138,7 +139,6 @@ class SvnRemoteFormat(ControlDirFormat):
 
     def initialize_on_transport(self, transport):
         """See ControlDir.initialize_on_transport()."""
-        from bzrlib import osutils
         from bzrlib.plugins.svn import lazy_check_versions
         lazy_check_versions()
         from bzrlib.transport.local import LocalTransport
@@ -365,39 +365,57 @@ class SvnRemoteAccess(ControlDir):
         if branch_name is None and layout.is_branch_or_tag(self._branch_path):
             return self._branch_path
         try:
+            if branch_name is not None:
+                branch_name = osutils.safe_utf8(branch_name)
             return layout.get_branch_path(branch_name, self._branch_path)
         except NoCustomBranchPaths:
             if branch_name is None:
                 return self._branch_path
             else:
-                raise errors.NoColocatedBranchSupport(self)
+                raise errors.NoColocatedBranchSupport(layout)
 
     def create_branch(self, branch_name=None, repository=None, mapping=None):
         """See ControlDir.create_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
+        from bzrlib.plugins.svn.push import (
+            check_dirs_exist,
+            create_branch_container,
+            create_branch_with_hidden_commit,
+            )
         if repository is None:
             repository = self.find_repository()
 
-        relpath = self._determine_relpath(branch_name)
-        if relpath != "":
-            # TODO: Set NULL_REVISION in SVN_PROP_BZR_BRANCHING_SCHEME
-            repository.transport.mkdir(relpath.strip("/"))
-        elif repository.get_latest_revnum() > 0:
-            # Bail out if there are already revisions in this repository
-            raise errors.AlreadyBranchError(self.root_transport.base)
         if mapping is None:
             mapping = repository.get_mapping()
+
+        relpath = self._determine_relpath(branch_name).strip("/")
+        if relpath == "":
+            if repository.get_latest_revnum() > 0:
+                # Bail out if there are already revisions in this repository
+                raise errors.AlreadyBranchError(repository.transport.base)
+            # TODO: Set NULL_REVISION in SVN_PROP_BZR_BRANCHING_SCHEME on rev0
+        bp_parts = relpath.split("/")
+        existing_bp_parts = check_dirs_exist(repository.transport, bp_parts,
+            -1)
+        if len(existing_bp_parts) == len(bp_parts) and relpath != "":
+            raise errors.AlreadyBranchError(repository.transport.base)
+        if len(existing_bp_parts) < len(bp_parts)-1:
+            create_branch_container(repository.transport, relpath, "/".join(existing_bp_parts))
+        if relpath != "":
+            create_branch_with_hidden_commit(repository, relpath, NULL_REVISION)
         return SvnBranch(repository, self, relpath, mapping)
 
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
-            mapping=None):
+            mapping=None, branch_path=None, repository=None):
         """See ControlDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
-        relpath = self._determine_relpath(name)
-        repos = self.find_repository()
+        if branch_path is None:
+            branch_path = self._determine_relpath(name)
+        if repository is None:
+            repository = self.find_repository()
         if mapping is None:
-            mapping = repos.get_mapping()
-        return SvnBranch(repos, self, relpath, mapping)
+            mapping = repository.get_mapping()
+        return SvnBranch(repository, self, branch_path, mapping)
 
     def create_repository(self, shared=False, format=None):
         """See ControlDir.create_repository."""
@@ -465,3 +483,13 @@ class SvnRemoteAccess(ControlDir):
             self._config = SvnRepositoryConfig(self.root_transport.base,
                 self.root_transport.get_uuid())
         return self._config
+
+    def list_branches(self):
+        repos = self.find_repository()
+        layout = repos.get_layout()
+        branches = []
+        for project, bp, nick, has_props, revnum in layout.get_branches(repos,
+                repos.get_latest_revnum()):
+            branches.append(self.open_branch(branch_path=bp, repository=repos))
+        return branches
+

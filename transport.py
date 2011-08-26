@@ -157,6 +157,7 @@ def bzr_to_svn_url(url):
 
     This will possibly remove the svn+ prefix.
     """
+    url = urlutils.split_segment_parameters(url.strip("/"))[0]
     if url.startswith("readonly+"):
         url = url[len("readonly+"):]
         readonly = True
@@ -334,10 +335,9 @@ class SvnRaTransport(Transport):
 
     @convert_svn_error
     def __init__(self, url, from_transport=None, credentials=None):
-        bzr_url = url
         self.svn_url, readonly = bzr_to_svn_url(url)
-        Transport.__init__(self, bzr_url)
-        host = urlutils.parse_url(bzr_url)[3]
+        Transport.__init__(self, url)
+        host = urlutils.parse_url(url)[3]
         if host.endswith(".codeplex.com"):
             warn_codeplex(host)
         if from_transport is None:
@@ -361,6 +361,11 @@ class SvnRaTransport(Transport):
         self.capabilities = {}
         from bzrlib.plugins.svn import lazy_check_versions
         lazy_check_versions()
+
+    def get_segment_parameters(self):
+        """Return the segment parameters for the top segment of the URL.
+        """
+        return self._segment_parameters
 
     def is_readonly(self):
         return self.connections.readonly

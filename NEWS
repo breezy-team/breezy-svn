@@ -120,6 +120,9 @@ bzr-svn 1.1.0					  UNRELEASED
     branches found by bzr-svn in a svn repository.
     (Jelmer Vernooij)
 
+  * Basic support for multiple branches in a single control directory.
+    (Jelmer Vernooij, #740261)
+
  INTERNALS
 
   * Switch to using record_iter_changes style committing everywhere.

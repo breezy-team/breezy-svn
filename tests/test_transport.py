@@ -53,6 +53,13 @@ class SvnRaTest(SubversionTestCase):
         self.assertEqual(t.base, repos_url)
         self.assertEqual(t.is_readonly(), False)
 
+    def test_segments(self):
+        repos_url = self.make_repository('a')
+        t = SvnRaTransport("%s,branch=name" % repos_url)
+        self.assertIsInstance(t, SvnRaTransport)
+        self.assertEqual(t.svn_url, repos_url)
+        self.assertEqual(t.get_segment_parameters(), {"branch": "name"})
+
     def test_create_direct(self):
         repos_url = self.make_repository('a')
         t = SvnRaTransport(repos_url)
