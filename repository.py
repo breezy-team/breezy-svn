@@ -644,8 +644,8 @@ class SvnRepository(ForeignRepository):
         from bzrlib.plugins.svn.fetch import TreeDeltaBuildEditor
         if parentrevmeta is None:
             parentfileidmap = {}
-            parent_branch_path = revision.svn_meta.branch_path
-            parentrevnum = revision.svn_meta.revnum
+            parent_branch_path = revision.svn_meta.metarev.branch_path
+            parentrevnum = revision.svn_meta.metarev.revnum
             start_empty = True
         else:
             parentfileidmap = self.get_fileid_map(parentrevmeta,

@@ -659,3 +659,9 @@ if len(sys.argv) == 2:
         self.client_add("dc/file")
         self.assertEquals("dc/file\n",
             self.run_bzr('ls dc', retcode=0)[0])
+
+    def test_log_v(self):
+        repos_url = self.make_client('d', 'dc')
+        self.commit_something(repos_url)
+        self.run_bzr('log -v d', retcode=0)
+        self.run_bzr('log -v dc', retcode=0)

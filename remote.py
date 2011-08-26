@@ -322,7 +322,7 @@ class SvnRemoteAccess(ControlDir):
         """See ControlDir.needs_format_conversion()."""
         return not isinstance(self._format, format.__class__)
 
-    def import_branch(self, source, stop_revision=None, overwrite=False):
+    def import_branch(self, source, stop_revision=None, overwrite=False, name=None):
         """Create a new branch in this repository, possibly
         with the specified history, optionally importing revisions.
 
@@ -336,7 +336,8 @@ class SvnRemoteAccess(ControlDir):
         try:
             if stop_revision is None:
                 stop_revision = source.last_revision()
-            target_branch_path = self._branch_path.strip("/")
+            relpath = self._determine_relpath(name)
+            target_branch_path = relpath.lstrip("/")
             repos = self.find_repository()
             repos.lock_write()
             try:
@@ -350,7 +351,7 @@ class SvnRemoteAccess(ControlDir):
                     raise errors.NotBranchError(target_branch_path)
                 inter.push_new_branch(layout, project, target_branch_path,
                         stop_revision, push_metadata=True, overwrite=overwrite)
-                return self.open_branch()
+                return self.open_branch(name)
             finally:
                 repos.unlock()
         finally:
@@ -422,14 +423,14 @@ class SvnRemoteAccess(ControlDir):
         return self.open_repository()
 
     def push_branch(self, source, revision_id=None, overwrite=False,
-        remember=False, create_prefix=False):
+        remember=False, create_prefix=False, name=None):
         ret = SubversionPushResult()
         ret.source_branch = source
         ret.workingtree_updated = None
         ret.stacked_on = None
         ret.master_branch = None
         try:
-            target_branch = self.open_branch()
+            target_branch = self.open_branch(name=name)
             if source.get_push_location() is None or remember:
                 source.set_push_location(target_branch.base)
             ret.target_branch = target_branch
@@ -441,12 +442,11 @@ class SvnRemoteAccess(ControlDir):
             finally:
                 target_branch.unlock()
         except errors.NotBranchError:
-            relpath = self._determine_relpath(None)
-            ret.target_branch_path = "/%s" % relpath.lstrip("/")
             if create_prefix:
                 self.root_transport.create_prefix()
             ret.target_branch = self.import_branch(source, revision_id,
                 overwrite=overwrite)
+            ret.target_branch_path = "/" + ret.target_branch.get_branch_path()
             ret.tag_conflicts = source.tags.merge_to(ret.target_branch.tags,
                 overwrite)
             if source.get_push_location() is None or remember:
