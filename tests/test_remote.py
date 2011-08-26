@@ -31,6 +31,7 @@ from bzrlib.errors import (
     NoWorkingTree,
     UnsupportedOperation,
     )
+from bzrlib.tests import TestCase
 
 from bzrlib.plugins.svn.layout.standard import TrunkLayout
 from bzrlib.plugins.svn.remote import SvnRemoteFormat
@@ -205,3 +206,10 @@ class TestRemoteAccess(SubversionTestCase):
         self.assertEquals(
             set([b1.base, b2.base]),
             set([b.base for b in x.list_branches()]))
+
+
+class SvnRemoteFormatTests(TestCase):
+
+    def test_eq(self):
+        self.assertEquals(SvnRemoteFormat(), SvnRemoteFormat())
+        self.assertNotEquals(SvnRemoteFormat(), "bla")

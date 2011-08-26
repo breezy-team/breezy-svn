@@ -78,6 +78,9 @@ class SvnRemoteFormat(ControlDirFormat):
     fixed_components = True
     _lock_class = TransportLock
 
+    def __eq__(self, other):
+        return isinstance(other, SvnRemoteFormat)
+
     @property
     def repository_format(self):
         from bzrlib.plugins.svn.repository import SvnRepositoryFormat
