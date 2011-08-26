@@ -59,7 +59,6 @@ from bzrlib.plugins.svn.tests import (
 class TestLoadDumpfile(TestCaseInTempDir):
 
     def test_loaddumpfile(self):
-        return
         dumpfile = os.path.join(self.test_dir, "dumpfile")
         open(dumpfile, 'w').write(
 """SVN-fs-dump-format-version: 2
@@ -76,16 +75,16 @@ V 27
 2006-07-02T13:14:51.972532Z
 PROPS-END
 """)
-        load_dumpfile(dumpfile, "d")
+        load_dumpfile(dumpfile, os.path.join(self.test_dir, "d"))
         fs = repos.Repository("d").fs()
         self.assertEqual("6987ef2d-cd6b-461f-9991-6f1abef3bd59",
                 fs.get_uuid())
 
     def test_loaddumpfile_invalid(self):
-        return
         dumpfile = os.path.join(self.test_dir, "dumpfile")
         open(dumpfile, 'w').write("""FooBar\n""")
-        self.assertRaises(NotDumpFile, load_dumpfile, dumpfile, "d")
+        self.assertRaises(NotDumpFile, load_dumpfile, dumpfile,
+            os.path.join(self.test_dir, "d"))
 
 
 class TestConversion(SubversionTestCase):
