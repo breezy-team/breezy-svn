@@ -367,7 +367,10 @@ class SvnRemoteAccess(ControlDir):
         try:
             return layout.get_branch_path(branch_name, self._branch_path)
         except NoCustomBranchPaths:
-            raise errors.NoColocatedBranchSupport(self)
+            if branch_name is None:
+                return self._branch_path
+            else:
+                raise errors.NoColocatedBranchSupport(self)
 
     def create_branch(self, branch_name=None, repository=None, mapping=None):
         """See ControlDir.create_branch()."""

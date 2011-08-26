@@ -216,7 +216,7 @@ class cmd_svn_layout(Command):
         try:
             branch, _ = Branch.open_containing(path)
             repos = branch.repository
-        except errors.NotBranchError:
+        except (errors.NotBranchError, errors.NoColocatedBranchSupport):
             repos = Repository.open(path)
             branch = None
         if getattr(repos, "uuid", None) is None:
