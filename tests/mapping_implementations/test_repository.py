@@ -18,7 +18,10 @@
 from bzrlib import urlutils
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import NoSuchRevision
+from bzrlib.errors import (
+    NoSuchRevision,
+    UnsupportedOperation,
+    )
 from bzrlib.repository import Repository
 from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import TestSkipped, TestNotApplicable
@@ -60,8 +63,8 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
     def test_set_make_working_trees(self):
         repos_url = self.make_repository("a")
         repos = Repository.open(repos_url)
-        repos.set_make_working_trees(True)
         self.assertFalse(repos.make_working_trees())
+        self.assertRaises(UnsupportedOperation, repos.set_make_working_trees, True)
 
     def test_get_fileid_map(self):
         repos_url = self.make_repository("a")

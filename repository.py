@@ -815,7 +815,7 @@ class SvnRepository(ForeignRepository):
 
     def set_make_working_trees(self, new_value):
         """See Repository.set_make_working_trees()."""
-        pass # ignored, nowhere to store it...
+        raise bzr_errors.UnsupportedOperation(self.set_make_working_trees, self)
 
     def make_working_trees(self):
         """See Repository.make_working_trees().
