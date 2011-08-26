@@ -24,7 +24,7 @@ class URLIsLikelyBranch(SubversionTestCase):
 
     def test_root(self):
         repo_url = self.make_repository("d")
-        self.assertTrue(is_likely_branch_url(repo_url))
+        self.assertIs(None, is_likely_branch_url(repo_url))
         self.assertFalse(is_likely_branch_url(repo_url+"/doesntexist"))
 
     def test_trunk(self):

@@ -19,7 +19,6 @@
 
 import os
 from subvertpy import (
-    ERR_FS_ALREADY_EXISTS,
     ERR_FS_NO_SUCH_REVISION,
     NODE_DIR,
     SubversionException,
@@ -46,11 +45,9 @@ from bzrlib.bzrdir import (
     format_registry,
     )
 from bzrlib.errors import (
-    AlreadyBranchError,
     DivergedBranches,
     IncompatibleFormat,
     LocalRequiresBoundBranch,
-    NoColocatedBranchSupport,
     NoSuchRevision,
     NotBranchError,
     UnstackableBranchFormat,
@@ -75,7 +72,6 @@ from bzrlib.plugins.svn.fetch import (
     )
 from bzrlib.plugins.svn.push import (
     InterToSvnRepository,
-    create_branch_with_hidden_commit,
     )
 from bzrlib.plugins.svn.config import (
     BranchConfig,
@@ -122,6 +118,7 @@ class SubversionWriteLock(object):
     __slots__ = ('unlock')
 
     def __init__(self, unlock):
+        self.branch_token = None
         self.unlock = unlock
 
     def __repr__(self):
@@ -650,19 +647,7 @@ class SvnBranchFormat(BranchFormat):
         from bzrlib.plugins.svn.remote import SvnRemoteAccess
         if not isinstance(to_bzrdir, SvnRemoteAccess):
             raise IncompatibleFormat(self, to_bzrdir._format)
-        if repository is None:
-            repository = to_bzrdir.find_repository()
-        if name is not None:
-            raise NoColocatedBranchSupport(to_bzrdir)
-        try:
-            create_branch_with_hidden_commit(repository,
-                to_bzrdir._branch_path, NULL_REVISION, set_metadata=True,
-                deletefirst=False)
-        except SubversionException, (_, num):
-            if num == ERR_FS_ALREADY_EXISTS:
-                raise AlreadyBranchError(to_bzrdir.user_url)
-            raise
-        return to_bzrdir.open_branch()
+        return to_bzrdir.create_branch(name)
 
     def supports_tags(self):
         return True

@@ -183,6 +183,7 @@ class SvnRepositoryFormat(RepositoryFormat):
     supports_funky_characters = True
     supports_external_lookups = False
     revision_graph_can_have_wrong_parents = False
+    supports_versioned_directories = True
 
     @property
     def _matchingbzrdir(self):

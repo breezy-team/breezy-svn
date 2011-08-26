@@ -105,7 +105,7 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
             assert isinstance(revpaths, dict)
             pb.update("analyzing repository layout", last_revnum-revnum,
                       last_revnum)
-            if revpaths == {}:
+            if revnum == 0 or revpaths == {}:
                 continue
             for path in find_commit_paths([revpaths]):
                 layout = guess_layout_from_path(path)
@@ -170,4 +170,6 @@ def is_likely_branch_url(url):
         if num == ERR_FS_NOT_FOUND:
             return False # path doesn't exist
         raise
+    if guessed_layout is None:
+        return None
     return guessed_layout.is_branch(branch_path)
