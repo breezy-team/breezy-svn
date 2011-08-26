@@ -109,7 +109,8 @@ def get_svn_ra_transport(bzr_transport):
     # Save _svn_ra transport here so we don't have to connect again next time
     # we try to use bzr svn on this transport
     shared_connection = getattr(bzr_transport, "_shared_connection", None)
-    if shared_connection is not None and shared_connection.credentials is not None:
+    if (shared_connection is not None and
+        shared_connection.credentials is not None):
         if isinstance(shared_connection.credentials, dict):
             creds = shared_connection.credentials
         elif isinstance(shared_connection.credentials[0], dict):
@@ -118,7 +119,8 @@ def get_svn_ra_transport(bzr_transport):
             creds = None
     else:
         creds = None
-    ra_transport = SvnRaTransport(bzr_transport.external_url(), credentials=creds)
+    ra_transport = SvnRaTransport(bzr_transport.external_url(),
+        credentials=creds)
     bzr_transport._svn_ra = ra_transport
     return ra_transport
 

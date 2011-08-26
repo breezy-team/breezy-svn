@@ -16,6 +16,7 @@
 
 """Full repository conversion tests."""
 
+from cStringIO import StringIO
 import os, sys
 from subvertpy import repos
 
@@ -75,7 +76,7 @@ V 27
 2006-07-02T13:14:51.972532Z
 PROPS-END
 """)
-        load_dumpfile(dumpfile, "d")
+        load_dumpfile(dumpfile, StringIO(), "d")
         fs = repos.Repository("d").fs()
         self.assertEqual("6987ef2d-cd6b-461f-9991-6f1abef3bd59",
                 fs.get_uuid())
@@ -83,7 +84,8 @@ PROPS-END
     def test_loaddumpfile_invalid(self):
         dumpfile = os.path.join(self.test_dir, "dumpfile")
         open(dumpfile, 'w').write("""FooBar\n""")
-        self.assertRaises(NotDumpFile, load_dumpfile, dumpfile, "d")
+        self.assertRaises(NotDumpFile, load_dumpfile, dumpfile, StringIO(),
+            "d")
 
 
 class TestConversion(SubversionTestCase):
@@ -360,7 +362,7 @@ PROPS-END
         Branch.open(branch_path)
 
     def load_dumpfile(self, dumpfile, target_path):
-        load_dumpfile(dumpfile, target_path)
+        load_dumpfile(dumpfile, StringIO(), target_path)
         return Repository.open(target_path)
 
     def test_dumpfile_open_empty_trunk(self):
