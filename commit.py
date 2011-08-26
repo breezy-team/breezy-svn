@@ -317,6 +317,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         # handle the file
         if child_ie.file_id in modified_files:
             changed = True
+            # The file editors implicitly close the file editor
             modified_files[child_ie.file_id](child_editor)
         elif child_editor is not None:
             child_editor.close()
@@ -1051,9 +1052,10 @@ def send_svn_file_text_delta(tree, old_tree, file_id, ie, editor):
     contents = mapping.get_svn_file_contents(tree, ie.kind, ie.file_id)
     try:
         file_editor_send_content_changes(contents, editor)
-        file_editor_send_prop_changes(old_tree, file_id, ie, editor)
     finally:
         contents.close()
+    file_editor_send_prop_changes(old_tree, file_id, ie, editor)
+    editor.close()
 
 
 def get_svn_file_delta_transmitter(tree, old_tree, file_id, ie):
