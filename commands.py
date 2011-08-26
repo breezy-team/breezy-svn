@@ -118,7 +118,7 @@ class cmd_svn_import(Command):
             from bzrlib.plugins.svn.convert import load_dumpfile
             import tempfile
             tmp_repos = tempfile.mkdtemp(prefix='bzr-svn-dump-')
-            load_dumpfile(from_location, self.outf, tmp_repos)
+            load_dumpfile(from_location, tmp_repos)
             from_location = tmp_repos
         else:
             tmp_repos = None

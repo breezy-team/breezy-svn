@@ -15,7 +15,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Blackbox tests."""
 
-from cStringIO import StringIO
 import os
 import sys
 
@@ -397,7 +396,7 @@ Node-copyfrom-path: x
                 self.run_bzr('svn-import --layout=none %s dc' % filename)[0])
         finally:
             self.enable_directory_isolation()
-        load_dumpfile(filename, StringIO(), "realrepo")
+        load_dumpfile(filename, "realrepo")
         svnrepo = Repository.open("realrepo")
         self.assertEquals(uuid, svnrepo.uuid)
         svnrepo.set_layout(RootLayout())

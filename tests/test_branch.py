@@ -16,7 +16,6 @@
 
 """Branch tests."""
 
-from cStringIO import StringIO
 import os
 import subvertpy
 
@@ -824,7 +823,7 @@ foohosts""")
         os.mkdir("new")
         os.mkdir("old")
 
-        load_dumpfile("dumpfile", StringIO(), "old")
+        load_dumpfile("dumpfile", "old")
 
         url = "old/branches/foobranch"
         mutter('open %r' % url)

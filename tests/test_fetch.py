@@ -18,7 +18,6 @@
 
 """Subversion fetch tests."""
 
-from cStringIO import StringIO
 import os
 import shutil
 import sys
@@ -590,7 +589,7 @@ Node-action: delete
 """)
         os.mkdir("old")
 
-        load_dumpfile("dumpfile", StringIO(), "old")
+        load_dumpfile("dumpfile", "old")
         oldrepos = Repository.open("old")
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f")
@@ -732,7 +731,7 @@ Node-copyfrom-path: u
 """)
         os.mkdir("old")
 
-        load_dumpfile("dumpfile", StringIO(), "old")
+        load_dumpfile("dumpfile", "old")
         oldrepos = Repository.open("old")
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f")
@@ -879,7 +878,7 @@ Node-copyfrom-path: bla
 """)
         os.mkdir("old")
 
-        load_dumpfile("dumpfile", StringIO(), "old")
+        load_dumpfile("dumpfile", "old")
         oldrepos = Repository.open("old")
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f")
@@ -1060,7 +1059,7 @@ Node-copyfrom-path: bla
 """)
         os.mkdir("old")
 
-        load_dumpfile("dumpfile", StringIO(), "old")
+        load_dumpfile("dumpfile", "old")
         oldrepos = Repository.open("old")
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f")
@@ -1202,7 +1201,7 @@ Node-copyfrom-path: x
 """)
         os.mkdir("old")
 
-        load_dumpfile("dumpfile", StringIO(), "old")
+        load_dumpfile("dumpfile", "old")
         oldrepos = Repository.open("old")
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f")
@@ -1366,7 +1365,7 @@ Node-copyfrom-path: x
 """)
         os.mkdir("old")
 
-        load_dumpfile("dumpfile", StringIO(), "old")
+        load_dumpfile("dumpfile", "old")
         oldrepos = Repository.open("old")
         oldrepos.set_layout(RootLayout())
         dir = BzrDir.create("f")

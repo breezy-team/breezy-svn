@@ -96,13 +96,20 @@ class NotDumpFile(BzrError):
         self.dumpfile = dumpfile
 
 
-def load_dumpfile(dumpfile, feedback_stream, outputdir):
+def load_dumpfile(dumpfile, outputdir, feedback_stream=None):
     """Load a Subversion dump file.
 
     :param dumpfile: Path to dump file.
     :param outputdir: Directory in which Subversion repository should be
         created.
     """
+    if feedback_stream is None:
+        class NullStream(object):
+
+            def read(self): return
+            def write(self, data): return
+            def close(self): return
+        feedback_stream = NullStream()
     r = repos.create(outputdir)
     if dumpfile.endswith(".gz"):
         import gzip
