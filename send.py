@@ -48,6 +48,9 @@ class SvnDiffTree(_mod_diff.DiffTree):
             rev = tree.get_file_revision(file_id)
         except errors.NoSuchId:
             return '(revision 0)'
+        except AttributeError:
+            # Not a revision tree
+            rev = None
         if rev is None:
             return '(working copy)'
         repo = self._get_repository()
