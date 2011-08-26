@@ -360,6 +360,8 @@ class SvnRemoteAccess(ControlDir):
         from bzrlib.plugins.svn.errors import NoCustomBranchPaths
         repos = self.find_repository()
         layout = repos.get_layout()
+        if branch_name is None and getattr(self, "_get_selected_branch", False):
+            branch_name = self._get_selected_branch()
         if branch_name is None and layout.is_branch_or_tag(self._branch_path):
             return self._branch_path
         try:
