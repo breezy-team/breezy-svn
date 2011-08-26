@@ -221,9 +221,13 @@ class SvnRemoteProber(SvnProber):
     _supported_schemes = ["http", "https", "file", "svn"]
 
     def probe_transport(self, transport):
-        from bzrlib.transport.local import LocalTransport
 
-        if isinstance(transport, LocalTransport):
+        url = transport.external_url()
+
+        if url.startswith("readonly+"):
+            url = url[len("readonly+"):]
+
+        if url.startswith("file://"):
             # Cheaper way to figure out if there is a svn repo
             maybe = False
             subtransport = transport
@@ -242,7 +246,7 @@ class SvnRemoteProber(SvnProber):
                 raise NotBranchError(path=transport.base)
 
         try:
-            scheme = transport.external_url().split(":")[0]
+            scheme = url.split(":")[0]
         except InProcessTransport:
             # bzr-svn not supported on MemoryTransport
             raise NotBranchError(path=transport.base)
