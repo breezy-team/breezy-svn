@@ -756,7 +756,7 @@ class SvnRepository(ForeignRepository):
             self._find_guessed_layout(self.get_config())
         return self._guessed_layout
 
-    def _warn_if_deprecated(self): # for bzr < 2.4
+    def _warn_if_deprecated(self, branch=None): # for bzr < 2.4
         # This class isn't deprecated
         pass
 

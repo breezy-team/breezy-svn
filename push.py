@@ -559,7 +559,7 @@ class InterToSvnRepository(InterRepository):
             self._graph = self.source.get_graph(self.target)
         return self._graph
 
-    def copy_content(self, revision_id=None, pb=None):
+    def copy_content(self, revision_id=None, pb=None, project=None, mapping=None):
         """See InterRepository.copy_content."""
         self.source.lock_read()
         try:
@@ -612,7 +612,7 @@ class InterToSvnRepository(InterRepository):
             self.source.unlock()
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
-        fetch_spec=None):
+        fetch_spec=None, project=None, mapping=None, target_is_empty=False):
         """Fetch revisions. """
         if fetch_spec is not None:
             recipe = fetch_spec.get_recipe()
@@ -621,9 +621,11 @@ class InterToSvnRepository(InterRepository):
             else:
                 raise AssertionError("Unknown search type %s" % recipe[0])
             for revid in heads:
-                self.copy_content(revision_id=revid, pb=pb)
+                self.copy_content(revision_id=revid, pb=pb, project=project,
+                    mapping=mapping)
         else:
-            self.copy_content(revision_id=revision_id, pb=pb)
+            self.copy_content(revision_id=revision_id, pb=pb, project=project,
+                mapping=mapping)
 
     @staticmethod
     def is_compatible(source, target):

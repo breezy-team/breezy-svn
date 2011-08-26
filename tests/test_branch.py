@@ -479,8 +479,14 @@ class WorkingSubversionBranch(SubversionTestCase):
 
     def test_set_revision_history_empty(self):
         repos_url = self.make_repository('a')
-        branch = Branch.open(repos_url)
-        self.assertRaises(NotImplementedError, branch.set_revision_history, [])
+        dc = self.get_commit_editor(repos_url)
+        trunk = dc.add_dir("trunk")
+        trunk.add_file('trunk/foo').modify()
+        dc.close()
+
+        branch = Branch.open(repos_url+"/trunk")
+        branch.set_revision_history([])
+        self.assertEquals(NULL_REVISION, branch.last_revision())
 
     def test_set_revision_history_ghost(self):
         repos_url = self.make_repository('a')

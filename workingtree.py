@@ -1168,6 +1168,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 class SvnWorkingTreeFormat(WorkingTreeFormat):
     """Subversion working copy format."""
 
+    supports_versioned_directories = True
+
     def __init__(self, version=None):
         self.version = version
 

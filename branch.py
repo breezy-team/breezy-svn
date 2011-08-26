@@ -48,8 +48,10 @@ from bzrlib.errors import (
     DivergedBranches,
     IncompatibleFormat,
     LocalRequiresBoundBranch,
+    LossyPushToSameVCS,
     NoSuchRevision,
     NotBranchError,
+    TokenLockingNotSupported,
     UnstackableBranchFormat,
     )
 from bzrlib.foreign import (
@@ -72,6 +74,7 @@ from bzrlib.plugins.svn.fetch import (
     )
 from bzrlib.plugins.svn.push import (
     InterToSvnRepository,
+    create_branch_with_hidden_commit,
     )
 from bzrlib.plugins.svn.config import (
     BranchConfig,
@@ -115,7 +118,7 @@ class SubversionSourcePullResult(PullResult):
 class SubversionWriteLock(object):
     """A (dummy) write lock on a Subversion object."""
 
-    __slots__ = ('unlock')
+    __slots__ = ('unlock', 'branch_token')
 
     def __init__(self, unlock):
         self.branch_token = None
@@ -229,6 +232,12 @@ class SvnBranch(ForeignBranch):
         if type not in ('branch', 'tag') or ip != '':
             raise NotBranchError(branch_path)
 
+    def leave_lock_in_place(self):
+        raise NotImplementedError(self.leave_lock_in_place)
+
+    def dont_leave_lock_in_place(self):
+        raise NotImplementedError(self.dont_leave_lock_in_place)
+
     def _push_should_merge_tags(self):
         return self.supports_tags()
 
@@ -296,7 +305,7 @@ class SvnBranch(ForeignBranch):
             return revmeta, mapping
         return None, None
 
-    def check(self):
+    def check(self, refs=None):
         """See Branch.Check.
 
         Doesn't do anything for Subversion repositories at the moment (yet).
@@ -415,20 +424,26 @@ class SvnBranch(ForeignBranch):
         # FIXME: 
 
     def _set_last_revision(self, revid):
-        try:
-            rev = self.repository.get_revision(revid)
-        except NoSuchRevision:
-            raise NotImplementedError("set_last_revision_info can't add ghosts")
-        if rev.parent_ids:
-            base_revid = rev.parent_ids[0]
+        if revid == NULL_REVISION:
+            create_branch_with_hidden_commit(
+                self.repository,
+                self.get_branch_path(), NULL_REVISION,
+                set_metadata=True, deletefirst=True)
         else:
-            base_revid = NULL_REVISION
-        interrepo = InterToSvnRepository(self.repository, self.repository)
-        base_foreign_info = interrepo._get_foreign_revision_info(base_revid,
-            self.get_branch_path())
-        interrepo.push_single_revision(self.get_branch_path(), self.get_config(), rev,
-            push_metadata=True, root_action=("replace", self.get_revnum()),
-            base_foreign_info=base_foreign_info)
+            try:
+                rev = self.repository.get_revision(revid)
+            except NoSuchRevision:
+                raise NotImplementedError("set_last_revision_info can't add ghosts")
+            if rev.parent_ids:
+                base_revid = rev.parent_ids[0]
+            else:
+                base_revid = NULL_REVISION
+            interrepo = InterToSvnRepository(self.repository, self.repository)
+            base_foreign_info = interrepo._get_foreign_revision_info(base_revid,
+                self.get_branch_path())
+            interrepo.push_single_revision(self.get_branch_path(), self.get_config(), rev,
+                push_metadata=True, root_action=("replace", self.get_revnum()),
+                base_foreign_info=base_foreign_info)
         self._clear_cached_state()
 
     def last_revision_info(self):
@@ -504,6 +519,8 @@ class SvnBranch(ForeignBranch):
         # Shortcut for finding the tip. This avoids expensive generation time
         # on large branches.
         last_revmeta, mapping = self.last_revmeta()
+        if last_revmeta is None:
+            return NULL_REVISION
         return last_revmeta.get_revision_id(mapping)
 
     def get_push_merged_revisions(self):
@@ -513,7 +530,11 @@ class SvnBranch(ForeignBranch):
     def import_last_revision_info(self, source_repo, revno, revid, lossy=False):
         interrepo = InterToSvnRepository(source_repo, self.repository)
         last_revmeta, mapping = self.last_revmeta()
-        revidmap = interrepo.push_todo(last_revmeta.get_revision_id(mapping),
+        if last_revmeta is None:
+            last_revid = NULL_REVISION
+        else:
+            last_revid = last_revmeta.get_revision_id(mapping)
+        revidmap = interrepo.push_todo(last_revid,
             last_revmeta.metarev.get_foreign_revid(), mapping, revid, self.layout,
             self.project, self.get_branch_path(), self.get_config(),
             push_merged=self.get_push_merged_revisions(),
@@ -561,9 +582,11 @@ class SvnBranch(ForeignBranch):
     def break_lock(self):
         pass
 
-    def lock_write(self):
+    def lock_write(self, token=None):
         """See Branch.lock_write()."""
         # TODO: Obtain lock on the remote server?
+        if token is not None:
+            raise TokenLockingNotSupported(self)
         if self._lock_mode:
             assert self._lock_mode == 'w'
             self._lock_count += 1
@@ -920,9 +943,16 @@ class InterToSvnBranch(InterBranch):
     def update_tags(self, overwrite=False):
         return self.source.tags.merge_to(self.target.tags, overwrite)
 
+    def _basic_push(self, overwrite=False, stop_revision=None):
+        # Wrapper for the benefit of GenericInterBranch, which
+        # calls it for bound branches
+        return self.push(overwrite=overwrite, stop_revision=stop_revision)
+
     def push(self, overwrite=False, stop_revision=None,
             lossy=False, _override_hook_source_branch=None):
         """See InterBranch.push()."""
+        if lossy and isinstance(self.source, SvnBranch):
+            raise LossyPushToSameVCS(self.source, self.target)
         result = SubversionTargetBranchPushResult()
         result.target_branch = self.target
         result.master_branch = None

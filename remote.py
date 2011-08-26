@@ -220,7 +220,7 @@ class SvnRemoteAccess(ControlDir):
             transport.create_prefix()
         if not use_existing_dir:
             transport.mkdir(".")
-        target = SvnRemoteFormat.initialize_on_transport(transport)
+        target = SvnRemoteFormat().initialize_on_transport(transport)
         target_repo = target.open_repository()
         source_repo = self.open_repository()
         target_repo.fetch(source_repo, revision_id=revision_id)
@@ -256,6 +256,8 @@ class SvnRemoteAccess(ControlDir):
         if stacked:
             raise errors.IncompatibleRepositories(source_repository, result_repo)
         interrepo = InterRepository.get(source_repository, result_repo)
+        if revision_id is None:
+            revision_id = source_branch.last_revision()
         interrepo.fetch(revision_id=revision_id,
             project=source_branch.project, mapping=source_branch.mapping,
             target_is_empty=target_is_empty)
