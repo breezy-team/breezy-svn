@@ -641,3 +641,21 @@ if len(sys.argv) == 2:
             'tags/release-1.0 (release-1.0)\n',
             self.run_bzr('svn-branches --layout trunk %s' % svn_url)[0])
 
+    def test_diff(self):
+        repos_url = self.make_client('d', 'dc')
+        self.build_tree_contents([("dc/file", "bar")])
+        self.client_add("dc/file")
+        self.run_bzr('diff dc', retcode=True)
+
+    def test_diff_svn(self):
+        repos_url = self.make_client('d', 'dc')
+        self.build_tree_contents([("dc/file", "bar")])
+        self.client_add("dc/file")
+        self.run_bzr('diff --format=svn dc', retcode=True)
+
+    def test_ls(self):
+        repos_url = self.make_client('d', 'dc')
+        self.build_tree_contents([("dc/file", "bar")])
+        self.client_add("dc/file")
+        self.assertEquals("dc/file\n",
+            self.run_bzr('ls dc', retcode=0)[0])

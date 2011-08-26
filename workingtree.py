@@ -189,10 +189,11 @@ def generate_ignore_list(ignore_map):
 
 class Walker(object):
 
-    def __init__(self, workingtree, start=u""):
+    def __init__(self, workingtree, start=u"", recursive=True):
         self.workingtree = workingtree
         self.todo = list([start])
         self.pending = deque()
+        self.recursive = recursive
 
     def __iter__(self):
         return iter(self.next, None)
@@ -213,7 +214,8 @@ class Walker(object):
                 for name, entry in wc.entries_read(True).iteritems():
                     subp = osutils.pathjoin(p, name.decode("utf-8")).rstrip("/")
                     if entry.kind == subvertpy.NODE_DIR and name != "":
-                        self.todo.append(subp)
+                        if self.recursive:
+                            self.todo.append(subp)
                     else:
                         self.pending.append((subp, entry))
             finally:
@@ -438,8 +440,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             return
         for from_subpath, entry in Walker(self, old_path):
             from_subpath = from_subpath.strip("/")
-            to_subpath = osutils.pathjoin(new_path, from_subpath[len(old_path):].strip("/"))
-            self._change_fileid_mapping(self.path2id(from_subpath), to_subpath, wc)
+            to_subpath = osutils.pathjoin(new_path,
+                from_subpath[len(old_path):].strip("/"))
+            self._change_fileid_mapping(self.path2id(from_subpath), to_subpath,
+                    wc)
             self._change_fileid_mapping(None, from_subpath, wc)
 
     def move(self, from_paths, to_dir=None, after=False, **kwargs):
@@ -593,6 +597,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         raise NoSuchId(file_id)
 
     def _ie_from_entry(self, relpath, entry, parent_id):
+        assert type(relpath) == unicode
         (file_id, revid) = self._find_ids(relpath, entry)
         abspath = self.abspath(relpath)
         if entry.kind == subvertpy.NODE_DIR:
@@ -809,6 +814,38 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 self.base_tree = self.branch.basis_tree()
 
         return self.base_tree
+
+    def list_files(self, include_root=False, from_dir=None, recursive=True):
+        """See `Tree.list_files`."""
+        # TODO: This doesn't sort the output
+        # TODO: This ignores unversioned files at the moment
+        if from_dir is None:
+            from_dir = u""
+        else:
+            from_dir = osutils.safe_unicode(from_dir)
+        w = Walker(self, from_dir, recursive=recursive)
+        fileids = {}
+        for path, entry in w:
+            relpath = path.decode("utf-8")
+            if entry.schedule in (SCHEDULE_NORMAL, SCHEDULE_ADD,
+                    SCHEDULE_REPLACE):
+                versioned = 'V'
+            else:
+                versioned = '?'
+            if relpath == u"":
+                parent_id = None
+            else:
+                parent_path = os.path.dirname(relpath)
+                try:
+                    parent_id = fileids[parent_path]
+                except KeyError:
+                    parent_id = self.path2id(parent_path)
+                    fileids[parent_path] = parent_id
+            ie = self._ie_from_entry(relpath, entry, parent_id)
+            if ie is not None:
+                fileids[relpath] = ie.file_id
+            if include_root or relpath != u"":
+                yield relpath, versioned, ie.kind, ie.file_id, ie
 
     def revision_tree(self, revid):
         return self.branch.repository.revision_tree(revid)
