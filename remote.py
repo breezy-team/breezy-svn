@@ -66,6 +66,11 @@ class SubversionPushResult(PushResult):
         return self.branch_push_result.old_revid
 
 
+class UninitializableOnRemoteTransports(errors.UninitializableFormat):
+
+    _fmt = "Format %(format)s can not be initialised on non-local transports."
+
+
 class SvnRemoteFormat(ControlDirFormat):
     """Format for the Subversion smart server."""
 
@@ -92,7 +97,8 @@ class SvnRemoteFormat(ControlDirFormat):
             return SvnRemoteAccess(transport, self)
         except subvertpy.SubversionException, (_, num):
             if num in (subvertpy.ERR_RA_DAV_REQUEST_FAILED,
-                       subvertpy.ERR_RA_DAV_NOT_VCC):
+                       subvertpy.ERR_RA_DAV_NOT_VCC,
+                       subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED):
                 raise errors.NotBranchError(transport.base)
             if num == subvertpy.ERR_XML_MALFORMED:
                 # This *could* be an indication of an actual corrupt
@@ -146,9 +152,7 @@ class SvnRemoteFormat(ControlDirFormat):
         from subvertpy import repos
 
         if not isinstance(transport, LocalTransport):
-            raise NotImplementedError(self.initialize,
-                "Can't create Subversion Repositories/branches on "
-                "non-local transports")
+            raise UninitializableOnRemoteTransports(self)
 
         local_path = transport.local_abspath(".").rstrip("/").encode(osutils._fs_enc)
         assert type(local_path) == str
