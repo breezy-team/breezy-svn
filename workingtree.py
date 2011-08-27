@@ -150,8 +150,13 @@ def update_wc(adm, basedir, conn, revnum):
     editor = adm.get_update_editor(basedir, False, True)
     assert editor is not None
     reporter = conn.do_update(revnum, "", True, editor)
-    adm.crawl_revisions(basedir, reporter, restore_files=False,
-                        recurse=True, use_commit_times=False)
+    try:
+        adm.crawl_revisions(basedir, reporter, restore_files=False,
+                            recurse=True, use_commit_times=False)
+    except subvertpy.SubversionException, (msg, num):
+        if num == subvertpy.ERR_RA_ILLEGAL_URL:
+            raise BzrError(msg)
+        raise
     # FIXME: handle externals
 
 
