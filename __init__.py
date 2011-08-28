@@ -222,7 +222,11 @@ class SvnRemoteProber(SvnProber):
 
     def probe_transport(self, transport):
 
-        url = transport.external_url()
+        try:
+            url = transport.external_url()
+        except InProcessTransport:
+            # bzr-svn not supported on MemoryTransport
+            raise NotBranchError(path=transport.base)
 
         if url.startswith("readonly+"):
             url = url[len("readonly+"):]
@@ -245,11 +249,7 @@ class SvnRemoteProber(SvnProber):
             if not maybe:
                 raise NotBranchError(path=transport.base)
 
-        try:
-            scheme = url.split(":")[0]
-        except InProcessTransport:
-            # bzr-svn not supported on MemoryTransport
-            raise NotBranchError(path=transport.base)
+        scheme = url.split(":")[0]
         if (not scheme.startswith("svn+") and
             not scheme in self._supported_schemes):
             raise NotBranchError(path=transport.base)
