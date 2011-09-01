@@ -21,22 +21,19 @@ from info import *
 
 if __name__ == '__main__':
     from distutils.core import setup
+    readme = open("README", "r").read()
     version = bzr_plugin_version[:3]
     version_string = ".".join([str(x) for x in version])
     setup(name='bzr-svn',
           description='Support for Subversion branches in Bazaar',
           keywords='plugin bzr svn',
           version=version_string,
-          url='http://bazaar-vcs.org/BzrForeignBranches/Subversion',
+          url='http://samba.org/~jelmer/bzr-svn',
           download_url='http://samba.org/~jelmer/bzr/bzr-svn-%s.tar.gz' % version_string,
           license='GPL',
           author='Jelmer Vernooij',
           author_email='jelmer@samba.org',
-          long_description="""
-          This plugin adds support for branching off and
-          committing to Subversion repositories from
-          Bazaar.
-          """,
+          long_description=readme,
           package_dir={'bzrlib.plugins.svn':'.' },
           packages=['bzrlib.plugins.svn',
                     'bzrlib.plugins.svn.cache',
@@ -46,4 +43,14 @@ if __name__ == '__main__':
                     'bzrlib.plugins.svn.tests.layout',
                     'bzrlib.plugins.svn.tests.mapping3',
                     'bzrlib.plugins.svn.tests.mapping_implementations'],
+          classifiers=[
+              'Topic :: Software Development :: Version Control',
+              'Environment :: Plugins',
+              'Development Status :: 4 - Beta',
+              'License :: OSI Approved :: GNU General Public License (GPL)',
+              'Natural Language :: English',
+              'Operating System :: OS Independent',
+              'Programming Language :: Python',
+              'Programming Language :: Python :: 2',
+          ]
           )
