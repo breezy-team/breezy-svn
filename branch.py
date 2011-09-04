@@ -950,8 +950,12 @@ class InterToSvnBranch(InterBranch):
             self.source.repository, self.target.repository)
         interrepo.fetch(revision_id=stop_revision)
 
-    def update_tags(self, overwrite=False):
-        return self.source.tags.merge_to(self.target.tags, overwrite)
+    def update_tags(self, result, overwrite=False):
+        ret = self.source.tags.merge_to(self.target.tags, overwrite)
+        if isinstance(ret, tuple):
+            (result.tag_updates, result.tag_conflicts) = ret
+        else:
+            result.tag_conflicts = ret
 
     def _basic_push(self, overwrite=False, stop_revision=None):
         # Wrapper for the benefit of GenericInterBranch, which
@@ -979,11 +983,7 @@ class InterToSvnBranch(InterBranch):
             else:
                 (result.old_revid, result.new_revid) = \
                     self._update_revisions(stop_revision, overwrite)
-            tag_ret = self.update_tags(overwrite)
-            if isinstance(tag_ret, tuple):
-                (result.tag_updates, result.tag_conflicts) = tag_ret
-            else:
-                result.tag_conflicts = tag_ret
+            self.update_tags(result, overwrite)
             for hook in Branch.hooks['post_push']:
                 hook(result)
             return result
@@ -1007,11 +1007,7 @@ class InterToSvnBranch(InterBranch):
             try:
                 (result.old_revid, result.new_revid) = \
                     self._update_revisions(stop_revision, overwrite)
-                tag_ret = self.update_tags(overwrite)
-                if isinstance(tag_ret, tuple):
-                    (result.tag_updates, result.tag_conflicts) = tag_ret
-                else:
-                    result.tag_conflicts = tag_ret
+                self.update_tags(result, overwrite)
                 if run_hooks:
                     for hook in Branch.hooks['post_pull']:
                         hook(result)
