@@ -381,12 +381,12 @@ class SubversionTags(BasicTags):
             source_dict = self._resolve_tags_ancestry(tag_revmetas,
                 graph, to_tags.branch.last_revision())
             dest_dict = to_tags.get_tag_dict()
-            result, conflicts = self._reconcile_tags(
+            ret = self._reconcile_tags(
                 dict([(k, v[2]) for (k, v) in source_dict.items()]),
                 dest_dict, overwrite)
-            if result != dest_dict:
-                to_tags._set_tag_dict(result)
+            if ret[0] != dest_dict:
+                to_tags._set_tag_dict(ret[0])
+            # bzr < 2.5 returns a 2-tuple, >= 2.5 returns a 3-tuple
+            return tuple(ret[1:])
         finally:
             to_tags.branch.unlock()
-        return conflicts
-

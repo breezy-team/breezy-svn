@@ -827,10 +827,14 @@ class InterFromSvnBranch(GenericInterBranch):
             (result.new_revno, result.new_revid) = self._update_revisions(
                 stop_revision, overwrite)
             if self.source.supports_tags():
-                result.tag_conflicts = self.source.tags.merge_to(
+                tag_ret = self.source.tags.merge_to(
                     self.target.tags, overwrite,
                     _from_revnum=tags_since_revnum,
                     _to_revnum=self.source.repository.get_latest_revnum())
+                if isinstance(tag_ret, tuple):
+                    (result.tag_updates, result.tag_conflicts) = tag_ret
+                else:
+                    result.tag_conflicts = tag_ret
             if _hook_master:
                 result.master_branch = _hook_master
                 result.local_branch = result.target_branch
@@ -948,9 +952,6 @@ class InterToSvnBranch(InterBranch):
             self.source.repository, self.target.repository)
         interrepo.fetch(revision_id=stop_revision)
 
-    def update_tags(self, overwrite=False):
-        return self.source.tags.merge_to(self.target.tags, overwrite)
-
     def _basic_push(self, overwrite=False, stop_revision=None):
         # Wrapper for the benefit of GenericInterBranch, which
         # calls it for bound branches
@@ -977,7 +978,11 @@ class InterToSvnBranch(InterBranch):
             else:
                 (result.old_revid, result.new_revid) = \
                     self._update_revisions(stop_revision, overwrite)
-            result.tag_conflicts = self.update_tags(overwrite)
+            tag_ret = self.source.tags.merge_to(self.target.tags, overwrite)
+            if isinstance(tag_ret, tuple):
+                (result.tag_updates, result.tag_conflicts) = tag_ret
+            else:
+                result.tag_conflicts = tag_ret
             return result
         finally:
             self.source.unlock()
@@ -996,7 +1001,11 @@ class InterToSvnBranch(InterBranch):
         try:
             (result.old_revid, result.new_revid) = \
                 self._update_revisions(stop_revision, overwrite)
-            result.tag_conflicts = self.update_tags(overwrite)
+            tag_ret = self.source.tags.merge_to(self.target.tags, overwrite)
+            if isinstance(tag_ret, tuple):
+                (result.tag_updates, result.tag_conflicts) = tag_ret
+            else:
+                result.tag_conflicts = tag_ret
             return result
         finally:
             self.source.unlock()
