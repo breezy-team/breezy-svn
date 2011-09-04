@@ -73,6 +73,7 @@ from bzrlib.plugins.svn.transport import (
     url_join_unescaped_path,
     )
 
+ERR_FS_ROOT_DIR = getattr(subvertpy, "ERR_FS_ROOT_DIR", 160021)
 
 def create_branch_container(transport, prefix, already_present):
     """Create a branch prefix.
@@ -715,7 +716,12 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
         try:
             root = ci.open_root()
             if deletefirst:
-                root.delete_entry(urlutils.basename(branch_path))
+                try:
+                    root.delete_entry(urlutils.basename(branch_path))
+                except SubversionException, (msg, num):
+                    if num == subvertpy.ERR_FS_ROOT_DIR:
+                        raise ChangesRootLHSHistory()
+                    raise
             branch_dir = root.add_directory(
                 urlutils.basename(branch_path), from_url, from_revnum)
             for k, (ov, nv) in properties.diff(fileprops, old_fileprops).iteritems():
