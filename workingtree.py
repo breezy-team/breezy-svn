@@ -242,8 +242,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         max_rev = revision_status(self.basedir.encode("utf-8"), None, True)[1]
         self.mapping = self.branch.mapping
         self._update_base_revnum(max_rev)
-        self._detect_case_handling()
         self._transport = bzrdir.get_workingtree_transport(None)
+        self._detect_case_handling()
         self.controldir = os.path.join(bzrdir.svn_controldir, 'bzr')
         try:
             os.makedirs(self.controldir)
@@ -260,6 +260,14 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         hc.read()
         self._control_files = LockableFiles(control_transport, 'lock', LockDir)
         self.views = self._make_views()
+
+    def _detect_case_handling(self):
+        try:
+            self._transport.stat(".svn/FoRmAt")
+        except NoSuchFile:
+            self.case_sensitive = True
+        else:
+            self.case_sensitive = False
 
     def _set_root_id(self, file_id):
         self._change_fileid_mapping(file_id, u"")
