@@ -979,7 +979,11 @@ class InterToSvnBranch(InterBranch):
             else:
                 (result.old_revid, result.new_revid) = \
                     self._update_revisions(stop_revision, overwrite)
-            result.tag_conflicts = self.update_tags(overwrite)
+            tag_ret = self.update_tags(overwrite)
+            if isinstance(tag_ret, tuple):
+                (result.tag_updates, result.tag_conflicts) = tag_ret
+            else:
+                result.tag_conflicts = tag_ret
             for hook in Branch.hooks['post_push']:
                 hook(result)
             return result
@@ -1003,7 +1007,11 @@ class InterToSvnBranch(InterBranch):
             try:
                 (result.old_revid, result.new_revid) = \
                     self._update_revisions(stop_revision, overwrite)
-                result.tag_conflicts = self.update_tags(overwrite)
+                tag_ret = self.update_tags(overwrite)
+                if isinstance(tag_ret, tuple):
+                    (result.tag_updates, result.tag_conflicts) = tag_ret
+                else:
+                    result.tag_conflicts = tag_ret
                 if run_hooks:
                     for hook in Branch.hooks['post_pull']:
                         hook(result)
