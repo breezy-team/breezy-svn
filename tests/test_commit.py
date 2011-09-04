@@ -333,10 +333,11 @@ class TestPush(SubversionTestCase):
         self.assertEquals(2, result.new_revno)
 
     def test_empty_result(self):
-        result = self.olddir.open_branch().pull(self.newdir.open_branch())
+        target_branch = self.olddir.open_branch()
+        result = target_branch.pull(self.newdir.open_branch())
         self.assertIsInstance(result, PullResult)
         self.assertEqual(result.old_revno, self.olddir.open_branch().revno())
-        self.assertEqual(result.master_branch, None)
+        self.assertEqual(result.master_branch, target_branch)
         self.assertEqual(result.source_branch.bzrdir.root_transport.base,
                          self.newdir.root_transport.base)
 
