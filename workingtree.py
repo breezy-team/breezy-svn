@@ -1058,8 +1058,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._control_files.break_lock()
 
     def unlock(self):
-        # non-implementation specific cleanup
-        self._cleanup()
+        if self._control_files._lock_count == 1:
+            # non-implementation specific cleanup
+            self._cleanup()
+            self._reset_data()
 
         # reverse order of locking.
         try:
