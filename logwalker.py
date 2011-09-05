@@ -26,7 +26,6 @@ from bzrlib import (
     trace,
     )
 from bzrlib.errors import (
-    BzrError,
     NoSuchRevision,
     )
 

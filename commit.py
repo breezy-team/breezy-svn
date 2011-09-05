@@ -837,8 +837,6 @@ class SvnCommitBuilder(CommitBuilder):
             self._svn_revprops[properties.PROP_REVISION_AUTHOR] = result_author
         self._svn_revprops[properties.PROP_REVISION_DATE] = result_date
 
-        self.repository._clear_cached_state(result_revision)
-
         self.mutter('commit %d finished. author: %r, date: %r',
                result_revision, result_author, result_date)
 
@@ -867,6 +865,8 @@ class SvnCommitBuilder(CommitBuilder):
                 fileprops=self._svnprops,
                 )
         revid = self.revmeta.get_revision_id(self.mapping)
+        self.repository._cache_add_new_revision(result_revision,
+            revid, tuple(self.parents))
 
         if self.push_metadata and self._new_revision_id not in (revid, None):
             raise AssertionError("Unexpected revision id %s != %s" %

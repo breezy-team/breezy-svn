@@ -34,6 +34,7 @@ from bzrlib.errors import (
     BzrError,
     DivergedBranches,
     NoSuchRevision,
+    NotWriteLocked,
     )
 from bzrlib.repository import (
     InterRepository,
@@ -128,6 +129,8 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
     :param root_action: Action to take on the tree root
     :return: Revision id of newly created revision.
     """
+    if target_repo._lock_mode != 'w':
+        raise NotWriteLocked(target_repo)
     assert rev.revision_id in (None, revision_id)
     old_tree = source_repo.revision_tree(revision_id)
     if rev.parent_ids:
@@ -311,10 +314,9 @@ class InterToSvnRepository(InterRepository):
                 todo.append(revid)
             return todo, ("replace", last_foreign_revid[2])
 
-    def push_branch(self, target_branch_path, target_config,
+    def push_branch(self, target_branch_path, target_config, old_last_revid,
             (last_revmeta, mapping), stop_revision, layout, project,
             overwrite, push_metadata, push_merged):
-        old_last_revid = last_revmeta.get_revision_id(mapping)
         graph = self.get_graph()
         if not overwrite:
             heads = graph.heads([old_last_revid, stop_revision])

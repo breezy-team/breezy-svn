@@ -459,6 +459,7 @@ class SvnRepository(ForeignRepository):
 
         self._parents_provider = graph.CachingParentsProvider(
             self._real_parents_provider)
+        self._parents_provider.disable_cache()
         self.texts = None
         self.revisions = None
         self.inventories = None
@@ -505,6 +506,7 @@ class SvnRepository(ForeignRepository):
         else:
             self._lock_mode = 'r'
             self._lock_count = 1
+            self._parents_provider.enable_cache()
         return self
 
     @only_raises(bzr_errors.LockNotHeld, bzr_errors.LockBroken)
@@ -522,6 +524,7 @@ class SvnRepository(ForeignRepository):
         if self._lock_count == 0:
             self._lock_mode = None
             self._clear_cached_state()
+            self._parents_provider.disable_cache()
 
     def reconcile(self, other=None, thorough=False):
         """Reconcile this repository."""
@@ -530,9 +533,16 @@ class SvnRepository(ForeignRepository):
         reconciler.reconcile()
         return reconciler
 
-    def _clear_cached_state(self, revnum=None):
+    def _cache_add_new_revision(self, revnum, revid, parents):
+        assert type(parents) == tuple
+        self._cached_revnum = max(revnum, self._cached_revnum)
+        if parents == () and revid != NULL_REVISION:
+            parents = (NULL_REVISION,)
+        self._parents_provider._cache[revid] = parents
+
+    def _clear_cached_state(self):
         self._cached_tags = {}
-        self._cached_revnum = revnum
+        self._cached_revnum = None
         self._layout = None
         self._layout_source = None
         self._parents_provider = graph.CachingParentsProvider(
@@ -548,6 +558,7 @@ class SvnRepository(ForeignRepository):
         else:
             self._lock_mode = 'w'
             self._lock_count = 1
+            self._parents_provider.enable_cache()
         return SubversionRepositoryLock(self)
 
     def is_write_locked(self):
@@ -1133,6 +1144,8 @@ class SvnRepository(ForeignRepository):
                            timezone=None, committer=None, revprops=None,
                            revision_id=None, lossy=False):
         """See Repository.get_commit_builder()."""
+        if self._lock_mode != 'w':
+            raise bzr_errors.NotWriteLocked(self)
         from bzrlib.plugins.svn.commit import SvnCommitBuilder
         if branch is None:
             raise Exception("branch option is required for "

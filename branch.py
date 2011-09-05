@@ -44,6 +44,9 @@ from bzrlib.bzrdir import (
     BzrDir,
     format_registry,
     )
+from bzrlib.decorators import (
+    needs_write_lock,
+    )
 from bzrlib.errors import (
     DivergedBranches,
     IncompatibleFormat,
@@ -217,6 +220,7 @@ class SvnBranch(ForeignBranch):
         self._lock_count = 0
         self._revmeta_cache = None
         self._revnum = revnum
+        self._cached_last_revid = None
         assert isinstance(self._branch_path, str)
         if not _skip_check:
             try:
@@ -429,6 +433,7 @@ class SvnBranch(ForeignBranch):
 
     nick = property(_get_nick)
 
+    @needs_write_lock
     def set_revision_history(self, rev_history):
         """See Branch.set_revision_history()."""
         if rev_history == []:
@@ -448,7 +453,6 @@ class SvnBranch(ForeignBranch):
                 self.repository,
                 self.get_branch_path(), NULL_REVISION,
                 set_metadata=True, deletefirst=True)
-            self._clear_cached_state()
         else:
             try:
                 rev = self.repository.get_revision(revid)
@@ -461,10 +465,12 @@ class SvnBranch(ForeignBranch):
             interrepo = InterToSvnRepository(self.repository, self.repository)
             base_foreign_info = interrepo._get_foreign_revision_info(base_revid,
                 self.get_branch_path())
-            interrepo.push_single_revision(self.get_branch_path(), self.get_config(), rev,
+            interrepo.push_single_revision(
+                self.get_branch_path(), self.get_config(), rev,
                 push_metadata=True, root_action=("replace", self.get_revnum()),
                 base_foreign_info=base_foreign_info)
         self._clear_cached_state()
+        self._cached_last_revid = revid
 
     def last_revision_info(self):
         """See Branch.last_revision_info()."""
@@ -537,6 +543,8 @@ class SvnBranch(ForeignBranch):
         """See Branch.last_revision()."""
         # Shortcut for finding the tip. This avoids expensive generation time
         # on large branches.
+        if self._cached_last_revid is not None:
+            return self._cached_last_revid
         last_revmeta, mapping = self.last_revmeta()
         if last_revmeta is None:
             return NULL_REVISION
@@ -637,8 +645,8 @@ class SvnBranch(ForeignBranch):
     def _clear_cached_state(self):
         super(SvnBranch, self)._clear_cached_state()
         self._cached_revnum = None
+        self._cached_last_revid = None
         self._revmeta_cache = None
-        self.repository._clear_cached_state()
 
     def get_parent(self):
         """See Branch.get_parent()."""
@@ -795,9 +803,9 @@ class InterFromSvnBranch(GenericInterBranch):
         result.target_branch = self.target
         graph = self.target.repository.get_graph(self.source.repository)
         result.old_revno, result.old_revid = self.target.last_revision_info()
-        self._update_revisions(stop_revision, overwrite=overwrite, graph=graph)
+        (result.new_revno, result.new_revid) = self._update_revisions(
+            stop_revision, overwrite=overwrite, graph=graph)
         # FIXME: Tags
-        result.new_revno, result.new_revid = self.target.last_revision_info()
         return result
 
     def pull(self, overwrite=False, stop_revision=None,
@@ -917,7 +925,8 @@ class InterToSvnBranch(InterBranch):
             self.source.repository, self.target.repository)
         try:
             revidmap = interrepo.push_branch(self.target.get_branch_path(),
-                    self.target.get_config(), self.target.last_revmeta(),
+                    self.target.get_config(), old_last_revid,
+                    self.target.last_revmeta(),
                     stop_revision=stop_revision, overwrite=overwrite,
                     push_metadata=push_metadata, push_merged=push_merged,
                     layout=self.target.layout, project=self.target.project)
