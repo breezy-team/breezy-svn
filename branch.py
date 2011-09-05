@@ -638,6 +638,7 @@ class SvnBranch(ForeignBranch):
         super(SvnBranch, self)._clear_cached_state()
         self._cached_revnum = None
         self._revmeta_cache = None
+        self.repository._clear_cached_state()
 
     def get_parent(self):
         """See Branch.get_parent()."""
