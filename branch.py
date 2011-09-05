@@ -47,6 +47,7 @@ from bzrlib.bzrdir import (
 from bzrlib.errors import (
     DivergedBranches,
     IncompatibleFormat,
+    InvalidRevisionId,
     LocalRequiresBoundBranch,
     LossyPushToSameVCS,
     NoSuchRevision,
@@ -429,7 +430,9 @@ class SvnBranch(ForeignBranch):
 
     def set_last_revision_info(self, revno, revid):
         """See Branch.set_last_revision_info()."""
-        # FIXME: 
+        if type(revid) != str:
+            raise InvalidRevisionId(revid, self)
+        # FIXME: ?
 
     def _set_last_revision(self, revid):
         if revid == NULL_REVISION:
