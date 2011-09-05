@@ -134,7 +134,6 @@ class RecordingRemoteAccess(object):
                      send_deltas=True):
         self.__class__.calls.append(("replay-range", (start_revision,
             end_revision, low_water_mark, send_deltas)))
-        mutter("svn replay-range %d -> %d (low water mark: %d)" % (start_revision, end_revision, low_water_mark))
         return self.actual.replay_range(start_revision, end_revision, low_water_mark, cbs,
                    send_deltas)
 

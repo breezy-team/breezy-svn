@@ -715,6 +715,9 @@ class SvnBranchFormat(BranchFormat):
         else:
             return tag.DisabledTags(branch)
 
+    def supports_set_append_revisions_only(self):
+        return True
+
 
 class InterFromSvnBranch(GenericInterBranch):
     """InterBranch implementation that is optimized for copying from
