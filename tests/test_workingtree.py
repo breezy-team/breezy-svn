@@ -416,7 +416,7 @@ class TestWorkingTree(SubversionTestCase):
         self.assertEquals(2, result.new_revno)
         self.assertEquals(old_revid, result.old_revid)
         self.assertEquals(1, result.old_revno)
-        self.assertEquals(None, result.master_branch)
+        self.assertEquals(tree.branch, result.master_branch)
         self.assertEquals(tree.branch, result.target_branch)
         self.assertEquals(br, result.source_branch)
 

@@ -330,7 +330,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals(result.old_revid, branch.revision_history()[0])
         self.assertEquals(result.old_revno, 1)
         self.assertEquals(result.new_revno, 2)
-        self.assertEquals(result.master_branch, None)
+        self.assertEquals(result.master_branch, branch)
         self.assertEquals(result.source_branch, otherbranch)
         self.assertEquals(result.target_branch, branch)
 
