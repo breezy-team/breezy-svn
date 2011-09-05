@@ -241,6 +241,14 @@ class SvnBranch(ForeignBranch):
     def user_url(self):
         return self.base
 
+    @property
+    def user_transport(self):
+        return self.repository.transport.clone(self.get_branch_path())
+
+    @property
+    def control_transport(self):
+        return self.repository.transport.clone(self.get_branch_path())
+
     def leave_lock_in_place(self):
         raise NotImplementedError(self.leave_lock_in_place)
 
