@@ -1265,6 +1265,10 @@ class SvnWorkingTreeDirFormat(ControlDirFormat):
         from bzrlib.plugins.svn.repository import SvnRepositoryFormat
         return SvnRepositoryFormat()
 
+    def get_branch_format(self):
+        from bzrlib.plugins.svn.branch import SvnBranchFormat
+        return SvnBranchFormat()
+
 
 class SvnCheckout(ControlDir):
     """ControlDir implementation for Subversion checkouts (directories
