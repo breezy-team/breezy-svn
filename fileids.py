@@ -323,9 +323,9 @@ class FileIdMapStore(object):
         todo = list(self.repos._revmeta_provider._iter_reverse_revmeta_mapping_history(branch, revnum, to_revnum=0, mapping=mapping))
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for i, (revmeta, mapping) in enumerate(reversed(todo)):
+            for i, (revmeta, hidden, mapping) in enumerate(reversed(todo)):
                 pb.update('generating file id map', i, len(todo))
-                if revmeta.is_hidden(mapping):
+                if hidden:
                     continue
                 self.update_idmap(map, revmeta, mapping)
         finally:

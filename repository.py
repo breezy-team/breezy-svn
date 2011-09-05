@@ -1153,7 +1153,7 @@ class SvnRepository(ForeignRepository):
         append_revisions_only = branch.get_config().get_append_revisions_only()
         if append_revisions_only is None:
             append_revisions_only = True
-        last_revmeta, last_mapping = branch.last_revmeta()
+        last_revmeta, last_mapping = branch.last_revmeta(skip_hidden=False)
         if len(parents) == 0 or tuple(parents) == (NULL_REVISION,):
             base_foreign_revid = None
             base_mapping = None

@@ -289,11 +289,11 @@ class SvnBranch(ForeignBranch):
 
         assert revnum >= 0
 
-        last_revmeta, _ = self.last_revmeta()
+        last_revmeta, _ = self.last_revmeta(skip_hidden=False)
         if revnum > last_revmeta.metarev.revnum:
             # Apparently a commit happened in the mean time
             self._clear_cached_state()
-            last_revmeta, _ = self.last_revmeta()
+            last_revmeta, _ = self.last_revmeta(skip_hidden=False)
         if revnum == last_revmeta.metarev.revnum:
             return last_revmeta.metarev.branch_path
 
@@ -310,7 +310,7 @@ class SvnBranch(ForeignBranch):
 
         :return: Revision number
         """
-        return self.last_revmeta()[0].metarev.revnum
+        return self.last_revmeta(skip_hidden=False)[0].metarev.revnum
 
     def get_child_submit_format(self):
         """Return the preferred format of submissions to this branch."""
@@ -319,11 +319,11 @@ class SvnBranch(ForeignBranch):
             return ret
         return "svn"
 
-    def last_revmeta(self):
+    def last_revmeta(self, skip_hidden):
         """Return the revmeta element for the last revision in this branch.
         """
         for revmeta, hidden, mapping in self._revision_meta_history():
-            if hidden:
+            if hidden and skip_hidden:
                 continue
             return revmeta, mapping
         return None, None
@@ -424,10 +424,12 @@ class SvnBranch(ForeignBranch):
         """Generate a new revision id for a revision on this branch."""
         assert isinstance(revnum, int)
         revmeta_history = self._revision_meta_history()
+        take_next = False
         for revmeta, hidden, mapping in revmeta_history:
-            if revmeta.metarev.revnum == revnum:
+            if revmeta.metarev.revnum == revnum or take_next:
                 if hidden:
-                    break
+                    take_next = True
+                    continue
                 return revmeta.get_revision_id(mapping)
             if revmeta.metarev.revnum < revnum:
                 break
@@ -563,7 +565,7 @@ class SvnBranch(ForeignBranch):
         # on large branches.
         if self._cached_last_revid is not None:
             return self._cached_last_revid
-        last_revmeta, mapping = self.last_revmeta()
+        last_revmeta, mapping = self.last_revmeta(skip_hidden=True)
         if last_revmeta is None:
             return NULL_REVISION
         return last_revmeta.get_revision_id(mapping)
@@ -748,9 +750,9 @@ class InterFromSvnBranch(GenericInterBranch):
         # common case of having something to pull, and so that the
         # check for already merged can operate on the just fetched
         # graph, which will be cached in memory.
-        (revmeta, mapping) = self.source.last_revmeta()
+        (revmeta, mapping) = self.source.last_revmeta(skip_hidden=True)
         if stop_revision is None:
-            todo = [self.source.last_revmeta()]
+            todo = [self.source.last_revmeta(skip_hidden=True)]
         elif stop_revision == NULL_REVISION:
             todo = []
         else:
