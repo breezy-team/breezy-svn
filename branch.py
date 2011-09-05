@@ -349,7 +349,7 @@ class SvnBranch(ForeignBranch):
         """
         checkout_branch = BzrDir.create_branch_convenience(
             to_location, force_new_tree=False,
-            format=format_registry.make_bzrdir('default'))
+            format=self._get_checkout_format(lightweight=False))
         checkout = checkout_branch.bzrdir
         checkout_branch.bind(self)
         # pull up to the specified revision_id to set the initial
@@ -401,6 +401,13 @@ class SvnBranch(ForeignBranch):
             adm.close()
         wt = WorkingTree.open(to_location)
         return wt
+
+    def _get_checkout_format(self, lightweight=False):
+        from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
+        if lightweight:
+            return SvnWorkingTreeDirFormat()
+        else:
+            return format_registry.make_bzrdir('default')
 
     def create_checkout(self, to_location, revision_id=None, lightweight=False,
                         accelerator_tree=None, hardlink=False):
