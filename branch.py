@@ -437,6 +437,7 @@ class SvnBranch(ForeignBranch):
                 self.repository,
                 self.get_branch_path(), NULL_REVISION,
                 set_metadata=True, deletefirst=True)
+            self._clear_cached_state()
         else:
             try:
                 rev = self.repository.get_revision(revid)
@@ -771,6 +772,7 @@ class InterFromSvnBranch(GenericInterBranch):
                         return self.target.last_revision_info()
                 finally:
                     self.target.unlock()
+            self.target._clear_cached_state()
             self.target.generate_revision_history(stop_revision)
             return self.target.last_revision_info()
         finally:
@@ -885,7 +887,15 @@ class InterToSvnBranch(InterBranch):
     def copy_content_into(self, revision_id=None):
         if revision_id is None:
             revision_id = self.source.last_revision()
-        self._push(revision_id, overwrite=True, push_metadata=True)
+        self.source.lock_read()
+        try:
+            self.target.lock_write()
+            try:
+                self._push(revision_id, overwrite=True, push_metadata=True)
+            finally:
+                self.target.unlock()
+        finally:
+            self.source.unlock()
 
     def _push(self, stop_revision, overwrite, push_metadata):
         old_last_revid = self.target.last_revision()
