@@ -969,24 +969,29 @@ class InterToSvnBranch(InterBranch):
             raise LossyPushToSameVCS(self.source, self.target)
         result = SubversionTargetBranchPushResult()
         result.target_branch = self.target
-        result.master_branch = None
+        result.master_branch = self.target
+        result.local_branch = None
         result.source_branch = self.source
         if lossy:
             self.source.lock_write()
         else:
             self.source.lock_read()
         try:
-            if lossy:
-                result.old_revid = self.target.last_revision()
-                result.revidmap = self._update_revisions_lossy(stop_revision)
-                result.new_revid = self.target.last_revision()
-            else:
-                (result.old_revid, result.new_revid) = \
-                    self._update_revisions(stop_revision, overwrite)
-            self.update_tags(result, overwrite)
-            for hook in Branch.hooks['post_push']:
-                hook(result)
-            return result
+            self.target.lock_write()
+            try:
+                if lossy:
+                    result.old_revid = self.target.last_revision()
+                    result.revidmap = self._update_revisions_lossy(stop_revision)
+                    result.new_revid = self.target.last_revision()
+                else:
+                    (result.old_revid, result.new_revid) = \
+                        self._update_revisions(stop_revision, overwrite)
+                self.update_tags(result, overwrite)
+                for hook in Branch.hooks['post_push']:
+                    hook(result)
+                return result
+            finally:
+                self.target.unlock()
         finally:
             self.source.unlock()
 
