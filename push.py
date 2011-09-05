@@ -564,12 +564,15 @@ class InterToSvnRepository(InterRepository):
         """See InterRepository.copy_content."""
         self.source.lock_read()
         try:
-            assert revision_id is not None, "fetching all revisions not supported"
-            graph = self.get_graph()
+            if revision_id is not None:
+                graph = self.get_graph()
+                consider = graph.iter_lefthand_ancestry(revision_id,
+                    (NULL_REVISION, None))
+            else:
+                consider = self.source.all_revision_ids()
             todo = []
             # Go back over the LHS parent until we reach a revid we know
-            for revid in graph.iter_lefthand_ancestry(revision_id,
-                    (NULL_REVISION, None)):
+            for revid in consider:
                 if self._target_has_revision(revid):
                     break
                 todo.append(revid)

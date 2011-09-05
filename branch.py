@@ -890,12 +890,12 @@ class InterToSvnBranch(InterBranch):
     def _push(self, stop_revision, overwrite, push_metadata):
         old_last_revid = self.target.last_revision()
         if old_last_revid == stop_revision:
-            return { old_last_revid: (old_last_revid, None) }
+            return (old_last_revid, { old_last_revid: (old_last_revid, None) })
         push_merged = self.target.get_push_merged_revisions()
         interrepo = InterToSvnRepository(
             self.source.repository, self.target.repository)
         try:
-            return interrepo.push_branch(self.target.get_branch_path(),
+            revidmap = interrepo.push_branch(self.target.get_branch_path(),
                     self.target.get_config(), self.target.last_revmeta(),
                     stop_revision=stop_revision, overwrite=overwrite,
                     push_metadata=push_metadata, push_merged=push_merged,
@@ -904,13 +904,14 @@ class InterToSvnBranch(InterBranch):
             if self._target_is_empty(interrepo.get_graph(), e.target_revid):
                 raise PushToEmptyBranch(self.target, self.source)
             raise DivergedBranches(self.target, self.source)
+        return (old_last_revid, revidmap)
 
     def _update_revisions(self, stop_revision=None, overwrite=False,
             graph=None):
-        old_last_revid = self.target.last_revision()
         if stop_revision is None:
             stop_revision = ensure_null(self.source.last_revision())
-        self._push(stop_revision, overwrite=overwrite, push_metadata=True)
+        (old_last_revid, revidmap) = self._push(
+            stop_revision, overwrite=overwrite, push_metadata=True)
         self.target._clear_cached_state()
         assert isinstance(old_last_revid, str)
         return (old_last_revid, self.target.last_revision())
@@ -926,14 +927,15 @@ class InterToSvnBranch(InterBranch):
         """
         if stop_revision is None:
             stop_revision = ensure_null(self.source.last_revision())
-        revid_map = self._push(stop_revision, overwrite=overwrite,
-            push_metadata=False)
+        (old_last_revid, revid_map) = self._push(
+            stop_revision, overwrite=overwrite, push_metadata=False)
+        new_last_revid = revid_map[stop_revision][0]
         reverse_inter = InterFromSvnBranch(self.target, self.source)
+        reverse_inter.fetch(stop_revision=new_last_revid)
         self.target._clear_cached_state()
-        reverse_inter.fetch(stop_revision=revid_map[stop_revision][0])
         assert stop_revision in revid_map
         assert len(revid_map.keys()) > 0
-        return dict([(k, v[0]) for (k, v) in revid_map.iteritems()])
+        return (old_last_revid, new_last_revid, dict([(k, v[0]) for (k, v) in revid_map.iteritems()]))
 
     def lossy_push(self, stop_revision=None):
         """See InterBranch.lossy_push()."""
@@ -980,9 +982,8 @@ class InterToSvnBranch(InterBranch):
             self.target.lock_write()
             try:
                 if lossy:
-                    result.old_revid = self.target.last_revision()
-                    result.revidmap = self._update_revisions_lossy(stop_revision)
-                    result.new_revid = self.target.last_revision()
+                    (result.old_revid, result.new_revid, result.revidmap) = (
+                        self._update_revisions_lossy(stop_revision))
                 else:
                     (result.old_revid, result.new_revid) = \
                         self._update_revisions(stop_revision, overwrite)

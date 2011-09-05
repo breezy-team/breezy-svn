@@ -117,7 +117,8 @@ class TestDPush(SubversionTestCase):
         source_branch = self.bzrdir.open_branch()
         source_branch.lock_write()
         try:
-            revid_map = self.dpush(source_branch, self.svndir.open_branch())
+            old_revid, new_revid, revid_map = self.dpush(source_branch,
+                    self.svndir.open_branch())
         finally:
             source_branch.unlock()
 
@@ -146,7 +147,8 @@ class TestDPush(SubversionTestCase):
         source_branch = self.bzrdir.open_branch()
         source_branch.lock_write()
         try:
-            revid_map = self.dpush(source_branch, self.svndir.open_branch())
+            old_revid, new_revid, revid_map = self.dpush(source_branch,
+                    self.svndir.open_branch())
         finally:
             source_branch.unlock()
 
@@ -175,7 +177,8 @@ class TestDPush(SubversionTestCase):
         source_branch = self.bzrdir.open_branch()
         source_branch.lock_write()
         try:
-            revid_map = self.dpush(source_branch, self.svndir.open_branch())
+            old_revid, new_revid, revid_map = self.dpush(source_branch,
+                self.svndir.open_branch())
         finally:
             source_branch.unlock()
 
