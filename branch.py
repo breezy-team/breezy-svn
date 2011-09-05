@@ -326,6 +326,10 @@ class SvnBranch(ForeignBranch):
             return revmeta, mapping
         return None, None
 
+    def _base_foreign_revid(self):
+        return (self.repository.uuid, self.get_branch_path(),
+                self.get_revnum())
+
     def check(self, refs=None):
         """See Branch.Check.
 
@@ -556,13 +560,8 @@ class SvnBranch(ForeignBranch):
 
     def import_last_revision_info(self, source_repo, revno, revid, lossy=False):
         interrepo = InterToSvnRepository(source_repo, self.repository)
-        last_revmeta, mapping = self.last_revmeta()
-        if last_revmeta is None:
-            last_revid = NULL_REVISION
-        else:
-            last_revid = last_revmeta.get_revision_id(mapping)
-        revidmap = interrepo.push_todo(last_revid,
-            last_revmeta.metarev.get_foreign_revid(), mapping, revid, self.layout,
+        revidmap = interrepo.push_todo(self.last_revision(),
+            self._base_foreign_revid(), self.mapping, revid, self.layout,
             self.project, self.get_branch_path(), self.get_config(),
             push_merged=self.get_push_merged_revisions(),
             overwrite=False, push_metadata=not lossy, append_revisions_only=True)
@@ -926,7 +925,7 @@ class InterToSvnBranch(InterBranch):
         try:
             revidmap = interrepo.push_branch(self.target.get_branch_path(),
                     self.target.get_config(), old_last_revid,
-                    self.target.last_revmeta(),
+                    self.target._base_foreign_revid(), self.target.mapping,
                     stop_revision=stop_revision, overwrite=overwrite,
                     push_metadata=push_metadata, push_merged=push_merged,
                     layout=self.target.layout, project=self.target.project)
