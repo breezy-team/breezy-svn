@@ -243,7 +243,7 @@ class CommitIdTesting:
         other_tree.set_conflicts(ConflictList())
         self.assertEquals(0, len(other_tree.conflicts()))
         self.commit_tree(other_tree, "merge")
-        tree.branch.get_config().set_user_option("append_revisions_only", "False")
+        tree.branch.set_append_revisions_only(False)
         tree.pull(other_tree.branch)
         items = self.tree_items(tree.revision_tree("merge"))
         self.assertEquals({

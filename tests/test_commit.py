@@ -166,7 +166,7 @@ class TestNativeCommit(SubversionTestCase):
         br = Branch.open(repos_url+"/trunk")
         br.lock_write()
         self.addCleanup(br.unlock)
-        br.get_config().set_user_option("append_revisions_only", "False")
+        br.set_append_revisions_only(False)
         builder = br.get_commit_builder([br.last_revision()])
         builder.finish_inventory()
 

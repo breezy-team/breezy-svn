@@ -554,7 +554,7 @@ class RepositoryTests(SubversionTestCase):
         trunk = Branch.open(repos_url + "/trunk")
         self.assertRaises(AppendRevisionsOnlyViolation,
             trunk.pull, bzrwt.branch)
-        trunk.get_config().set_user_option('append_revisions_only', 'False')
+        trunk.set_append_revisions_only(False)
         trunk.pull(bzrwt.branch)
 
         self.assertEquals(tuple(bzr_parents),

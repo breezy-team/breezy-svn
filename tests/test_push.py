@@ -731,7 +731,7 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertTrue(os.path.exists("bzrco/baz.txt"))
         target_branch = Branch.open(repos_url+"/trunk")
         self.assertRaises(AppendRevisionsOnlyViolation, wt.branch.push, target_branch)
-        target_branch.get_config().set_user_option('append_revisions_only', 'False')
+        target_branch.set_append_revisions_only(False)
         wt.branch.push(target_branch)
 
     def test_push_merge_unchanged_file(self):
@@ -1153,7 +1153,7 @@ class PushNewBranchTests(SubversionTestCase):
         trunk = Branch.open(repos_url + "/branches/foo")
         self.assertRaises(AppendRevisionsOnlyViolation, trunk.pull,
             bzrwt.branch)
-        trunk.get_config().set_user_option('append_revisions_only', 'False')
+        trunk.set_append_revisions_only(False)
         trunk.pull(bzrwt.branch)
 
         self.assertEquals([revid1, revid2, revid3], trunk.revision_history())

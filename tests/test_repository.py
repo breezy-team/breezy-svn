@@ -193,7 +193,7 @@ class GetCommitBuilderTests(SubversionTestCase):
 
         other_tree = self.branch.repository.revision_tree(otherrevid)
 
-        self.branch.get_config().set_user_option("append_revisions_only", "False")
+        self.branch.set_append_revisions_only(False)
 
         self.branch.lock_write()
         self.addCleanup(self.branch.unlock)
@@ -226,7 +226,7 @@ class GetCommitBuilderTests(SubversionTestCase):
     def test_create_new_branch(self):
         self.branch.repository.set_layout(TrunkLayout())
 
-        self.branch.get_config().set_user_option("append_revisions_only", "False")
+        self.branch.set_append_revisions_only(False)
 
         self.branch.lock_write()
         self.addCleanup(self.branch.unlock)
@@ -252,7 +252,7 @@ class GetCommitBuilderTests(SubversionTestCase):
 
         self.branch.repository.set_layout(TrunkLayout())
 
-        self.branch.get_config().set_user_option("append_revisions_only", "False")
+        self.branch.set_append_revisions_only(False)
 
         self.branch.lock_write()
         self.addCleanup(self.branch.unlock)
