@@ -26,6 +26,7 @@ from bzrlib.bzrdir import (
 from bzrlib.tests import (
     TestCaseInTempDir,
     )
+from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn import (
     transport as _mod_svn_transport,
@@ -145,7 +146,11 @@ class RecordingRemoteAccess(object):
 
 class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
-    def make_repository(self, relpath, allow_revprop_changes=True):
+    def make_svn_branch(self, relpath):
+        repos_url = self.make_repository(relpath)
+        return BzrDir.open(repos_url).create_branch()
+
+    def make_svn_repository(self, relpath, allow_revprop_changes=True):
         """Create an SVN repository.
 
         :param relpath: Relative path at which to create the repository.
@@ -157,6 +162,8 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
             subvertpy.tests.SubversionTestCase.make_repository(self,
                 relpath, allow_revprop_changes))
 
+    make_repository = make_svn_repository
+
     def setUp(self):
         subvertpy.tests.SubversionTestCase.setUp(self)
         subvertpy.tests.SubversionTestCase.tearDown(self)
@@ -167,17 +174,13 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
     def tearDown(self):
         TestCaseInTempDir.tearDown(self)
 
-    def make_local_bzrdir(self, repos_path, relpath):
-        """Create a repository and checkout."""
-
-        repos_url = self.make_repository(repos_path)
-        self.make_checkout(repos_url, relpath)
-
-        return BzrDir.open(relpath)
+    def make_svn_branch_and_tree(self, repospath, clientpath, allow_revprop_changes=True):
+        branch = self.make_svn_branch(repospath)
+        self.make_checkout(branch.base, clientpath)
+        return WorkingTree.open(clientpath.decode("utf-8"))
 
     def make_client_and_bzrdir(self, repospath, clientpath):
         repos_url = self.make_client(repospath, clientpath)
-
         return BzrDir.open(repos_url)
 
     def assertChangedPathEquals(self, expected, got, msg=None):

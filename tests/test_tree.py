@@ -40,7 +40,6 @@ except ImportError: # bzr < 2.5
         )
 from bzrlib.workingtree import WorkingTree
 
-from bzrlib.plugins.svn.layout.standard import RootLayout
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.tree import (
     SvnBasisTree,
@@ -51,9 +50,9 @@ from bzrlib.plugins.svn.tree import (
 class TestBasisTree(SubversionTestCase):
 
     def test_executable(self):
-        repos_url = self.make_client("d", "dc")
+        tree = self.make_svn_branch_and_tree("d", "dc")
 
-        dc = self.get_commit_editor(repos_url)
+        dc = self.get_commit_editor(tree.branch.base)
         f = dc.add_file("file")
         f.modify("x")
         f.change_prop("svn:executable", "*")
@@ -61,32 +60,32 @@ class TestBasisTree(SubversionTestCase):
 
         self.client_update("dc")
 
-        tree = SvnBasisTree(WorkingTree.open("dc"))
+        tree = SvnBasisTree(tree)
         self.assertTrue(tree.is_executable(tree.path2id("file")))
 
     def test_executable_changed(self):
-        repos_url = self.make_client("d", "dc")
+        tree = self.make_svn_branch_and_tree("d", "dc")
 
-        dc = self.get_commit_editor(repos_url)
+        dc = self.get_commit_editor(tree.branch.base)
         dc.add_file("file").modify("x")
         dc.close()
 
         self.client_update("dc")
         self.client_set_prop("dc/file", "svn:executable", "*")
-        tree = SvnBasisTree(WorkingTree.open("dc"))
+        tree = SvnBasisTree(tree)
         self.assertFalse(tree.is_executable(tree.path2id("file")))
 
     def test_symlink(self):
-        repos_url = self.make_client("d", "dc")
+        tree = self.make_svn_branch_and_tree("d", "dc")
 
-        dc = self.get_commit_editor(repos_url)
+        dc = self.get_commit_editor(tree.branch.base)
         file = dc.add_file("file")
         file.modify("link target")
         file.change_prop("svn:special", "*")
         dc.close()
 
         self.client_update("dc")
-        tree = SvnBasisTree(WorkingTree.open("dc"))
+        tree = SvnBasisTree(tree)
         self.assertEqual('symlink',
                          tree.kind(tree.path2id("file")))
         self.assertEqual("target",
@@ -109,9 +108,9 @@ class TestBasisTree(SubversionTestCase):
                          tree.get_symlink_target(tree.path2id("file")))
 
     def test_symlink_not_special(self):
-        repos_url = self.make_client("d", "dc")
+        tree = self.make_svn_branch_and_tree("d", "dc")
 
-        dc = self.get_commit_editor(repos_url)
+        dc = self.get_commit_editor(tree.branch.base)
         file1 = dc.add_file("file")
         file1.modify("fsdfdslhfdsk h")
         file1.change_prop("svn:special", "*")
@@ -126,26 +125,26 @@ class TestBasisTree(SubversionTestCase):
             if num == subvertpy.ERR_WC_BAD_ADM_LOG:
                 raise TestSkipped("Unable to run test with svn 1.4")
             raise
-        tree = SvnBasisTree(WorkingTree.open("dc"))
+        tree = SvnBasisTree(tree)
         self.assertEqual('file', tree.kind(tree.path2id("file")))
 
     def test_symlink_next(self):
-        repos_url = self.make_client("d", "dc")
+        tree = self.make_svn_branch_and_tree("d", "dc")
 
-        dc = self.get_commit_editor(repos_url)
+        dc = self.get_commit_editor(tree.branch.base)
         dc.add_file("bla").modify("p")
         file = dc.add_file("file")
         file.modify("link target")
         file.change_prop("svn:special", "*")
         dc.close()
 
-        dc = self.get_commit_editor(repos_url)
+        dc = self.get_commit_editor(tree.branch.base)
         dc.open_file("bla").modify("pa")
         dc.close()
 
         self.client_update("dc")
 
-        tree = SvnBasisTree(WorkingTree.open("dc"))
+        tree = SvnBasisTree(tree)
         self.assertEqual('symlink', tree.kind(tree.path2id("file")))
         self.assertEqual("target",
                          tree.get_symlink_target(tree.path2id("file")))
@@ -220,50 +219,51 @@ class TestInventoryExternals(SubversionTestCase):
 
     def test_add_nested_norev(self):
         """Add a nested tree with no specific revision referenced."""
-        repos_url = self.make_client('d', 'dc')
-        repos = Repository.open(repos_url)
+        branch = self.make_svn_branch('d')
+        repos = branch.repository
+        repos_url = repos.base
         mapping = repos.get_mapping()
         inv = Inventory(root_id='blabloe')
         inventory_add_external(inv, 'blabloe', 'blie/bla',
-                mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)),
+                mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)),
                 None, repos_url)
         self.assertEqual(TreeReference(
-            mapping.generate_file_id((repos.uuid, "", 0), u""),
+            mapping.generate_file_id((repos.uuid, branch.get_branch_path(), 1), u""),
              'bla', inv.path2id('blie'),
              reference_revision=CURRENT_REVISION,
-             revision=mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1))),
+             revision=mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1))),
              inv[inv.path2id('blie/bla')])
 
     def test_add_simple_norev(self):
-        repos_url = self.make_client('d', 'dc')
-        repos = Repository.open(repos_url)
+        branch = self.make_svn_branch('d')
+        repos = branch.repository
         mapping = repos.get_mapping()
         inv = Inventory(root_id='blabloe')
         inventory_add_external(inv, 'blabloe', 'bla',
-            mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)), None,
-            repos_url)
+            mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)), None,
+            branch.repository.base)
 
         self.assertEqual(TreeReference(
-            mapping.generate_file_id((repos.uuid, "", 0), u""),
+            mapping.generate_file_id((repos.uuid, branch.get_branch_path(), 1), u""),
              'bla', 'blabloe',
              reference_revision=CURRENT_REVISION,
-             revision=mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1))),
+             revision=mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1))),
              inv[inv.path2id('bla')])
 
     def test_add_simple_rev(self):
-        repos_url = self.make_client('d', 'dc')
-        repos = Repository.open(repos_url)
+        branch = self.make_svn_branch('d')
+        repos = branch.repository
         inv = Inventory(root_id='blabloe')
         mapping = repos.get_mapping()
         inventory_add_external(inv, 'blabloe', 'bla',
-            mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)), 0, repos_url)
-        expected_ie = TreeReference(mapping.generate_file_id((repos.uuid, "", 0), u""),
+            mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)), 1, branch.repository.base)
+        expected_ie = TreeReference(mapping.generate_file_id((repos.uuid, branch.get_branch_path(), 1), u""),
             'bla', 'blabloe',
-            revision=mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)),
+            revision=mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)),
             reference_revision=NULL_REVISION)
         ie = inv[inv.path2id('bla')]
         self.assertEqual(NULL_REVISION, ie.reference_revision)
-        self.assertEqual(mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)),
+        self.assertEqual(mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)),
                          ie.revision)
         self.assertEqual(expected_ie, inv[inv.path2id('bla')])
 
@@ -272,30 +272,31 @@ class TestSvnRevisionTree(SubversionTestCase):
 
     def setUp(self):
         super(TestSvnRevisionTree, self).setUp()
-        repos_url = self.make_client('d', 'dc')
+        tree = self.make_svn_branch_and_tree('d', 'dc')
         self.build_tree({'dc/foo/bla': "data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message")
-        self.repos = Repository.open(repos_url)
-        self.repos.set_layout(RootLayout())
+        self.branch = tree.branch
+        self.repos = tree.branch.repository
         mapping = self.repos.get_mapping()
         self.tree = self.repos.revision_tree(
-                self.repos.generate_revision_id(1, "", mapping))
+                self.repos.generate_revision_id(2, "trunk", mapping))
 
     def test_get_parent_ids(self):
         mapping = self.repos.get_mapping()
-        self.assertEqual((self.repos.generate_revision_id(0, "", mapping),),
-                self.tree.get_parent_ids())
+        self.assertEqual(
+            (self.repos.generate_revision_id(1, self.branch.get_branch_path(), mapping),),
+            self.tree.get_parent_ids())
 
     def test_get_parent_ids_zero(self):
         mapping = self.repos.get_mapping()
         tree = self.repos.revision_tree(
-                self.repos.generate_revision_id(0, "", mapping))
+                self.repos.generate_revision_id(1, self.branch.get_branch_path(), mapping))
         self.assertEqual((), tree.get_parent_ids())
 
     def test_get_revision_id(self):
         mapping = self.repos.get_mapping()
-        self.assertEqual(self.repos.generate_revision_id(1, "", mapping),
+        self.assertEqual(self.repos.generate_revision_id(2, self.branch.get_branch_path(), mapping),
                          self.tree.get_revision_id())
 
     def test_get_file_lines(self):
@@ -309,7 +310,7 @@ class TestSvnRevisionTree(SubversionTestCase):
         mapping = self.repos.get_mapping()
 
         tree = self.repos.revision_tree(
-                self.repos.generate_revision_id(2, "", mapping))
+                self.repos.generate_revision_id(3, self.branch.get_branch_path(), mapping))
 
         self.assertTrue(tree.is_executable(tree.path2id("foo/bla")))
 
@@ -322,7 +323,7 @@ class TestSvnRevisionTree(SubversionTestCase):
         mapping = self.repos.get_mapping()
 
         tree = self.repos.revision_tree(
-                self.repos.generate_revision_id(2, "", mapping))
+                self.repos.generate_revision_id(2, self.branch.get_branch_path(), mapping))
 
         self.assertEqual('symlink', tree.kind(tree.path2id("bar")))
         self.assertEqual('foo/bla',

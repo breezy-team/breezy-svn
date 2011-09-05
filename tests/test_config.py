@@ -111,8 +111,7 @@ class BranchConfigTests(SubversionTestCase):
 
     def setUp(self):
         super(BranchConfigTests, self).setUp()
-        self.repos_url = self.make_repository("d")
-        self.config = Branch.open(self.repos_url).get_config()
+        self.config = self.make_svn_branch("d").get_config()
 
     def test_has_explicit_nickname(self):
         self.assertEquals(False, self.config.has_explicit_nickname())
@@ -172,54 +171,54 @@ class PropertyConfigTests(SubversionTestCase):
 class SvnBpConfigTests(SubversionTestCase):
 
     def test_no_debian_dir(self):
-        repos_url = self.make_repository("d")
+        branch = self.make_svn_branch("d")
         self.assertRaises(NoSubversionBuildPackageConfig,
-                SubversionBuildPackageConfig, Branch.open(repos_url).basis_tree())
+                SubversionBuildPackageConfig, branch.basis_tree())
 
     def test_mergeWithUpstream(self):
-        repos_url = self.make_repository("d")
+        branch = self.make_svn_branch("d")
 
-        dc = self.get_commit_editor(repos_url)
+        dc = self.get_commit_editor(branch.base)
         f = dc.add_dir("debian")
         f.change_prop("mergeWithUpstream", "1")
         dc.close()
 
-        cfg = SubversionBuildPackageConfig(Branch.open(repos_url).basis_tree())
+        cfg = SubversionBuildPackageConfig(branch.basis_tree())
 
         self.assertEquals(True, cfg.get_merge_with_upstream())
 
     def test_get_property_val(self):
-        repos_url = self.make_repository("d")
+        branch = self.make_svn_branch("d")
 
-        dc = self.get_commit_editor(repos_url)
+        dc = self.get_commit_editor(branch.base)
         f = dc.add_dir("debian")
         f.change_prop("svn-bp:origDir", "myorigdir")
         dc.close()
 
-        cfg = SubversionBuildPackageConfig(Branch.open(repos_url).basis_tree())
+        cfg = SubversionBuildPackageConfig(branch.basis_tree())
 
         self.assertEquals("myorigdir", cfg.get("origDir"))
 
     def test_get_intree_val(self):
-        repos_url = self.make_repository("d")
+        branch = self.make_svn_branch("d")
 
-        dc = self.get_commit_editor(repos_url)
+        dc = self.get_commit_editor(branch.base)
         d = dc.add_dir("debian")
         f = d.add_file("debian/svn-layout")
         f.modify("origDir = aorigdir\n")
         dc.close()
 
-        cfg = SubversionBuildPackageConfig(Branch.open(repos_url).basis_tree())
+        cfg = SubversionBuildPackageConfig(branch.basis_tree())
 
         self.assertEquals("aorigdir", cfg.get("origDir"))
 
     def test_get_controldir_val(self):
-        repos_url = self.make_client("d", "dc")
+        tree = self.make_svn_branch_and_tree("d", "dc")
 
         f = open('dc/.svn/svn-layout', 'w')
         f.write("buildArea = build-gebied\n")
         f.close()
 
-        cfg = SubversionBuildPackageConfig(WorkingTree.open("dc"))
+        cfg = SubversionBuildPackageConfig(tree)
 
         self.assertEquals("build-gebied", cfg.get("buildArea"))

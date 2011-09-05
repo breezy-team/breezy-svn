@@ -51,20 +51,17 @@ from bzrlib.plugins.svn.tests import SubversionTestCase
 class WorkingSubversionBranch(SubversionTestCase):
 
     def test_last_rev_rev_hist(self):
-        repos_url = self.make_repository("a")
-        branch = Branch.open(repos_url)
+        branch = self.make_svn_branch('a')
         branch.revision_history()
         self.assertEqual(branch.generate_revision_id(0),
                          branch.last_revision())
 
     def test_get_branch_path_root(self):
-        repos_url = self.make_repository("a")
-        branch = Branch.open(repos_url)
-        self.assertEqual("", branch.get_branch_path())
+        branch = self.make_svn_branch('a')
+        self.assertEqual("trunk", branch.get_branch_path())
 
     def test_get_child_submit_format_default(self):
-        repos_url = self.make_repository("a")
-        branch = Branch.open(repos_url)
+        branch = self.make_svn_branch('a')
         self.assertEquals("svn", branch.get_child_submit_format())
 
     def test_tags_dict(self):
@@ -425,57 +422,44 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertRaises(NotBranchError, Branch.open, repos_url + "/trunk")
 
     def test_last_rev_rev_info(self):
-        repos_url = self.make_repository("a")
-        branch = Branch.open(repos_url)
-        self.assertEqual((1, branch.generate_revision_id(0)),
+        branch = self.make_svn_branch("a")
+        self.assertEqual((1, branch.generate_revision_id(1)),
                 branch.last_revision_info())
         branch.revision_history()
-        self.assertEqual((1, branch.generate_revision_id(0)),
+        self.assertEqual((1, branch.generate_revision_id(1)),
                 branch.last_revision_info())
 
     def test_lookup_revision_id_unknown(self):
-        repos_url = self.make_repository("a")
-        branch = Branch.open(repos_url)
+        branch = self.make_svn_branch("a")
         self.assertRaises(NoSuchRevision, lambda: branch.lookup_bzr_revision_id("bla"))
 
     def test_lookup_revision_id(self):
-        repos_url = self.make_repository("a")
-        branch = Branch.open(repos_url)
+        branch = self.make_svn_branch("a")
         self.assertEquals(0, branch.lookup_bzr_revision_id(branch.last_revision()))
 
     def test_set_parent(self):
-        repos_url = self.make_repository('a')
-        branch = Branch.open(repos_url)
+        branch = self.make_svn_branch("a")
         branch.set_parent("foobar")
 
     def test_num_revnums(self):
-        repos_url = self.make_repository('a')
-        bzrdir = BzrDir.open(repos_url)
-        branch = bzrdir.open_branch()
-        self.assertEqual(branch.generate_revision_id(0), branch.last_revision())
+        branch = self.make_branch('a')
+        self.assertEqual(branch.generate_revision_id(1), branch.last_revision())
 
-        dc = self.get_commit_editor(repos_url)
+        dc = self.get_commit_editor(branch.base)
         dc.add_file("foo").modify()
         dc.close()
 
-        bzrdir = BzrDir.open(repos_url)
-        branch = bzrdir.open_branch()
-        repos = bzrdir.find_repository()
+        self.assertEqual(
+            branch.repository.generate_revision_id(1, branch.get_branch_path(), branch.mapping),
+            branch.last_revision())
 
-        mapping = repos.get_mapping()
-
-        self.assertEqual(repos.generate_revision_id(1, "", mapping),
-                branch.last_revision())
-
-        dc = self.get_commit_editor(repos_url)
+        dc = self.get_commit_editor(branch.base)
         dc.open_file("foo").modify()
         dc.close()
 
-        branch = Branch.open(repos_url)
-        repos = Repository.open(repos_url)
-
-        self.assertEqual(repos.generate_revision_id(2, "", mapping),
-                branch.last_revision())
+        self.assertEqual(
+            branch.repository.generate_revision_id(2, "", branch.mapping),
+            branch.last_revision())
 
     def test_set_revision_history_empty(self):
         repos_url = self.make_repository('a')
@@ -526,50 +510,42 @@ class WorkingSubversionBranch(SubversionTestCase):
 
     def test_break_lock(self):
         # duplicated by bzrlib.tests.per_branch.test_break_lock
-        repos_url = self.make_repository('a')
-        branch = Branch.open(repos_url)
+        branch = self.make_svn_branch('a')
         branch.break_lock()
 
     def test_repr(self):
-        repos_url = self.make_repository('a')
-        branch = Branch.open(repos_url)
-        self.assertEqual("SvnBranch('%s')" % repos_url, branch.__repr__())
+        branch = self.make_svn_branch('a')
+        self.assertEqual("SvnBranch('%s')" % branch.base, branch.__repr__())
 
     def test_get_physical_lock_status(self):
-        repos_url = self.make_repository('a')
-        branch = Branch.open(repos_url)
+        branch = self.make_svn_branch('a')
         self.assertFalse(branch.get_physical_lock_status())
 
     def test_set_push_location(self):
         # duplicated by bt.per_branch.TestBranchPushLocations.test_set_push_location
-        repos_url = self.make_repository('a')
-        branch = Branch.open(repos_url)
+        branch = self.make_svn_branch('a')
         branch.set_push_location("http://bar/bloe")
 
     def test_get_parent(self):
-        repos_url = self.make_repository('a')
-        branch = Branch.open(repos_url)
+        branch = self.make_svn_branch('a')
         self.assertEqual(None, branch.get_parent())
 
     def test_get_push_location(self):
         # duplicated by bt.per_branch.TestBranchPushLocations.test_get_push_location_unset
-        repos_url = self.make_repository('a')
-        branch = Branch.open(repos_url)
+        branch = self.make_svn_branch('a')
         self.assertIs(None, branch.get_push_location())
 
     def test_revision_id_to_revno_none(self):
         """The None revid should map to revno 0."""
         # duplicated by bt.per_branch.test_revision_id_to_revno
-        repos_url = self.make_repository('a')
-        branch = Branch.open(repos_url)
+        branch = self.make_svn_branch('a')
         self.assertEquals(0, branch.revision_id_to_revno(NULL_REVISION))
 
     def test_revision_id_to_revno_nonexistant(self):
         """revision_id_to_revno() should raise NoSuchRevision if
         the specified revision did not exist in the branch history."""
         # duplicated by bt.per_branch.test_revision_id_to_revno
-        repos_url = self.make_repository('a')
-        branch = Branch.open(repos_url)
+        branch = self.make_svn_branch('a')
         self.assertRaises(NoSuchRevision, branch.revision_id_to_revno, "bla")
 
     def test_get_nick_none(self):
@@ -916,8 +892,7 @@ foohosts""")
             set(filter(lambda (fid, rid): fid == fileid, texts.keys())))
 
     def test_check(self):
-        self.make_repository('d')
-        branch = Branch.open('d')
+        branch = self.make_svn_branch('d')
         result = branch.check()
         self.assertEqual(branch, result.branch)
 
@@ -1033,47 +1008,44 @@ foohosts""")
                 newdir.open_branch().last_revision())
 
     def test_fetch_branch_downgrade(self):
-        repos_url = self.make_client('d', 'sc')
+        tree = self.make_svn_branch_and_tree('d', 'sc')
 
-        sc = self.get_commit_editor(repos_url)
-        sc.add_dir("trunk")
+        sc = self.get_commit_editor(tree.branch.repository.base)
+        sc.open_dir("trunk")
         branches = sc.add_dir("branches")
         abranch = branches.add_dir("branches/abranch")
         abranch.add_file("branches/abranch/bla").modify()
         sc.close()
 
-        sc = self.get_commit_editor(repos_url)
+        sc = self.get_commit_editor(tree.branch.repository.base)
         trunk = sc.open_dir("trunk")
         sc.add_dir("trunk/mylib", "branches/abranch")
         sc.close()
 
         self.client_update('sc')
-        olddir = BzrDir.open("sc/trunk")
 
         os.mkdir("dc")
 
-        newdir = olddir.sprout('dc')
+        newdir = tree.branch.bzrdir.sprout('dc')
 
         self.assertEqual(
-                olddir.open_branch().last_revision(),
+                tree.branch.last_revision(),
                 newdir.open_branch().last_revision())
 
     def test_ghost_workingtree(self):
         # Looks like bazaar has trouble creating a working tree of a
         # revision that has ghost parents
-        repos_url = self.make_client('d', 'sc')
+        tree = self.make_svn_branch_and_tree('d', 'sc')
 
-        sc = self.get_commit_editor(repos_url)
+        sc = self.get_commit_editor(tree.branch.base)
         foo = sc.add_dir("foo")
         foo.add_file("foo/bla").modify()
         sc.change_prop("bzr:ancestry:v3-none", "some-ghost\n")
         sc.close()
 
-        olddir = BzrDir.open("sc")
-
         os.mkdir("dc")
 
-        newdir = olddir.sprout('dc')
+        newdir = tree.branch.bzrdir.sprout('dc')
         newdir.find_repository().get_revision(
                 newdir.open_branch().last_revision())
         newdir.find_repository().revision_tree(
