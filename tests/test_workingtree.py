@@ -53,7 +53,6 @@ except ImportError: # bzr < 2.5
         SymlinkFeature,
         UnicodeFilenameFeature,
         )
-from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn.layout.standard import TrunkLayout
