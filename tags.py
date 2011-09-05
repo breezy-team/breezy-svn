@@ -22,13 +22,9 @@ from subvertpy import (
     )
 
 from bzrlib import (
+    errors as bzr_errors,
     ui,
     urlutils,
-    )
-from bzrlib.errors import (
-    InvalidRevisionId,
-    NoSuchRevision,
-    NoSuchTag,
     )
 from bzrlib.tag import BasicTags
 from bzrlib.trace import mutter
@@ -157,6 +153,10 @@ class ReverseTagDict(object):
 class SubversionTags(BasicTags):
     """Subversion tags object."""
 
+    versioned = True
+
+    supports_ghosts = False
+
     def __init__(self, branch):
         self.branch = branch
         self.repository = branch.repository
@@ -192,8 +192,11 @@ class SubversionTags(BasicTags):
         parent = urlutils.dirname(path)
         try:
             (from_uuid, from_bp, from_revnum), mapping = self.repository.lookup_bzr_revision_id(tag_target, project=self.branch.project)
-        except NoSuchRevision:
+        except bzr_errors.NoSuchRevision:
             mutter("not setting tag %s; unknown revision %s", tag_name, tag_target)
+            GhostTagsNotSupported = getattr(bzr_errors, "GhostTagsNotSupported", None)
+            if GhostTagsNotSupported is not None:
+                raise GhostTagsNotSupported(self.branch._format)
             return
         self._ensure_tag_parent_exists(parent)
         try:
@@ -252,7 +255,7 @@ class SubversionTags(BasicTags):
         try:
             return self.get_tag_dict()[tag_name]
         except KeyError:
-            raise NoSuchTag(tag_name)
+            raise bzr_errors.NoSuchTag(tag_name)
 
     def _get_tag_dict_revmeta(self, from_revnum=None, to_revnum=None):
         """Get a name -> revmeta dictionary."""
@@ -291,7 +294,7 @@ class SubversionTags(BasicTags):
                 return ret
             try:
                 foreign_revid, m = mapping_registry.parse_revision_id(revid)
-            except InvalidRevisionId:
+            except bzr_errors.InvalidRevisionId:
                 continue
             if not foreign_revid in foreign_revid_map:
                 continue
@@ -323,7 +326,7 @@ class SubversionTags(BasicTags):
         try:
             if conn.check_path(urlutils.basename(path),
                     self.repository.get_latest_revnum()) != subvertpy.NODE_DIR:
-                raise NoSuchTag(tag_name)
+                raise bzr_errors.NoSuchTag(tag_name)
             ci = svn_errors.convert_svn_error(conn.get_commit_editor)(
                     self._revprops("Remove tag %s" % tag_name.encode("utf-8"),
                     {tag_name: ""}))
