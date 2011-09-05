@@ -173,6 +173,8 @@ class GetCommitBuilderTests(SubversionTestCase):
         self.branch = Branch.open("d/trunk")
 
     def test_simple(self):
+        self.branch.lock_write()
+        self.addCleanup(self.branch.unlock)
         cb = self.branch.get_commit_builder([self.branch.last_revision()])
         cb.commit("MSG")
 
@@ -193,6 +195,9 @@ class GetCommitBuilderTests(SubversionTestCase):
 
         self.branch.get_config().set_user_option("append_revisions_only", "False")
 
+        self.branch.lock_write()
+        self.addCleanup(self.branch.unlock)
+
         cb = self.branch.get_commit_builder([otherrevid])
         list(cb.record_iter_changes(other_tree, otherrevid, []))
         cb.finish_inventory()
@@ -211,6 +216,9 @@ class GetCommitBuilderTests(SubversionTestCase):
         otherrevid = self.branch.repository.generate_revision_id(2, "branches/dir",
             self.branch.mapping)
 
+        self.branch.lock_write()
+        self.addCleanup(self.branch.unlock)
+
         self.assertRaises(AppendRevisionsOnlyViolation,
             self.branch.get_commit_builder,
             [otherrevid, self.branch.last_revision()])
@@ -220,6 +228,8 @@ class GetCommitBuilderTests(SubversionTestCase):
 
         self.branch.get_config().set_user_option("append_revisions_only", "False")
 
+        self.branch.lock_write()
+        self.addCleanup(self.branch.unlock)
         cb = self.branch.get_commit_builder([])
         list(cb.record_iter_changes(self.branch.repository.revision_tree("null:"),
             "null:", [("rootid", (None, ""), (False, True), (False, True),
@@ -244,6 +254,8 @@ class GetCommitBuilderTests(SubversionTestCase):
 
         self.branch.get_config().set_user_option("append_revisions_only", "False")
 
+        self.branch.lock_write()
+        self.addCleanup(self.branch.unlock)
         cb = self.branch.get_commit_builder([first_rev])
         cb.finish_inventory()
         cb.commit("FOO")

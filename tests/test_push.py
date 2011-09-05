@@ -107,7 +107,11 @@ class TestDPush(SubversionTestCase):
         return self.get_commit_editor(self.repos_url, message)
 
     def dpush(self, source, target):
-        return InterToSvnBranch(source, target)._update_revisions_lossy()
+        target.lock_write()
+        try:
+            return InterToSvnBranch(source, target)._update_revisions_lossy()
+        finally:
+            target.unlock()
 
     def test_change_single(self):
         self.build_tree({'dc/foo/bla': 'other data'})
@@ -1359,6 +1363,8 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         self.revid1 = tree.commit('msg')
 
     def test_push_first_revision_with_metadata(self):
+        self.to_repo.lock_write()
+        self.addCleanup(self.to_repo.unlock)
         self.interrepo.push_single_revision("trunk",
             self.interrepo._get_branch_config("trunk"),
             self.from_repo.get_revision(self.revid1),
@@ -1369,6 +1375,8 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         # FIXME: Check revision properties
 
     def test_push_first_revision_without_metadata(self):
+        self.to_repo.lock_write()
+        self.addCleanup(self.to_repo.unlock)
         self.interrepo.push_single_revision("trunk",
             self.interrepo._get_branch_config("trunk"),
             self.from_repo.get_revision(self.revid1),
@@ -1389,6 +1397,9 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         config = self.interrepo._get_branch_config("trunk")
         rev1 = self.from_repo.get_revision(self.revid1)
 
+        self.to_repo.lock_write()
+        self.addCleanup(self.to_repo.unlock)
+
         # With append revisions only disabled but overwrite it should work
         self.interrepo.push_single_revision("trunk", config, rev1,
             push_metadata=False, base_foreign_info=(None, None),
@@ -1408,6 +1419,9 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
 
         config = self.interrepo._get_branch_config("trunk")
         rev1 = self.from_repo.get_revision(self.revid1)
+
+        self.to_repo.lock_write()
+        self.addCleanup(self.to_repo.unlock)
 
         self.interrepo.push_single_revision("trunk", config, rev1,
             push_metadata=False, base_foreign_info=(None, None), root_action=("replace", 1))
@@ -1445,6 +1459,8 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         config = self.interrepo._get_branch_config("trunk")
         self.addCleanup(self.from_repo.unlock)
         self.from_repo.lock_read()
+        self.to_repo.lock_write()
+        self.addCleanup(self.to_repo.unlock)
         rev1 = self.from_repo.get_revision(self.revid1)
         self.interrepo.push_single_revision("trunk",
             config, rev1, push_metadata=True, root_action=("create", ),
@@ -1467,6 +1483,8 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         config = self.interrepo._get_branch_config("trunk")
         self.addCleanup(self.from_repo.unlock)
         self.from_repo.lock_read()
+        self.to_repo.lock_write()
+        self.addCleanup(self.to_repo.unlock)
         rev1 = self.from_repo.get_revision(self.revid1)
         self.interrepo.push_single_revision("trunk",
             config, rev1, push_metadata=True, root_action=("create", ),
@@ -1497,6 +1515,8 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         config = self.interrepo._get_branch_config("trunk")
         self.addCleanup(self.from_repo.unlock)
         self.from_repo.lock_read()
+        self.to_repo.lock_write()
+        self.addCleanup(self.to_repo.unlock)
         rev1 = self.from_repo.get_revision(self.revid1)
         self.interrepo.push_single_revision("trunk",
             config, rev1, push_metadata=True, root_action=("create", ),

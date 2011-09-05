@@ -448,6 +448,8 @@ class RepositoryTests(SubversionTestCase):
         wt.add('bla')
         wt.commit(message="data")
         branch = Branch.open(self.repos_url)
+        branch.lock_write()
+        self.addCleanup(branch.unlock)
         builder = branch.get_commit_builder([branch.last_revision()], 
                 revision_id="my-revision-id")
         tree = branch.repository.revision_tree(branch.last_revision())
@@ -480,6 +482,8 @@ class RepositoryTests(SubversionTestCase):
         wt.commit(message="data")
 
         branch = Branch.open(self.repos_url)
+        branch.lock_write()
+        self.addCleanup(branch.unlock)
         builder = branch.get_commit_builder([branch.last_revision()], 
                 timestamp=4534.0, timezone=2, committer="fry",
                 revision_id="my-revision-id")

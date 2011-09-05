@@ -43,6 +43,7 @@ from bzrlib.inventory import (
 from bzrlib.repository import Repository
 from bzrlib.tests import (
     TestCase,
+    TestSkipped,
     )
 try:
     from bzrlib.tests.features import (
@@ -163,6 +164,8 @@ class TestNativeCommit(SubversionTestCase):
         dc = self.get_commit_editor(repos_url)
 
         br = Branch.open(repos_url+"/trunk")
+        br.lock_write()
+        self.addCleanup(br.unlock)
         br.get_config().set_user_option("append_revisions_only", "False")
         builder = br.get_commit_builder([br.last_revision()])
         builder.finish_inventory()
@@ -179,6 +182,8 @@ class TestNativeCommit(SubversionTestCase):
     def test_lossy_commit_builder(self):
         repos_url = self.make_repository('d')
         branch = Branch.open(repos_url)
+        branch.lock_write()
+        self.addCleanup(branch.unlock)
         cb = branch.repository.get_commit_builder(branch,
             [branch.last_revision()], branch.get_config(),
             revision_id="foorevid", lossy=True)
@@ -259,6 +264,8 @@ class TestNativeCommit(SubversionTestCase):
 
         branch = Branch.open(repos_url+"/trunk")
         foobranch = Branch.open(repos_url+"/tags/foo")
+        branch.lock_write()
+        self.addCleanup(branch.unlock)
         builder = branch.get_commit_builder(
             [branch.last_revision(), foobranch.last_revision()],
             revision_id="my-revision-id")
@@ -274,7 +281,7 @@ class TestNativeCommit(SubversionTestCase):
             mi = c.mergeinfo(["trunk"], 4)
             self.assertEquals({"trunk": {"/tags/foo": [(1, 3, 1)]}}, mi)
         except NotImplementedError:
-            pass # Svn 1.4
+            raise TestSkipped("mergeinfo not available with svn 1.4")
 
     def test_mwh(self):
         repo = self.make_client('d', 'sc')
