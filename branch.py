@@ -954,17 +954,7 @@ class InterToSvnBranch(InterBranch):
             raise DivergedBranches(self.target, self.source)
         return (old_last_revid, revidmap)
 
-    def _update_revisions(self, stop_revision=None, overwrite=False,
-            graph=None):
-        if stop_revision is None:
-            stop_revision = ensure_null(self.source.last_revision())
-        (old_last_revid, revidmap) = self._push(
-            stop_revision, overwrite=overwrite, push_metadata=True)
-        self.target._clear_cached_state()
-        assert isinstance(old_last_revid, str)
-        return (old_last_revid, self.target.last_revision())
-
-    def _update_revisions_lossy(self, stop_revision=None, overwrite=False):
+    def _update_revisions(self, stop_revision=None, overwrite=False, lossy=False):
         """Push derivatives of the revisions missing from target from source
         into target.
 
@@ -976,11 +966,12 @@ class InterToSvnBranch(InterBranch):
         if stop_revision is None:
             stop_revision = ensure_null(self.source.last_revision())
         (old_last_revid, revid_map) = self._push(
-            stop_revision, overwrite=overwrite, push_metadata=False)
-        new_last_revid = revid_map[stop_revision][0]
-        reverse_inter = InterFromSvnBranch(self.target, self.source)
-        reverse_inter.fetch(stop_revision=new_last_revid)
+            stop_revision, overwrite=overwrite, push_metadata=(not lossy))
         self.target._clear_cached_state()
+        new_last_revid = self.target.last_revision()
+        if lossy:
+            reverse_inter = InterFromSvnBranch(self.target, self.source)
+            reverse_inter.fetch(stop_revision=new_last_revid)
         assert stop_revision in revid_map
         assert len(revid_map.keys()) > 0
         return (old_last_revid, new_last_revid, dict([(k, v[0]) for (k, v) in revid_map.iteritems()]))
@@ -1029,12 +1020,9 @@ class InterToSvnBranch(InterBranch):
         try:
             self.target.lock_write()
             try:
-                if lossy:
-                    (result.old_revid, result.new_revid, result.revidmap) = (
-                        self._update_revisions_lossy(stop_revision))
-                else:
-                    (result.old_revid, result.new_revid) = \
-                        self._update_revisions(stop_revision, overwrite)
+                (result.old_revid, result.new_revid, result.revidmap) = (
+                    self._update_revisions(stop_revision, overwrite=overwrite,
+                        lossy=lossy))
                 self.update_tags(result, overwrite)
                 for hook in Branch.hooks['post_push']:
                     hook(result)
@@ -1059,7 +1047,7 @@ class InterToSvnBranch(InterBranch):
         try:
             self.target.lock_write()
             try:
-                (result.old_revid, result.new_revid) = \
+                (result.old_revid, result.new_revid, result.revidmap) = \
                     self._update_revisions(stop_revision, overwrite)
                 self.update_tags(result, overwrite)
                 if run_hooks:
