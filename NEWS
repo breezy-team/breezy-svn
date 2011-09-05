@@ -1,5 +1,10 @@
 bzr-svn 1.1.1					  UNRELEASED
 
+ CHANGES
+
+  * The 'trunk' layout is now the default for an empty repository.
+    (Jelmer Vernooij)
+
 bzr-svn 1.1.0					  2011-08-26
 
  BUG FIXES
