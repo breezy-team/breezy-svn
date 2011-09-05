@@ -762,8 +762,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
         """
         # Find the ancestor of self.revmeta with revnum revnum
         last_revmeta = None
-        for revmeta, mapping in self.source._revmeta_provider._iter_reverse_revmeta_mapping_history(
+        for revmeta, hidden, mapping in self.source._revmeta_provider._iter_reverse_revmeta_mapping_history(
             self.revmeta.branch_path, self.revmeta.metarev.revnum, revnum, self.mapping):
+            if hidden:
+                continue
             last_revmeta = revmeta
         assert last_revmeta is not None and last_revmeta.metarev.revnum == revnum
         revid = last_revmeta.get_revision_id(mapping)
@@ -1250,8 +1252,10 @@ class FetchRevisionFinder(object):
         needs_checking = []
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for revmeta, mapping in self.source._revmeta_provider._iter_reverse_revmeta_mapping_history(
+            for revmeta, hidden, mapping in self.source._revmeta_provider._iter_reverse_revmeta_mapping_history(
                 branch_path, revnum, to_revnum=0, mapping=mapping):
+                if hidden:
+                    continue
                 if pb:
                     pb.update("determining revisions to fetch",
                               revnum-revmeta.metarev.revnum, revnum)

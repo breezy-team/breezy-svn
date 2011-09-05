@@ -322,7 +322,9 @@ class SvnBranch(ForeignBranch):
     def last_revmeta(self):
         """Return the revmeta element for the last revision in this branch.
         """
-        for revmeta, mapping in self._revision_meta_history():
+        for revmeta, hidden, mapping in self._revision_meta_history():
+            if hidden:
+                continue
             return revmeta, mapping
         return None, None
 
@@ -422,8 +424,10 @@ class SvnBranch(ForeignBranch):
         """Generate a new revision id for a revision on this branch."""
         assert isinstance(revnum, int)
         revmeta_history = self._revision_meta_history()
-        for revmeta, mapping in revmeta_history:
+        for revmeta, hidden, mapping in revmeta_history:
             if revmeta.metarev.revnum == revnum:
+                if hidden:
+                    break
                 return revmeta.get_revision_id(mapping)
             if revmeta.metarev.revnum < revnum:
                 break
@@ -495,7 +499,9 @@ class SvnBranch(ForeignBranch):
         revmeta_history = self._revision_meta_history()
         # FIXME: Maybe we can parse revision_id as a bzr-svn roundtripped
         # revision?
-        for revmeta, mapping in revmeta_history:
+        for revmeta, hidden, mapping in revmeta_history:
+            if hidden:
+                continue
             if revmeta.get_revision_id(mapping) == revision_id:
                 return revmeta.get_revno(mapping)
         raise NoSuchRevision(self, revision_id)
@@ -536,8 +542,9 @@ class SvnBranch(ForeignBranch):
         if revno <= 0 or revno > last_revno:
             raise NoSuchRevision(self, revno)
         count = last_revno - revno
-        for (revmeta, mapping) in self._revision_meta_history():
-            assert not revmeta.is_hidden(mapping)
+        for (revmeta, hidden, mapping) in self._revision_meta_history():
+            if hidden:
+                continue
             if count == 0:
                 assert revmeta.get_revno(mapping) == revno, "Expected %d, was (%r,%r) %d" % (revno, revmeta, mapping, revmeta.get_revno(mapping))
                 return revmeta.get_revision_id(mapping)
@@ -546,7 +553,7 @@ class SvnBranch(ForeignBranch):
 
     def _gen_revision_history(self):
         """Generate the revision history from last revision."""
-        history = [revmeta.get_revision_id(mapping) for revmeta, mapping in self._revision_meta_history()]
+        history = [revmeta.get_revision_id(mapping) for revmeta, hidden, mapping in self._revision_meta_history() if not hidden]
         history.reverse()
         return history
 

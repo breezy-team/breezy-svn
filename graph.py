@@ -46,9 +46,9 @@ class SubversionGraph(_mod_graph.Graph):
                 yield key
             return
         (uuid, branch_path, revnum) = foreign_revid
-        for revmeta, mapping in self._revmeta_provider._iter_reverse_revmeta_mapping_history(
+        for revmeta, hidden, mapping in self._revmeta_provider._iter_reverse_revmeta_mapping_history(
                 branch_path, revnum, to_revnum=0, mapping=mapping):
-            if revmeta.is_hidden(mapping):
+            if hidden:
                 continue
             key = revmeta.get_revision_id(mapping)
             if key in stop_keys:
