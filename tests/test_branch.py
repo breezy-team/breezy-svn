@@ -325,6 +325,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         otherbranch = Branch.open(urlutils.join(repos_url, "branches", "foo"))
         branch = Branch.open(urlutils.join(repos_url, "trunk"))
         result = branch.pull(otherbranch)
+
         self.assertEquals(branch.last_revision(), otherbranch.last_revision())
         self.assertEquals(result.new_revid, otherbranch.last_revision())
         self.assertEquals(result.old_revid, branch.revision_history()[0])
