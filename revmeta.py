@@ -947,6 +947,7 @@ class RevisionMetadataProvider(object):
         of a specified path.
 
         """
+        # FIXME: This should rely on mergeinfo data
         todo = []
         processed = set()
         def update_todo(todo, it):
@@ -966,9 +967,11 @@ class RevisionMetadataProvider(object):
             if pb is not None:
                 pb.update("finding rhs ancestors", i, i+len(todo))
             i += 1
-            (revmeta, mapping) = entry
+            (revmeta, hidden, mapping) = entry
             yield entry
             parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
+            if hidden:
+                continue
             for rhs_parent_revid in revmeta.get_rhs_parents(mapping, parentrevmeta):
                 try:
                     (rhs_parent_foreign_revid, rhs_parent_mapping) = self.lookup_bzr_revision_id(rhs_parent_revid, foreign_sibling=revmeta.metarev.get_foreign_revid())
@@ -999,6 +1002,7 @@ class RevisionMetadataProvider(object):
             except StopIteration:
                 revid = None
                 foreign_sibling = None
+                hidden = False
             else:
                 (mapping, lhs_mapping) = revmeta.get_appropriate_mappings(
                     mapping)
@@ -1007,9 +1011,11 @@ class RevisionMetadataProvider(object):
                         "LHS mapping %r newer than %r" %
                             (lhs_mapping, mapping))
                 if revmeta.is_hidden(mapping):
-                    mapping = lhs_mapping
-                    continue
-                revid = revmeta.get_revision_id(mapping)
+                    revid = None
+                    hidden = True
+                else:
+                    revid = revmeta.get_revision_id(mapping)
+                    hidden = False
                 foreign_sibling = revmeta.metarev.get_foreign_revid()
             if expected_revid is not None and revid != expected_revid:
                 # Need to restart, branch root has changed
@@ -1019,10 +1025,10 @@ class RevisionMetadataProvider(object):
                     expected_revid, foreign_sibling=foreign_sibling)
                 (_, branch_path, revnum) = foreign_revid
                 it = get_iter(branch_path, revnum)
-            elif revid is not None:
+            elif revid is not None or hidden:
                 if not mapping.is_branch_or_tag(revmeta.metarev.branch_path):
                     return
-                yield revmeta, mapping
+                yield revmeta, hidden, mapping
                 expected_revid = revmeta._get_stored_lhs_parent_revid(mapping)
                 mapping = lhs_mapping
             else:

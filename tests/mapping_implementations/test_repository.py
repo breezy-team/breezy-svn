@@ -179,7 +179,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
             repos.set_layout(CustomLayout(["pygments"]))
         except svn_errors.LayoutUnusable:
             raise TestNotApplicable
-        changes = [c for c,m in repos._revmeta_provider._iter_reverse_revmeta_mapping_history("pygments", 2, 0, repos.get_mapping())]
+        changes = [c for c,h,m in repos._revmeta_provider._iter_reverse_revmeta_mapping_history("pygments", 2, 0, repos.get_mapping())]
         if repos.get_mapping().is_branch("pykleur"):
             self.assertRevmetaLogEquals([('pygments',
                   {'pygments': ('A', 'pykleur', 1, NODE_DIR)},

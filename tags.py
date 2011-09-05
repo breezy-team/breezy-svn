@@ -86,10 +86,13 @@ def resolve_tags_svn_ancestry(branch, tag_revmetas):
     # and use their appropriate mapping
     pb = ui.ui_factory.nested_progress_bar()
     try:
-        for (revmeta, mapping) in branch._iter_revision_meta_ancestry(
+        for (revmeta, hidden, mapping) in branch._iter_revision_meta_ancestry(
             pb=pb):
             if revmeta not in reverse_tag_revmetas:
                 continue
+            if hidden:
+                mutter("tagged hidden revision %r", revmeta)
+                continue # This is bad.
             if len(reverse_tag_revmetas) == 0:
                 # No more tag revmetas to resolve, just return immediately
                 return ret
@@ -245,8 +248,9 @@ class SubversionTags(BasicTags):
         revnum = self.repository.get_latest_revnum()
         if self.repository.transport.check_path(path, revnum) == NODE_NONE:
             raise KeyError
-        tip, mapping = self.repository._revmeta_provider._iter_reverse_revmeta_mapping_history(
+        tip, hidden, mapping = self.repository._revmeta_provider._iter_reverse_revmeta_mapping_history(
             path, revnum, to_revnum=0, mapping=self.branch.mapping).next()
+        assert not hidden
         return tip.get_tag_revmeta(mapping)
 
     def lookup_tag(self, tag_name):
