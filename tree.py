@@ -507,8 +507,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         return "<%s for '%r'>" % (self.__class__.__name__, self.workingtree)
 
     def __init__(self, workingtree):
-        mutter("opening basistree for %r at %d",
-                workingtree, workingtree.base_revnum)
+        mutter("opening basistree for %r", workingtree)
         self.workingtree = workingtree
         self._bzr_inventory = None
         self._repository = workingtree.branch.repository

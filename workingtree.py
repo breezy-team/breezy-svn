@@ -607,7 +607,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             pass
         if file_id.startswith("NEW-"):
             return urlutils.unescape(file_id[4:])
-        raise NoSuchId(file_id)
+        raise NoSuchId(self, file_id)
 
     def _ie_from_entry(self, relpath, entry, parent_id):
         assert type(relpath) == unicode
