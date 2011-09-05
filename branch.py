@@ -509,8 +509,7 @@ class SvnBranch(ForeignBranch):
             raise NoSuchRevision(self, revno)
         count = last_revno - revno
         for (revmeta, mapping) in self._revision_meta_history():
-            if revmeta.is_hidden(mapping):
-                continue
+            assert not revmeta.is_hidden(mapping)
             if count == 0:
                 assert revmeta.get_revno(mapping) == revno, "Expected %d, was (%r,%r) %d" % (revno, revmeta, mapping, revmeta.get_revno(mapping))
                 return revmeta.get_revision_id(mapping)
