@@ -238,10 +238,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._format = format
         self.bzrdir = bzrdir
         self._branch = None
-        self.base_revnum = 0
-        max_rev = revision_status(self.basedir.encode("utf-8"), None, True)[1]
         self.mapping = self.branch.mapping
-        self._update_base_revnum(max_rev)
+        self._reset_data()
+        self._cached_base_tree = None
         self._transport = bzrdir.get_workingtree_transport(None)
         self._detect_case_handling()
         self.controldir = os.path.join(bzrdir.svn_controldir, 'bzr')
@@ -288,11 +287,14 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     @property
     def basis_idmap(self):
-        if self._base_idmap is None:
-            self._base_idmap = self.branch.repository.get_fileid_map(
+        if self._cached_base_idmap is not None:
+            return self._cached_base_idmap
+        idmap = self.branch.repository.get_fileid_map(
                     self._get_base_revmeta(),
                     self.mapping)
-        return self._base_idmap
+        if self.is_locked():
+            self._cached_base_idmap = idmap
+        return idmap
 
     def get_branch_path(self, revnum=None):
         if revnum is None:
@@ -394,7 +396,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             raise AssertionError("revision and revnum are mutually exclusive")
         if revision is not None:
             revnum = self.branch.lookup_bzr_revision_id(revision)
-        self._update_base_revnum(self._update(revnum))
+        self._cached_base_revnum = self._update(revnum)
+        self._cached_base_revid = None
+        self._cached_base_idmap = None
         return self.base_revnum - orig_revnum
 
     def remove(self, files, verbose=False, to_file=None, keep_files=True,
@@ -694,21 +698,15 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 all_files.add(subp)
         return iter(all_files - versioned_files)
 
-    def _set_base(self, revid, revnum, tree=None):
-        assert revid is None or isinstance(revid, str)
-        self.base_revid = revid
-        assert isinstance(revnum, int)
-        self._base_idmap = None
-        self.base_revnum = revnum
-        self.base_tree = tree
-
     def merge_modified(self):
         return {}
 
     def set_last_revision(self, revid):
         mutter('setting last revision to %r', revid)
         rev = self.branch.lookup_bzr_revision_id(revid)
-        self._set_base(revid, rev)
+        self._cached_base_revnum = rev
+        self._cached_base_revid = revid
+        self._cached_base_idmap = None
 
     def set_parent_trees(self, parents_list, allow_leftmost_as_ghost=False):
         """See MutableTree.set_parent_trees."""
@@ -820,13 +818,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def basis_tree(self):
         """Return the basis tree for a working tree."""
-        if self.base_tree is None:
-            try:
-                self.base_tree = SvnBasisTree(self)
-            except BasisTreeIncomplete:
-                self.base_tree = self.branch.basis_tree()
-
-        return self.base_tree
+        try:
+            return SvnBasisTree(self)
+        except BasisTreeIncomplete:
+            return self.branch.basis_tree()
 
     def list_files(self, include_root=False, from_dir=None, recursive=True):
         """See `Tree.list_files`."""
@@ -872,9 +867,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 "expected %s prefix, got %s" % (self.get_branch_path(), relpath)
         return relpath[len(self.get_branch_path()):].strip("/")
 
-    def _update_base_revnum(self, fetched):
-        self._set_base(None, fetched)
-
     def pull(self, source, overwrite=False, stop_revision=None,
              delta_reporter=None, possible_transports=None, local=False):
         """Pull in changes from another branch into this working tree."""
@@ -882,7 +874,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         result = self.branch.pull(source, overwrite=overwrite,
             stop_revision=stop_revision, local=local)
         fetched = self._update(self.branch.get_revnum())
-        self._update_base_revnum(fetched)
+        self._cached_base_revnum = fetched
+        self._cached_base_revid = None
+        self._cached_base_idmap = None
         return result
 
     def get_file_properties(self, file_id, path=None):
@@ -1005,10 +999,22 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             self._apply_inventory_delta_change(base_tree, old_path, new_path,
                 file_id, ie)
 
+    @property
+    def base_revnum(self):
+        if self._cached_base_revnum is not None:
+            return self._cached_base_revnum
+        max_rev = revision_status(self.basedir.encode("utf-8"), None, True)[1]
+        if self.is_locked():
+            self._cached_base_revnum = max_rev
+        return max_rev
+
     def _last_revision(self):
-        if self.base_revid is None:
-            self.base_revid = self.branch.generate_revision_id(self.base_revnum)
-        return self.base_revid
+        if self._cached_base_revid is not None:
+            return self._cached_base_revid
+        revid = self.branch.generate_revision_id(self.base_revnum)
+        if self.is_locked():
+            self._cached_base_revid = revid
+        return revid
 
     def path_content_summary(self, path, _lstat=os.lstat,
         _mapper=osutils.file_kind_from_stat_mode):
@@ -1044,7 +1050,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             self.get_branch_path(self.base_revnum), self.base_revnum)
 
     def _reset_data(self):
-        pass
+        self._cached_base_revnum = None
+        self._cached_base_idmap = None
+        self._cached_base_revid = None
 
     def break_lock(self):
         """Break a lock if one is present from another instance.
@@ -1134,7 +1142,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             the changes from the current left most parent revision to new_revid.
         """
         rev = self.branch.lookup_bzr_revision_id(new_revid)
-        self._set_base(new_revid, rev)
+        self._cached_base_revnum = rev
+        self._cached_base_revid = new_revid
+        self._cached_base_idmap = None
 
         newrev = self.branch.repository.get_revision(new_revid)
         svn_revprops = self.branch.repository._log.revprop_list(rev)
