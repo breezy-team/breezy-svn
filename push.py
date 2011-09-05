@@ -257,7 +257,7 @@ class InterToSvnRepository(InterRepository):
         (revmeta, mapping) = self.target._revmeta_provider._iter_reverse_revmeta_mapping_history(
             path, self.target.get_latest_revnum(), to_revnum=0,
             mapping=self.target.get_mapping()).next()
-        if parent_ids == [] or parent_ids == [NULL_REVISION]:
+        if tuple(parent_ids) == () or tuple(parent_ids) == (NULL_REVISION,):
             return ("replace", revmeta.metarev.revnum)
         else:
             if revmeta.get_revision_id(mapping) != parent_ids[0]:
