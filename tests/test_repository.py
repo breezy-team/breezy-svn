@@ -244,11 +244,11 @@ class GetCommitBuilderTests(SubversionTestCase):
     def test_based_on_older(self):
         first_rev = self.branch.last_revision()
 
-        self.branch = Branch.open("d/trunk")
-
         cb = self.get_commit_editor(self.repos_url + "/trunk")
         cb.add_dir("foo")
         cb.close()
+
+        self.branch = Branch.open("d/trunk")
 
         self.branch.repository.set_layout(TrunkLayout())
 

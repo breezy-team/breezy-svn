@@ -1169,7 +1169,6 @@ class SvnRepository(ForeignRepository):
                 root_action = ("replace", last_revmeta.metarev.revnum)
                 branch_path = last_revmeta.metarev.branch_path
         else:
-            import pdb; pdb.set_trace()
             branch_path = last_revmeta.metarev.branch_path
             base_foreign_revid, base_mapping = \
                  self.lookup_bzr_revision_id(parents[0], project=branch.project)
