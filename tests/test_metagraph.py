@@ -49,7 +49,7 @@ class TestMetaRevisionGraph(SubversionTestCase):
     """Mapping-dependent tests for Subversion repositories."""
 
     def test_iter_changes_parent_rename(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.add_dir("foo")

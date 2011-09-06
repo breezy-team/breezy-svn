@@ -52,7 +52,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
     def setUp(self):
         super(TestSubversionRepositoryWorks, self).setUp()
         self.repos_path = 'a'
-        self.repos_url = self.make_repository(self.repos_path)
+        self.repos_url = self.make_svn_repository(self.repos_path)
 
     def test_get_config_global_set(self):
         cfg = GlobalConfig()
@@ -166,7 +166,7 @@ class GetCommitBuilderTests(SubversionTestCase):
 
     def setUp(self):
         super(GetCommitBuilderTests, self).setUp()
-        self.repos_url = self.make_repository("d")
+        self.repos_url = self.make_svn_repository("d")
         dc = self.get_commit_editor(self.repos_url)
         dc.add_dir('trunk')
         dc.close()

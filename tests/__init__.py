@@ -179,10 +179,6 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         self.make_checkout(branch.base, clientpath)
         return WorkingTree.open(clientpath.decode("utf-8"))
 
-    def make_client_and_bzrdir(self, repospath, clientpath):
-        repos_url = self.make_client(repospath, clientpath)
-        return BzrDir.open(repos_url)
-
     def assertChangedPathEquals(self, expected, got, msg=None):
         if expected[:3] == got[:3] and got[3] in (expected[3], NODE_UNKNOWN):
             return

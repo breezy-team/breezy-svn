@@ -47,7 +47,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         mapping_registry.set_default(self.mapping_name)
 
     def test_get_branch_log(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         cb.add_file("foo").modify()
         cb.close()
@@ -61,13 +61,13 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
             repos._revmeta_provider.iter_reverse_branch_changes("", 1, 0))
 
     def test_set_make_working_trees(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         repos = Repository.open(repos_url)
         self.assertFalse(repos.make_working_trees())
         self.assertRaises(UnsupportedOperation, repos.set_make_working_trees, True)
 
     def test_get_fileid_map(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         repos = Repository.open(repos_url)
         mapping = repos.get_mapping()
         rm_provider = repos._revmeta_provider
@@ -82,18 +82,18 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
             self.assertEquals({}, ret)
 
     def test_add_revision(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         repos = Repository.open(repos_url)
         self.assertRaises(NotImplementedError, repos.add_revision, "revid",
                 None)
 
     def test_has_signature_for_revision_id_no(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         repos = Repository.open(repos_url)
         self.assertFalse(repos.has_signature_for_revision_id("foo"))
 
     def test_set_signature(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         repos = Repository.open(repos_url)
         cb = self.get_commit_editor(repos_url)
         cb.add_file("foo").modify("bar")
@@ -104,14 +104,14 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertEquals(repos.get_signature_text(revid), "TEXT")
 
     def test_get_branch_invalid_revision(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
         self.assertRaises(NoSuchRevision, list,
                repos._revmeta_provider.iter_reverse_branch_changes("/", 20, 0))
 
     def test_follow_branch_switched_parents(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         cb = self.get_commit_editor(repos_url)
         pykleur = cb.add_dir("pykleur")
@@ -163,7 +163,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
             )
 
     def test_follow_branch_move_single(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         pykleur = dc.add_dir("pykleur")
@@ -190,7 +190,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
 
     def test_history_all(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -206,13 +206,13 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                len(set(repos.all_revision_ids(TrunkLayout()))))
 
     def test_all_revs_empty(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(0))
         self.assertEqual(set([]), set(repos.all_revision_ids()))
 
     def test_all_revs(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -241,14 +241,14 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
             set(repos.all_revision_ids()))
 
     def test_follow_history_empty(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
         self.assertEqual(set([repos.generate_revision_id(0, '', repos.get_mapping())]),
               set(repos.all_revision_ids(repos.get_layout())))
 
     def test_follow_history_empty_branch(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -262,7 +262,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 set(repos.all_revision_ids(repos.get_layout())))
 
     def test_follow_history_follow(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -340,7 +340,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                           branches[0].base)
 
     def test_find_tags(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         tags = dc.add_dir("tags")
@@ -356,7 +356,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                            "branchab": rm_provider.get_revision("tags/branchab", 1)}, tags)
 
     def test_find_tags_unmodified(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk").add_file("trunk/data").modify()
@@ -374,7 +374,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertEquals({"brancha": rm_provider.get_revision("trunk", 1)}, tags)
 
     def test_find_tags_modified(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk").add_file("trunk/data").modify()
@@ -417,7 +417,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 list(find_branches_between(repos._log, repos.transport, TrunkLayout(0), from_revnum=2, to_revnum=0)))
 
     def test_find_branches_between_start_revno(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         branches = dc.add_dir("branches")
@@ -486,7 +486,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 list(find_branches_between(repos._log, repos.transport, TrunkLayout(1), to_revnum=2, from_revnum=2)))
 
     def test_find_branches_between_root(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
@@ -495,7 +495,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 list(find_branches_between(repos._log, repos.transport, RootLayout(), to_revnum=0, from_revnum=0)))
 
     def test_find_branches_between_no_later(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
@@ -504,7 +504,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 list(find_branches_between(repos._log, repos.transport, RootLayout(), to_revnum=0, from_revnum=0)))
 
     def test_find_branches_between_trunk_empty(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(0))
@@ -513,7 +513,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 list(find_branches_between(repos._log, repos.transport, TrunkLayout(0), to_revnum=0, from_revnum=0)))
 
     def test_find_branches_between_trunk_one(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(0))
@@ -527,7 +527,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 list(find_branches_between(repos._log, repos.transport, TrunkLayout(0), from_revnum=1, to_revnum=0)))
 
     def test_find_branches_between_removed(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(0))
@@ -547,8 +547,8 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 list(find_branches_between(repos._log, repos.transport, TrunkLayout(0), from_revnum=1, to_revnum=0)))
 
     def test_has_revision(self):
-        bzrdir = self.make_client_and_bzrdir('d', 'dc')
-        repository = bzrdir.find_repository()
+        repos_url = self.make_client('d', 'dc')
+        repository = Repository.open(repos_url)
         self.build_tree({'dc/foo': "data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message")
@@ -557,13 +557,13 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertFalse(repository.has_revision("some-other-revision"))
 
     def test_has_revision_none(self):
-        bzrdir = self.make_client_and_bzrdir('d', 'dc')
-        repository = bzrdir.find_repository()
+        repos_url = self.make_client('d', 'dc')
+        repository = Repository.open(repos_url)
         self.assertTrue(repository.has_revision(None))
 
     def test_has_revision_future(self):
-        bzrdir = self.make_client_and_bzrdir('d', 'dc')
-        repository = bzrdir.find_repository()
+        repos_url = self.make_client('d', 'dc')
+        repository = Repository.open(repos_url)
         self.assertFalse(repository.has_revision(
             repository.get_mapping().revision_id_foreign_to_bzr((repository.uuid, "", 5))))
 
@@ -586,7 +586,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertEqual({}, repository.get_parent_map(["notexisting"]))
 
     def test_get_revision_delta(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify("data")
@@ -665,7 +665,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertEqual(0, rev.timezone)
 
     def test_get_inventory(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         repository = Repository.open(repos_url)
         self.assertRaises(NotImplementedError, repository.get_inventory,
                 "nonexisting")
@@ -754,7 +754,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
             self.assertChangedPathsEquals(changes, g.metarev.paths)
 
     def test_fetch_property_change_only_trunk(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -787,7 +787,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         if ra.version()[1] >= 5:
             raise TestSkipped("Test not runnable with Subversion >= 1.5")
 
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         cb = self.get_commit_editor(repos_url)
         cb.add_dir("trunk")
@@ -842,12 +842,12 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertEqual(u"a\\x0cb", rev.message)
 
     def test_set_layout(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
 
     def testlhs_revision_parent_none(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
         revmeta0 = repos._revmeta_provider.get_revision("", 0)
@@ -885,7 +885,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 revmeta2.get_lhs_parent_revid(mapping, revmeta1))
 
     def testlhs_revision_parent_copied(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         py = dc.add_dir("py")
@@ -913,7 +913,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 revmeta3.get_lhs_parent_revid(mapping, revmeta3.get_lhs_parent_revmeta(mapping)))
 
     def test_mainline_revision_copied(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         py = dc.add_dir("py")
@@ -936,7 +936,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 revmeta2.get_lhs_parent_revid(mapping, revmeta2.get_lhs_parent_revmeta(mapping)))
 
     def test_mainline_revision_nested_deleted(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         py = dc.add_dir("py")
@@ -964,7 +964,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
             revmeta3.get_lhs_parent_revid(mapping, revmeta3.get_lhs_parent_revmeta(mapping)))
 
     def test_fetch_file_from_non_branch(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         old_trunk = dc.add_dir("old-trunk")

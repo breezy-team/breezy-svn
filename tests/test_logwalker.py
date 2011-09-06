@@ -46,11 +46,11 @@ class TestLogWalker(SubversionTestCase):
         return logwalker.LogWalker(transport)
 
     def test_create(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         self.get_log_walker(transport=SvnRaTransport(repos_url))
 
     def test_get_branch_log(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         cb.add_file("foo").modify()
         cb.close()
@@ -60,7 +60,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEqual(2, len(list(walker.iter_changes(None, 1))))
 
     def test_get_branch_log_copy_from_root(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         cb = self.get_commit_editor(repos_url)
         cb.add_file("bla").modify()
@@ -78,7 +78,7 @@ class TestLogWalker(SubversionTestCase):
             (l[:2] for l in walker.iter_changes(["trunk"], 2, 0)))
 
     def test_get_branch_follow_branch(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         cb.add_dir("trunk").close()
         cb.close()
@@ -96,7 +96,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEqual(2, len(list(walker.iter_changes(["branches/foo"], 3))))
 
     def test_get_branch_follow_multiple(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         cb.add_dir("trunk").close()
         cb.close()
@@ -116,7 +116,7 @@ class TestLogWalker(SubversionTestCase):
                 (l[:2] for l in walker.iter_changes(["branches/foo", "trunk"], 3, 0)))
 
     def test_get_branch_follow_branch_changing_parent(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         d = cb.add_dir("trunk")
         d.add_file("trunk/foo").modify()
@@ -140,13 +140,13 @@ class TestLogWalker(SubversionTestCase):
             ], [l[:2] for l in walker.iter_changes(["branches/abranch/foo"], 3)])
 
     def test_get_branch_invalid_revision(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
         self.assertRaises(NoSuchRevision, lambda: list(
                           walker.iter_changes(["/"], 20)))
 
     def test_branch_log_all(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         d = cb.add_dir("trunk")
         d.add_file("trunk/file").modify()
@@ -159,7 +159,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEqual(2, len(list(walker.iter_changes([""], 1))))
 
     def test_branch_log_specific(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         d = cb.add_dir("branches")
         ba = d.add_dir("branches/brancha")
@@ -175,7 +175,7 @@ class TestLogWalker(SubversionTestCase):
             1))))
 
     def test_iter_changes_ignore_unchanged(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         b = cb.add_dir("branches")
         ba = b.add_dir("branches/brancha")
@@ -195,7 +195,7 @@ class TestLogWalker(SubversionTestCase):
             2))))
 
     def test_find_latest_none(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         cb.add_dir("branches")
         cb.close()
@@ -205,7 +205,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEqual(1, walker.find_latest_change("", 1))
 
     def test_find_latest_children_root(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         cb.add_file("branches").modify()
         cb.close()
@@ -216,7 +216,7 @@ class TestLogWalker(SubversionTestCase):
             walker.find_latest_change("", 1))
 
     def test_find_latest_case(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         b = cb.add_dir("branches")
         b.add_file("branches/child").modify()
@@ -233,7 +233,7 @@ class TestLogWalker(SubversionTestCase):
             walker.find_latest_change("branches", 2))
 
     def test_find_latest_parent(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         cb.add_dir("tags")
         b = cb.add_dir("branches")
@@ -251,7 +251,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEqual(2, walker.find_latest_change("tags/tmp/foo", 2))
 
     def test_find_latest_parent_just_modify(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         cb = self.get_commit_editor(repos_url)
         b = cb.add_dir("branches")
@@ -274,7 +274,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEqual(2, walker.find_latest_change("tags/tmp/foo", 3))
 
     def test_find_latest_parentmoved(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         cb = self.get_commit_editor(repos_url)
         b = cb.add_dir("branches")
@@ -290,7 +290,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertIs(2, walker.find_latest_change("bla/tmp", 2))
 
     def test_find_latest_nonexistant(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         cb = self.get_commit_editor(repos_url)
         b = cb.add_dir("branches")
@@ -307,7 +307,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertIs(None, walker.find_latest_change("bloe/bla", 2))
 
     def test_find_latest_change(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         cb = self.get_commit_editor(repos_url)
         cb.add_dir("branches")
@@ -318,7 +318,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEqual(1, walker.find_latest_change("branches", 1))
 
     def test_find_latest_change_children(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         cb = self.get_commit_editor(repos_url)
         cb.add_dir("branches")
@@ -334,7 +334,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEqual(2, walker.find_latest_change("branches", 2))
 
     def test_find_latest_change_prop(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         cb = self.get_commit_editor(repos_url)
         cb.add_dir("branches")
@@ -354,7 +354,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEqual(3, walker.find_latest_change("branches", 3))
 
     def test_find_latest_change_file(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         cb = self.get_commit_editor(repos_url)
         cb.add_dir("branches")
@@ -375,7 +375,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEqual(3, walker.find_latest_change("branches/foo", 3))
 
     def test_find_latest_change_newer(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         cb = self.get_commit_editor(repos_url)
         cb.add_dir("branches")
@@ -396,7 +396,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEqual(2, walker.find_latest_change("branches/foo", 2))
 
     def test_follow_history_branch_replace(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         cb = self.get_commit_editor(repos_url)
         t = cb.add_dir("trunk")
@@ -418,7 +418,7 @@ class TestLogWalker(SubversionTestCase):
                              [l[:2] for l in walker.iter_changes(["trunk"], 3)])
 
     def test_follow_history(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
         cb = self.get_commit_editor(repos_url)
@@ -430,14 +430,14 @@ class TestLogWalker(SubversionTestCase):
             self.assertTrue(rev in (0, 1))
 
     def test_follow_history_nohist(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
         self.assertLogEquals([({'': ('A', None, -1, NODE_DIR)}, 0)],
                 [l[:2] for l in walker.iter_changes([""], 0)])
 
     def test_later_update(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
@@ -452,7 +452,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertRaises(NoSuchRevision, lambda: list(walker.iter_changes([""], 2)))
 
     def test_get_branch_log_follow(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         cb = self.get_commit_editor(repos_url)
         t = cb.add_dir("trunk")
         t.add_file("trunk/afile")
@@ -474,7 +474,7 @@ class TestLogWalker(SubversionTestCase):
                 'trunk': (u'A', None, -1, NODE_DIR)}, 1)], items)
 
     def test_revprop_list(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         cb = self.get_commit_editor(repos_url)
         cb.add_dir("trunk")
@@ -489,7 +489,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEquals(set(["svn:date"]), set(props.keys()))
 
     def test_set_revprop(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         cb = self.get_commit_editor(repos_url)
         cb.add_dir("trunk")
@@ -505,7 +505,7 @@ class TestLogWalker(SubversionTestCase):
         self.assertEquals("blaaa", props["foo"])
 
     def test_iter_changes_prefix(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         cb = self.get_commit_editor(repos_url)
         foo = cb.add_dir("foo")
@@ -527,7 +527,7 @@ class TestLogWalker(SubversionTestCase):
                            ({"foo": ('A', None, -1, NODE_DIR), 'foo/trunk': (u'A', None, -1, NODE_DIR)}, 1)], [l[:2] for l in walker.iter_changes(["bar"], 3)])
 
     def test_iter_changes_property_change(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         cb = self.get_commit_editor(repos_url)
         t = cb.add_dir("trunk")
@@ -557,7 +557,7 @@ class TestLogWalker(SubversionTestCase):
                            [l[:2] for l in walker.iter_changes(["trunk"], 3)])
 
     def test_iter_changes_pointless(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         cb = self.get_commit_editor(repos_url)
         cb.close()
@@ -588,7 +588,7 @@ class TestCachingLogWalker(TestLogWalker):
         logwalker.cache_dir = os.path.join(self.test_dir, "cache-dir")
 
     def test_fetch_revisions(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         cb = self.get_commit_editor(repos_url)
         cb.close()
@@ -612,7 +612,7 @@ class TestCachingLogWalker(TestLogWalker):
         self.assertEquals(0, walker.saved_minrevnum)
 
     def test_fetch_revisions_fill_in(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         cb = self.get_commit_editor(repos_url)
         cb.close()

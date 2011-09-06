@@ -52,7 +52,7 @@ class WorkingSubversionBranch(SubversionTestCase):
     def test_last_rev_rev_hist(self):
         branch = self.make_svn_branch('a')
         branch.revision_history()
-        self.assertEqual(branch.generate_revision_id(0),
+        self.assertEqual(branch.generate_revision_id(1),
                          branch.last_revision())
 
     def test_get_branch_path_root(self):

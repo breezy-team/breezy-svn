@@ -99,7 +99,7 @@ class FetchTestCase(SubversionTestCase):
 class TestFetchWorks(FetchTestCase):
 
     def test_fetch_trunk1(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         proj1 = dc.add_dir("proj1")
@@ -114,7 +114,7 @@ class TestFetchWorks(FetchTestCase):
         self.copy_content(oldrepos, newrepos)
 
     def test_replace_from_branch(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         t = dc.add_dir("trunk")
@@ -174,7 +174,7 @@ class TestFetchWorks(FetchTestCase):
     def test_fetch_backslash(self):
         if sys.platform == 'win32':
             raise TestSkipped("Unable to create filenames with backslash on Windows")
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -189,7 +189,7 @@ class TestFetchWorks(FetchTestCase):
                 newrepos)
 
     def test_fetch_null(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(1))
         dir = BzrDir.create("f")
@@ -220,7 +220,7 @@ class TestFetchWorks(FetchTestCase):
         self.copy_content(oldrepos, newrepos)
 
     def test_fetch_special_char(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -234,7 +234,7 @@ class TestFetchWorks(FetchTestCase):
         self.copy_content(oldrepos, newrepos)
 
     def test_fetch_signature(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         trunk.add_file("trunk/bar").modify("data")
@@ -248,7 +248,7 @@ class TestFetchWorks(FetchTestCase):
         self.assertEquals("SIGNATURE", newrepos.get_signature_text(oldrepos.generate_revision_id(1, "trunk", oldrepos.get_mapping())))
 
     def test_fetch_invalid_svk_rev(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         uuid = SvnRaTransport(repos_url).get_uuid()
 
@@ -280,7 +280,7 @@ class TestFetchWorks(FetchTestCase):
         self.assertEquals([], list(rf.find_rhs_parents([(rm, mapping)])))
 
     def test_fetch_file_branch(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_file("trunk")
         dc.close()
@@ -292,7 +292,7 @@ class TestFetchWorks(FetchTestCase):
         self.copy_content(oldrepos, newrepos)
 
     def test_fetch_special_char_edit(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -311,7 +311,7 @@ class TestFetchWorks(FetchTestCase):
         self.copy_content(oldrepos, newrepos)
 
     def test_fetch_special_char_child(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -325,7 +325,7 @@ class TestFetchWorks(FetchTestCase):
         self.copy_content(oldrepos, newrepos)
 
     def test_fetch_special_char_modify(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -344,7 +344,7 @@ class TestFetchWorks(FetchTestCase):
         self.copy_content(oldrepos, newrepos)
 
     def test_fetch_delete(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.add_dir("foo")
@@ -366,7 +366,7 @@ class TestFetchWorks(FetchTestCase):
         self.assertTrue(oldrepos.has_revision(oldrepos.generate_revision_id(2, "", mapping)))
 
     def test_fetch_delete_recursive(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.add_dir("foo")
@@ -389,7 +389,7 @@ class TestFetchWorks(FetchTestCase):
         self.assertEquals(1, len(tree.all_file_ids()))
 
     def test_fetch_local(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.add_dir("foo")
@@ -425,7 +425,7 @@ class TestFetchWorks(FetchTestCase):
             newrepos.unlock()
 
     def test_fetch_move_root(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         br1 = dc.add_dir("branch1")
@@ -457,7 +457,7 @@ class TestFetchWorks(FetchTestCase):
 
 
     def test_fetch_replace(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("bla").modify("data")
@@ -485,7 +485,7 @@ class TestFetchWorks(FetchTestCase):
         self.assertNotEqual(tree1.path2id("bla"), tree2.path2id("bla"))
 
     def test_fetch_copy_subdir(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -1383,7 +1383,7 @@ Node-copyfrom-path: x
         self.assertNotEqual(tree1.path2id("y"), tree2.path2id("y"))
 
     def test_fetch_dir_replace_self(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("branches")
@@ -1428,7 +1428,7 @@ Node-copyfrom-path: x
         self.assertTrue(tree.path2id("dir1/file.txt") is not None)
 
     def test_fetch_dir_upgrade(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -1457,7 +1457,7 @@ Node-copyfrom-path: x
                              branch.revision_history())
 
     def test_fetch_dir_from_non_branch(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         old_trunk = dc.add_dir("old-trunk")
@@ -1481,7 +1481,7 @@ Node-copyfrom-path: x
                          branch.revision_history())
 
     def test_fetch_from_non_branch(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         ot = dc.add_dir("old-trunk")
@@ -1513,7 +1513,7 @@ Node-copyfrom-path: x
 
 
     def test_fetch_branch_downgrade(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -1533,7 +1533,7 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
 
     def test_fetch_all(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -1578,7 +1578,7 @@ Node-copyfrom-path: x
             oldrepos.generate_revision_id(2, "", mapping)))
 
     def test_fetch_copy_root_id_kept(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir('trunk')
@@ -1608,7 +1608,7 @@ Node-copyfrom-path: x
             tree.get_root_id())
 
     def test_fetch_odd(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -1648,7 +1648,7 @@ Node-copyfrom-path: x
              repos.generate_revision_id(6, "branches/foobranch", mapping))
 
     def test_fetch_consistent(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         f = dc.add_file("bla")
@@ -1672,7 +1672,7 @@ Node-copyfrom-path: x
         self.assertFalse(tree1.changes_from(tree2).has_changed())
 
     def test_fetch_executable(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         bla = dc.add_file("bla")
@@ -1697,7 +1697,7 @@ Node-copyfrom-path: x
         self.assertTrue(tree1.is_executable(tree1.path2id("blie")))
 
     def test_fetch_executable_persists(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         bla = dc.add_file("bla")
@@ -1724,7 +1724,7 @@ Node-copyfrom-path: x
 
     def test_fetch_symlink(self):
         self.requireFeature(SymlinkFeature)
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("bla").modify("data")
@@ -1757,7 +1757,7 @@ Node-copyfrom-path: x
 
     def test_fetch_symlink_with_newlines(self):
         self.requireFeature(SymlinkFeature)
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("bla").modify("data")
@@ -1782,7 +1782,7 @@ Node-copyfrom-path: x
             tree1.get_symlink_target(tree1.path2id("mylink")))
 
     def test_fetch_special_non_symlink(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         l = dc.add_file("mylink")
@@ -1803,7 +1803,7 @@ Node-copyfrom-path: x
         self.assertEqual('file', tree1.kind(tree1.path2id("mylink")))
 
     def test_fetch_special_unbecomes_symlink(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         l = dc.add_file("mylink")
@@ -1843,7 +1843,7 @@ Node-copyfrom-path: x
         self.assertEqual('file', tree2.kind(tree2.path2id("mylink")))
 
     def test_fetch_special_becomes_symlink(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         l = dc.add_file("mylink")
@@ -1873,7 +1873,7 @@ Node-copyfrom-path: x
             'symlink', tree1.kind(tree1.path2id("mylink")))
 
     def test_fetch_symlink_kind_change(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("bla").modify("data")
@@ -1900,7 +1900,7 @@ Node-copyfrom-path: x
         self.assertEqual('bla', tree2.get_symlink_target(tree2.path2id("mylink")))
 
     def test_fetch_executable_separate(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("bla").modify("data")
@@ -1928,7 +1928,7 @@ Node-copyfrom-path: x
                          tree2.get_file_revision(tree2.path2id("bla")))
 
     def test_fetch_hidden(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -1961,7 +1961,7 @@ Node-copyfrom-path: x
         self.assertFalse(newrepos.has_revision(mapping.revision_id_foreign_to_bzr((oldrepos.uuid, "branches/brancha", 2))))
 
     def test_fetch_svk_merge(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -1992,7 +1992,7 @@ Node-copyfrom-path: x
         self.assertTrue(oldrepos.generate_revision_id(2, "branches/foo", mapping) in rev.parent_ids)
 
     def build_intertwined(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         trunk.change_prop("bzr:revision-id:v3-trunk0", "1 revid1\n")
@@ -2054,7 +2054,7 @@ Node-copyfrom-path: x
                 set(newrepos.all_revision_ids()))
 
     def test_fetch_property_change_only(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         trunk.add_file("trunk/bla").modify("data")
@@ -2087,7 +2087,7 @@ Node-copyfrom-path: x
             ]), set(newrepos.all_revision_ids()))
 
     def test_fetch_property_change_only_trunk(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         trunk.add_file("trunk/bla").modify("data")
@@ -2123,7 +2123,7 @@ Node-copyfrom-path: x
 
     def test_fetch_replace_self_open(self):
         # Not actually a replace, merely just an open. Bug #308353
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -2159,7 +2159,7 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
 
     def test_fetch_replace_self_open_older(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -2196,7 +2196,7 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
 
     def test_fetch_crosscopy(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -2245,7 +2245,7 @@ Node-copyfrom-path: x
                          tree.get_file_revision(tree.path2id("bdir/stationary")))
 
     def test_fetch_different_parent_path(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         myproj = dc.add_dir("myproj")

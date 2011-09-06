@@ -281,7 +281,7 @@ class SvnRevisionTreeCommitIdTesting(SubversionTestCase,CommitIdTesting):
     build_tree_contents = staticmethod(treeshape.build_tree_contents)
 
     def prepare_wt(self, path):
-        repo_url = self.make_repository(os.path.join("repo", path))
+        repo_url = self.make_svn_repository(os.path.join("repo", path))
         dc = self.get_commit_editor(repo_url)
         trunk = dc.add_dir("trunk")
         dc.close()
@@ -317,7 +317,7 @@ class SvnFetchCommitIdTesting(SubversionTestCase,CommitIdTesting):
         return to_branch.basis_tree()
 
     def prepare_wt(self, path):
-        repo_url = self.make_repository(os.path.join("repo", path))
+        repo_url = self.make_svn_repository(os.path.join("repo", path))
         dc = self.get_commit_editor(repo_url)
         trunk = dc.add_dir("trunk")
         dc.close()

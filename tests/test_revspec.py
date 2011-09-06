@@ -48,7 +48,7 @@ class TestRevSpecsBySubversion(SubversionTestCase):
 
     def test_by_single_revno(self):
         revspec = RevisionSpec.from_string("svn:2")
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
@@ -65,7 +65,7 @@ class TestRevSpecsBySubversion(SubversionTestCase):
 
     def test_invalid_revnum(self):
         revspec = RevisionSpec.from_string("svn:foo")
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("bar").modify()
@@ -78,7 +78,7 @@ class TestRevSpecsBySubversion(SubversionTestCase):
     def test_oor_revnum(self):
         """Out-of-range revnum."""
         revspec = RevisionSpec.from_string("svn:24")
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("bar").modify()

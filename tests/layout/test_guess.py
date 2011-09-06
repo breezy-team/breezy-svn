@@ -23,12 +23,12 @@ from bzrlib.plugins.svn.layout.guess import is_likely_branch_url
 class URLIsLikelyBranch(SubversionTestCase):
 
     def test_root(self):
-        repo_url = self.make_repository("d")
+        repo_url = self.make_svn_repository("d")
         self.assertIs(None, is_likely_branch_url(repo_url))
         self.assertFalse(is_likely_branch_url(repo_url+"/doesntexist"))
 
     def test_trunk(self):
-        repo_url = self.make_repository("d")
+        repo_url = self.make_svn_repository("d")
         ce = self.get_commit_editor(repo_url)
         ce.add_dir("trunk")
         ce.close()
@@ -36,7 +36,7 @@ class URLIsLikelyBranch(SubversionTestCase):
         self.assertTrue(is_likely_branch_url(repo_url+"/trunk"))
 
     def test_file_in_trunk(self):
-        repo_url = self.make_repository("d")
+        repo_url = self.make_svn_repository("d")
         ce = self.get_commit_editor(repo_url)
         trunk = ce.add_dir("trunk")
         trunk.add_dir("trunk/somedir")
