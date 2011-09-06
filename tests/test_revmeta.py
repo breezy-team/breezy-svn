@@ -113,26 +113,6 @@ class TestWithRepository(SubversionTestCase):
         dc.change_prop("myp2", None)
         dc.close()
 
-
-    def test_get_changed_properties(self):
-        repos_url = self.make_repository('d')
-
-        dc = self.get_commit_editor(repos_url)
-        dc.change_prop("myprop", "data\n")
-        dc.close()
-
-        dc = self.get_commit_editor(repos_url)
-        dc.change_prop("myprop", "newdata\n")
-        dc.close()
-
-        dc = self.get_commit_editor(repos_url)
-        dc.change_prop("myp2", "newdata\n")
-        dc.close()
-
-        dc = self.get_commit_editor(repos_url)
-        dc.change_prop("myp2", None)
-        dc.close()
-
         repos = Repository.open(repos_url)
 
         revmeta1 = repos._revmeta_provider.get_revision("", 1)
