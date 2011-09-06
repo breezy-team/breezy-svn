@@ -33,7 +33,6 @@ from bzrlib.errors import (
     NotBranchError,
     TagsNotSupported,
     )
-from bzrlib.repository import Repository
 from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import (
     TestCase,
@@ -435,7 +434,10 @@ class WorkingSubversionBranch(SubversionTestCase):
 
     def test_lookup_revision_id(self):
         branch = self.make_svn_branch("a")
-        self.assertEquals(0, branch.lookup_bzr_revision_id(branch.last_revision()))
+        dc = self.get_commit_editor(branch.base)
+        dc.add_dir("mydir")
+        dc.close()
+        self.assertEquals(2, branch.lookup_bzr_revision_id(branch.last_revision()))
 
     def test_set_parent(self):
         branch = self.make_svn_branch("a")

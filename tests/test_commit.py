@@ -689,9 +689,10 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         master_branch = Branch.open(master_branch.base)
         rm_provider = master_branch.repository._revmeta_provider
         mapping = master_branch.repository.get_mapping()
-        self.assertEquals({"dir": dirid,
-                          "dir/file": fileid},
-                          rm_provider.get_revision("", 1).get_fileid_overrides(mapping))
+        self.assertEquals({
+            "dir": dirid,
+            "dir/file": fileid},
+            rm_provider.get_revision("", 1).get_fileid_overrides(mapping))
 
     def test_push_merged_revision(self):
         repos_url = self.make_repository("d")
