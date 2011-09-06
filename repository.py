@@ -1169,11 +1169,12 @@ class SvnRepository(ForeignRepository):
                 root_action = ("replace", last_revmeta.metarev.revnum)
                 branch_path = last_revmeta.metarev.branch_path
         else:
-            base_foreign_revid, base_mapping = \
-                self.lookup_bzr_revision_id(parents[0], project=branch.project)
+            import pdb; pdb.set_trace()
             branch_path = last_revmeta.metarev.branch_path
-            if ((base_foreign_revid[2] != last_revmeta.metarev.revnum or
-                base_foreign_revid[1] != last_revmeta.metarev.branch_path)):
+            base_foreign_revid, base_mapping = \
+                 self.lookup_bzr_revision_id(parents[0], project=branch.project)
+
+            if parents[0] != branch.last_revision():
                 root_action = ("replace", last_revmeta.metarev.revnum)
             else:
                 root_action = ("open", )
