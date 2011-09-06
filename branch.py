@@ -45,6 +45,7 @@ from bzrlib.bzrdir import (
     format_registry,
     )
 from bzrlib.decorators import (
+    needs_read_lock,
     needs_write_lock,
     )
 from bzrlib.errors import (
@@ -485,7 +486,8 @@ class SvnBranch(ForeignBranch):
                 push_metadata=True, root_action=("replace", self.get_revnum()),
                 base_foreign_info=base_foreign_info)
         self._clear_cached_state()
-        self._cached_last_revid = revid
+        if self.is_locked():
+            self._cached_last_revid = revid
 
     def last_revision_info(self):
         """See Branch.last_revision_info()."""
@@ -526,13 +528,16 @@ class SvnBranch(ForeignBranch):
             lhs_history=self._revision_meta_history(), pb=pb)
 
     def _revision_meta_history(self):
-        if self._revmeta_cache is None:
-            self._revmeta_cache = util.lazy_readonly_list(
+        if self._revmeta_cache is not None:
+            return self._revmeta_cache
+        revmeta_history = util.lazy_readonly_list(
                 self.repository._revmeta_provider._iter_reverse_revmeta_mapping_history(
                     self.get_branch_path(),
                     self.repository.get_latest_revnum(),
                     to_revnum=0, mapping=self.mapping))
-        return self._revmeta_cache
+        if self.is_locked():
+            self._revmeta_cache = revmeta_history
+        return revmeta_history
 
     def get_rev_id(self, revno, history=None):
         """Find the revision id of the specified revno."""
@@ -557,6 +562,7 @@ class SvnBranch(ForeignBranch):
         history.reverse()
         return history
 
+    @needs_read_lock
     def last_revision(self):
         """See Branch.last_revision()."""
         # Shortcut for finding the tip. This avoids expensive generation time
@@ -578,10 +584,12 @@ class SvnBranch(ForeignBranch):
             self._base_foreign_revid(), self.mapping, revid, self.layout,
             self.project, self.get_branch_path(), self.get_config(),
             push_merged=self.get_push_merged_revisions(),
-            overwrite=False, push_metadata=not lossy, append_revisions_only=True)
+            overwrite=False, push_metadata=not lossy,
+            append_revisions_only=True)
         return (revno, revidmap[revid][0])
 
-    def import_last_revision_info_and_tags(self, source, revno, revid, lossy=False):
+    def import_last_revision_info_and_tags(self, source, revno, revid,
+            lossy=False):
         (revno, revid) = self.import_last_revision_info(source.repository,
             revno, revid, lossy=lossy)
         self.tags.merge_to(source.tags, overwrite=False)
