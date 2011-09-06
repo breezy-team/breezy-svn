@@ -738,6 +738,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
             ci.abort()
             raise
         ci.close()
+        repository._cache_add_new_revision(foreign_revid[2], revid, None)
         return revid, (tuple(foreign_revid), mapping)
     finally:
         repository.transport.add_connection(conn)

@@ -109,7 +109,7 @@ class TestDPush(SubversionTestCase):
     def dpush(self, source, target):
         target.lock_write()
         try:
-            return InterToSvnBranch(source, target)._update_revisions_lossy()
+            return InterToSvnBranch(source, target)._update_revisions(lossy=True)
         finally:
             target.unlock()
 

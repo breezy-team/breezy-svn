@@ -534,11 +534,16 @@ class SvnRepository(ForeignRepository):
         return reconciler
 
     def _cache_add_new_revision(self, revnum, revid, parents):
-        assert type(parents) == tuple
+        assert type(parents) == tuple or parents is None
         self._cached_revnum = max(revnum, self._cached_revnum)
         if parents == () and revid != NULL_REVISION:
             parents = (NULL_REVISION,)
-        self._parents_provider._cache[revid] = parents
+        parents_cache = self._parents_provider._cache
+        if parents is None:
+            if revid in parents_cache and parents_cache[revid] is None:
+                del parents_cache[revid]
+        else:
+            parents_cache[revid] = parents
 
     def _clear_cached_state(self):
         self._cached_tags = {}
@@ -1164,11 +1169,11 @@ class SvnRepository(ForeignRepository):
                 root_action = ("replace", last_revmeta.metarev.revnum)
                 branch_path = last_revmeta.metarev.branch_path
         else:
-            base_foreign_revid, base_mapping = \
-                self.lookup_bzr_revision_id(parents[0], project=branch.project)
             branch_path = last_revmeta.metarev.branch_path
-            if ((base_foreign_revid[2] != last_revmeta.metarev.revnum or
-                base_foreign_revid[1] != last_revmeta.metarev.branch_path)):
+            base_foreign_revid, base_mapping = \
+                 self.lookup_bzr_revision_id(parents[0], project=branch.project)
+
+            if parents[0] != branch.last_revision():
                 root_action = ("replace", last_revmeta.metarev.revnum)
             else:
                 root_action = ("open", )
