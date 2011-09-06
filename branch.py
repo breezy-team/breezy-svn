@@ -972,8 +972,6 @@ class InterToSvnBranch(InterBranch):
         if lossy:
             reverse_inter = InterFromSvnBranch(self.target, self.source)
             reverse_inter.fetch(stop_revision=new_last_revid)
-        assert stop_revision in revid_map
-        assert len(revid_map.keys()) > 0
         return (old_last_revid, new_last_revid, dict([(k, v[0]) for (k, v) in revid_map.iteritems()]))
 
     def lossy_push(self, stop_revision=None):

@@ -403,25 +403,29 @@ class SvnRemoteAccess(ControlDir):
         if repository is None:
             repository = self.find_repository()
 
-        if mapping is None:
-            mapping = repository.get_mapping()
+        repository.lock_write()
+        try:
+            if mapping is None:
+                mapping = repository.get_mapping()
 
-        relpath = self._determine_relpath(branch_name).strip("/")
-        if relpath == "":
-            if repository.get_latest_revnum() > 0:
-                # Bail out if there are already revisions in this repository
+            relpath = self._determine_relpath(branch_name).strip("/")
+            if relpath == "":
+                if repository.get_latest_revnum() > 0:
+                    # Bail out if there are already revisions in this repository
+                    raise errors.AlreadyBranchError(repository.transport.base)
+                # TODO: Set NULL_REVISION in SVN_PROP_BZR_BRANCHING_SCHEME on rev0
+            bp_parts = relpath.split("/")
+            existing_bp_parts = check_dirs_exist(repository.transport, bp_parts,
+                -1)
+            if len(existing_bp_parts) == len(bp_parts) and relpath != "":
                 raise errors.AlreadyBranchError(repository.transport.base)
-            # TODO: Set NULL_REVISION in SVN_PROP_BZR_BRANCHING_SCHEME on rev0
-        bp_parts = relpath.split("/")
-        existing_bp_parts = check_dirs_exist(repository.transport, bp_parts,
-            -1)
-        if len(existing_bp_parts) == len(bp_parts) and relpath != "":
-            raise errors.AlreadyBranchError(repository.transport.base)
-        if len(existing_bp_parts) < len(bp_parts)-1:
-            create_branch_container(repository.transport, relpath, "/".join(existing_bp_parts))
-        if relpath != "":
-            create_branch_with_hidden_commit(repository, relpath, NULL_REVISION)
-        return SvnBranch(repository, self, relpath, mapping)
+            if len(existing_bp_parts) < len(bp_parts)-1:
+                create_branch_container(repository.transport, relpath, "/".join(existing_bp_parts))
+            if relpath != "":
+                create_branch_with_hidden_commit(repository, relpath, NULL_REVISION)
+            return SvnBranch(repository, self, relpath, mapping)
+        finally:
+            repository.unlock()
 
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
             mapping=None, branch_path=None, repository=None):
