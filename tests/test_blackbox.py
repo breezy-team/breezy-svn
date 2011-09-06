@@ -54,7 +54,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         tree = self.make_svn_branch_and_tree('d', 'de')
         self.commit_something(tree.branch.base)
         self.run_bzr("branch %s dc" % tree.branch.base)
-        self.assertEquals("2\n", self.run_bzr("revno de")[0])
+        self.assertEquals("1\n", self.run_bzr("revno de")[0])
 
     def test_branch_onerev_stacked(self):
         tree = self.make_svn_branch_and_tree('d', 'de')

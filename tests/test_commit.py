@@ -173,7 +173,7 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEquals(ERR_FS_TXN_OUT_OF_DATE, e.args[1])
 
     def test_lossy_commit_builder(self):
-        branch = self.make_svn_branch('d')
+        branch = self.make_svn_branch('d', lossy=True) #1
         branch.lock_write()
         self.addCleanup(branch.unlock)
         cb = branch.repository.get_commit_builder(branch,
@@ -181,7 +181,7 @@ class TestNativeCommit(SubversionTestCase):
             revision_id="foorevid", lossy=True)
         revid = cb.commit("msg")
         self.assertEquals(
-            branch.repository.generate_revision_id(1, "", branch.mapping),
+            branch.repository.generate_revision_id(2, branch.get_branch_path(), branch.mapping),
             revid)
 
     def test_commit_update(self):
@@ -196,23 +196,26 @@ class TestNativeCommit(SubversionTestCase):
                 wt.branch.last_revision())
 
     def test_commit_rename_file(self):
-        wt = self.make_svn_branch_and_tree('d', 'dc')
+        wt = self.make_svn_branch_and_tree('d', 'dc') #1
+        self.build_tree({'dc/.dummy': 'dummy'})
+        self.client_add('dc/.dummy')
+        self.client_commit("dc", "msg") #2
         self.build_tree({'dc/foo': "data"})
         self.client_add("dc/foo")
         wt.set_pending_merges(["some-ghost-revision"])
         oldid = wt.path2id("foo")
-        wt.commit(message="data") # 1
+        wt.commit(message="data") # 3
         wt.rename_one("foo", "bar")
         self.assertEquals(oldid, wt.path2id("bar"))
         self.assertEquals(None, wt.path2id("foo"))
-        wt.commit(message="doe") # 2
-        paths = self.client_log(wt.branch.repository.base, 2, 0)[2][0]
+        wt.commit(message="doe") # 4
+        paths = self.client_log(wt.branch.repository.base, 4, 0)[4][0]
         self.assertEquals('D', paths["/foo"][0])
         self.assertEquals('A', paths["/bar"][0])
         self.assertEquals('/foo', paths["/bar"][1])
-        self.assertEquals(1, paths["/bar"][2])
+        self.assertEquals(3, paths["/bar"][2])
         svnrepo = Repository.open(wt.branch.repository.base)
-        revmeta = svnrepo._revmeta_provider.get_revision("", 2)
+        revmeta = svnrepo._revmeta_provider.get_revision(wt.branch.get_branch_path(), 4)
         self.assertEquals({u"bar": oldid},
                 revmeta.get_fileid_overrides(svnrepo.get_mapping()))
 
@@ -652,6 +655,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         wt = local_dir.open_workingtree()
         local_dir.open_branch().bind(master_branch)
         self.build_tree({'b/file': 'data'})
+        rootid = wt.get_root_id()
         wt.branch.nick = "some-nick"
         wt.add('file')
         oldid = wt.path2id("file")
@@ -661,20 +665,22 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         master_branch = Branch.open(master_branch.base)
         rm_provider = master_branch.repository._revmeta_provider
         mapping = master_branch.repository.get_mapping()
-        self.assertEquals({u"file": oldid},
-                rm_provider.get_revision("", 1).get_fileid_overrides(mapping))
+        revmeta1 = rm_provider.get_revision(master_branch.get_branch_path(), 2)
+        self.assertEquals({u'': rootid, u"file": oldid},
+                revmeta1.get_fileid_overrides(mapping))
+        revmeta2 = rm_provider.get_revision(master_branch.get_branch_path(), 3)
         self.assertEquals({u"file2": oldid},
-                rm_provider.get_revision("", 2).get_fileid_overrides(mapping))
+                revmeta2.get_fileid_overrides(mapping))
         tree1 = master_branch.repository.revision_tree(revid1)
         tree2 = master_branch.repository.revision_tree(revid2)
         delta = tree2.changes_from(tree1)
-        mutter("changes %r" % list(rm_provider.iter_reverse_branch_changes("", 2, 0)))
+        mutter("changes %r" % list(rm_provider.iter_reverse_branch_changes(master_branch.get_branch_path(), 3, 0)))
         self.assertEquals(0, len(delta.added))
         self.assertEquals(0, len(delta.removed))
         self.assertEquals(1, len(delta.renamed))
 
     def test_nested_fileid(self):
-        master_branch = self.make_svn_branch("d")
+        master_branch = self.make_svn_branch("d") #1
         os.mkdir("b")
         local_dir = master_branch.bzrdir.sprout("b")
         wt = local_dir.open_workingtree()
@@ -683,16 +689,19 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         self.build_tree({'b/dir/file': 'data'})
         wt.add('dir')
         wt.add('dir/file')
+        rootid = wt.get_root_id()
         dirid = wt.path2id("dir")
         fileid = wt.path2id("dir/file")
-        revid1 = wt.commit(message="Commit from Bzr")
+        revid1 = wt.commit(message="Commit from Bzr") #2
         master_branch = Branch.open(master_branch.base)
         rm_provider = master_branch.repository._revmeta_provider
         mapping = master_branch.repository.get_mapping()
+        revmeta = rm_provider.get_revision(master_branch.get_branch_path(), 2)
         self.assertEquals({
+            "": rootid,
             "dir": dirid,
             "dir/file": fileid},
-            rm_provider.get_revision("", 1).get_fileid_overrides(mapping))
+            revmeta.get_fileid_overrides(mapping))
 
     def test_push_merged_revision(self):
         repos_url = self.make_repository("d")

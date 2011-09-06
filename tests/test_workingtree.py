@@ -313,7 +313,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_empty_basis_tree(self):
         wt = self.make_svn_branch_and_tree('a', 'dc')
-        self.assertEqual(wt.branch.generate_revision_id(0),
+        self.assertEqual(wt.branch.generate_revision_id(1),
                          wt.basis_tree().get_revision_id())
         inv = Inventory()
         root_id = wt.branch.repository.get_mapping().generate_file_id((wt.branch.repository.uuid, "", 0), u"")
@@ -377,9 +377,9 @@ class TestWorkingTree(SubversionTestCase):
         result = tree.pull(br)
         self.assertEquals(tree.last_revision(), br.last_revision())
         self.assertEquals(tree.last_revision(), result.new_revid)
-        self.assertEquals(2, result.new_revno)
+        self.assertEquals(1, result.new_revno)
         self.assertEquals(old_revid, result.old_revid)
-        self.assertEquals(1, result.old_revno)
+        self.assertEquals(0, result.old_revno)
         self.assertEquals(tree.branch, result.master_branch)
         self.assertEquals(tree.branch, result.target_branch)
         self.assertEquals(br, result.source_branch)
@@ -487,18 +487,21 @@ class TestWorkingTree(SubversionTestCase):
         self.assertEqual([lhs_parent_id], tree.get_parent_ids())
 
     def test_set_pending_merges_svk(self):
-        tree = self.make_svn_branch_and_tree('a', 'dc')
+        repos_url = self.make_client('a', 'dc')
         self.build_tree({"dc/branches/foo": None})
         self.client_add("dc/branches")
         self.client_commit("dc", "add")
 
         self.build_tree({"dc/trunk/bl": None})
         self.client_add("dc/trunk")
+        self.client_commit("dc", "add trunk")
+
+        tree = WorkingTree.open("dc/trunk")
 
         tree.set_pending_merges([
             tree.branch.repository.generate_revision_id(1, "branches/foo", tree.branch.mapping), "c"])
         self.assertEqual("%s:/branches/foo:1\n" % tree.branch.repository.uuid,
-                         self.client_get_prop("dc", "svk:merge"))
+                         self.client_get_prop("dc/trunk", "svk:merge"))
 
     def test_commit_callback(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')

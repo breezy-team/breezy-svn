@@ -146,9 +146,9 @@ class RecordingRemoteAccess(object):
 
 class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
-    def make_svn_branch(self, relpath):
+    def make_svn_branch(self, relpath, lossy=False):
         repos_url = self.make_repository(relpath)
-        return BzrDir.open(repos_url).create_branch()
+        return BzrDir.open(repos_url).create_branch(lossy=lossy)
 
     def make_svn_repository(self, relpath, allow_revprop_changes=True):
         """Create an SVN repository.

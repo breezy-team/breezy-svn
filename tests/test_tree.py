@@ -22,7 +22,6 @@ from bzrlib.inventory import (
     Inventory,
     TreeReference,
     )
-from bzrlib.repository import Repository
 from bzrlib.revision import (
     NULL_REVISION,
     CURRENT_REVISION,
@@ -219,14 +218,14 @@ class TestInventoryExternals(SubversionTestCase):
 
     def test_add_nested_norev(self):
         """Add a nested tree with no specific revision referenced."""
-        branch = self.make_svn_branch('d')
+        branch = self.make_svn_branch('d', lossy=False)
         repos = branch.repository
         repos_url = repos.base
         mapping = repos.get_mapping()
         inv = Inventory(root_id='blabloe')
         inventory_add_external(inv, 'blabloe', 'blie/bla',
                 mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)),
-                None, repos_url)
+                None, branch.base)
         self.assertEqual(TreeReference(
             mapping.generate_file_id((repos.uuid, branch.get_branch_path(), 1), u""),
              'bla', inv.path2id('blie'),
@@ -235,13 +234,13 @@ class TestInventoryExternals(SubversionTestCase):
              inv[inv.path2id('blie/bla')])
 
     def test_add_simple_norev(self):
-        branch = self.make_svn_branch('d')
+        branch = self.make_svn_branch('d', lossy=True)
         repos = branch.repository
         mapping = repos.get_mapping()
         inv = Inventory(root_id='blabloe')
         inventory_add_external(inv, 'blabloe', 'bla',
             mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)), None,
-            branch.repository.base)
+            branch.base)
 
         self.assertEqual(TreeReference(
             mapping.generate_file_id((repos.uuid, branch.get_branch_path(), 1), u""),
@@ -251,21 +250,27 @@ class TestInventoryExternals(SubversionTestCase):
              inv[inv.path2id('bla')])
 
     def test_add_simple_rev(self):
-        branch = self.make_svn_branch('d')
+        branch = self.make_svn_branch('d', lossy=True) #1
         repos = branch.repository
         inv = Inventory(root_id='blabloe')
         mapping = repos.get_mapping()
         inventory_add_external(inv, 'blabloe', 'bla',
-            mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)), 1, branch.repository.base)
-        expected_ie = TreeReference(mapping.generate_file_id((repos.uuid, branch.get_branch_path(), 1), u""),
+            mapping.revision_id_foreign_to_bzr(
+                (repos.uuid, branch.get_branch_path(), 1)), 1, branch.base)
+        expected_ie = TreeReference(
+            mapping.generate_file_id((repos.uuid, branch.get_branch_path(), 1), u""),
             'bla', 'blabloe',
-            revision=mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)),
-            reference_revision=NULL_REVISION)
+            revision=mapping.revision_id_foreign_to_bzr(
+                (repos.uuid, branch.get_branch_path(), 1)),
+            reference_revision=branch.last_revision())
         ie = inv[inv.path2id('bla')]
-        self.assertEqual(NULL_REVISION, ie.reference_revision)
-        self.assertEqual(mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)),
-                         ie.revision)
-        self.assertEqual(expected_ie, inv[inv.path2id('bla')])
+        self.assertEqual(branch.last_revision(), ie.reference_revision)
+        self.assertEquals(expected_ie.file_id, ie.file_id)
+        self.assertEquals(expected_ie.revision, ie.revision)
+        self.assertEquals(expected_ie.name, ie.name)
+        self.assertEquals(expected_ie.reference_revision, ie.reference_revision)
+        self.assertEquals(expected_ie.parent_id, ie.parent_id)
+        self.assertEqual(expected_ie, ie)
 
 
 class TestSvnRevisionTree(SubversionTestCase):
@@ -282,11 +287,9 @@ class TestSvnRevisionTree(SubversionTestCase):
         self.tree = self.repos.revision_tree(
                 self.repos.generate_revision_id(2, "trunk", mapping))
 
-    def test_get_parent_ids(self):
+    def test_get_parent_ids_first(self):
         mapping = self.repos.get_mapping()
-        self.assertEqual(
-            (self.repos.generate_revision_id(1, self.branch.get_branch_path(), mapping),),
-            self.tree.get_parent_ids())
+        self.assertEqual((), self.tree.get_parent_ids())
 
     def test_get_parent_ids_zero(self):
         mapping = self.repos.get_mapping()
