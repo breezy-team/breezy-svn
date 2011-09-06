@@ -547,8 +547,8 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
                 list(find_branches_between(repos._log, repos.transport, TrunkLayout(0), from_revnum=1, to_revnum=0)))
 
     def test_has_revision(self):
-        bzrdir = self.make_client_and_bzrdir('d', 'dc')
-        repository = bzrdir.find_repository()
+        repos_url = self.make_client('d', 'dc')
+        repository = Repository.open(repos_url)
         self.build_tree({'dc/foo': "data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message")
@@ -557,13 +557,13 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         self.assertFalse(repository.has_revision("some-other-revision"))
 
     def test_has_revision_none(self):
-        bzrdir = self.make_client_and_bzrdir('d', 'dc')
-        repository = bzrdir.find_repository()
+        repos_url = self.make_client('d', 'dc')
+        repository = Repository.open(repos_url)
         self.assertTrue(repository.has_revision(None))
 
     def test_has_revision_future(self):
-        bzrdir = self.make_client_and_bzrdir('d', 'dc')
-        repository = bzrdir.find_repository()
+        repos_url = self.make_client('d', 'dc')
+        repository = Repository.open(repos_url)
         self.assertFalse(repository.has_revision(
             repository.get_mapping().revision_id_foreign_to_bzr((repository.uuid, "", 5))))
 

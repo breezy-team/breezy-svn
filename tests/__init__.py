@@ -167,19 +167,6 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
     def tearDown(self):
         TestCaseInTempDir.tearDown(self)
 
-    def make_local_bzrdir(self, repos_path, relpath):
-        """Create a repository and checkout."""
-
-        repos_url = self.make_svn_repository(repos_path)
-        self.make_checkout(repos_url, relpath)
-
-        return BzrDir.open(relpath)
-
-    def make_client_and_bzrdir(self, repospath, clientpath):
-        repos_url = self.make_client(repospath, clientpath)
-
-        return BzrDir.open(repos_url)
-
     def assertChangedPathEquals(self, expected, got, msg=None):
         if expected[:3] == got[:3] and got[3] in (expected[3], NODE_UNKNOWN):
             return
