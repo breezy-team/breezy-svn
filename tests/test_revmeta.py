@@ -46,7 +46,7 @@ class TestWithRepository(SubversionTestCase):
         return r._revmeta_provider
 
     def test_checks_uuid(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("bp")
@@ -75,7 +75,7 @@ class TestWithRepository(SubversionTestCase):
             revmeta2.get_lhs_parent_revid(mapping, revmeta1))
 
     def test_get_testament(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -95,7 +95,7 @@ class TestWithRepository(SubversionTestCase):
         self.assertIs(None, revmeta2.get_testament())
 
     def test_get_changed_properties(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.change_prop("myprop", "data\n")
@@ -144,7 +144,7 @@ class TestWithRepository(SubversionTestCase):
                           revmeta4.get_changed_fileprops().get("myp2", ("newdata\n", None)))
 
     def test_changes_branch_root(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.change_prop("myprop", "data\n")
@@ -163,7 +163,7 @@ class TestWithRepository(SubversionTestCase):
         self.assertFalse(revmeta2.changes_branch_root())
 
     def test_paths(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.change_prop("myprop", "data\n")
@@ -184,7 +184,7 @@ class TestWithRepository(SubversionTestCase):
                           revmeta2.metarev.paths)
 
     def test_foreign_revid(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.change_prop("myprop", "data\n")
@@ -198,7 +198,7 @@ class TestWithRepository(SubversionTestCase):
                 revmeta1.metarev.get_foreign_revid())
 
     def test_revprops(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.change_prop("myprop", "data\n")
@@ -210,7 +210,7 @@ class TestWithRepository(SubversionTestCase):
                           set(revmeta1.metarev.revprops.keys()))
 
     def test_is_changes_root(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("bloe")

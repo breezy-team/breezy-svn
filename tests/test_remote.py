@@ -51,42 +51,42 @@ class TestRemoteAccess(SubversionTestCase):
         self.assertRaises(NotImplementedError, x.clone, "dir")
 
     def test_break_lock(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
 
         x = BzrDir.open(repos_url)
         x.break_lock()
 
     def test_too_much_slashes(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
 
         repos_url = repos_url[:-1] + "///d"
 
         BzrDir.open(repos_url)
 
     def test_open_workingtree(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url)
         self.assertRaises(NoWorkingTree, x.open_workingtree)
 
     def test_open_workingtree_recommend_arg(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url)
         self.assertRaises(NoWorkingTree,
                 x.open_workingtree, recommend_upgrade=True)
 
     def test_create_workingtree(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url)
         self.assertRaises(UnsupportedOperation, x.create_workingtree)
 
     def test_create_branch_top(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url)
         b = x.create_branch()
         self.assertEquals(repos_url, b.base)
 
     def test_create_branch_top_already_branch(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("bla").modify("contents")
@@ -95,7 +95,7 @@ class TestRemoteAccess(SubversionTestCase):
         self.assertRaises(AlreadyBranchError, x.create_branch)
 
     def test_create_branch_nested(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url+"/trunk")
         b = x.create_branch()
         self.assertEquals(repos_url+"/trunk", b.base)
@@ -104,7 +104,7 @@ class TestRemoteAccess(SubversionTestCase):
                 transport.check_path("trunk", 1))
 
     def test_destroy_branch(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -115,7 +115,7 @@ class TestRemoteAccess(SubversionTestCase):
         self.assertRaises(NotBranchError, x.open_branch)
 
     def test_bad_dir(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo")
@@ -124,12 +124,12 @@ class TestRemoteAccess(SubversionTestCase):
         BzrDir.open(repos_url+"/foo")
 
     def test_create(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url)
         self.assertTrue(hasattr(x, 'svn_root_url'))
 
     def test_import_branch(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url+"/trunk")
         origb = BzrDir.create_standalone_workingtree("origb")
         self.build_tree({'origb/twin': 'bla', 'origb/peaks': 'bloe'})
@@ -141,13 +141,13 @@ class TestRemoteAccess(SubversionTestCase):
                 Branch.open(repos_url+"/trunk").revision_history())
 
     def test_open_repos_root(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url)
         repos = x.open_repository()
         self.assertTrue(hasattr(repos, 'uuid'))
 
     def test_find_repos_nonroot(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -158,13 +158,13 @@ class TestRemoteAccess(SubversionTestCase):
         self.assertTrue(hasattr(repos, 'uuid'))
 
     def test_find_repos_root(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url)
         repos = x.find_repository()
         self.assertTrue(hasattr(repos, 'uuid'))
 
     def test_open_repos_nonroot(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -174,13 +174,13 @@ class TestRemoteAccess(SubversionTestCase):
         self.assertRaises(NoRepositoryPresent, x.open_repository)
 
     def test_needs_format_upgrade_default(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url+"/trunk")
         self.assertTrue(x.needs_format_conversion(
             format_registry.make_bzrdir("default")))
 
     def test_needs_format_upgrade_self(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url+"/trunk")
         self.assertFalse(x.needs_format_conversion(SvnRemoteFormat()))
 
@@ -191,14 +191,14 @@ class TestRemoteAccess(SubversionTestCase):
                 lambda: BzrDir.open("dc").find_repository())
 
     def test_create_branch_named(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url)
         x.open_repository().store_layout(TrunkLayout())
         b = x.create_branch("foo")
         self.assertEquals(repos_url+"/branches/foo", b.base)
 
     def test_list_branches_trunk(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url)
         x.open_repository().store_layout(TrunkLayout())
         b1 = x.create_branch("foo")

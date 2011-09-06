@@ -47,14 +47,14 @@ class SvnRaTest(SubversionTestCase):
                           "svn+nonexisting://foo/bar")
 
     def test_create(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport(repos_url)
         self.assertIsInstance(t, SvnRaTransport)
         self.assertEqual(t.base, repos_url)
         self.assertEqual(t.is_readonly(), False)
 
     def test_segments(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport("%s,branch=name" % repos_url)
         self.assertIsInstance(t, SvnRaTransport)
         self.assertEqual(t.svn_url, repos_url)
@@ -64,37 +64,37 @@ class SvnRaTest(SubversionTestCase):
             return
 
     def test_create_direct(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport(repos_url)
         self.assertIsInstance(t, SvnRaTransport)
         self.assertEqual(t.base, repos_url)
 
     def test_create_readonly(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport("readonly+"+repos_url)
         self.assertIsInstance(t, SvnRaTransport)
         self.assertEqual(t.base, "readonly+"+repos_url)
         self.assertEqual(t.is_readonly(), True)
 
     def test_lock_read(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport(repos_url)
         lock = t.lock_read(".")
         lock.unlock()
 
     def test_lock_write(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport(repos_url)
         lock = t.lock_write(".")
         lock.unlock()
 
     def test_listable(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport(repos_url)
         self.assertTrue(t.listable())
 
     def test_get_dir_rev(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.add_dir("foo")
@@ -110,7 +110,7 @@ class SvnRaTest(SubversionTestCase):
         self.assertTrue("bar" in lists[0])
 
     def test_list_dir(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport(repos_url)
         self.assertEqual([], t.list_dir("."))
         t.mkdir("foo")
@@ -120,7 +120,7 @@ class SvnRaTest(SubversionTestCase):
         self.assertEqual(["bar"], t.list_dir("foo"))
 
     def test_list_dir_file(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("file").modify("data")
@@ -131,7 +131,7 @@ class SvnRaTest(SubversionTestCase):
         self.assertRaises(NoSuchFile, t.list_dir, "file")
 
     def test_clone(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("dir")
@@ -142,7 +142,7 @@ class SvnRaTest(SubversionTestCase):
         self.assertEqual("%s/dir" % repos_url, t.clone('dir').base)
 
     def test_clone_none(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("dir")
@@ -154,12 +154,12 @@ class SvnRaTest(SubversionTestCase):
         self.assertEqual(tt.base, t.base)
 
     def test_mkdir_readonly(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport("readonly+"+repos_url)
         self.assertRaises(TransportNotPossible, t.mkdir, "bla")
 
     def test_mkdir(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport(repos_url)
         t.mkdir("bla")
 
@@ -171,11 +171,11 @@ class SvnRaTest(SubversionTestCase):
                           subvertpy.NODE_DIR)
 
     def test_has_dot(self):
-        t = SvnRaTransport(self.make_repository('a'))
+        t = SvnRaTransport(self.make_svn_repository('a'))
         self.assertEqual(True, t.has("."))
 
     def test_stat(self):
-        t = SvnRaTransport(self.make_repository('a'))
+        t = SvnRaTransport(self.make_svn_repository('a'))
         try:
             statob = t.stat(".")
         except TransportNotPossible:
@@ -184,11 +184,11 @@ class SvnRaTest(SubversionTestCase):
             self.assertTrue(stat.S_ISDIR(statob.st_mode))
 
     def test_has_nonexistent(self):
-        t = SvnRaTransport(self.make_repository('a'))
+        t = SvnRaTransport(self.make_svn_repository('a'))
         self.assertEqual(False, t.has("bar"))
 
     def test_mkdir_missing_parent(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport(repos_url)
         self.assertRaises(NoSuchFile, t.mkdir, "bla/subdir")
         c = ra.RemoteAccess(repos_url)
@@ -196,13 +196,13 @@ class SvnRaTest(SubversionTestCase):
                           subvertpy.NODE_NONE)
 
     def test_mkdir_twice(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport(repos_url)
         t.mkdir("bla")
         self.assertRaises(FileExists, t.mkdir, "bla")
 
     def test_clone2(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("dir")
@@ -213,7 +213,7 @@ class SvnRaTest(SubversionTestCase):
         self.assertEqual("%s/dir" % repos_url, t.clone('dir').base)
 
     def test_get_root(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("dir")
@@ -225,7 +225,7 @@ class SvnRaTest(SubversionTestCase):
         self.assertEqual(repos_url, root)
 
     def test_local_abspath(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         t = SvnRaTransport("%s" % repos_url)
         self.assertEquals(urlutils.join(self.test_dir, "a"), t.local_abspath('.'))
 
@@ -281,7 +281,7 @@ class ReadonlyConnectionTests(SubversionTestCase):
 
     def setUp(self):
         super(ReadonlyConnectionTests, self).setUp()
-        self.repos_url = self.make_repository("d")
+        self.repos_url = self.make_svn_repository("d")
 
     def test_get_latest_revnum(self):
         self.recordRemoteAccessCalls()

@@ -63,7 +63,7 @@ class TestComplexFileids(SubversionTestCase):
     # movefileorder.dump
     # recreatebranch.dump
     def test_simplemove(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify("data")
@@ -93,7 +93,7 @@ class TestComplexFileids(SubversionTestCase):
         self.assertNotEqual(tree2.path2id("bar"), tree2.path2id("blie"))
 
     def test_simplecopy(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify("data")
@@ -119,7 +119,7 @@ class TestComplexFileids(SubversionTestCase):
         self.assertNotEqual(None, tree1.path2id("blie"))
 
     def test_simpledelete(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify("data")
@@ -141,7 +141,7 @@ class TestComplexFileids(SubversionTestCase):
         self.assertIs(None, tree2.path2id("foo"))
 
     def test_replace(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify("data")
@@ -164,7 +164,7 @@ class TestComplexFileids(SubversionTestCase):
         self.assertNotEqual(tree1.path2id("foo"), tree2.path2id("foo"))
 
     def test_copy_branch(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -286,7 +286,7 @@ class GetMapTests(SubversionTestCase):
 
     def setUp(self):
         super(GetMapTests, self).setUp()
-        self.repos_url = self.make_repository("d")
+        self.repos_url = self.make_svn_repository("d")
         self.repos = Repository.open(self.repos_url)
 
     def get_map(self, path, revnum, mapping):

@@ -91,7 +91,7 @@ class TestConversion(SubversionTestCase):
 
     def setUp(self):
         super(TestConversion, self).setUp()
-        self.repos_url = self.make_repository('d')
+        self.repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor()
         t = dc.add_dir("trunk")
@@ -461,7 +461,7 @@ class TestPrefixed(SubversionTestCase):
 
     def setUp(self):
         super(TestPrefixed, self).setUp()
-        self.repos_url = self.make_repository('d')
+        self.repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor()
         b = dc.add_dir("base")

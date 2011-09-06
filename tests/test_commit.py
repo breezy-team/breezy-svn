@@ -154,7 +154,7 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEqual(u"føø", new_revision.message)
 
     def test_commit_out_of_date(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         somedir = trunk.add_dir("trunk/somedir")
@@ -180,7 +180,7 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEquals(ERR_FS_TXN_OUT_OF_DATE, e.args[1])
 
     def test_lossy_commit_builder(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         branch = Branch.open(repos_url)
         branch.lock_write()
         self.addCleanup(branch.unlock)
@@ -242,7 +242,7 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEquals(1, paths["/bar"][2])
 
     def test_commit_sets_mergeinfo(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.add_dir("trunk")
@@ -635,7 +635,7 @@ class TestPushNested(SubversionTestCase):
 class HeavyWeightCheckoutTests(SubversionTestCase):
 
     def test_bind(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         master_branch = Branch.open(repos_url)
         os.mkdir("b")
         local_dir = master_branch.bzrdir.sprout("b")
@@ -644,7 +644,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         local_dir.open_branch().unbind()
 
     def test_commit(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         master_branch = Branch.open(repos_url)
         os.mkdir("b")
         local_dir = master_branch.bzrdir.sprout("b")
@@ -658,7 +658,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         self.assertEquals(revid, master_branch.last_revision())
 
     def test_fileid(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         master_branch = Branch.open(repos_url)
         os.mkdir("b")
         local_dir = master_branch.bzrdir.sprout("b")
@@ -687,7 +687,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         self.assertEquals(1, len(delta.renamed))
 
     def test_nested_fileid(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         master_branch = Branch.open(repos_url)
         os.mkdir("b")
         local_dir = master_branch.bzrdir.sprout("b")
@@ -708,7 +708,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
                           rm_provider.get_revision("", 1).get_fileid_overrides(mapping))
 
     def test_push_merged_revision(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -750,7 +750,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
 class RevpropTests(SubversionTestCase):
 
     def test_change_revprops(self):
-        repos_url = self.make_repository("d", allow_revprop_changes=True)
+        repos_url = self.make_svn_repository("d", allow_revprop_changes=True)
 
         dc = self.get_commit_editor(repos_url, message="My commit")
         dc.add_file("foo.txt").modify()
@@ -766,7 +766,7 @@ class RevpropTests(SubversionTestCase):
                           self.client_log(repos_url, 1, 1)[1][1:])
 
     def test_change_revprops_disallowed(self):
-        repos_url = self.make_repository("d", allow_revprop_changes=False)
+        repos_url = self.make_svn_repository("d", allow_revprop_changes=False)
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo.txt").modify()

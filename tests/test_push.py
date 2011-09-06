@@ -88,7 +88,7 @@ class TestDPush(SubversionTestCase):
     def setUp(self):
         super(TestDPush, self).setUp()
         transport.disabled_capabilities.update(["commit-revprops", "log-revprops"])
-        self.repos_url = self.make_repository('d')
+        self.repos_url = self.make_svn_repository('d')
 
         dc = self.commit_editor()
         foo = dc.add_dir("foo")
@@ -219,7 +219,7 @@ class TestPush(SubversionTestCase):
 
     def setUp(self):
         super(TestPush, self).setUp()
-        self.repos_url = self.make_repository('d')
+        self.repos_url = self.make_svn_repository('d')
 
         dc = self.commit_editor()
         foo = dc.add_dir("foo")
@@ -493,7 +493,7 @@ class TestPush(SubversionTestCase):
                 repos.generate_revision_id(3, "", mapping))
 
     def test_multiple_diverged(self):
-        oc_url = self.make_repository("o")
+        oc_url = self.make_svn_repository("o")
 
         self.build_tree({'dc/file': 'data'})
         wt = self.bzrdir.open_workingtree()
@@ -585,7 +585,7 @@ class PushNewBranchTests(SubversionTestCase):
         return bzrwt, revid
 
     def test_fetch_after_push(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         newdir = BzrDir.open("%s/trunk" % repos_url)
         bzrwt, revid = self._create_single_rev_bzrwt()
         newbranch = newdir.import_branch(bzrwt.branch)
@@ -605,7 +605,7 @@ class PushNewBranchTests(SubversionTestCase):
             bzrwt.unlock()
 
     def test_single_revision(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         newdir = BzrDir.open("%s/trunk" % repos_url)
         bzrwt, revid = self._create_single_rev_bzrwt()
         newbranch = newdir.import_branch(bzrwt.branch)
@@ -619,7 +619,7 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertEquals([revid], newbranch.revision_history())
 
     def test_single_revision_single_branch(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/test': "Tour"})
         bzrwt.add("test")
@@ -740,7 +740,7 @@ class PushNewBranchTests(SubversionTestCase):
                 t.get_file_revision(t.path2id("bar.txt")))
             self.assertEquals(other_revid,
                 t.get_file_revision(t.path2id("bar2.txt")))
-        repos_url = self.make_repository("test")
+        repos_url = self.make_svn_repository("test")
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -791,7 +791,7 @@ class PushNewBranchTests(SubversionTestCase):
         check_tree(cpyrepos.revision_tree(mergingrevid))
 
     def test_missing_prefix_error(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/test': "Tour"})
         bzrwt.add("test")
@@ -801,7 +801,7 @@ class PushNewBranchTests(SubversionTestCase):
                           lambda: newdir.import_branch(bzrwt.branch))
 
     def test_repeat(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/test': "Tour"})
         bzrwt.add("test")
@@ -817,7 +817,7 @@ class PushNewBranchTests(SubversionTestCase):
                           bzrwt.branch)
 
     def test_multiple(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/test': "Tour"})
         bzrwt.add("test")
@@ -830,7 +830,7 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertEquals([revid1, revid2], newbranch.revision_history())
 
     def test_dato(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/foo.txt': "foo"})
         bzrwt.add("foo.txt")
@@ -842,7 +842,7 @@ class PushNewBranchTests(SubversionTestCase):
                 Repository.open(repos_url).get_revision(revid1).committer)
 
     def test_utf8_commit_msg(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/foo.txt': "foo"})
         bzrwt.add("foo.txt")
@@ -853,7 +853,7 @@ class PushNewBranchTests(SubversionTestCase):
                 Repository.open(repos_url).get_revision(revid1).message)
 
     def test_kind_change_file_to_directory(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/foo.txt': "foo"})
         bzrwt.add("foo.txt")
@@ -866,7 +866,7 @@ class PushNewBranchTests(SubversionTestCase):
         newdir.import_branch(bzrwt.branch)
 
     def test_kind_change_directory_to_file(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/foo.txt/bar': "foo"})
         bzrwt.add("foo.txt")
@@ -880,7 +880,7 @@ class PushNewBranchTests(SubversionTestCase):
         newdir.import_branch(bzrwt.branch)
 
     def test_multiple_part_exists(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir('trunk')
@@ -905,7 +905,7 @@ class PushNewBranchTests(SubversionTestCase):
             , revid1, revid2], newbranch.revision_history())
 
     def test_push_overwrite(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -938,7 +938,7 @@ class PushNewBranchTests(SubversionTestCase):
                 Branch.open(repos_url+"/trunk").revision_history())
 
     def test_push_overwrite_unrelated(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -969,7 +969,7 @@ class PushNewBranchTests(SubversionTestCase):
                 Branch.open(repos_url+"/trunk").revision_history())
 
     def test_complex_rename(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry")
@@ -997,7 +997,7 @@ class PushNewBranchTests(SubversionTestCase):
         BzrDir.open(repos_url+"/trunk").sprout("n")
 
     def test_rename_dir_changing_contents(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry", "dirid")
@@ -1045,7 +1045,7 @@ class PushNewBranchTests(SubversionTestCase):
         return bzrwt, old_ie, new_ie, foo_ie, revid1, revid2
 
     def test_change_root(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt, old_ie, new_ie, foo_ie, revid1, revid2 = self._create_bzrwt_with_changed_root()
         newdir = BzrDir.open(repos_url+"/trunk")
         newbranch = newdir.import_branch(bzrwt.branch)
@@ -1063,7 +1063,7 @@ class PushNewBranchTests(SubversionTestCase):
                           newbranch.revision_history())
 
     def test_change_root_fetch(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         (bzrwt, old_ie, new_ie, foo_ie, revid1, revid2) = \
             self._create_bzrwt_with_changed_root()
         newdir = BzrDir.open(repos_url+"/trunk")
@@ -1090,7 +1090,7 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertEquals(tree2.path2id("foo"), foo_ie.file_id)
 
     def test_rename_dir(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry", "dirid")
@@ -1112,7 +1112,7 @@ class PushNewBranchTests(SubversionTestCase):
         check(copybranch)
 
     def test_push_non_lhs_parent(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry")
@@ -1159,7 +1159,7 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertEquals([revid1, revid2, revid3], trunk.revision_history())
 
     def test_complex_replace_dir(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add(["registry"], ["origdir"])
@@ -1181,7 +1181,7 @@ class PushNewBranchTests(SubversionTestCase):
         BzrDir.open(repos_url+"/trunk").sprout("n")
 
     def test_subdir_becomes_branch_root(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -1215,7 +1215,7 @@ class PushNewBranchTests(SubversionTestCase):
                 paths['trunk'])
 
     def test_push_pointless(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -1241,7 +1241,7 @@ class TestPushTwice(SubversionTestCase):
 
     def test_push_twice(self):
         # bug 208566
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -1303,7 +1303,7 @@ class InterToSvnRepositoryTestCase(SubversionTestCase):
         super(InterToSvnRepositoryTestCase, self).setUp()
         self.from_bzrdir = BzrDir.create('bzrrepo')
         self.from_repo = self.from_bzrdir.create_repository(shared=True)
-        self.svn_repo_url = self.make_repository('svnrepo')
+        self.svn_repo_url = self.make_svn_repository('svnrepo')
         self.to_repo = Repository.open(self.svn_repo_url)
         self.interrepo = InterRepository.get(self.from_repo, self.to_repo)
 
@@ -1551,7 +1551,7 @@ class CreateBranchContainerTests(SubversionTestCase):
 
     def setUp(self):
         super(CreateBranchContainerTests, self).setUp()
-        self.repos_url = self.make_repository("d")
+        self.repos_url = self.make_svn_repository("d")
         self.repo = Repository.open(self.repos_url)
 
     def test_create_single(self):

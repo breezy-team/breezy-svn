@@ -133,13 +133,13 @@ class RepositoryTests(SubversionTestCase):
 
     def setUp(self):
         super(RepositoryTests, self).setUp()
-        self.repos_url = self.make_repository("d")
+        self.repos_url = self.make_svn_repository("d")
         self._old_mapping = mapping_registry._get_default_key()
         self.addCleanup(mapping_registry.set_default, self._old_mapping)
         mapping_registry.set_default("v3")
 
     def test_revision_id_to_revno_simple(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
@@ -151,7 +151,7 @@ class RepositoryTests(SubversionTestCase):
         self.assertEquals(2, branch.revision_id_to_revno("myrevid"))
 
     def test_revision_id_to_revno_older(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
@@ -519,7 +519,7 @@ class RepositoryTests(SubversionTestCase):
         from bzrlib.debug import debug_flags
         debug_flags.add("commit")
         debug_flags.add("fetch")
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         bzrwt = BzrDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry")
@@ -567,7 +567,7 @@ class RepositoryTests(SubversionTestCase):
                                      c.get_latest_revnum()))
 
     def test_revision_history(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         branch = Branch.open(repos_url)
         self.assertEqual([branch.generate_revision_id(0)], 

@@ -39,7 +39,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         ExternalBase.tearDown(self)
 
     def test_branch_empty(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         self.run_bzr("branch %s dc" % repos_url)
 
     def commit_something(self, repos_url):
@@ -59,19 +59,19 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("branch --stacked %s dc" % repos_url, retcode=3)
 
     def test_log_empty(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         self.run_bzr('log %s' % repos_url)
 
     def test_info_verbose(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         self.run_bzr('info -v %s' % repos_url)
 
     def test_pack(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         self.run_bzr('pack %s' % repos_url)
 
     def test_rmbranch(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -80,7 +80,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("rmbranch %s/trunk" % repos_url)
 
     def test_push_create_prefix(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -96,7 +96,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("push --create-prefix -d dc %s/branches/mybranch" % repos_url)
 
     def test_push(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
@@ -109,7 +109,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.assertEquals("", self.run_bzr("status dc")[0])
 
     def test_push_empty_existing(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -123,7 +123,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.assertTrue(('ERROR: These branches have diverged.  See "bzr help diverged-branches" for more information.\n' in err) or ('ERROR: These branches have diverged.  Try using "merge" and then "push".\n' in err))
 
     def test_dpush_empty_existing(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -138,7 +138,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
             ["dpush", "-d", "dc", "%s/trunk" % repos_url])
 
     def test_push_verbose(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
         self.run_bzr("init dc")
         self.build_tree({"dc/foo": "blaaaa"})
         self.run_bzr("add dc/foo")
@@ -149,13 +149,13 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("push -v -d dc %s/trunk" % repos_url)
 
     def test_reconcile(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         output, err = self.run_bzr("reconcile %s" % repos_url, retcode=0)
         self.assertContainsRe(output, "Reconciliation complete.\n")
 
     def test_missing(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         self.run_bzr("init dc")
 
@@ -172,7 +172,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.assertContainsRe(output, "You are missing 2 revision\\(s\\):")
 
     def test_push_overwrite(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir('trunk')
@@ -187,13 +187,13 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.assertEquals("", self.run_bzr("status dc")[0])
 
     def test_dpush_empty(self):
-        repos_url = self.make_repository('dp')
+        repos_url = self.make_svn_repository('dp')
         self.run_bzr("init --default-rich-root dc")
         os.chdir("dc")
         self.run_bzr("dpush %s" % repos_url)
 
     def test_dpush(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
@@ -206,7 +206,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.assertEquals("", self.run_bzr("status dc")[0])
 
     def test_dpush_new(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
@@ -221,7 +221,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.assertEquals("", self.run_bzr("status dc")[0])
 
     def test_dpush_wt_diff(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
@@ -424,7 +424,7 @@ Node-copyfrom-path: x
                            ['svn-import', 'foo/bar', 'dc'])
 
     def test_list(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify("test")
         dc.add_file("bla").modify("ha")
@@ -432,7 +432,7 @@ Node-copyfrom-path: x
         self.assertEquals("a/bla\na/foo\n", self.run_bzr("ls a")[0])
 
     def test_info_remote(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify("test")
         dc.add_file("bla").modify("ha")
@@ -495,12 +495,12 @@ if len(sys.argv) == 2:
 
     def test_set_branching_scheme_local(self):
         self.make_fake_editor()
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         self.assertEquals("", self.run_bzr('svn-branching-scheme --set %s' % repos_url)[0])
 
     def test_set_branching_scheme_global(self):
         self.make_fake_editor()
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         self.assertEquals("",
             self.run_bzr('svn-branching-scheme --repository-wide --set %s' % repos_url)[0])
 
@@ -521,14 +521,14 @@ if len(sys.argv) == 2:
         bzrlib.gpg.GPGStrategy = self._oldstrategy
 
     def test_sign_my_commits(self):
-        repos_url = self.make_repository('dc')
+        repos_url = self.make_svn_repository('dc')
         self.commit_something(repos_url)
 
         self.monkey_patch_gpg()
         self.run_bzr('sign-my-commits')
 
     def test_pull_old(self):
-        svn_url = self.make_repository('d')
+        svn_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(svn_url)
         trunk = dc.add_dir("trunk")
@@ -598,13 +598,13 @@ if len(sys.argv) == 2:
         self.run_bzr('pull')
 
     def test_svn_import_format(self):
-        svn_url = self.make_repository('d')
+        svn_url = self.make_svn_repository('d')
 
         self.run_bzr('svn-import --format 1.9-rich-root %s dc' % svn_url)
         self.assertEquals("Repository branch (format: 1.14-rich-root)\nLocation:\n  shared repository: dc\n  repository branch: dc\n\nRelated branches:\n  parent branch: d\n", self.run_bzr('info dc')[0])
 
     def test_svn_layout(self):
-        svn_url = self.make_repository('d')
+        svn_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(svn_url)
         dc.add_dir("trunk")
@@ -620,7 +620,7 @@ if len(sys.argv) == 2:
                 self.run_bzr('svn-layout %s' % svn_url)[0])
 
     def test_svn_branches(self):
-        svn_url = self.make_repository('d')
+        svn_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(svn_url)
         dc.add_dir("trunk")

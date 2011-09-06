@@ -31,7 +31,7 @@ class ReposConfigTests(SubversionTestCase):
 
     def setUp(self):
         super(ReposConfigTests, self).setUp()
-        self.repos_url = self.make_repository("d")
+        self.repos_url = self.make_svn_repository("d")
         self.repos = Repository.open(self.repos_url)
         self.config = self.repos.get_config()
 
@@ -111,7 +111,7 @@ class BranchConfigTests(SubversionTestCase):
 
     def setUp(self):
         super(BranchConfigTests, self).setUp()
-        self.repos_url = self.make_repository("d")
+        self.repos_url = self.make_svn_repository("d")
         self.config = Branch.open(self.repos_url).get_config()
 
     def test_has_explicit_nickname(self):
@@ -154,7 +154,7 @@ class BranchConfigTests(SubversionTestCase):
 class PropertyConfigTests(SubversionTestCase):
 
     def test_getitem(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
 
         dc = self.get_commit_editor(repos_url)
         f = dc.add_file("foo")
@@ -172,12 +172,12 @@ class PropertyConfigTests(SubversionTestCase):
 class SvnBpConfigTests(SubversionTestCase):
 
     def test_no_debian_dir(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
         self.assertRaises(NoSubversionBuildPackageConfig,
                 SubversionBuildPackageConfig, Branch.open(repos_url).basis_tree())
 
     def test_mergeWithUpstream(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
 
         dc = self.get_commit_editor(repos_url)
         f = dc.add_dir("debian")
@@ -189,7 +189,7 @@ class SvnBpConfigTests(SubversionTestCase):
         self.assertEquals(True, cfg.get_merge_with_upstream())
 
     def test_get_property_val(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
 
         dc = self.get_commit_editor(repos_url)
         f = dc.add_dir("debian")
@@ -201,7 +201,7 @@ class SvnBpConfigTests(SubversionTestCase):
         self.assertEquals("myorigdir", cfg.get("origDir"))
 
     def test_get_intree_val(self):
-        repos_url = self.make_repository("d")
+        repos_url = self.make_svn_repository("d")
 
         dc = self.get_commit_editor(repos_url)
         d = dc.add_dir("debian")

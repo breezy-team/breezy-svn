@@ -51,24 +51,24 @@ from bzrlib.plugins.svn.tests import SubversionTestCase
 class WorkingSubversionBranch(SubversionTestCase):
 
     def test_last_rev_rev_hist(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         branch = Branch.open(repos_url)
         branch.revision_history()
         self.assertEqual(branch.generate_revision_id(0),
                          branch.last_revision())
 
     def test_get_branch_path_root(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         branch = Branch.open(repos_url)
         self.assertEqual("", branch.get_branch_path())
 
     def test_get_child_submit_format_default(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         branch = Branch.open(repos_url)
         self.assertEquals("svn", branch.get_child_submit_format())
 
     def test_tags_dict(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         tags = dc.add_dir("tags")
@@ -80,7 +80,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals(["foo"], b.tags.get_tag_dict().keys())
 
     def test_reverse_tags_dict(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -101,7 +101,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals([(revid, ["foo"])], revtagdict.items())
 
     def test_tags_other_project(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         other = dc.add_dir("otherproj")
@@ -119,7 +119,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals(["foo"], b.tags.get_tag_dict().keys())
 
     def test_tag_set(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -139,7 +139,7 @@ class WorkingSubversionBranch(SubversionTestCase):
                 b.repository.transport.check_path("tags/mytag", 3))
 
     def test_tag_set_dupe(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -166,7 +166,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals({u"mytag": target}, b.tags.get_tag_dict())
 
     def test_tag_set_existing(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -207,7 +207,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals({u"mytag": newtagrevid}, b.tags.get_tag_dict())
 
     def test_tags_delete(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         tags = dc.add_dir("tags")
@@ -222,7 +222,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals([], b.tags.get_tag_dict().keys())
 
     def test_tag_set_no_parent_dir(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -246,7 +246,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals(4, b.repository.get_latest_revnum())
 
     def test_tag_set_not_supported(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -260,7 +260,7 @@ class WorkingSubversionBranch(SubversionTestCase):
                 b.repository.get_mapping()))
 
     def test_tag_lookup(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         tags = dc.add_dir("tags")
@@ -276,7 +276,7 @@ class WorkingSubversionBranch(SubversionTestCase):
             b.tags.lookup_tag("foo"))
 
     def test_tag_lookup_nonexistant(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -286,7 +286,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertRaises(NoSuchTag, b.tags.lookup_tag, "foo")
 
     def test_tags_delete_nonexistent(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -296,7 +296,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertRaises(NoSuchTag, b.tags.delete_tag, u"foo")
 
     def test_get_branch_path_old(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -311,7 +311,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEqual("trunk", branch.get_branch_path(1))
 
     def test_pull_internal(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -336,7 +336,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals(result.target_branch, branch)
 
     def make_tworev_branch(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file('foo')
@@ -350,7 +350,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         return b, (revid1, revid2)
 
     def make_branch(self, relpath):
-        # The inherited make_branch is broken, thanks to the make_repository
+        # The inherited make_branch is broken, thanks to the make_svn_repository
         # from subvertpy.
         bzrdir = self.make_bzrdir(relpath)
         bzrdir._find_or_create_repository(True)
@@ -380,7 +380,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals(revid1, new_branch.last_revision())
 
     def test_get_branch_path_subdir(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -390,7 +390,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEqual("trunk", branch.get_branch_path())
 
     def test_tag_added_later(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -413,7 +413,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals(["newtag"], newbranch.tags.get_tag_dict().keys())
 
     def test_open_non_ascii_url(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir('\xd0\xb4\xd0\xbe\xd0\xbc')
@@ -422,11 +422,11 @@ class WorkingSubversionBranch(SubversionTestCase):
         branch = Branch.open(repos_url + "/%D0%B4%D0%BE%D0%BC")
 
     def test_open_nonexistant(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         self.assertRaises(NotBranchError, Branch.open, repos_url + "/trunk")
 
     def test_last_rev_rev_info(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         branch = Branch.open(repos_url)
         self.assertEqual((1, branch.generate_revision_id(0)),
                 branch.last_revision_info())
@@ -435,22 +435,22 @@ class WorkingSubversionBranch(SubversionTestCase):
                 branch.last_revision_info())
 
     def test_lookup_revision_id_unknown(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         branch = Branch.open(repos_url)
         self.assertRaises(NoSuchRevision, lambda: branch.lookup_bzr_revision_id("bla"))
 
     def test_lookup_revision_id(self):
-        repos_url = self.make_repository("a")
+        repos_url = self.make_svn_repository("a")
         branch = Branch.open(repos_url)
         self.assertEquals(0, branch.lookup_bzr_revision_id(branch.last_revision()))
 
     def test_set_parent(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         branch = Branch.open(repos_url)
         branch.set_parent("foobar")
 
     def test_num_revnums(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         bzrdir = BzrDir.open(repos_url)
         branch = bzrdir.open_branch()
         self.assertEqual(branch.generate_revision_id(0), branch.last_revision())
@@ -479,7 +479,7 @@ class WorkingSubversionBranch(SubversionTestCase):
                 branch.last_revision())
 
     def test_set_revision_history_empty(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         trunk.add_file('trunk/foo').modify()
@@ -490,7 +490,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals(NULL_REVISION, branch.last_revision())
 
     def test_set_revision_history_ghost(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -502,7 +502,7 @@ class WorkingSubversionBranch(SubversionTestCase):
             branch.set_revision_history, ["nonexistantt"])
 
     def test_set_revision_history(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -527,41 +527,41 @@ class WorkingSubversionBranch(SubversionTestCase):
 
     def test_break_lock(self):
         # duplicated by bzrlib.tests.per_branch.test_break_lock
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         branch = Branch.open(repos_url)
         branch.break_lock()
 
     def test_repr(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         branch = Branch.open(repos_url)
         self.assertEqual("SvnBranch('%s')" % repos_url, branch.__repr__())
 
     def test_get_physical_lock_status(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         branch = Branch.open(repos_url)
         self.assertFalse(branch.get_physical_lock_status())
 
     def test_set_push_location(self):
         # duplicated by bt.per_branch.TestBranchPushLocations.test_set_push_location
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         branch = Branch.open(repos_url)
         branch.set_push_location("http://bar/bloe")
 
     def test_get_parent(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         branch = Branch.open(repos_url)
         self.assertEqual(None, branch.get_parent())
 
     def test_get_push_location(self):
         # duplicated by bt.per_branch.TestBranchPushLocations.test_get_push_location_unset
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         branch = Branch.open(repos_url)
         self.assertIs(None, branch.get_push_location())
 
     def test_revision_id_to_revno_none(self):
         """The None revid should map to revno 0."""
         # duplicated by bt.per_branch.test_revision_id_to_revno
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         branch = Branch.open(repos_url)
         self.assertEquals(0, branch.revision_id_to_revno(NULL_REVISION))
 
@@ -569,12 +569,12 @@ class WorkingSubversionBranch(SubversionTestCase):
         """revision_id_to_revno() should raise NoSuchRevision if
         the specified revision did not exist in the branch history."""
         # duplicated by bt.per_branch.test_revision_id_to_revno
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
         branch = Branch.open(repos_url)
         self.assertRaises(NoSuchRevision, branch.revision_id_to_revno, "bla")
 
     def test_get_nick_none(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
@@ -585,7 +585,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEquals("a", branch.nick)
 
     def test_get_nick_path(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("trunk")
@@ -596,7 +596,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEqual("trunk", branch.nick)
 
     def test_get_revprops(self):
-        repos_url = self.make_repository('a')
+        repos_url = self.make_svn_repository('a')
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
@@ -855,7 +855,7 @@ foohosts""")
         newbranch.unlock()
 
     def test_fetch_odd(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -917,13 +917,13 @@ foohosts""")
             set(filter(lambda (fid, rid): fid == fileid, texts.keys())))
 
     def test_check(self):
-        self.make_repository('d')
+        self.make_svn_repository('d')
         branch = Branch.open('d')
         result = branch.check()
         self.assertEqual(branch, result.branch)
 
     def test_generate_revision_id(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         bla = dc.add_dir("bla")
@@ -935,7 +935,7 @@ foohosts""")
         self.assertEqual(mapping.revision_id_foreign_to_bzr((branch.repository.uuid, "", 1)), branch.generate_revision_id(1))
 
     def test_create_checkout(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -953,7 +953,7 @@ foohosts""")
         self.assertFalse(os.path.exists("e/.svn"))
 
     def test_create_checkout_lightweight(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -967,7 +967,7 @@ foohosts""")
         self.assertFalse(os.path.exists("e/.bzr"))
 
     def test_create_checkout_lightweight_stop_rev(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
@@ -1115,7 +1115,7 @@ class TestInterBranchFetch(SubversionTestCase):
         return bzrdir.create_branch()
 
     def make_tworev_branch(self):
-        self.repos_url = self.make_repository("a")
+        self.repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(self.repos_url)
         trunk = dc.add_dir("trunk")

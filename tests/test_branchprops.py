@@ -38,7 +38,7 @@ class TestBranchProps(SubversionTestCase):
         return LogWalker(transport=transport)
 
     def test_get_old_properties(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.change_prop("myprop", "data")
@@ -55,7 +55,7 @@ class TestBranchProps(SubversionTestCase):
         self.assertEqual("data", bp.get_properties("", 2)["myprop"])
 
     def test_get_properties(self):
-        repos_url = self.make_repository('d')
+        repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
         dc.change_prop("myprop", "data")

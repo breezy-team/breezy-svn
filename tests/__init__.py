@@ -145,7 +145,7 @@ class RecordingRemoteAccess(object):
 
 class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
-    def make_repository(self, relpath, allow_revprop_changes=True):
+    def make_svn_repository(self, relpath, allow_revprop_changes=True):
         """Create an SVN repository.
 
         :param relpath: Relative path at which to create the repository.
@@ -170,7 +170,7 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
     def make_local_bzrdir(self, repos_path, relpath):
         """Create a repository and checkout."""
 
-        repos_url = self.make_repository(repos_path)
+        repos_url = self.make_svn_repository(repos_path)
         self.make_checkout(repos_url, relpath)
 
         return BzrDir.open(relpath)
