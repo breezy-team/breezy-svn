@@ -329,7 +329,7 @@ class TestWorkingTree(SubversionTestCase):
         self.client_commit("dc", "Bla")
         self.client_update("dc")
         self.assertEqual(
-            tree.branch.generate_revision_id(1),
+            tree.branch.generate_revision_id(2),
             tree.basis_tree().get_revision_id())
 
     def test_move(self):
@@ -476,6 +476,8 @@ class TestWorkingTree(SubversionTestCase):
     def test_get_parent_ids(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
         self.build_tree({"dc/bl": None})
+        self.client_add("dc/bl")
+        self.client_commit("dc", "msg")
 
         lhs_parent_id = tree.branch.last_revision()
 

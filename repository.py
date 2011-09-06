@@ -534,6 +534,7 @@ class SvnRepository(ForeignRepository):
         return reconciler
 
     def _cache_add_new_revision(self, revnum, revid, parents):
+        assert self.is_locked()
         assert type(parents) == tuple or parents is None
         self._cached_revnum = max(revnum, self._cached_revnum)
         if parents == () and revid != NULL_REVISION:
@@ -578,10 +579,12 @@ class SvnRepository(ForeignRepository):
 
         Will be cached when there is a read lock open.
         """
-        if self._lock_mode in ('r','w') and self._cached_revnum is not None:
+        if self._cached_revnum is not None:
             return self._cached_revnum
-        self._cached_revnum = self.transport.get_latest_revnum()
-        return self._cached_revnum
+        revnum = self.transport.get_latest_revnum()
+        if self.is_locked():
+            self._cached_revnum = revnum
+        return revnum
 
     @needs_read_lock
     def gather_stats(self, revid=None, committers=None):
