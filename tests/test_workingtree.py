@@ -348,6 +348,9 @@ class TestWorkingTree(SubversionTestCase):
     def test_get_parent_ids_no_merges(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
         self.build_tree({"dc/bl": "data"})
+        self.client_add("dc/bl")
+        self.client_commit('dc', 'msg')
+        self.build_tree({"dc/bl": "data"})
         self.assertEqual([tree.branch.last_revision()], tree.get_parent_ids())
 
     def test_delta(self):
@@ -553,38 +556,38 @@ class TestWorkingTree(SubversionTestCase):
         self.assertFalse(os.path.exists(os.path.join("dc", ".bzr")))
 
     def test_update(self):
-        tree = self.make_svn_branch_and_tree('a', 'de')
-        self.make_checkout(tree.branch.base, "dc")
+        tree = self.make_svn_branch_and_tree('a', 'de') #1
+        self.make_checkout(tree.branch.base, "dc") #1
         self.build_tree({'dc/bla': "data"})
         self.client_add("dc/bla")
-        self.client_commit("dc", "msg")
+        self.client_commit("dc", "msg") #2
         tree.update()
         self.assertTrue(os.path.exists(os.path.join("de", ".svn")))
         self.assertTrue(os.path.exists(os.path.join("de", "bla")))
 
     def test_update_revision(self):
-        tree = self.make_svn_branch_and_tree('a', 'de')
+        tree = self.make_svn_branch_and_tree('a', 'de') #1
         self.make_checkout(tree.branch.base, "dc")
         self.build_tree({'dc/bla': "data"})
         self.client_add("dc/bla")
-        self.client_commit("dc", "msg")
+        self.client_commit("dc", "msg") #2
         self.build_tree({'dc/bla': "data2"})
-        self.client_commit("dc", "msg2")
-        tree.update(revision=tree.branch.generate_revision_id(1))
+        self.client_commit("dc", "msg2") #3
+        tree.update(revision=tree.branch.generate_revision_id(2))
         self.assertTrue(os.path.exists(os.path.join("de", ".svn")))
         self.assertFileEqual("data", "de/bla")
 
     def test_update_old_tip(self):
-        tree = self.make_svn_branch_and_tree('a', 'dc')
+        tree = self.make_svn_branch_and_tree('a', 'dc') #1
         self.make_checkout(tree.branch.base, "de")
         self.build_tree({'dc/bla': "data"})
         self.client_add("dc/bla")
-        self.client_commit("dc", "msg")
+        self.client_commit("dc", "msg") #2
         self.build_tree({'dc/bla': "data2"})
-        self.client_commit("dc", "msg2")
+        self.client_commit("dc", "msg2") #3
         tree = WorkingTree.open("de")
-        tree.update(revision=tree.branch.generate_revision_id(1),
-                    old_tip=tree.branch.generate_revision_id(0))
+        tree.update(revision=tree.branch.generate_revision_id(2),
+                    old_tip=tree.branch.generate_revision_id(1))
         self.assertTrue(os.path.exists(os.path.join("de", ".svn")))
         self.assertFileEqual("data", "de/bla")
 

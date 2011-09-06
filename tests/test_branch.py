@@ -424,15 +424,14 @@ class WorkingSubversionBranch(SubversionTestCase):
 
     def test_last_rev_rev_info(self):
         branch = self.make_svn_branch("a")
-        self.assertEqual((1, branch.generate_revision_id(1)),
-                branch.last_revision_info())
+        self.assertEqual(
+            (0, branch.generate_revision_id(1)),
+            branch.last_revision_info())
         branch.revision_history()
-        self.assertEqual((1, branch.generate_revision_id(1)),
-                branch.last_revision_info())
 
     def test_lookup_revision_id_unknown(self):
         branch = self.make_svn_branch("a")
-        self.assertRaises(NoSuchRevision, lambda: branch.lookup_bzr_revision_id("bla"))
+        self.assertRaises(NoSuchRevision, branch.lookup_bzr_revision_id, "bla")
 
     def test_lookup_revision_id(self):
         branch = self.make_svn_branch("a")
@@ -443,23 +442,22 @@ class WorkingSubversionBranch(SubversionTestCase):
         branch.set_parent("foobar")
 
     def test_num_revnums(self):
-        branch = self.make_branch('a')
-        self.assertEqual(branch.generate_revision_id(1), branch.last_revision())
+        branch = self.make_svn_branch('a') #1
 
-        dc = self.get_commit_editor(branch.base)
+        self.assertEqual(
+            branch.generate_revision_id(1),
+            branch.last_revision())
+
+        dc = self.get_commit_editor(branch.base) #2
         dc.add_file("foo").modify()
         dc.close()
 
-        self.assertEqual(
-            branch.repository.generate_revision_id(1, branch.get_branch_path(), branch.mapping),
-            branch.last_revision())
-
-        dc = self.get_commit_editor(branch.base)
+        dc = self.get_commit_editor(branch.base) #3
         dc.open_file("foo").modify()
         dc.close()
 
         self.assertEqual(
-            branch.repository.generate_revision_id(2, "", branch.mapping),
+            branch.repository.generate_revision_id(3, branch.get_branch_path(), branch.mapping),
             branch.last_revision())
 
     def test_set_revision_history_empty(self):

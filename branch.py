@@ -431,6 +431,8 @@ class SvnBranch(ForeignBranch):
                 return revmeta.get_revision_id(mapping)
             if revmeta.metarev.revnum < revnum:
                 break
+        if take_next:
+            return NULL_REVISION
         raise NoSuchRevision(self, revnum)
 
     def get_config(self):
