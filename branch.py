@@ -218,9 +218,7 @@ class SvnBranch(ForeignBranch):
         super(SvnBranch, self).__init__(mapping)
         self._lock_mode = None
         self._lock_count = 0
-        self._revmeta_cache = None
-        self._revnum = revnum
-        self._cached_last_revid = None
+        self._clear_cached_state()
         assert isinstance(self._branch_path, str)
         if not _skip_check:
             try:
@@ -264,7 +262,7 @@ class SvnBranch(ForeignBranch):
 
     def check_path(self):
         return self.repository.transport.check_path(self._branch_path,
-            self._revnum or self.repository.get_latest_revnum())
+            self.repository.get_latest_revnum())
 
     def supports_tags(self):
         """See Branch.supports_tags()."""
@@ -524,7 +522,7 @@ class SvnBranch(ForeignBranch):
     def _iter_revision_meta_ancestry(self, pb=None):
         return self.repository._revmeta_provider._iter_reverse_revmeta_mapping_ancestry(
             self.get_branch_path(),
-            self._revnum or self.repository.get_latest_revnum(), self.mapping,
+            self.repository.get_latest_revnum(), self.mapping,
             lhs_history=self._revision_meta_history(), pb=pb)
 
     def _revision_meta_history(self):
@@ -532,7 +530,7 @@ class SvnBranch(ForeignBranch):
             self._revmeta_cache = util.lazy_readonly_list(
                 self.repository._revmeta_provider._iter_reverse_revmeta_mapping_history(
                     self.get_branch_path(),
-                    self._revnum or self.repository.get_latest_revnum(),
+                    self.repository.get_latest_revnum(),
                     to_revnum=0, mapping=self.mapping))
         return self._revmeta_cache
 
@@ -659,7 +657,6 @@ class SvnBranch(ForeignBranch):
 
     def _clear_cached_state(self):
         super(SvnBranch, self)._clear_cached_state()
-        self._cached_revnum = None
         self._cached_last_revid = None
         self._revmeta_cache = None
 
