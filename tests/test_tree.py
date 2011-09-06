@@ -218,20 +218,25 @@ class TestInventoryExternals(SubversionTestCase):
 
     def test_add_nested_norev(self):
         """Add a nested tree with no specific revision referenced."""
-        branch = self.make_svn_branch('d', lossy=False)
+        branch = self.make_svn_branch('d', lossy=True)
         repos = branch.repository
-        repos_url = repos.base
         mapping = repos.get_mapping()
         inv = Inventory(root_id='blabloe')
         inventory_add_external(inv, 'blabloe', 'blie/bla',
                 mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)),
                 None, branch.base)
-        self.assertEqual(TreeReference(
+        expected_ie = TreeReference(
             mapping.generate_file_id((repos.uuid, branch.get_branch_path(), 1), u""),
              'bla', inv.path2id('blie'),
              reference_revision=CURRENT_REVISION,
-             revision=mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1))),
-             inv[inv.path2id('blie/bla')])
+             revision=mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)))
+        ie = inv[inv.path2id('blie/bla')]
+        self.assertEquals(expected_ie.file_id, ie.file_id)
+        self.assertEquals(expected_ie.revision, ie.revision)
+        self.assertEquals(expected_ie.name, ie.name)
+        self.assertEquals(expected_ie.reference_revision, ie.reference_revision)
+        self.assertEquals(expected_ie.parent_id, ie.parent_id)
+        self.assertEqual(expected_ie, ie)
 
     def test_add_simple_norev(self):
         branch = self.make_svn_branch('d', lossy=True)

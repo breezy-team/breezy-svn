@@ -174,8 +174,9 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
     def tearDown(self):
         TestCaseInTempDir.tearDown(self)
 
-    def make_svn_branch_and_tree(self, repospath, clientpath, allow_revprop_changes=True):
-        branch = self.make_svn_branch(repospath)
+    def make_svn_branch_and_tree(self, repospath, clientpath,
+            allow_revprop_changes=True, lossy=False):
+        branch = self.make_svn_branch(repospath, lossy=lossy)
         self.make_checkout(branch.base, clientpath)
         return WorkingTree.open(clientpath.decode("utf-8"))
 

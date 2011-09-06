@@ -209,7 +209,7 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEquals(oldid, wt.path2id("bar"))
         self.assertEquals(None, wt.path2id("foo"))
         wt.commit(message="doe") # 4
-        paths = self.client_log(wt.branch.repository.base, 4, 0)[4][0]
+        paths = self.client_log(wt.branch.base, 4, 0)[4][0]
         self.assertEquals('D', paths["/foo"][0])
         self.assertEquals('A', paths["/bar"][0])
         self.assertEquals('/foo', paths["/bar"][1])
