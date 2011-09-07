@@ -390,13 +390,15 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
 class SvnCommitBuilder(CommitBuilder):
     """Commit Builder implementation wrapped around svn_delta_editor. """
 
+    _versioned_root = True
+
     support_use_record_entry_contents = False
 
     def __init__(self, repository, branch_path, parents, config, timestamp,
                  timezone, committer, revprops, revision_id,
                  base_foreign_revid, base_mapping, root_action, old_tree=None,
                  push_metadata=True, graph=None, opt_signature=None,
-                 testament=None):
+                 testament=None, branch=None):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -435,6 +437,7 @@ class SvnCommitBuilder(CommitBuilder):
         self._override_text_revisions = {}
         self._override_text_parents = {}
         self._heads = _mod_graph.HeadsCache(repository.get_graph()).heads
+        self._branch = branch
 
         # Gather information about revision on top of which the commit is
         # happening
@@ -873,6 +876,8 @@ class SvnCommitBuilder(CommitBuilder):
         revid = self.revmeta.get_revision_id(self.mapping)
         self.repository._cache_add_new_revision(result_revision,
             revid, tuple(self.parents))
+        if self._branch is not None:
+            self._branch._clear_cached_state()
 
         if self.push_metadata and self._new_revision_id not in (revid, None):
             raise AssertionError("Unexpected revision id %s != %s" %

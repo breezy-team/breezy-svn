@@ -1192,7 +1192,8 @@ class SvnRepository(ForeignRepository):
                                 revprops, revision_id,
                                 base_foreign_revid, base_mapping,
                                 root_action=root_action,
-                                push_metadata=not lossy)
+                                push_metadata=not lossy,
+                                branch=branch)
 
     def find_fileprop_paths(self, layout, from_revnum, to_revnum,
                                project=None, check_removed=False):
