@@ -74,6 +74,7 @@ class UninitializableOnRemoteTransports(errors.UninitializableFormat):
 class SvnRemoteFormat(ControlDirFormat):
     """Format for the Subversion smart server."""
 
+    colocated_branches = True
     supports_workingtrees = False
     fixed_components = True
     _lock_class = TransportLock
