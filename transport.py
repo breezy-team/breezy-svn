@@ -548,11 +548,15 @@ class SvnRaTransport(Transport):
         finally:
             self.add_connection(conn)
 
+    @property
+    def repos_path(self):
+        return self.svn_url[len(self.get_repos_root()):].strip("/")
+
     @convert_svn_error
     def create_prefix(self):
         create_branch_prefix(self.clone_root(),
                 {"svn:log": "Creating prefix"},
-                self.svn_url[len(self.get_repos_root()):].strip("/").split("/")[:-1])
+                self.repos_path.split("/")[:-1])
 
     @convert_svn_error
     def mkdir(self, relpath, message="Creating directory"):
