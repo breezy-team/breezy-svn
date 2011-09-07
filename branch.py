@@ -56,6 +56,7 @@ from bzrlib.errors import (
     LossyPushToSameVCS,
     NoSuchRevision,
     NotBranchError,
+    ReadOnlyError,
     TokenLockingNotSupported,
     UnstackableBranchFormat,
     )
@@ -647,7 +648,8 @@ class SvnBranch(ForeignBranch):
         if token is not None:
             raise TokenLockingNotSupported(self)
         if self._lock_mode:
-            assert self._lock_mode == 'w'
+            if self._lock_mode == 'r':
+                raise ReadOnlyError(self)
             self._lock_count += 1
         else:
             self._lock_mode = 'w'
