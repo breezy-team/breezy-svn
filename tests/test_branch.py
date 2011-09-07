@@ -1070,11 +1070,12 @@ class BranchFormatTests(TestCase):
 class ForeignTestsBranchFactory(object):
 
     def make_empty_branch(self, transport):
-        raise TestSkipped()
+        subvertpy.repos.create(transport.local_abspath("."))
+        dir = BzrDir.open_from_transport(transport)
+        return dir.create_branch()
 
     def make_branch(self, transport):
-        subvertpy.repos.create(transport.local_abspath("."))
-        return Branch.open(transport.base)
+        return self.make_empty_branch(transport)
 
 
 class TestInterBranchFetch(SubversionTestCase):
