@@ -23,6 +23,7 @@ from bzrlib import (
     errors,
     osutils,
     trace,
+    urlutils,
     )
 from bzrlib.controldir import (
     ControlDirFormat,
@@ -515,12 +516,13 @@ class SvnRemoteAccess(ControlDir):
         relpath = self._determine_relpath(branch_name)
         if relpath == "":
             raise errors.UnsupportedOperation(self.destroy_branch, self)
-        conn = self.root_transport.get_connection()
+        dirname, basename = urlutils.split(relpath)
+        conn = self.root_transport.get_connection(dirname)
         try:
             ce = conn.get_commit_editor({"svn:log": "Remove branch."})
             try:
                 root = ce.open_root()
-                root.delete_entry(".")
+                root.delete_entry(basename)
                 root.close()
             except:
                 ce.abort()
