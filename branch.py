@@ -634,7 +634,7 @@ class SvnBranch(ForeignBranch):
         return self._lock_count != 0
 
     def break_lock(self):
-        pass
+        raise NotImplementedError(self.break_lock)
 
     def lock_write(self, token=None):
         """See Branch.lock_write()."""
@@ -736,6 +736,12 @@ class SvnBranchFormat(BranchFormat):
             return tag.DisabledTags(branch)
 
     def supports_set_append_revisions_only(self):
+        return True
+
+    def supports_tags_referencing_ghosts(self):
+        return False
+
+    def tags_are_versioned(self):
         return True
 
 

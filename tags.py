@@ -156,10 +156,6 @@ class ReverseTagDict(object):
 class SubversionTags(BasicTags):
     """Subversion tags object."""
 
-    versioned = True
-
-    supports_ghosts = False
-
     def __init__(self, branch):
         self.branch = branch
         self.repository = branch.repository
