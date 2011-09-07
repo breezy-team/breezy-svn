@@ -240,6 +240,14 @@ class SvnRemoteAccess(ControlDir):
         target_repo = target.open_repository()
         source_repo = self.open_repository()
         target_repo.fetch(source_repo, revision_id=revision_id)
+        # FIXME: This should ideally use the same mechanism as svnsync,
+        # or at least copy all colocated branches, too.
+        try:
+            branch = self.open_branch()
+        except errors.NotBranchError:
+            pass
+        else:
+            target.push_branch(branch, revision_id=branch.last_revision())
         return target
 
     def sprout(self, url, revision_id=None, force_new_repo=False,
@@ -260,25 +268,42 @@ class SvnRemoteAccess(ControlDir):
         cloning_format = self.cloning_metadir()
         # Create/update the result branch
         result = cloning_format.initialize_on_transport(target_transport)
-        source_branch = self.open_branch()
+
         source_repository = self.find_repository()
-        try:
-            result_repo = result.find_repository()
-        except errors.NoRepositoryPresent:
+        if force_new_repo:
             result_repo = result.create_repository()
             target_is_empty = True
         else:
-            target_is_empty = None # Unknown
+            try:
+                result_repo = result.find_repository()
+            except errors.NoRepositoryPresent:
+                result_repo = result.create_repository()
+                target_is_empty = True
+            else:
+                target_is_empty = None # Unknown
         if stacked:
             raise errors.UnstackableRepositoryFormat(self._format, self.root_transport.base)
         interrepo = InterRepository.get(source_repository, result_repo)
-        if revision_id is None:
-            revision_id = source_branch.last_revision()
+        try:
+            source_branch = self.open_branch()
+        except errors.NotBranchError:
+            source_branch = None
+            project = None
+            mapping = None
+            revision_id = NULL_REVISION
+        else:
+            if revision_id is None:
+                revision_id = source_branch.last_revision()
+            project = source_branch.project
+            mapping = source_branch.mapping
         interrepo.fetch(revision_id=revision_id,
-            project=source_branch.project, mapping=source_branch.mapping,
+            project=project, mapping=mapping,
             target_is_empty=target_is_empty)
-        result_branch = source_branch.sprout(result,
-            revision_id=revision_id, repository=result_repo)
+        if source_branch is not None:
+            result_branch = source_branch.sprout(result,
+                revision_id=revision_id, repository=result_repo)
+        else:
+            result_branch = result.create_branch()
         if (create_tree_if_local and isinstance(target_transport, LocalTransport)
             and (result_repo is None or result_repo.make_working_trees())):
             result.create_workingtree(accelerator_tree=accelerator_tree,
@@ -354,6 +379,8 @@ class SvnRemoteAccess(ControlDir):
         try:
             if stop_revision is None:
                 stop_revision = source.last_revision()
+            if stop_revision == NULL_REVISION:
+                return self.create_branch()
             relpath = self._determine_relpath(name)
             target_branch_path = relpath.lstrip("/")
             repos = self.find_repository()
@@ -428,6 +455,14 @@ class SvnRemoteAccess(ControlDir):
             return SvnBranch(repository, self, relpath, mapping)
         finally:
             repository.unlock()
+
+    def get_branch_reference(self, name=None):
+        """See ControlDir.get_branch_reference()."""
+        # No branch is a reference branch, but we should
+        # still raise the appropriate errors if there is no
+        # branch with the specified name.
+        self.open_branch()
+        return None
 
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
             mapping=None, branch_path=None, repository=None):
