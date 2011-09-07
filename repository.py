@@ -551,8 +551,6 @@ class SvnRepository(ForeignRepository):
         self._cached_revnum = None
         self._layout = None
         self._layout_source = None
-        self._parents_provider = graph.CachingParentsProvider(
-            self._real_parents_provider)
         if self._cache_obj is not None:
             self._cache_obj.commit()
 
