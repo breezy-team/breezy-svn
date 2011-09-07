@@ -320,16 +320,14 @@ class SvnBranch(ForeignBranch):
 
     def last_revmeta(self, skip_hidden):
         """Return the revmeta element for the last revision in this branch.
+
+        :param skip_hidden: Whether to skip hidden revisions
         """
         for revmeta, hidden, mapping in self._revision_meta_history():
             if hidden and skip_hidden:
                 continue
             return revmeta, mapping
         return None, None
-
-    def _base_foreign_revid(self):
-        return (self.repository.uuid, self.get_branch_path(),
-                self.get_revnum())
 
     def check(self, refs=None):
         """See Branch.Check.
@@ -432,6 +430,8 @@ class SvnBranch(ForeignBranch):
                 return revmeta.get_revision_id(mapping)
             if revmeta.metarev.revnum < revnum:
                 break
+        if take_next:
+            return NULL_REVISION
         raise NoSuchRevision(self, revnum)
 
     def get_config(self):
@@ -571,8 +571,12 @@ class SvnBranch(ForeignBranch):
             return self._cached_last_revid
         last_revmeta, mapping = self.last_revmeta(skip_hidden=True)
         if last_revmeta is None:
-            return NULL_REVISION
-        return last_revmeta.get_revision_id(mapping)
+            revid = NULL_REVISION
+        else:
+            revid = last_revmeta.get_revision_id(mapping)
+        if self.is_locked():
+            self._cached_last_revid = revid
+        return revid
 
     def get_push_merged_revisions(self):
         return (self.layout.push_merged_revisions(self.project) and
@@ -580,8 +584,10 @@ class SvnBranch(ForeignBranch):
 
     def import_last_revision_info(self, source_repo, revno, revid, lossy=False):
         interrepo = InterToSvnRepository(source_repo, self.repository)
+        base_revmeta, base_mapping = self.last_revmeta(skip_hidden=False)
         revidmap = interrepo.push_todo(self.last_revision(),
-            self._base_foreign_revid(), self.mapping, revid, self.layout,
+            base_revmeta.metarev.get_foreign_revid(),
+            base_mapping, revid, self.layout,
             self.project, self.get_branch_path(), self.get_config(),
             push_merged=self.get_push_merged_revisions(),
             overwrite=False, push_metadata=not lossy,
@@ -946,10 +952,12 @@ class InterToSvnBranch(InterBranch):
         push_merged = self.target.get_push_merged_revisions()
         interrepo = InterToSvnRepository(
             self.source.repository, self.target.repository)
+        base_revmeta, base_mapping = self.target.last_revmeta(skip_hidden=False)
         try:
             revidmap = interrepo.push_branch(self.target.get_branch_path(),
                     self.target.get_config(), old_last_revid,
-                    self.target._base_foreign_revid(), self.target.mapping,
+                    base_revmeta.metarev.get_foreign_revid(),
+                    base_mapping,
                     stop_revision=stop_revision, overwrite=overwrite,
                     push_metadata=push_metadata, push_merged=push_merged,
                     layout=self.target.layout, project=self.target.project)

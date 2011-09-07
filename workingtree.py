@@ -924,7 +924,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         try:
             return self.basis_idmap.lookup(self.mapping, path)[:2]
         except KeyError:
-            mutter("FILEID MAP: %r", self._get_new_file_ids())
+            mutter("fileid map: %r", self._get_new_file_ids())
             raise
 
     def _get_changed_branch_props(self):
@@ -1161,8 +1161,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
         adms_to_close = set()
         def update_entry(cq, path, root_adm, md5sum=None):
-            mutter('updating entry for %s'% path)
-            adm = root_adm.probe_try(self.abspath(path).encode("utf-8"), True, 1)
+            mutter('updating entry for %s', path)
+            adm = root_adm.probe_try(
+                self.abspath(path).encode("utf-8"), True, 1)
             cq.queue(self.abspath(path).rstrip("/").encode("utf-8"), adm,
                 True, None, False, False, md5sum)
             adms_to_close.add(adm)

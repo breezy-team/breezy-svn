@@ -320,12 +320,12 @@ class FileIdMapStore(object):
             return map
 
         # No history -> empty map
-        todo = list(self.repos._iter_reverse_revmeta_mapping_history(branch, revnum, to_revnum=0, mapping=mapping))
+        todo = list(self.repos._revmeta_provider._iter_reverse_revmeta_mapping_history(branch, revnum, to_revnum=0, mapping=mapping))
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for i, (revmeta, mapping) in enumerate(reversed(todo)):
+            for i, (revmeta, hidden, mapping) in enumerate(reversed(todo)):
                 pb.update('generating file id map', i, len(todo))
-                if revmeta.is_hidden(mapping):
+                if hidden:
                     continue
                 self.update_idmap(map, revmeta, mapping)
         finally:
@@ -396,8 +396,6 @@ class CachingFileIdMapStore(object):
 
     def get_map(self, (uuid, branch, revnum), mapping):
         """Make sure the map is up to date until revnum."""
-        if revnum == 0:
-            return self.actual.get_map((uuid, branch, revnum), mapping)
         todo = []
         next_parent_revs = []
 
@@ -422,7 +420,7 @@ class CachingFileIdMapStore(object):
 
         # target revision was present
         if len(todo) == 0:
-            return map
+            return self.actual.get_map((uuid, branch, revnum), mapping)
 
         if len(next_parent_revs) == 0:
             if mapping.is_branch(""):

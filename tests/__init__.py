@@ -26,6 +26,7 @@ from bzrlib.bzrdir import (
 from bzrlib.tests import (
     TestCaseInTempDir,
     )
+from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn import (
     transport as _mod_svn_transport,
@@ -145,6 +146,10 @@ class RecordingRemoteAccess(object):
 
 class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
+    def make_svn_branch(self, relpath, lossy=False):
+        repos_url = self.make_repository(relpath)
+        return BzrDir.open(repos_url).create_branch(lossy=lossy)
+
     def make_svn_repository(self, relpath, allow_revprop_changes=True):
         """Create an SVN repository.
 
@@ -157,6 +162,8 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
             subvertpy.tests.SubversionTestCase.make_repository(self,
                 relpath, allow_revprop_changes))
 
+    make_repository = make_svn_repository
+
     def setUp(self):
         subvertpy.tests.SubversionTestCase.setUp(self)
         subvertpy.tests.SubversionTestCase.tearDown(self)
@@ -166,6 +173,12 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
     def tearDown(self):
         TestCaseInTempDir.tearDown(self)
+
+    def make_svn_branch_and_tree(self, repospath, clientpath,
+            allow_revprop_changes=True, lossy=False):
+        branch = self.make_svn_branch(repospath, lossy=lossy)
+        self.make_checkout(branch.base, clientpath)
+        return WorkingTree.open(clientpath.decode("utf-8"))
 
     def assertChangedPathEquals(self, expected, got, msg=None):
         if expected[:3] == got[:3] and got[3] in (expected[3], NODE_UNKNOWN):

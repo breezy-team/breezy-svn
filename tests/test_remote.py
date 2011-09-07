@@ -33,7 +33,7 @@ from bzrlib.errors import (
     )
 from bzrlib.tests import TestCase
 
-from bzrlib.plugins.svn.layout.standard import TrunkLayout
+from bzrlib.plugins.svn.layout.standard import RootLayout, TrunkLayout
 from bzrlib.plugins.svn.remote import SvnRemoteFormat
 from bzrlib.plugins.svn.tests import SubversionTestCase
 from bzrlib.plugins.svn.transport import SvnRaTransport
@@ -79,9 +79,17 @@ class TestRemoteAccess(SubversionTestCase):
         x = BzrDir.open(repos_url)
         self.assertRaises(UnsupportedOperation, x.create_workingtree)
 
+    def test_create_branch(self):
+        repos_url = self.make_repository("d")
+        x = BzrDir.open(repos_url)
+        # The default layout is "trunk"
+        b = x.create_branch()
+        self.assertEquals(repos_url+"/trunk", b.base)
+
     def test_create_branch_top(self):
         repos_url = self.make_svn_repository("d")
         x = BzrDir.open(repos_url)
+        x.open_repository().store_layout(RootLayout())
         b = x.create_branch()
         self.assertEquals(repos_url, b.base)
 

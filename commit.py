@@ -793,7 +793,8 @@ class SvnCommitBuilder(CommitBuilder):
                         self._get_parents_tuples(),
                         (self._iter_new_children, self._get_new_ie), "",
                         self.new_root_id, branch_editors[-1],
-                        self.branch_path, self.modified_files, self._visit_dirs)
+                        self.branch_path, self.modified_files,
+                        self._visit_dirs)
 
                 if self.modified_files != {}:
                     raise AssertionError("some modified files not sent: %r" %
@@ -961,6 +962,7 @@ class SvnCommitBuilder(CommitBuilder):
         :return: A generator of (file_id, relpath, fs_hash) tuples for use with
             tree._observed_sha1.
         """
+        self.new_root_id = tree.get_root_id()
         parent_trees = [self.old_tree]
         for p in self.parents[1:]:
             try:

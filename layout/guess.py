@@ -126,9 +126,7 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
     else:
         best_match = None
 
-    if relpath is None:
-        if best_match is None:
-            return (None, RootLayout())
+    if relpath is None and best_match is not None:
         return (best_match, best_match)
 
     for (layoutname, _) in entries:
@@ -136,7 +134,12 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
         if layout.is_branch(relpath):
             return (best_match, layout)
 
-    return (best_match, guess_layout_from_branch_path(relpath))
+    if relpath == "" or relpath is None:
+        guessed_layout = TrunkLayout()
+    else:
+        guessed_layout = guess_layout_from_branch_path(relpath)
+
+    return (best_match, guessed_layout)
 
 
 def repository_guess_layout(repository, revnum, branch_path=None):

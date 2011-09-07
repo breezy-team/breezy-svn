@@ -427,12 +427,6 @@ class BzrMetaRevision(object):
                 return bzr_revno
         return None
 
-    def get_hidden_lhs_ancestors_count(self, mapping):
-        """Get the number of hidden ancestors this revision has."""
-        if not mapping.supports_hidden:
-            return 0
-        return mapping.get_hidden_lhs_ancestors_count(self.get_fileprops())
-
     def get_revno(self, mapping):
         """Determine the Bazaar revision number for this revision.
 
@@ -440,7 +434,8 @@ class BzrMetaRevision(object):
         :return: Bazaar revision number
         """
         extra = 0
-        total_hidden = None
+        total_hidden = 0
+        hidden_seen = 0
         lm = self
         pb = ui.ui_factory.nested_progress_bar()
         try:
@@ -450,15 +445,15 @@ class BzrMetaRevision(object):
                 (mapping, lhs_mapping) = lm.get_appropriate_mappings(mapping)
                 ret = lm.get_distance_to_null(mapping)
                 if ret is not None:
-                    return ret + extra - (total_hidden or 0)
-                if total_hidden is None:
-                    total_hidden = lm.get_hidden_lhs_ancestors_count(mapping)
+                    return ret + extra - total_hidden
+                if lm.is_hidden(mapping):
+                    total_hidden += 1
                 extra += 1
                 lm = lm.get_direct_lhs_parent_revmeta()
                 mapping = lhs_mapping
         finally:
             pb.finished()
-        return extra - (total_hidden or 0)
+        return extra - total_hidden
 
     def get_rhs_parents(self, mapping, parentrevmeta):
         """Determine the right hand side parent ids for this revision.

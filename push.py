@@ -300,12 +300,13 @@ class InterToSvnRepository(InterRepository):
             for revid in graph.iter_lefthand_ancestry(stop_revision,
                     (NULL_REVISION, None)):
                 if revid == last_revid:
-                    todo.reverse()
                     break
                 todo.append(revid)
             else:
-                url = urlutils.join(self.target.base, target_branch)
-                raise AppendRevisionsOnlyViolation(url)
+                if last_revid != NULL_REVISION:
+                    url = urlutils.join(self.target.base, target_branch)
+                    raise AppendRevisionsOnlyViolation(url)
+            todo.reverse()
             return todo, ("open", )
         else:
             for revid in graph.iter_lefthand_ancestry(stop_revision, (NULL_REVISION, None)):
