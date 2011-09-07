@@ -170,6 +170,10 @@ class SvnRaTest(SubversionTestCase):
         self.assertEquals(c.check_path("bla/subdir", c.get_latest_revnum()),
                           subvertpy.NODE_DIR)
 
+        t = SvnRaTransport(repos_url+"/nonexistant")
+        self.knownFailure("unable to create dir by .")
+        t.mkdir(".")
+
     def test_has_dot(self):
         t = SvnRaTransport(self.make_svn_repository('a'))
         self.assertEqual(True, t.has("."))
