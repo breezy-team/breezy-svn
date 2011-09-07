@@ -512,7 +512,7 @@ class WorkingSubversionBranch(SubversionTestCase):
     def test_break_lock(self):
         # duplicated by bzrlib.tests.per_branch.test_break_lock
         branch = self.make_svn_branch('a')
-        branch.break_lock()
+        self.assertRaises(NotImplementedError, branch.break_lock)
 
     def test_repr(self):
         branch = self.make_svn_branch('a')
