@@ -637,7 +637,10 @@ class SvnRaTransport(Transport):
         return self.PhonyLock() # FIXME
 
     def clone_root(self):
-        return SvnRaTransport(self.get_repos_root(), self)
+        url = self.get_repos_root()
+        if self.is_readonly():
+            url = "readonly+" + url
+        return SvnRaTransport(url, self)
 
     def clone(self, offset=None):
         """See Transport.clone()."""
