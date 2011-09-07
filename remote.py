@@ -517,7 +517,7 @@ class SvnRemoteAccess(ControlDir):
         if relpath == "":
             raise errors.UnsupportedOperation(self.destroy_branch, self)
         dirname, basename = urlutils.split(relpath)
-        conn = self.root_transport.get_connection(dirname)
+        conn = self.root_transport.get_connection(dirname.strip("/"))
         try:
             ce = conn.get_commit_editor({"svn:log": "Remove branch."})
             try:
