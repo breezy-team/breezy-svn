@@ -456,7 +456,7 @@ Node-copyfrom-path: x
         self.build_tree({'de/foo': 'bla'})
         self.run_bzr("add de/foo")
         self.run_bzr("commit -m test de")
-        self.assertEquals("2\n", self.run_bzr("revno de")[0])
+        self.assertEquals("1\n", self.run_bzr("revno de")[0])
 
     # this method imported from bzrlib.tests.test_msgeditor:
     def make_fake_editor(self, message='test message from fed\\n'):

@@ -25,6 +25,7 @@ from subvertpy.wc import (
 
 from bzrlib import (
     osutils,
+    revision as _mod_revision,
     version_info as bzrlib_version,
     )
 from bzrlib.branch import Branch
@@ -536,23 +537,31 @@ class TestWorkingTree(SubversionTestCase):
         tree.basis_tree()
         tree.commit(message="data")
 
-    def test_update_after_commit(self):
+    def test_set_root_id_commit(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
+        self.assertIsNot(None, tree.path2id(""))
+        self.build_tree({"dc/foo": "data"})
+        self.client_add("dc/foo")
+        tree.commit("set root")
+
+    def test_update_after_commit(self):
+        tree = self.make_svn_branch_and_tree('a', 'dc') #1
         self.build_tree({"dc/bl": "data"})
         self.client_add("dc/bl")
         orig_tree = tree.basis_tree()
         self.assertTrue(tree.changes_from(tree.basis_tree()).has_changed())
-        tree.commit(message="data")
+        tree.commit(message="data") #2
         self.assertCleanTree(tree)
         self.assertEqual(
-                tree.branch.generate_revision_id(1),
+                tree.branch.generate_revision_id(2),
                 tree.basis_tree().get_revision_id())
-        rev0tree = tree.branch.repository.revision_tree(tree.branch.generate_revision_id(0))
+        rev0tree = tree.branch.repository.revision_tree(
+            _mod_revision.NULL_REVISION)
         delta = tree.basis_tree().changes_from(rev0tree)
         self.assertTrue(delta.has_changed(), repr(delta))
         tree = WorkingTree.open("dc")
         self.assertEqual(
-             tree.branch.generate_revision_id(1),
+             tree.branch.generate_revision_id(2),
              tree.basis_tree().get_revision_id())
         self.assertCleanTree(tree)
 
@@ -676,7 +685,7 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({'dc/some strange file': 'data'})
         tree.add(["some strange file"])
         tree.commit("message")
-        self.assertEqual("a", tree.branch.nick)
+        self.assertEqual("trunk", tree.branch.nick)
 
     def test_out_of_date(self):
         repos_url = self.make_client('a', 'dc')

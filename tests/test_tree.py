@@ -282,10 +282,10 @@ class TestSvnRevisionTree(SubversionTestCase):
 
     def setUp(self):
         super(TestSvnRevisionTree, self).setUp()
-        tree = self.make_svn_branch_and_tree('d', 'dc')
+        tree = self.make_svn_branch_and_tree('d', 'dc') #1
         self.build_tree({'dc/foo/bla': "data"})
         self.client_add("dc/foo")
-        self.client_commit("dc", "My Message")
+        self.client_commit("dc", "My Message") #2
         self.branch = tree.branch
         self.repos = tree.branch.repository
         mapping = self.repos.get_mapping()
@@ -326,12 +326,12 @@ class TestSvnRevisionTree(SubversionTestCase):
         self.requireFeature(SymlinkFeature)
         os.symlink('foo/bla', 'dc/bar')
         self.client_add('dc/bar')
-        self.client_commit("dc", "My Message")
+        self.client_commit("dc", "My Message") #3
 
         mapping = self.repos.get_mapping()
 
         tree = self.repos.revision_tree(
-                self.repos.generate_revision_id(2, self.branch.get_branch_path(), mapping))
+            self.repos.generate_revision_id(3, self.branch.get_branch_path(), mapping))
 
         self.assertEqual('symlink', tree.kind(tree.path2id("bar")))
         self.assertEqual('foo/bla',
