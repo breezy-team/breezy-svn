@@ -1006,12 +1006,11 @@ class InterToSvnBranch(InterBranch):
     def fetch(self, stop_revision=None, fetch_tags=None, find_ghosts=False,
             limit=None):
         """Fetch into a subversion repository."""
-        # FIXME: Handle limit
         # FIXME: Handle fetch_tags
         # FIXME: Handle find_ghosts
         interrepo = InterToSvnRepository(
             self.source.repository, self.target.repository)
-        interrepo.fetch(revision_id=stop_revision)
+        interrepo.fetch(revision_id=stop_revision, limit=limit)
 
     def update_tags(self, result, overwrite=False):
         ret = self.source.tags.merge_to(self.target.tags, overwrite)

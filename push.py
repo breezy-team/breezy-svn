@@ -564,16 +564,16 @@ class InterToSvnRepository(InterRepository):
             self._graph = self.source.get_graph(self.target)
         return self._graph
 
-    def copy_content(self, revision_id=None, pb=None, project=None, mapping=None):
+    def copy_content(self, revision_id=None, pb=None, project=None, mapping=None, limit=None):
         """See InterRepository.copy_content."""
         self.source.lock_read()
         try:
+            graph = self.get_graph()
             if revision_id is not None:
-                graph = self.get_graph()
                 consider = graph.iter_lefthand_ancestry(revision_id,
                     (NULL_REVISION, None))
             else:
-                consider = self.source.all_revision_ids()
+                consider = graph.iter_topo_order(self.source.all_revision_ids())
             todo = []
             # Go back over the LHS parent until we reach a revid we know
             for revid in consider:
@@ -582,6 +582,12 @@ class InterToSvnRepository(InterRepository):
                 todo.append(revid)
             else:
                 return
+            if limit is not None:
+                # FIXME: This only considers mainline revisions.
+                # Properly keeping track of how many revisions have been
+                # pushed will be fairly complicated though, so for the
+                # moment this is reasonable enough (and passes tests).
+                todo = todo[:limit]
             mutter("pushing %r into svn", todo)
             base_foreign_info = None
             layout = self.target.get_layout()
@@ -620,7 +626,8 @@ class InterToSvnRepository(InterRepository):
             self.source.unlock()
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
-        fetch_spec=None, project=None, mapping=None, target_is_empty=False):
+        fetch_spec=None, project=None, mapping=None, target_is_empty=False,
+        limit=None):
         """Fetch revisions. """
         if fetch_spec is not None:
             recipe = fetch_spec.get_recipe()
@@ -630,10 +637,10 @@ class InterToSvnRepository(InterRepository):
                 raise AssertionError("Unknown search type %s" % recipe[0])
             for revid in heads:
                 self.copy_content(revision_id=revid, pb=pb, project=project,
-                    mapping=mapping)
+                    mapping=mapping, limit=limit)
         else:
             self.copy_content(revision_id=revision_id, pb=pb, project=project,
-                mapping=mapping)
+                mapping=mapping, limit=limit)
 
     @staticmethod
     def is_compatible(source, target):
