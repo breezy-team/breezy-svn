@@ -226,6 +226,8 @@ class SubversionTags(BasicTags):
                 ci.abort()
                 raise
             ci.close()
+            # FIXME: This shouldn't have to remove the entire cache, just update it
+            self.repository._clear_cached_state()
         finally:
             self.repository.transport.add_connection(conn)
 
@@ -338,6 +340,8 @@ class SubversionTags(BasicTags):
                 ci.abort()
                 raise
             ci.close()
+            # FIXME: This shouldn't have to remove the entire cache, just update it
+            self.repository._clear_cached_state()
         finally:
             assert not conn.busy
             self.repository.transport.add_connection(conn)
