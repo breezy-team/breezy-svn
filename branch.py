@@ -67,6 +67,10 @@ from bzrlib.revision import (
     is_null,
     ensure_null,
     )
+from bzrlib.symbol_versioning import (
+    deprecated_method,
+    deprecated_in,
+    )
 from bzrlib.workingtree import (
     WorkingTree,
     )
@@ -449,6 +453,7 @@ class SvnBranch(ForeignBranch):
 
     nick = property(_get_nick)
 
+    @deprecated_method(deprecated_in((2, 4, 0)))
     @needs_write_lock
     def set_revision_history(self, rev_history):
         """See Branch.set_revision_history()."""
