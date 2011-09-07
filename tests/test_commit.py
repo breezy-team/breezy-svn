@@ -210,10 +210,10 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEquals(None, wt.path2id("foo"))
         wt.commit(message="doe") # 4
         paths = self.client_log(wt.branch.base, 4, 0)[4][0]
-        self.assertEquals('D', paths["/foo"][0])
-        self.assertEquals('A', paths["/bar"][0])
-        self.assertEquals('/foo', paths["/bar"][1])
-        self.assertEquals(3, paths["/bar"][2])
+        self.assertEquals('D', paths["/trunk/foo"][0])
+        self.assertEquals('A', paths["/trunk/bar"][0])
+        self.assertEquals('/trunk/foo', paths["/trunk/bar"][1])
+        self.assertEquals(3, paths["/trunk/bar"][2])
         svnrepo = Repository.open(wt.branch.repository.base)
         revmeta = svnrepo._revmeta_provider.get_revision(wt.branch.get_branch_path(), 4)
         self.assertEquals({u"bar": oldid},
