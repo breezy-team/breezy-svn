@@ -515,11 +515,11 @@ class SvnBranch(ForeignBranch):
     def set_push_location(self, location):
         """See Branch.set_push_location()."""
         trace.mutter("setting push location for %s to %s", self.base, location)
+        self.get_config().set_user_option("push_location", location)
 
     def get_push_location(self):
         """See Branch.get_push_location()."""
-        # get_push_location not supported on Subversion
-        return None
+        return self.get_config().get_user_option("push_location")
 
     def _iter_revision_meta_ancestry(self, pb=None):
         return self.repository._revmeta_provider._iter_reverse_revmeta_mapping_ancestry(
