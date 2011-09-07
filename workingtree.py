@@ -82,6 +82,7 @@ from bzrlib.workingtree import (
     )
 
 from bzrlib.plugins.svn import (
+    SvnWorkingTreeProber,
     svk,
     )
 from bzrlib.plugins.svn.commit import (
@@ -1292,7 +1293,12 @@ class SvnCheckout(ControlDir):
         self._format = format
         self._mode_check_done = False
         self._config = None
-        self.local_path = transport.local_abspath(".")
+        if transport.base.startswith("readonly+"):
+            real_transport = transport._decorated
+        else:
+            real_transport = transport
+        SvnWorkingTreeProber().probe_transport(real_transport)
+        self.local_path = real_transport.local_abspath(".")
 
         # Open related remote repository + branch
         try:
