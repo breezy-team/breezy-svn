@@ -475,6 +475,8 @@ class SvnCommitBuilder(CommitBuilder):
         else:
             self.old_tree = old_tree
 
+        self.new_root_id = self.old_tree.get_root_id()
+
         # Determine revisions merged in this one
         merges = filter(lambda x: x != self.base_revid, parents)
 
