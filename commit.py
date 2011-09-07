@@ -319,6 +319,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
             changed = True
             # The file editors implicitly close the file editor
             modified_files[child_ie.file_id](child_editor)
+            del modified_files[child_ie.file_id]
         elif child_editor is not None:
             child_editor.close()
 
@@ -793,6 +794,10 @@ class SvnCommitBuilder(CommitBuilder):
                         (self._iter_new_children, self._get_new_ie), "",
                         self.new_root_id, branch_editors[-1],
                         self.branch_path, self.modified_files, self._visit_dirs)
+
+                if self.modified_files != {}:
+                    raise AssertionError("some modified files not sent: %r" %
+                        self.modified_files.keys())
 
                 # Set all the revprops
                 if self.push_metadata and self._svnprops.is_loaded:
