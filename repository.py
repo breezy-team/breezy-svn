@@ -782,6 +782,8 @@ class SvnRepository(ForeignRepository):
 
     def _check(self, revision_ids=None, callback_refs=None, check_repo=True):
         ret = SubversionRepositoryCheckResult(self)
+        # FIXME: If this is a local repository, call out to subvertpy.repos.verify_fs.
+        # bug=843944
         pb = ui.ui_factory.nested_progress_bar()
         try:
             if revision_ids is not None:
