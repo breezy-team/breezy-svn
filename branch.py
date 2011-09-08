@@ -17,7 +17,6 @@
 
 """Handles branch-specific operations."""
 
-import os
 from subvertpy import (
     ERR_FS_NO_SUCH_REVISION,
     NODE_DIR,
@@ -26,7 +25,6 @@ from subvertpy import (
     )
 
 from bzrlib import (
-    osutils,
     tag,
     trace,
     urlutils,
@@ -72,19 +70,10 @@ from bzrlib.symbol_versioning import (
     deprecated_method,
     deprecated_in,
     )
-from bzrlib.workingtree import (
-    WorkingTree,
-    )
+from bzrlib.transport import get_transport
 
 from bzrlib.plugins.svn import (
     util,
-    )
-from bzrlib.plugins.svn.fetch import (
-    InterFromSvnRepository,
-    )
-from bzrlib.plugins.svn.push import (
-    InterToSvnRepository,
-    create_branch_with_hidden_commit,
     )
 from bzrlib.plugins.svn.config import (
     BranchConfig,
@@ -94,12 +83,23 @@ from bzrlib.plugins.svn.errors import (
     PushToEmptyBranch,
     SubversionBranchDiverged,
     )
+from bzrlib.plugins.svn.fetch import (
+    InterFromSvnRepository,
+    )
+from bzrlib.plugins.svn.push import (
+    InterToSvnRepository,
+    create_branch_with_hidden_commit,
+    )
 from bzrlib.plugins.svn.tags import (
     SubversionTags,
     resolve_tags_svn_ancestry,
     )
 from bzrlib.plugins.svn.transport import (
     bzr_to_svn_url,
+    )
+from bzrlib.plugins.svn.workingtree import (
+    SvnCheckout,
+    SvnWorkingTreeDirFormat,
     )
 
 class SubversionBranchCheckResult(BranchCheckResult):
@@ -389,10 +389,11 @@ class SvnBranch(ForeignBranch):
         else:
             revnum = self.get_revnum()
 
+        transport = get_transport(to_location)
+        transport.ensure_base()
         svn_url, readonly = bzr_to_svn_url(self.base)
-        os.mkdir(to_location.encode(osutils._fs_enc))
-        wc.ensure_adm(to_location.encode("utf-8"), self.repository.uuid, svn_url,
-                      bzr_to_svn_url(self.repository.base)[0], revnum)
+        wc.ensure_adm(to_location.encode("utf-8"), self.repository.uuid,
+                      svn_url, bzr_to_svn_url(self.repository.base)[0], revnum)
         adm = wc.WorkingCopy(None, to_location.encode("utf-8"), write_lock=True)
         try:
             conn = self.repository.transport.connections.get(svn_url)
@@ -403,8 +404,8 @@ class SvnBranch(ForeignBranch):
                     self.repository.transport.add_connection(conn)
         finally:
             adm.close()
-        wt = WorkingTree.open(to_location)
-        return wt
+        dir = SvnCheckout(transport, SvnWorkingTreeDirFormat())
+        return dir.open_workingtree()
 
     def _get_checkout_format(self, lightweight=False):
         from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
