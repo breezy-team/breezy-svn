@@ -560,20 +560,15 @@ class SvnRaTransport(Transport):
 
     @convert_svn_error
     def mkdir(self, relpath, message="Creating directory"):
-        conn = self.get_connection()
+        relpath = urlutils.join(self.repos_path, relpath)
+        dirname, basename = urlutils.split(relpath)
+        conn = self.get_connection(dirname.strip("/"))
         try:
             ce = conn.get_commit_editor({"svn:log": message})
             try:
                 node = ce.open_root(-1)
-                batons = relpath.split("/")
-                toclose = [node]
-                for i in range(len(batons)):
-                    node = node.open_directory("/".join(batons[:i]), -1)
-                    toclose.append(node)
-                toclose.append(node.add_directory(relpath, None, -1))
-                for c in reversed(toclose):
-                    c.close()
-                ce.close()
+                node.add_directory(relpath, None, -1).close()
+                node.close()
             except subvertpy.SubversionException, (msg, num):
                 ce.abort()
                 if num == ERR_FS_NOT_DIRECTORY:
@@ -581,6 +576,8 @@ class SvnRaTransport(Transport):
                 if num == subvertpy.ERR_FS_ALREADY_EXISTS:
                     raise FileExists(msg)
                 raise
+            else:
+                ce.close()
         finally:
             self.add_connection(conn)
 

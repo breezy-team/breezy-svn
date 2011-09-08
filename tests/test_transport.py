@@ -171,7 +171,6 @@ class SvnRaTest(SubversionTestCase):
                           subvertpy.NODE_DIR)
 
         t = SvnRaTransport(repos_url+"/nonexistant")
-        self.knownFailure("unable to create dir by .")
         t.mkdir(".")
 
     def test_has_dot(self):
