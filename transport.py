@@ -22,6 +22,7 @@ from subvertpy import (
     AUTH_PARAM_DEFAULT_USERNAME,
     AUTH_PARAM_DEFAULT_PASSWORD,
     ERR_FS_NOT_DIRECTORY,
+    ERR_FS_NOT_FOUND,
     )
 from subvertpy.client import get_config
 from subvertpy.ra import RemoteAccess
@@ -571,6 +572,8 @@ class SvnRaTransport(Transport):
                 node.close()
             except subvertpy.SubversionException, (msg, num):
                 ce.abort()
+                if num == ERR_FS_NOT_FOUND:
+                    raise NoSuchFile(msg)
                 if num == ERR_FS_NOT_DIRECTORY:
                     raise NoSuchFile(msg)
                 if num == subvertpy.ERR_FS_ALREADY_EXISTS:
