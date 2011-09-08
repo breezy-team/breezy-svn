@@ -48,6 +48,7 @@ from bzrlib.decorators import (
     )
 from bzrlib.errors import (
     DivergedBranches,
+    InaccessibleParent,
     IncompatibleFormat,
     InvalidRevisionId,
     LocalRequiresBoundBranch,
@@ -685,10 +686,11 @@ class SvnBranch(ForeignBranch):
 
     def get_parent(self):
         """See Branch.get_parent()."""
-        return None
+        return self.get_config().get_user_option("parent_location")
 
     def set_parent(self, url):
         """See Branch.set_parent()."""
+        self.get_config().set_user_option("parent_location", url)
 
     def get_physical_lock_status(self):
         """See Branch.get_physical_lock_status()."""
@@ -957,6 +959,13 @@ class InterToSvnBranch(InterBranch):
                 self._push(revision_id, overwrite=True, push_metadata=True)
             finally:
                 self.target.unlock()
+            try:
+                parent = self.source.get_parent()
+            except InaccessibleParent, e:
+                trace.mutter('parent was not accessible to copy: %s', e)
+            else:
+                if parent:
+                    self.target.set_parent(parent)
         finally:
             self.source.unlock()
 
