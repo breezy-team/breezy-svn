@@ -309,7 +309,8 @@ class InterToSvnRepository(InterRepository):
             todo.reverse()
             return todo, ("open", )
         else:
-            for revid in graph.iter_lefthand_ancestry(stop_revision, (NULL_REVISION, None)):
+            for revid in graph.iter_lefthand_ancestry(stop_revision,
+                    (NULL_REVISION, None)):
                 if self._target_has_revision(revid, project=project):
                     todo.reverse()
                     break
@@ -564,24 +565,25 @@ class InterToSvnRepository(InterRepository):
             self._graph = self.source.get_graph(self.target)
         return self._graph
 
-    def copy_content(self, revision_id=None, pb=None, project=None, mapping=None, limit=None):
+    def copy_content(self, revision_id=None, pb=None, project=None,
+            mapping=None, limit=None):
         """See InterRepository.copy_content."""
         self.source.lock_read()
         try:
             graph = self.get_graph()
             if revision_id is not None:
-                consider = graph.iter_lefthand_ancestry(revision_id,
-                    (NULL_REVISION, None))
+                heads = [revision_id]
             else:
-                consider = graph.iter_topo_order(self.source.all_revision_ids())
+                heads = graph.heads(self.source.all_revision_ids())
             todo = []
             # Go back over the LHS parent until we reach a revid we know
-            for revid in consider:
-                if self._target_has_revision(revid):
-                    break
-                todo.append(revid)
-            else:
-                return
+            for head in heads:
+                for revid in graph.iter_lefthand_ancestry(head,
+                        (NULL_REVISION, None)):
+                    if self._target_has_revision(revid):
+                        break
+                    todo.append(revid)
+            todo.reverse()
             if limit is not None:
                 # FIXME: This only considers mainline revisions.
                 # Properly keeping track of how many revisions have been
