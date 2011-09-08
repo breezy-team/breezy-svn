@@ -80,6 +80,7 @@ from bzrlib.plugins.svn.layout.guess import (
     )
 from bzrlib.plugins.svn.mapping import (
     SVN_REVPROP_BZR_SIGNATURE,
+    SVN_REVPROP_BZR_TIMESTAMP,
     BzrSvnMapping,
     foreign_vcs_svn,
     find_mappings_fileprops,
@@ -87,6 +88,7 @@ from bzrlib.plugins.svn.mapping import (
     is_bzr_revision_revprops,
     mapping_registry,
     parse_svn_dateprop,
+    unpack_highres_date,
     )
 from bzrlib.plugins.svn.parents import (
     DiskCachingParentsProvider,
@@ -588,9 +590,12 @@ class SvnRepository(ForeignRepository):
     def gather_stats(self, revid=None, committers=None):
         """See Repository.gather_stats()."""
         result = {}
-        def revdate(revnum):
-            revprops = self._log.revprop_list(revnum)
-            return parse_svn_dateprop(revprops[subvertpy.properties.PROP_REVISION_DATE])
+        def check_timestamp(timestamp):
+            if not 'latestrev' in result:
+                result['latestrev'] = timestamp
+            result['firstrev'] = timestamp
+
+        count = 0
         if committers is not None and revid is not None:
             all_committers = set()
             graph = self.get_graph()
@@ -599,11 +604,27 @@ class SvnRepository(ForeignRepository):
             for rev in self.get_revisions(revids):
                 if rev.committer != '':
                     all_committers.add(rev.committer)
+                check_timestamp((rev.timestamp, rev.timezone))
             result['committers'] = len(all_committers)
-        result['firstrev'] = revdate(0)
-        result['latestrev'] = revdate(self.get_latest_revnum())
+            count = len(list(self.all_revision_ids()))
+        else:
+            mapping = self.get_mapping()
+            for revmeta in self._revmeta_provider.iter_all_revisions(
+                    self.get_layout(), mapping.is_branch_or_tag,
+                    self.get_latest_revnum()):
+                if revmeta.is_hidden(mapping):
+                    continue
+                try:
+                    timestamp = unpack_highres_date(
+                        revmeta.metarev.revprops[SVN_REVPROP_BZR_TIMESTAMP])
+                except KeyError:
+                    timestamp = parse_svn_dateprop(
+                        revmeta.metarev.revprops[
+                            subvertpy.properties.PROP_REVISION_DATE])
+                check_timestamp(timestamp)
+                count += 1
         # Approximate number of revisions
-        result['revisions'] = self.get_latest_revnum()+1
+        result['revisions'] = count
         result['svn-uuid'] = self.uuid
         result['svn-last-revnum'] = self.get_latest_revnum()
         return result
