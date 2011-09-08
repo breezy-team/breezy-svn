@@ -570,62 +570,66 @@ class InterToSvnRepository(InterRepository):
         """See InterRepository.copy_content."""
         self.source.lock_read()
         try:
-            graph = self.get_graph()
-            if revision_id is not None:
-                heads = [revision_id]
-            else:
-                heads = graph.heads(self.source.all_revision_ids())
-            todo = []
-            # Go back over the LHS parent until we reach a revid we know
-            for head in heads:
-                for revid in graph.iter_lefthand_ancestry(head,
-                        (NULL_REVISION, None)):
-                    if self._target_has_revision(revid):
-                        break
-                    todo.append(revid)
-            todo.reverse()
-            if limit is not None:
-                # FIXME: This only considers mainline revisions.
-                # Properly keeping track of how many revisions have been
-                # pushed will be fairly complicated though, so for the
-                # moment this is reasonable enough (and passes tests).
-                todo = todo[:limit]
-            mutter("pushing %r into svn", todo)
-            base_foreign_info = None
-            layout = self.target.get_layout()
-            for rev in self.source.get_revisions(todo):
-                if pb is not None:
-                    pb.update("pushing revisions", todo.index(rev.revision_id),
-                        len(todo))
-                mutter('pushing %r', rev.revision_id)
-
-                if base_foreign_info is None:
-                    if rev.parent_ids:
-                        base_revid = rev.parent_ids[0]
-                    else:
-                        base_revid = NULL_REVISION
-                    base_foreign_info  = self._get_foreign_revision_info(
-                        base_revid)
-
-                (base_foreign_revid, base_mapping) = base_foreign_info
-                if base_foreign_revid is None:
-                    target_project = None
+            self.target.lock_write()
+            try:
+                graph = self.get_graph()
+                if revision_id is not None:
+                    heads = [revision_id]
                 else:
-                    (_, target_project, _, _) = layout.parse(base_foreign_revid[1])
-                bp = determine_branch_path(rev, layout, target_project)
-                target_config = self._get_branch_config(bp)
-                push_merged = (layout.push_merged_revisions(target_project) and
-                    target_config.get_push_merged_revisions())
-                root_action = self._get_root_action(bp, rev.parent_ids, overwrite=False,
-                    append_revisions_only=target_config.get_append_revisions_only(True),
-                    create_prefix=True)
-                (pushed_revid, base_foreign_info) = self.push_revision_inclusive(
-                    bp, target_config, rev, push_metadata=True,
-                    push_merged=push_merged, root_action=root_action,
-                    layout=layout, project=target_project,
-                    base_foreign_info=base_foreign_info)
+                    heads = graph.heads(self.source.all_revision_ids())
+                todo = []
+                # Go back over the LHS parent until we reach a revid we know
+                for head in heads:
+                    for revid in graph.iter_lefthand_ancestry(head,
+                            (NULL_REVISION, None)):
+                        if self._target_has_revision(revid):
+                            break
+                        todo.append(revid)
+                todo.reverse()
+                if limit is not None:
+                    # FIXME: This only considers mainline revisions.
+                    # Properly keeping track of how many revisions have been
+                    # pushed will be fairly complicated though, so for the
+                    # moment this is reasonable enough (and passes tests).
+                    todo = todo[:limit]
+                mutter("pushing %r into svn", todo)
+                base_foreign_info = None
+                layout = self.target.get_layout()
+                for rev in self.source.get_revisions(todo):
+                    if pb is not None:
+                        pb.update("pushing revisions",
+                            todo.index(rev.revision_id), len(todo))
+                    mutter('pushing %r', rev.revision_id)
+
+                    if base_foreign_info is None:
+                        if rev.parent_ids:
+                            base_revid = rev.parent_ids[0]
+                        else:
+                            base_revid = NULL_REVISION
+                        base_foreign_info  = self._get_foreign_revision_info(
+                            base_revid)
+
+                    (base_foreign_revid, base_mapping) = base_foreign_info
+                    if base_foreign_revid is None:
+                        target_project = None
+                    else:
+                        (_, target_project, _, _) = layout.parse(base_foreign_revid[1])
+                    bp = determine_branch_path(rev, layout, target_project)
+                    target_config = self._get_branch_config(bp)
+                    push_merged = (layout.push_merged_revisions(target_project) and
+                        target_config.get_push_merged_revisions())
+                    root_action = self._get_root_action(bp, rev.parent_ids, overwrite=False,
+                        append_revisions_only=target_config.get_append_revisions_only(True),
+                        create_prefix=True)
+                    (pushed_revid, base_foreign_info) = self.push_revision_inclusive(
+                        bp, target_config, rev, push_metadata=True,
+                        push_merged=push_merged, root_action=root_action,
+                        layout=layout, project=target_project,
+                        base_foreign_info=base_foreign_info)
+            finally:
+                self.source.unlock()
         finally:
-            self.source.unlock()
+            self.target.unlock()
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
         fetch_spec=None, project=None, mapping=None, target_is_empty=False,
