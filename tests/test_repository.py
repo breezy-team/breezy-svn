@@ -83,9 +83,9 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
     def test_gather_stats(self):
         repos = Repository.open(self.repos_url)
         stats = repos.gather_stats()
-        self.assertEquals(1, stats['revisions'])
-        self.assertTrue(stats.has_key("firstrev"))
-        self.assertTrue(stats.has_key("latestrev"))
+        self.assertEquals(0, stats['revisions'])
+        self.assertFalse(stats.has_key("firstrev"))
+        self.assertFalse(stats.has_key("latestrev"))
         self.assertFalse(stats.has_key('committers'))
 
     def test_uuid(self):
