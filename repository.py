@@ -186,6 +186,7 @@ class SvnRepositoryFormat(RepositoryFormat):
     supports_external_lookups = False
     revision_graph_can_have_wrong_parents = False
     supports_versioned_directories = True
+    supports_nesting_repositories = False
 
     @property
     def _matchingbzrdir(self):
@@ -505,7 +506,9 @@ class SvnRepository(ForeignRepository):
         else:
             from subvertpy import repos
             repo = repos.Repository(local_path)
-            repo.pack_fs()
+            pack_fs = getattr(repo, "pack_fs", None)
+            if pack_fs is not None:
+                pack_fs()
 
     def get_transaction(self):
         """See Repository.get_transaction()."""
