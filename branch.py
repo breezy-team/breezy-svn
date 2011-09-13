@@ -730,12 +730,14 @@ class SvnBranchFormat(BranchFormat):
         from bzrlib.plugins.svn.tests.test_branch import ForeignTestsBranchFactory
         return ForeignTestsBranchFactory()
 
-    def initialize(self, to_bzrdir, name=None, repository=None):
+    def initialize(self, to_bzrdir, name=None, repository=None,
+                   append_revisions_only=None):
         """See BranchFormat.initialize()."""
         from bzrlib.plugins.svn.remote import SvnRemoteAccess
         if not isinstance(to_bzrdir, SvnRemoteAccess):
             raise IncompatibleFormat(self, to_bzrdir._format)
-        return to_bzrdir.create_branch(name)
+        return to_bzrdir.create_branch(name,
+            append_revisions_only=append_revisions_only)
 
     def supports_tags(self):
         return True

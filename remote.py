@@ -421,7 +421,8 @@ class SvnRemoteAccess(ControlDir):
             else:
                 raise errors.NoColocatedBranchSupport(layout)
 
-    def create_branch(self, branch_name=None, repository=None, mapping=None, lossy=False):
+    def create_branch(self, branch_name=None, repository=None, mapping=None,
+            lossy=False, append_revisions_only=None):
         """See ControlDir.create_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         from bzrlib.plugins.svn.push import (
@@ -453,7 +454,10 @@ class SvnRemoteAccess(ControlDir):
             if relpath != "":
                 create_branch_with_hidden_commit(repository, relpath, NULL_REVISION,
                         set_metadata=(not lossy))
-            return SvnBranch(repository, self, relpath, mapping)
+            branch = SvnBranch(repository, self, relpath, mapping)
+            if append_revisions_only == False:
+                branch.set_append_revisions_only(False)
+            return branch
         finally:
             repository.unlock()
 
