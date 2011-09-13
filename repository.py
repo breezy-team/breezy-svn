@@ -303,27 +303,27 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             self.hidden_rev_cnt += 1
 
         mapping.check_fileprops(revmeta.get_changed_fileprops(), self)
-        mapping.check_revprops(revmeta.revprops, self)
+        mapping.check_revprops(revmeta.metarev.revprops, self)
 
-        for parent_revid in revmeta.get_rhs_parents(mapping):
+        lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
+        for parent_revid in revmeta.get_rhs_parents(mapping, lhs_parent_revmeta):
             if not self.repository.has_revision(parent_revid):
                 self.ghost_revisions.add(parent_revid)
 
         # TODO: Check that stored revno matches actual revision number
 
         # Check all paths are under branch root
-        branch_root = mapping.get_branch_root(revmeta.revprops)
+        branch_root = mapping.get_branch_root(revmeta.metarev.revprops)
         if branch_root is not None:
-            for p in revmeta.paths:
+            for p in revmeta.metarev.paths:
                 if not changes.path_is_child(branch_root, p):
                     self.paths_not_under_branch_root += 1
 
-        original_uuid = mapping.get_repository_uuid(revmeta.revprops)
+        original_uuid = mapping.get_repository_uuid(revmeta.metarev.revprops)
         if (original_uuid is not None and
             original_uuid != self.repository.uuid):
             self.different_uuid_cnt += 1
 
-        lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(mapping)
         if lhs_parent_revmeta is not None:
             lhs_parent_mapping = lhs_parent_revmeta.get_original_mapping()
             if lhs_parent_mapping is None:
@@ -336,22 +336,22 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             if revmeta.get_stored_lhs_parent_revid(mapping) not in (
                     None, expected_lhs_parent_revid):
                 self.inconsistent_stored_lhs_parent += 1
-        self.check_texts(revmeta, mapping)
+        self.check_texts(revmeta, mapping, lhs_parent_revmeta)
 
-    def check_texts(self, revmeta, mapping):
+    def check_texts(self, revmeta, mapping, lhs_parent_revmeta):
         # Check for inconsistencies in text file ids/revisions
         text_revisions = revmeta.get_text_revisions(mapping)
         text_ids = revmeta.get_fileid_overrides(mapping)
         fileid_map = self.repository.get_fileid_map(revmeta, mapping)
-        path_changes = revmeta.paths
+        path_changes = revmeta.metarev.paths
         for path in set(text_ids.keys() + text_revisions.keys()):
-            full_path = urlutils.join(revmeta.branch_path, path)
+            full_path = urlutils.join(revmeta.metarev.branch_path, path)
             # TODO Check consistency against parent data
         ghost_parents = False
         parent_revmetas = []
         parent_mappings = []
         parent_fileid_maps = []
-        for revid in revmeta.get_parent_ids(mapping):
+        for revid in revmeta.get_parent_ids(mapping, lhs_parent_revmeta):
             try:
                 parent_revmeta, parent_mapping = self.repository._get_revmeta(
                     revid)
@@ -371,8 +371,11 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             parent_text_revisions = []
             for parent_fileid_map, parent_mapping in zip(parent_fileid_maps,
                     parent_mappings):
-                parent_text_revisions.append(
-                    parent_fileid_map.reverse_lookup(parent_mapping, fileid))
+                try:
+                    parent_text_revisions.append(
+                        parent_fileid_map.reverse_lookup(parent_mapping, fileid))
+                except KeyError:
+                    pass
             if (text_revision != revmeta.get_revision_id(mapping) and
                     not ghost_parents and
                     not text_revision in parent_text_revisions):
@@ -828,7 +831,7 @@ class SvnRepository(ForeignRepository):
                         self.get_layout(), self.get_mapping().is_branch_or_tag,
                         last_revnum):
                     pb.update("checking revisions",
-                        last_revnum-revmeta.revnum, last_revnum)
+                        last_revnum-revmeta.metarev.revnum, last_revnum)
                     ret.check_revmeta(revmeta)
         finally:
             pb.finished()
@@ -1122,7 +1125,7 @@ class SvnRepository(ForeignRepository):
         try:
             for project, bp, nick, has_props, revnum in layout.get_branches(self,
                     revnum):
-                branches.append(SvnBranch(self, None, bp, mapping,
+                branches.append(SvnBranch(self, self.bzrdir, bp, mapping,
                     _skip_check=True, revnum=revnum))
         finally:
             pb.finished()
