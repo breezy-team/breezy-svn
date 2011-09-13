@@ -494,6 +494,16 @@ class SvnRepository(ForeignRepository):
         # DEPRECATED in bzr 2.4
         return False
 
+    def pack(self, hint=None, clean_obsolete_packs=False):
+        try:
+            local_path = self.transport.local_abspath(".")
+        except bzr_errors.NotLocalUrl:
+            pass
+        else:
+            from subvertpy import repos
+            repo = repos.Repository(local_path)
+            repo.pack_fs()
+
     def get_transaction(self):
         """See Repository.get_transaction()."""
         if self._write_group is None:
