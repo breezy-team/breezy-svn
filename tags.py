@@ -62,8 +62,8 @@ def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
         except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY,):
             continue
         for name in names:
-            assert isinstance(name, str)
-            yield (name.decode("utf-8"), (revmeta, mapping, revid))
+            assert isinstance(name, unicode)
+            yield (name, (revmeta, mapping, revid))
 
 
 def resolve_tags_svn_ancestry(branch, tag_revmetas):
@@ -97,8 +97,8 @@ def resolve_tags_svn_ancestry(branch, tag_revmetas):
                 # No more tag revmetas to resolve, just return immediately
                 return ret
             for name in reverse_tag_revmetas[revmeta]:
-                assert isinstance(name, str)
-                ret[name.decode("utf-8")] = (revmeta, mapping, revmeta.get_revision_id(mapping))
+                assert isinstance(name, unicode)
+                ret[name] = (revmeta, mapping, revmeta.get_revision_id(mapping))
             del reverse_tag_revmetas[revmeta]
     finally:
         pb.finished()
@@ -124,6 +124,8 @@ class ReverseTagDict(object):
     def has_key(self, revid):
         foreign_revid, mapping = self._lookup_revid(revid)
         return self._by_foreign_revid.has_key(foreign_revid)
+
+    __contains__ = has_key
 
     def get(self, revid, default=None):
         foreign_revid, mapping = self._lookup_revid(revid)

@@ -1162,6 +1162,7 @@ class SvnRepository(ForeignRepository):
         ret = {}
         for (project, branch_path, name, has_props, revnum) in layout.get_tags(self,
                 revnum, project=project):
+            assert type(name) is unicode
             base_revmeta = self._revmeta_provider.lookup_revision(branch_path, revnum)
             ret[name] = base_revmeta.get_tag_revmeta(mapping)
 
