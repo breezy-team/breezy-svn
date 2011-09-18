@@ -1217,6 +1217,9 @@ class SvnWorkingTreeFormat(WorkingTreeFormat):
     def initialize(self, a_bzrdir, revision_id=None):
         raise NotImplementedError(self.initialize)
 
+    def is_supported(self):
+        return False
+
     def open(self, a_bzrdir):
         raise NotImplementedError(self.initialize)
 
