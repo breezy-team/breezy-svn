@@ -857,7 +857,7 @@ class InterFromSvnBranch(GenericInterBranch):
         return result
 
     def pull(self, overwrite=False, stop_revision=None,
-             _hook_master=None, run_hooks=True, possible_transports=None,
+             run_hooks=True, possible_transports=None,
              _override_hook_target=None, local=False):
         """See InterBranch.pull()."""
         if local:
@@ -906,12 +906,8 @@ class InterFromSvnBranch(GenericInterBranch):
                         (result.tag_updates, result.tag_conflicts) = tag_ret
                     else:
                         result.tag_conflicts = tag_ret
-                if _hook_master:
-                    result.master_branch = _hook_master
-                    result.local_branch = result.target_branch
-                else:
-                    result.master_branch = result.target_branch
-                    result.local_branch = None
+                result.master_branch = result.target_branch
+                result.local_branch = None
                 if run_hooks:
                     for hook in Branch.hooks['post_pull']:
                         hook(result)
@@ -1034,18 +1030,20 @@ class InterToSvnBranch(InterBranch):
         else:
             result.tag_conflicts = ret
 
-    def _basic_push(self, overwrite=False, stop_revision=None):
-        # Wrapper for the benefit of GenericInterBranch, which
-        # calls it for bound branches
-        return self.push(overwrite=overwrite, stop_revision=stop_revision)
+    def _basic_push(self, overwrite=False, stop_revision=None, lossy=False):
+        """Basic implementation of push without bound branches or hooks.
+
+        Must be called with source read locked and target write locked.
+        """
+        if lossy and isinstance(self.source, SvnBranch):
+            raise LossyPushToSameVCS(self.source, self.target)
+        return self._update_revisions(stop_revision, overwrite=overwrite,
+            lossy=lossy)
 
     def push(self, overwrite=False, stop_revision=None,
             lossy=False, _override_hook_source_branch=None):
         """See InterBranch.push()."""
-        if lossy and isinstance(self.source, SvnBranch):
-            raise LossyPushToSameVCS(self.source, self.target)
         result = SubversionTargetBranchPushResult()
-        result.target_branch = self.target
         result.master_branch = self.target
         result.local_branch = None
         result.source_branch = self.source
@@ -1057,8 +1055,9 @@ class InterToSvnBranch(InterBranch):
             self.target.lock_write()
             try:
                 (result.old_revid, result.new_revid, result.revidmap) = (
-                    self._update_revisions(stop_revision, overwrite=overwrite,
-                        lossy=lossy))
+                        self._basic_push(
+                            stop_revision=stop_revision, overwrite=overwrite,
+                            lossy=lossy))
                 self.update_tags(result, overwrite)
                 for hook in Branch.hooks['post_push']:
                     hook(result)

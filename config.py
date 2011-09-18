@@ -375,7 +375,7 @@ class BranchConfig(Config):
         except KeyError:
             return False
 
-    def get_append_revisions_only(self, default=None):
+    def get_append_revisions_only(self, default=True):
         """Check whether it is possible to remove revisions from the mainline.
         """
         try:
