@@ -304,8 +304,7 @@ class SubversionTags(BasicTags):
                 continue
             revmeta = foreign_revid_map[foreign_revid]
             for name in reverse_tag_revmetas[revmeta]:
-                assert isinstance(name, str)
-                ret[name.decode("utf-8")] = (revmeta, m, revid)
+                ret[name] = (revmeta, m, revid)
             del reverse_tag_revmetas[revmeta]
         ret.update(_resolve_reverse_tags_fallback(self.branch,
                                                   reverse_tag_revmetas))

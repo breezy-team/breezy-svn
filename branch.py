@@ -51,10 +51,12 @@ from bzrlib.errors import (
     InaccessibleParent,
     IncompatibleFormat,
     InvalidRevisionId,
+    InvalidURL,
     LocalRequiresBoundBranch,
     LossyPushToSameVCS,
     NoSuchRevision,
     NotBranchError,
+    PathNotChild,
     ReadOnlyError,
     TokenLockingNotSupported,
     UnstackableBranchFormat,
@@ -774,7 +776,8 @@ class InterFromSvnBranch(GenericInterBranch):
         from bzrlib.branch import format_registry as branch_format_registry
         return [(SvnBranchFormat(), branch_format_registry.get_default())]
 
-    def fetch(self, stop_revision=None, fetch_tags=None, find_ghosts=False, limit=None):
+    def fetch(self, stop_revision=None, fetch_tags=None, find_ghosts=False,
+              limit=None):
         """See InterBranch.fetch."""
         # we fetch here so that we don't process data twice in the
         # common case of having something to pull, and so that the
@@ -788,8 +791,8 @@ class InterFromSvnBranch(GenericInterBranch):
         else:
             todo = [self.source.repository._get_revmeta(stop_revision)]
         if limit is not None and len(todo) > limit:
-            # No need to fetch tags if there are already up to 'limit' revisions
-            # missing in mainline.
+            # No need to fetch tags if there are already up to 'limit'
+            # revisions missing in mainline.
             fetch_tags = False
         if fetch_tags is None:
             c = self.source.get_config()
@@ -806,8 +809,8 @@ class InterFromSvnBranch(GenericInterBranch):
             self.target.repository)
         revisionfinder = interrepo.get_revision_finder()
         for revmeta, mapping in revmetas:
-            revisionfinder.find_until(revmeta.metarev.get_foreign_revid(), mapping,
-                find_ghosts=find_ghosts)
+            revisionfinder.find_until(revmeta.metarev.get_foreign_revid(),
+                mapping, find_ghosts=find_ghosts)
         interrepo.fetch(needed=revisionfinder.get_missing(limit=limit),
             project=self.source.project, mapping=self.source.mapping)
 
@@ -856,65 +859,102 @@ class InterFromSvnBranch(GenericInterBranch):
         # FIXME: Tags
         return result
 
+    def _update_tags(self, result, overwrite, tags_since_revnum):
+        if not self.source.supports_tags():
+            return
+        tag_ret = self.source.tags.merge_to(
+            self.target.tags, overwrite,
+            _from_revnum=tags_since_revnum,
+            _to_revnum=self.source.repository.get_latest_revnum())
+        if isinstance(tag_ret, tuple):
+            (result.tag_updates, result.tag_conflicts) = tag_ret
+        else:
+            result.tag_conflicts = tag_ret
+
+    def _pull(self, stop_revision, overwrite, run_hooks,
+              _override_hook_target, _hook_master):
+        self.target.lock_write()
+        try:
+            result = SubversionSourcePullResult()
+            result.source_branch = self.source
+            if _override_hook_target is None:
+                result.target_branch = self.target
+            else:
+                result.target_branch = _override_hook_target
+
+            (result.old_revno, result.old_revid) = \
+                self.target.last_revision_info()
+            if result.old_revid == NULL_REVISION:
+                result.old_revmeta = None
+                tags_since_revnum = None
+            else:
+                try:
+                    result.old_revmeta, _ = \
+                        self.source.repository._get_revmeta(result.old_revid)
+                    tags_since_revnum = result.old_revmeta.metarev.revnum
+                except NoSuchRevision:
+                    result.old_revmeta = None
+                    tags_since_revnum = None
+            if stop_revision == NULL_REVISION:
+                result.new_revid = NULL_REVISION
+                result.new_revmeta = None
+            elif stop_revision is not None:
+                result.new_revmeta, _ = \
+                    self.source.repository._get_revmeta(stop_revision)
+            else:
+                result.new_revmeta = None
+            (result.new_revno, result.new_revid) = self._update_revisions(
+                stop_revision, overwrite)
+            self._update_tags(result, overwrite, tags_since_revnum)
+            if _hook_master:
+                result.master_branch = _hook_master
+                result.local_branch = result.target_branch
+            else:
+                result.master_branch = result.target_branch
+                result.local_branch = None
+            if run_hooks:
+                for hook in Branch.hooks['post_pull']:
+                    hook(result)
+        finally:
+            self.target.unlock()
+        return result
+
     def pull(self, overwrite=False, stop_revision=None,
              run_hooks=True, possible_transports=None,
              _override_hook_target=None, local=False):
         """See InterBranch.pull()."""
-        if local:
+        bound_location = self.target.get_bound_location()
+        if local and not bound_location:
             raise LocalRequiresBoundBranch()
-        result = SubversionSourcePullResult()
-        if _override_hook_target is None:
-            result.target_branch = self
-        else:
-            result.target_branch = _override_hook_target
-        result.source_branch = self.source
-        result.master_branch = None
-        result.target_branch = self.target
+        master_branch = None
+        source_is_master = False
         self.source.lock_read()
-        try:
-            self.target.lock_write()
+        if bound_location:
+            # bound_location comes from a config file, some care has to be
+            # taken to relate it to source.user_url
+            normalized = urlutils.normalize_url(bound_location)
             try:
-                (result.old_revno, result.old_revid) = \
-                    self.target.last_revision_info()
-                if result.old_revid == NULL_REVISION:
-                    result.old_revmeta = None
-                    tags_since_revnum = None
-                else:
-                    try:
-                        result.old_revmeta, _ = \
-                            self.source.repository._get_revmeta(result.old_revid)
-                        tags_since_revnum = result.old_revmeta.metarev.revnum
-                    except NoSuchRevision:
-                        result.old_revmeta = None
-                        tags_since_revnum = None
-                if stop_revision == NULL_REVISION:
-                    result.new_revid = NULL_REVISION
-                    result.new_revmeta = None
-                elif stop_revision is not None:
-                    result.new_revmeta, _ = \
-                        self.source.repository._get_revmeta(stop_revision)
-                else:
-                    result.new_revmeta = None
-                (result.new_revno, result.new_revid) = self._update_revisions(
-                    stop_revision, overwrite)
-                if self.source.supports_tags():
-                    tag_ret = self.source.tags.merge_to(
-                        self.target.tags, overwrite,
-                        _from_revnum=tags_since_revnum,
-                        _to_revnum=self.source.repository.get_latest_revnum())
-                    if isinstance(tag_ret, tuple):
-                        (result.tag_updates, result.tag_conflicts) = tag_ret
-                    else:
-                        result.tag_conflicts = tag_ret
-                result.master_branch = result.target_branch
-                result.local_branch = None
-                if run_hooks:
-                    for hook in Branch.hooks['post_pull']:
-                        hook(result)
+                relpath = self.source.user_transport.relpath(normalized)
+                source_is_master = (relpath == '')
+            except (PathNotChild, InvalidURL):
+                source_is_master = False
+        if not local and bound_location and not source_is_master:
+            # not pulling from master, so we need to update master.
+            master_branch = self.target.get_master_branch(possible_transports)
+            master_branch.lock_write()
+        try:
+            try:
+                if master_branch:
+                    # pull from source into master.
+                    master_branch.pull(self.source, overwrite, stop_revision,
+                        run_hooks=False)
+                result = self._pull(stop_revision, overwrite, run_hooks,
+                    _override_hook_target, _hook_master=master_branch)
             finally:
-                self.target.unlock()
+                self.source.unlock()
         finally:
-            self.source.unlock()
+            if master_branch:
+                master_branch.unlock()
         return result
 
     @classmethod
