@@ -1362,5 +1362,7 @@ def find_tags_between(revmeta_provider, project, layout, mapping, from_revnum,
         # Layout wasn't able to determine tag name from path
         if name is None:
             continue
+        name = name.decode("utf-8")
+        assert type(name) is unicode
         ret[name] = revmeta
     return ret
