@@ -240,15 +240,17 @@ class SvnRemoteAccess(ControlDir):
         target = SvnRemoteFormat().initialize_on_transport(transport)
         target_repo = target.open_repository()
         source_repo = self.open_repository()
-        target_repo.fetch(source_repo, revision_id=revision_id)
         # FIXME: This should ideally use the same mechanism as svnsync,
         # or at least copy all colocated branches, too.
         try:
             branch = self.open_branch()
         except errors.NotBranchError:
-            pass
+            target_repo.fetch(source_repo)
         else:
-            target.push_branch(branch, revision_id=branch.last_revision())
+            if revision_id is None:
+                revision_id = branch.last_revision()
+            target_repo.fetch(source_repo, revision_id=revision_id)
+            target.push_branch(branch, revision_id=revision_id)
         return target
 
     def sprout(self, url, revision_id=None, force_new_repo=False,
@@ -481,8 +483,12 @@ class SvnRemoteAccess(ControlDir):
             mapping = repository.get_mapping()
         return SvnBranch(repository, self, branch_path, mapping)
 
-    def create_repository(self, shared=False, format=None):
+    def create_repository(self, shared=None, format=None):
         """See ControlDir.create_repository."""
+        if shared == True:
+            from bzrlib.plugins.svn.repository import SvnRepositoryFormat
+            raise errors.IncompatibleFormat(
+                SvnRepositoryFormat(), self._format)
         return self.open_repository()
 
     def push_branch(self, source, revision_id=None, overwrite=False,

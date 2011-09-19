@@ -1217,9 +1217,6 @@ class SvnWorkingTreeFormat(WorkingTreeFormat):
     def initialize(self, a_bzrdir, revision_id=None):
         raise NotImplementedError(self.initialize)
 
-    def is_supported(self):
-        return False
-
     def open(self, a_bzrdir):
         raise NotImplementedError(self.initialize)
 
@@ -1247,6 +1244,9 @@ class SvnWorkingTreeDirFormat(ControlDirFormat):
 
     def get_format_description(self):
         return 'Subversion Local Checkout'
+
+    def is_supported(self):
+        return False
 
     def initialize_on_transport(self, transport):
         raise UninitializableFormat(self)
