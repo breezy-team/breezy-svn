@@ -485,7 +485,7 @@ class SvnRemoteAccess(ControlDir):
 
     def create_repository(self, shared=None, format=None):
         """See ControlDir.create_repository."""
-        if shared == True:
+        if shared == False:
             from bzrlib.plugins.svn.repository import SvnRepositoryFormat
             raise errors.IncompatibleFormat(
                 SvnRepositoryFormat(), self._format)
