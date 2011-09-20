@@ -167,7 +167,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         dc.close()
 
         output, err = self.run_bzr("missing %s" % branch.base, retcode=1)
-        self.assertContainsRe(output, "You are missing 1 revision\\(s\\):")
+        self.assertContainsRe(output, "You are missing 1 revision")
 
     def test_push_overwrite(self):
         repos_url = self.make_repository('d')
