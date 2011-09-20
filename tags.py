@@ -42,6 +42,9 @@ from bzrlib.plugins.svn.transport import (
     )
 
 
+GhostTagsNotSupported = getattr(bzr_errors, "GhostTagsNotSupported", None)
+
+
 def reverse_dict(orig):
     ret = {}
     for k, v in orig.iteritems():
@@ -195,7 +198,6 @@ class SubversionTags(BasicTags):
             (from_uuid, from_bp, from_revnum), mapping = self.repository.lookup_bzr_revision_id(tag_target, project=self.branch.project)
         except bzr_errors.NoSuchRevision:
             mutter("not setting tag %s; unknown revision %s", tag_name, tag_target)
-            GhostTagsNotSupported = getattr(bzr_errors, "GhostTagsNotSupported", None)
             if GhostTagsNotSupported is not None:
                 raise GhostTagsNotSupported(self.branch._format)
             return
@@ -351,7 +353,11 @@ class SubversionTags(BasicTags):
         cur_dict = self.get_tag_dict()
         for k, v in dest_dict.iteritems():
             if cur_dict.get(k) != v:
-                self.set_tag(k, v)
+                try:
+                    self.set_tag(k, v)
+                except GhostTagsNotSupported:
+                    # Silently ignore..
+                    pass
         for k in cur_dict:
             if k not in dest_dict:
                 self.delete_tag(k)
