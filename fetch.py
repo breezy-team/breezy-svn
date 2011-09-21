@@ -591,8 +591,8 @@ class FileRevisionBuildEditor(FileBuildEditor):
             actual_checksum = md5_strings(self.base_chunks)
             if base_checksum != actual_checksum:
                 raise TextChecksumMismatch(base_checksum, actual_checksum,
-                    self.editor.revmeta.branch_path,
-                    self.editor.revmeta.revnum)
+                    self.editor.revmeta.metarev.branch_path,
+                    self.editor.revmeta.metarev.revnum)
         self.chunks = []
         return apply_txdelta_handler_chunks(self.base_chunks, self.chunks)
 
@@ -614,8 +614,8 @@ class FileRevisionBuildEditor(FileBuildEditor):
             actual_checksum = md5sum.hexdigest()
             if checksum != actual_checksum:
                 raise TextChecksumMismatch(checksum, actual_checksum,
-                        self.editor.revmeta.branch_path,
-                        self.editor.revmeta.revnum)
+                        self.editor.revmeta.metarev.branch_path,
+                        self.editor.revmeta.metarev.revnum)
 
         if self.is_special is not None:
             self.is_symlink = (self.is_special and chunks_start_with_link(chunks))
@@ -730,8 +730,9 @@ class RevisionBuildEditor(DeltaBuildEditor):
         if path == u"":
             if self.lhs_parent_revmeta is not None:
                 try:
-                    (action, copyfrom_path, copyfrom_revnum, kind) = self.revmeta.metarev.paths.get(
-                        self.revmeta.metarev.branch_path)
+                    (action, copyfrom_path, copyfrom_revnum, kind) = (
+                        self.revmeta.metarev.paths.get(
+                        self.revmeta.metarev.branch_path))
                 except TypeError:
                     copyfrom_path = None
                 if copyfrom_path is None:
