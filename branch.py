@@ -1121,7 +1121,7 @@ class InterToSvnBranch(InterBranch):
             self.source.unlock()
 
     def pull(self, overwrite=False, stop_revision=None,
-             _hook_master=None, run_hooks=True, possible_transports=None,
+             run_hooks=True, possible_transports=None,
              local=False):
         """See InterBranch.pull()."""
         if local:
@@ -1129,8 +1129,8 @@ class InterToSvnBranch(InterBranch):
         result = SubversionTargetPullResult()
         result.source_branch = self.source
         result.local_branch = None
-        result.master_branch = self.target
         result.target_branch = self.target
+        result.master_branch = self.target
         self.source.lock_read()
         try:
             self.target.lock_write()
