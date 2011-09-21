@@ -618,6 +618,7 @@ class SvnBranch(ForeignBranch):
         self.tags.merge_to(source.tags, overwrite=False)
         return (revno, revid)
 
+    @needs_write_lock
     def generate_revision_history(self, revision_id, last_rev=None,
         other_branch=None):
         """Create a new revision history that will finish with revision_id.
@@ -630,6 +631,12 @@ class SvnBranch(ForeignBranch):
         """
         # stop_revision must be a descendant of last_revision
         # make a new revision history from the graph
+        graph = self.repository.get_graph()
+        if last_rev is not None:
+            if not graph.is_ancestor(last_rev, revision_id):
+                # our previous tip is not merged into stop_revision
+                raise DivergedBranches(self, other_branch)
+        self._set_last_revision(revision_id)
 
     def _synchronize_history(self, destination, revision_id):
         """Synchronize last revision and revision history between branches.
