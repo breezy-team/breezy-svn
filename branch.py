@@ -446,6 +446,9 @@ class SvnBranch(ForeignBranch):
     def get_config(self):
         return BranchConfig(self.base, self.repository.uuid)
 
+    def get_append_revisions_only(self):
+        return self.get_config().get_append_revisions_only()
+
     def _get_nick(self, local=False, possible_master_transports=None):
         """Find the nick name for this branch.
 
