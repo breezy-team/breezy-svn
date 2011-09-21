@@ -127,50 +127,6 @@ class DummyLockableFiles(object):
     def __init__(self, transport):
         self._transport = transport
 
-    def create_lock(self):
-        pass
-
-    def break_lock(self):
-        raise NotImplementedError(self.break_lock)
-
-    def leave_in_place(self):
-        raise NotImplementedError(self.leave_in_place)
-
-    def dont_leave_in_place(self):
-        raise NotImplementedError(self.dont_leave_in_place)
-
-    def lock_write(self, token=None):
-        if token is not None:
-            raise errors.TokenLockingNotSupported(self)
-        return SubversionRepositoryLock()
-
-    def lock_read(self):
-        return SubversionRepositoryLock()
-
-    def unlock(self):
-        pass
-
-    def is_locked(self):
-        """Return true if this LockableFiles group is locked"""
-        return False
-
-    def get_physical_lock_status(self):
-        """Return physical lock status.
-
-        Returns true if a lock is held on the transport. If no lock is held, or
-        the underlying locking mechanism does not support querying lock
-        status, false is returned.
-        """
-        return False
-
-    def get_transaction(self):
-        """Return the current active transaction.
-
-        If no transaction is active, this returns a passthrough object
-        for which all data is immediately flushed and no caching happens.
-        """
-        return transactions.PassThroughTransaction()
-
 
 class SvnRepositoryFormat(RepositoryFormat):
     """Repository format for Subversion repositories (accessed using svn_ra).
@@ -401,7 +357,7 @@ class SvnRepository(ForeignRepository):
 
         control_files = DummyLockableFiles(transport)
         Repository.__init__(self, SvnRepositoryFormat(), bzrdir, control_files)
-
+        self._transport = transport
         self._cached_revnum = None
         self._lock_mode = None
         self._lock_count = 0
@@ -475,6 +431,15 @@ class SvnRepository(ForeignRepository):
 
         self._revmeta_provider = revmeta.RevisionMetadataProvider(self,
                 self.revinfo_cache is not None)
+
+    def break_lock(self):
+        raise NotImplementedError(self.break_lock)
+
+    def dont_leave_lock_in_place(self):
+        raise NotImplementedError(self.dont_leave_lock_in_place)
+
+    def leave_lock_in_place(self):
+        raise NotImplementedError(self.leave_lock_in_place)
 
     @needs_read_lock
     def get_file_graph(self):
