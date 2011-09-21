@@ -144,8 +144,11 @@ class SvnRemoteFormat(ControlDirFormat):
             transport.create_prefix()
 
         controldir = self.initialize_on_transport(transport)
-        repository = controldir.open_repository()
-        repository.lock_write()
+        if repo_format_name is not None:
+            repository = controldir.open_repository()
+            repository.lock_write()
+        else:
+            repository = None
         return (repository, controldir, None, CreateRepository(controldir))
 
     def initialize_on_transport(self, transport):
