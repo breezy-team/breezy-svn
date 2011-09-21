@@ -468,11 +468,14 @@ class SvnBranch(ForeignBranch):
             self._set_last_revision(rev_history[-1])
         self._revision_history_cache = rev_history
 
+    @needs_write_lock
     def set_last_revision_info(self, revno, revid):
         """See Branch.set_last_revision_info()."""
         if type(revid) != str:
             raise InvalidRevisionId(revid, self)
-        # FIXME: ?
+        if self.last_revision() == revid:
+            return
+        self._set_last_revision(revid)
 
     def _set_last_revision(self, revid):
         if revid == NULL_REVISION:
