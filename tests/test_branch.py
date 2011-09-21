@@ -470,7 +470,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.close()
 
         branch = Branch.open(repos_url+"/trunk")
-        branch.set_revision_history([])
+        branch.set_last_revision_info(0, NULL_REVISION)
         self.assertEquals(NULL_REVISION, branch.last_revision())
 
     def test_set_revision_history_ghost(self):
@@ -483,9 +483,9 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         branch = Branch.open(repos_url+"/trunk")
         self.assertRaises(NotImplementedError,
-            branch.set_revision_history, ["nonexistantt"])
+            branch.set_last_revision_info, 423, "nonexistantt")
 
-    def test_set_revision_history(self):
+    def test_set_last_revision(self):
         repos_url = self.make_repository('a')
 
         dc = self.get_commit_editor(repos_url)
@@ -506,7 +506,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         branch = Branch.open(repos_url+"/trunk")
         orig_history = branch.revision_history()
         branch.set_append_revisions_only(False)
-        branch.set_revision_history(orig_history[:-1])
+        branch.generate_revision_history(orig_history[-2])
         self.assertEquals(orig_history[:-1], branch.revision_history())
 
     def test_break_lock(self):
