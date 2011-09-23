@@ -314,6 +314,23 @@ class TestNativeCommit(SubversionTestCase):
         self.client_update('pyd')
         self.assertEqual("data", open('pyd/bar').read())
 
+    def test_parent_id_reused(self):
+        wt = self.make_svn_branch_and_tree('d', 'dc')
+
+        first_revid = wt.commit("msg", rev_id="firstrevid")
+        second_revid = wt.commit("msg", rev_id="secondrevid")
+
+        wt.branch.set_last_revision_info(1, first_revid)
+
+        branch = wt.branch
+
+        branch.lock_write()
+        self.addCleanup(branch.unlock)
+        cb = branch.get_commit_builder([branch.last_revision()],
+            revision_id="foorevid")
+        revid = cb.commit("msg")
+        self.assertEquals("foorevid", revid)
+
 
 class TestPush(SubversionTestCase):
 
