@@ -1280,6 +1280,9 @@ class SvnWorkingTreeDirFormat(ControlDirFormat):
     def get_format_description(self):
         return 'Subversion Local Checkout'
 
+    def is_initializable(self):
+        return False
+
     def is_supported(self):
         return True
 
