@@ -164,6 +164,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
                                push_metadata=push_metadata,
                                graph=graph, opt_signature=opt_signature,
                                testament=testament)
+    target_repo.start_write_group()
     try:
         builder.will_record_deletes()
         iter_changes = old_tree.iter_changes(base_tree)
