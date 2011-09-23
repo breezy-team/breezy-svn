@@ -369,15 +369,12 @@ class SvnBranch(ForeignBranch):
         the branch.
 
         :param revid: Revision id to look up.
-        :return: Revision number on the branch.
+        :return: Tuple with foreign revision id and mapping
         :raises NoSuchRevision: If the revision id was not found.
         """
-        (uuid, bp, revnum), mapping = self.repository.lookup_bzr_revision_id(revid,
+        return self.repository.lookup_bzr_revision_id(revid,
             ancestry=(self.get_branch_path(), self.get_revnum()),
             project=self.project)
-        assert bp.strip("/") == self.get_branch_path(revnum).strip("/"), \
-                "Got %r, expected %r" % (bp, self.get_branch_path(revnum))
-        return revnum
 
     def _create_lightweight_checkout(self, to_location, revision_id=None):
         """Create a new lightweight checkout of this branch.
@@ -388,20 +385,24 @@ class SvnBranch(ForeignBranch):
         """
         from bzrlib.plugins.svn.workingtree import update_wc
         if revision_id is not None:
-            revnum = self.lookup_bzr_revision_id(revision_id)
+            (uuid, bp, revnum), mapping = self.repository.lookup_bzr_revision_id(
+                revision_id,
+                ancestry=(self.get_branch_path(), self.get_revnum()),
+                project=self.project)
         else:
+            uuid = self.repository.uuid
             revnum = self.get_revnum()
 
         transport = get_transport(to_location)
         transport.ensure_base()
         svn_url, readonly = bzr_to_svn_url(self.base)
-        wc.ensure_adm(to_location.encode("utf-8"), self.repository.uuid,
+        wc.ensure_adm(to_location.encode("utf-8"), uuid,
                       svn_url, bzr_to_svn_url(self.repository.base)[0], revnum)
         adm = wc.WorkingCopy(None, to_location.encode("utf-8"), write_lock=True)
         try:
             conn = self.repository.transport.connections.get(svn_url)
             try:
-                update_wc(adm, to_location.encode("utf-8"), conn, revnum)
+                update_wc(adm, to_location.encode("utf-8"), conn, svn_url, revnum)
             finally:
                 if not conn.busy:
                     self.repository.transport.add_connection(conn)

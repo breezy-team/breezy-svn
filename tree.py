@@ -647,7 +647,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
 
     def annotate_iter(self, file_id, default_revision=CURRENT_REVISION):
         from bzrlib.plugins.svn.annotate import Annotater
-        annotater = Annotater(self.repository, file_id)
+        annotater = Annotater(self.workingtree.branch.repository, file_id)
         annotater.check_file_revs(
             self.get_revision_id(), self.workingtree.get_branch_path(), 
             self.workingtree.base_revnum, self.mapping, self.id2path(file_id))

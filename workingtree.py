@@ -144,13 +144,13 @@ class CorruptWorkingTree(BzrError):
         self.msg = msg
 
 
-def update_wc(adm, basedir, conn, revnum):
+def update_wc(adm, basedir, conn, url, revnum):
     # FIXME: honor SVN_CONFIG_SECTION_HELPERS:SVN_CONFIG_OPTION_DIFF3_CMD
     # FIXME: honor SVN_CONFIG_SECTION_MISCELLANY:SVN_CONFIG_OPTION_USE_COMMIT_TIMES
     # FIXME: honor SVN_CONFIG_SECTION_MISCELLANY:SVN_CONFIG_OPTION_PRESERVED_CF_EXTS
     editor = adm.get_update_editor(basedir, False, True)
     assert editor is not None
-    reporter = conn.do_update(revnum, "", True, editor)
+    reporter = conn.do_switch(revnum, "", True, url, editor)
     try:
         adm.crawl_revisions(basedir, reporter, restore_files=False,
                             recurse=True, use_commit_times=False)
@@ -377,16 +377,18 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         """Check whether path is a control file (used by bzr or svn)."""
         return is_adm_dir(path)
 
-    def _update(self, revnum=None):
+    def _update(self, branch_path, revnum):
         if revnum is None:
             # FIXME: should be able to use -1 here
             revnum = self.branch.get_revnum()
-        bp = self.get_branch_path()
+        old_branch_path = self.get_branch_path()
         adm = self._get_wc(write_lock=True, depth=-1)
         try:
-            conn = self.branch.repository.transport.get_connection(bp)
+            conn = self.branch.repository.transport.get_connection(old_branch_path)
             try:
-                update_wc(adm, self.basedir.encode("utf-8"), conn, revnum)
+                update_wc(adm, self.basedir.encode("utf-8"), conn, 
+                        urlutils.join(self.branch.repository.transport.svn_url, branch_path),
+                        revnum)
             finally:
                 self.branch.repository.transport.add_connection(conn)
         finally:
@@ -402,8 +404,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         if revision is not None and revnum is not None:
             raise AssertionError("revision and revnum are mutually exclusive")
         if revision is not None:
-            revnum = self.branch.lookup_bzr_revision_id(revision)
-        self._cached_base_revnum = self._update(revnum)
+            ((uuid, branch_path, revnum), mapping) = self.branch.lookup_bzr_revision_id(revision)
+        else:
+            branch_path = self.get_branch_path()
+        self._cached_base_revnum = self._update(branch_path, revnum)
         self._cached_base_revid = None
         self._cached_base_idmap = None
         return self.base_revnum - orig_revnum
@@ -710,8 +714,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def set_last_revision(self, revid):
         mutter('setting last revision to %r', revid)
-        rev = self.branch.lookup_bzr_revision_id(revid)
-        self._cached_base_revnum = rev
+        (foreign_revid, mapping) = self.branch.lookup_bzr_revision_id(revid)
+        self._cached_base_revnum = foreign_revid[2]
         self._cached_base_revid = revid
         self._cached_base_idmap = None
 
@@ -880,7 +884,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         # FIXME: Use delta_reporter
         result = self.branch.pull(source, overwrite=overwrite,
             stop_revision=stop_revision, local=local)
-        fetched = self._update(self.branch.get_revnum())
+        fetched = self._update(self.branch.get_branch_path(), self.branch.get_revnum())
         self._cached_base_revnum = fetched
         self._cached_base_revid = None
         self._cached_base_idmap = None

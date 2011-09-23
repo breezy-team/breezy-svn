@@ -415,11 +415,10 @@ class BranchConfig(Config):
 
     def get_push_merged_revisions(self):
         """Check whether merged revisions should be pushed."""
-        return True
         try:
             return self.get_bool("push_merged_revisions")
         except KeyError:
-            return True
+            return None
 
     def has_explicit_nickname(self):
         return False

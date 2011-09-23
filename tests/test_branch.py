@@ -437,7 +437,8 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc = self.get_commit_editor(branch.base)
         dc.add_dir("mydir")
         dc.close()
-        self.assertEquals(2, branch.lookup_bzr_revision_id(branch.last_revision()))
+        self.assertEquals(((branch.repository.uuid, "trunk", 2), branch.mapping),
+                branch.lookup_bzr_revision_id(branch.last_revision()))
 
     def test_set_parent(self):
         branch = self.make_svn_branch("a")
