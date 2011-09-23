@@ -1235,6 +1235,10 @@ class SvnWorkingTreeFormat(WorkingTreeFormat):
     def open(self, a_bzrdir):
         raise NotImplementedError(self.initialize)
 
+    def get_controldir_for_branch(self):
+        from bzrlib.plugins.svn.remote import SvnRemoteFormat
+        return SvnRemoteFormat()
+
 
 class SvnWorkingTreeDirFormat(ControlDirFormat):
     """Working Tree implementation that uses Subversion working copies."""
@@ -1275,10 +1279,6 @@ class SvnWorkingTreeDirFormat(ControlDirFormat):
     def get_converter(self, format):
         """See ControlDirFormat.get_converter()."""
         return SvnCheckoutConverter(format)
-
-    def is_supported(self):
-        """See ControlDirFormat.is_supported()."""
-        return True
 
     @property
     def repository_format(self):
