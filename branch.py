@@ -387,18 +387,19 @@ class SvnBranch(ForeignBranch):
         :return: WorkingTree object of the checkout.
         """
         from bzrlib.plugins.svn.workingtree import update_wc
-        if revision_id is not None:
+        if revision_id is None or revision_id == self.last_revision():
+            bp = self.get_branch_path()
+            uuid = self.repository.uuid
+            revnum = self.get_revnum()
+        else:
             (uuid, bp, revnum), mapping = self.repository.lookup_bzr_revision_id(
                 revision_id,
                 ancestry=(self.get_branch_path(), self.get_revnum()),
                 project=self.project)
-        else:
-            uuid = self.repository.uuid
-            revnum = self.get_revnum()
 
         transport = get_transport(to_location)
         transport.ensure_base()
-        svn_url, readonly = bzr_to_svn_url(self.base)
+        svn_url, readonly = bzr_to_svn_url(urlutils.join(self.repository.base, bp))
         wc.ensure_adm(to_location.encode("utf-8"), uuid,
                       svn_url, bzr_to_svn_url(self.repository.base)[0], revnum)
         adm = wc.WorkingCopy(None, to_location.encode("utf-8"), write_lock=True)
@@ -458,12 +459,18 @@ class SvnBranch(ForeignBranch):
 
         :return: Branch nick
         """
+        ret = self.get_config().get_user_option("nick")
+        if ret is not None:
+            return ret
         bp = self._branch_path.strip("/")
         if self._branch_path == "":
             return self.base.split("/")[-1]
         return bp
 
-    nick = property(_get_nick)
+    def _set_nick(self, name):
+        self.get_config().set_user_option("nick", name)
+
+    nick = property(_get_nick, _set_nick)
 
     @deprecated_method(deprecated_in((2, 4, 0)))
     @needs_write_lock
