@@ -261,6 +261,12 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._control_files = LockableFiles(control_transport, 'lock', LockDir)
         self.views = self._make_views()
 
+    def kind(self, file_id, path=None):
+        if path is not None:
+            return osutils.file_kind(self.abspath(path))
+        else:
+            return osutils.file_kind(self.id2abspath(file_id))
+
     def _detect_case_handling(self):
         try:
             self._transport.stat(".svn/FoRmAt")
@@ -1108,8 +1114,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         finally:
             root_adm.close()
 
-    def transmit_svn_file_deltas(self, file_id, editor):
-        path = self.id2path(file_id)
+    def transmit_svn_file_deltas(self, file_id, path, editor):
+        if path is None:
+            path = self.id2path(file_id)
         encoded_path = self.abspath(path).encode("utf-8")
         root_adm = self._get_wc(write_lock=True)
         try:
@@ -1180,7 +1187,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     update_entry(cq, old_path, root_adm)
                 if new_path is not None:
                     if ie.kind in ("symlink", "file"):
-                        f = get_svn_file_contents(self, ie.kind, ie.file_id)
+                        f = get_svn_file_contents(self, ie.kind, ie.file_id, new_path)
                         md5sum = osutils.md5(self.get_file_text(file_id)).digest()
                     else:
                         md5sum = None

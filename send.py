@@ -116,7 +116,7 @@ class SvnDiffTree(_mod_diff.DiffTree):
         if kind in (None, "directory"):
             return None
         from bzrlib.plugins.svn.mapping import get_svn_file_contents
-        f = get_svn_file_contents(tree, kind, file_id)
+        f = get_svn_file_contents(tree, kind, file_id, path)
         return f.readlines()
 
     def _show_diff(self, specific_files, extra_trees):
