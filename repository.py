@@ -852,7 +852,15 @@ class SvnRepository(ForeignRepository):
         pending = set(keys)
         parent_map = {}
         while pending:
-            this_parent_map = self.get_parent_map(pending)
+            this_parent_map = {}
+            for revid in pending:
+                if revid == NULL_REVISION:
+                    continue
+                parents = self._get_parents(revid)
+                if tuple(parents) == (NULL_REVISION,):
+                    parents = ()
+                if parents is not None:
+                    this_parent_map[revid] = parents
             parent_map.update(this_parent_map)
             pending = set()
             map(pending.update, this_parent_map.itervalues())
@@ -907,20 +915,28 @@ class SvnRepository(ForeignRepository):
 
         return SvnRevisionTree(self, revision_id)
 
+    def _get_parents(self, revid):
+        try:
+            revmeta, mapping = self._get_revmeta(ensure_null(revid))
+        except bzr_errors.NoSuchRevision:
+            return None
+        else:
+            parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
+            return revmeta.get_parent_ids(mapping, parentrevmeta)
+
     def get_parent_map(self, revids):
         """See Repository.get_parent_map()."""
         parent_map = {}
         for revision_id in revids:
+            parents = self._get_parents(revision_id)
             if revision_id == NULL_REVISION:
                 parent_map[revision_id] = ()
                 continue
-            try:
-                revmeta, mapping = self._get_revmeta(ensure_null(revision_id))
-            except bzr_errors.NoSuchRevision:
+            if parents is None:
                 continue
-            else:
-                parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
-                parent_map[revision_id] = revmeta.get_parent_ids(mapping, parentrevmeta)
+            if len(parents) == 0:
+                parents = [NULL_REVISION]
+            parent_map[revision_id] = tuple(parents)
         return parent_map
 
     def _get_revmeta(self, revision_id):
