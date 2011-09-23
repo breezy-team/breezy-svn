@@ -1182,16 +1182,22 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         root_adm = self._get_wc(self.abspath("."), write_lock=True, depth=-1)
         adms_to_close.add(root_adm)
         try:
-            for (old_path, new_path, file_id, ie) in delta:
-                if old_path is not None:
-                    update_entry(cq, old_path, root_adm)
-                if new_path is not None:
-                    if ie.kind in ("symlink", "file"):
-                        f = get_svn_file_contents(self, ie.kind, ie.file_id, new_path)
-                        md5sum = osutils.md5(self.get_file_text(file_id)).digest()
+            for repos_path, changes in revmeta.metarev.paths.iteritems():
+                if changes[0] == 'D':
+                    continue
+                assert changes[0] in ('A', 'M', 'R')
+                path = repos_path[len(revmeta.metarev.branch_path):].strip("/")
+                path = path.decode("utf-8")
+                try:
+                    kind = self.kind(None, path)
+                except NoSuchFile:
+                    md5sum = None
+                else:
+                    if kind in ("symlink", "file"):
+                        md5sum = osutils.md5(self.get_file_text(None, path)).digest()
                     else:
                         md5sum = None
-                    update_entry(cq, new_path, root_adm, md5sum)
+                update_entry(cq, path, root_adm, md5sum)
             root_adm.process_committed_queue(cq,
                 rev, svn_revprops[properties.PROP_REVISION_DATE],
                 svn_revprops[properties.PROP_REVISION_AUTHOR])
