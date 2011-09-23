@@ -921,10 +921,10 @@ class SvnRepository(ForeignRepository):
         """See Repository.get_parent_map()."""
         parent_map = {}
         for revision_id in revids:
-            parents = self._get_parents(revision_id)
             if revision_id == NULL_REVISION:
                 parent_map[revision_id] = ()
                 continue
+            parents = self._get_parents(revision_id)
             if parents is None:
                 continue
             if len(parents) == 0:
