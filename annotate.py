@@ -16,6 +16,7 @@
 
 """Annotate support."""
 
+import subvertpy
 
 from cStringIO import (
     StringIO,
@@ -59,8 +60,13 @@ class Annotater(object):
         if relpath is None:
             relpath = self._repository.revision_tree(revid).id2path(self.fileid)
         path = urlutils.join(branch_path, relpath.encode("utf-8")).strip("/")
-        self._repository.transport.get_file_revs(path, -1, revnum,
-            self._handler, include_merged_revisions=True)
+        try:
+            self._repository.transport.get_file_revs(path, -1, revnum,
+                self._handler, include_merged_revisions=True)
+        except subvertpy.SubversionException, (msg, num):
+            if num == subvertpy.ERR_FS_NOT_FILE:
+                return
+            raise
 
     def _get_ids(self, path, rev, revprops):
         revmeta, mapping = self._related_revs[rev]
