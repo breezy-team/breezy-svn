@@ -32,6 +32,9 @@ from bzrlib import (
 from bzrlib.annotate import (
     reannotate,
     )
+from bzrlib.errors import (
+    NoSuchId,
+    )
 
 from bzrlib.plugins.svn import (
     changes,
@@ -50,7 +53,7 @@ class Annotater(object):
     def get_annotated(self):
         return self._annotated
 
-    def check_file_revs(self, revid, branch_path, revnum, mapping, relpath):
+    def check_file_revs(self, revid, branch_path, revnum, mapping, relpath=None):
         for (revmeta, hidden, mapping) in self._repository._revmeta_provider._iter_reverse_revmeta_mapping_history(branch_path, revnum,
                 to_revnum=0, mapping=mapping):
             if hidden:
@@ -58,7 +61,11 @@ class Annotater(object):
             self._related_revs[revmeta.metarev.revnum] = revmeta, mapping
         self._text = ""
         if relpath is None:
-            relpath = self._repository.revision_tree(revid).id2path(self.fileid)
+            tree = self._repository.revision_tree(revid)
+            try:
+                relpath = tree.id2path(self.fileid)
+            except NoSuchId:
+                return
         path = urlutils.join(branch_path, relpath.encode("utf-8")).strip("/")
         try:
             self._repository.transport.get_file_revs(path, -1, revnum,
