@@ -24,6 +24,10 @@ from subvertpy.delta import (
     apply_txdelta_window,
     )
 
+from bzrlib import (
+    trace,
+    urlutils,
+    )
 from bzrlib.annotate import (
     reannotate,
     )
@@ -35,28 +39,28 @@ from bzrlib.plugins.svn import (
 
 class Annotater(object):
 
-    def __init__(self, repository, mapping, fileid, revid):
+    def __init__(self, repository, fileid):
         self._text = ""
         self._annotated = []
-        self._mapping = mapping
         self._repository = repository
         self.fileid = fileid
         self._related_revs = {}
-        (_, branch_path, revnum), mapping = self._repository.lookup_bzr_revision_id(
-            revid)
+
+    def get_annotated(self):
+        return self._annotated
+
+    def check_file_revs(self, revid, branch_path, revnum, mapping, relpath):
         for (revmeta, hidden, mapping) in self._repository._revmeta_provider._iter_reverse_revmeta_mapping_history(branch_path, revnum,
                 to_revnum=0, mapping=mapping):
             if hidden:
                 continue
             self._related_revs[revmeta.metarev.revnum] = revmeta, mapping
-
-    def get_annotated(self):
-        return self._annotated
-
-    def check_file_revs(self, path, revnum):
         self._text = ""
+        if relpath is None:
+            relpath = self._repository.revision_tree(revid).id2path(self.fileid)
+        path = urlutils.join(branch_path, relpath.encode("utf-8")).strip("/")
         self._repository.transport.get_file_revs(path, -1, revnum,
-            self._handler)
+            self._handler, include_merged_revisions=True)
 
     def _get_ids(self, path, rev, revprops):
         revmeta, mapping = self._related_revs[rev]
@@ -68,6 +72,9 @@ class Annotater(object):
         idmap = self._repository.get_fileid_map(revmeta, mapping)
         return idmap.lookup(mapping, ip)
 
+    def check_file(self, lines, revid):
+        self._annotated = reannotate([self._annotated], lines, revid)
+
     def _handler(self, path, rev, revprops, result_of_merge=None):
         try:
             fileid, revid, _ = self._get_ids(path, rev, revprops)
@@ -76,6 +83,7 @@ class Annotater(object):
             # Related file in Subversion but not in Bazaar
             # We still apply the delta since we'll need the fulltext later
             fileid = None
+        trace.mutter('annotate %r, %r', fileid, revid)
         stream = StringIO()
         def apply_window(window):
             if window is None:
@@ -84,8 +92,7 @@ class Annotater(object):
                 self._text = "".join(lines)
                 if fileid == self.fileid:
                     # FIXME: Right hand side parents
-                    self._annotated = reannotate([self._annotated],
-                        lines, revid)
+                    self.check_file(lines, revid)
                 return
             stream.write(apply_txdelta_window(self._text, window))
         return apply_window

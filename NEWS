@@ -5,6 +5,10 @@ bzr-svn 1.1.1					  UNRELEASED
   * The 'trunk' layout is now the default for an empty repository.
     (Jelmer Vernooij)
 
+ FEATURES
+
+  * Support annotate in working trees. (Jelmer Vernooij)
+
  BUG FIXES
 
   * Implement `Repository.pack_fs()`. (Jelmer Vernooij)

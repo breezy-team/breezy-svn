@@ -73,6 +73,7 @@ from bzrlib.lockable_files import (
     )
 from bzrlib.lockdir import LockDir
 from bzrlib.revision import (
+    CURRENT_REVISION,
     NULL_REVISION,
     )
 from bzrlib.trace import mutter
@@ -95,7 +96,6 @@ from bzrlib.plugins.svn.errors import (
     )
 from bzrlib.plugins.svn.mapping import (
     escape_svn_path,
-    get_svn_file_contents,
     )
 from bzrlib.plugins.svn.transport import (
     SvnRaTransport,
@@ -1206,6 +1206,18 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 adm.close()
         self.set_parent_ids([new_revid])
 
+    def annotate_iter(self, file_id, default_revision=CURRENT_REVISION):
+        from bzrlib.plugins.svn.annotate import Annotater
+        annotater = Annotater(self.branch.repository, file_id)
+        for revid in self.get_parent_ids():
+            foreign_revid, mapping = self.branch.repository.lookup_bzr_revision_id(
+                revid)
+            annotater.check_file_revs(revid, foreign_revid[1], foreign_revid[2],
+                self.mapping, None)
+        annotater.check_file(self.get_file_lines(file_id, self.id2path(file_id)),
+            default_revision)
+        return annotater.get_annotated()
+
 
 class SvnWorkingTreeFormat(WorkingTreeFormat):
     """Subversion working copy format."""
@@ -1265,7 +1277,7 @@ class SvnWorkingTreeDirFormat(ControlDirFormat):
         return 'Subversion Local Checkout'
 
     def is_supported(self):
-        return False
+        return True
 
     def initialize_on_transport(self, transport):
         raise UninitializableFormat(self)

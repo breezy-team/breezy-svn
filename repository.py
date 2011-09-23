@@ -692,13 +692,6 @@ class SvnRepository(ForeignRepository):
             self.transport.add_connection(conn)
         return editor.delta
 
-    def _annotate(self, path, revnum, fileid, revid, mapping):
-        assert type(path) is str
-        from bzrlib.plugins.svn.annotate import Annotater
-        annotater = Annotater(self, mapping, fileid, revid)
-        annotater.check_file_revs(path, revnum)
-        return annotater.get_annotated()
-
     def set_layout(self, layout):
         """Set the layout that should be used by default by this instance."""
         self.get_mapping().check_layout(self, layout)
@@ -857,9 +850,9 @@ class SvnRepository(ForeignRepository):
                 if revid == NULL_REVISION:
                     continue
                 parents = self._get_parents(revid)
-                if tuple(parents) == (NULL_REVISION,):
-                    parents = ()
                 if parents is not None:
+                    if tuple(parents) == (NULL_REVISION,):
+                        parents = ()
                     this_parent_map[revid] = parents
             parent_map.update(this_parent_map)
             pending = set()

@@ -646,11 +646,12 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         return orig_props
 
     def annotate_iter(self, file_id, default_revision=CURRENT_REVISION):
-        path = urlutils.join(self.workingtree.branch.get_branch_path(),
-                             self.id2path(file_id).encode("utf-8"))
-        return self.workingtree.branch.repository._annotate(path.strip("/"),
-            self.workingtree.base_revnum,  file_id, self.get_revision_id(),
-            self.workingtree.branch.mapping)
+        from bzrlib.plugins.svn.annotate import Annotater
+        annotater = Annotater(self.repository, file_id)
+        annotater.check_file_revs(
+            self.get_revision_id(), self.workingtree.get_branch_path(), 
+            self.workingtree.base_revnum, self.mapping, self.id2path(file_id))
+        return annotater.get_annotated()
 
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
         # FIXME

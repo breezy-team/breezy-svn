@@ -524,11 +524,13 @@ class SvnRaTransport(Transport):
         finally:
             self.add_connection(conn)
 
-    def get_file_revs(self, path, start_revnum, end_revnum, handler):
+    def get_file_revs(self, path, start_revnum, end_revnum, handler,
+                      include_merged_revisions=False):
         assert type(path) is str
         conn, relpath = self.get_path_connection(path)
         try:
-            return conn.get_file_revs(relpath, start_revnum, end_revnum, handler)
+            return conn.get_file_revs(relpath, start_revnum, end_revnum, handler,
+                                      include_merged_revisions)
         finally:
             self.add_connection(conn)
 
