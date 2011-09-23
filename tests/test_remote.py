@@ -16,6 +16,7 @@
 
 """Remote access tests."""
 
+import os
 import subvertpy
 
 from bzrlib import osutils
@@ -41,14 +42,19 @@ from bzrlib.plugins.svn.transport import SvnRaTransport
 class TestRemoteAccess(SubversionTestCase):
 
     def test_clone(self):
-        repos_url = self.make_client("d", "dc")
+        old_tree = self.make_svn_branch_and_tree("d", "dc")
 
-        dc = self.get_commit_editor(repos_url)
+        dc = self.get_commit_editor(old_tree.branch.base)
         dc.add_dir("foo")
         dc.close()
 
+        old_tree.update()
+
         x = BzrDir.open("dc")
-        self.assertRaises(NotImplementedError, x.clone, "dir")
+        dir = x.clone("ec")
+        new_tree = dir.open_workingtree()
+        self.assertEquals(old_tree.branch.base, new_tree.branch.base)
+        self.assertEquals(set([".svn", "foo"]), set(os.listdir("ec")))
 
     def test_break_lock(self):
         repos_url = self.make_svn_repository("d")
