@@ -25,6 +25,7 @@ from bzrlib import (
     errors as bzr_errors,
     ui,
     urlutils,
+    version_info as bzrlib_version,
     )
 from bzrlib.tag import BasicTags
 from bzrlib.trace import mutter
@@ -379,16 +380,19 @@ class SubversionTags(BasicTags):
             (tagname, source_target, dest_target), or None if no copying was
             done.
         """
-        if self.branch == to_tags.branch:
-            return
-        if not self.branch.supports_tags():
-            # obviously nothing to copy
-            return
+        if (self.branch == to_tags.branch or not self.branch.supports_tags()):
+            if bzrlib_version >= (2, 5):
+                return {}, []
+            else:
+                return
         tag_revmetas = self._get_tag_dict_revmeta(_from_revnum, _to_revnum)
         if len(tag_revmetas) == 0:
             # no tags in the source, and we don't want to clobber anything
             # that's in the destination
-            return
+            if bzrlib_version >= (2, 5):
+                return {}, []
+            else:
+                return
         to_tags.branch.lock_write()
         try:
             graph = to_tags.branch.repository.get_graph()
