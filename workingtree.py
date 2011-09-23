@@ -406,7 +406,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         if revision is not None:
             ((uuid, branch_path, revnum), mapping) = self.branch.lookup_bzr_revision_id(revision)
         else:
-            branch_path = self.get_branch_path()
+            branch_path = self.branch.get_branch_path()
         self._cached_base_revnum = self._update(branch_path, revnum)
         self._cached_base_revid = None
         self._cached_base_idmap = None
