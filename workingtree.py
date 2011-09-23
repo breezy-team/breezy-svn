@@ -1381,8 +1381,14 @@ class SvnCheckout(ControlDir):
                 from_transport=self._remote_repo_transport)
         return self._remote_branch_transport
 
-    def clone(self, path, revision_id=None, force_new_repo=False):
-        raise NotImplementedError(self.clone)
+    def clone(self, url, revision_id=None, force_new_repo=False,
+              preserve_stacking=False):
+        wt = self.open_workingtree()
+        if revision_id is None:
+            revision_id = wt.last_revision()
+        path = urlutils.local_path_from_url(url)
+        return wt.branch.create_checkout(path, lightweight=True,
+            revision_id=revision_id).bzrdir
 
     def open_workingtree(self, _unsupported=False, recommend_upgrade=False):
         try:
