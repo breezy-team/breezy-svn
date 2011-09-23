@@ -817,6 +817,7 @@ class SvnRepository(ForeignRepository):
                if part of the ancestry of valid revisions) won't be
                returned.
         """
+        ret = set()
         if mapping is None:
             mapping = self.get_mapping()
         if layout is None:
@@ -825,7 +826,8 @@ class SvnRepository(ForeignRepository):
                 mapping.is_branch_or_tag, self.get_latest_revnum()):
             if revmeta.is_hidden(mapping):
                 continue
-            yield revmeta.get_revision_id(mapping)
+            ret.add(revmeta.get_revision_id(mapping))
+        return ret
 
     def set_make_working_trees(self, new_value):
         """See Repository.set_make_working_trees()."""
