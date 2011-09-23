@@ -1142,13 +1142,15 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         :param delta: An inventory delta (see apply_inventory_delta) describing
             the changes from the current left most parent revision to new_revid.
         """
-        rev = self.branch.lookup_bzr_revision_id(new_revid)
+        revmeta, mapping = self.branch.last_revmeta(True)
+        assert revmeta.get_revision_id(mapping) == new_revid
+        rev = revmeta.metarev.revnum
         self._cached_base_revnum = rev
         self._cached_base_revid = new_revid
         self._cached_base_idmap = None
 
         newrev = self.branch.repository.get_revision(new_revid)
-        svn_revprops = self.branch.repository._log.revprop_list(rev)
+        svn_revprops = revmeta.metarev.revprops
 
         class DummyEditor(object):
 
