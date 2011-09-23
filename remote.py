@@ -236,6 +236,9 @@ class SvnRemoteAccess(ControlDir):
         :param use_existing_dir: Use an existing directory if one exists.
         :param no_tree: If set to true prevents creation of a working tree.
         """
+        if stacked_on is not None:
+            raise errors.UnstackableRepositoryFormat(
+                self._format.repository_format, self.user_url)
         if create_prefix:
             transport.create_prefix()
         if not use_existing_dir:
@@ -330,6 +333,9 @@ class SvnRemoteAccess(ControlDir):
         if self._branch_path == "":
             return SvnRepository(self, self.root_transport)
         raise NoSvnRepositoryPresent(self.root_transport.base)
+
+    def _find_or_create_repository(self, force_new_repo=False):
+        return self.find_repository()
 
     def find_repository(self, _ignore_branch_path=False):
         """Open the repository associated with this ControlDir.
