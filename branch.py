@@ -162,14 +162,17 @@ class SubversionTargetBranchPushResult(BranchPushResult):
         try:
             return self.source_branch.revision_id_to_revno(revid)
         except NoSuchRevision:
-            return self.target_branch.revision_id_to_revno(revid)
+            if self.local_branch is not None:
+                return self.local_branch.revision_id_to_revno(revid)
+            else:
+                return self.master_branch.revision_id_to_revno(revid)
 
     @property
     def old_revno(self):
         try:
             return self._lookup_revno(self.old_revid)
         except NoSuchRevision:
-            graph = self.target_branch.repository.get_graph(
+            graph = self.master_branch.repository.get_graph(
                 self.source_branch.repository)
             return graph.find_distance_to_null(self.old_revid, [])
 
