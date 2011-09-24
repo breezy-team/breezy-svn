@@ -547,6 +547,15 @@ class SvnCommitBuilder(CommitBuilder):
             if new_mergeinfo is not None:
                 self._svnprops[properties.PROP_MERGEINFO] = new_mergeinfo
 
+    def _check_properties(self):
+        """Verify that all revision properties are OK."""
+        for name, value in self._revprops.iteritems():
+            if not isinstance(name, basestring) or osutils.contains_whitespace(name):
+                raise ValueError("invalid property name %r" % name)
+            if not isinstance(value, basestring):
+                raise ValueError("invalid property value %r for %r" %
+                                 (value, name))
+
     @staticmethod
     def mutter(text, *args):
         if 'commit' in debug.debug_flags:
@@ -713,6 +722,7 @@ class SvnCommitBuilder(CommitBuilder):
         """Finish the commit.
 
         """
+        self._check_properties()
         bp_parts = self.branch_path.split("/")
         lock = self.repository.transport.lock_write(".")
 
