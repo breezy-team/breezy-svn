@@ -724,7 +724,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         """See MutableTree.set_parent_trees."""
         self.set_parent_ids([rev for (rev, tree) in parents_list])
 
-    def set_parent_ids(self, parent_ids):
+    def set_parent_ids(self, parent_ids, allow_leftmost_as_ghost=False):
         """See MutableTree.set_parent_ids."""
         super(SvnWorkingTree, self).set_parent_ids(parent_ids)
         if parent_ids == [] or parent_ids[0] == NULL_REVISION:
