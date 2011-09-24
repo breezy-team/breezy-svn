@@ -909,6 +909,19 @@ class SvnRepository(ForeignRepository):
         else:
             return (kind == subvertpy.NODE_DIR)
 
+    def iter_files_bytes(self, desired_files):
+        per_revision = {}
+        for (file_id, revision_id, identifier) in desired_files:
+            per_revision.setdefault(revision_id, []).append(
+                (file_id, identifier))
+        for revid, files in per_revision.iteritems():
+            try:
+                tree = self.revision_tree(revid)
+            except bzr_errors.NoSuchRevision:
+                raise bzr_errors.RevisionNotPresent(revid, self)
+            for identifier, curfile in tree.iter_files_bytes(files):
+                yield identifier, curfile
+
     def revision_trees(self, revids):
         """See Repository.revision_trees()."""
         # TODO: Use diffs
