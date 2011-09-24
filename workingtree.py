@@ -788,7 +788,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 if self.filter_unversioned_files([f]):
                     if save:
                         mutter('adding %r', file_path)
-                        wc.add(file_path.encode("utf-8"))
+                        encoded_file_path = file_path.encode("utf-8")
+                        wc.add(encoded_file_path)
+                        self._update_special(wc, encoded_file_path, f)
                     added.append(file_path)
                 if (recurse and
                     osutils.file_kind(file_path.encode(osutils._fs_enc)) == 'directory'):
@@ -809,6 +811,16 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 added.extend(cadded)
                 ignored.update(cignored)
         return added, ignored
+
+    def _update_special(self, adm, abspath, relpath):
+        kind = self.kind(None, relpath)
+        if kind == "file":
+            value = None
+        elif kind == "symlink":
+            value = properties.PROP_SPECIAL_VALUE
+        else:
+            return
+        adm.prop_set(properties.PROP_SPECIAL, value, abspath)
 
     def add(self, files, ids=None, kinds=None, _copyfrom=None):
         """Add files to the working tree."""
@@ -838,6 +850,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     elif num == subvertpy.ERR_WC_PATH_NOT_FOUND:
                         raise NoSuchFile(path=f)
                     raise
+                self._update_special(wc, utf8_abspath, f)
             finally:
                 wc.close()
             if file_id is not None:
@@ -970,7 +983,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return self.get_file_properties(None, "")
 
     def _set_branch_props(self, wc, fileprops):
-        for k,v in fileprops.iteritems():
+        for k, v in fileprops.iteritems():
             wc.prop_set(k, v, self.basedir.encode("utf-8"))
 
     def _get_base_branch_props(self):
@@ -1144,6 +1157,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             try:
                 entry = adm.entry(encoded_path)
                 root_adm.transmit_prop_deltas(encoded_path, entry, editor)
+                self._update_special(adm, encoded_path, path)
                 root_adm.transmit_text_deltas(encoded_path, True, editor)
             finally:
                 adm.close()
@@ -1213,7 +1227,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 except NoSuchFile:
                     md5sum = None
                 else:
-                    if kind in ("symlink", "file"):
+                    if kind == "file":
                         md5sum = osutils.md5(self.get_file_text(None, path)).digest()
                     else:
                         md5sum = None
