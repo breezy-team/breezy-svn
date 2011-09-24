@@ -347,7 +347,7 @@ class SvnRepository(ForeignRepository):
 
     chk_bytes = None
 
-    def __init__(self, bzrdir, transport, branch_path=None):
+    def __init__(self, some_dir, transport, branch_path=None):
         from bzrlib.plugins.svn import lazy_register_optimizers
         lazy_register_optimizers()
         self.vcs = foreign_vcs_svn
@@ -356,7 +356,7 @@ class SvnRepository(ForeignRepository):
         assert isinstance(transport, Transport)
 
         control_files = DummyLockableFiles(transport)
-        Repository.__init__(self, SvnRepositoryFormat(), bzrdir, control_files)
+        Repository.__init__(self, SvnRepositoryFormat(), some_dir, control_files)
         self._transport = transport
         self._cached_revnum = None
         self._lock_mode = None
@@ -431,6 +431,20 @@ class SvnRepository(ForeignRepository):
 
         self._revmeta_provider = revmeta.RevisionMetadataProvider(self,
                 self.revinfo_cache is not None)
+
+    def _get_bzrdir(self):
+        # This is done lazily since the actual repository root may not be
+        # accessible, and we don't really need it.
+        if self._some_controldir.svn_root_url == self._some_controldir.svn_url:
+            return self._some_controldir
+        from bzrlib.plugins.svn.remote import SvnRemoteAccess
+        self._some_controldir = SvnRemoteAccess(self._some_controldir.root_transport.clone_root())
+        return self._some_controldir
+
+    def _set_bzrdir(self, value):
+        self._some_controldir = value
+
+    bzrdir = property(_get_bzrdir, _set_bzrdir)
 
     def break_lock(self):
         raise NotImplementedError(self.break_lock)

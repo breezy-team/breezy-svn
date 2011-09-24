@@ -1388,6 +1388,8 @@ class SvnCheckout(ControlDir):
         finally:
             wc.close()
 
+        self.svn_root_url = self.entry.repos
+        self.svn_url = self.entry.url
         self._remote_branch_transport = None
         self._remote_repo_transport = None
         self._remote_bzrdir = None
@@ -1455,20 +1457,7 @@ class SvnCheckout(ControlDir):
         raise NoRepositoryPresent(self)
 
     def _find_repository(self):
-        if self.entry.repos is None:
-            return self.get_remote_bzrdir().find_repository()
-        if self._remote_repo_transport is None:
-            try:
-                self._remote_repo_transport = SvnRaTransport(self.entry.repos,
-                    from_transport=self._remote_branch_transport)
-            except subvertpy.SubversionException, (msg, num):
-                if num == subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED:
-                    raise LocalRepositoryOpenFailed(self.entry.repos)
-                else:
-                    raise
-        from bzrlib.plugins.svn.repository import SvnRepository
-        return SvnRepository(self, self._remote_repo_transport,
-                self.get_branch_path())
+        return self.get_remote_bzrdir().find_repository()
 
     def get_branch_path(self):
         if self.entry.repos is None:

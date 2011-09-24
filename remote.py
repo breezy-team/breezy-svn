@@ -207,12 +207,12 @@ class SvnRemoteAccess(ControlDir):
         self.transport = None
         self.root_transport = _transport
 
-        svn_url, readonly = bzr_to_svn_url(self.root_transport.base)
+        self.svn_url, readonly = bzr_to_svn_url(self.root_transport.base)
         self.svn_root_url = _transport.get_svn_repos_root()
         self.root_url = _transport.get_repos_root()
 
-        assert svn_url.lower().startswith(self.svn_root_url.lower())
-        self._branch_path = urllib.unquote(svn_url[len(self.svn_root_url):])
+        assert self.svn_url.lower().startswith(self.svn_root_url.lower())
+        self._branch_path = urllib.unquote(self.svn_url[len(self.svn_root_url):])
 
     def break_lock(self):
         pass
