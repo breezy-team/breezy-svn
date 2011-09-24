@@ -399,14 +399,15 @@ class SvnBranch(ForeignBranch):
 
         transport = get_transport(to_location)
         transport.ensure_base()
+        to_path = transport.local_abspath(".")
         svn_url, readonly = bzr_to_svn_url(urlutils.join(self.repository.base, bp))
-        wc.ensure_adm(to_location.encode("utf-8"), uuid,
+        wc.ensure_adm(to_path.encode("utf-8"), uuid,
                       svn_url, bzr_to_svn_url(self.repository.base)[0], revnum)
-        adm = wc.WorkingCopy(None, to_location.encode("utf-8"), write_lock=True)
+        adm = wc.WorkingCopy(None, to_path.encode("utf-8"), write_lock=True)
         try:
             conn = self.repository.transport.connections.get(svn_url)
             try:
-                update_wc(adm, to_location.encode("utf-8"), conn, svn_url, revnum)
+                update_wc(adm, to_path.encode("utf-8"), conn, svn_url, revnum)
             finally:
                 if not conn.busy:
                     self.repository.transport.add_connection(conn)
