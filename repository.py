@@ -664,7 +664,6 @@ class SvnRepository(ForeignRepository):
 
     def get_deltas_for_revisions(self, revisions):
         """See Repository.get_deltas_for_revisions()."""
-        """See Repository.get_deltas_for_revisions()."""
         for revision in revisions:
             yield self.get_delta_for_revision(revision)
 
