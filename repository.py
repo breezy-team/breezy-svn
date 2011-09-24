@@ -903,7 +903,7 @@ class SvnRepository(ForeignRepository):
 
     def revision_tree(self, revision_id):
         """See Repository.revision_tree()."""
-        if revision_id in (NULL_REVISION, None):
+        if ensure_null(revision_id) == NULL_REVISION:
             inventory = Inventory(root_id=None)
             inventory.revision_id = revision_id
             return InventoryRevisionTree(self, inventory, revision_id)
