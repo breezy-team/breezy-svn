@@ -76,7 +76,10 @@ from bzrlib.revision import (
     CURRENT_REVISION,
     NULL_REVISION,
     )
-from bzrlib.trace import mutter
+from bzrlib.trace import (
+    mutter,
+    note,
+    )
 from bzrlib.transport import location_to_url
 from bzrlib.workingtree import (
     WorkingTree,
@@ -111,6 +114,9 @@ from bzrlib.plugins.svn.tree import (
 # Compatibility with bzr < 2.5
 get_transport_from_path = getattr(_mod_transport, "get_transport_from_path",
         _mod_transport.get_transport)
+
+# Compatibility with subvertpy < 0.8.6
+ERR_BAD_FILENAME = getattr(subvertpy, "ERR_BAD_FILENAME", 125001)
 
 
 try:
@@ -425,8 +431,14 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         wc = self._get_wc(write_lock=True)
         try:
             for file in files:
-                wc.delete(osutils.safe_utf8(self.abspath(file)),
-                          keep_local=keep_files)
+                try:
+                    wc.delete(osutils.safe_utf8(self.abspath(file)),
+                              keep_local=keep_files)
+                except subvertpy.SubversionException, (msg, num):
+                    if num == ERR_BAD_FILENAME:
+                        note("%s does not exist." % file)
+                    else:
+                        raise
         finally:
             wc.close()
 
