@@ -146,7 +146,7 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
         text = self.get_file_stream_by_path(path).read()
         if not text.startswith("link "):
             return None
-        return text[len("link "):]
+        return text[len("link "):].decode("utf-8")
 
     def get_file_sha1(self, file_id, path=None, stat_value=None):
         return osutils.sha_string(self.get_file_text(file_id, path))
