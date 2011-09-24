@@ -558,7 +558,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                                   SCHEDULE_ADD,
                                   SCHEDULE_REPLACE)
         if entry.schedule == SCHEDULE_NORMAL:
-            assert entry.revision >= 0
             # Keep old id
             return self.path_to_file_id(entry.cmt_rev, entry.revision,
                     relpath)
