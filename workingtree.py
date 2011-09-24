@@ -374,6 +374,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
         return ignores
 
+    def flush(self):
+        pass
+
     def is_control_filename(self, path):
         """Check whether path is a control file (used by bzr or svn)."""
         return is_adm_dir(path)
