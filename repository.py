@@ -923,6 +923,8 @@ class SvnRepository(ForeignRepository):
         """See Repository.get_parent_map()."""
         parent_map = {}
         for revision_id in revids:
+            if type(revision_id) != str:
+                raise ValueError("expected sequence of revision ids")
             if revision_id == NULL_REVISION:
                 parent_map[revision_id] = ()
                 continue
