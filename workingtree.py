@@ -1434,18 +1434,8 @@ class SvnCheckout(ControlDir):
         except NotSvnBranchPath, e:
             raise NoWorkingTree(self.local_path)
 
-    def sprout(self, url, revision_id=None, force_new_repo=False,
-               recurse='down', possible_transports=None, accelerator_tree=None,
-               hardlink=False):
-        # FIXME: honor force_new_repo
-        # FIXME: Use recurse
-        result = format_registry.make_bzrdir('default').initialize(url)
-        repo = self._find_repository()
-        repo.clone(result, revision_id)
-        branch = self.open_branch()
-        branch.sprout(result, revision_id)
-        result.create_workingtree(hardlink=hardlink)
-        return result
+    def sprout(self, *args, **kwargs):
+        return self.get_remote_bzrdir().sprout(*args, **kwargs)
 
     def create_repository(self, shared=False):
         raise UninitializableFormat(self._format)
