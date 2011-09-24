@@ -241,7 +241,7 @@ class SvnRemoteAccess(ControlDir):
                 self._format.repository_format, self.user_url)
         if create_prefix:
             transport.create_prefix()
-        if not use_existing_dir:
+        elif not use_existing_dir:
             transport.mkdir(".")
         target = SvnRemoteFormat().initialize_on_transport(transport)
         target_repo = target.open_repository()
