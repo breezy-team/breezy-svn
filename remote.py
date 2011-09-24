@@ -245,7 +245,7 @@ class SvnRemoteAccess(ControlDir):
             transport.mkdir(".")
         target = SvnRemoteFormat().initialize_on_transport(transport)
         target_repo = target.open_repository()
-        source_repo = self.open_repository()
+        source_repo = self.find_repository()
         # FIXME: This should ideally use the same mechanism as svnsync,
         # or at least copy all colocated branches, too.
         try:
