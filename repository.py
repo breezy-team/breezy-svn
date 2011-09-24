@@ -796,9 +796,10 @@ class SvnRepository(ForeignRepository):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             if revision_ids is not None:
-                for i, revid in enumerate(revision_ids):
+                for i, (revid, revmeta, mapping) in enumerate(self._iter_revmetas(revision_ids)):
+                    if revid == NULL_REVISION:
+                        continue
                     pb.update("checking revisions", i, len(revision_ids))
-                    revmeta, mapping = self._get_revmeta(revid)
                     ret.check_revmeta(revmeta)
             else:
                 last_revnum = self.get_latest_revnum()
@@ -963,6 +964,14 @@ class SvnRepository(ForeignRepository):
             parent_map[revision_id] = tuple(parents)
         return parent_map
 
+    def _iter_revmetas(self, revision_ids):
+        for revid in revision_ids:
+            if revid == NULL_REVISION:
+                yield (NULL_REVISION, None, None)
+            else:
+                (revmeta, mapping) = self._get_revmeta(revid)
+                yield (revid, revmeta, mapping)
+
     def _get_revmeta(self, revision_id):
         foreign_revid, mapping = self.lookup_bzr_revision_id(revision_id)
         (uuid, branch, revnum) = foreign_revid
@@ -974,7 +983,6 @@ class SvnRepository(ForeignRepository):
         if not revision_id or not isinstance(revision_id, str):
             raise bzr_errors.InvalidRevisionId(revision_id=revision_id,
                 branch=self)
-
         revmeta, mapping = self._get_revmeta(revision_id)
         parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
         return revmeta.get_revision(mapping, parentrevmeta)

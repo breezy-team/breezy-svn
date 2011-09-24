@@ -15,9 +15,6 @@
 
 """Per-file graph for Subversion."""
 
-from bzrlib import (
-    urlutils,
-    )
 from bzrlib.revision import NULL_REVISION
 
 
@@ -26,15 +23,6 @@ class PerFileParentProvider(object):
 
     def __init__(self, repository):
         self.repository = repository
-
-    def _lookup_key(self, key):
-        (fileid, revid) = key
-        revmeta, mapping = self.repository._get_revmeta(revid)
-        map = self.repository.get_fileid_map(revmeta, mapping)
-        path = map.reverse_lookup(mapping, fileid)
-        assert type(path) is str
-        return (urlutils.join(revmeta.branch_path, path).strip("/"),
-                revmeta.revnum, mapping)
 
     def _get_parent(self, fileid, revid):
         revmeta, mapping = self.repository._get_revmeta(revid)
@@ -55,10 +43,9 @@ class PerFileParentProvider(object):
         # present in the parents of the mentioned revision.
         ret = []
         rev_parent_revids = revmeta.get_parent_ids(mapping, parentrevmeta)
-        for revid in rev_parent_revids:
+        for (revid, revmeta, mapping) in self.repository._iter_revmetas(rev_parent_revids):
             if revid == NULL_REVISION:
                 continue # Nothing exists in NULL_REVISION
-            revmeta, mapping = self.repository._get_revmeta(revid)
             fileidmap = self.repository.get_fileid_map(revmeta, mapping)
             try:
                 path = fileidmap.reverse_lookup(mapping, fileid)
