@@ -73,6 +73,7 @@ from bzrlib.versionedfile import (
     FulltextContentFactory,
     )
 
+from bzrlib.plugins.svn import changes
 from bzrlib.plugins.svn.errors import (
     AbsentPath,
     InvalidFileName,
@@ -1049,19 +1050,21 @@ class FileTreeDeltaBuildEditor(FileBuildEditor):
             entry_kind = 'symlink'
         else:
             entry_kind = 'file'
-        if self.change_kind == 'add':
-            if (self.copyfrom_path is not None and
-                self._get_map_id(self.path) is not None):
-                self.editor.delta.renamed.append((self.copyfrom_path,
-                    self.path, self.editor._get_new_file_id(self.path),
-                    entry_kind, text_changed, metadata_changed))
+        fileid = self.editor._get_new_file_id(self.path)
+        if self.editor._should_include(fileid, self.path):
+            if self.change_kind == 'add':
+                if (self.copyfrom_path is not None and
+                    self._get_map_id(self.path) is not None):
+                    self.editor.delta.renamed.append((self.copyfrom_path,
+                        self.path, fileid,
+                        entry_kind, text_changed, metadata_changed))
+                else:
+                    self.editor.delta.added.append((self.path,
+                        fileid, entry_kind))
             else:
-                self.editor.delta.added.append((self.path,
-                    self.editor._get_new_file_id(self.path), entry_kind))
-        else:
-            self.editor.delta.modified.append((self.path,
-                self.editor._get_new_file_id(self.path), entry_kind,
-                text_changed, metadata_changed))
+                self.editor.delta.modified.append((self.path,
+                    fileid, entry_kind,
+                    text_changed, metadata_changed))
 
     def _apply_textdelta(self, base_checksum=None):
         self.base_checksum = None
@@ -1087,17 +1090,21 @@ class DirectoryTreeDeltaBuildEditor(DirectoryBuildEditor):
 
     def _delete_entry(self, path, revnum):
         # FIXME: old kind
-        self.editor.delta.removed.append((path,
-            self.editor._get_bzr_base_file_id(path), 'unknown'))
+        fileid = self.editor._get_bzr_base_file_id(path)
+        if self.editor._should_include(fileid, path):
+            self.editor.delta.removed.append((path,
+                fileid, 'unknown'))
 
     def _add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
-        if (copyfrom_path is not None and
-            self.editor._was_renamed(path) is not None):
-            self.editor.delta.renamed.append((copyfrom_path, path,
-                self.editor._get_new_file_id(path), 'directory', False, False))
-        else:
-            self.editor.delta.added.append((path,
-                self.editor._get_new_file_id(path), 'directory'))
+        fileid = self.editor._get_new_file_id(path)
+        if self.editor._should_include(fileid, path):
+            if (copyfrom_path is not None and
+                self.editor._was_renamed(path) is not None):
+                self.editor.delta.renamed.append((copyfrom_path, path,
+                    fileid, 'directory', False, False))
+            else:
+                self.editor.delta.added.append((path,
+                    fileid, 'directory'))
         return DirectoryTreeDeltaBuildEditor(self.editor, path)
 
 
@@ -1106,14 +1113,32 @@ class TreeDeltaBuildEditor(DeltaBuildEditor):
     Bazaar TreeDelta.
     """
 
-    def __init__(self, revmeta, mapping, newfileidmap, oldfileidmap):
+    def __init__(self, revmeta, mapping, newfileidmap, oldfileidmap,
+                 specific_fileids=None):
         super(TreeDeltaBuildEditor, self).__init__(revmeta, mapping)
+        self.specific_fileids = specific_fileids
         self._parent_idmap = oldfileidmap
         self._idmap = newfileidmap
+        if self.specific_fileids is not None:
+            self.specific_paths = [self._idmap.reverse_lookup(self.mapping, fileid) for fileid in self.specific_fileids]
         self.delta = delta.TreeDelta()
         self.delta.unversioned = []
         # To make sure we fall over if anybody tries to use it:
         self.delta.unchanged = None
+
+    def _should_include(self, file_id, path):
+        if self.specific_fileids is None:
+            return True
+        if file_id in self.specific_fileids:
+            return True
+        # path is under one of our specific_fileids
+        if changes.under_prefixes(path, self.specific_paths):
+            return True
+        # paht is a parent of one of our specific_fileids
+        for p in self.specific_paths:
+            if changes.path_is_child(path, p):
+                return True
+        return False
 
     def _open_root(self, base_revnum):
         return DirectoryTreeDeltaBuildEditor(self, u"")
@@ -1127,6 +1152,13 @@ class TreeDeltaBuildEditor(DeltaBuildEditor):
 
     def _get_new_file_id(self, path):
         return self._idmap.lookup(self.mapping, path)[0]
+
+    def sort(self):
+        self.delta.removed.sort()
+        self.delta.added.sort()
+        self.delta.renamed.sort()
+        self.delta.missing.sort()
+        self.delta.modified.sort()
 
 
 @convert_svn_error

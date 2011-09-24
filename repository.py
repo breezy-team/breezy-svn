@@ -667,10 +667,11 @@ class SvnRepository(ForeignRepository):
         for revision in revisions:
             yield self.get_delta_for_revision(revision)
 
-    def get_revision_delta(self, revid):
-        return self.get_delta_for_revision(self.get_revision(revid))
+    def get_revision_delta(self, revid, specific_fileids=None):
+        return self.get_delta_for_revision(self.get_revision(revid),
+            specific_fileids=specific_fileids)
 
-    def get_delta_for_revision(self, revision):
+    def get_delta_for_revision(self, revision, specific_fileids=None):
         """See Repository.get_delta_for_revision()."""
         parentrevmeta = revision.svn_meta.get_lhs_parent_revmeta(
             revision.mapping)
@@ -688,7 +689,7 @@ class SvnRepository(ForeignRepository):
             start_empty = False
         editor = TreeDeltaBuildEditor(revision.svn_meta, revision.mapping,
             self.get_fileid_map(revision.svn_meta, revision.mapping),
-            parentfileidmap)
+            parentfileidmap, specific_fileids=specific_fileids)
         conn = self.transport.get_connection(parent_branch_path)
         try:
             reporter = conn.do_diff(revision.svn_meta.metarev.revnum, "",
@@ -703,6 +704,7 @@ class SvnRepository(ForeignRepository):
                 raise
         finally:
             self.transport.add_connection(conn)
+        editor.sort()
         return editor.delta
 
     def set_layout(self, layout):
