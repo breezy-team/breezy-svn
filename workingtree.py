@@ -60,6 +60,7 @@ from bzrlib.errors import (
     NoWorkingTree,
     TransportNotPossible,
     UnsupportedFormatError,
+    UnsupportedOperation,
     UninitializableFormat,
     )
 from bzrlib.inventory import (
@@ -249,16 +250,15 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self.mapping = self.branch.mapping
         self._reset_data()
         self._cached_base_tree = None
-        self._transport = bzrdir.get_workingtree_transport(None)
         self._detect_case_handling()
-        self.controldir = os.path.join(bzrdir.svn_controldir, 'bzr')
+        self.controldir = os.path.join(bzrdir.local_path, bzrdir._adm_dir, 'bzr')
         try:
             os.makedirs(self.controldir)
             os.makedirs(os.path.join(self.controldir, 'lock'))
         except OSError:
             pass
-        control_transport = bzrdir.transport.clone(urlutils.join(
-                                                   get_adm_dir(), 'bzr'))
+        control_transport = bzrdir.transport.clone('bzr')
+        self._transport = control_transport
         cache_filename = control_transport.local_abspath('stat-cache')
         self._hashcache = hashcache.HashCache(self.basedir, cache_filename,
             self.bzrdir._get_file_mode(),
@@ -276,7 +276,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def _detect_case_handling(self):
         try:
-            self._transport.stat(".svn/FoRmAt")
+            self.bzrdir.transport.stat("FoRmAt")
         except NoSuchFile:
             self.case_sensitive = True
         else:
@@ -1345,7 +1345,7 @@ class SvnCheckout(ControlDir):
 
     @property
     def control_transport(self):
-        return None
+        return self.transport
 
     @property
     def control_url(self):
@@ -1353,10 +1353,12 @@ class SvnCheckout(ControlDir):
 
     @property
     def user_transport(self):
-        return self._transport
+        return self.root_transport
+
+    def break_lock(self):
+        raise NotImplementedError(self.break_lock)
 
     def __init__(self, transport, format):
-        self._transport = transport
         self._format = format
         self._mode_check_done = False
         self._config = None
@@ -1393,8 +1395,9 @@ class SvnCheckout(ControlDir):
         self._remote_branch_transport = None
         self._remote_repo_transport = None
         self._remote_bzrdir = None
-        self.svn_controldir = os.path.join(self.local_path, get_adm_dir())
-        self.root_transport = self.transport = transport
+        self._adm_dir = get_adm_dir()
+        self.root_transport = transport
+        self.transport = self.root_transport.clone(get_adm_dir())
 
     def backup_bzrdir(self):
         self.root_transport.copy_tree(".svn", ".svn.backup")
@@ -1402,7 +1405,7 @@ class SvnCheckout(ControlDir):
                 self.root_transport.abspath(".svn.backup"))
 
     def is_control_filename(self, filename):
-        return filename == '.svn' or filename.startswith('.svn/')
+        return filename == self._adm_dir or filename.startswith(self._adm_dir+'/')
 
     def get_remote_bzrdir(self):
         from bzrlib.plugins.svn.remote import SvnRemoteAccess
@@ -1458,10 +1461,6 @@ class SvnCheckout(ControlDir):
     def needs_format_conversion(self, format):
         return not isinstance(self._format, format.__class__)
 
-    def get_workingtree_transport(self, format):
-        assert format is None
-        return get_transport_from_path(self.svn_controldir)
-
     def create_workingtree(self, revision_id=None, hardlink=None):
         """See ControlDir.create_workingtree().
 
@@ -1469,6 +1468,9 @@ class SvnCheckout(ControlDir):
         implies having a working copy.
         """
         raise NotImplementedError(self.create_workingtree)
+
+    def destroy_workingtree(self):
+        raise UnsupportedOperation(self.destroy_workingtree, self)
 
     def create_branch(self):
         """See ControlDir.create_branch()."""
