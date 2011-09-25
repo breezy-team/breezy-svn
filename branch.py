@@ -1109,6 +1109,7 @@ class InterToSvnBranch(InterBranch):
             lossy=False, _override_hook_source_branch=None):
         """See InterBranch.push()."""
         result = SubversionTargetBranchPushResult()
+        result.target_branch = self.target
         result.master_branch = self.target
         result.local_branch = None
         result.source_branch = self.source
