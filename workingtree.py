@@ -727,8 +727,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return {}
 
     def set_last_revision(self, revid):
-        if revid == 'null:':
-            import pdb; pdb.set_trace()
         mutter('setting last revision to %r', revid)
         (foreign_revid, mapping) = self.branch.lookup_bzr_revision_id(revid)
         self._cached_base_revnum = foreign_revid[2]
