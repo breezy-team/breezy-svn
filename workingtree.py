@@ -81,7 +81,6 @@ from bzrlib.trace import (
     mutter,
     note,
     )
-from bzrlib.transport import location_to_url
 from bzrlib.workingtree import (
     WorkingTree,
     WorkingTreeFormat,
@@ -728,6 +727,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return {}
 
     def set_last_revision(self, revid):
+        if revid == 'null:':
+            import pdb; pdb.set_trace()
         mutter('setting last revision to %r', revid)
         (foreign_revid, mapping) = self.branch.lookup_bzr_revision_id(revid)
         self._cached_base_revnum = foreign_revid[2]
@@ -1423,7 +1424,7 @@ class SvnCheckout(ControlDir):
         wt = self.open_workingtree()
         if revision_id is None:
             revision_id = wt.last_revision()
-        url = location_to_url(location)
+        url = _mod_transport.location_to_url(location)
         path = urlutils.local_path_from_url(url)
         return wt.branch.create_checkout(path, lightweight=True,
             revision_id=revision_id).bzrdir
