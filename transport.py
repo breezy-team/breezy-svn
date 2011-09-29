@@ -484,8 +484,9 @@ class SvnRaTransport(Transport):
             include_merged_revisions=include_merged_revisions,
             revprops=revprops)
 
-    def get_log(self, rcvr, paths, from_revnum, to_revnum, limit, discover_changed_paths,
-                strict_node_history, include_merged_revisions, revprops):
+    def get_log(self, rcvr, paths, from_revnum, to_revnum, limit,
+            discover_changed_paths, strict_node_history,
+            include_merged_revisions, revprops):
 
         if paths is not None:
             conn, paths = self.get_paths_connection(paths)
@@ -501,7 +502,9 @@ class SvnRaTransport(Transport):
             except subvertpy.SubversionException, e:
                 msg, num = e.args
                 if num == subvertpy.ERR_RA_DAV_REQUEST_FAILED:
-                    return DavRequestFailed(msg)
+                    raise DavRequestFailed(msg)
+                elif num == subvertpy.ERR_RA_DAV_RELOCATED:
+                    raise convert_relocate_error(conn.url, num, msg)
                 else:
                     raise e
         finally:
