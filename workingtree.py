@@ -597,7 +597,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         related_wc = wc.probe_try(path)
         if related_wc is None:
             raise KeyError
-        return related_wc.entry(path)
+        try:
+            return related_wc.entry(path)
+        finally:
+            related_wc.close()
 
     def filter_unversioned_files(self, paths):
         ret = set()
