@@ -238,7 +238,7 @@ class SvnRemoteAccess(ControlDir):
         """
         if stacked_on is not None:
             raise errors.UnstackableBranchFormat(
-                self._format.branch_format, self.user_url)
+                self._format.get_branch_format(), self.user_url)
         if create_prefix:
             transport.create_prefix()
         elif not use_existing_dir:
@@ -291,7 +291,7 @@ class SvnRemoteAccess(ControlDir):
             else:
                 target_is_empty = None # Unknown
         if stacked:
-            raise errors.UnstackableBranchFormat(self._format.branch_format,
+            raise errors.UnstackableBranchFormat(self._format.get_branch_format(),
                 self.root_transport.base)
         interrepo = InterRepository.get(source_repository, result_repo)
         try:
