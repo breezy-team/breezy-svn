@@ -237,8 +237,8 @@ class SvnRemoteAccess(ControlDir):
         :param no_tree: If set to true prevents creation of a working tree.
         """
         if stacked_on is not None:
-            raise errors.UnstackableRepositoryFormat(
-                self._format.repository_format, self.user_url)
+            raise errors.UnstackableBranchFormat(
+                self._format.branch_format, self.user_url)
         if create_prefix:
             transport.create_prefix()
         elif not use_existing_dir:
@@ -291,7 +291,8 @@ class SvnRemoteAccess(ControlDir):
             else:
                 target_is_empty = None # Unknown
         if stacked:
-            raise errors.UnstackableRepositoryFormat(self._format, self.root_transport.base)
+            raise errors.UnstackableBranchFormat(self._format.branch_format,
+                self.root_transport.base)
         interrepo = InterRepository.get(source_repository, result_repo)
         try:
             source_branch = self.open_branch()
