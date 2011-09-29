@@ -13,8 +13,9 @@ bzr-svn 1.1.1					  UNRELEASED
 
   * Implement `Repository.pack_fs()`. (Jelmer Vernooij)
 
-  * Fix several "Tree out of date" errors during commit/push if multiple copies of
-    a revision are present in the target repository. (Jelmer Vernooij, #702870)
+  * Fix several "Tree out of date" errors during commit/push if multiple
+    copies of a revision are present in the target repository.
+    (Jelmer Vernooij, #702870)
 
 bzr-svn 1.1.0					  2011-08-26
 
