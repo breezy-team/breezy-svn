@@ -58,6 +58,8 @@ from bzrlib.errors import (
     NoSuchRevision,
     NoRepositoryPresent,
     NoWorkingTree,
+    ReadOnlyError,
+    TokenLockingNotSupported,
     TransportNotPossible,
     UnsupportedFormatError,
     UnsupportedOperation,
@@ -69,10 +71,8 @@ from bzrlib.inventory import (
     InventoryLink,
     )
 from bzrlib.lockable_files import (
-    LockableFiles,
     TransportLock,
     )
-from bzrlib.lockdir import LockDir
 from bzrlib.revision import (
     CURRENT_REVISION,
     NULL_REVISION,
@@ -89,6 +89,10 @@ from bzrlib.workingtree import (
 from bzrlib.plugins.svn import (
     SvnWorkingTreeProber,
     svk,
+    )
+from bzrlib.plugins.svn.branch import (
+    SubversionReadLock,
+    SubversionWriteLock,
     )
 from bzrlib.plugins.svn.commit import (
     _revision_id_to_svk_feature,
@@ -262,9 +266,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._hashcache = hashcache.HashCache(self.basedir, cache_filename,
             self.bzrdir._get_file_mode(),
             self._content_filter_stack_provider())
-        hc = self._hashcache
-        hc.read()
-        self._control_files = LockableFiles(control_transport, 'lock', LockDir)
+        self._hashcache.read()
+        self._lock_count = 0
+        self._lock_mode = None
+        self._control_files = None
         self.views = self._make_views()
 
     def kind(self, file_id, path=None):
@@ -1101,19 +1106,63 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         This will probe the repository for its lock as well.
         """
         cleanup(self.basedir.encode("utf-8"))
-        self._control_files.break_lock()
+
+    def is_locked(self):
+        return (self._lock_mode is not None)
+
+    def _lock_write(self):
+        if self._lock_mode:
+            if self._lock_mode == 'r':
+                raise ReadOnlyError(self)
+            self._lock_count += 1
+        else:
+            self._lock_mode = 'w'
+            self._lock_count = 1
+        return SubversionWriteLock(self.unlock)
+
+    def lock_tree_write(self):
+        ret = self._lock_write()
+        try:
+            self.branch.lock_read()
+        except:
+            ret.unlock()
+            raise
+        return ret
+
+    def get_physical_lock_status(self):
+        return False
+
+    def lock_write(self, token=None):
+        """See Branch.lock_write()."""
+        # TODO: Obtain lock on the remote server?
+        if token is not None:
+            raise TokenLockingNotSupported(self)
+        ret = self._lock_write()
+        try:
+            self.branch.lock_write()
+        except:
+            ret.unlock()
+            raise
+        return ret
+
+    def lock_read(self):
+        """See Branch.lock_read()."""
+        if self._lock_mode:
+            assert self._lock_mode in ('r', 'w')
+            self._lock_count += 1
+        else:
+            self._lock_mode = 'r'
+            self._lock_count = 1
+        self.branch.lock_read()
+        return SubversionReadLock(self.unlock)
 
     def unlock(self):
-        if self._control_files._lock_count == 1:
-            # non-implementation specific cleanup
+        self._lock_count -= 1
+        if self._lock_count == 0:
+            self._lock_mode = None
             self._cleanup()
             self._reset_data()
-
-        # reverse order of locking.
-        try:
-            return self._control_files.unlock()
-        finally:
-            self.branch.unlock()
+        self.branch.unlock()
 
     def _is_executable_from_path_and_stat_from_stat(self, path, stat_result):
         mode = stat_result.st_mode

@@ -100,10 +100,6 @@ from bzrlib.plugins.svn.tags import (
 from bzrlib.plugins.svn.transport import (
     bzr_to_svn_url,
     )
-from bzrlib.plugins.svn.workingtree import (
-    SvnCheckout,
-    SvnWorkingTreeDirFormat,
-    )
 
 class SubversionBranchCheckResult(BranchCheckResult):
     """Result of checking a Subversion branch."""
@@ -386,7 +382,11 @@ class SvnBranch(ForeignBranch):
         :param revision_id: Tip of the checkout.
         :return: WorkingTree object of the checkout.
         """
-        from bzrlib.plugins.svn.workingtree import update_wc
+        from bzrlib.plugins.svn.workingtree import (
+            SvnCheckout,
+            SvnWorkingTreeDirFormat,
+            update_wc,
+            )
         if revision_id is None or revision_id == self.last_revision():
             bp = self.get_branch_path()
             uuid = self.repository.uuid
@@ -413,6 +413,7 @@ class SvnBranch(ForeignBranch):
                     self.repository.transport.add_connection(conn)
         finally:
             adm.close()
+
         dir = SvnCheckout(transport, SvnWorkingTreeDirFormat())
         return dir.open_workingtree()
 

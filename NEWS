@@ -17,6 +17,9 @@ bzr-svn 1.1.1					  UNRELEASED
     copies of a revision are present in the target repository.
     (Jelmer Vernooij, #702870)
 
+  * Don't use bzr's locking mechanism in working copies.
+    (Jelmer Vernooij, #855113)
+
 bzr-svn 1.1.0					  2011-08-26
 
  BUG FIXES
