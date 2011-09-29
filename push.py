@@ -179,6 +179,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
     try:
         revid = builder.commit(rev.message)
     except SubversionException, (msg, num):
+        builder.abort()
         if num == ERR_FS_TXN_OUT_OF_DATE:
             raise DivergedBranches(source_repo, target_repo)
         raise
