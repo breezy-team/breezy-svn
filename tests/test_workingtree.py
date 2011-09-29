@@ -294,10 +294,10 @@ class TestWorkingTree(SubversionTestCase):
         self.assertEqual("data", open('dc/bl').read())
 
     def test_rename_one(self):
-        tree = self.make_svn_branch_and_tree('a', 'dc')
+        tree = self.make_svn_branch_and_tree('a', 'dc') #1
         self.build_tree({"dc/bl": "data"})
         self.client_add("dc/bl")
-        self.client_commit("dc", "Bla")
+        self.client_commit("dc", "Bla") #2
         tree.rename_one("bl", "bloe")
 
         basis_tree = tree.basis_tree()

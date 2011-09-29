@@ -225,6 +225,7 @@ class DictFileIdMap(FileIdMap):
 
         for x in sorted(text_revisions.keys() + delta.keys()):
             assert isinstance(x, unicode)
+            # Entry was added
             if (x in delta and
                 (not x in self.data or self.data[x][0] != delta[x])):
                 if x in changes and changes[x][1] is not None:
@@ -236,6 +237,7 @@ class DictFileIdMap(FileIdMap):
                 self.data[x] = (delta[x],
                     text_revisions.get(x, default_revid), child_create_revid)
             else:
+                # Entry already existed
                 try:
                     prev_entry = self.lookup(mapping, x)
                 except KeyError:
@@ -306,7 +308,7 @@ class FileIdMapStore(object):
         (uuid, branch, revnum) = foreign_revid
         todo = []
         next_parent_revs = []
-        if mapping.is_branch(""):
+        if mapping.is_branch("") and branch == "":
             map = DictFileIdMap({
                 u"": (mapping.generate_file_id((uuid, "", 0), u""),
                       mapping.revision_id_foreign_to_bzr((uuid, "", 0)),
@@ -423,7 +425,7 @@ class CachingFileIdMapStore(object):
             return self.actual.get_map((uuid, branch, revnum), mapping)
 
         if len(next_parent_revs) == 0:
-            if mapping.is_branch(""):
+            if mapping.is_branch("") and branch == "":
                 map = DictFileIdMap({
                     u"": (mapping.generate_file_id((uuid, "", 0), u""),
                           NULL_REVISION, None)})
