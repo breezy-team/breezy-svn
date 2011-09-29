@@ -23,6 +23,9 @@ bzr-svn 1.1.1					  UNRELEASED
   * Fix handling of working copy updates during partial commit.
     (Jelmer Vernooij, #834918)
 
+  * Allow unversioned obstructions during working copy updates.
+    (Jelmer Vernooij, #562442)
+
 bzr-svn 1.1.0					  2011-08-26
 
  BUG FIXES

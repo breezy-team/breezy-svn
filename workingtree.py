@@ -159,7 +159,8 @@ def update_wc(adm, basedir, conn, url, revnum):
     # FIXME: honor SVN_CONFIG_SECTION_HELPERS:SVN_CONFIG_OPTION_DIFF3_CMD
     # FIXME: honor SVN_CONFIG_SECTION_MISCELLANY:SVN_CONFIG_OPTION_USE_COMMIT_TIMES
     # FIXME: honor SVN_CONFIG_SECTION_MISCELLANY:SVN_CONFIG_OPTION_PRESERVED_CF_EXTS
-    editor = adm.get_update_editor(basedir, False, True)
+    editor = adm.get_update_editor(basedir, False, True, None, None, False,
+        True)
     assert editor is not None
     reporter = conn.do_switch(revnum, "", True, url, editor)
     try:

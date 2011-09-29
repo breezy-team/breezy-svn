@@ -366,6 +366,17 @@ class TestWorkingTree(SubversionTestCase):
         delta = tree.changes_from(tree.basis_tree())
         self.assertEqual("bl", delta.modified[0][0])
 
+    def test_update_unversioned_exists(self):
+        tree = self.make_svn_branch_and_tree('a', 'dc')
+
+        dc = self.get_commit_editor(tree.branch.base)
+        f = dc.add_file("somefile")
+        f.modify()
+        dc.close()
+
+        self.build_tree({'dc/somefile': 'some contents'})
+        tree.update()
+
     def test_pull(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
 
