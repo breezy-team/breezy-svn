@@ -973,6 +973,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         try:
             return self.basis_idmap.lookup(self.mapping, path)[:2]
         except KeyError:
+            if path == "":
+                return ("root-%s-%s" % (
+                    escape_svn_path(self.get_branch_path()),
+                    self.entry.uuid), None)
             mutter("fileid map: %r", self._get_new_file_ids())
             raise
 

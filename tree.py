@@ -531,6 +531,8 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         if self._bzr_inventory is not None:
             return self._bzr_inventory
         self._bzr_inventory = Inventory(root_id=None)
+        if self.get_root_id() is None:
+            return self._bzr_inventory
         def add_file_to_inv(relpath, id, revid, adm):
             assert isinstance(relpath, unicode)
             (propchanges, props) = adm.get_prop_diffs(

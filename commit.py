@@ -44,6 +44,7 @@ from bzrlib.errors import (
     BzrError,
     NoSuchId,
     NoSuchRevision,
+    RootMissing,
     )
 from bzrlib.inventory import (
     entry_factory,
@@ -979,8 +980,7 @@ class SvnCommitBuilder(CommitBuilder):
         :return: A generator of (file_id, relpath, fs_hash) tuples for use with
             tree._observed_sha1.
         """
-        if tree is not None:
-            self.new_root_id = tree.get_root_id()
+        self.new_root_id = None
         parent_trees = [self.old_tree]
         for p in self.parents[1:]:
             try:
@@ -1038,6 +1038,25 @@ class SvnCommitBuilder(CommitBuilder):
             if old_path not in (None, new_path):
                 self._visit_parent_dirs(old_path)
             self._any_changes = True
+        if self.new_root_id is None:
+            # housekeeping root entry changes do not affect no-change commits.
+            self._require_root_change(tree)
+
+    def _require_root_change(self, tree):
+        """Enforce an appropriate root object change.
+
+        This is called once when record_iter_changes is called, if and only if
+        the root was not in the delta calculated by record_iter_changes.
+
+        :param tree: The tree which is being committed.
+        """
+        if len(self.parents) == 0:
+            raise RootMissing()
+        self.new_root_id = tree.get_root_id()
+        entry = entry_factory['directory'](self.new_root_id, '', None)
+        entry.revision = self._new_revision_id
+        self._updated[self.new_root_id] = ("", entry)
+        self._basis_delta.append(('', '', entry.file_id, entry))
 
     def any_changes(self):
         return self._any_changes
