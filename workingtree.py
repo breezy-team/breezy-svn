@@ -739,10 +739,27 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def set_last_revision(self, revid):
         mutter('setting last revision to %r', revid)
-        (foreign_revid, mapping) = self.branch.lookup_bzr_revision_id(revid)
-        self._cached_base_revnum = foreign_revid[2]
+        if revid == NULL_REVISION:
+            # If there is a hidden revision at the beginning of the branch,
+            # use that as the NULL revision.
+            foreign_revid = None
+            for revmeta, hidden, mapping in self.branch._iter_revision_meta_ancestry():
+                if hidden:
+                    foreign_revid = revmeta.metarev.get_foreign_revid()
+                else:
+                    foreign_revid = None
+            if foreign_revid is None:
+                raise NotImplementedError("unable to set NULL_REVISION if there is "
+                    "no hidden initial revision")
+            self._cached_base_revnum = foreign_revid[2]
+            self._cached_base_idmap = None
+        else:
+            (foreign_revid, mapping) = self.branch.lookup_bzr_revision_id(revid)
+            self._cached_base_revnum = foreign_revid[2]
+            self._cached_base_idmap = None
+        # FIXME: set any items that are no longer versioned to SCHEDULE_ADD,
+        # but remove their versioning information
         self._cached_base_revid = revid
-        self._cached_base_idmap = None
 
     def set_parent_trees(self, parents_list, allow_leftmost_as_ghost=False):
         """See MutableTree.set_parent_trees."""

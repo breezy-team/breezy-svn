@@ -55,7 +55,8 @@ class RevidMap(object):
         fileprops_to_revnum = last_revnum
         pb = ui.ui_factory.nested_progress_bar()
         try:
-            for entry_revid, branch, revnum, mapping in self.discover_revprop_revids(last_revnum, 0, pb=pb):
+            for entry_revid, branch, revnum, mapping in self.discover_revprop_revids(
+                    last_revnum, 0, pb=pb):
                 if revid == entry_revid:
                     return (self.repos.uuid, branch, revnum), mapping
                 fileprops_to_revnum = min(fileprops_to_revnum, revnum)
