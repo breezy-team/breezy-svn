@@ -212,6 +212,20 @@ class SubversionProgressReporter(object):
         ui.ui_factory.report_transport_activity(self, changed, None)
 
 
+def convert_relocate_error(url, num, msg):
+    """Convert a permanently moved error."""
+    # Try to guess the new url
+    if "'" in msg:
+        new_url = msg.split("'")[1]
+    elif "«" in msg:
+        new_url = msg[msg.index("»")+2:msg.index("«")]
+    else:
+        raise AssertionError("Unable to parse error message: %s" % msg)
+    raise RedirectRequested(source=_url_escape_uri(url),
+        target=_url_escape_uri(urlutils.join(url, new_url)),
+        is_permanent=True)
+
+
 def Connection(url, auth=None, config=None, readonly=False):
     # Subvertpy <= 0.6.3 has a bug in the reference counting of the
     # progress update function
@@ -240,16 +254,7 @@ def Connection(url, auth=None, config=None, readonly=False):
         if num == subvertpy.ERR_RA_ILLEGAL_URL:
             raise InvalidURL(url, msg)
         if num == subvertpy.ERR_RA_DAV_RELOCATED:
-            # Try to guess the new url
-            if "'" in msg:
-                new_url = msg.split("'")[1]
-            elif "«" in msg:
-                new_url = msg[msg.index("»")+2:msg.index("«")]
-            else:
-                raise AssertionError("Unable to parse error message: %s" % msg)
-            raise RedirectRequested(source=_url_escape_uri(url),
-                                    target=_url_escape_uri(urlutils.join(url, new_url)),
-                                    is_permanent=True)
+            raise convert_relocate_error(url, num, msg)
         raise convert_error(e)
     from bzrlib.plugins.svn import lazy_check_versions
     lazy_check_versions()
