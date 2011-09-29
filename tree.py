@@ -515,6 +515,17 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         self.id_map = self.workingtree.basis_idmap
         self.mapping = self.workingtree.branch.mapping
 
+    def get_file_verifier(self, file_id, path=None, stat_value=None):
+        if path is None:
+            path = self.id2path(file_id)
+        encoded_path = self.workingtree.abspath(path).encode("utf-8")
+        root_adm = self.workingtree._get_wc(write_lock=False)
+        try:
+            entry = self.workingtree._get_entry(root_adm, encoded_path)
+            return ("MD5", entry.checksum)
+        finally:
+            root_adm.close()
+
     @property
     def inventory(self):
         if self._bzr_inventory is not None:

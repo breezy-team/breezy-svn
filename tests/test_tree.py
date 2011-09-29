@@ -18,12 +18,12 @@
 import os
 import subvertpy
 
+from bzrlib import osutils
 from bzrlib.inventory import (
     Inventory,
     TreeReference,
     )
 from bzrlib.revision import (
-    NULL_REVISION,
     CURRENT_REVISION,
     )
 from bzrlib.tests import (
@@ -47,6 +47,20 @@ from bzrlib.plugins.svn.tree import (
 
 
 class TestBasisTree(SubversionTestCase):
+
+    def test_file_verifiers(self):
+        tree = self.make_svn_branch_and_tree("d", "dc")
+
+        dc = self.get_commit_editor(tree.branch.base)
+        f = dc.add_file("file")
+        f.modify("new contents")
+        dc.close()
+
+        self.client_update("dc")
+
+        tree = SvnBasisTree(tree)
+        self.assertEquals(tree.get_file_verifier(None, "file"),
+            ("MD5", osutils.md5("new contents").hexdigest()))
 
     def test_executable(self):
         tree = self.make_svn_branch_and_tree("d", "dc")
