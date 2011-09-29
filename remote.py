@@ -525,8 +525,12 @@ class SvnRemoteAccess(ControlDir):
             ret.target_branch = self.import_branch(source, revision_id,
                 overwrite=overwrite)
             ret.target_branch_path = "/" + ret.target_branch.get_branch_path()
-            ret.tag_conflicts = source.tags.merge_to(ret.target_branch.tags,
+            tag_ret = source.tags.merge_to(ret.target_branch.tags,
                 overwrite)
+            if isinstance(tag_ret, tuple):
+                (ret.tag_updates, ret.tag_conflicts) = tag_ret
+            else:
+                ret.tag_conflicts = tag_ret
             if source.get_push_location() is None or remember:
                 source.set_push_location(ret.target_branch.base)
         return ret
