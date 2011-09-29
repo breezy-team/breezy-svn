@@ -20,6 +20,9 @@ bzr-svn 1.1.1					  UNRELEASED
   * Don't use bzr's locking mechanism in working copies.
     (Jelmer Vernooij, #855113)
 
+  * Fix handling of working copy updates during partial commit.
+    (Jelmer Vernooij, #834918)
+
 bzr-svn 1.1.0					  2011-08-26
 
  BUG FIXES
