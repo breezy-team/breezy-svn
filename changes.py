@@ -66,10 +66,13 @@ def find_prev_location(paths, branch_path, revnum):
         if paths[p][0] == 'M':
             continue
         if branch_path.startswith(p+"/"):
-            assert paths[p][0] in ('A', 'R'), "Parent %r wasn't added" % p
-            assert paths[p][1] is not None, \
-                "Empty parent %r added, but child %r wasn't added !?" % (p, branch_path)
-
+            if paths[p][0] not in ('A', 'R'):
+                raise AssertionError("Parent %r wasn't added" % (
+                    p, paths[p][0]))
+            if paths[p][1] is None:
+                raise AssertionError(
+                    "Empty parent %r added, but child %r wasn't added !?" % (
+                        p, branch_path))
             revnum = paths[p][2]
             branch_path = paths[p][1].encode("utf-8") + branch_path[len(p):]
             return (branch_path.lstrip("/"), revnum)
