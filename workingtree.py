@@ -294,7 +294,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def get_file_mtime(self, file_id, path=None):
         """See Tree.get_file_mtime."""
-        if not path:
+        if path is None:
             path = self.id2path(file_id)
         return os.lstat(self.abspath(path)).st_mtime
 
@@ -302,7 +302,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._directory_is_tree_reference = self._directory_is_never_tree_reference
 
     def get_file_sha1(self, file_id, path=None, stat_value=None):
-        if not path:
+        if path is None:
             path = self.id2path(file_id)
         return self._hashcache.get_sha1(path, stat_value)
 
@@ -1187,7 +1187,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             return False
     else:
         def is_executable(self, file_id, path=None):
-            if not path:
+            if path is None:
                 path = self.id2path(file_id)
             mode = os.lstat(self.abspath(path)).st_mode
             return bool(stat.S_ISREG(mode) and stat.S_IEXEC & mode)
