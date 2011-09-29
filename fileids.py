@@ -296,6 +296,10 @@ class FileIdMapStore(object):
     def update_idmap(self, map, revmeta, mapping):
         local_changes = get_local_changes(revmeta.metarev.paths,
                 revmeta.metarev.branch_path)
+        parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
+        if revmeta.get_lhs_parent_revid(mapping, parentrevmeta) == NULL_REVISION:
+            # Special case - a NULL_REVISION officially doesn't have a root
+            local_changes[u''] = ('A', None)
         idmap = self.get_idmap_delta(local_changes, revmeta, mapping)
         revid = revmeta.get_revision_id(mapping)
         text_revisions = determine_text_revisions(local_changes, revid,
