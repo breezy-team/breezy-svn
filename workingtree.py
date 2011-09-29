@@ -229,7 +229,9 @@ class Walker(object):
                     continue
                 raise
             try:
-                for name, entry in wc.entries_read(True).iteritems():
+                entries = wc.entries_read(True)
+                for name in sorted(entries):
+                    entry = entries[name]
                     subp = osutils.pathjoin(p, name.decode("utf-8")).rstrip("/")
                     if entry.kind == subvertpy.NODE_DIR and name != "":
                         if self.recursive:
@@ -678,7 +680,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 return ie
 
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
-        if specific_file_ids:
+        if specific_file_ids is not None:
             wc = self._get_wc()
             try:
                 for file_id in specific_file_ids:
