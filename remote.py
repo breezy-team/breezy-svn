@@ -482,7 +482,7 @@ class SvnRemoteAccess(ControlDir):
         return None
 
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
-            mapping=None, branch_path=None, repository=None):
+            mapping=None, branch_path=None, repository=None, revnum=None):
         """See ControlDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         if branch_path is None:
@@ -491,7 +491,7 @@ class SvnRemoteAccess(ControlDir):
             repository = self.find_repository()
         if mapping is None:
             mapping = repository.get_mapping()
-        return SvnBranch(repository, self, branch_path, mapping)
+        return SvnBranch(repository, self, branch_path, mapping, revnum=revnum)
 
     def create_repository(self, shared=None, format=None):
         """See ControlDir.create_repository."""

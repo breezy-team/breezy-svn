@@ -247,14 +247,13 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     """WorkingTree implementation that uses a svn working copy for storage."""
 
     def __init__(self, bzrdir, format, local_path, entry):
+        self._reset_data()
         assert isinstance(local_path, unicode)
         self.entry = entry
         self.basedir = local_path
         self._format = format
         self.bzrdir = bzrdir
         self._branch = None
-        self.mapping = self.branch.mapping
-        self._reset_data()
         self._cached_base_tree = None
         self._detect_case_handling()
         self.controldir = os.path.join(bzrdir.local_path, bzrdir._adm_dir, 'bzr')
@@ -274,6 +273,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._lock_mode = None
         self._control_files = None
         self.views = self._make_views()
+
+    @property
+    def mapping(self):
+        return self.branch.mapping
 
     def kind(self, file_id, path=None):
         if path is not None:
@@ -328,7 +331,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     @property
     def branch(self):
         if self._branch is None:
-            self._branch = self.bzrdir.open_branch()
+            self._branch = self.bzrdir.open_branch(revnum=self.base_revnum)
         return self._branch
 
     def __repr__(self):
@@ -1551,7 +1554,7 @@ class SvnCheckout(ControlDir):
         raise NotImplementedError(self.create_branch)
 
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
-            mapping=None):
+            mapping=None, revnum=None):
         """See ControlDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         repos = self._find_repository()
@@ -1560,9 +1563,9 @@ class SvnCheckout(ControlDir):
 
         try:
             return SvnBranch(repos, self.get_remote_bzrdir(),
-                self.get_branch_path(), mapping)
+                self.get_branch_path(), mapping, revnum=revnum)
         except RepositoryRootUnknown:
-            return self.get_remote_bzrdir().open_branch()
+            return self.get_remote_bzrdir().open_branch(revnum=revnum)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_WC_NOT_DIRECTORY:
                 raise NotBranchError(path=self.base)
