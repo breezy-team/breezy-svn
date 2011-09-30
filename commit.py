@@ -1037,7 +1037,8 @@ class SvnCommitBuilder(CommitBuilder):
             # from it but there were no other changes there.
             if old_path not in (None, new_path):
                 self._visit_parent_dirs(old_path)
-            self._any_changes = True
+            if new_path != "":
+                self._any_changes = True
         if self.new_root_id is None:
             # housekeeping root entry changes do not affect no-change commits.
             self._require_root_change(tree)
