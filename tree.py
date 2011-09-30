@@ -666,7 +666,19 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             self.workingtree.base_revnum, self.mapping, self.id2path(file_id))
         return annotater.get_annotated()
 
+    @property
+    def real_tree(self):
+        if self._real_tree is not None:
+            return self._real_tree
+        self._real_tree = self.workingtree.revision_tree(self.get_revision_id())
+        return self._real_tree
+
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
         # FIXME
-        return self.inventory.iter_entries_by_dir(
-            specific_file_ids=specific_file_ids, yield_parents=yield_parents)
+        try:
+            return self.inventory.iter_entries_by_dir(
+                specific_file_ids=specific_file_ids, yield_parents=yield_parents)
+        except BasisTreeIncomplete:
+            return self.real_tree.iter_entries_by_dir(
+                specific_file_ids=specific_file_ids,
+                yield_parents=yield_parents)
