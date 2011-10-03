@@ -1507,12 +1507,15 @@ class SvnCheckout(ControlDir):
             revision_id=revision_id).bzrdir
 
     def open_workingtree(self, _unsupported=False, recommend_upgrade=False):
+        wt_format = SvnWorkingTreeFormat(self._format.version)
+        ret = SvnWorkingTree(self, wt_format, self.local_path, self.entry)
         try:
-            return SvnWorkingTree(self,
-                    SvnWorkingTreeFormat(self._format.version),
-                    self.local_path, self.entry)
+            # FIXME: This could potentially be done without actually
+            # opening the branch?
+            ret.branch # Trigger NotSvnBranchPath error
         except NotSvnBranchPath, e:
             raise NoWorkingTree(self.local_path)
+        return ret
 
     def sprout(self, *args, **kwargs):
         return self.get_remote_bzrdir().sprout(*args, **kwargs)
