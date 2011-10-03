@@ -158,14 +158,15 @@ class SvnWorkingTreeProber(SvnProber):
     def probe_transport(self, transport):
         from bzrlib.transport.local import LocalTransport
 
-        if isinstance(transport, LocalTransport) and transport.has(".svn"):
-            self._check_versions()
-            from subvertpy.wc import check_wc
-            version = check_wc(transport.local_abspath('.').encode("utf-8"))
-            from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
-            return SvnWorkingTreeDirFormat(version)
+        if (not isinstance(transport, LocalTransport)
+            or not transport.has(".svn")):
+            raise NotBranchError(path=transport.base)
 
-        raise NotBranchError(path=transport.base)
+        self._check_versions()
+        from subvertpy.wc import check_wc
+        version = check_wc(transport.local_abspath('.').encode("utf-8"))
+        from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
+        return SvnWorkingTreeDirFormat(version)
 
     @classmethod
     def known_formats(cls):
