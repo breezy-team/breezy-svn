@@ -514,6 +514,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         self._repository = workingtree.branch.repository
         self.id_map = self.workingtree.basis_idmap
         self.mapping = self.workingtree.branch.mapping
+        self._real_tree = None
 
     def get_file_verifier(self, file_id, path=None, stat_value=None):
         if path is None:
