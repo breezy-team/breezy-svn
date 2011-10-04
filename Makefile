@@ -101,8 +101,8 @@ ctags:: tags
 homepage.html: wiki.py README INSTALL
 	python wiki.py | tail -n +2 | rst2html > $@
 
-.PHONY: update-pot po/bzr-rewrite.pot
-update-pot: po/bzr-rewrite.pot
+.PHONY: update-pot po/bzr-svn.pot
+update-pot: po/bzr-svn.pot
 
 TRANSLATABLE_PYFILES:=$(shell find . -name '*.py' \
 		| grep -v 'tests/' \
