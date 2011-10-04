@@ -1,3 +1,22 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Jelmer Vernooij <jelmer@samba.org>
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: bzr-svn\n"
+"Report-Msgid-Bugs-To: <bazaar@lists.canonical.com>\n"
+"POT-Creation-Date: 2011-10-05 00:58+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
 #: commands.py:51
 msgid "Convert a Subversion repository to a Bazaar repository."
 msgstr ""
@@ -15,48 +34,47 @@ msgid ""
 "skipped."
 msgstr ""
 
-#: commands.py:67
+# help of 'format' option of 'svn-import' command
+#: commands.py:63
+msgid ""
+"Specify a format for this repository. See \"bzr help formats\" for details. "
+"Must support rich-root."
+msgstr ""
+
 # title of 'format' option of 'svn-import' command
+#: commands.py:67
 msgid "Repository format"
 msgstr ""
 
-#: commands.py:63
-# help of 'format' option of 'svn-import' command
-msgid "Specify a format for this repository. See \"bzr help formats\" for details. Must support rich-root."
-msgstr ""
-
-#: commands.py:68
 # help of 'trees' option of 'svn-import' command
+#: commands.py:68
 msgid "Create working trees."
 msgstr ""
 
-#: commands.py:69
 # help of 'standalone' option of 'svn-import' command
+#: commands.py:69
 msgid "Create standalone branches."
 msgstr ""
 
-#: commands.py:71
 # help of 'all' option of 'svn-import' command
+#: commands.py:71
 msgid "Convert all revisions, even those not in current branch history."
 msgstr ""
 
-#: commands.py:262
-# help of 'layout' option of 'svn-import' command
-msgid "Repository layout (none, trunk, etc). Default: auto."
-msgstr ""
-
-#: commands.py:77
 # help of 'keep' option of 'svn-import' command
+#: commands.py:77
 msgid "Don't delete branches removed in Subversion."
 msgstr ""
 
-#: commands.py:79
 # help of 'restore' option of 'svn-import' command
-msgid "Restore branches that were removed but have not been changed since the last import."
+#: commands.py:79
+msgid ""
+"Restore branches that were removed but have not been changed since the last "
+"import."
 msgstr ""
 
-#: commands.py:86
 # help of 'until' option of 'svn-import' command
+#: commands.py:86
 msgid "Only import revisions up to specified Subversion revnum"
 msgstr ""
 
@@ -71,3 +89,7 @@ msgid ""
 "layouts."
 msgstr ""
 
+# help of 'layout' option of 'svn-import' command
+#: commands.py:262
+msgid "Repository layout (none, trunk, etc). Default: auto."
+msgstr ""
