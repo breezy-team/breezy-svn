@@ -9,6 +9,8 @@ bzr-svn 1.1.1					  UNRELEASED
 
   * Support annotate in working trees. (Jelmer Vernooij)
 
+  * Add basic i18n support. (Jelmer Vernooij)
+
  BUG FIXES
 
   * Implement `Repository.pack_fs()`. (Jelmer Vernooij)

@@ -100,3 +100,20 @@ ctags:: tags
 
 homepage.html: wiki.py README INSTALL
 	python wiki.py | tail -n +2 | rst2html > $@
+
+.PHONY: update-pot po/bzr-rewrite.pot
+update-pot: po/bzr-rewrite.pot
+
+TRANSLATABLE_PYFILES:=$(shell find . -name '*.py' \
+		| grep -v 'tests/' \
+		)
+
+po/bzr-svn.pot: $(PYFILES) $(DOCFILES)
+	BZR_PLUGINS_AT=svn@$(shell pwd) bzr export-pot \
+          --plugin=svn > po/bzr-svn.pot
+	echo $(TRANSLATABLE_PYFILES) | xargs \
+	  xgettext --package-name "bzr-svn" \
+	  --msgid-bugs-address "<bazaar@lists.canonical.com>" \
+	  --copyright-holder "Jelmer Vernooij <jelmer@samba.org>" \
+	  --from-code ISO-8859-1 --sort-by-file --join --add-comments=i18n: \
+	  -d bzr-svn -p po -o bzr-svn.pot
