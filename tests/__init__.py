@@ -218,35 +218,6 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         self.assertEquals(RecordingRemoteAccess.calls, expected)
 
 
-def build_backing_branch(test, relpath):
-    """Test helper to create a backin1
-    Some tests needs multiple stores/stacks to check concurrent update
-    behaviours. As such, they need to build different branch *objects* even if
-    they share the branch on disk.
-
-    :param relpath: The relative path to the branch. (Note that the helper
-        should always specify the same relpath).
-
-    :param transport_class: The Transport class the test needs to use.
-
-    :param server_class: The server associated with the ``transport_class``
-        above.
-
-    Either both or neither of ``transport_class`` and ``server_class`` should
-    be specified.
-    """
-    if getattr(test, 'backing_branch', None) is None:
-        # First call, let's build the branch on disk
-        repo = test.make_repository(relpath, format='subversion')
-        test.backing_branch = BzrDir.open(repo.base).create_branch(lossy=False)
-
-def build_SvnBranchStack_for_test(test):
-    """Build a subversion store for the given test."""
-    build_backing_branch(test, 'branch')
-    b = BzrDir.open('branch').open_branch()
-    return config.SvnBranchStack(b)
-
-
 def test_suite():
     from unittest import TestSuite
     from bzrlib.tests import TestUtil
