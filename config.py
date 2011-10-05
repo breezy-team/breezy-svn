@@ -78,6 +78,16 @@ class SubversionStore(_mod_bzr_config.LockableIniFileStore):
         super(SubversionStore, self).__init__(t, 'subversion.conf')
 
 
+class UUIDMatcher(_mod_bzr_config.SectionMatcher):
+    """UUID-based Subversion section matcher."""
+
+    def __init__(self, store, uuid):
+        super(UUIDMatcher, self).__init__(store)
+        self.uuid = uuid
+
+    def match(self, section):
+        return section.id == self.uuid
+
 
 class SubversionUUIDConfig(_mod_bzr_config.LockableConfig):
     """UUID-based Subversion configuration."""
