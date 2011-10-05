@@ -16,6 +16,7 @@
 
 """Config tests."""
 
+from bzrlib import bzrdir
 from bzrlib.branch import Branch
 from bzrlib.repository import Repository
 from bzrlib.tests import test_config
@@ -25,53 +26,46 @@ from bzrlib.plugins.svn.config import (
     PropertyConfig,
     SubversionBuildPackageConfig,
     SubversionStore,
+    SvnBranchStack,
     UUIDMatcher,
     )
 from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 
+def build_subversion_store(test):
+    return SubversionStore()
+
 
 class TestReadonlySubversionStore(test_config.TestReadonlyStore):
 
-    def get_store(self, test):
-        return SubversionStore()
+    def setUp(self):
+        super(TestReadonlySubversionStore, self).setUp()
+        self.get_store = build_subversion_store
 
 
 class TestMutableSubversionStore(test_config.TestMutableStore):
 
-    store_id = 'subversion'
-
-    def get_store(self, test):
-        return SubversionStore()
+    def setUp(self):
+        super(TestMutableSubversionStore, self).setUp()
+        self.store_id = 'subversion'
+        self.get_store = build_subversion_store
 
 
 class TestUUIDMatcherStoreLoading(test_config.TestSectionMatcher):
 
     def setUp(self):
         super(TestUUIDMatcherStoreLoading, self).setUp()
+        self.get_store = build_subversion_store
         self.matcher = UUIDMatcher
-
-    def get_store(self, file_name):
-        # file_name is ignored, luckily the tests don't care
-        return SubversionStore()
 
 
 class TestUUIDMatching(test_config.TestNameMatcher):
 
     def setUp(self):
         super(TestUUIDMatching, self).setUp()
-        self.store = SubversionStore()
-        self.store._load_from_string('''
-[foo]
-option=foo
-[foo/baz]
-option=foo/baz
-[bar]
-option=bar
-''')
+        self.get_store = build_subversion_store
         self.matcher = UUIDMatcher
-
 
 
 class ReposConfigTests(SubversionTestCase):
