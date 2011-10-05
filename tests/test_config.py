@@ -18,6 +18,7 @@
 
 from bzrlib.branch import Branch
 from bzrlib.repository import Repository
+from bzrlib.tests import test_config
 from bzrlib.workingtree import WorkingTree
 from bzrlib.plugins.svn.config import (
     NoSubversionBuildPackageConfig,
@@ -30,32 +31,18 @@ from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 
-class TestUUIDMatcherStoreLoading(SubversionTestCase):
-    # FIXME: bzr doesn't provide hooks/registries for SectionMatcher so we
-    # duplicate/adapt bt.test_config.TestSectionMatcher here -- vila 2011-10-05
+class TestUUIDMatcherStoreLoading(test_config.TestSectionMatcher):
 
     def setUp(self):
         super(TestUUIDMatcherStoreLoading, self).setUp()
         self.matcher = UUIDMatcher
 
-    def get_store(self):
+    def get_store(self, file_name):
+        # file_name is ignored, luckily the tests don't care
         return SubversionStore()
 
-    def test_no_matches_for_empty_stores(self):
-        store = self.get_store()
-        store._load_from_string('')
-        matcher = self.matcher(store, 'unknown-UUID')
-        self.assertEquals([], list(matcher.get_sections()))
 
-    def test_build_doesnt_load_store(self):
-        store = self.get_store()
-        matcher = self.matcher(store, 'unknown-UUID')
-        self.assertFalse(store.is_loaded())
-
-
-class TestUUIDMatching(SubversionTestCase):
-    # FIXME: bzr doesn't provide hooks/registries for SectionMatcher so we
-    # duplicate/adapt bt.test_config.TestNameMatcher here -- vila 2011-10-05
+class TestUUIDMatching(test_config.TestNameMatcher):
 
     def setUp(self):
         super(TestUUIDMatching, self).setUp()
@@ -68,27 +55,7 @@ option=foo/baz
 [bar]
 option=bar
 ''')
-
-    def get_matching_sections(self, name):
-        matcher = UUIDMatcher(self.store, name)
-        return list(matcher.get_sections())
-
-    def assertSectionContent(self, expected, section):
-        """Assert that some options have the proper values in a section."""
-        expected_name, expected_options = expected
-        self.assertEquals(expected_name, section.id)
-        self.assertEquals(
-            expected_options,
-            dict([(k, section.get(k)) for k in expected_options.keys()]))
-
-    def test_matching(self):
-        sections = self.get_matching_sections('foo')
-        self.assertLength(1, sections)
-        self.assertSectionContent(('foo', {'option': 'foo'}), sections[0])
-
-    def test_not_matching(self):
-        sections = self.get_matching_sections('baz')
-        self.assertLength(0, sections)
+        self.matcher = UUIDMatcher
 
 
 class ReposConfigTests(SubversionTestCase):
