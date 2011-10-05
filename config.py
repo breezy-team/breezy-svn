@@ -23,11 +23,12 @@ from subvertpy import (
     properties,
     )
 
-import bzrlib.config
 from bzrlib import (
     atomicfile,
+    config as _mod_bzr_config,
     osutils,
     trace,
+    transport,
     )
 from bzrlib.config import (
     ConfigObj,
@@ -43,8 +44,6 @@ from bzrlib.config import (
 from bzrlib.errors import (
     BzrError,
     )
-
-from bzrlib.config import LockableConfig
 
 
 def as_bool(str):
@@ -70,9 +69,17 @@ def as_bool(str):
 # Data stored includes default branching scheme and locations the repository
 # was seen at.
 
+class SubversionStore(_mod_bzr_config.LockableIniFileStore):
+
+    def __init__(self, possible_transports=None):
+        t = transport.get_transport_from_path(
+            _mod_bzr_config.config_dir(),
+            possible_transports=possible_transports)
+        super(SubversionStore, self).__init__(t, 'subversion.conf')
 
 
-class SubversionUUIDConfig(LockableConfig):
+
+class SubversionUUIDConfig(_mod_bzr_config.LockableConfig):
     """UUID-based Subversion configuration."""
 
     def __init__(self, uuid):

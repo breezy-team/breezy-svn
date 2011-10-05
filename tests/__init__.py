@@ -29,6 +29,7 @@ from bzrlib.tests import (
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn import (
+    config,
     transport as _mod_svn_transport,
     )
 
@@ -212,6 +213,11 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
     def assertRemoteAccessCalls(self, expected):
         self.assertEquals(RecordingRemoteAccess.calls, expected)
+
+
+def build_SubversionStore_for_test(test):
+    """Build a subversion store for the given test."""
+    return config.SubversionStore()
 
 
 def test_suite():
