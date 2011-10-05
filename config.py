@@ -69,6 +69,7 @@ def as_bool(str):
 # Data stored includes default branching scheme and locations the repository
 # was seen at.
 
+
 class SubversionStore(_mod_bzr_config.LockableIniFileStore):
 
     def __init__(self, possible_transports=None):
@@ -87,6 +88,29 @@ class UUIDMatcher(_mod_bzr_config.SectionMatcher):
 
     def match(self, section):
         return section.id == self.uuid
+
+
+class SvnBranchStack(_mod_bzr_config._CompatibleStack):
+    """SvnBranch stack providing UUID specific options."""
+
+    def __init__(self, branch):
+        bstore = _mod_bzr_config.BranchStore(branch)
+        lstore = _mod_bzr_config.LocationStore()
+        loc_matcher = _mod_bzr_config.LocationMatcher(lstore, branch.base)
+        svn_store = SubversionStore()
+        uuid_matcher = UUIDMatcher(svn_store,
+                                   getattr(branch.repository, 'uuid', None))
+        gstore = _mod_bzr_config.GlobalStore()
+        super(SvnBranchStack, self).__init__(
+            [self._get_overrides,
+             loc_matcher.get_sections,
+             bstore.get_sections,
+             uuid_matcher.get_sections,
+             gstore.get_sections],
+            # All modifications go to the corresponding section in
+            # locations.conf
+            lstore, branch.base)
+        self.branch = branch
 
 
 class SubversionUUIDConfig(_mod_bzr_config.LockableConfig):
