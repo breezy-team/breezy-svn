@@ -218,11 +218,6 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         self.assertEquals(RecordingRemoteAccess.calls, expected)
 
 
-def build_SubversionStore_for_test(test):
-    """Build a subversion store for the given test."""
-    return config.SubversionStore()
-
-
 def build_backing_branch(test, relpath):
     """Test helper to create a backin1
     Some tests needs multiple stores/stacks to check concurrent update

@@ -31,6 +31,21 @@ from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
 
+
+class TestReadonlySubversionStore(test_config.TestReadonlyStore):
+
+    def get_store(self, test):
+        return SubversionStore()
+
+
+class TestMutableSubversionStore(test_config.TestMutableStore):
+
+    store_id = 'subversion'
+
+    def get_store(self, test):
+        return SubversionStore()
+
+
 class TestUUIDMatcherStoreLoading(test_config.TestSectionMatcher):
 
     def setUp(self):
@@ -56,6 +71,7 @@ option=foo/baz
 option=bar
 ''')
         self.matcher = UUIDMatcher
+
 
 
 class ReposConfigTests(SubversionTestCase):
