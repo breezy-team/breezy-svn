@@ -36,6 +36,16 @@ from bzrlib.plugins.svn.tests import SubversionTestCase
 def build_subversion_store(test):
     return SubversionStore()
 
+def build_svn_branch_stack(test):
+    """See bt.test_config.build_backing_branch."""
+    if getattr(test, 'backing_branch', None) is None:
+        # First call, let's build the branch on disk
+        repo = test.make_repository('branch', format='subversion')
+        test.backing_branch = bzrdir.BzrDir.open(repo.base
+                                                 ).create_branch(lossy=False)
+    b = Branch.open('branch')
+    return SvnBranchStack(b)
+
 
 class TestReadonlySubversionStore(test_config.TestReadonlyStore):
 
@@ -66,6 +76,48 @@ class TestUUIDMatching(test_config.TestNameMatcher):
         super(TestUUIDMatching, self).setUp()
         self.get_store = build_subversion_store
         self.matcher = UUIDMatcher
+
+
+class TestConcurrentStoreUpdates(test_config.TestConcurrentStoreUpdates):
+
+    def setUp(self):
+        self.get_stack = build_svn_branch_stack
+        super(TestConcurrentStoreUpdates, self).setUp()
+
+
+class TestConcreteStacks(test_config.TestConcreteStacks):
+
+    def setUp(self):
+        self.get_stack = build_svn_branch_stack
+        super(TestConcreteStacks, self).setUp()
+
+
+class TestStackGet(test_config.TestStackGet):
+
+    def setUp(self):
+        self.get_stack = build_svn_branch_stack
+        super(TestStackGet, self).setUp()
+
+
+class TestStackGetWithConverter(test_config.TestStackGetWithConverter):
+
+    def setUp(self):
+        self.get_stack = build_svn_branch_stack
+        super(TestStackGetWithConverter, self).setUp()
+
+
+class TestStackSet(test_config.TestStackSet):
+
+    def setUp(self):
+        self.get_stack = build_svn_branch_stack
+        super(TestStackSet, self).setUp()
+
+
+class TestStackRemove(test_config.TestStackRemove):
+
+    def setUp(self):
+        self.get_stack = build_svn_branch_stack
+        super(TestStackRemove, self).setUp()
 
 
 class ReposConfigTests(SubversionTestCase):

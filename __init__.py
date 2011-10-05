@@ -399,11 +399,6 @@ _mod_bzr_config.credential_store_registry.register_lazy(
     "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore",
     help=__doc__, fallback=True)
 
-# Inject our config stuff to be tested against the bzr test suite
-_mod_bzr_config.test_stack_builder_registry.register_lazy(
-    'subversion', "bzrlib.plugins.svn.tests", "build_SvnBranchStack_for_test")
-
-
 
 foreign_vcs_registry.register_lazy("svn", "bzrlib.plugins.svn.mapping",
                                    "foreign_vcs_svn")
