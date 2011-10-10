@@ -687,7 +687,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             wc = self._get_wc()
             try:
                 for file_id in specific_file_ids:
-                    path = self.id2path(file_id)
+                    try:
+                        path = self.id2path(file_id)
+                    except NoSuchId:
+                        continue
                     parent = os.path.dirname(path)
                     parent_id = self.lookup_id(parent)
                     entry = self._get_entry(wc,
