@@ -1084,7 +1084,12 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def _last_revision(self):
         if self._cached_base_revid is not None:
             return self._cached_base_revid
-        revid = self.branch.generate_revision_id(self.base_revnum)
+        try:
+            revid = self.branch.generate_revision_id(self.base_revnum)
+        except NoSuchRevision:
+            # Current revision is no longer on the mainline?
+            revid = self.branch.repository.generate_revision_id(self.base_revnum,
+                self.get_branch_path(), self.mapping)
         if self.is_locked():
             self._cached_base_revid = revid
         return revid
