@@ -180,6 +180,18 @@ class SvnRemoteFormat(ControlDirFormat):
         from bzrlib.plugins.svn.transport import get_svn_ra_transport
         return self.open(get_svn_ra_transport(transport), _found=True)
 
+    def supports_transport(self, transport):
+        try:
+            url = transport.external_url()
+        except errors.InProcessTransport:
+            return False
+        if url.startswith("file:") or url.startswith("svn+"):
+            return True
+        if url.startswith("http:") or url.startswith("https:"):
+            # FIXME: Check that the server is running SVN
+            return False
+        return False
+
 
 class SvnRemoteAccess(ControlDir):
     """ControlDir implementation for Subversion connections.
