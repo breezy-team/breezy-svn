@@ -28,6 +28,10 @@ bzr-svn 1.1.1					  UNRELEASED
   * Allow unversioned obstructions during working copy updates.
     (Jelmer Vernooij, #562442)
 
+  * Make sure parent inventories are present in the repository itself
+    rather than in the stacked-on repositories during fetch.
+    (Jelmer Vernooij, #866028)
+
 bzr-svn 1.1.0					  2011-08-26
 
  BUG FIXES

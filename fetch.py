@@ -667,6 +667,16 @@ class FileRevisionBuildEditor(FileBuildEditor):
             self.bzr_base_path, self.path, self.file_id, ie)
 
 
+def ensure_inventories_in_repo(repo, trees):
+    real_inv_vf = repo.inventories.without_fallbacks()
+    for t in trees:
+        revid = t.get_revision_id()
+        if revid == NULL_REVISION:
+            continue
+        if not real_inv_vf.get_parent_map([(revid, )]):
+            repo.add_inventory(revid, t.inventory, t.get_parent_ids())
+
+
 class RevisionBuildEditor(DeltaBuildEditor):
     """Implementation of the Subversion commit editor interface that builds a
     Bazaar revision.
@@ -1414,6 +1424,7 @@ class InterFromSvnRepository(InterRepository):
         try:
             bzr_parent_trees = self._get_parent_trees(revmeta, mapping,
                 lhs_parent_revmeta)
+            ensure_inventories_in_repo(self.target, bzr_parent_trees)
             svn_base_tree = bzr_parent_trees[0]
             return RevisionBuildEditor(self.source, self.target, revid,
                 bzr_parent_trees, svn_base_tree,
