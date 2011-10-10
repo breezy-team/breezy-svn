@@ -312,7 +312,7 @@ class SvnRemoteAccess(ControlDir):
             source_branch = None
             project = None
             mapping = None
-            revision_id = NULL_REVISION
+            revision_id = None
         else:
             if revision_id is None:
                 revision_id = source_branch.last_revision()
@@ -324,6 +324,7 @@ class SvnRemoteAccess(ControlDir):
         if source_branch is not None:
             result_branch = source_branch.sprout(result,
                 revision_id=revision_id, repository=result_repo)
+            result_branch.fetch(source_branch, last_revision=revision_id) # For the tags
         else:
             result_branch = result.create_branch()
         if (create_tree_if_local and isinstance(target_transport, LocalTransport)
