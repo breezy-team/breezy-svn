@@ -51,7 +51,7 @@ class WorkingSubversionBranch(SubversionTestCase):
 
     def test_last_rev_rev_hist(self):
         branch = self.make_svn_branch('a')
-        self.assertEquals([], branch.revision_history())
+        self.assertEquals(NULL_REVISION, branch.last_revision())
         self.assertEqual(branch.generate_revision_id(1),
                          branch.last_revision())
 
@@ -320,11 +320,12 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         otherbranch = Branch.open(urlutils.join(repos_url, "branches", "foo"))
         branch = Branch.open(urlutils.join(repos_url, "trunk"))
+        old_last_revid = branch.last_revision()
         result = branch.pull(otherbranch)
 
         self.assertEquals(branch.last_revision(), otherbranch.last_revision())
         self.assertEquals(result.new_revid, otherbranch.last_revision())
-        self.assertEquals(result.old_revid, branch.revision_history()[0])
+        self.assertEquals(result.old_revid, old_last_revid)
         self.assertEquals(result.old_revno, 1)
         self.assertEquals(result.new_revno, 2)
         self.assertEquals(result.master_branch, branch)
@@ -426,7 +427,6 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertEqual(
             (0, branch.generate_revision_id(1)),
             branch.last_revision_info())
-        branch.revision_history()
 
     def test_lookup_revision_id_unknown(self):
         branch = self.make_svn_branch("a")
@@ -492,23 +492,25 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         trunk.add_file('trunk/foo').modify()
-        dc.close()
+        dc.close() #1
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.open_dir("trunk")
         trunk.add_file('trunk/bla').modify()
-        dc.close()
+        dc.close() #2
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.open_dir("trunk")
         trunk.add_file('trunk/bar').modify()
-        dc.close()
+        dc.close() #3
 
         branch = Branch.open(repos_url+"/trunk")
-        orig_history = branch.revision_history()
-        branch.set_append_revisions_only(False)
-        branch.generate_revision_history(orig_history[-2])
-        self.assertEquals(orig_history[:-1], branch.revision_history())
+        orig_last_revid = branch.last_revision()
+        branch.set_last_revision_info(2, branch.generate_revision_id(2),)
+        self.assertNotEqual(orig_last_revid, branch.last_revision())
+        self.assertEqual(
+            branch.last_revision(),
+            branch.repository.generate_revision_id(2, "trunk", branch.mapping))
 
     def test_break_lock(self):
         # duplicated by bzrlib.tests.per_branch.test_break_lock

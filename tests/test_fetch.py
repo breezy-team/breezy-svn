@@ -1449,12 +1449,8 @@ Node-copyfrom-path: x
 
         branch = Branch.open("%s/branches/mybranch" % repos_url)
         mapping = oldrepos.get_mapping()
-        if mapping.is_branch("trunk/lib"):
-            self.assertEqual([oldrepos.generate_revision_id(1, "trunk/lib", mapping), oldrepos.generate_revision_id(2, "branches/mybranch", mapping)],
-                             branch.revision_history())
-        else:
-            self.assertEqual([oldrepos.generate_revision_id(2, "branches/mybranch", mapping)],
-                             branch.revision_history())
+        self.assertEqual(oldrepos.generate_revision_id(2, "branches/mybranch", mapping),
+                         branch.last_revision())
 
     def test_fetch_dir_from_non_branch(self):
         repos_url = self.make_svn_repository('d')
@@ -1477,8 +1473,8 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
 
         branch = Branch.open("%s/trunk" % repos_url)
-        self.assertEqual([oldrepos.generate_revision_id(2, "trunk", oldrepos.get_mapping())],
-                         branch.revision_history())
+        self.assertEqual(oldrepos.generate_revision_id(2, "trunk", oldrepos.get_mapping()),
+                         branch.last_revision())
 
     def test_fetch_from_non_branch(self):
         repos_url = self.make_svn_repository('d')
@@ -1500,17 +1496,9 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
 
         branch = Branch.open("%s/trunk" % repos_url)
-        if oldrepos.get_mapping().is_branch("old-trunk"):
-            self.assertEqual([
-                oldrepos.generate_revision_id(1, "old-trunk", oldrepos.get_mapping()),
-                oldrepos.generate_revision_id(2, "trunk", oldrepos.get_mapping())],
-                         branch.revision_history())
-        else:
-            self.assertEqual([
-                oldrepos.generate_revision_id(2, "trunk", oldrepos.get_mapping())],
-                         branch.revision_history())
-
-
+        self.assertEqual(
+            oldrepos.generate_revision_id(2, "trunk", oldrepos.get_mapping()),
+            branch.last_revision())
 
     def test_fetch_branch_downgrade(self):
         repos_url = self.make_svn_repository('d')

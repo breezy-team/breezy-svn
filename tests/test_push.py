@@ -238,8 +238,8 @@ class TestPush(SubversionTestCase):
         bzrbranch = self.bzrdir.open_branch()
         result = svnbranch.pull(bzrbranch)
         self.assertEqual(0, result.new_revno - result.old_revno)
-        self.assertEqual(svnbranch.revision_history(),
-                         bzrbranch.revision_history())
+        self.assertEqual(svnbranch.last_revision_info(),
+                         bzrbranch.last_revision_info())
 
     def test_child(self):
         dc = self.commit_editor()
@@ -385,8 +385,8 @@ class TestPush(SubversionTestCase):
         os.mkdir("b")
         repos = self.svndir.sprout("b")
 
-        self.assertEqual(Branch.open("dc").revision_history(),
-                         Branch.open("b").revision_history())
+        self.assertEqual(Branch.open("dc").last_revision_info(),
+                         Branch.open("b").last_revision_info())
 
     def test_fetch_preserves_file_revid(self):
         self.build_tree({'dc/file': 'data'})
@@ -486,8 +486,8 @@ class TestPush(SubversionTestCase):
         self.assertTrue(tree.has_filename('file'))
         self.assertTrue(tree.has_filename('adir'))
 
-        self.assertEqual(self.svndir.open_branch().revision_history(),
-                         self.bzrdir.open_branch().revision_history())
+        self.assertEqual(self.svndir.open_branch().last_revision_info(),
+                         self.bzrdir.open_branch().last_revision_info())
 
         self.assertEqual(wt.branch.last_revision(),
                 repos.generate_revision_id(3, "", mapping))
@@ -616,7 +616,6 @@ class PushNewBranchTests(SubversionTestCase):
         finally:
             bzrwt.unlock()
         self.assertEquals(revid, newbranch.last_revision())
-        self.assertEquals([revid], newbranch.revision_history())
 
     def test_single_revision_single_branch(self):
         repos_url = self.make_svn_repository("a")
@@ -809,7 +808,6 @@ class PushNewBranchTests(SubversionTestCase):
         newdir = BzrDir.open(repos_url+"/trunk")
         newbranch = newdir.import_branch(bzrwt.branch)
         self.assertEquals(revid, newbranch.last_revision())
-        self.assertEquals([revid], newbranch.revision_history())
         self.build_tree({'c/test': "Tour de France"})
         bzrwt.commit("Do a commit")
         newdir = BzrDir.open(repos_url+"/trunk")
@@ -827,7 +825,6 @@ class PushNewBranchTests(SubversionTestCase):
         newdir = BzrDir.open(repos_url+"/trunk")
         newbranch = newdir.import_branch(bzrwt.branch)
         self.assertEquals(revid2, newbranch.last_revision())
-        self.assertEquals([revid1, revid2], newbranch.revision_history())
 
     def test_dato(self):
         repos_url = self.make_svn_repository("a")
