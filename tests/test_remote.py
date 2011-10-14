@@ -150,9 +150,9 @@ class TestRemoteAccess(SubversionTestCase):
         origb.add(["twin", "peaks"])
         origb.commit("Message")
         b = x.import_branch(source=origb.branch)
-        self.assertEquals(origb.branch.revision_history(), b.revision_history())
-        self.assertEquals(origb.branch.revision_history(),
-                Branch.open(repos_url+"/trunk").revision_history())
+        self.assertEquals(origb.branch.last_revision_info(), b.last_revision_info())
+        self.assertEquals(origb.branch.last_revision_info(),
+                Branch.open(repos_url+"/trunk").last_revision_info())
 
     def test_open_repos_root(self):
         repos_url = self.make_svn_repository("d")
