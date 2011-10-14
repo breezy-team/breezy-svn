@@ -92,6 +92,7 @@ from bzrlib.revisionspec import (
     revspec_registry,
     )
 from bzrlib.transport import (
+    ConnectedTransport,
     register_lazy_transport,
     register_transport_proto,
     )
@@ -264,8 +265,11 @@ class SvnRemoteProber(SvnProber):
         # If this is a HTTP transport, use the existing connection to check
         # that the remote end supports version control.
         if scheme in ("http", "https"):
-            url = transport._unsplit_url(transport._unqualified_scheme,
-                None, None, transport._host, transport._port, transport._path)
+            priv_transport = getattr(transport, "_decorated", transport)
+            url = ConnectedTransport._unsplit_url(
+                priv_transport._unqualified_scheme,
+                None, None, priv_transport._host,
+                priv_transport._port, priv_transport._path)
             try:
                 dav_entries = dav_options(transport, url)
             except (InProcessTransport, NoSuchFile, InvalidURL, InvalidHttpResponse):
