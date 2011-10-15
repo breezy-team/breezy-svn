@@ -773,11 +773,12 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def set_parent_ids(self, parent_ids, allow_leftmost_as_ghost=False):
         """See MutableTree.set_parent_ids."""
-        super(SvnWorkingTree, self).set_parent_ids(parent_ids)
-        if parent_ids == [] or parent_ids[0] == NULL_REVISION:
+        if parent_ids == []:
             merges = []
+            self.set_last_revision(NULL_REVISION)
         else:
             merges = parent_ids[1:]
+            self.set_last_revision(parent_ids[0])
         adm = self._get_wc(write_lock=True)
         try:
             old_svk_merges = svk.parse_svk_features(self._get_svk_merges(
