@@ -143,6 +143,7 @@ class SvnRepositoryFormat(RepositoryFormat):
     revision_graph_can_have_wrong_parents = False
     supports_versioned_directories = True
     supports_nesting_repositories = False
+    supports_invisible_revisions = False
 
     @property
     def _matchingbzrdir(self):
