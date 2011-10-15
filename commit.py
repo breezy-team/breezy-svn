@@ -395,6 +395,8 @@ class SvnCommitBuilder(CommitBuilder):
 
     support_use_record_entry_contents = False
 
+    updates_branch = True
+
     def __init__(self, repository, branch_path, parents, config, timestamp,
                  timezone, committer, revprops, revision_id,
                  base_foreign_revid, base_mapping, root_action, old_tree=None,
