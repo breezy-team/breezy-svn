@@ -392,10 +392,8 @@ class SvnBranch(ForeignBranch):
             uuid = self.repository.uuid
             revnum = self.get_revnum()
         else:
-            (uuid, bp, revnum), mapping = self.repository.lookup_bzr_revision_id(
-                revision_id,
-                ancestry=(self.get_branch_path(), self.get_revnum()),
-                project=self.project)
+            (uuid, bp, revnum), mapping = self.lookup_bzr_revision_id(
+                revision_id)
 
         transport = get_transport(to_location)
         transport.ensure_base()
@@ -505,11 +503,16 @@ class SvnBranch(ForeignBranch):
             except NoSuchRevision:
                 raise NotImplementedError("set_last_revision_info can't add ghosts")
             interrepo = InterToSvnRepository(self.repository, self.repository)
-            base_revmeta, base_mapping = self.last_revmeta(skip_hidden=False)
+            try:
+                base_revid = rev.parent_ids[0]
+            except IndexError:
+                base_foreign_info = None, None
+            else:
+                base_foreign_info = self.lookup_bzr_revision_id(rev.parent_ids[0])
             interrepo.push_single_revision(
                 self.get_branch_path(), self.get_config(), rev,
                 push_metadata=True, root_action=("replace", self.get_revnum()),
-                base_foreign_info=(base_revmeta.metarev.get_foreign_revid(), base_mapping))
+                base_foreign_info=base_foreign_info)
         self._clear_cached_state()
         if self.is_locked():
             self._cached_last_revid = revid
