@@ -569,8 +569,15 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                                   SCHEDULE_REPLACE)
         if entry.schedule == SCHEDULE_NORMAL:
             # Keep old id
-            return self.path_to_file_id(entry.cmt_rev, entry.revision,
-                    relpath)
+            try:
+                return self.path_to_file_id(entry.cmt_rev, entry.revision,
+                        relpath)
+            except KeyError:
+                if entry.revision == self._cached_base_revnum:
+                    raise AssertionError("file %s:%d not in fileid map for %d" % (
+                        relpath, entry.revision, self._cached_base_revnum))
+                # For some reason a file that doesn't exist in the current revision
+                # has ended up here. Let's just generate a NEW- file id
         elif entry.schedule == SCHEDULE_DELETE:
             return (None, None)
         elif (entry.schedule == SCHEDULE_ADD or
@@ -578,9 +585,12 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             ids = self._get_new_file_ids()
             if ids.has_key(relpath):
                 return (ids[relpath], None)
-            # FIXME: Generate more random but consistent file ids
-            return ("NEW-" + escape_svn_path(osutils.safe_utf8(relpath).strip("/")),
-                    None)
+        else:
+            raise AssertionError("unknown schedule value %r for %s" % (
+                entry.schedule, relpath))
+        # FIXME: Generate more random but consistent file ids
+        return ("NEW-" + escape_svn_path(osutils.safe_utf8(relpath).strip("/")),
+                None)
 
     def get_root_id(self):
         return self.path2id("")
@@ -771,6 +781,34 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         """See MutableTree.set_parent_trees."""
         self.set_parent_ids([rev for (rev, tree) in parents_list])
 
+    def get_parent_ids(self):
+        """See Tree.get_parent_ids.
+
+        This implementation reads the pending merges list and last_revision
+        value and uses that to decide what the parents list should be.
+        """
+        last_rev = self._last_revision()
+        if NULL_REVISION == last_rev:
+            parents = []
+        else:
+            parents = [last_rev]
+        if not self._cached_merges:
+            try:
+                merges_bytes = self._transport.get_bytes('pending-merges')
+            except NoSuchFile:
+                merges = []
+            else:
+                merges = []
+                for l in osutils.split_lines(merges_bytes):
+                    revision_id = l.rstrip('\n')
+                    merges.append(revision_id)
+            if self.is_locked():
+                self._cached_merges = merges
+        else:
+            merges = self._cached_merges
+        parents.extend(merges)
+        return parents
+
     def set_parent_ids(self, parent_ids, allow_leftmost_as_ghost=False):
         """See MutableTree.set_parent_ids."""
         if parent_ids == []:
@@ -779,6 +817,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         else:
             merges = parent_ids[1:]
             self.set_last_revision(parent_ids[0])
+        if self.is_locked():
+            self._cached_merges = merges
+        self._transport.put_bytes('pending-merges', '\n'.join(merges),
+            mode=self.bzrdir._get_file_mode())
         adm = self._get_wc(write_lock=True)
         try:
             old_svk_merges = svk.parse_svk_features(self._get_svk_merges(
@@ -950,6 +992,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._cached_base_revnum = fetched
         self._cached_base_revid = None
         self._cached_base_idmap = None
+        self._cached_merges = None
         return result
 
     def get_file_properties(self, file_id, path=None):
@@ -1135,6 +1178,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._cached_base_revnum = None
         self._cached_base_idmap = None
         self._cached_base_revid = None
+        self._cached_merges = None
 
     def break_lock(self):
         """Break a lock if one is present from another instance.
@@ -1275,6 +1319,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._cached_base_revnum = rev
         self._cached_base_revid = new_revid
         self._cached_base_idmap = None
+        self._cached_merges = []
 
         newrev = self.branch.repository.get_revision(new_revid)
         svn_revprops = revmeta.metarev.revprops
