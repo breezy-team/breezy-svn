@@ -314,9 +314,9 @@ class InterToSvnRepository(InterRepository):
             for revid in graph.iter_lefthand_ancestry(stop_revision,
                     (NULL_REVISION, None)):
                 if self._target_has_revision(revid, project=project):
-                    todo.reverse()
                     break
                 todo.append(revid)
+            todo.reverse()
             return todo, ("replace", last_foreign_revid[2])
 
     def push_branch(self, target_branch_path, target_config, old_last_revid,
