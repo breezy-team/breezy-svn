@@ -617,7 +617,7 @@ class SvnCommitBuilder(CommitBuilder):
                 if name == "":
                     raise ChangesRootLHSHistory()
                 self.mutter("removing branch dir %r", name)
-                ret[-1].delete_entry(name, max(base_rev, root_action[1]))
+                ret[-1].delete_entry(name, root_action[1])
             self.mutter("adding branch dir %r", name)
             if base_url is None or root_from is None:
                 copyfrom_url = None
