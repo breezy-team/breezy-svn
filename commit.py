@@ -567,7 +567,8 @@ class SvnCommitBuilder(CommitBuilder):
     def get_basis_delta(self):
         if not self._will_record_deletes:
             raise AssertionError
-        return self._basis_delta
+        revid = self._get_actual_revision_id()
+        return self._get_basis_delta(revid)
 
     def will_record_deletes(self):
         self._will_record_deletes = True
@@ -899,17 +900,28 @@ class SvnCommitBuilder(CommitBuilder):
         self.repository.commit_write_group()
         return revid
 
+    def _get_actual_revision_id(self):
+        if not self.random_revid:
+            return self._new_revision_id
+        elif self.revmeta is not None:
+            return self.revmeta.get_revision_id(self.mapping)
+        else:
+            return None
+
+    def _get_basis_delta(self, revid):
+        ret = []
+        for (old_path, new_path, file_id, ie) in self._basis_delta:
+            if ie is not None:
+                ie.revision = revid
+            ret.append((old_path, new_path, file_id, ie))
+        return ret
+
     def revision_tree(self):
         from bzrlib.inventory import mutable_inventory_from_tree
         from bzrlib.revisiontree import InventoryRevisionTree
         inv = mutable_inventory_from_tree(self.old_tree)
-        inv.apply_delta(self._basis_delta)
-        if not self.random_revid:
-            revid = self._new_revision_id
-        elif self.revmeta is not None:
-            revid = self.revmeta.get_revision_id(self.mapping)
-        else:
-            revid = "new:"
+        revid = self._get_actual_revision_id()
+        inv.apply_delta(self._get_basis_delta(revid))
         return InventoryRevisionTree(self.repository, inv,
             revid)
 
@@ -983,7 +995,6 @@ class SvnCommitBuilder(CommitBuilder):
         :return: A generator of (file_id, relpath, fs_hash) tuples for use with
             tree._observed_sha1.
         """
-        self.new_root_id = None
         parent_trees = [self.old_tree]
         for p in self.parents[1:]:
             try:
