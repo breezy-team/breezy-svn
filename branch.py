@@ -897,7 +897,7 @@ class InterFromSvnBranch(GenericInterBranch):
         else:
             result.tag_conflicts = tag_ret
 
-    def _pull(self, stop_revision, overwrite, run_hooks,
+    def _basic_pull(self, stop_revision, overwrite, run_hooks,
               _override_hook_target, _hook_master):
         self.target.lock_write()
         try:
@@ -974,7 +974,7 @@ class InterFromSvnBranch(GenericInterBranch):
                     # pull from source into master.
                     master_branch.pull(self.source, overwrite, stop_revision,
                         run_hooks=False)
-                result = self._pull(stop_revision, overwrite, run_hooks,
+                result = self._basic_pull(stop_revision, overwrite, run_hooks,
                     _override_hook_target, _hook_master=master_branch)
             finally:
                 self.source.unlock()
