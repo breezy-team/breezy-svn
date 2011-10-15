@@ -255,6 +255,24 @@ class CommitIdTesting:
         self.assertOverrideTextRevisions(tree, "merge", {
             })
 
+    def test_pointless(self):
+        tree = self.prepare_wt('.')
+        tree.lock_write()
+        self.addCleanup(tree.unlock)
+        tree.set_root_id("THEROOTID")
+        self.build_tree_contents([('afile', 'contents')])
+        tree.add(["afile"], ['THEFILEID'])
+        items = self.commit_tree_items(tree, "reva")
+        self.assertEquals({
+            "": ("THEROOTID", "reva", []),
+            "afile": ("THEFILEID", "reva", []),
+            }, items)
+        items = self.commit_tree_items(tree, "revb")
+        self.assertEquals({
+            "": ("THEROOTID", "reva", []),
+            "afile": ("THEFILEID", "reva", []),
+            }, items)
+
 
 class BzrCommitIdTesting(TestCaseWithTransport,CommitIdTesting):
     """Test ids from a revision tree after committing to bzr."""
