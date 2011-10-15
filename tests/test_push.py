@@ -1467,7 +1467,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.interrepo.push_revision_inclusive("trunk", config,
             rev_merged, push_merged=False,
             layout=TrunkLayout0(), project="",
-            push_metadata=True, root_action=("open",),
+            push_metadata=True, root_action=("open", self.to_repo.get_latest_revnum()),
             base_foreign_info=foreign_rev_info)
         log = self.client_log(self.svn_repo_url, 2, 0)
         self.assertEquals(log[1][0],
@@ -1489,7 +1489,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.interrepo.push_revision_inclusive("trunk", config,
             rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
-            push_metadata=True, root_action=("open", ),
+            push_metadata=True, root_action=("open",  self.to_repo.get_latest_revnum()),
             base_foreign_info=self.interrepo._get_foreign_revision_info(
                 rev_merged.parent_ids[0]))
         log = self.client_log(self.svn_repo_url, 4, 0)
@@ -1521,7 +1521,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.interrepo.push_revision_inclusive("trunk", config,
             rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
-            push_metadata=True, root_action=("open", ),
+            push_metadata=True, root_action=("open",  self.to_repo.get_latest_revnum()),
             base_foreign_info=self.interrepo._get_foreign_revision_info(rev_merged.parent_ids[0]))
 
         revid3 = self.tree2.commit('msg2 again')
@@ -1533,7 +1533,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.interrepo.push_revision_inclusive("trunk", config,
             rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
-            push_metadata=True, root_action=("open",),
+            push_metadata=True, root_action=("open",  self.to_repo.get_latest_revnum()),
             base_foreign_info=self.interrepo._get_foreign_revision_info(rev_merged.parent_ids[0]))
 
         log = self.client_log(self.svn_repo_url, 6, 4)

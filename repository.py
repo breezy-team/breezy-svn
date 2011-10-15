@@ -1222,7 +1222,7 @@ class SvnRepository(ForeignRepository):
                 base_mapping = None
                 branch_path = branch._branch_path
             elif branch.last_revision() == NULL_REVISION:
-                root_action = ("open", )
+                root_action = ("open", base_revmeta.metarev.revnum)
                 branch_path = base_revmeta.metarev.branch_path
             else:
                 root_action = ("replace", base_revmeta.metarev.revnum)
@@ -1235,7 +1235,7 @@ class SvnRepository(ForeignRepository):
                 base_foreign_revid, base_mapping = \
                      self.lookup_bzr_revision_id(parents[0], project=branch.project)
             else:
-                root_action = ("open", )
+                root_action = ("open", base_revmeta.metarev.revnum)
                 base_foreign_revid = base_revmeta.metarev.get_foreign_revid()
 
         if root_action[0] == "replace" and append_revisions_only:

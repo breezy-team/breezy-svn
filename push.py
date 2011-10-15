@@ -272,7 +272,7 @@ class InterToSvnRepository(InterRepository):
                         urlutils.join(self.target.base, path))
                 return ("replace", revmeta.metarev.revnum)
             else:
-                return ("open", )
+                return ("open", revmeta.metarev.revnum)
 
     def _otherline_missing_revisions(self, graph, stop_revision, project, overwrite):
         """Find the revisions missing on the mainline.
@@ -309,7 +309,7 @@ class InterToSvnRepository(InterRepository):
                     url = urlutils.join(self.target.base, target_branch)
                     raise AppendRevisionsOnlyViolation(url)
             todo.reverse()
-            return todo, ("open", )
+            return todo, ("open", last_foreign_revid[2])
         else:
             for revid in graph.iter_lefthand_ancestry(stop_revision,
                     (NULL_REVISION, None)):
@@ -398,7 +398,7 @@ class InterToSvnRepository(InterRepository):
                     push_metadata=push_metadata, push_merged=push_merged,
                     project=project, layout=layout)
                 revid_map[rev.revision_id] = (last_revid, last_foreign_info)
-                root_action = ("open", )
+                root_action = ("open", last_foreign_info[0][2])
             return revid_map
         finally:
             pb.finished()

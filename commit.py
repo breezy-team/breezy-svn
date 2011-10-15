@@ -790,8 +790,9 @@ class SvnCommitBuilder(CommitBuilder):
                 root_from = None
 
             if (self.old_tree.get_root_id() is not None and
-                self.old_tree.get_root_id() != self.new_root_id):
-                self.root_action = ("replace", self.base_revnum)
+                self.old_tree.get_root_id() != self.new_root_id and
+                self.root_action[0] == "open"):
+                self.root_action = ("replace", self.root_action[1])
 
             try:
                 try:
