@@ -18,6 +18,7 @@
 """Working tree tests."""
 
 import os
+import shutil
 
 from subvertpy.wc import (
     check_wc,
@@ -774,6 +775,32 @@ class TestWorkingTree(SubversionTestCase):
         self.client_add('dc/file.txt')
         revid = wt.commit("Initial commit")
         self.assertEquals(revid, wt.revision_tree(revid).get_revision_id())
+
+    def test_kind_change_file_to_dir(self):
+        wt = self.make_svn_branch_and_tree('a', 'dc')
+        self.build_tree({'dc/thing': 'Foo'})
+        self.client_add('dc/thing')
+        self.assertEquals('file', wt.kind(wt.path2id('thing')))
+        os.unlink('dc/thing')
+        self.build_tree({'dc/thing': None})
+        self.assertEquals('directory', wt.kind(wt.path2id('thing')))
+        entries = list(wt.iter_entries_by_dir())
+        self.assertEquals(
+            [("", "directory"), ("thing", "directory")],
+            [(p, e.kind) for (p, e) in entries])
+
+    def test_kind_change_dir_to_file(self):
+        wt = self.make_svn_branch_and_tree('a', 'dc')
+        self.build_tree({'dc/thing': None})
+        self.client_add('dc/thing')
+        self.assertEquals('directory', wt.kind(wt.path2id('thing')))
+        shutil.rmtree('dc/thing')
+        self.build_tree({'dc/thing': 'Foo'})
+        self.assertEquals('file', wt.kind(wt.path2id('thing')))
+        entries = list(wt.iter_entries_by_dir())
+        self.assertEquals(
+            [("", "directory"), ("thing", "directory")],
+            [(p, e.kind) for (p, e) in entries])
 
 
 class IgnoreListTests(TestCase):

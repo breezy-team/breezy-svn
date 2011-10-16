@@ -20,6 +20,7 @@ from collections import (
     deque,
     )
 
+import errno
 import os
 import stat
 import subvertpy
@@ -233,6 +234,12 @@ class Walker(object):
                 wc = self.workingtree._get_wc(p)
             except subvertpy.SubversionException, (_, num):
                 if num == subvertpy.ERR_WC_NOT_DIRECTORY:
+                    # Turns out it's not a directory after all
+                    wc = self.workingtree._get_wc(write_lock=False)
+                    try:
+                        self.pending.append((p, self.workingtree._get_entry(wc, p)))
+                    finally:
+                        wc.close()
                     continue
                 raise
             try:
@@ -288,9 +295,13 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def kind(self, file_id, path=None):
         if path is not None:
-            return osutils.file_kind(self.abspath(path))
+            abspath = self.abspath(path)
         else:
-            return osutils.file_kind(self.id2abspath(file_id))
+            abspath = self.id2abspath(file_id)
+        try:
+            return osutils.file_kind(abspath)
+        except NoSuchFile:
+            return None
 
     def _detect_case_handling(self):
         try:
@@ -610,7 +621,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         wc = self._get_wc()
         try:
             try:
-                entry = self._get_entry(wc, osutils.safe_utf8(self.abspath(path)))
+                entry = self._get_entry(wc, path)
                 (file_id, revision) = self._find_ids(osutils.safe_unicode(path), entry)
             except KeyError:
                 return None
@@ -620,7 +631,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             wc.close()
 
     def _get_entry(self, wc, path):
-        assert type(path) == str
+        path = osutils.safe_utf8(self.abspath(path))
         related_wc = wc.probe_try(path)
         if related_wc is None:
             raise KeyError
@@ -635,7 +646,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         try:
             for p in paths:
                 try:
-                    entry = self._get_entry(wc, self.abspath(p).encode("utf-8"))
+                    entry = self._get_entry(wc, p)
                 except KeyError:
                     ret.add(p)
                 else:
@@ -680,26 +691,31 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         assert type(relpath) == unicode
         (file_id, revid) = self._find_ids(relpath, entry)
         abspath = self.abspath(relpath)
+        basename = os.path.basename(relpath)
         if entry.kind == subvertpy.NODE_DIR:
-            ie = InventoryDirectory(file_id, os.path.basename(relpath),
-                    parent_id)
+            ie = InventoryDirectory(file_id, basename, parent_id)
             ie.revision = revid
             return ie
         elif os.path.islink(abspath):
-            ie = InventoryLink(file_id, os.path.basename(relpath), parent_id)
+            ie = InventoryLink(file_id, basename, parent_id)
             ie.revision = revid
             target_path = os.readlink(abspath.encode(osutils._fs_enc))
             ie.symlink_target = target_path.decode(osutils._fs_enc)
             return ie
         else:
-            ie = InventoryFile(file_id, os.path.basename(relpath), parent_id)
+            ie = InventoryFile(file_id, basename, parent_id)
             ie.revision = revid
             try:
                 data = osutils.fingerprint_file(
                     open(abspath.encode(osutils._fs_enc)))
-            except IOError:
-                # Ignore non-existing files
-                return None
+            except IOError, e:
+                if e.errno == errno.EISDIR:
+                    ie = InventoryDirectory(file_id, basename, parent_id)
+                    ie.revision = None
+                    return ie
+                elif e.errno == errno.ENOENT:
+                    return None
+                raise
             else:
                 ie.text_sha1 = data['sha1']
                 ie.text_size = data['size']
@@ -718,8 +734,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                         continue
                     parent = os.path.dirname(path)
                     parent_id = self.lookup_id(parent)
-                    entry = self._get_entry(wc,
-                            osutils.safe_utf8(self.abspath(path)))
+                    entry = self._get_entry(wc, path)
+                    if entry.schedule == SCHEDULE_DELETE:
+                        continue
                     ie = self._ie_from_entry(path, entry, parent_id)
                     if ie is not None:
                         yield path, ie
