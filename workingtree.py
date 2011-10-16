@@ -1486,17 +1486,24 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 adm.close()
         self.set_parent_ids([new_revid])
 
+    @needs_read_lock
     def annotate_iter(self, file_id, default_revision=CURRENT_REVISION):
         from bzrlib.plugins.svn.annotate import Annotater
         annotater = Annotater(self.branch.repository, file_id)
-        for revid in self.get_parent_ids():
+        parent_lines = []
+        if len(self.get_parent_ids()) > 1:
+            graph = self.branch.repository.get_graph()
+            head_parents = graph.heads(self.get_parent_ids())
+        else:
+            head_parents = self.get_parent_ids()
+        for revid in head_parents:
             foreign_revid, mapping = self.branch.repository.lookup_bzr_revision_id(
                 revid)
-            annotater.check_file_revs(revid, foreign_revid[1], foreign_revid[2],
-                self.mapping, None)
-        annotater.check_file(self.get_file_lines(file_id, self.id2path(file_id)),
-            default_revision)
-        return annotater.get_annotated()
+            parent_lines.append(annotater.check_file_revs(revid, foreign_revid[1], foreign_revid[2],
+                self.mapping, None))
+        return annotater.check_file(
+            self.get_file_lines(file_id, self.id2path(file_id)),
+            default_revision, parent_lines)
 
 
 class SvnWorkingTreeFormat(WorkingTreeFormat):

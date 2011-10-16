@@ -54,8 +54,9 @@ class Annotater(object):
         return self._annotated
 
     def check_file_revs(self, revid, branch_path, revnum, mapping, relpath=None):
-        for (revmeta, hidden, mapping) in self._repository._revmeta_provider._iter_reverse_revmeta_mapping_history(branch_path, revnum,
-                to_revnum=0, mapping=mapping):
+        self._annotated = []
+        for (revmeta, hidden, mapping) in self._repository._revmeta_provider._iter_reverse_revmeta_mapping_history(
+                branch_path, revnum, to_revnum=0, mapping=mapping):
             if hidden:
                 continue
             self._related_revs[revmeta.metarev.revnum] = revmeta, mapping
@@ -65,15 +66,16 @@ class Annotater(object):
             try:
                 relpath = tree.id2path(self.fileid)
             except NoSuchId:
-                return
+                return []
         path = urlutils.join(branch_path, relpath.encode("utf-8")).strip("/")
         try:
             self._repository.transport.get_file_revs(path, -1, revnum,
                 self._handler, include_merged_revisions=True)
         except subvertpy.SubversionException, (msg, num):
             if num == subvertpy.ERR_FS_NOT_FILE:
-                return
+                return []
             raise
+        return self._annotated
 
     def _get_ids(self, path, rev, revprops):
         revmeta, mapping = self._related_revs[rev]
@@ -85,8 +87,9 @@ class Annotater(object):
         idmap = self._repository.get_fileid_map(revmeta, mapping)
         return idmap.lookup(mapping, ip)
 
-    def check_file(self, lines, revid):
-        self._annotated = reannotate([self._annotated], lines, revid)
+    def check_file(self, lines, revid, parent_lines):
+        trace.mutter('annotate %r, %r', self.fileid, revid)
+        return reannotate(parent_lines, lines, revid)
 
     def _handler(self, path, rev, revprops, result_of_merge=None):
         try:
@@ -96,7 +99,6 @@ class Annotater(object):
             # Related file in Subversion but not in Bazaar
             # We still apply the delta since we'll need the fulltext later
             fileid = None
-        trace.mutter('annotate %r, %r', fileid, revid)
         stream = StringIO()
         def apply_window(window):
             if window is None:
@@ -104,8 +106,7 @@ class Annotater(object):
                 lines = stream.readlines()
                 self._text = "".join(lines)
                 if fileid == self.fileid:
-                    # FIXME: Right hand side parents
-                    self.check_file(lines, revid)
+                    self._annotated = self.check_file(lines, revid, [self._annotated])
                 return
             stream.write(apply_txdelta_window(self._text, window))
         return apply_window
