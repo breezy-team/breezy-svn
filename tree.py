@@ -277,6 +277,10 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
             self._repository.transport.add_connection(conn)
         return self._bzr_inventory
 
+    def all_file_ids(self):
+        # FIXME
+        return set(self._bzr_inventory)
+
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
         # FIXME
         return self.inventory.iter_entries_by_dir(
@@ -673,6 +677,9 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             return self._real_tree
         self._real_tree = self.workingtree.revision_tree(self.get_revision_id())
         return self._real_tree
+
+    def all_file_ids(self):
+        return self.real_tree.all_file_ids()
 
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
         # FIXME
