@@ -206,8 +206,15 @@ def generate_ignore_list(ignore_map):
 
 
 class Walker(object):
+    """Iterator of a Subversion working copy."""
 
     def __init__(self, workingtree, start=u"", recursive=True):
+        """Create a new walker.
+
+        :param workingtree: bzr-svn working tree to walk over
+        :param start: Start path, relative to tree root
+        :param recursive: Whether to be recursive
+        """
         self.workingtree = workingtree
         self.todo = list([start])
         self.pending = deque()
@@ -276,6 +283,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     @property
     def mapping(self):
+        """bzr-svn mapping to use."""
         return self.branch.mapping
 
     def kind(self, file_id, path=None):
@@ -470,7 +478,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         ret = set()
         w = Walker(self)
         for path, entry in w:
-            ret.add(self.lookup_id(path))
+            ret.add(self.lookup_id(path)[0])
         return ret
 
     @convert_svn_error
@@ -894,6 +902,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         elif kind == "symlink":
             value = properties.PROP_SPECIAL_VALUE
         else:
+            # FIXME: Fixup directories?
             return
         adm.prop_set(properties.PROP_SPECIAL, value, abspath)
 
@@ -1293,6 +1302,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 adm.close()
         finally:
             root_adm.close()
+
+    def merge_from_branch(self, branch, to_revision=None, from_revision=None,
+                          merge_type=None, force=False):
+        raise UnsupportedOperation(self.merge_from_branch, self)
 
     def update_basis_by_delta(self, new_revid, delta):
         """Update the parents of this tree after a commit.
