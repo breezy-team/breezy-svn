@@ -45,6 +45,7 @@ from subvertpy.wc import (
 import bzrlib.add
 from bzrlib import (
     conflicts as _mod_conflicts,
+    errors as bzr_errors,
     hashcache,
     osutils,
     transport as _mod_transport,
@@ -122,6 +123,9 @@ get_transport_from_path = getattr(_mod_transport, "get_transport_from_path",
 
 # Compatibility with subvertpy < 0.8.6
 ERR_BAD_FILENAME = getattr(subvertpy, "ERR_BAD_FILENAME", 125001)
+
+# Compatibility with subvertpy < 0.8.9
+ERR_WC_NODE_KIND_CHANGE = getattr(subvertpy, "ERR_WC_NODE_KIND_CHANGE", 155018)
 
 
 try:
@@ -237,7 +241,10 @@ class Walker(object):
                     # Turns out it's not a directory after all
                     wc = self.workingtree._get_wc(write_lock=False)
                     try:
-                        self.pending.append((p, self.workingtree._get_entry(wc, p)))
+                        try:
+                            self.pending.append((p, self.workingtree._get_entry(wc, p)))
+                        except KeyError:
+                            pass
                     finally:
                         wc.close()
                     continue
@@ -894,7 +901,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                         mutter('adding %r', file_path)
                         encoded_file_path = file_path.encode("utf-8")
                         wc.add(encoded_file_path)
-                        self._update_special(wc, encoded_file_path, f)
+                        self._fix_special(wc, encoded_file_path, f)
                     added.append(file_path)
                 if (recurse and
                     osutils.file_kind(file_path.encode(osutils._fs_enc)) == 'directory'):
@@ -916,16 +923,29 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 ignored.update(cignored)
         return added, ignored
 
-    def _update_special(self, adm, abspath, relpath):
-        kind = self.kind(None, relpath)
+    def _fix_special(self, adm, abspath, relpath, kind=None):
+        if kind is None:
+            kind = self.kind(None, relpath)
         if kind == "file":
             value = None
         elif kind == "symlink":
             value = properties.PROP_SPECIAL_VALUE
         else:
-            # FIXME: Fixup directories?
             return
         adm.prop_set(properties.PROP_SPECIAL, value, abspath)
+
+    def _fix_kind(self, adm, abspath, relpath, entry):
+        kind = self.kind(None, relpath)
+        if ((entry.kind == subvertpy.NODE_DIR and kind in ('file', 'symlink')) or
+            (entry.kind == subvertpy.NODE_FILE and kind == 'directory')):
+            try:
+                adm.delete(abspath, keep_local=True)
+                adm.add(abspath)
+            except subvertpy.SubversionException, (_, num):
+                if num == ERR_WC_NODE_KIND_CHANGE:
+                    raise bzr_errors.UnsupportedKindChange(relpath)
+                raise
+        self._fix_special(adm, abspath, relpath, kind)
 
     def add(self, files, ids=None, kinds=None, _copyfrom=None):
         """Add files to the working tree."""
@@ -955,7 +975,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     elif num == subvertpy.ERR_WC_PATH_NOT_FOUND:
                         raise NoSuchFile(path=f)
                     raise
-                self._update_special(wc, utf8_abspath, f)
+                self._fix_special(wc, utf8_abspath, f)
             finally:
                 wc.close()
             if file_id is not None:
@@ -1310,7 +1330,13 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         encoded_path = self.abspath(path).encoded("utf-8")
         root_adm = self._get_wc(write_lock=True)
         try:
-            root_adm.transmit_prop_deltas(encoded_path, True, editor)
+            adm = root_adm.probe_try(encoded_path, True, 1)
+            try:
+                entry = adm.entry(encoded_path)
+                self._fix_kind(root_adm, encoded_path, path, entry)
+                root_adm.transmit_prop_deltas(encoded_path, True, editor)
+            finally:
+                adm.close()
         finally:
             root_adm.close()
 
@@ -1323,8 +1349,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             adm = root_adm.probe_try(encoded_path, True, 1)
             try:
                 entry = adm.entry(encoded_path)
+                self._fix_kind(adm, encoded_path, path, entry)
                 root_adm.transmit_prop_deltas(encoded_path, entry, editor)
-                self._update_special(adm, encoded_path, path)
                 root_adm.transmit_text_deltas(encoded_path, True, editor)
             finally:
                 adm.close()
