@@ -1504,9 +1504,10 @@ class SvnCheckout(ControlDir):
         SvnWorkingTreeProber().probe_transport(real_transport)
         self.local_path = real_transport.local_abspath(".")
 
+        encoded_path = self.local_path.encode("utf-8")
         # Open related remote repository + branch
         try:
-            wc = WorkingCopy(None, self.local_path.encode("utf-8"))
+            wc = WorkingCopy(None, encoded_path)
         except subvertpy.SubversionException, (msg, num):
             if num == ERR_WC_UNSUPPORTED_FORMAT:
                 raise UnsupportedFormatError(msg, kind='workingtree')
@@ -1514,11 +1515,11 @@ class SvnCheckout(ControlDir):
                 raise
         try:
             try:
-                self.entry = wc.entry(self.local_path.encode("utf-8"), True)
+                self.entry = wc.entry(encoded_path, True)
             except subvertpy.SubversionException, (msg, num):
                 if num in (subvertpy.ERR_ENTRY_NOT_FOUND,
                            subvertpy.ERR_NODE_UNKNOWN_KIND):
-                    raise CorruptWorkingTree(self.local_path.encode("utf-8"),
+                    raise CorruptWorkingTree(encoded_path,
                         msg)
                 else:
                     raise
