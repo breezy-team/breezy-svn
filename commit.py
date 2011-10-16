@@ -961,12 +961,12 @@ class SvnCommitBuilder(CommitBuilder):
             ppath = ptree.id2path(new_ie.file_id)
             if (ptree.path2id(osutils.dirname(ppath)) == new_ie.parent_id and
                 osutils.basename(ppath) == new_ie.name and (
-                 (new_ie.kind == 'file' and
+                 (new_ie.kind == 'file' and ptree.kind(new_ie.file_id) == 'file' and
                   ptree.get_file_sha1(new_ie.file_id) == new_ie.text_sha1 and
                   ptree.is_executable(new_ie.file_id) == new_ie.executable) or
-                 (new_ie.kind == 'symlink' and
+                 (new_ie.kind == 'symlink' and ptree.kind(new_ie.file_id) == 'symlink' and
                   ptree.get_symlink_target(new_ie.file_id) == new_ie.symlink_target) or
-                 (new_ie.kind == 'directory'))):
+                 (new_ie.kind == 'directory' and ptree.kind(new_ie.file_id) == 'directory'))):
                 carry_over_candidates[prevision] = ptree
             parent_text_revisions.append(prevision)
         heads_set = self._heads(parent_text_revisions)
