@@ -971,6 +971,7 @@ class SvnCommitBuilder(CommitBuilder):
             parent_text_revisions.append(prevision)
         heads_set = self._heads(parent_text_revisions)
         heads = []
+        trace.mutter('%r. candidates: %r', new_ie, parent_text_revisions)
         # Preserve order
         for p in parent_text_revisions:
             if p in heads_set:
@@ -1011,7 +1012,7 @@ class SvnCommitBuilder(CommitBuilder):
             try:
                 parent_trees.append(self.repository.revision_tree(p))
             except NoSuchRevision:
-                pass
+                trace.mutter('missing parent tree %r', p)
         if self.base_revid != basis_revision_id:
             raise AssertionError("Invalid basis revision %s != %s" %
                 (self.base_revid, basis_revision_id))
