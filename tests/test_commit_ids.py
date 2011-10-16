@@ -106,6 +106,25 @@ class CommitIdTesting:
             "unchanged": ("unchangedid", "reva", []),
             }, items)
 
+    def test_new_parent(self):
+        tree = self.prepare_wt('.')
+        tree.lock_write()
+        self.addCleanup(tree.unlock)
+        tree.set_root_id("therootid")
+        self.build_tree_contents([
+            ('afile', 'contents'),
+            ('adir/', )])
+        tree.add(["afile", "adir"],
+                 ['thefileid', "thedirid"])
+        self.commit_tree(tree, "reva")
+        tree.rename_one("afile", "adir/afile")
+        items = self.commit_tree_items(tree, "revb")
+        self.assertEquals({
+            "": ("therootid", "reva", []),
+            "adir": ("thedirid", "reva", []),
+            "adir/afile": ("thefileid", "revb", ["reva"]),
+            }, items)
+
     def test_rename_unmodified(self):
         tree = self.prepare_wt('.')
         tree.lock_write()
@@ -113,19 +132,17 @@ class CommitIdTesting:
         tree.set_root_id("therootid")
         self.build_tree_contents([
             ('afile', 'contents'),
-            ('cdir/', ),
             ('adir/', )])
-        tree.add(["afile", "adir", "cdir"],
-                 ['thefileid', "thedirid", 'cdirid'])
+        tree.add(["afile", "adir"],
+                 ['thefileid', "thedirid"])
         self.commit_tree(tree, "reva")
-        tree.rename_one("afile", "adir/afile")
-        tree.rename_one("cdir", "ddir")
+        tree.rename_one("afile", "bfile")
+        tree.rename_one("adir", "bdir")
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
             "": ("therootid", "reva", []),
-            "adir": ("thedirid", "reva", []),
-            "adir/afile": ("thefileid", "revb", ["reva"]),
-            "ddir": ("cdirid", "revb", ["reva"]),
+            "bfile": ("thefileid", "revb", ["reva"]),
+            "bdir": ("thedirid", "revb", ["reva"]),
             }, items)
 
     def test_change_mode(self):

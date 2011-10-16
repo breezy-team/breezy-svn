@@ -909,9 +909,15 @@ class SvnCommitBuilder(CommitBuilder):
             return None
 
     def _get_basis_delta(self, revid):
+        """Create a basis delta with a specific revision for new entries.
+
+        :param revid: Revision id to use for changes introduced
+        :return: Invalitory delta
+        """
         ret = []
         for (old_path, new_path, file_id, ie) in self._basis_delta:
-            if ie is not None:
+            if ie is not None and ie.revision is None:
+                ie = ie.copy()
                 ie.revision = revid
             ret.append((old_path, new_path, file_id, ie))
         return ret
@@ -950,12 +956,14 @@ class SvnCommitBuilder(CommitBuilder):
             except NoSuchId:
                 continue
             ppath = ptree.id2path(new_ie.file_id)
-            if (ptree.path2id(osutils.dirname(ppath)) == new_ie.parent_id and (
+            if (ptree.path2id(osutils.dirname(ppath)) == new_ie.parent_id and 
+                osutils.basename(ppath) == new_ie.name and (
                  (new_ie.kind == 'file' and
                   ptree.get_file_sha1(new_ie.file_id) == new_ie.text_sha1 and
                   ptree.is_executable(new_ie.file_id) == new_ie.executable) or
                  (new_ie.kind == 'symlink' and
-                  ptree.get_symlink_target(new_ie.file_id) == new_ie.symlink_target))):
+                  ptree.get_symlink_target(new_ie.file_id) == new_ie.symlink_target) or
+                 (new_ie.kind == 'directory'))):
                 carry_over_candidates[prevision] = ptree
             parent_text_revisions.append(prevision)
         heads_set = self._heads(parent_text_revisions)
@@ -1039,6 +1047,10 @@ class SvnCommitBuilder(CommitBuilder):
                     self._override_text_revisions[new_path] = new_ie.revision
                     self._override_text_parents[new_path] = unusual_text_parents
                 elif new_kind == 'directory':
+                    (new_ie.revision, unusual_text_parents) = self._get_text_revision(
+                        new_ie, new_path, parent_trees)
+                    self._override_text_revisions[new_path] = new_ie.revision
+                    self._override_text_parents[new_path] = unusual_text_parents
                     self._visit_dirs.add(new_path)
                     self._touched_dirs.add((new_path, file_id))
                 self._visit_parent_dirs(new_path)
