@@ -48,12 +48,17 @@ from bzrlib import (
     errors as bzr_errors,
     hashcache,
     osutils,
+    rio as _mod_rio,
     transport as _mod_transport,
     urlutils,
+    )
+from bzrlib.decorators import (
+    needs_read_lock,
     )
 from bzrlib.errors import (
     BadFilenameEncoding,
     BzrError,
+    MergeModifiedFormatError,
     NotBranchError,
     NoSuchFile,
     NoSuchId,
@@ -75,6 +80,7 @@ from bzrlib.inventory import (
 from bzrlib.lockable_files import (
     TransportLock,
     )
+from bzrlib.mutabletree import needs_tree_write_lock
 from bzrlib.revision import (
     CURRENT_REVISION,
     NULL_REVISION,
@@ -84,6 +90,7 @@ from bzrlib.trace import (
     note,
     )
 from bzrlib.workingtree import (
+    MERGE_MODIFIED_HEADER_1,
     WorkingTree,
     WorkingTreeFormat,
     )
@@ -1357,12 +1364,50 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         finally:
             root_adm.close()
 
+    @needs_read_lock
     def merge_modified(self):
-        return {}
+        """Return a dictionary of files modified by a merge.
 
-    def merge_from_branch(self, branch, to_revision=None, from_revision=None,
-                          merge_type=None, force=False):
-        raise UnsupportedOperation(self.merge_from_branch, self)
+        The list is initialized by WorkingTree.set_merge_modified, which is
+        typically called after we make some automatic updates to the tree
+        because of a merge.
+
+        This returns a map of file_id->sha1, containing only files which are
+        still in the working inventory and have that text hash.
+        """
+        try:
+            hashfile = self._transport.get('merge-hashes')
+        except NoSuchFile:
+            return {}
+        try:
+            merge_hashes = {}
+            try:
+                if hashfile.next() != MERGE_MODIFIED_HEADER_1 + '\n':
+                    raise MergeModifiedFormatError()
+            except StopIteration:
+                raise MergeModifiedFormatError()
+            for s in _mod_rio.RioReader(hashfile):
+                # RioReader reads in Unicode, so convert file_ids back to utf8
+                file_id = osutils.safe_file_id(s.get("file_id"), warn=False)
+                if not self.has_id(file_id):
+                    continue
+                text_hash = s.get("hash")
+                if text_hash == self.get_file_sha1(file_id):
+                    merge_hashes[file_id] = text_hash
+            return merge_hashes
+        finally:
+            hashfile.close()
+
+    @needs_tree_write_lock
+    def set_merge_modified(self, modified_hashes):
+        mutter('merge modified: %r', modified_hashes)
+        def iter_stanzas():
+            for file_id, hash in modified_hashes.iteritems():
+                yield _mod_rio.Stanza(file_id=file_id.decode('utf8'),
+                    hash=hash)
+        my_file = _mod_rio.rio_file(iter_stanzas(), MERGE_MODIFIED_HEADER_1)
+        self._transport.put_file('merge-hashes', my_file,
+            mode=self.bzrdir._get_file_mode())
 
     def update_basis_by_delta(self, new_revid, delta):
         """Update the parents of this tree after a commit.
