@@ -28,6 +28,15 @@ from bzrlib.tests import (
     TestCaseWithTransport,
     treeshape,
     )
+try:
+    from bzrlib.tests.features import (
+        SymlinkFeature,
+        )
+except ImportError: # bzr < 2.5
+    from bzrlib.tests import (
+        SymlinkFeature,
+        )
+
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn.tests import SubversionTestCase
@@ -104,6 +113,23 @@ class CommitIdTesting:
             "": ("therootid", "reva", []),
             "afile": ("thefileid", "revb", ["reva"]),
             "unchanged": ("unchangedid", "reva", []),
+            }, items)
+
+    def test_change_link_target(self):
+        self.requireFeature(SymlinkFeature)
+        tree = self.prepare_wt('.')
+        tree.lock_write()
+        self.addCleanup(tree.unlock)
+        tree.set_root_id("therootid")
+        os.symlink('oldtarget', 'link')
+        tree.add(["link"], ['thefileid'])
+        self.commit_tree(tree, "reva")
+        os.unlink('link')
+        os.symlink('newtarget', 'link')
+        items = self.commit_tree_items(tree, "revb")
+        self.assertEquals({
+            "": ("therootid", "reva", []),
+            "link": ("thefileid", "revb", ["reva"]),
             }, items)
 
     def test_new_parent(self):
