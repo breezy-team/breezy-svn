@@ -478,7 +478,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         ret = set()
         w = Walker(self)
         for path, entry in w:
-            ret.add(self.lookup_id(path)[0])
+            try:
+                ret.add(self.lookup_id(path)[0])
+            except KeyError:
+                pass
         return ret
 
     @convert_svn_error
@@ -668,6 +671,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             pass
         if file_id.startswith("NEW-"):
             return urlutils.unescape(file_id[4:])
+        if file_id == self.get_root_id():
+            # Special case if self.last_revision() == 'null:'
+            return ""
         raise NoSuchId(self, file_id)
 
     def _ie_from_entry(self, relpath, entry, parent_id):
@@ -701,6 +707,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 return ie
 
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
+        """See WorkingTree.iter_entries_by_dir."""
         if specific_file_ids is not None:
             wc = self._get_wc()
             try:
@@ -735,7 +742,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     yield relpath, ie
 
     def extras(self):
-        """Return the extras."""
+        """See WorkingTree.extras."""
         w = Walker(self)
         versioned_files = set()
         all_files = set()
@@ -757,9 +764,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 subp = os.path.join(path, subf_norm)
                 all_files.add(subp)
         return iter(all_files - versioned_files)
-
-    def merge_modified(self):
-        return {}
 
     def set_last_revision(self, revid):
         mutter('setting last revision to %r', revid)
@@ -1010,16 +1014,23 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         else:
             path = osutils.safe_unicode(path)
         abspath = self.abspath(path)
-        if not os.path.isdir(abspath.encode(osutils._fs_enc)):
-            wc = self._get_wc(urlutils.split(path)[0])
-        else:
-            wc = self._get_wc(path)
+        root_adm = self._get_wc(write_lock=False)
         try:
-            (prop_changes, orig_props) = wc.get_prop_diffs(
-                abspath.encode("utf-8"))
+            adm = root_adm.probe_try(abspath.encode("utf-8"), False, 2)
+            try:
+                try:
+                    (prop_changes, orig_props) = adm.get_prop_diffs(
+                        abspath.encode("utf-8"))
+                except subvertpy.SubversionException, (_, num):
+                    if num in (subvertpy.ERR_WC_NOT_DIRECTORY,
+                               subvertpy.ERR_WC_NOT_LOCKED):
+                        return {}
+                    raise
+            finally:
+                adm.close()
+            return apply_prop_changes(orig_props, prop_changes)
         finally:
-            wc.close()
-        return apply_prop_changes(orig_props, prop_changes)
+            root_adm.close()
 
     def _change_fileid_mapping(self, id, path, wc=None):
         """Change the file id mapping for a particular path."""
@@ -1302,6 +1313,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 adm.close()
         finally:
             root_adm.close()
+
+    def merge_modified(self):
+        return {}
 
     def merge_from_branch(self, branch, to_revision=None, from_revision=None,
                           merge_type=None, force=False):
