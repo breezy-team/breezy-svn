@@ -949,6 +949,9 @@ class SvnCommitBuilder(CommitBuilder):
 
     def _get_text_revision(self, new_ie, new_path, parent_trees):
         parent_text_revisions = []
+        # Compare with the older versions of this file in the parent trees.
+        # Separately track those entries that have the exact same properties,
+        # as they are candidates for being carried over.
         carry_over_candidates = {}
         for ptree in parent_trees:
             try:
@@ -956,7 +959,7 @@ class SvnCommitBuilder(CommitBuilder):
             except NoSuchId:
                 continue
             ppath = ptree.id2path(new_ie.file_id)
-            if (ptree.path2id(osutils.dirname(ppath)) == new_ie.parent_id and 
+            if (ptree.path2id(osutils.dirname(ppath)) == new_ie.parent_id and
                 osutils.basename(ppath) == new_ie.name and (
                  (new_ie.kind == 'file' and
                   ptree.get_file_sha1(new_ie.file_id) == new_ie.text_sha1 and
@@ -1035,24 +1038,23 @@ class SvnCommitBuilder(CommitBuilder):
                         new_ie, new_path, parent_trees)
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(
                         tree, self.old_tree, file_id, new_path, new_ie)
-                    self._override_text_revisions[new_path] = new_ie.revision
-                    self._override_text_parents[new_path] = unusual_text_parents
-                    yield file_id, new_path, (new_ie.text_sha1, stat_val)
+                    if new_ie.revision is None:
+                        yield file_id, new_path, (new_ie.text_sha1, stat_val)
                 elif new_kind == 'symlink':
                     new_ie.symlink_target = tree.get_symlink_target(file_id)
                     new_ie.revision, unusual_text_parents = self._get_text_revision(
                         new_ie, new_path, parent_trees)
                     self.modified_files[file_id] = get_svn_file_delta_transmitter(
                         tree, self.old_tree, file_id, new_path, new_ie)
-                    self._override_text_revisions[new_path] = new_ie.revision
-                    self._override_text_parents[new_path] = unusual_text_parents
                 elif new_kind == 'directory':
                     (new_ie.revision, unusual_text_parents) = self._get_text_revision(
                         new_ie, new_path, parent_trees)
-                    self._override_text_revisions[new_path] = new_ie.revision
-                    self._override_text_parents[new_path] = unusual_text_parents
                     self._visit_dirs.add(new_path)
                     self._touched_dirs.add((new_path, file_id))
+                else:
+                    raise AssertionError("unknown kind %r" % new_kind)
+                self._override_text_revisions[new_path] = new_ie.revision
+                self._override_text_parents[new_path] = unusual_text_parents
                 self._visit_parent_dirs(new_path)
                 self._updated[file_id] = (new_path, new_ie)
                 self._updated_children[new_parent_id].add(file_id)
