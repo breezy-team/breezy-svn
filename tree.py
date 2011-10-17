@@ -635,7 +635,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         wt_path = self.workingtree.abspath(name).encode("utf-8")
         return wc.get_pristine_contents(wt_path)
 
-    def kind(self, file_id):
+    def kind(self, file_id, path=None):
         # FIXME
         return self.inventory[file_id].kind
 

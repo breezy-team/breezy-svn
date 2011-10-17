@@ -261,7 +261,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                 child_ie.name != new_child_ie.name or
                 # ... kind changed
                 child_ie.kind != new_child_ie.kind):
-                trace.mutter('removing %r(%r)', child_name, child_ie.file_id)
+                mutter('removing %r(%r)', child_name, child_ie.file_id)
                 dir_editor.delete_entry(
                     branch_relative_path(path, child_name.encode("utf-8")),
                     base_revnum)
@@ -279,7 +279,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         # add them if they didn't exist in base_tree or changed kind
         if (not base_tree.has_id(child_ie.file_id) or
             base_tree.kind(child_ie.file_id) != child_ie.kind):
-            trace.mutter('adding %s %r', child_ie.kind, new_child_path)
+            mutter('adding %s %r', child_ie.kind, new_child_path)
 
             # Do a copy operation if at all possible, to make
             # the log a bit easier to read for Subversion people
@@ -299,7 +299,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         # copy if they existed at different location
         elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
                 base_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
-            trace.mutter('copy %s %r -> %r', child_ie.kind,
+            mutter('copy %s %r -> %r', child_ie.kind,
                               base_tree.id2path(child_ie.file_id),
                               new_child_path)
             child_editor = dir_editor.add_file(full_new_child_path,
@@ -309,7 +309,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
             changed = True
         # open if they existed at the same location
         elif child_ie.file_id in modified_files:
-            trace.mutter('open %s %r', child_ie.kind, new_child_path)
+            mutter('open %s %r', child_ie.kind, new_child_path)
             child_editor = dir_editor.open_file(full_new_child_path, base_revnum)
         else:
             # Old copy of the file was retained. No need to send changes
@@ -333,7 +333,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         # add them if they didn't exist in base_tree or changed kind
         if (not base_tree.has_id(child_ie.file_id) or
             base_tree.kind(child_ie.file_id) != child_ie.kind):
-            trace.mutter('adding dir %r', child_ie.name)
+            mutter('adding dir %r', child_ie.name)
 
             # Do a copy operation if at all possible, to make
             # the log a bit easier to read for Subversion people
@@ -357,7 +357,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
               base_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
             old_child_path = base_tree.id2path(child_ie.file_id).encode("utf-8")
-            trace.mutter('copy dir %r -> %r', old_child_path, new_child_path)
+            mutter('copy dir %r -> %r', old_child_path, new_child_path)
             copyfrom_url = url_join_unescaped_path(base_url, old_child_path)
             copyfrom_revnum = base_revnum
 
@@ -369,7 +369,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         # open if they existed at the same location and
         # the directory was touched
         elif new_child_path.decode('utf-8') in visit_dirs:
-            trace.mutter('open dir %r', new_child_path)
+            mutter('open dir %r', new_child_path)
 
             child_editor = dir_editor.open_directory(
                     branch_relative_path(new_child_path),
@@ -971,7 +971,6 @@ class SvnCommitBuilder(CommitBuilder):
             parent_text_revisions.append(prevision)
         heads_set = self._heads(parent_text_revisions)
         heads = []
-        trace.mutter('%r. candidates: %r', new_ie, parent_text_revisions)
         # Preserve order
         for p in parent_text_revisions:
             if p in heads_set:
