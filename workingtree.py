@@ -950,7 +950,12 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 adm.add(abspath)
             except subvertpy.SubversionException, (_, num):
                 if num == ERR_WC_NODE_KIND_CHANGE:
-                    raise bzr_errors.UnsupportedKindChange(relpath)
+                    if entry.kind == subvertpy.NODE_DIR:
+                        from_kind = "directory"
+                    else:
+                        from_kind = "file or symlink"
+                    raise bzr_errors.UnsupportedKindChange(relpath,
+                        from_kind, kind, self._format)
                 raise
         self._fix_special(adm, abspath, relpath, kind)
 
