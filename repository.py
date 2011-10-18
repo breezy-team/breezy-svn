@@ -798,7 +798,10 @@ class SvnRepository(ForeignRepository):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             if revision_ids is not None:
-                for i, (revid, revmeta, mapping) in enumerate(self._iter_revmetas(revision_ids)):
+                for i, (revid, revmeta, mapping) in enumerate(
+                        self._iter_revmetas(revision_ids)):
+                    if revmeta is None:
+                        continue
                     if revid == NULL_REVISION:
                         continue
                     pb.update("checking revisions", i, len(revision_ids))
@@ -971,8 +974,12 @@ class SvnRepository(ForeignRepository):
             if revid == NULL_REVISION:
                 yield (NULL_REVISION, None, None)
             else:
-                (revmeta, mapping) = self._get_revmeta(revid)
-                yield (revid, revmeta, mapping)
+                try:
+                    (revmeta, mapping) = self._get_revmeta(revid)
+                except bzr_errors.NoSuchRevision:
+                    yield (revid, None, None)
+                else:
+                    yield (revid, revmeta, mapping)
 
     def _get_revmeta(self, revision_id):
         foreign_revid, mapping = self.lookup_bzr_revision_id(revision_id)

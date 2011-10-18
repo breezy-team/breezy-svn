@@ -43,7 +43,11 @@ class PerFileParentProvider(object):
         # present in the parents of the mentioned revision.
         ret = []
         rev_parent_revids = revmeta.get_parent_ids(mapping, parentrevmeta)
-        for (revid, revmeta, mapping) in self.repository._iter_revmetas(rev_parent_revids):
+        for (revid, revmeta, mapping) in self.repository._iter_revmetas(
+                rev_parent_revids):
+            if revmeta is None:
+                # Parent is missing, let's just ignore it..
+                continue
             if revid == NULL_REVISION:
                 continue # Nothing exists in NULL_REVISION
             fileidmap = self.repository.get_fileid_map(revmeta, mapping)
