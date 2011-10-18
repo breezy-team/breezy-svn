@@ -418,7 +418,7 @@ class BranchConfig(Config):
         try:
             return self.get_bool("push_merged_revisions")
         except KeyError:
-            return True
+            return None
 
     def has_explicit_nickname(self):
         return False
