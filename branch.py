@@ -1095,12 +1095,14 @@ class InterToSvnBranch(InterBranch):
         return self.push(lossy=True, stop_revision=stop_revision)
 
     def fetch(self, stop_revision=None, fetch_tags=None, find_ghosts=False,
-            limit=None, exclude_non_mainline=False):
+            limit=None, exclude_non_mainline=True):
         """Fetch into a subversion repository."""
         # FIXME: Handle fetch_tags
         # FIXME: Handle find_ghosts
         interrepo = InterToSvnRepository(
             self.source.repository, self.target.repository)
+        if stop_revision is None:
+            stop_revision = self.source.last_revision()
         interrepo.fetch(revision_id=stop_revision, limit=limit,
             exclude_non_mainline=exclude_non_mainline)
 

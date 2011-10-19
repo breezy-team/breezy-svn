@@ -582,6 +582,7 @@ class InterToSvnRepository(InterRepository):
                     heads = [revision_id]
                 else:
                     heads = graph.heads(self.source.all_revision_ids())
+                    exclude_non_mainline = False
                 todo = []
                 # Go back over the LHS parent until we reach a revid we know
                 for head in heads:
@@ -651,7 +652,7 @@ class InterToSvnRepository(InterRepository):
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
         fetch_spec=None, project=None, mapping=None, target_is_empty=False,
-        limit=None, exclude_non_mainline=True):
+        limit=None, exclude_non_mainline=False):
         """Fetch revisions. """
         if fetch_spec is not None:
             recipe = fetch_spec.get_recipe()
