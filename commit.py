@@ -401,7 +401,7 @@ class SvnCommitBuilder(CommitBuilder):
                  timezone, committer, revprops, revision_id,
                  base_foreign_revid, base_mapping, root_action, old_tree=None,
                  push_metadata=True, graph=None, opt_signature=None,
-                 testament=None, branch=None):
+                 testament=None, branch=None, _rich_root_bump=False):
         """Instantiate a new SvnCommitBuilder.
 
         :param repository: SvnRepository to commit to.
@@ -441,6 +441,7 @@ class SvnCommitBuilder(CommitBuilder):
         self._override_text_parents = {}
         self._heads = _mod_graph.HeadsCache(repository.get_graph()).heads
         self._branch = branch
+        self._rich_root_bump = _rich_root_bump
 
         # Gather information about revision on top of which the commit is
         # happening
@@ -947,7 +948,8 @@ class SvnCommitBuilder(CommitBuilder):
                 return
             self._visit_dirs.add(path)
 
-    def _get_text_revision(self, new_ie, new_path, parent_trees):
+    def _get_text_revision(self, new_ie, new_path, parent_trees,
+            force_change=False):
         parent_text_revisions = []
         # Compare with the older versions of this file in the parent trees.
         # Separately track those entries that have the exact same properties,
@@ -976,18 +978,21 @@ class SvnCommitBuilder(CommitBuilder):
             if p in heads_set:
                 heads.append(p)
                 heads_set.remove(p)
-        if len(heads) == 1 and heads[0] in carry_over_candidates:
+        if force_change:
+            return self._new_revision_id, heads
+        if (len(heads) == 1 and
+            heads[0] in carry_over_candidates):
             # carry over situation
             parent_tree = carry_over_candidates[heads[0]]
             return parent_tree.get_file_revision(new_ie.file_id), None
         if (len(heads) == 0 or
             (parent_trees[0].has_id(new_ie.file_id) and
             heads == [parent_trees[0].get_file_revision(new_ie.file_id)])):
-            # No need to explicitly store file ids
+            # No need to explicitly store parent text ids
             text_parents = None
         else:
             text_parents = heads
-        return None, heads
+        return None, text_parents
 
     def record_delete(self, path, file_id):
         raise NotImplementedError(self.record_delete)
@@ -1067,11 +1072,11 @@ class SvnCommitBuilder(CommitBuilder):
                 self._visit_parent_dirs(old_path)
             if new_path != "" or basis_revision_id != NULL_REVISION:
                 self._any_changes = True
-        if self.new_root_id is None:
+        if self.new_root_id is None or self._rich_root_bump:
             # housekeeping root entry changes do not affect no-change commits.
-            self._require_root_change(tree)
+            self._require_root_change(tree, parent_trees)
 
-    def _require_root_change(self, tree):
+    def _require_root_change(self, tree, parent_trees):
         """Enforce an appropriate root object change.
 
         This is called once when record_iter_changes is called, if and only if
@@ -1079,13 +1084,23 @@ class SvnCommitBuilder(CommitBuilder):
 
         :param tree: The tree which is being committed.
         """
-        if len(self.parents) == 0:
+        if len(self.parents) == 0 and not self._rich_root_bump:
             raise RootMissing()
         self.new_root_id = tree.get_root_id()
-        entry = entry_factory['directory'](self.new_root_id, '', None)
-        entry.revision = self._new_revision_id
-        self._updated[self.new_root_id] = ("", entry)
-        self._basis_delta.append(('', '', entry.file_id, entry))
+        assert self.new_root_id is not None
+        new_ie = entry_factory['directory'](self.new_root_id, '', None)
+        if len(self.parents) == 0:
+            old_path = None
+        else:
+            old_path = ""
+        (new_ie.revision, unusual_text_parents) = self._get_text_revision(
+            new_ie, "", parent_trees, force_change=True)
+        self._override_text_revisions[""] = new_ie.revision
+        self._override_text_parents[""] = unusual_text_parents
+        trace.mutter('root file id: %r, revision %r, parents: %r',
+               new_ie.file_id, new_ie.revision, unusual_text_parents)
+        self._updated[self.new_root_id] = ("", new_ie)
+        self._basis_delta.append((old_path, '', new_ie.file_id, new_ie))
 
     def any_changes(self):
         return self._any_changes
