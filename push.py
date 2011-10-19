@@ -405,13 +405,14 @@ class InterToSvnRepository(InterRepository):
 
     def push_revision_inclusive(self, target_path, target_config, rev,
             push_merged, layout, project, root_action, push_metadata,
-            base_foreign_info):
+            base_foreign_info, exclude=None):
         """Push a revision including ancestors.
 
         :return: Tuple with pushed revision id and foreign revision id
         """
         if push_merged and len(rev.parent_ids) > 1:
-            self.push_ancestors(layout, project, rev.parent_ids)
+            self.push_ancestors(layout, project, rev.parent_ids,
+                    exclude=[target_path])
         return self.push_single_revision(target_path, target_config, rev,
             push_metadata=push_metadata, root_action=root_action,
             base_foreign_info=base_foreign_info)
@@ -455,7 +456,8 @@ class InterToSvnRepository(InterRepository):
         return BranchConfig(urlutils.join(self.target.base, branch_path),
                 self.target.uuid)
 
-    def push_ancestors(self, layout, project, parent_revids):
+    def push_ancestors(self, layout, project, parent_revids, lossy=False,
+                       exclude=None):
         """Push the ancestors of a revision.
 
         :param layout: Subversion layout
@@ -468,7 +470,8 @@ class InterToSvnRepository(InterRepository):
         graph = self.get_graph()
         for parent_revid in missing_rhs_parents:
             # Push merged revisions
-            ancestors = graph.find_unique_ancestors(parent_revid, [parent_revids[0]])
+            ancestors = graph.find_unique_ancestors(parent_revid,
+                [parent_revids[0]])
             unique_ancestors.update(ancestors)
         for x in self.get_graph().iter_topo_order(unique_ancestors):
             if self._target_has_revision(x, project):
@@ -488,7 +491,7 @@ class InterToSvnRepository(InterRepository):
                 target_project = None
             else:
                 (_, target_project, _, _) = layout.parse(base_foreign_revid[1])
-            bp = determine_branch_path(rev, layout, target_project)
+            bp = determine_branch_path(rev, layout, target_project, exclude)
             target_config = self._get_branch_config(bp)
             push_merged = (layout.push_merged_revisions(target_project) and
                 target_config.get_push_merged_revisions())
@@ -497,7 +500,7 @@ class InterToSvnRepository(InterRepository):
                 append_revisions_only=target_config.get_append_revisions_only(False),
                 create_prefix=True)
             self.push_revision_inclusive(bp, target_config, rev,
-                push_metadata=True, push_merged=push_merged,
+                push_metadata=not lossy, push_merged=push_merged,
                 layout=layout, project=target_project,
                 root_action=root_action,
                 base_foreign_info=(base_foreign_revid, base_mapping))
@@ -568,7 +571,7 @@ class InterToSvnRepository(InterRepository):
         return self._graph
 
     def copy_content(self, revision_id=None, pb=None, project=None,
-            mapping=None, limit=None):
+            mapping=None, limit=None, lossy=False):
         """See InterRepository.copy_content."""
         self.source.lock_read()
         try:
@@ -615,16 +618,22 @@ class InterToSvnRepository(InterRepository):
                     if base_foreign_revid is None:
                         target_project = None
                     else:
-                        (_, target_project, _, _) = layout.parse(base_foreign_revid[1])
+                        (_, target_project, _, _) = layout.parse(
+                            base_foreign_revid[1])
                     bp = determine_branch_path(rev, layout, target_project)
+                    mutter("pushing revision include %r to %s",
+                            rev.revision_id, bp)
                     target_config = self._get_branch_config(bp)
-                    push_merged = (layout.push_merged_revisions(target_project) and
+                    push_merged = (
+                        layout.push_merged_revisions(target_project) and
                         target_config.get_push_merged_revisions())
-                    root_action = self._get_root_action(bp, rev.parent_ids, overwrite=False,
+                    root_action = self._get_root_action(bp, rev.parent_ids,
+                        overwrite=False,
                         append_revisions_only=target_config.get_append_revisions_only(True),
                         create_prefix=True)
-                    (pushed_revid, base_foreign_info) = self.push_revision_inclusive(
-                        bp, target_config, rev, push_metadata=True,
+                    (pushed_revid,
+                            base_foreign_info) = self.push_revision_inclusive(
+                        bp, target_config, rev, push_metadata=not lossy,
                         push_merged=push_merged, root_action=root_action,
                         layout=layout, project=target_project,
                         base_foreign_info=base_foreign_info)
@@ -658,7 +667,7 @@ class InterToSvnRepository(InterRepository):
         return True
 
 
-def determine_branch_path(rev, layout, project=None):
+def determine_branch_path(rev, layout, project=None, exclude=None):
     """Create a sane branch path to use for a revision.
 
     :param rev: Revision object
@@ -666,12 +675,19 @@ def determine_branch_path(rev, layout, project=None):
     :param project: Optional project name, as used by the layout
     :return: Branch path string
     """
+    if exclude is None:
+        exclude = []
+    bp = None
     nick = (rev.properties.get('branch-nick') or "merged")
     nick = nick.encode("utf-8").replace("/","_")
-    if project is None:
-        return layout.get_branch_path(nick)
-    else:
-        return layout.get_branch_path(nick, project)
+    while True:
+        if project is None:
+            bp = layout.get_branch_path(nick)
+        else:
+            bp = layout.get_branch_path(nick, project)
+        if bp not in exclude:
+            return bp
+        nick += '-merged'
 
 
 def create_branch_with_hidden_commit(repository, branch_path, revid,
