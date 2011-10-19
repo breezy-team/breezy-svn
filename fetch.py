@@ -1225,7 +1225,7 @@ class FetchRevisionFinder(object):
         return [k for k in revmetas if k in map and map[k] not in present_revids]
 
     def find_iter_revisions(self, iter, master_mapping, needs_manual_check,
-                            heads=None, pb=None):
+                            heads=None, pb=None, exclude_non_mainline=False):
         """Find revisions to fetch based on an iterator over available revmetas.
 
         :param iter: Iterator over RevisionMetadata objects
@@ -1261,7 +1261,8 @@ class FetchRevisionFinder(object):
                 if (lhs_parent_revmeta is not None and
                     needs_manual_check(lhs_parent_revmeta)):
                     self.needed.extend(self.find_mainline(
-                        lhs_parent_revmeta.metarev.get_foreign_revid(), lhsm))
+                        lhs_parent_revmeta.metarev.get_foreign_revid(), lhsm,
+                        exclude_non_mainline=exclude_non_mainline))
                 if lhsm != master_mapping or heads is not None:
                     needed_mappings[lhs_parent_revmeta].add(lhsm)
                 if not revmeta.is_hidden(m):
@@ -1285,7 +1286,8 @@ class FetchRevisionFinder(object):
         finally:
             pb.finished()
 
-    def find_mainline(self, foreign_revid, mapping, find_ghosts=False):
+    def find_mainline(self, foreign_revid, mapping, find_ghosts=False,
+                      exclude_non_mainline=False):
         if (foreign_revid, mapping) in self.checked:
             return []
         revmetas = deque()
@@ -1323,7 +1325,8 @@ class FetchRevisionFinder(object):
         for r in self.check_revmetas(needs_checking):
             revmetas.appendleft(r)
         # Determine if there are any RHS parents to fetch
-        self.extra.extend(self.find_rhs_parents(revmetas))
+        if not exclude_non_mainline:
+            self.extra.extend(self.find_rhs_parents(revmetas))
         return revmetas
 
     def find_rhs_parents(self, revmetas):
@@ -1339,7 +1342,8 @@ class FetchRevisionFinder(object):
                     if self.source.has_foreign_revision(foreign_revid):
                         yield (foreign_revid, rhs_mapping)
 
-    def find_until(self, foreign_revid, mapping, find_ghosts=False):
+    def find_until(self, foreign_revid, mapping, find_ghosts=False,
+                   exclude_non_mainline=False):
         """Find all missing revisions until revision_id
 
         :param revision_id: Stop revision
@@ -1350,7 +1354,8 @@ class FetchRevisionFinder(object):
         while len(self.extra) > 0:
             foreign_revid, mapping = self.extra.pop()
             self.needed.extend(self.find_mainline(foreign_revid, mapping,
-                find_ghosts=find_ghosts))
+                find_ghosts=find_ghosts,
+                exclude_non_mainline=exclude_non_mainline))
 
 
 class InterFromSvnRepository(InterRepository):
@@ -1561,7 +1566,8 @@ class InterFromSvnRepository(InterRepository):
         return FetchRevisionFinder(self.source, self.target, target_is_empty)
 
     def _get_needed(self, revision_id=None, fetch_spec=None, project=None,
-                    target_is_empty=False, find_ghosts=False):
+                    target_is_empty=False, find_ghosts=False,
+                    exclude_non_mainline=False):
         """Find the set of revisions that is missing.
 
         :note: revision_id and fetch_spec are mutually exclusive
@@ -1580,7 +1586,8 @@ class InterFromSvnRepository(InterRepository):
             foreign_revid, mapping = self.source.lookup_bzr_revision_id(
                 revision_id, project=project)
             revisionfinder.find_until(foreign_revid, mapping,
-                                      find_ghosts=find_ghosts)
+                                      find_ghosts=find_ghosts,
+                                      exclude_non_mainline=exclude_non_mainline)
         elif fetch_spec is not None:
             recipe = fetch_spec.get_recipe()
             if recipe[0] in ("search", "proxy-search"):
@@ -1591,14 +1598,15 @@ class InterFromSvnRepository(InterRepository):
                 foreign_revid, mapping = self.source.lookup_bzr_revision_id(
                     head, project=project)
                 revisionfinder.find_until(foreign_revid, mapping,
-                    find_ghosts=find_ghosts)
+                    find_ghosts=find_ghosts,
+                    exclude_non_mainline=exclude_non_mainline)
         else:
             revisionfinder.find_all(self.source.get_mapping())
         return revisionfinder.get_missing()
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
               needed=None, mapping=None, project=None, fetch_spec=None,
-              target_is_empty=False):
+              target_is_empty=False, exclude_non_mainline=False):
         """Fetch revisions. """
         if revision_id == NULL_REVISION:
             return
@@ -1615,7 +1623,8 @@ class InterFromSvnRepository(InterRepository):
             if needed is None:
                 needed = self._get_needed(target_is_empty=target_is_empty,
                     revision_id=revision_id, fetch_spec=fetch_spec,
-                    find_ghosts=find_ghosts, project=project)
+                    find_ghosts=find_ghosts, project=project,
+                    exclude_non_mainline=exclude_non_mainline)
 
             if len(needed) == 0:
                 # Nothing to fetch

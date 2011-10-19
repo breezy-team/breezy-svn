@@ -571,7 +571,7 @@ class InterToSvnRepository(InterRepository):
         return self._graph
 
     def copy_content(self, revision_id=None, pb=None, project=None,
-            mapping=None, limit=None, lossy=False):
+            mapping=None, limit=None, lossy=False, exclude_non_mainline=None):
         """See InterRepository.copy_content."""
         self.source.lock_read()
         try:
@@ -624,9 +624,16 @@ class InterToSvnRepository(InterRepository):
                     mutter("pushing revision include %r to %s",
                             rev.revision_id, bp)
                     target_config = self._get_branch_config(bp)
-                    push_merged = (
-                        layout.push_merged_revisions(target_project) and
-                        target_config.get_push_merged_revisions())
+                    can_push_merged = layout.push_merged_revisions(target_project)
+                    if exclude_non_mainline is None:
+                        push_merged = can_push_merged and (
+                            target_config.get_push_merged_revisions())
+                    else:
+                        push_merged = (not exclude_non_mainline)
+                    if push_merged and not can_push_merged:
+                        raise BzrError(
+                            "Unable to push merged revisions, layout "
+                            "does not provide branch path")
                     root_action = self._get_root_action(bp, rev.parent_ids,
                         overwrite=False,
                         append_revisions_only=target_config.get_append_revisions_only(True),
@@ -644,7 +651,7 @@ class InterToSvnRepository(InterRepository):
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
         fetch_spec=None, project=None, mapping=None, target_is_empty=False,
-        limit=None):
+        limit=None, exclude_non_mainline=True):
         """Fetch revisions. """
         if fetch_spec is not None:
             recipe = fetch_spec.get_recipe()
@@ -654,10 +661,12 @@ class InterToSvnRepository(InterRepository):
                 raise AssertionError("Unknown search type %s" % recipe[0])
             for revid in heads:
                 self.copy_content(revision_id=revid, pb=pb, project=project,
-                    mapping=mapping, limit=limit)
+                    mapping=mapping, limit=limit,
+                    exclude_non_mainline=exclude_non_mainline)
         else:
             self.copy_content(revision_id=revision_id, pb=pb, project=project,
-                mapping=mapping, limit=limit)
+                    mapping=mapping, limit=limit,
+                    exclude_non_mainline=exclude_non_mainline)
 
     @staticmethod
     def is_compatible(source, target):
