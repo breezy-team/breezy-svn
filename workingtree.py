@@ -1411,7 +1411,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     @needs_tree_write_lock
     def set_merge_modified(self, modified_hashes):
-        mutter('merge modified: %r', modified_hashes)
         def iter_stanzas():
             for file_id, hash in modified_hashes.iteritems():
                 yield _mod_rio.Stanza(file_id=file_id.decode('utf8'),
