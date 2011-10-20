@@ -584,8 +584,6 @@ class SvnCommitBuilder(CommitBuilder):
     def _generate_revision_if_needed(self):
         """See CommitBuilder._generate_revision_if_needed()."""
         self.random_revid = (self._new_revision_id is None)
-        if self._new_revision_id is not None:
-            return
 
     def _get_revision_id_if_metadata(self):
          if self.push_metadata and self._new_revision_id is None:
@@ -735,7 +733,8 @@ class SvnCommitBuilder(CommitBuilder):
                 continue
             child_path = osutils.pathjoin(path, ie.name)
             self._override_file_ids[child_path] = fid
-            self._override_text_revisions[child_path] = self.old_tree.get_file_revision(fid)
+            self._override_text_revisions[child_path] = (
+                    self.old_tree.get_file_revision(fid))
             if ie.kind == 'directory':
                 self._update_moved_dir_child_file_ids(child_path, fid)
 
@@ -966,8 +965,7 @@ class SvnCommitBuilder(CommitBuilder):
                 return
             self._visit_dirs.add(path)
 
-    def _get_text_revision(self, new_ie, new_path, parent_trees,
-            force_change=False):
+    def _get_text_revision(self, new_ie, new_path, parent_trees, force_change=False):
         parent_text_revisions = []
         # Compare with the older versions of this file in the parent trees.
         # Separately track those entries that have the exact same properties,
@@ -1015,6 +1013,49 @@ class SvnCommitBuilder(CommitBuilder):
     def record_delete(self, path, file_id):
         raise NotImplementedError(self.record_delete)
 
+    def _get_file_with_stat(self, tree, file_id):
+        def dummy_get_file_with_stat(file_id):
+            return tree.get_file(file_id), None
+        return getattr(tree, "get_file_with_stat",
+                dummy_get_file_with_stat)(file_id)
+
+    def _record_change(self, tree, parent_trees,
+            file_id, (old_path, new_path), new_kind, new_name, new_parent_id,
+            new_executable, force_change=False):
+        self._override_file_ids[new_path] = file_id
+        new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
+        if new_kind == 'file':
+            new_ie.executable = new_executable
+            file_obj, stat_val = self._get_file_with_stat(tree, file_id)
+            new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
+            (new_ie.revision, unusual_text_parents) = self._get_text_revision(
+                new_ie, new_path, parent_trees, force_change=force_change)
+            self.modified_files[file_id] = get_svn_file_delta_transmitter(
+                tree, self.old_tree, file_id, new_path, new_ie)
+            if new_ie.revision is None:
+                yield file_id, new_path, (new_ie.text_sha1, stat_val)
+        elif new_kind == 'symlink':
+            new_ie.symlink_target = tree.get_symlink_target(file_id)
+            new_ie.revision, unusual_text_parents = self._get_text_revision(
+                new_ie, new_path, parent_trees, force_change=force_change)
+            self.modified_files[file_id] = get_svn_file_delta_transmitter(
+                tree, self.old_tree, file_id, new_path, new_ie)
+        elif new_kind == 'directory':
+            (new_ie.revision, unusual_text_parents) = self._get_text_revision(
+                new_ie, new_path, parent_trees, force_change=force_change)
+            self._visit_dirs.add(new_path)
+            self._touched_dirs.add((new_path, file_id))
+        else:
+            raise AssertionError("unknown kind %r" % new_kind)
+        self._override_text_revisions[new_path] = new_ie.revision
+        self._override_text_parents[new_path] = unusual_text_parents
+        self._visit_parent_dirs(new_path)
+        self._updated[file_id] = (new_path, new_ie)
+        self._updated_children[new_parent_id].add(file_id)
+        self._basis_delta.append((old_path, new_path, file_id, new_ie))
+        if new_path == "":
+            self.new_root_id = file_id
+
     def record_iter_changes(self, tree, basis_revision_id, iter_changes):
         """Record a new tree via iter_changes.
 
@@ -1038,10 +1079,6 @@ class SvnCommitBuilder(CommitBuilder):
         if self.base_revid != basis_revision_id:
             raise AssertionError("Invalid basis revision %s != %s" %
                 (self.base_revid, basis_revision_id))
-        def dummy_get_file_with_stat(file_id):
-            return tree.get_file(file_id), None
-        get_file_with_stat = getattr(tree, "get_file_with_stat",
-                dummy_get_file_with_stat)
         for (file_id, (old_path, new_path), changed_content,
              (old_ver, new_ver), (old_parent_id, new_parent_id),
              (old_name, new_name), (old_kind, new_kind),
@@ -1050,40 +1087,10 @@ class SvnCommitBuilder(CommitBuilder):
                 self._basis_delta.append((old_path, None, file_id, None))
                 self._deleted_fileids.add(file_id)
             else:
-                self._override_file_ids[new_path] = file_id
-                new_ie = entry_factory[new_kind](file_id, new_name,
-                        new_parent_id)
-                if new_kind == 'file':
-                    new_ie.executable = new_executable
-                    file_obj, stat_val = get_file_with_stat(file_id)
-                    new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
-                    (new_ie.revision, unusual_text_parents) = self._get_text_revision(
-                        new_ie, new_path, parent_trees)
-                    self.modified_files[file_id] = get_svn_file_delta_transmitter(
-                        tree, self.old_tree, file_id, new_path, new_ie)
-                    if new_ie.revision is None:
-                        yield file_id, new_path, (new_ie.text_sha1, stat_val)
-                elif new_kind == 'symlink':
-                    new_ie.symlink_target = tree.get_symlink_target(file_id)
-                    new_ie.revision, unusual_text_parents = self._get_text_revision(
-                        new_ie, new_path, parent_trees)
-                    self.modified_files[file_id] = get_svn_file_delta_transmitter(
-                        tree, self.old_tree, file_id, new_path, new_ie)
-                elif new_kind == 'directory':
-                    (new_ie.revision, unusual_text_parents) = self._get_text_revision(
-                        new_ie, new_path, parent_trees)
-                    self._visit_dirs.add(new_path)
-                    self._touched_dirs.add((new_path, file_id))
-                else:
-                    raise AssertionError("unknown kind %r" % new_kind)
-                self._override_text_revisions[new_path] = new_ie.revision
-                self._override_text_parents[new_path] = unusual_text_parents
-                self._visit_parent_dirs(new_path)
-                self._updated[file_id] = (new_path, new_ie)
-                self._updated_children[new_parent_id].add(file_id)
-                self._basis_delta.append((old_path, new_path, file_id, new_ie))
-                if new_path == "":
-                    self.new_root_id = file_id
+                for data in self._record_change(
+                        tree, parent_trees, file_id, (old_path, new_path),
+                        new_kind, new_name, new_parent_id, new_executable):
+                    yield data
             # Old path parent needs to be visited in case file_id was removed
             # from it but there were no other changes there.
             if old_path not in (None, new_path):
