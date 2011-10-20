@@ -450,8 +450,10 @@ class SvnCommitBuilder(CommitBuilder):
             self.base_revid = NULL_REVISION
 
         if graph is None:
-            graph = self.repository.get_graph()
-        self.base_revno = graph.find_distance_to_null(self.base_revid, [])
+            self.graph = self.repository.get_graph()
+        else:
+            self.graph = graph
+        self.base_revno = self.graph.find_distance_to_null(self.base_revid, [])
         self.base_foreign_revid = base_foreign_revid
         if self.base_revid == NULL_REVISION:
             self._base_revmeta = None
@@ -482,9 +484,6 @@ class SvnCommitBuilder(CommitBuilder):
             self.old_tree = old_tree
 
         self.new_root_id = self.old_tree.get_root_id()
-
-        # Determine revisions merged in this one
-        merges = filter(lambda x: x != self.base_revid, parents)
 
         self._deleted_fileids = set()
         self._updated_children = defaultdict(set)
@@ -524,27 +523,36 @@ class SvnCommitBuilder(CommitBuilder):
                 # properties
                 self.mapping.export_revprop_redirect(
                     self.repository.get_latest_revnum()+1, self._svnprops)
+        self._testament = testament
+
+    def _update_properties(self):
         revno = self.base_revno + 1
         if self.set_custom_fileprops:
             self.mapping.export_revision_fileprops(self._svnprops,
-                timestamp, timezone, committer, revprops,
-                self._new_revision_id, revno, parents, testament=testament)
+                self._timestamp, self._timezone, self._committer,
+                self._revprops, self._new_revision_id, revno, self.parents,
+                testament=self._testament)
         if self.set_custom_revprops:
             self.mapping.export_revision_revprops(
                 self._svn_revprops, self.repository.uuid,
-                self.branch_path, timestamp, timezone, committer, revprops,
-                self._new_revision_id, revno, parents, testament=testament)
+                self.branch_path, self._timestamp, self._timezone,
+                self._committer, self._revprops,
+                self._new_revision_id, revno, self.parents,
+                testament=self._testament)
+
+        # Determine revisions merged in this one
+        merges = filter(lambda x: x != self.base_revid, self.parents)
 
         if len(merges) > 0:
             old_svk_merges = self._base_branch_props.get(SVN_PROP_SVK_MERGE, "")
             def lookup_revid(revid):
-                return repository.lookup_bzr_revision_id(revid,
+                return self.repository.lookup_bzr_revision_id(revid,
                     foreign_sibling=self.base_foreign_revid)
             new_svk_merges = update_svk_features(old_svk_merges, merges, lookup_revid)
             if new_svk_merges is not None:
                 self._svnprops[SVN_PROP_SVK_MERGE] = new_svk_merges
 
-            new_mergeinfo = update_mergeinfo(lookup_revid, graph,
+            new_mergeinfo = update_mergeinfo(lookup_revid, self.graph,
                 self._base_branch_props.get(properties.PROP_MERGEINFO, ""),
                 self.base_revid, merges)
             if new_mergeinfo is not None:
@@ -576,6 +584,15 @@ class SvnCommitBuilder(CommitBuilder):
     def _generate_revision_if_needed(self):
         """See CommitBuilder._generate_revision_if_needed()."""
         self.random_revid = (self._new_revision_id is None)
+        if self._new_revision_id is not None:
+            return
+
+    def _get_revision_id_if_metadata(self):
+         if self.push_metadata and self._new_revision_id is None:
+            # Generate a revision id here, in case it's needed later
+            # to put into the text revision fields
+            self._new_revision_id = self._gen_revision_id()
+         return self._new_revision_id
 
     def finish_inventory(self):
         """See CommitBuilder.finish_inventory()."""
@@ -727,6 +744,7 @@ class SvnCommitBuilder(CommitBuilder):
         """Finish the commit.
 
         """
+        self._update_properties()
         self._check_properties()
         bp_parts = self.branch_path.split("/")
         lock = self.repository.transport.lock_write(".")
@@ -979,7 +997,7 @@ class SvnCommitBuilder(CommitBuilder):
                 heads.append(p)
                 heads_set.remove(p)
         if force_change:
-            return self._new_revision_id, heads
+            return self._get_revision_id_if_metadata(), heads
         if (len(heads) == 1 and
             heads[0] in carry_over_candidates):
             # carry over situation
