@@ -279,7 +279,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
 
     def all_file_ids(self):
         # FIXME
-        return set(self._bzr_inventory)
+        return set(self.inventory)
 
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
         # FIXME
