@@ -422,6 +422,7 @@ class SvnCommitBuilder(CommitBuilder):
         :param testament: A Testament object to store
         :param root_action: Action to take on the branch root
         """
+        self.push_metadata = push_metadata
         super(SvnCommitBuilder, self).__init__(repository, parents,
             config, timestamp, timezone, committer, revprops, revision_id)
         self._basis_delta = []
@@ -432,9 +433,7 @@ class SvnCommitBuilder(CommitBuilder):
 
         # revision ids are either specified or predictable
         self.revmeta = None
-        self.random_revid = (self._new_revision_id is None)
         self.branch_path = branch_path
-        self.push_metadata = push_metadata
         self.root_action = root_action
         self._override_file_ids = {}
         self._override_text_revisions = {}
@@ -529,12 +528,12 @@ class SvnCommitBuilder(CommitBuilder):
         if self.set_custom_fileprops:
             self.mapping.export_revision_fileprops(self._svnprops,
                 timestamp, timezone, committer, revprops,
-                revision_id, revno, parents, testament=testament)
+                self._new_revision_id, revno, parents, testament=testament)
         if self.set_custom_revprops:
             self.mapping.export_revision_revprops(
                 self._svn_revprops, self.repository.uuid,
                 self.branch_path, timestamp, timezone, committer, revprops,
-                revision_id, revno, parents, testament=testament)
+                self._new_revision_id, revno, parents, testament=testament)
 
         if len(merges) > 0:
             old_svk_merges = self._base_branch_props.get(SVN_PROP_SVK_MERGE, "")
@@ -576,6 +575,7 @@ class SvnCommitBuilder(CommitBuilder):
 
     def _generate_revision_if_needed(self):
         """See CommitBuilder._generate_revision_if_needed()."""
+        self.random_revid = (self._new_revision_id is None)
 
     def finish_inventory(self):
         """See CommitBuilder.finish_inventory()."""
@@ -902,7 +902,7 @@ class SvnCommitBuilder(CommitBuilder):
         return revid
 
     def _get_actual_revision_id(self):
-        if not self.random_revid:
+        if self._new_revision_id is not None:
             return self._new_revision_id
         elif self.revmeta is not None:
             return self.revmeta.get_revision_id(self.mapping)
