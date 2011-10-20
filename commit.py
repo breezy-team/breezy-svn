@@ -585,14 +585,6 @@ class SvnCommitBuilder(CommitBuilder):
         """See CommitBuilder._generate_revision_if_needed()."""
         self.random_revid = (self._new_revision_id is None)
 
-    def _get_revision_id_if_metadata(self):
-         if self.push_metadata and self._new_revision_id is None:
-            # Generate a revision id here, in case it's needed later
-            # to put into the text revision fields
-            self.mutter('generating a random revid')
-            self._new_revision_id = self._gen_revision_id()
-         return self._new_revision_id
-
     def finish_inventory(self):
         """See CommitBuilder.finish_inventory()."""
         pass
@@ -997,7 +989,7 @@ class SvnCommitBuilder(CommitBuilder):
                 heads.append(p)
                 heads_set.remove(p)
         if force_change:
-            return self._get_revision_id_if_metadata(), heads
+            return None, heads
         if (len(heads) == 1 and
             heads[0] in carry_over_candidates):
             # carry over situation
@@ -1104,10 +1096,10 @@ class SvnCommitBuilder(CommitBuilder):
             for data in self._require_root_change(tree, parent_trees):
                 yield data
         if len(self.parents) > 1 and self.push_metadata:
-            for data in self._record_last_modified_merges(parent_trees):
+            for data in self._record_last_modified_merges(tree, parent_trees):
                 yield data
 
-    def _record_last_modified_merges(self, parent_trees):
+    def _record_last_modified_merges(self, tree, parent_trees):
         for file_id in parent_trees[0].all_file_ids():
             if file_id in self._updated:
                 # Already updated, no need to do so again
@@ -1129,7 +1121,7 @@ class SvnCommitBuilder(CommitBuilder):
                 else:
                     parent_id = parent_trees[0].path2id("")
                     name = path
-                for data in self._record_change(parent_trees[0], parent_trees,
+                for data in self._record_change(tree, parent_trees,
                     file_id, (path, path), parent_trees[0].kind(file_id),
                     name, parent_id,
                     parent_trees[0].is_executable(file_id, path),
