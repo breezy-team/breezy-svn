@@ -1225,7 +1225,7 @@ class FetchRevisionFinder(object):
         return [k for k in revmetas if k in map and map[k] not in present_revids]
 
     def find_iter_revisions(self, iter, master_mapping, needs_manual_check,
-                            heads=None, pb=None, exclude_non_mainline=False):
+                            heads=None, pb=None, exclude_non_mainline=None):
         """Find revisions to fetch based on an iterator over available revmetas.
 
         :param iter: Iterator over RevisionMetadata objects
@@ -1287,7 +1287,7 @@ class FetchRevisionFinder(object):
             pb.finished()
 
     def find_mainline(self, foreign_revid, mapping, find_ghosts=False,
-                      exclude_non_mainline=False):
+                      exclude_non_mainline=None):
         if (foreign_revid, mapping) in self.checked:
             return []
         revmetas = deque()
@@ -1325,6 +1325,11 @@ class FetchRevisionFinder(object):
         for r in self.check_revmetas(needs_checking):
             revmetas.appendleft(r)
         # Determine if there are any RHS parents to fetch
+        if exclude_non_mainline is None:
+            # FIXME JRV 2011-10-20: Fetching non-mainline revisions
+            # doesn't work yet - they end up on the branch mainline
+            # and cause diverged branch errors.
+            exclude_non_mainline = isinstance(self.target, SvnRepository)
         if not exclude_non_mainline:
             self.extra.extend(self.find_rhs_parents(revmetas))
         return revmetas
@@ -1343,7 +1348,7 @@ class FetchRevisionFinder(object):
                         yield (foreign_revid, rhs_mapping)
 
     def find_until(self, foreign_revid, mapping, find_ghosts=False,
-                   exclude_non_mainline=False):
+                   exclude_non_mainline=None):
         """Find all missing revisions until revision_id
 
         :param revision_id: Stop revision
@@ -1567,7 +1572,7 @@ class InterFromSvnRepository(InterRepository):
 
     def _get_needed(self, revision_id=None, fetch_spec=None, project=None,
                     target_is_empty=False, find_ghosts=False,
-                    exclude_non_mainline=False):
+                    exclude_non_mainline=None):
         """Find the set of revisions that is missing.
 
         :note: revision_id and fetch_spec are mutually exclusive
@@ -1606,7 +1611,7 @@ class InterFromSvnRepository(InterRepository):
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
               needed=None, mapping=None, project=None, fetch_spec=None,
-              target_is_empty=False, exclude_non_mainline=False):
+              target_is_empty=False, exclude_non_mainline=None):
         """Fetch revisions. """
         if revision_id == NULL_REVISION:
             return

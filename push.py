@@ -653,7 +653,7 @@ class InterToSvnRepository(InterRepository):
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
         fetch_spec=None, project=None, mapping=None, target_is_empty=False,
-        limit=None, exclude_non_mainline=False):
+        limit=None, exclude_non_mainline=None):
         """Fetch revisions. """
         if fetch_spec is not None:
             recipe = fetch_spec.get_recipe()

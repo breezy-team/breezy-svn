@@ -801,7 +801,7 @@ class InterFromSvnBranch(GenericInterBranch):
         return [(SvnBranchFormat(), branch_format_registry.get_default())]
 
     def fetch(self, stop_revision=None, fetch_tags=None, find_ghosts=False,
-              limit=None, exclude_non_mainline=False):
+              limit=None, exclude_non_mainline=None):
         """See InterBranch.fetch."""
         # we fetch here so that we don't process data twice in the
         # common case of having something to pull, and so that the
@@ -830,7 +830,7 @@ class InterFromSvnBranch(GenericInterBranch):
                 exclude_non_mainline=exclude_non_mainline)
 
     def _fetch_revmetas(self, revmetas, find_ghosts=False, limit=None,
-            exclude_non_mainline=False):
+            exclude_non_mainline=None):
         interrepo = InterFromSvnRepository(self.source.repository,
             self.target.repository)
         revisionfinder = interrepo.get_revision_finder()
@@ -1095,7 +1095,7 @@ class InterToSvnBranch(InterBranch):
         return self.push(lossy=True, stop_revision=stop_revision)
 
     def fetch(self, stop_revision=None, fetch_tags=None, find_ghosts=False,
-            limit=None, exclude_non_mainline=True):
+            limit=None, exclude_non_mainline=None):
         """Fetch into a subversion repository."""
         # FIXME: Handle fetch_tags
         # FIXME: Handle find_ghosts
