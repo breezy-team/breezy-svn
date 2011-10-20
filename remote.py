@@ -25,6 +25,7 @@ from bzrlib import (
     trace,
     urlutils,
     )
+from bzrlib.branch import InterBranch
 from bzrlib.controldir import (
     ControlDirFormat,
     ControlDir,
@@ -312,19 +313,21 @@ class SvnRemoteAccess(ControlDir):
             source_branch = None
             project = None
             mapping = None
-            revision_id = None
         else:
-            if revision_id is None:
-                revision_id = source_branch.last_revision()
             project = source_branch.project
             mapping = source_branch.mapping
         interrepo.fetch(revision_id=revision_id,
             project=project, mapping=mapping,
-            target_is_empty=target_is_empty)
+            target_is_empty=target_is_empty,
+            exclude_non_mainline=False)
         if source_branch is not None:
+            if revision_id is None:
+                revision_id = source_branch.last_revision()
             result_branch = source_branch.sprout(result,
                 revision_id=revision_id, repository=result_repo)
-            result_branch.fetch(source_branch, last_revision=revision_id) # For the tags
+            interbranch = InterBranch.get(source_branch, result_branch)
+            interbranch.fetch(stop_revision=revision_id,
+                    exclude_non_mainline=False) # For the tags
         else:
             result_branch = result.create_branch()
         if (create_tree_if_local and isinstance(target_transport, LocalTransport)
