@@ -589,6 +589,7 @@ class SvnCommitBuilder(CommitBuilder):
          if self.push_metadata and self._new_revision_id is None:
             # Generate a revision id here, in case it's needed later
             # to put into the text revision fields
+            trace.mutter('generating a random revid')
             self._new_revision_id = self._gen_revision_id()
          return self._new_revision_id
 
@@ -965,7 +966,8 @@ class SvnCommitBuilder(CommitBuilder):
                 return
             self._visit_dirs.add(path)
 
-    def _get_text_revision(self, new_ie, new_path, parent_trees, force_change=False):
+    def _get_text_revision(self, new_ie, new_path, parent_trees,
+            force_change=False):
         parent_text_revisions = []
         # Compare with the older versions of this file in the parent trees.
         # Separately track those entries that have the exact same properties,
@@ -1099,7 +1101,8 @@ class SvnCommitBuilder(CommitBuilder):
                 self._any_changes = True
         if self.new_root_id is None or self._rich_root_bump:
             # housekeeping root entry changes do not affect no-change commits.
-            self._require_root_change(tree, parent_trees)
+            for data in self._require_root_change(tree, parent_trees):
+                yield data
 
     def _require_root_change(self, tree, parent_trees):
         """Enforce an appropriate root object change.
@@ -1111,21 +1114,15 @@ class SvnCommitBuilder(CommitBuilder):
         """
         if len(self.parents) == 0 and not self._rich_root_bump:
             raise RootMissing()
-        self.new_root_id = tree.get_root_id()
-        assert self.new_root_id is not None
-        new_ie = entry_factory['directory'](self.new_root_id, '', None)
         if len(self.parents) == 0:
             old_path = None
         else:
             old_path = ""
-        (new_ie.revision, unusual_text_parents) = self._get_text_revision(
-            new_ie, "", parent_trees, force_change=True)
-        self._override_text_revisions[""] = new_ie.revision
-        self._override_text_parents[""] = unusual_text_parents
-        trace.mutter('root file id: %r, revision %r, parents: %r',
-               new_ie.file_id, new_ie.revision, unusual_text_parents)
-        self._updated[self.new_root_id] = ("", new_ie)
-        self._basis_delta.append((old_path, '', new_ie.file_id, new_ie))
+        trace.mutter('rich root bump')
+        for data in self._record_change(tree, parent_trees, tree.get_root_id(),
+                (old_path, ""), "directory", "", None, False,
+                force_change=self._rich_root_bump):
+            yield data
 
     def any_changes(self):
         return self._any_changes
