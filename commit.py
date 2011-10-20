@@ -589,7 +589,7 @@ class SvnCommitBuilder(CommitBuilder):
          if self.push_metadata and self._new_revision_id is None:
             # Generate a revision id here, in case it's needed later
             # to put into the text revision fields
-            trace.mutter('generating a random revid')
+            self.mutter('generating a random revid')
             self._new_revision_id = self._gen_revision_id()
          return self._new_revision_id
 
@@ -1077,7 +1077,7 @@ class SvnCommitBuilder(CommitBuilder):
             try:
                 parent_trees.append(self.repository.revision_tree(p))
             except NoSuchRevision:
-                trace.mutter('missing parent tree %r', p)
+                self.mutter('missing parent tree %r', p)
         if self.base_revid != basis_revision_id:
             raise AssertionError("Invalid basis revision %s != %s" %
                 (self.base_revid, basis_revision_id))
@@ -1103,6 +1103,38 @@ class SvnCommitBuilder(CommitBuilder):
             # housekeeping root entry changes do not affect no-change commits.
             for data in self._require_root_change(tree, parent_trees):
                 yield data
+        if len(self.parents) > 1 and self.push_metadata:
+            for data in self._record_last_modified_merges(parent_trees):
+                yield data
+
+    def _record_last_modified_merges(self, parent_trees):
+        for file_id in parent_trees[0].all_file_ids():
+            if file_id in self._updated:
+                # Already updated, no need to do so again
+                continue
+            text_revisions = []
+            for ptree in parent_trees:
+                try:
+                    text_revisions.append(ptree.get_file_revision(file_id))
+                except NoSuchId:
+                    continue
+            heads = self._heads(text_revisions)
+            if len(heads) != 1:
+                self.mutter('last modified text merge for %r (%r)', file_id,
+                        text_revisions)
+                path = parent_trees[0].id2path(file_id)
+                if "/" in path:
+                    (parent, name) = path.rsplit("/", 1)
+                    parent_id = parent_trees[0].path2id(parent)
+                else:
+                    parent_id = parent_trees[0].path2id("")
+                    name = path
+                for data in self._record_change(parent_trees[0], parent_trees,
+                    file_id, (path, path), parent_trees[0].kind(file_id),
+                    name, parent_id,
+                    parent_trees[0].is_executable(file_id, path),
+                    force_change=True):
+                    yield data
 
     def _require_root_change(self, tree, parent_trees):
         """Enforce an appropriate root object change.
@@ -1118,7 +1150,6 @@ class SvnCommitBuilder(CommitBuilder):
             old_path = None
         else:
             old_path = ""
-        trace.mutter('rich root bump')
         for data in self._record_change(tree, parent_trees, tree.get_root_id(),
                 (old_path, ""), "directory", "", None, False,
                 force_change=self._rich_root_bump):
