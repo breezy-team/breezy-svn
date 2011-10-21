@@ -276,53 +276,57 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
 
         new_child_path = path_join(path, child_name.encode("utf-8"))
         full_new_child_path = branch_relative_path(new_child_path)
-        # add them if they didn't exist in base_tree or changed kind
-        if (not base_tree.has_id(child_ie.file_id) or
-            base_tree.kind(child_ie.file_id) != child_ie.kind):
-            mutter('adding %s %r', child_ie.kind, new_child_path)
+        child_editor = None
+        try:
+            # add them if they didn't exist in base_tree or changed kind
+            if (not base_tree.has_id(child_ie.file_id) or
+                base_tree.kind(child_ie.file_id) != child_ie.kind):
+                mutter('adding %s %r', child_ie.kind, new_child_path)
 
-            # Do a copy operation if at all possible, to make
-            # the log a bit easier to read for Subversion people
-            new_base = find_suitable_base(parents, child_ie)
-            if new_base is not None:
-                child_base_path = new_base[0].id2path(child_ie.file_id).encode("utf-8")
-                copyfrom_url = url_join_unescaped_path(new_base[1], child_base_path)
-                copyfrom_revnum = new_base[2]
+                # Do a copy operation if at all possible, to make
+                # the log a bit easier to read for Subversion people
+                new_base = find_suitable_base(parents, child_ie)
+                if new_base is not None:
+                    child_base_path = new_base[0].id2path(child_ie.file_id).encode("utf-8")
+                    copyfrom_url = url_join_unescaped_path(new_base[1], child_base_path)
+                    copyfrom_revnum = new_base[2]
+                else:
+                    # No suitable base found
+                    copyfrom_url = None
+                    copyfrom_revnum = -1
+
+                child_editor = dir_editor.add_file(full_new_child_path,
+                            copyfrom_url, copyfrom_revnum)
+                changed = True
+            # copy if they existed at different location
+            elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
+                    base_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
+                mutter('copy %s %r -> %r', child_ie.kind,
+                                  base_tree.id2path(child_ie.file_id),
+                                  new_child_path)
+                child_editor = dir_editor.add_file(full_new_child_path,
+                    url_join_unescaped_path(base_url,
+                        base_tree.id2path(child_ie.file_id).encode("utf-8")),
+                    base_revnum)
+                changed = True
+            # open if they existed at the same location
+            elif child_ie.file_id in modified_files:
+                mutter('open %s %r', child_ie.kind, new_child_path)
+                child_editor = dir_editor.open_file(full_new_child_path, base_revnum)
             else:
-                # No suitable base found
-                copyfrom_url = None
-                copyfrom_revnum = -1
+                # Old copy of the file was retained. No need to send changes
+                child_editor = None
 
-            child_editor = dir_editor.add_file(full_new_child_path,
-                        copyfrom_url, copyfrom_revnum)
-            changed = True
-        # copy if they existed at different location
-        elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
-                base_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
-            mutter('copy %s %r -> %r', child_ie.kind,
-                              base_tree.id2path(child_ie.file_id),
-                              new_child_path)
-            child_editor = dir_editor.add_file(full_new_child_path,
-                url_join_unescaped_path(base_url,
-                    base_tree.id2path(child_ie.file_id).encode("utf-8")),
-                base_revnum)
-            changed = True
-        # open if they existed at the same location
-        elif child_ie.file_id in modified_files:
-            mutter('open %s %r', child_ie.kind, new_child_path)
-            child_editor = dir_editor.open_file(full_new_child_path, base_revnum)
-        else:
-            # Old copy of the file was retained. No need to send changes
-            child_editor = None
-
-        # handle the file
-        if child_ie.file_id in modified_files:
-            changed = True
-            # The file editors implicitly close the file editor
-            modified_files[child_ie.file_id](child_editor)
-            del modified_files[child_ie.file_id]
-        elif child_editor is not None:
-            child_editor.close()
+            # handle the file
+            if child_ie.file_id in modified_files:
+                changed = True
+                # The file editors implicitly close the file editor
+                modified_files[child_ie.file_id](child_editor)
+                child_editor = None
+                del modified_files[child_ie.file_id]
+        finally:
+            if child_editor is not None:
+                child_editor.close()
 
     # Loop over subdirectories of file_id in new_inv
     for child_name, child_ie in iter_children(file_id):
@@ -330,60 +334,64 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
             continue
 
         new_child_path = path_join(path, child_name.encode("utf-8"))
-        # add them if they didn't exist in base_tree or changed kind
-        if (not base_tree.has_id(child_ie.file_id) or
-            base_tree.kind(child_ie.file_id) != child_ie.kind):
-            mutter('adding dir %r', child_ie.name)
+        child_editor = None
+        try:
+            # add them if they didn't exist in base_tree or changed kind
+            if (not base_tree.has_id(child_ie.file_id) or
+                base_tree.kind(child_ie.file_id) != child_ie.kind):
+                mutter('adding dir %r', child_ie.name)
 
-            # Do a copy operation if at all possible, to make
-            # the log a bit easier to read for Subversion people
-            new_base = find_suitable_base(parents, child_ie)
-            if new_base is not None:
-                child_base = new_base
-                child_base_path = new_base[0].id2path(child_ie.file_id).encode("utf-8")
-                assert isinstance(new_base[1], str)
-                copyfrom_url = url_join_unescaped_path(new_base[1], child_base_path)
-                copyfrom_revnum = new_base[2]
-            else:
-                # No suitable base found
-                child_base = (base_tree, base_url, base_revnum)
-                copyfrom_url = None
-                copyfrom_revnum = -1
+                # Do a copy operation if at all possible, to make
+                # the log a bit easier to read for Subversion people
+                new_base = find_suitable_base(parents, child_ie)
+                if new_base is not None:
+                    child_base = new_base
+                    child_base_path = new_base[0].id2path(child_ie.file_id).encode("utf-8")
+                    assert isinstance(new_base[1], str)
+                    copyfrom_url = url_join_unescaped_path(new_base[1], child_base_path)
+                    copyfrom_revnum = new_base[2]
+                else:
+                    # No suitable base found
+                    child_base = (base_tree, base_url, base_revnum)
+                    copyfrom_url = None
+                    copyfrom_revnum = -1
 
-            child_editor = dir_editor.add_directory(
-                branch_relative_path(new_child_path), copyfrom_url, copyfrom_revnum)
-            changed = True
-        # copy if they existed at different location
-        elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
-              base_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
-            old_child_path = base_tree.id2path(child_ie.file_id).encode("utf-8")
-            mutter('copy dir %r -> %r', old_child_path, new_child_path)
-            copyfrom_url = url_join_unescaped_path(base_url, old_child_path)
-            copyfrom_revnum = base_revnum
+                child_editor = dir_editor.add_directory(
+                    branch_relative_path(new_child_path), copyfrom_url, copyfrom_revnum)
+                changed = True
+            # copy if they existed at different location
+            elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
+                  base_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
+                old_child_path = base_tree.id2path(child_ie.file_id).encode("utf-8")
+                mutter('copy dir %r -> %r', old_child_path, new_child_path)
+                copyfrom_url = url_join_unescaped_path(base_url, old_child_path)
+                copyfrom_revnum = base_revnum
 
-            child_editor = dir_editor.add_directory(
-                branch_relative_path(new_child_path),
-                copyfrom_url, copyfrom_revnum)
-            changed = True
-            child_base = (base_tree, base_url, base_revnum)
-        # open if they existed at the same location and
-        # the directory was touched
-        elif new_child_path.decode('utf-8') in visit_dirs:
-            mutter('open dir %r', new_child_path)
-
-            child_editor = dir_editor.open_directory(
+                child_editor = dir_editor.add_directory(
                     branch_relative_path(new_child_path),
-                    base_revnum)
+                    copyfrom_url, copyfrom_revnum)
+                changed = True
+                child_base = (base_tree, base_url, base_revnum)
+            # open if they existed at the same location and
+            # the directory was touched
+            elif new_child_path.decode('utf-8') in visit_dirs:
+                mutter('open dir %r', new_child_path)
 
-            child_base = (base_tree, base_url, base_revnum)
-        else:
-            continue
+                child_editor = dir_editor.open_directory(
+                        branch_relative_path(new_child_path),
+                        base_revnum)
 
-        # Handle this directory
-        changed = dir_editor_send_changes(child_base, parents,
-            (iter_children, get_ie), new_child_path, child_ie.file_id,
-            child_editor, branch_path, modified_files, visit_dirs) or changed
-        child_editor.close()
+                child_base = (base_tree, base_url, base_revnum)
+            else:
+                continue
+
+            # Handle this directory
+            changed = dir_editor_send_changes(child_base, parents,
+                (iter_children, get_ie), new_child_path, child_ie.file_id,
+                child_editor, branch_path, modified_files, visit_dirs) or changed
+        finally:
+            if child_editor is not None:
+                child_editor.close()
 
     return changed
 
@@ -731,6 +739,14 @@ class SvnCommitBuilder(CommitBuilder):
             if ie.kind == 'directory':
                 self._update_moved_dir_child_file_ids(child_path, fid)
 
+    def _commit_done(self, *args):
+        """Callback that is called by the Subversion commit editor
+        once the commit finishes.
+
+        :param revision_data: Revision metadata
+        """
+        self.revision_metadata = args
+
     @convert_svn_error
     def commit(self, message):
         """Finish the commit.
@@ -769,16 +785,8 @@ class SvnCommitBuilder(CommitBuilder):
             message = message.rstrip("\n")
         self._svn_revprops[properties.PROP_REVISION_LOG] = message.encode("utf-8")
 
-        def done(*args):
-            """Callback that is called by the Subversion commit editor
-            once the commit finishes.
-
-            :param revision_data: Revision metadata
-            """
-            self.revision_metadata = args
-
         self.editor = convert_svn_error(self.conn.get_commit_editor)(
-                self._svn_revprops, done)
+                self._svn_revprops, self._commit_done)
         try:
             self.revision_metadata = None
             for prop in self._svn_revprops:
@@ -816,45 +824,45 @@ class SvnCommitBuilder(CommitBuilder):
                 branch_editors = self.open_branch_editors(root, bp_parts,
                     self.base_url, self.base_revnum, root_from,
                     self.root_action)
+                try:
+                    changed = dir_editor_send_changes(
+                            (self.old_tree, self.base_url, self.base_revnum),
+                            self._get_parents_tuples(),
+                            (self._iter_new_children, self._get_new_ie), "",
+                            self.new_root_id, branch_editors[-1],
+                            self.branch_path, self.modified_files,
+                            self._visit_dirs)
 
-                changed = dir_editor_send_changes(
-                        (self.old_tree, self.base_url, self.base_revnum),
-                        self._get_parents_tuples(),
-                        (self._iter_new_children, self._get_new_ie), "",
-                        self.new_root_id, branch_editors[-1],
-                        self.branch_path, self.modified_files,
-                        self._visit_dirs)
+                    if self.modified_files != {}:
+                        raise AssertionError("some modified files not sent: %r" %
+                            self.modified_files.keys())
 
-                if self.modified_files != {}:
-                    raise AssertionError("some modified files not sent: %r" %
-                        self.modified_files.keys())
+                    # Set all the revprops
+                    if self.push_metadata and self._svnprops.is_loaded:
+                        for prop, newvalue in self._svnprops.iteritems():
+                            oldvalue = self._base_branch_props.get(prop)
+                            if oldvalue == newvalue:
+                                continue
+                            self._changed_fileprops[prop] = (oldvalue, newvalue)
 
-                # Set all the revprops
-                if self.push_metadata and self._svnprops.is_loaded:
-                    for prop, newvalue in self._svnprops.iteritems():
-                        oldvalue = self._base_branch_props.get(prop)
-                        if oldvalue == newvalue:
-                            continue
-                        self._changed_fileprops[prop] = (oldvalue, newvalue)
+                    if self._changed_fileprops == {}:
+                        # Set dummy property, so Subversion will raise an error in case of
+                        # clashes.
+                        branch_editors[-1].change_prop(DUMMY_ROOT_PROPERTY_NAME,
+                            None)
 
-                if self._changed_fileprops == {}:
-                    # Set dummy property, so Subversion will raise an error in case of
-                    # clashes.
-                    branch_editors[-1].change_prop(DUMMY_ROOT_PROPERTY_NAME,
-                        None)
-
-                for prop, (oldvalue, newvalue) in self._changed_fileprops.iteritems():
-                        if not properties.is_valid_property_name(prop):
-                            trace.warning(
-                                "Setting property %r with invalid characters "
-                                "in name", prop)
-                        assert isinstance(newvalue, str)
-                        self.mutter("Setting root file property %r -> %r",
-                            prop, newvalue)
-                        branch_editors[-1].change_prop(prop, newvalue)
-
-                for dir_editor in reversed(branch_editors):
-                    dir_editor.close()
+                    for prop, (oldvalue, newvalue) in self._changed_fileprops.iteritems():
+                            if not properties.is_valid_property_name(prop):
+                                trace.warning(
+                                    "Setting property %r with invalid characters "
+                                    "in name", prop)
+                            assert isinstance(newvalue, str)
+                            self.mutter("Setting root file property %r -> %r",
+                                prop, newvalue)
+                            branch_editors[-1].change_prop(prop, newvalue)
+                finally:
+                    for dir_editor in reversed(branch_editors):
+                        dir_editor.close()
             except:
                 self.editor.abort()
                 raise
