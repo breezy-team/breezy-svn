@@ -785,7 +785,7 @@ class SvnCommitBuilder(CommitBuilder):
             message = message.rstrip("\n")
         self._svn_revprops[properties.PROP_REVISION_LOG] = message.encode("utf-8")
 
-        self.editor = convert_svn_error(self.conn.get_commit_editor)(
+        editor = convert_svn_error(self.conn.get_commit_editor)(
                 self._svn_revprops, self._commit_done)
         try:
             self.revision_metadata = None
@@ -816,7 +816,7 @@ class SvnCommitBuilder(CommitBuilder):
 
             try:
                 try:
-                    root = self.editor.open_root(self.base_revnum)
+                    root = editor.open_root(self.base_revnum)
                 except SubversionException, (msg, num):
                     if num == ERR_BAD_PROPERTY_VALUE:
                         raise ValueError("Invalid property contents: %r" % msg)
@@ -864,9 +864,10 @@ class SvnCommitBuilder(CommitBuilder):
                     for dir_editor in reversed(branch_editors):
                         dir_editor.close()
             except:
-                self.editor.abort()
+                editor.abort()
                 raise
-            self.editor.close()
+            else:
+                editor.close()
         finally:
             self.repository.transport.add_connection(self.conn)
             self.conn = None
