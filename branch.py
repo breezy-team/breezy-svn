@@ -1014,7 +1014,9 @@ class InterToSvnBranch(InterBranch):
     @staticmethod
     def _get_branch_formats_to_test():
         from bzrlib.branch import format_registry as branch_format_registry
-        return [(branch_format_registry.get_default(), SvnBranchFormat())]
+        return [
+            (branch_format_registry.get_default(), SvnBranchFormat()),
+            (SvnBranchFormat(), SvnBranchFormat())]
 
     def _target_is_empty(self, graph, revid):
         parent_revids = tuple(graph.get_parent_map([revid])[revid])
