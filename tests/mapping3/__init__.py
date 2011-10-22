@@ -584,9 +584,8 @@ class RepositoryTests(SubversionTestCase):
 
         mapping = repos.get_mapping()
 
-        self.assertEqual([repos.generate_revision_id(0, "", mapping), 
-                    repos.generate_revision_id(1, "", mapping)], 
-                branch.revision_history())
+        self.assertEqual((42, repos.generate_revision_id(1, "", mapping)),
+                branch.last_revision_info())
 
         dc = self.get_commit_editor(repos_url)
         dc.open_file("foo").modify()
@@ -597,11 +596,9 @@ class RepositoryTests(SubversionTestCase):
 
         mapping = repos.get_mapping()
 
-        self.assertEqual([
-            repos.generate_revision_id(0, "", mapping),
-            "mycommit",
-            repos.generate_revision_id(2, "", mapping)],
-            branch.revision_history())
+        self.assertEqual(
+            (43, repos.generate_revision_id(2, "", mapping)),
+            branch.last_revision_info())
 
 
 class ErrorTests(TestCase):
