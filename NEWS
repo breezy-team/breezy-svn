@@ -1,4 +1,4 @@
-bzr-svn 1.1.1					  UNRELEASED
+bzr-svn 1.1.1					  2011-10-25
 
  CHANGES
 
@@ -10,6 +10,9 @@ bzr-svn 1.1.1					  UNRELEASED
   * Support annotate in working trees. (Jelmer Vernooij)
 
   * Add basic i18n support. (Jelmer Vernooij)
+
+  * Now passes all bzr interface tests for repositories, branches,
+    working trees and control directories. (Jelmer Vernooij)
 
  BUG FIXES
 

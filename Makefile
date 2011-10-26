@@ -24,7 +24,7 @@ PYDOCTOR ?= pydoctor
 CTAGS ?= ctags
 PYLINT ?= pylint
 RST2HTML ?= $(if $(shell which rst2html.py 2>/dev/null), rst2html.py, rst2html)
-TESTS ?= -s bp.svn
+TESTS ?= "^bzrlib.plugins.svn." Subversion Svn
 DESTDIR ?=
 
 REST_DOCS = README FAQ AUTHORS
@@ -53,9 +53,6 @@ clean::
 
 check:: build-inplace
 	BZR_PLUGINS_AT=svn@$(shell pwd) $(DEBUGGER) $(PYTHON) $(PYTHON_OPTIONS) $(BZR) $(BZR_OPTIONS) selftest $(TEST_OPTIONS) $(TESTS)
-
-check-all::
-	$(MAKE) check TESTS="^bzrlib.plugins.svn. Subversion Svn"
 
 coverage::
 	$(MAKE) check BZR_OPTIONS="--coverage coverage"
