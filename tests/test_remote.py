@@ -19,7 +19,7 @@
 import os
 import subvertpy
 
-from bzrlib import osutils
+from bzrlib import osutils, transport
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import (
     BzrDir,
@@ -32,7 +32,7 @@ from bzrlib.errors import (
     NoWorkingTree,
     UnsupportedOperation,
     )
-from bzrlib.tests import TestCase
+from bzrlib.tests import TestCase, TestSkipped
 
 from bzrlib.plugins.svn.layout.standard import RootLayout, TrunkLayout
 from bzrlib.plugins.svn.remote import SvnRemoteFormat
@@ -51,6 +51,8 @@ class TestRemoteAccess(SubversionTestCase):
         old_tree.update()
 
         x = BzrDir.open("dc")
+        if not getattr(transport, "location_to_url", None):
+            raise TestSkipped("location_to_url not provided by bzr < 2.5")
         dir = x.clone("ec")
         new_tree = dir.open_workingtree()
         self.assertEquals(old_tree.branch.base, new_tree.branch.base)

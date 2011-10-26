@@ -288,8 +288,8 @@ class TestWorkingTree(SubversionTestCase):
         self.client_commit("dc", "Bla")
         self.client_update("dc")
         os.remove("dc/bl")
-        if bzrlib_version < (2, 4, 0):
-            raise KnownFailure("revert is known broken with bzr 2.3")
+        if bzrlib_version < (2, 5, 0):
+            raise KnownFailure("revert is known broken with bzr < 2.5")
         tree.revert(["bl"])
         self.assertCleanTree(tree)
         self.assertEqual("data", open('dc/bl').read())
