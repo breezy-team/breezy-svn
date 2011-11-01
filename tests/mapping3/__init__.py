@@ -560,7 +560,7 @@ class RepositoryTests(SubversionTestCase):
         self.assertEquals(tuple(bzr_parents),
                 trunk.repository.get_revision(revid2).parent_ids)
 
-        self.assertEquals([revid1, revid2], trunk.revision_history())
+        self.assertEquals((2, revid2), trunk.last_revision_info())
         self.assertEquals(
                 '1 initialrevid\n2 mergerevid\n',
                 self.client_get_prop(repos_url+"/trunk", SVN_PROP_BZR_REVISION_ID+"v3-trunk0",
@@ -570,8 +570,8 @@ class RepositoryTests(SubversionTestCase):
         repos_url = self.make_svn_repository('a')
 
         branch = Branch.open(repos_url)
-        self.assertEqual([branch.generate_revision_id(0)], 
-                branch.revision_history())
+        self.assertEqual((1, branch.generate_revision_id(0)),
+                branch.last_revision_info())
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()

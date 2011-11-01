@@ -224,11 +224,14 @@ class TestPush(SubversionTestCase):
         dc = self.commit_editor()
         foo = dc.add_dir("foo")
         foo.add_file("foo/bla").modify("data")
-        dc.close()
+        dc.close() #1
 
         self.svndir = BzrDir.open(self.repos_url)
         os.mkdir("dc")
         self.bzrdir = self.svndir.sprout("dc")
+
+        repo = self.svndir.open_repository()
+        self.revid1 = repo.generate_revision_id(1, "", repo.get_mapping())
 
     def commit_editor(self, message="Test commit"):
         return self.get_commit_editor(self.repos_url, message)
@@ -393,7 +396,7 @@ class TestPush(SubversionTestCase):
         wt = self.bzrdir.open_workingtree()
         wt.add('file')
         self.build_tree({'dc/foo/bla': 'data43243242'})
-        revid = wt.commit(message="Commit from Bzr")
+        revid = wt.commit(message="Commit from Bzr") #2
 
         self.svndir.open_branch().pull(self.bzrdir.open_branch())
 
@@ -406,7 +409,7 @@ class TestPush(SubversionTestCase):
             self.assertEqual(rtree.get_file_revision(rtree.path2id("file")),
                              revid)
             self.assertEqual(rtree.get_file_revision(rtree.path2id("foo")),
-                             b.revision_history()[1])
+                             self.revid1)
             self.assertEqual(rtree.get_file_revision(rtree.path2id("foo/bla")),
                              revid)
             self.assertEqual(rtree.get_revision_id(), b.last_revision())
@@ -897,9 +900,11 @@ class PushNewBranchTests(SubversionTestCase):
         newbranch = newdir.import_branch(bzrwt.branch)
         self.assertEquals(revid2, newbranch.last_revision())
         mapping = svnrepos.get_mapping()
-        self.assertEquals([
-            svnrepos.generate_revision_id(1, "trunk", mapping)
-            , revid1, revid2], newbranch.revision_history())
+        self.addCleanup(newbranch.lock_read().unlock)
+        graph = newbranch.repository.get_graph()
+        self.assertEquals([revid2, revid1,
+            svnrepos.generate_revision_id(1, "trunk", mapping)],
+            list(graph.iter_lefthand_ancestry(newbranch.last_revision())))
 
     def test_push_overwrite(self):
         repos_url = self.make_svn_repository("a")
