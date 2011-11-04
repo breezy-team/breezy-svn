@@ -50,6 +50,7 @@ from bzrlib.plugins.svn.mapping3.scheme import (
 SVN_PROP_BZR_BRANCHING_SCHEME = 'bzr:branching-scheme'
 
 class SchemeDerivedLayout(RepositoryLayout):
+
     def __init__(self, repository, scheme):
         self.repository = repository
         self.scheme = scheme
@@ -66,6 +67,9 @@ class SchemeDerivedLayout(RepositoryLayout):
         return (type, proj, bp, rp)
 
     def get_tag_name(self, path, project=None):
+        return path.split("/")[-1]
+
+    def get_branch_name(self, path, project=None):
         return path.split("/")[-1]
 
     def supports_tags(self):

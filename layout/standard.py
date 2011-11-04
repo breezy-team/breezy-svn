@@ -71,6 +71,9 @@ class TrunkLayout(RepositoryLayout):
         """
         return True
 
+    def get_branch_name(self, path, project=""):
+        return urlutils.split(path)[-1]
+
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.
 
@@ -190,6 +193,11 @@ class RootLayout(RepositoryLayout):
             raise svn_errors.NoCustomBranchPaths(self)
         return ""
 
+    def get_branch_name(self, path, project=""):
+        if path != "":
+            raise svn_errors.NoCustomBranchPaths(self)
+        return None
+
     def parse(self, path):
         """Parse a path.
 
@@ -248,6 +256,9 @@ class CustomLayout(RepositoryLayout):
 
         :param path: Path inside the repository.
         """
+        return None
+
+    def get_branch_name(self, path, project=""):
         return None
 
     def parse(self, path):
@@ -342,18 +353,28 @@ class WildcardLayout(RepositoryLayout):
                 "can only handle a single asterisk in tag path")
         return self.tags[0].replace("*", name)
 
+    def get_item_name(self, possibilities, path, project=""):
+        for p in possibilities:
+            if wildcard_matches(path, p):
+                for a, wc in zip(path.split("/"), p.split("/")):
+                    if "*" in wc:
+                        return a
+                return path.split("/")[-1]
+        return None
+
     def get_tag_name(self, path, project=""):
         """Determine the tag name from a tag path.
 
         :param path: Path inside the repository.
         """
-        for tp in self.tags:
-            if wildcard_matches(path, tp):
-                for a, wc in zip(path.split("/"), tp.split("/")):
-                    if "*" in wc:
-                        return a
-                return path.split("/")[-1]
-        return None
+        return self.get_item_name(self.tags, path, project)
+
+    def get_branch_name(self, path, project=""):
+        """Determine the tag name from a branch path.
+
+        :param path: Path inside the repository.
+        """
+        return self.get_item_name(self.branches, path, project)
 
     def is_branch(self, path, project=None):
         for bp in self.branches:
@@ -435,6 +456,9 @@ class InverseTrunkLayout(RepositoryLayout):
         :return: Path of the branch.
         """
         return urlutils.join("branches", project, name).strip("/")
+
+    def get_branch_name(self, path, project=""):
+        return urlutils.basename(path).strip("/")
 
     def parse(self, path):
         """Parse a path.

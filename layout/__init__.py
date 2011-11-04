@@ -69,6 +69,15 @@ class RepositoryLayout(object):
         """
         return False
 
+    def get_branch_name(self, path, project=""):
+        """Return the name of a branch from the path.
+
+        :param path: utf8-encoded branch path
+        :param project: Project identifier
+        :return: Unicode branch name, or None for default
+        """
+        raise NotImplementedError(self.get_branch_name)
+
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be
         found.

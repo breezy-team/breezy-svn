@@ -84,6 +84,12 @@ class TrunkLayoutTests(TestCase,LayoutTests):
         self.assertEquals("proj/a/branches/abranch",
             self.layout.get_branch_path("abranch", "proj/a"))
 
+    def test_get_branch_name(self):
+        self.assertEquals("abranch",
+            self.layout.get_branch_name("branches/abranch"))
+        self.assertEquals("trunk",
+            self.layout.get_branch_name("trunk"))
+
     def test_is_branch_parent(self):
         self.assertEquals(True, self.layout.is_branch_parent("foo/bar"))
 
@@ -193,6 +199,14 @@ class WildcardLayoutTests(TestCase):
         self.assertEquals("bla", x.get_tag_name("tags/bla"))
         x = WildcardLayout(["trunk"], ["tags/bla"])
         self.assertEquals(None, x.get_tag_name("bla"))
+
+    def test_get_branch_name(self):
+        x = WildcardLayout(["trunk"], ["tags/*"])
+        self.assertEquals("trunk", x.get_branch_name("trunk"))
+        x = WildcardLayout(["trunk"], ["tags/bla"])
+        self.assertEquals(None, x.get_branch_name("tags/bla"))
+        x = WildcardLayout(["trunk"], ["tags/bla"])
+        self.assertEquals(None, x.get_branch_name("bla"))
 
     def test_get_tag_path(self):
         x = WildcardLayout(["trunk"], ["tags/*"])
