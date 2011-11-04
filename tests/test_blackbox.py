@@ -27,7 +27,6 @@ from bzrlib.tests.blackbox import ExternalBase
 from bzrlib.plugins.svn.convert import load_dumpfile
 from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
-    TrunkLayout,
     )
 from bzrlib.plugins.svn.tests import SubversionTestCase
 
