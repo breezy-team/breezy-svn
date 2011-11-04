@@ -26,6 +26,7 @@ import stat
 import subvertpy
 
 from subvertpy import (
+    ERR_BAD_FILENAME,
     ERR_WC_UNSUPPORTED_FORMAT,
     properties,
     )
@@ -127,9 +128,6 @@ from bzrlib.plugins.svn.tree import (
 # Compatibility with bzr < 2.5
 get_transport_from_path = getattr(_mod_transport, "get_transport_from_path",
         _mod_transport.get_transport)
-
-# Compatibility with subvertpy < 0.8.6
-ERR_BAD_FILENAME = getattr(subvertpy, "ERR_BAD_FILENAME", 125001)
 
 # Compatibility with subvertpy < 0.8.9
 ERR_WC_NODE_KIND_CHANGE = getattr(subvertpy, "ERR_WC_NODE_KIND_CHANGE", 155018)

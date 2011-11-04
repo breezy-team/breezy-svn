@@ -161,7 +161,6 @@ class SvnRemoteFormat(ControlDirFormat):
         import subvertpy
         from subvertpy import repos
         # For subvertpy < 0.8.6
-        ERR_DIR_NOT_EMPTY = getattr(subvertpy, "ERR_DIR_NOT_EMPTY", 200011)
 
         if not isinstance(transport, LocalTransport):
             raise UninitializableOnRemoteTransports(self)
@@ -171,7 +170,7 @@ class SvnRemoteFormat(ControlDirFormat):
         try:
             repos.create(local_path)
         except subvertpy.SubversionException, (_, num):
-            if num == ERR_DIR_NOT_EMPTY:
+            if num == subvertpy.ERR_DIR_NOT_EMPTY:
                 raise errors.BzrError("Directory is not empty")
             raise
         # All revision property changes

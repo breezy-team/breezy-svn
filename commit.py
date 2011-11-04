@@ -22,8 +22,8 @@ from collections import defaultdict
 from cStringIO import (
     StringIO,
     )
-import subvertpy
 from subvertpy import (
+    ERR_BAD_PROPERTY_VALUE ,
     ERR_FS_NOT_DIRECTORY,
     ERR_REPOS_DISABLED_FEATURE,
     delta,
@@ -79,8 +79,6 @@ from bzrlib.plugins.svn.util import (
     )
 
 DUMMY_ROOT_PROPERTY_NAME = "bzr:svn:dummy"
-
-ERR_BAD_PROPERTY_VALUE = getattr(subvertpy, "ERR_BAD_PROPERTY_VALUE", 125005)
 
 _fileprops_warned_repos = set()
 
