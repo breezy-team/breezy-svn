@@ -340,6 +340,20 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
                 self.invalid_text_revisions += 1
 
 
+_optimizers_registered = False
+def lazy_register_optimizers():
+    """Register optimizers for fetching between svn and bzr repositories.
+    """
+    global _optimizers_registered
+    if _optimizers_registered:
+        return
+    from bzrlib.repository import InterRepository
+    from bzrlib.plugins.svn import push, fetch
+    _optimizers_registered = True
+    InterRepository.register_optimiser(fetch.InterFromSvnRepository)
+    InterRepository.register_optimiser(push.InterToSvnRepository)
+
+
 class SvnRepository(ForeignRepository):
     """
     Provides a simplified interface to a Subversion repository
@@ -349,7 +363,6 @@ class SvnRepository(ForeignRepository):
     chk_bytes = None
 
     def __init__(self, some_dir, transport, branch_path=None):
-        from bzrlib.plugins.svn import lazy_register_optimizers
         lazy_register_optimizers()
         self.vcs = foreign_vcs_svn
         _revision_store = None

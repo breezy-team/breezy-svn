@@ -411,22 +411,6 @@ transport_server_registry.register_lazy('svn',
     "Subversion svn_ra protocol. (default port: 3690)")
 
 
-_optimizers_registered = False
-def lazy_register_optimizers():
-    """Register optimizers for fetching between Subversion and Bazaar
-    repositories.
-
-    :note: Only registers on the first call."""
-    global _optimizers_registered
-    if _optimizers_registered:
-        return
-    from bzrlib.repository import InterRepository
-    from bzrlib.plugins.svn import push, fetch
-    _optimizers_registered = True
-    InterRepository.register_optimiser(fetch.InterFromSvnRepository)
-    InterRepository.register_optimiser(push.InterToSvnRepository)
-
-
 plugin_cmds.register_lazy('cmd_svn_import', [], 'bzrlib.plugins.svn.commands')
 plugin_cmds.register_lazy('cmd_svn_branching_scheme', [],
                           'bzrlib.plugins.svn.mapping3.commands')
