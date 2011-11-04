@@ -72,7 +72,10 @@ class TrunkLayout(RepositoryLayout):
         return True
 
     def get_branch_name(self, path, project=""):
-        return urlutils.split(path)[-1]
+        name = urlutils.split(path)[-1]
+        if name == "trunk":
+            return None
+        return name
 
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.

@@ -28,6 +28,7 @@ from subvertpy import (
 
 from bzrlib import (
     bzrdir,
+    controldir,
     osutils,
     ui,
     urlutils,
@@ -163,9 +164,10 @@ class RepositoryConverter(object):
         """
         assert not all or create_shared_repo
         if format is None:
-            self._format = bzrdir.format_registry.make_bzrdir('default')
+            self._format = controldir.format_registry.make_bzrdir('default')
         else:
             self._format = format
+
         self.dirs = {}
         self.to_transport = get_transport(output_url)
         try:
@@ -177,14 +179,26 @@ class RepositoryConverter(object):
         else:
             layout = source_repos.get_layout()
 
+        try:
+            target_dir = bzrdir.BzrDir.open_from_transport(self.to_transport)
+        except NotBranchError:
+            colocated = getattr(format, "colocated_branches", False)
+
+            if colocated or create_shared_repo:
+                target_dir = self.get_dir(prefix, prefix)
+            else:
+                target_dir = None
+        else:
+            format = target_dir._format
+            colocated = getattr(format, "colocated_branches", False)
+
         if create_shared_repo:
             try:
-                target_repos = self.get_dir(prefix, prefix).open_repository()
+                target_repos = target_dir.open_repository()
                 target_repos_is_empty = False # FIXME: Call Repository.is_empty() ?
-                if not layout.is_branch("") and not target_repos.is_shared():
+                if not layout.is_branch("") and not target_repos.is_shared() and not colocated:
                     raise BzrError("Repository %r is not shared." % target_repos)
             except NoRepositoryPresent:
-                target_dir = self.get_dir(prefix, prefix)
                 target_repos = target_dir.create_repository(shared=True)
                 target_repos_is_empty = True
             target_repos.set_make_working_trees(working_trees)
@@ -256,7 +270,7 @@ class RepositoryConverter(object):
             if filter_branch is not None:
                 existing_branches = filter(filter_branch, existing_branches)
             self._create_branches(existing_branches, prefix,
-                                  create_shared_repo, working_trees)
+                  create_shared_repo, working_trees, colocated)
         finally:
             source_repos.unlock()
 
@@ -288,8 +302,40 @@ class RepositoryConverter(object):
         missing = revfinder.get_missing()
         inter.fetch(needed=missing)
 
+    def _get_nested_branch(self, source_branch, prefix):
+        target_dir = self.get_dir(source_branch.get_branch_path(), prefix)
+        try:
+            target_dir.find_repository()
+        except NoRepositoryPresent:
+            target_dir.create_repository()
+        try:
+            return target_dir.open_branch()
+        except NotBranchError:
+            target_branch = target_dir.create_branch()
+            target_branch.set_parent(source_branch.base)
+            return target_branch
+
+    def _get_colocated_branch(self, source_branch, prefix):
+        target_dir = self.get_dir(prefix, prefix)
+
+        if source_branch.project in (None, ""):
+            name = source_branch.name
+        else:
+            if source_branch.name is None:
+                name = source_branch.project
+            else:
+                name = urlutils.join(
+                    source_branch.project, source_branch.name)
+
+        try:
+            return target_dir.open_branch(name)
+        except NotBranchError:
+            target_branch = target_dir.create_branch(name)
+            target_branch.set_parent(source_branch.base)
+            return target_branch
+
     def _create_branches(self, existing_branches, prefix, shared,
-                         working_trees):
+                         working_trees, colocated):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for i, source_branch in enumerate(existing_branches):
@@ -299,17 +345,10 @@ class RepositoryConverter(object):
                         len(existing_branches))
                 except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                     continue
-                target_dir = self.get_dir(source_branch.get_branch_path(), prefix)
-                if not shared:
-                    try:
-                        target_dir.open_repository()
-                    except NoRepositoryPresent:
-                        target_dir.create_repository()
-                try:
-                    target_branch = target_dir.open_branch()
-                except NotBranchError:
-                    target_branch = target_dir.create_branch()
-                    target_branch.set_parent(source_branch.base)
+                if colocated:
+                    target_branch = self._get_colocated_branch(source_branch, prefix)
+                else:
+                    target_branch = self._get_nested_branch(source_branch, prefix)
                 try:
                     target_branch.pull(source_branch, overwrite=True)
                 except NoSuchRevision:
@@ -317,8 +356,8 @@ class RepositoryConverter(object):
                         self.to_transport.delete_tree(source_branch.get_branch_path())
                         continue
                     raise
-                if working_trees and not target_dir.has_workingtree():
-                    target_dir.create_workingtree()
+                if working_trees and not target_branch.bzrdir.has_workingtree():
+                    target_branch.bzrdir.create_workingtree()
         finally:
             pb.finished()
 

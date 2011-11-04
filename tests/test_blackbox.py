@@ -18,6 +18,7 @@
 import os
 import sys
 
+from bzrlib.controldir import ControlDir
 import bzrlib.gpg
 from bzrlib import version_info as bzrlib_version
 from bzrlib.repository import Repository
@@ -670,3 +671,22 @@ if len(sys.argv) == 2:
         self.commit_something(tree.branch.base)
         self.run_bzr('log -v d', retcode=0)
         self.run_bzr('log -v dc', retcode=0)
+
+    def test_svn_import_colocated(self):
+        svn_url = self.make_repository('d')
+
+        dc = self.get_commit_editor(svn_url)
+        dc.add_dir("trunk")
+        dc.close()
+
+        dc = self.get_commit_editor(svn_url)
+        branches = dc.add_dir("branches")
+        branches.add_dir("branches/somebranch", "trunk")
+        tags = dc.add_dir("tags")
+        tags.add_dir("tags/release-1.0", "trunk")
+        dc.close()
+
+        self.run_bzr('init --development-colo dc')
+        self.run_bzr('svn-import d dc')
+        cd = ControlDir.open('dc')
+        self.assertEquals(set([None, "somebranch"]), set([b.name for b in cd.list_branches()]))

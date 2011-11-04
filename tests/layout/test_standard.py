@@ -87,7 +87,7 @@ class TrunkLayoutTests(TestCase,LayoutTests):
     def test_get_branch_name(self):
         self.assertEquals("abranch",
             self.layout.get_branch_name("branches/abranch"))
-        self.assertEquals("trunk",
+        self.assertEquals(None,
             self.layout.get_branch_name("trunk"))
 
     def test_is_branch_parent(self):
