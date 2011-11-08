@@ -5,6 +5,12 @@ bzr-svn 1.1.2					  UNRELEASED
    * Support fetching to colocated branches in svn-import.
      (Jelmer Vernooij)
 
+  * Follow redirects when using pycurl. (Jelmer Vernooij0
+
+ CHANGES
+
+  * No longer supports bzr 2.3. (Jelmer Vernooij)
+
 bzr-svn 1.1.1					  2011-10-25
 
  CHANGES

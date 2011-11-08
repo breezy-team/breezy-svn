@@ -206,6 +206,7 @@ def dav_options(transport, url):
             if isinstance(transport, PyCurlTransport):
                 conn = transport._get_curl()
                 conn.setopt(pycurl.URL, url)
+                conn.setopt(pycurl.FOLLOWLOCATION, 1)
                 transport._set_curl_options(conn)
                 conn.setopt(pycurl.CUSTOMREQUEST, 'OPTIONS')
                 header = StringIO()
