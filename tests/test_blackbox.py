@@ -22,7 +22,7 @@ from bzrlib.controldir import ControlDir
 import bzrlib.gpg
 from bzrlib import version_info as bzrlib_version
 from bzrlib.repository import Repository
-from bzrlib.tests import KnownFailure
+from bzrlib.tests import KnownFailure, TestSkipped
 from bzrlib.tests.blackbox import ExternalBase
 
 from bzrlib.plugins.svn.convert import load_dumpfile
@@ -673,6 +673,9 @@ if len(sys.argv) == 2:
         self.run_bzr('log -v dc', retcode=0)
 
     def test_svn_import_colocated(self):
+        if bzrlib_version < (2, 5, 0):
+            raise TestSkipped("Colocated branches not supported in bzr < 2.5")
+
         svn_url = self.make_repository('d')
 
         dc = self.get_commit_editor(svn_url)
