@@ -77,6 +77,7 @@ from bzrlib.plugins.svn import changes
 from bzrlib.plugins.svn.errors import (
     AbsentPath,
     InvalidFileName,
+    SymlinkTargetContainsNewline,
     TextChecksumMismatch,
     convert_svn_error,
     )
@@ -644,8 +645,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
                     self.parent_file_id)
             ie.symlink_target = "".join(chunks)[len("link "):].decode("utf-8")
             if "\n" in ie.symlink_target:
-                raise AssertionError("bzr doesn't support newlines in symlink "
-                                     "targets yet")
+                raise SymlinkTargetContainsNewline(self.path)
             chunks = []
             text_sha1 = osutils.sha_string("")
         else:

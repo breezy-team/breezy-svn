@@ -40,6 +40,7 @@ from bzrlib.revision import (
     NULL_REVISION,
     )
 from bzrlib.tests import (
+    KnownFailure,
     TestCase,
     TestSkipped,
     )
@@ -63,6 +64,7 @@ from bzrlib.plugins.svn.convert import (
     )
 from bzrlib.plugins.svn.errors import (
     InvalidFileName,
+    SymlinkTargetContainsNewline,
     )
 from bzrlib.plugins.svn.fetch import (
    FetchRevisionFinder,
@@ -1757,9 +1759,11 @@ Node-copyfrom-path: x
         oldrepos = Repository.open(repos_url)
         dir = BzrDir.create("f")
         newrepos = dir.create_repository()
-        self.expectFailure(
-            "Bazaar doesn't support newlines in symlink targets (#219832)",
-            self.copy_content, oldrepos, newrepos)
+        try:
+            self.copy_content(oldrepos, newrepos)
+        except SymlinkTargetContainsNewline:
+            raise KnownFailure(
+                "Bazaar doesn't support newlines in symlink targets (#219832)")
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(1, "", mapping)))

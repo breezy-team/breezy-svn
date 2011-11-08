@@ -172,6 +172,15 @@ class InvalidFileName(BzrError):
         self.path = path
 
 
+class SymlinkTargetContainsNewline(BzrError):
+
+    _fmt = "Unable to convert target of symlink %(path)s because it contains newlines."
+
+    def __init__(self, path):
+        BzrError.__init__(self)
+        self.path = path
+
+
 class CorruptMappingData(BzrError):
 
     _fmt = "An invalid change was made to the bzr-specific properties in %(path)s."
