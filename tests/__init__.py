@@ -165,13 +165,13 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
     make_repository = make_svn_repository
 
     def setUp(self):
-        subvertpy.tests.SubversionTestCase.setUp(self)
-        subvertpy.tests.SubversionTestCase.tearDown(self)
+        self._init_client()
         TestCaseInTempDir.setUp(self)
         if type(self.test_dir) == unicode:
             self.test_dir = self.test_dir.encode(osutils._fs_enc)
 
     def tearDown(self):
+        del self.client_ctx
         TestCaseInTempDir.tearDown(self)
 
     def make_svn_branch_and_tree(self, repospath, clientpath,
