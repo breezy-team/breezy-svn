@@ -16,7 +16,10 @@
 
 """Tests for the bzr-svn plugin."""
 
-from subvertpy import NODE_UNKNOWN
+from subvertpy import (
+    NODE_UNKNOWN,
+    repos,
+    )
 import subvertpy.tests
 
 from bzrlib import osutils
@@ -29,6 +32,7 @@ from bzrlib.tests import (
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn import (
+    config,
     transport as _mod_svn_transport,
     )
 

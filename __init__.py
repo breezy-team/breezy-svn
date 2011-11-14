@@ -53,7 +53,8 @@ else:
     translation = load_plugin_translations("bzr-svn")
     gettext = translation.gettext
 
-from bzrlib import config
+
+from bzrlib import config as _mod_bzr_config # Or we mask plugins.svn.config
 from bzrlib.branch import (
     network_format_registry as branch_network_format_registry,
     )
@@ -399,9 +400,10 @@ format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.workingtree",
 revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec",
     "RevisionSpec_svn")
 
-config.credential_store_registry.register_lazy(
+_mod_bzr_config.credential_store_registry.register_lazy(
     "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore",
     help=__doc__, fallback=True)
+
 
 foreign_vcs_registry.register_lazy("svn", "bzrlib.plugins.svn.mapping",
                                    "foreign_vcs_svn")

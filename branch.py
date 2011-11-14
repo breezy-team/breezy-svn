@@ -80,6 +80,7 @@ from bzrlib.plugins.svn import (
     )
 from bzrlib.plugins.svn.config import (
     BranchConfig,
+    SvnBranchStack,
     )
 from bzrlib.plugins.svn.errors import (
     NotSvnBranchPath,
@@ -451,6 +452,9 @@ class SvnBranch(ForeignBranch):
 
     def get_config(self):
         return BranchConfig(self.base, self.repository.uuid)
+
+    def get_config_stack(self):
+        return SvnBranchStack(self)
 
     def get_append_revisions_only(self):
         return self.get_config().get_append_revisions_only()

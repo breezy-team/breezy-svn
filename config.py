@@ -23,11 +23,12 @@ from subvertpy import (
     properties,
     )
 
-import bzrlib.config
 from bzrlib import (
     atomicfile,
+    config as _mod_bzr_config,
     osutils,
     trace,
+    transport,
     )
 from bzrlib.config import (
     ConfigObj,
@@ -43,8 +44,6 @@ from bzrlib.config import (
 from bzrlib.errors import (
     BzrError,
     )
-
-from bzrlib.config import LockableConfig
 
 
 def as_bool(str):
@@ -71,8 +70,50 @@ def as_bool(str):
 # was seen at.
 
 
+class SubversionStore(_mod_bzr_config.LockableIniFileStore):
 
-class SubversionUUIDConfig(LockableConfig):
+    def __init__(self, possible_transports=None):
+        t = transport.get_transport_from_path(
+            _mod_bzr_config.config_dir(),
+            possible_transports=possible_transports)
+        super(SubversionStore, self).__init__(t, 'subversion.conf')
+
+
+class UUIDMatcher(_mod_bzr_config.SectionMatcher):
+    """UUID-based Subversion section matcher."""
+
+    def __init__(self, store, uuid):
+        super(UUIDMatcher, self).__init__(store)
+        self.uuid = uuid
+
+    def match(self, section):
+        return section.id == self.uuid
+
+
+class SvnBranchStack(_mod_bzr_config._CompatibleStack):
+    """SvnBranch stack providing UUID specific options."""
+
+    def __init__(self, branch):
+        bstore = _mod_bzr_config.BranchStore(branch)
+        lstore = _mod_bzr_config.LocationStore()
+        loc_matcher = _mod_bzr_config.LocationMatcher(lstore, branch.base)
+        svn_store = SubversionStore()
+        uuid_matcher = UUIDMatcher(svn_store,
+                                   getattr(branch.repository, 'uuid', None))
+        gstore = _mod_bzr_config.GlobalStore()
+        super(SvnBranchStack, self).__init__(
+            [self._get_overrides,
+             loc_matcher.get_sections,
+             bstore.get_sections,
+             uuid_matcher.get_sections,
+             gstore.get_sections],
+            # All modifications go to the corresponding section in
+            # locations.conf
+            lstore, branch.base)
+        self.branch = branch
+
+
+class SubversionUUIDConfig(_mod_bzr_config.LockableConfig):
     """UUID-based Subversion configuration."""
 
     def __init__(self, uuid):
