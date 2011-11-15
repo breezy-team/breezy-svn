@@ -99,6 +99,7 @@ class cmd_svn_import(Command):
             BzrCommandError,
             NoRepositoryPresent,
             )
+        from bzrlib.plugins.svn import gettext
         from bzrlib.plugins.svn.convert import convert_repository
         from bzrlib.plugins.svn.remote import SvnRemoteAccess
         from bzrlib.plugins.svn.repository import SvnRepository
@@ -163,7 +164,7 @@ class cmd_svn_import(Command):
                             from_location)
                 # FIXME: Hint about is_tag()
                 elif overall_layout.is_branch_parent(prefix):
-                    self.outf.write("Importing branches with prefix /%s\n" %
+                    self.outf.write(gettext("Importing branches with prefix /%s\n") %
                         urlutils.unescape_for_display(prefix, self.outf.encoding))
                 else:
                     raise BzrCommandError("The specified path is inside a branch. "
@@ -179,7 +180,7 @@ class cmd_svn_import(Command):
                     return False
                 return True
 
-            trace.note("Using repository layout: %s",
+            trace.note(gettext("Using repository layout: %s"),
                        layout or from_repos.get_layout())
             convert_repository(from_repos, to_location, layout,
                 not standalone, trees, all, format=format,
@@ -189,8 +190,9 @@ class cmd_svn_import(Command):
             if tmp_repos is not None:
                 osutils.rmtree(tmp_repos)
             if not trees:
-                trace.note("Use 'bzr checkout' to create a working tree in "
-                           "the newly created branches.")
+                trace.note(
+                    gettext("Use 'bzr checkout' to create a working tree in "
+                            "the newly created branches."))
         finally:
             from_repos.unlock()
 
@@ -210,6 +212,7 @@ class cmd_svn_layout(Command):
             urlutils,
             )
         from bzrlib.branch import Branch
+        from bzrlib.plugins.svn import gettext
         from bzrlib.repository import Repository
         from bzrlib.plugins.svn import errors as bzrsvn_errors
 
@@ -223,19 +226,19 @@ class cmd_svn_layout(Command):
             raise errors.BzrCommandError(
                 "Not a Subversion branch or repository.")
         layout = repos.get_layout()
-        self.outf.write("Repository root: %s\n" % repos.base)
-        self.outf.write("Layout: %s\n" % str(layout))
+        self.outf.write(gettext("Repository root: %s\n") % repos.base)
+        self.outf.write(gettext("Layout: %s\n") % str(layout))
         if branch is not None:
-            self.outf.write("Branch path: %s\n" % branch.get_branch_path())
+            self.outf.write(gettext("Branch path: %s\n") % branch.get_branch_path())
             if branch.project:
-                self.outf.write("Project: %s\n" % branch.project)
+                self.outf.write(gettext("Project: %s\n") % branch.project)
             try:
                 test_tag_path = layout.get_tag_path("test", branch.project)
             except bzrsvn_errors.NoLayoutTagSetSupport:
-                self.outf.write("No tag support\n")
+                self.outf.write(gettext("No tag support\n"))
             else:
                 if test_tag_path:
-                    self.outf.write("Tag container directory: %s\n" %
+                    self.outf.write(gettext("Tag container directory: %s\n") %
                             urlutils.dirname(test_tag_path))
             try:
                 test_branch_path = layout.get_branch_path("test",
@@ -244,9 +247,10 @@ class cmd_svn_layout(Command):
                 self.outf.write("No custom branch support\n")
             else:
                 if test_branch_path:
-                    self.outf.write("Branch container directory: %s\n" %
-                            urlutils.dirname(test_branch_path))
-            self.outf.write("Push merged revisions: %s\n" %
+                    self.outf.write(
+                        gettext("Branch container directory: %s\n" %
+                            urlutils.dirname(test_branch_path)))
+            self.outf.write(gettext("Push merged revisions: %s\n") %
                     branch.get_push_merged_revisions())
 
 
@@ -267,6 +271,7 @@ class cmd_svn_branches(Command):
     def run(self, location, layout=None):
         from bzrlib import errors
         from bzrlib.bzrdir import BzrDir
+        from bzrlib.plugins.svn import gettext
         from bzrlib.plugins.svn.remote import SvnRemoteAccess
         from bzrlib.plugins.svn.workingtree import SvnCheckout
 
@@ -291,9 +296,9 @@ class cmd_svn_branches(Command):
         if layout is None:
             layout = repository.get_guessed_layout()
 
-        self.outf.write("Branches:\n")
+        self.outf.write(gettext("Branches:\n"))
         for (project, path, name, has_props, revnum) in layout.get_branches(repository, revnum, prefix):
             self.outf.write("%s (%s)\n" % (path, name))
-        self.outf.write("Tags:\n")
+        self.outf.write(gettext("Tags:\n"))
         for (project, path, name, has_props, revnum) in layout.get_tags(repository, revnum, prefix):
             self.outf.write("%s (%s)\n" % (path, name))
