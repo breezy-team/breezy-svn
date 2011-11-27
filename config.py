@@ -94,7 +94,6 @@ class SvnBranchStack(_mod_bzr_config._CompatibleStack):
     """SvnBranch stack providing UUID specific options."""
 
     def __init__(self, branch):
-        bstore = _mod_bzr_config.BranchStore(branch)
         lstore = _mod_bzr_config.LocationStore()
         loc_matcher = _mod_bzr_config.LocationMatcher(lstore, branch.base)
         svn_store = SubversionStore()
@@ -104,7 +103,6 @@ class SvnBranchStack(_mod_bzr_config._CompatibleStack):
         super(SvnBranchStack, self).__init__(
             [self._get_overrides,
              loc_matcher.get_sections,
-             bstore.get_sections,
              uuid_matcher.get_sections,
              gstore.get_sections],
             # All modifications go to the corresponding section in
