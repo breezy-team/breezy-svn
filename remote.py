@@ -286,7 +286,9 @@ class SvnRemoteAccess(ControlDir):
                         'use "bzr svn-import".')
         target_transport = get_transport(url, possible_transports)
         target_transport.ensure_base()
-        cloning_format = self.cloning_metadir()
+        cloning_format = self.cloning_metadir(
+            require_colocated=("branch" in
+                target_transport.get_segment_parameters()))
         # Create/update the result branch
         result = cloning_format.initialize_on_transport(target_transport)
 
@@ -367,9 +369,12 @@ class SvnRemoteAccess(ControlDir):
         else:
             return SvnRepository(self, transport, self._branch_path)
 
-    def cloning_metadir(self, require_stacking=False):
+    def cloning_metadir(self, require_stacking=False, require_colocated=False):
         """Produce a metadir suitable for cloning with."""
-        return format_registry.make_bzrdir('default')
+        ret = format_registry.make_bzrdir('default')
+        if require_colocated and not ret.colocated_branches:
+            ret = format_registry.make_bzrdir('development-colo')
+        return ret
 
     def open_workingtree(self, _unsupported=False,
             recommend_upgrade=True):
