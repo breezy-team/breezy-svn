@@ -75,7 +75,7 @@ class TrunkLayout(RepositoryLayout):
         name = urlutils.split(path)[-1]
         if name == "trunk":
             return None
-        return name
+        return name.decode("utf-8")
 
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.
@@ -377,7 +377,10 @@ class WildcardLayout(RepositoryLayout):
 
         :param path: Path inside the repository.
         """
-        return self.get_item_name(self.branches, path, project)
+        name = self.get_item_name(self.branches, path, project)
+        if name is not None:
+            name = name.decode("utf-8")
+        return name
 
     def is_branch(self, path, project=None):
         for bp in self.branches:

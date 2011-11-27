@@ -244,6 +244,8 @@ class SvnBranch(ForeignBranch):
         if type not in ('branch', 'tag') or ip != '':
             raise NotBranchError(branch_path)
         self.name = self.layout.get_branch_name(branch_path)
+        if self.name is not None and not isinstance(self.name, unicode):
+            raise TypeError(self.name)
 
     @property
     def control_url(self):
