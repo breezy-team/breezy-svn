@@ -111,6 +111,27 @@ class SvnBranchStack(_mod_bzr_config._CompatibleStack):
         self.branch = branch
 
 
+class SvnRepositoryStack(_mod_bzr_config._CompatibleStack):
+    """SvnRepository stack providing UUID specific options."""
+
+    def __init__(self, repository):
+        lstore = _mod_bzr_config.LocationStore()
+        loc_matcher = _mod_bzr_config.LocationMatcher(lstore, repository.base)
+        svn_store = SubversionStore()
+        uuid_matcher = UUIDMatcher(svn_store,
+                                   getattr(repository, 'uuid', None))
+        gstore = _mod_bzr_config.GlobalStore()
+        super(SvnRepositoryStack, self).__init__(
+            [self._get_overrides,
+             loc_matcher.get_sections,
+             uuid_matcher.get_sections,
+             gstore.get_sections],
+            # All modifications go to the corresponding section in
+            # locations.conf
+            lstore, repository.base)
+        self.repository = repository
+
+
 class SubversionUUIDConfig(_mod_bzr_config.LockableConfig):
     """UUID-based Subversion configuration."""
 
@@ -532,3 +553,22 @@ class SubversionBuildPackageConfig(object):
 
     def __setitem__(self, option_name, value):
         self.option_source[option_name] = value
+
+
+svn_layout_option = _mod_bzr_config.Option('svn.layout', default=None,
+           help='''\
+The mandated bzr-svn repository layout to use.
+
+See `bzr help svn-layout` for details.
+''')
+
+svn_branches_option = _mod_bzr_config.Option('branches', default=None,
+           help='''\
+Paths in the Subversion repository to consider branches.
+
+This should be a comma-separated list of paths, each relative to the
+repository root. Asterisks may be used as wildcards, and will match
+a single path element.
+
+See `bzr help svn-layout` for more information on Subversion repository layouts.
+''')

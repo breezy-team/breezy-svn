@@ -64,6 +64,7 @@ from bzrlib.plugins.svn import (
 from bzrlib.plugins.svn.branchprops import (
     PathPropertyProvider,
     )
+from bzrlib.plugins.svn.config import SvnRepositoryStack
 from bzrlib.plugins.svn.fileids import (
     CachingFileIdMapStore,
     FileIdMapStore,
@@ -1098,6 +1099,9 @@ class SvnRepository(ForeignRepository):
 
     def get_config(self):
         return self.bzrdir.get_config()
+
+    def get_config_stack(self):
+        return SvnRepositoryStack(self)
 
     def has_signature_for_revision_id(self, revision_id):
         """Check whether a signature exists for a particular revision id.
