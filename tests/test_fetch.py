@@ -422,7 +422,7 @@ class TestFetchWorks(FetchTestCase):
                     oldrepos.generate_revision_id(2, "", mapping))
             self.assertTrue(tree.has_filename("foo/bla"))
             self.assertTrue(tree.has_filename("foo"))
-            self.assertEqual("data", tree.get_file_by_path("foo/bla").read())
+            self.assertEqual("data", tree.get_file_text(tree.path2id("foo/bla"), "foo/bla"))
         finally:
             newrepos.unlock()
 
