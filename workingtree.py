@@ -1746,7 +1746,7 @@ class SvnCheckout(ControlDir):
         raise NotImplementedError(self.create_branch)
 
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
-            mapping=None, revnum=None):
+            mapping=None, revnum=None, possible_transports=None):
         """See ControlDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         repos = self._find_repository()
@@ -1757,7 +1757,8 @@ class SvnCheckout(ControlDir):
             return SvnBranch(repos, self.get_remote_bzrdir(),
                 self.get_branch_path(), mapping, revnum=revnum)
         except RepositoryRootUnknown:
-            return self.get_remote_bzrdir().open_branch(revnum=revnum)
+            return self.get_remote_bzrdir().open_branch(revnum=revnum,
+                possible_transports=possible_transports)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_WC_NOT_DIRECTORY:
                 raise NotBranchError(path=self.base)

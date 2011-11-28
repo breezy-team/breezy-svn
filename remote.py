@@ -502,7 +502,8 @@ class SvnRemoteAccess(ControlDir):
         return None
 
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
-            mapping=None, branch_path=None, repository=None, revnum=None):
+            mapping=None, branch_path=None, repository=None, revnum=None,
+            possible_transports=None):
         """See ControlDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         if branch_path is None:
