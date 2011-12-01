@@ -18,7 +18,10 @@
 import os
 import sys
 
-from bzrlib.controldir import ControlDir
+from bzrlib.controldir import (
+    ControlDir,
+    format_registry,
+    )
 import bzrlib.gpg
 from bzrlib import version_info as bzrlib_version
 from bzrlib.repository import Repository
@@ -603,11 +606,10 @@ if len(sys.argv) == 2:
         svn_url = self.make_repository('d')
 
         self.run_bzr('svn-import --format 1.9-rich-root %s dc' % svn_url)
+        cd = ControlDir.open('dc')
         self.assertEquals(
-            "Shared repository (format: 1.14-rich-root)\n"
-            "Location:\n"
-            "  shared repository: dc\n",
-            self.run_bzr('info dc')[0])
+            cd.open_repository()._format,
+            format_registry.make_bzrdir('1.9-rich-root').repository_format)
 
     def test_svn_layout(self):
         svn_url = self.make_repository('d')
