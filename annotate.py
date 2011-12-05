@@ -88,7 +88,6 @@ class Annotater(object):
         return idmap.lookup(mapping, ip)
 
     def check_file(self, lines, revid, parent_lines):
-        trace.mutter('annotate %r, %r', self.fileid, revid)
         return reannotate(parent_lines, lines, revid)
 
     def _handler(self, path, rev, revprops, result_of_merge=None):

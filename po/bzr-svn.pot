@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: bzr-svn\n"
 "Report-Msgid-Bugs-To: <bazaar@lists.canonical.com>\n"
-"POT-Creation-Date: 2011-11-15 14:51+0100\n"
+"POT-Creation-Date: 2011-12-05 02:16+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,134 +17,181 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: commands.py:167
+#: commands.py:48
 #, python-format
-msgid "Importing branches with prefix /%s\n"
+msgid "No such repository layout %r"
 msgstr ""
 
-#: commands.py:183
+#: commands.py:135 commands.py:287
+msgid "Source repository is not a Subversion repository."
+msgstr ""
+
+#: commands.py:141
+msgid "Path inside repository specified and --prefix specified"
+msgstr ""
+
+#: commands.py:150
+#, python-format
+msgid "Not a Subversion repository: %s"
+msgstr ""
+
+#: commands.py:166
+#, python-format
+msgid ""
+"%s appears to contain a branch. For individual branches, use 'bzr branch'."
+msgstr ""
+
+#: commands.py:171
+#, python-format
+msgid "Importing branches with prefix %s\n"
+msgstr ""
+
+#: commands.py:174
+msgid ""
+"The specified path is inside a branch. Specify a different URL or a "
+"different repository layout (see also 'bzr help svn-layout')."
+msgstr ""
+
+#: commands.py:187
 #, python-format
 msgid "Using repository layout: %s"
 msgstr ""
 
-#: commands.py:194
+#: commands.py:198
 msgid ""
 "Use 'bzr checkout' to create a working tree in the newly created branches."
 msgstr ""
 
-#: commands.py:229
+#: commands.py:231
+msgid "Not a Subversion branch or repository."
+msgstr ""
+
+#: commands.py:233
 #, python-format
 msgid "Repository root: %s\n"
 msgstr ""
 
-#: commands.py:230
+#: commands.py:234
 #, python-format
 msgid "Layout: %s\n"
 msgstr ""
 
-#: commands.py:232
+#: commands.py:236
 #, python-format
 msgid "Branch path: %s\n"
 msgstr ""
 
-#: commands.py:234
+#: commands.py:238
 #, python-format
 msgid "Project: %s\n"
 msgstr ""
 
-#: commands.py:238
+#: commands.py:242
 msgid "No tag support\n"
 msgstr ""
 
-#: commands.py:241
+#: commands.py:245
 #, python-format
 msgid "Tag container directory: %s\n"
 msgstr ""
 
 #: commands.py:251
+msgid "No custom branch support\n"
+msgstr ""
+
+#: commands.py:255
 #, python-format
 msgid "Branch container directory: %s\n"
 msgstr ""
 
-#: commands.py:253
+#: commands.py:257
 #, python-format
 msgid "Push merged revisions: %s\n"
 msgstr ""
 
-#: commands.py:299
+#: commands.py:303
 msgid "Branches:\n"
 msgstr ""
 
-#: commands.py:302
+#: commands.py:306
 msgid "Tags:\n"
 msgstr ""
 
-#: commands.py:51
+#: keywords.py:159
+msgid "(value unsafe to expand)"
+msgstr ""
+
+#: keywords.py:215
+#, python-format
+msgid "Unknown svn keyword %s"
+msgstr ""
+
+#: commands.py:54
 msgid "Convert a Subversion repository to a Bazaar repository."
 msgstr ""
 
-#: commands.py:53
+#: commands.py:56
 msgid ""
 "To save disk space, only branches will be created by default\n"
 "(no working trees). To create a tree for a branch, run \"bzr co\" in\n"
 "it."
 msgstr ""
 
-#: commands.py:57
+#: commands.py:60
 msgid ""
 "This command is resumable; any previously imported revisions will be\n"
 "skipped."
 msgstr ""
 
 # help of 'format' option of 'svn-import' command
-#: commands.py:63
+#: commands.py:66
 msgid ""
 "Specify a format for this repository. See \"bzr help formats\" for details. "
 "Must support rich-root."
 msgstr ""
 
 # title of 'format' option of 'svn-import' command
-#: commands.py:67
+#: commands.py:70
 msgid "Repository format"
 msgstr ""
 
 # help of 'trees' option of 'svn-import' command
-#: commands.py:68
+#: commands.py:71
 msgid "Create working trees."
 msgstr ""
 
 # help of 'standalone' option of 'svn-import' command
-#: commands.py:69
+#: commands.py:72
 msgid "Create standalone branches."
 msgstr ""
 
 # help of 'all' option of 'svn-import' command
-#: commands.py:71
+#: commands.py:74
 msgid "Convert all revisions, even those not in current branch history."
 msgstr ""
 
 # help of 'keep' option of 'svn-import' command
-#: commands.py:77
+#: commands.py:80
 msgid "Don't delete branches removed in Subversion."
 msgstr ""
 
 # help of 'restore' option of 'svn-import' command
-#: commands.py:79
+#: commands.py:82
 msgid ""
 "Restore branches that were removed but have not been changed since the last "
 "import."
 msgstr ""
 
 # help of 'until' option of 'svn-import' command
-#: commands.py:86
+#: commands.py:89
 msgid "Only import revisions up to specified Subversion revnum"
 msgstr ""
 
-#: commands.py:201
+#: commands.py:205
 msgid "Print the repository layout in use for a Subversion repository."
 msgstr ""
 
-#: commands.py:203
+#: commands.py:207
 msgid ""
 "This will print the name of the repository layout. See\n"
 "\"bzr help svn-layout\" for more information about repository\n"
@@ -152,6 +199,6 @@ msgid ""
 msgstr ""
 
 # help of 'layout' option of 'svn-import' command
-#: commands.py:266
+#: commands.py:270
 msgid "Repository layout (none, trunk, etc). Default: auto."
 msgstr ""

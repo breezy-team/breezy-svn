@@ -38,6 +38,7 @@ from bzrlib.filters import (
     ContentFilter,
     )
 
+from bzrlib.plugins.svn import gettext
 from bzrlib.plugins.svn.mapping import (
     mapping_registry,
     )
@@ -155,7 +156,7 @@ def expand_keywords(s, allowed_keywords, context=None, encoder=None):
         if expansion is not None:
             if '$' in expansion:
                 # Expansion is not safe to be collapsed later
-                expansion = "(value unsafe to expand)"
+                expansion = gettext("(value unsafe to expand)")
             if encoder is not None:
                 expansion = encoder(expansion)
             expanded = "$%s: %s $" % (keyword, expansion)
@@ -211,7 +212,7 @@ def create_svn_keywords_filter(value):
     kws = value.split(" ")
     for k in kws:
         if not k in keywords:
-            raise BzrError("Unknown svn keyword %s" % k)
+            raise BzrError(gettext("Unknown svn keyword %s") % k)
     if kws == []:
         return []
     return [SubversionKeywordContentFilter(kws)]
