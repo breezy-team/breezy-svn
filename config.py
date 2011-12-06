@@ -47,6 +47,9 @@ from bzrlib.errors import (
     )
 
 
+get_transport_from_path = getattr(transport, "get_transport_from_path", transport.get_transport) # bzr < 2.5
+
+
 def as_bool(str):
     """Parse a string as a boolean.
 
@@ -74,7 +77,7 @@ def as_bool(str):
 class SubversionStore(_mod_bzr_config.LockableIniFileStore):
 
     def __init__(self, possible_transports=None):
-        t = transport.get_transport_from_path(
+        t = get_transport_from_path(
             _mod_bzr_config.config_dir(),
             possible_transports=possible_transports)
         super(SubversionStore, self).__init__(t, 'subversion.conf')

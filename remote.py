@@ -286,9 +286,11 @@ class SvnRemoteAccess(ControlDir):
                         'use "bzr svn-import".')
         target_transport = get_transport(url, possible_transports)
         target_transport.ensure_base()
-        cloning_format = self.cloning_metadir(
-            require_colocated=("branch" in
-                target_transport.get_segment_parameters()))
+        if getattr(target_transport, "get_segment_parameters", None) is None: # bzr < 2.5
+            require_colocated = False
+        else:
+            require_colocated = ("branch" in target_transport.get_segment_parameters())
+        cloning_format = self.cloning_metadir(require_colocated=require_colocated)
         # Create/update the result branch
         result = cloning_format.initialize_on_transport(target_transport)
 
