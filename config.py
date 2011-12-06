@@ -29,6 +29,7 @@ from bzrlib import (
     osutils,
     trace,
     transport,
+    version_info as bzrlib_version,
     )
 from bzrlib.config import (
     ConfigObj,
@@ -555,14 +556,23 @@ class SubversionBuildPackageConfig(object):
         self.option_source[option_name] = value
 
 
-svn_layout_option = _mod_bzr_config.Option('svn.layout', default=None,
+if bzrlib_version < (2, 5):
+    def Option(*args, **kwargs):
+        if 'help' in kwargs:
+            del kwargs['help']
+        return _mod_bzr_config.Option(*args, **kwargs)
+else:
+    Option = _mod_bzr_config.Option
+
+
+svn_layout_option = Option('svn.layout', default=None,
            help='''\
 The mandated bzr-svn repository layout to use.
 
 See `bzr help svn-layout` for details.
 ''')
 
-svn_branches_option = _mod_bzr_config.Option('branches', default=None,
+svn_branches_option = Option('branches', default=None,
            help='''\
 Paths in the Subversion repository to consider branches.
 

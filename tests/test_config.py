@@ -70,12 +70,13 @@ class TestUUIDMatcherStoreLoading(test_config.TestSectionMatcher):
         self.matcher = UUIDMatcher
 
 
-class TestUUIDMatching(test_config.TestNameMatcher):
+if getattr(test_config, "TestNameMatcher", None): # bzr >= 2.5
+    class TestUUIDMatching(test_config.TestNameMatcher):
 
-    def setUp(self):
-        super(TestUUIDMatching, self).setUp()
-        self.get_store = build_subversion_store
-        self.matcher = UUIDMatcher
+        def setUp(self):
+            super(TestUUIDMatching, self).setUp()
+            self.get_store = build_subversion_store
+            self.matcher = UUIDMatcher
 
 
 class TestConcurrentStoreUpdates(test_config.TestConcurrentStoreUpdates):
