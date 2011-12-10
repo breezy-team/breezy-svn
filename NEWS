@@ -16,6 +16,9 @@ bzr-svn 1.1.2					  UNRELEASED
   * Properly abort when the commit editor commit function fails
     rather than complaining about busy connections.  (Jelmer Vernooij, #890529)
 
+  * Ignore .svn directories that aren't actually svn working
+    copies. (Jelmer Vernooij, #862910)
+
 bzr-svn 1.1.1					  2011-10-25
 
  CHANGES

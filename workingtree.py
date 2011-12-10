@@ -1563,6 +1563,8 @@ class SvnWorkingTreeDirFormat(ControlDirFormat):
         except subvertpy.SubversionException, (_, num):
             if num in (subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED,):
                 raise NoSvnRepositoryPresent(transport.base)
+            if num in (subvertpy.ERR_WC_NOT_DIRECTORY,):
+                raise NotBranchError(path=transport.base)
             raise
 
     def get_format_string(self):
