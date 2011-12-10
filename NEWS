@@ -19,6 +19,9 @@ bzr-svn 1.1.2					  UNRELEASED
   * Ignore .svn directories that aren't actually svn working
     copies. (Jelmer Vernooij, #862910)
 
+  * Fix find_iter_revisions when accessing repository that contains
+    old mapping data. (Jelmer Vernooij, #898780)
+
 bzr-svn 1.1.1					  2011-10-25
 
  CHANGES
