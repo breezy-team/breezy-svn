@@ -402,21 +402,6 @@ class BranchConfig(Config):
             raise KeyError
         return as_bool(ret)
 
-    def get_override_svn_revprops(self):
-        """Check whether or not bzr-svn should attempt to override Subversion revision
-        properties after committing."""
-        try:
-            if self.get_bool("override-svn-revprops"):
-                return [properties.PROP_REVISION_DATE, properties.PROP_REVISION_AUTHOR]
-            return []
-        except ValueError:
-            val = self._get_user_option("override-svn-revprops")
-            if not isinstance(val, list):
-                return [val]
-            return val
-        except KeyError:
-            return None
-
     def _get_user_option(self, option_name, use_global=True):
         """See Config._get_user_option."""
         for source in self.option_sources:
@@ -556,23 +541,14 @@ class SubversionBuildPackageConfig(object):
         self.option_source[option_name] = value
 
 
-if bzrlib_version < (2, 5):
-    def Option(*args, **kwargs):
-        if 'help' in kwargs:
-            del kwargs['help']
-        return _mod_bzr_config.Option(*args, **kwargs)
-else:
-    Option = _mod_bzr_config.Option
-
-
-svn_layout_option = Option('svn.layout', default=None,
+svn_layout_option = _mod_bzr_config.Option('svn.layout', default=None,
            help='''\
 The mandated bzr-svn repository layout to use.
 
 See `bzr help svn-layout` for details.
 ''')
 
-svn_branches_option = Option('branches', default=None,
+svn_branches_option = _mod_bzr_config.Option('branches', default=None,
            help='''\
 Paths in the Subversion repository to consider branches.
 
@@ -581,4 +557,35 @@ repository root. Asterisks may be used as wildcards, and will match
 a single path element.
 
 See `bzr help svn-layout` for more information on Subversion repository layouts.
+''')
+
+
+def override_svn_revprops_from_store(text):
+    val = _mod_bzr_config.bool_from_store(text)
+    if val is not None:
+        if val:
+            return [properties.PROP_REVISION_DATE, properties.PROP_REVISION_AUTHOR]
+        else:
+            return []
+    else:
+        # FIXME: Check for allowed values ?
+        return _mod_bzr_config.list_from_store(text)
+
+
+svn_override_revprops = _mod_bzr_config.Option('override-svn-revprops', default=None,
+    from_unicode=override_svn_revprops_from_store,
+   help='''\
+Which Subversion revision properties to override (comma-separated list).
+
+This is done after a revision is pushed from bzr, and requires the
+pre-revprop-change-hook to be enabled in the repository.
+
+Possible values:
+
+ * svn:author=committer - set the svn author to the committer of the bzr
+                          revision
+ * svn:author=author, svn:author - set the svn author to the first author of
+                                   the bzr revision
+ * svn:date - override the date to be the same as the commit timestamp of
+              the bzr revision
 ''')

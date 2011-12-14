@@ -882,7 +882,7 @@ class SvnCommitBuilder(CommitBuilder):
         self.mutter('commit %d finished. author: %r, date: %r',
                result_revision, result_author, result_date)
 
-        override_svn_revprops = self._config.get_override_svn_revprops()
+        override_svn_revprops = self._config.get('override-svn-revprops')
         if override_svn_revprops is not None:
             new_revprops = {}
             if (("%s=committer" % properties.PROP_REVISION_AUTHOR) in override_svn_revprops or

@@ -205,7 +205,7 @@ class BranchConfigTests(SubversionTestCase):
 
     def setUp(self):
         super(BranchConfigTests, self).setUp()
-        self.config = self.make_svn_branch("d").get_config()
+        self.config = self.make_svn_branch("d").get_config_stack()
 
     def test_has_explicit_nickname(self):
         self.assertEquals(False, self.config.has_explicit_nickname())
@@ -222,19 +222,19 @@ class BranchConfigTests(SubversionTestCase):
         self.assertEquals(False, self.config.get_log_strip_trailing_newline())
 
     def test_override_revprops(self):
-        self.assertEquals(None, self.config.get_override_svn_revprops())
-        self.config.set_user_option("override-svn-revprops", "True")
-        self.assertEquals(["svn:date", "svn:author"], self.config.get_override_svn_revprops())
-        self.config.set_user_option("override-svn-revprops", "False")
-        self.assertEquals([], self.config.get_override_svn_revprops())
-        self.config.set_user_option("override-svn-revprops", ["svn:author", "svn:date"])
-        self.assertEquals(["svn:author", "svn:date"], self.config.get_override_svn_revprops())
-        self.config.set_user_option("override-svn-revprops", ["svn:author"])
-        self.assertEquals(["svn:author"], self.config.get_override_svn_revprops())
-        self.config.set_user_option("override-svn-revprops", ["svn:author=author"])
-        self.assertEquals(["svn:author=author"], self.config.get_override_svn_revprops())
-        self.config.set_user_option("override-svn-revprops", ["svn:author=committer"])
-        self.assertEquals(["svn:author=committer"], self.config.get_override_svn_revprops())
+        self.assertEquals(None, self.config.get('override-svn-revprops'))
+        self.config.set("override-svn-revprops", "True")
+        self.assertEquals(["svn:date", "svn:author"], self.config.get('override-svn-revprops'))
+        self.config.set("override-svn-revprops", "False")
+        self.assertEquals([], self.config.get('override-svn-revprops'))
+        self.config.set("override-svn-revprops", ["svn:author", "svn:date"])
+        self.assertEquals(["svn:author", "svn:date"], self.config.get('override-svn-revprops'))
+        self.config.set("override-svn-revprops", ["svn:author"])
+        self.assertEquals(["svn:author"], self.config.get('override-svn-revprops'))
+        self.config.set("override-svn-revprops", ["svn:author=author"])
+        self.assertEquals(["svn:author=author"], self.config.get('override-svn-revprops'))
+        self.config.set("override-svn-revprops", ["svn:author=committer"])
+        self.assertEquals(["svn:author=committer"], self.config.get('override-svn-revprops'))
 
     def test_get_append_revisions_only(self):
         self.assertEquals(True, self.config.get_append_revisions_only())
