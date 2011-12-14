@@ -455,7 +455,7 @@ class SvnBranch(ForeignBranch):
         return BranchConfig(self.base, self.repository.uuid)
 
     def get_config_stack(self):
-        return SvnBranchStack(self)
+        return SvnBranchStack(self.base, self.repository.uuid)
 
     def get_append_revisions_only(self):
         return self.get_config().get_append_revisions_only()
@@ -516,7 +516,7 @@ class SvnBranch(ForeignBranch):
             else:
                 base_foreign_info = self.lookup_bzr_revision_id(rev.parent_ids[0])
             interrepo.push_single_revision(
-                self.get_branch_path(), self.get_config(), rev,
+                self.get_branch_path(), self.get_config_stack(), rev,
                 push_metadata=True, root_action=("replace", self.get_revnum()),
                 base_foreign_info=base_foreign_info)
         self._clear_cached_state()
@@ -622,7 +622,7 @@ class SvnBranch(ForeignBranch):
         revidmap = interrepo.push_todo(self.last_revision(),
             base_revmeta.metarev.get_foreign_revid(),
             base_mapping, revid, self.layout,
-            self.project, self.get_branch_path(), self.get_config(),
+            self.project, self.get_branch_path(), self.get_config_stack(),
             push_merged=self.get_push_merged_revisions(),
             overwrite=False, push_metadata=not lossy,
             append_revisions_only=True)

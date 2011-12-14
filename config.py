@@ -29,7 +29,6 @@ from bzrlib import (
     osutils,
     trace,
     transport,
-    version_info as bzrlib_version,
     )
 from bzrlib.config import (
     ConfigObj,
@@ -94,12 +93,11 @@ class UUIDMatcher(_mod_bzr_config.SectionMatcher):
 class SvnBranchStack(_mod_bzr_config._CompatibleStack):
     """SvnBranch stack providing UUID specific options."""
 
-    def __init__(self, branch):
+    def __init__(self, branch_base, repository_uuid):
         lstore = _mod_bzr_config.LocationStore()
-        loc_matcher = _mod_bzr_config.LocationMatcher(lstore, branch.base)
+        loc_matcher = _mod_bzr_config.LocationMatcher(lstore, branch_base)
         svn_store = SubversionStore()
-        uuid_matcher = UUIDMatcher(svn_store,
-                                   getattr(branch.repository, 'uuid', None))
+        uuid_matcher = UUIDMatcher(svn_store, repository_uuid)
         gstore = _mod_bzr_config.GlobalStore()
         super(SvnBranchStack, self).__init__(
             [self._get_overrides,
@@ -108,8 +106,7 @@ class SvnBranchStack(_mod_bzr_config._CompatibleStack):
              gstore.get_sections],
             # All modifications go to the corresponding section in
             # locations.conf
-            lstore, branch.base)
-        self.branch = branch
+            lstore, branch_base)
 
 
 class SvnRepositoryStack(_mod_bzr_config._CompatibleStack):
@@ -387,14 +384,6 @@ class BranchConfig(Config):
             self._global_config = GlobalConfig()
         return self._global_config
 
-    def get_log_strip_trailing_newline(self):
-        """Check whether or not trailing newlines should be stripped in the
-        Subversion log message (where support by the bzr<->svn mapping used)."""
-        try:
-            return self.get_bool("log-strip-trailing-newline")
-        except KeyError:
-            return False
-
     def get_bool(self, option_name, use_global=True):
         """See Config.get_bool."""
         ret = self._get_user_option(option_name, use_global)
@@ -588,4 +577,12 @@ Possible values:
                                    the bzr revision
  * svn:date - override the date to be the same as the commit timestamp of
               the bzr revision
+''')
+
+svn_log_strip_trailing_new_line = _mod_bzr_config.Option('log-strip-trailing-newline',
+    default=False, from_unicode=_mod_bzr_config.bool_from_store,
+    help='''\
+Whether or not trailing newlines should be stripped in the Subversion log message.
+
+This only applies to revisions created by bzr-svn.
 ''')

@@ -774,7 +774,7 @@ class SvnCommitBuilder(CommitBuilder):
                     self._override_file_ids, self._svnprops)
                 self.mapping.export_text_parents_fileprops(
                     self._override_text_parents, self._svnprops)
-        if self._config_stack.get_log_strip_trailing_newline():
+        if self._config_stack.get("log-strip-trailing-newline"):
             if self.set_custom_revprops:
                 self.mapping.export_message_revprops(message,
                     self._svn_revprops)
@@ -882,7 +882,7 @@ class SvnCommitBuilder(CommitBuilder):
         self.mutter('commit %d finished. author: %r, date: %r',
                result_revision, result_author, result_date)
 
-        override_svn_revprops = self._config.get('override-svn-revprops')
+        override_svn_revprops = self._config_stack.get('override-svn-revprops')
         if override_svn_revprops is not None:
             new_revprops = {}
             if (("%s=committer" % properties.PROP_REVISION_AUTHOR) in override_svn_revprops or

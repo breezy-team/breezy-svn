@@ -54,7 +54,7 @@ from bzrlib.plugins.svn.commit import (
     SvnCommitBuilder,
     )
 from bzrlib.plugins.svn.config import (
-    BranchConfig,
+    SvnBranchStack,
     )
 from bzrlib.plugins.svn.errors import (
     ChangesRootLHSHistory,
@@ -110,7 +110,7 @@ def _filter_iter_changes(iter_changes):
             yield change
 
 
-def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
+def push_revision_tree(graph, target_repo, branch_path, config_stack, source_repo,
                        base_revid, revision_id, rev,
                        base_foreign_revid, base_mapping,
                        push_metadata,
@@ -120,7 +120,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
     :param graph: Repository graph.
     :param target_repo: Target repository.
     :param branch_path: Branch path.
-    :param config: Branch configuration.
+    :param config_stack: Branch configuration.
     :param source_repo: Source repository.
     :param base_revid: Base revision id.
     :param revision_id: Revision id to push.
@@ -154,7 +154,7 @@ def push_revision_tree(graph, target_repo, branch_path, config, source_repo,
         testament = None
 
     builder = SvnCommitBuilder(target_repo, branch_path, base_revids,
-                               config, rev.timestamp,
+                               config_stack, rev.timestamp,
                                rev.timezone, rev.committer, rev.properties,
                                revision_id, base_foreign_revid, base_mapping,
                                root_action, base_tree,
@@ -451,7 +451,7 @@ class InterToSvnRepository(InterRepository):
         return (revid, foreign_info)
 
     def _get_branch_config(self, branch_path):
-        return BranchConfig(urlutils.join(self.target.base, branch_path),
+        return SvnBranchStack(urlutils.join(self.target.base, branch_path),
                 self.target.uuid)
 
     def push_ancestors(self, layout, project, parent_revids, lossy=False,
@@ -728,7 +728,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
             raise AssertionError("mapping format %r doesn't support hidden" %
                 mapping)
         to_url = urlutils.join(repository.base, branch_path)
-        config = BranchConfig(to_url, repository.uuid)
+        config = SvnBranchStack(to_url, repository.uuid)
         (set_custom_revprops,
             set_custom_fileprops) = repository._properties_to_set(mapping, config)
         if set_custom_revprops:
