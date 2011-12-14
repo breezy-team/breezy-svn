@@ -403,8 +403,8 @@ class SvnCommitBuilder(CommitBuilder):
 
     updates_branch = True
 
-    def __init__(self, repository, branch_path, parents, config, timestamp,
-                 timezone, committer, revprops, revision_id,
+    def __init__(self, repository, branch_path, parents, config_stack,
+                 timestamp, timezone, committer, revprops, revision_id,
                  base_foreign_revid, base_mapping, root_action, old_tree=None,
                  push_metadata=True, graph=None, opt_signature=None,
                  testament=None, branch=None, _rich_root_bump=False):
@@ -413,7 +413,7 @@ class SvnCommitBuilder(CommitBuilder):
         :param repository: SvnRepository to commit to.
         :param branch: branch path to commit to.
         :param parents: List of parent revision ids.
-        :param config: Branch configuration to use.
+        :param config_stack: Branch configuration stack to use.
         :param timestamp: Optional timestamp recorded for commit.
         :param timezone: Optional timezone for timestamp.
         :param committer: Optional committer to set for commit.
@@ -430,7 +430,7 @@ class SvnCommitBuilder(CommitBuilder):
         """
         self.push_metadata = push_metadata
         super(SvnCommitBuilder, self).__init__(repository, parents,
-            config, timestamp, timezone, committer, revprops, revision_id)
+            config_stack, timestamp, timezone, committer, revprops, revision_id)
         self._basis_delta = []
         self.new_inventory = None
         self._any_changes = False
@@ -511,7 +511,7 @@ class SvnCommitBuilder(CommitBuilder):
         if push_metadata:
             (self.set_custom_revprops,
                 self.set_custom_fileprops) = self.repository._properties_to_set(
-                    self.mapping, config)
+                    self.mapping, config_stack)
         else:
             self.set_custom_revprops = False
             self.set_custom_fileprops = False
@@ -774,7 +774,7 @@ class SvnCommitBuilder(CommitBuilder):
                     self._override_file_ids, self._svnprops)
                 self.mapping.export_text_parents_fileprops(
                     self._override_text_parents, self._svnprops)
-        if self._config.get_log_strip_trailing_newline():
+        if self._config_stack.get_log_strip_trailing_newline():
             if self.set_custom_revprops:
                 self.mapping.export_message_revprops(message,
                     self._svn_revprops)
