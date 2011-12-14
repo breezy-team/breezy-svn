@@ -452,6 +452,8 @@ _mod_bzr_config.option_registry.register_lazy('log-strip-trailing-newline',
     'bzrlib.plugins.svn.config', 'svn_log_strip_trailing_new_line')
 _mod_bzr_config.option_registry.register_lazy('push_merged_revisions',
     'bzrlib.plugins.svn.config', 'svn_push_merged_revisions')
+_mod_bzr_config.option_registry.register_lazy('allow_metadata_in_file_properties',
+    'bzrlib.plugins.svn.config', 'svn_allow_metadata_in_fileprops')
 
 def test_suite():
     """Returns the testsuite for bzr-svn."""

@@ -648,7 +648,7 @@ class SvnRepository(ForeignRepository):
             use_revprops = False
             use_fileprops = mapping.can_use_fileprops
         if (use_fileprops and
-            not target_config.get_allow_metadata_in_fileprops()):
+            not target_config.get('allow_metadata_in_file_properties')):
             raise errors.RequiresMetadataInFileProps()
         return (use_revprops, use_fileprops)
 

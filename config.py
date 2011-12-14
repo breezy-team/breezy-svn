@@ -401,15 +401,6 @@ class BranchConfig(Config):
                 return value
         return None
 
-    def get_allow_metadata_in_fileprops(self):
-        """Check whether file properties may be used to store bzr-svn metadata.
-
-        """
-        try:
-            return self.get_bool("allow_metadata_in_file_properties")
-        except KeyError:
-            return False
-
     def get_append_revisions_only(self, default=True):
         """Check whether it is possible to remove revisions from the mainline.
         """
@@ -590,4 +581,13 @@ svn_push_merged_revisions = _mod_bzr_config.Option('push_merged_revisions',
     default=False, from_unicode=_mod_bzr_config.bool_from_store,
     help='''\
 Whether to push merged revisions.
+''')
+svn_allow_metadata_in_fileprops = _mod_bzr_config.Option('allow_metadata_in_file_properties',
+    default=False, from_unicode=_mod_bzr_config.bool_from_store,
+    help='''\
+Whether to allow bzr-svn to store bzr-svn-specific metadata in Subversion file properties.
+
+This is usually a bad idea, and not necessary with newer versions of Subversion,
+which support revision properties. This setting is present for compatibility with
+older versions of bzr-svn.
 ''')
