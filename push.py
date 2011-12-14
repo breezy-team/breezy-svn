@@ -492,7 +492,7 @@ class InterToSvnRepository(InterRepository):
             bp = determine_branch_path(rev, layout, target_project, exclude)
             target_config = self._get_branch_config(bp)
             push_merged = (layout.push_merged_revisions(target_project) and
-                target_config.get_push_merged_revisions())
+                target_config.get('push_merged_revisions'))
             root_action = self._get_root_action(bp, rev.parent_ids,
                 overwrite=True,
                 append_revisions_only=target_config.get_append_revisions_only(False),
@@ -517,7 +517,7 @@ class InterToSvnRepository(InterRepository):
         target_config = self._get_branch_config(target_branch_path)
         mapping = self.target.get_mapping()
         push_merged = (layout.push_merged_revisions(project) and
-            target_config.get_push_merged_revisions())
+            target_config.get('push_merged_revisions'))
 
         graph = self.source.get_graph()
         start_revid_parent = NULL_REVISION
@@ -626,7 +626,7 @@ class InterToSvnRepository(InterRepository):
                     can_push_merged = layout.push_merged_revisions(target_project)
                     if exclude_non_mainline is None:
                         push_merged = can_push_merged and (
-                            target_config.get_push_merged_revisions())
+                            target_config.get('push_merged_revisions'))
                     else:
                         push_merged = (not exclude_non_mainline)
                     if push_merged and not can_push_merged:

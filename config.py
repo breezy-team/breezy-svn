@@ -586,3 +586,8 @@ Whether or not trailing newlines should be stripped in the Subversion log messag
 
 This only applies to revisions created by bzr-svn.
 ''')
+svn_push_merged_revisions = _mod_bzr_config.Option('push_merged_revisions',
+    default=False, from_unicode=_mod_bzr_config.bool_from_store,
+    help='''\
+Whether to push merged revisions.
+''')

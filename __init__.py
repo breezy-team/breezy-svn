@@ -450,6 +450,8 @@ _mod_bzr_config.option_registry.register_lazy('override-svn-revprops',
     'bzrlib.plugins.svn.config', 'svn_override_revprops')
 _mod_bzr_config.option_registry.register_lazy('log-strip-trailing-newline',
     'bzrlib.plugins.svn.config', 'svn_log_strip_trailing_new_line')
+_mod_bzr_config.option_registry.register_lazy('push_merged_revisions',
+    'bzrlib.plugins.svn.config', 'svn_push_merged_revisions')
 
 def test_suite():
     """Returns the testsuite for bzr-svn."""
