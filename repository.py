@@ -38,10 +38,7 @@ from bzrlib.repository import (
     RepositoryFormat,
     needs_read_lock,
     )
-try:
-    from bzrlib.revisiontree import InventoryRevisionTree
-except ImportError:# bzr < 2.4
-    from bzrlib.revisiontree import RevisionTree as InventoryRevisionTree
+from bzrlib.revisiontree import InventoryRevisionTree
 from bzrlib.revision import (
     NULL_REVISION,
     ensure_null,
@@ -488,10 +485,6 @@ class SvnRepository(ForeignRepository):
     def add_fallback_repository(self, basis_url):
         raise bzr_errors.UnstackableRepositoryFormat(self._format, self.base)
 
-    def revision_graph_can_have_wrong_parents(self):
-        # DEPRECATED in bzr 2.4
-        return False
-
     def pack(self, hint=None, clean_obsolete_packs=False):
         try:
             local_path = self.transport.local_abspath(".")
@@ -797,10 +790,6 @@ class SvnRepository(ForeignRepository):
         if self._guessed_layout is None:
             self._find_guessed_layout(self.get_config())
         return self._guessed_layout
-
-    def _warn_if_deprecated(self, branch=None): # for bzr < 2.4
-        # This class isn't deprecated
-        pass
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.base)

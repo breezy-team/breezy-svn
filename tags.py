@@ -404,10 +404,6 @@ class SubversionTags(BasicTags):
                 dest_dict, overwrite)
             if ret[0] != dest_dict:
                 to_tags._set_tag_dict(ret[0])
-            # bzr < 2.5 returns a 2-tuple, >= 2.5 returns a 3-tuple
-            if len(ret) == 3:
-                return (ret[1], ret[2])
-            else:
-                return ret[1]
+            return (ret[1], ret[2])
         finally:
             to_tags.branch.unlock()

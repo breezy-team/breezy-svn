@@ -45,17 +45,14 @@ __version__ = version_string
 
 bzrlib.api.require_any_api(bzrlib, bzr_compatible_versions)
 
-try:
-    from bzrlib.i18n import load_plugin_translations
-except ImportError: # No translations for bzr < 2.5
-    gettext = lambda x: x
-else:
-    translation = load_plugin_translations("bzr-svn")
-    gettext = translation.gettext
+from bzrlib.i18n import load_plugin_translations
+translation = load_plugin_translations("bzr-svn")
+gettext = translation.gettext
 
 
 from bzrlib import config as _mod_bzr_config # Or we mask plugins.svn.config
 from bzrlib.branch import (
+    format_registry as branch_format_registry,
     network_format_registry as branch_network_format_registry,
     )
 from bzrlib.commands import (
@@ -340,54 +337,25 @@ topic_registry.register_lazy('svn-layout',
 ControlDirFormat.register_prober(SvnWorkingTreeProber)
 ControlDirFormat._server_probers.insert(0, SvnRemoteProber)
 
-if not getattr(Prober, "known_formats", False): # bzr < 2.4
-    lazy_check_versions()
-    from bzrlib.plugins.svn.remote import SvnRemoteFormat
-    ControlDirFormat.register_format(SvnRemoteFormat())
-    from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
-    ControlDirFormat.register_format(SvnWorkingTreeDirFormat())
-    # Provide RevisionTree.get_file_revision, so various parts of bzr-svn
-    # can avoid inventories.
-    from bzrlib.revisiontree import RevisionTree
-    def get_file_revision(tree, file_id, path=None):
-        return tree.inventory[file_id].revision
-    RevisionTree.get_file_revision = get_file_revision
-
-
 network_format_registry.register_lazy("svn-wc",
     'bzrlib.plugins.svn.workingtree', 'SvnWorkingTreeDirFormat')
 network_format_registry.register_lazy("subversion",
     'bzrlib.plugins.svn.remote', 'SvnRemoteFormat')
-try:
-    from bzrlib.branch import (
-        format_registry as branch_format_registry,
-        )
-except ImportError: # bzr < 2.4
-    pass
-else:
-    branch_format_registry.register_extra_lazy(
-        'bzrlib.plugins.svn.branch', 'SvnBranchFormat')
-try:
-    from bzrlib.workingtree import (
-        format_registry as workingtree_format_registry,
-        )
-except ImportError: # bzr < 2.4
-    pass
-else:
-    workingtree_format_registry.register_extra_lazy(
-        'bzrlib.plugins.svn.workingtree', 'SvnWorkingTreeFormat')
+branch_format_registry.register_extra_lazy(
+    'bzrlib.plugins.svn.branch', 'SvnBranchFormat')
+from bzrlib.workingtree import (
+    format_registry as workingtree_format_registry,
+    )
+workingtree_format_registry.register_extra_lazy(
+    'bzrlib.plugins.svn.workingtree', 'SvnWorkingTreeFormat')
 branch_network_format_registry.register_lazy("subversion",
     'bzrlib.plugins.svn.branch', 'SvnBranchFormat')
 repository_network_format_registry.register_lazy("subversion",
     'bzrlib.plugins.svn.repository', 'SvnRepositoryFormat')
-try:
-    register_extra_lazy_repository_format = getattr(repository_format_registry,
-        'register_extra_lazy')
-except AttributeError: # bzr < 2.4
-    pass
-else:
-    register_extra_lazy_repository_format('bzrlib.plugins.svn.repository',
-        'SvnRepositoryFormat')
+register_extra_lazy_repository_format = getattr(repository_format_registry,
+    'register_extra_lazy')
+register_extra_lazy_repository_format('bzrlib.plugins.svn.repository',
+    'SvnRepositoryFormat')
 
 format_registry.register_lazy("subversion", "bzrlib.plugins.svn.remote",
                          "SvnRemoteFormat",
@@ -459,22 +427,11 @@ def update_stanza(rev, stanza):
         stanza.add("svn-revno", str(revno))
         stanza.add("svn-uuid", uuid)
 
-try:
-    from bzrlib.hooks import install_lazy_named_hook
-except ImportError: # bzr < 2.4
-    from bzrlib.version_info_formats.format_rio import (
-        RioVersionInfoBuilder,
-        )
-    RioVersionInfoBuilder.hooks.install_named_hook('revision',
-        update_stanza, "svn metadata")
-    from bzrlib.info import hooks as info_hooks
-    info_hooks.install_named_hook('repository', info_svn_repository, None)
-else:
-    install_lazy_named_hook("bzrlib.version_info_formats.format_rio",
-        "RioVersionInfoBuilder.hooks", "revision", update_stanza, "svn metadata")
-    install_lazy_named_hook("bzrlib.info", "hooks",
-            'repository', info_svn_repository, "svn repository info")
-
+from bzrlib.hooks import install_lazy_named_hook
+install_lazy_named_hook("bzrlib.version_info_formats.format_rio",
+    "RioVersionInfoBuilder.hooks", "revision", update_stanza, "svn metadata")
+install_lazy_named_hook("bzrlib.info", "hooks",
+        'repository', info_svn_repository, "svn repository info")
 
 from bzrlib.send import format_registry as send_format_registry
 send_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',

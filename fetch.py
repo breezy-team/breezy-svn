@@ -61,10 +61,7 @@ from bzrlib.inventory import (
 from bzrlib.revision import (
     NULL_REVISION,
     )
-try:
-    from bzrlib.revisiontree import InventoryRevisionTree
-except ImportError: # bzr < 2.4
-    from bzrlib.revisiontree import RevisionTree as InventoryRevisionTree
+from bzrlib.revisiontree import InventoryRevisionTree
 from bzrlib.repository import (
     InterRepository,
     )

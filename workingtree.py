@@ -125,18 +125,11 @@ from bzrlib.plugins.svn.tree import (
     SubversionTree,
     )
 
-# Compatibility with bzr < 2.5
-get_transport_from_path = getattr(_mod_transport, "get_transport_from_path",
-        _mod_transport.get_transport)
-
 # Compatibility with subvertpy < 0.8.9
 ERR_WC_NODE_KIND_CHANGE = getattr(subvertpy, "ERR_WC_NODE_KIND_CHANGE", 155018)
 
 
-try:
-    from bzrlib.controldir import Converter
-except ImportError:
-    from bzrlib.bzrdir import Converter
+from bzrlib.controldir import Converter
 from bzrlib.controldir import (
     ControlDirFormat,
     ControlDir,

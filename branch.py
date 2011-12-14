@@ -1097,11 +1097,6 @@ class InterToSvnBranch(InterBranch):
                 new_last_revid,
                 dict([(k, v[0]) for (k, v) in revid_map.iteritems()]))
 
-    def lossy_push(self, stop_revision=None):
-        """See InterBranch.lossy_push()."""
-        # For compatibility with bzr < 2.4
-        return self.push(lossy=True, stop_revision=stop_revision)
-
     def fetch(self, stop_revision=None, fetch_tags=None, find_ghosts=False,
             limit=None, exclude_non_mainline=None):
         """Fetch into a subversion repository."""
