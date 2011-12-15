@@ -740,7 +740,8 @@ class SvnRepository(ForeignRepository):
             self._layout_source = LAYOUT_SOURCE_MAPPING_MANDATED
             self._layout = self.get_mapping().get_mandated_layout(self)
         if self._layout is None:
-            layoutname = self.get_config().get_layout()
+            config_stack = self.get_config_stack()
+            layoutname = config_stack.get('layout')
             if layoutname is not None:
                 self._layout_source = LAYOUT_SOURCE_CONFIG
                 self._layout = layout.layout_registry.get(layoutname)()

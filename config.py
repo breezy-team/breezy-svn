@@ -236,9 +236,6 @@ class SvnRepositoryConfig(Config):
     def set_user_option(self, name, value):
         self._get_uuid_config().set_user_option(name, value)
 
-    def get_layout(self):
-        return self._get_user_option("layout", use_global=False)
-
     def get_guessed_layout(self):
         return self._get_user_option("guessed-layout", use_global=False)
 
@@ -514,7 +511,7 @@ class SubversionBuildPackageConfig(object):
         self.option_source[option_name] = value
 
 
-svn_layout_option = _mod_bzr_config.Option('svn.layout', default=None,
+svn_layout_option = _mod_bzr_config.Option('layout', default=None,
            help='''\
 The mandated bzr-svn repository layout to use.
 

@@ -442,7 +442,7 @@ diff_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
         'SvnDiffTree', 'Subversion diff format')
 
 
-_mod_bzr_config.option_registry.register_lazy('svn.layout',
+_mod_bzr_config.option_registry.register_lazy('layout',
     'bzrlib.plugins.svn.config', 'svn_layout_option')
 _mod_bzr_config.option_registry.register_lazy('branches',
     'bzrlib.plugins.svn.config', 'svn_branches_option')
