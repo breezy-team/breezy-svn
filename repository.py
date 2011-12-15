@@ -753,15 +753,15 @@ class SvnRepository(ForeignRepository):
                 self._layout = WildcardLayout(branches, tags or [])
         if self._layout is None:
             if self._guessed_appropriate_layout is None:
-                self._find_guessed_layout(self.get_config())
+                self._find_guessed_layout(self.get_config_stack())
             self._layout_source = LAYOUT_SOURCE_GUESSED
             self._layout = self._guessed_appropriate_layout
         return self._layout, self._layout_source
 
-    def _find_guessed_layout(self, config):
+    def _find_guessed_layout(self, config_stack):
         # Retrieve guessed-layout from config and see if it accepts
         # self._hinted_branch_path
-        layoutname = config.get_guessed_layout()
+        layoutname = config_stack.get('guessed-layout')
         if layoutname is not None:
             config_guessed_layout = layout.layout_registry.get(layoutname)()
             if (self._hinted_branch_path is None or
@@ -778,7 +778,7 @@ class SvnRepository(ForeignRepository):
             self._guessed_appropriate_layout) = repository_guess_layout(self,
                     revnum, self._hinted_branch_path)
         if self._guessed_layout != config_guessed_layout and revnum > 200:
-            self.get_config().set_guessed_layout(self._guessed_layout)
+            config_stack.set('guessed-layout', self._guessed_layout)
 
     def get_guessed_layout(self):
         """Retrieve the layout bzr-svn deems most appropriate for this repo.
@@ -789,7 +789,7 @@ class SvnRepository(ForeignRepository):
         if self._guessed_layout is None:
             self._guessed_layout = self.get_mapping().get_guessed_layout(self)
         if self._guessed_layout is None:
-            self._find_guessed_layout(self.get_config())
+            self._find_guessed_layout(self.get_config_stack())
         return self._guessed_layout
 
     def __repr__(self):
