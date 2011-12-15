@@ -584,3 +584,8 @@ This is usually a bad idea, and not necessary with newer versions of Subversion,
 which support revision properties. This setting is present for compatibility with
 older versions of bzr-svn.
 ''')
+
+# FIXME: Here as a placeholder, until bzr gets append_revisions_only support
+append_revisions_only = _mod_bzr_config.Option('append_revisions_only',
+    default=None, from_unicode=_mod_bzr_config.bool_from_store,
+    help='''Whether to append revisions only.''')

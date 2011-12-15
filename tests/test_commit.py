@@ -177,7 +177,7 @@ class TestNativeCommit(SubversionTestCase):
         branch.lock_write()
         self.addCleanup(branch.unlock)
         cb = branch.repository.get_commit_builder(branch,
-            [branch.last_revision()], branch.get_config(),
+            [branch.last_revision()], branch.get_config_stack(),
             revision_id="foorevid", lossy=True)
         revid = cb.commit("msg")
         self.assertEquals(

@@ -592,11 +592,15 @@ class SvnRemoteAccess(ControlDir):
         return self._config
 
     def list_branches(self):
+        return self.get_branches().values()
+
+    def get_branches(self):
         repos = self.find_repository()
         layout = repos.get_layout()
-        branches = []
+        branches = {}
         for project, bp, nick, has_props, revnum in layout.get_branches(repos,
                 repos.get_latest_revnum()):
-            branches.append(self.open_branch(branch_path=bp, repository=repos))
+            b = self.open_branch(branch_path=bp, repository=repos)
+            branches[b.name] = b
         return branches
 

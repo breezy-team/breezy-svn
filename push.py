@@ -330,8 +330,9 @@ class InterToSvnRepository(InterRepository):
             if heads == set([old_last_revid, stop_revision]):
                 raise SubversionBranchDiverged(self.source, stop_revision,
                         self.target, target_branch_path, old_last_revid)
-        append_revisions_only = target_config.get_append_revisions_only(
-            not overwrite)
+        append_revisions_only = target_config.get('append_revisions_only')
+        if append_revisions_only is None:
+            append_revisions_only = (not overwrite)
         return self.push_todo(old_last_revid, old_last_foreign_revid,
             mapping, stop_revision, layout, project,
             target_branch_path, target_config, push_merged=push_merged,
@@ -495,7 +496,7 @@ class InterToSvnRepository(InterRepository):
                 target_config.get('push_merged_revisions'))
             root_action = self._get_root_action(bp, rev.parent_ids,
                 overwrite=True,
-                append_revisions_only=target_config.get_append_revisions_only(False),
+                append_revisions_only=(target_config.get('append_revisions_only') or False),
                 create_prefix=True)
             self.push_revision_inclusive(bp, target_config, rev,
                 push_metadata=not lossy, push_merged=push_merged,
@@ -633,9 +634,12 @@ class InterToSvnRepository(InterRepository):
                         raise BzrError(
                             "Unable to push merged revisions, layout "
                             "does not provide branch path")
+                    append_revisions_only = target_config.get('append_revisions_only')
+                    if append_revisions_only is None:
+                        append_revisions_only = True
                     root_action = self._get_root_action(bp, rev.parent_ids,
                         overwrite=False,
-                        append_revisions_only=target_config.get_append_revisions_only(True),
+                        append_revisions_only=append_revisions_only,
                         create_prefix=True)
                     (pushed_revid,
                             base_foreign_info) = self.push_revision_inclusive(

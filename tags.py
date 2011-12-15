@@ -381,18 +381,12 @@ class SubversionTags(BasicTags):
             done.
         """
         if (self.branch == to_tags.branch or not self.branch.supports_tags()):
-            if bzrlib_version >= (2, 5):
-                return {}, []
-            else:
-                return
+            return {}, []
         tag_revmetas = self._get_tag_dict_revmeta(_from_revnum, _to_revnum)
         if len(tag_revmetas) == 0:
             # no tags in the source, and we don't want to clobber anything
             # that's in the destination
-            if bzrlib_version >= (2, 5):
-                return {}, []
-            else:
-                return
+            return {}, []
         to_tags.branch.lock_write()
         try:
             graph = to_tags.branch.repository.get_graph()

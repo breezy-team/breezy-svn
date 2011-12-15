@@ -20,7 +20,6 @@ from bzrlib import bzrdir
 from bzrlib.branch import Branch
 from bzrlib.repository import Repository
 from bzrlib.tests import test_config
-from bzrlib.workingtree import WorkingTree
 from bzrlib.plugins.svn.config import (
     NoSubversionBuildPackageConfig,
     PropertyConfig,
@@ -44,7 +43,7 @@ def build_svn_branch_stack(test):
         test.backing_branch = bzrdir.BzrDir.open(repo.base
                                                  ).create_branch(lossy=False)
     b = Branch.open('branch')
-    return SvnBranchStack(b)
+    return SvnBranchStack(b.base, b.repository.uuid)
 
 
 class TestReadonlySubversionStore(test_config.TestReadonlyStore):
@@ -70,13 +69,12 @@ class TestUUIDMatcherStoreLoading(test_config.TestSectionMatcher):
         self.matcher = UUIDMatcher
 
 
-if getattr(test_config, "TestNameMatcher", None): # bzr >= 2.5
-    class TestUUIDMatching(test_config.TestNameMatcher):
+class TestUUIDMatching(test_config.TestNameMatcher):
 
-        def setUp(self):
-            super(TestUUIDMatching, self).setUp()
-            self.get_store = build_subversion_store
-            self.matcher = UUIDMatcher
+    def setUp(self):
+        super(TestUUIDMatching, self).setUp()
+        self.get_store = build_subversion_store
+        self.matcher = UUIDMatcher
 
 
 class TestConcurrentStoreUpdates(test_config.TestConcurrentStoreUpdates):
@@ -205,21 +203,27 @@ class BranchConfigTests(SubversionTestCase):
 
     def setUp(self):
         super(BranchConfigTests, self).setUp()
-        self.config = self.make_svn_branch("d").get_config_stack()
+        self.config = self.make_svn_branch("d").get_config()
 
     def test_has_explicit_nickname(self):
         self.assertEquals(False, self.config.has_explicit_nickname())
 
+class BranchConfigStackTests(SubversionTestCase):
+
+    def setUp(self):
+        super(BranchConfigStackTests, self).setUp()
+        self.config = self.make_svn_branch("d").get_config_stack()
+
     def test_set_option(self):
-        self.config.set_user_option("append_revisions_only", "True")
-        self.assertEquals("True", self.config.get_user_option("append_revisions_only"))
+        self.config.set("append_revisions_only", "True")
+        self.assertEquals(True, self.config.get('append_revisions_only'))
 
     def test_log_strip_trailing_newline(self):
-        self.assertEquals(False, self.config.get_log_strip_trailing_newline())
-        self.config.set_user_option("log-strip-trailing-newline", "True")
-        self.assertEquals(True, self.config.get_log_strip_trailing_newline())
-        self.config.set_user_option("log-strip-trailing-newline", "False")
-        self.assertEquals(False, self.config.get_log_strip_trailing_newline())
+        self.assertEquals(False, self.config.get('log-strip-trailing-newline'))
+        self.config.set("log-strip-trailing-newline", "True")
+        self.assertEquals(True, self.config.get('log-strip-trailing-newline'))
+        self.config.set("log-strip-trailing-newline", "False")
+        self.assertEquals(False, self.config.get('log-strip-trailing-newline'))
 
     def test_override_revprops(self):
         self.assertEquals(None, self.config.get('override-svn-revprops'))
@@ -227,21 +231,21 @@ class BranchConfigTests(SubversionTestCase):
         self.assertEquals(["svn:date", "svn:author"], self.config.get('override-svn-revprops'))
         self.config.set("override-svn-revprops", "False")
         self.assertEquals([], self.config.get('override-svn-revprops'))
-        self.config.set("override-svn-revprops", ["svn:author", "svn:date"])
+        self.config.set("override-svn-revprops", "svn:author,svn:date")
         self.assertEquals(["svn:author", "svn:date"], self.config.get('override-svn-revprops'))
-        self.config.set("override-svn-revprops", ["svn:author"])
+        self.config.set("override-svn-revprops", "svn:author")
         self.assertEquals(["svn:author"], self.config.get('override-svn-revprops'))
-        self.config.set("override-svn-revprops", ["svn:author=author"])
+        self.config.set("override-svn-revprops", "svn:author=author")
         self.assertEquals(["svn:author=author"], self.config.get('override-svn-revprops'))
-        self.config.set("override-svn-revprops", ["svn:author=committer"])
+        self.config.set("override-svn-revprops", "svn:author=committer")
         self.assertEquals(["svn:author=committer"], self.config.get('override-svn-revprops'))
 
     def test_get_append_revisions_only(self):
-        self.assertEquals(True, self.config.get_append_revisions_only())
-        self.config.set_user_option("append_revisions_only", "True")
-        self.assertEquals(True, self.config.get_append_revisions_only())
-        self.config.set_user_option("append_revisions_only", "False")
-        self.assertEquals(False, self.config.get_append_revisions_only())
+        self.assertEquals(None, self.config.get('append_revisions_only'))
+        self.config.set("append_revisions_only", "True")
+        self.assertEquals(True, self.config.get('append_revisions_only'))
+        self.config.set("append_revisions_only", "False")
+        self.assertEquals(False, self.config.get('append_revisions_only'))
 
 
 class PropertyConfigTests(SubversionTestCase):

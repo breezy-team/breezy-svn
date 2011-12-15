@@ -624,7 +624,7 @@ if len(sys.argv) == 2:
             'Branch path: trunk\n'
             'Tag container directory: tags\n'
             'Branch container directory: branches\n'
-            'Push merged revisions: None\n' % svn_url,
+            'Push merged revisions: False\n' % svn_url,
                 self.run_bzr('svn-layout %s' % svn_url)[0])
 
     def test_svn_branches(self):
@@ -675,9 +675,6 @@ if len(sys.argv) == 2:
         self.run_bzr('log -v dc', retcode=0)
 
     def test_svn_import_colocated(self):
-        if bzrlib_version < (2, 5, 0):
-            raise TestSkipped("Colocated branches not supported in bzr < 2.5")
-
         svn_url = self.make_repository('d')
 
         dc = self.get_commit_editor(svn_url)
