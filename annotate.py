@@ -26,7 +26,6 @@ from subvertpy.delta import (
     )
 
 from bzrlib import (
-    trace,
     urlutils,
     )
 from bzrlib.annotate import (

@@ -142,26 +142,6 @@ class ReposConfigTests(SubversionTestCase):
         c.add_location("brainslug")
         self.assertEquals(set(["foobar", "brainslug", self.repos.base.rstrip("/")]), c.get_locations())
 
-    def test_get_branches(self):
-        c = self.config
-        c.set_user_option("branches", "bla;blie")
-        self.assertEquals(["bla", "blie"], c.get_branches())
-
-    def test_branches(self):
-        c = self.config
-        c.set_branches(["bla", "blie"])
-        self.assertEquals(["bla", "blie"], c.get_branches())
-
-    def test_get_tags(self):
-        c = self.config
-        c.set_user_option("tags", "bla;blie")
-        self.assertEquals(["bla", "blie"], c.get_tags())
-
-    def test_tags(self):
-        c = self.config
-        c.set_tags(["bla", "blie"])
-        self.assertEquals(["bla", "blie"], c.get_tags())
-
     def test_get_scheme_none(self):
         c = self.config
         self.assertEquals(None, c.get_branching_scheme())
@@ -246,6 +226,22 @@ class BranchConfigStackTests(SubversionTestCase):
         self.assertEquals(True, self.config.get('append_revisions_only'))
         self.config.set("append_revisions_only", "False")
         self.assertEquals(False, self.config.get('append_revisions_only'))
+
+    def test_get_branches(self):
+        c = self.config
+        self.assertIs(None, c.get('branches'))
+        c.set("branches", "bla;blie")
+        self.assertEquals(["bla", "blie"], c.get('branches'))
+
+    def test_get_tags(self):
+        c = self.config
+        c.set("tags", "bla;blie")
+        self.assertEquals(["bla", "blie"], c.get('tags'))
+
+    def test_tags(self):
+        c = self.config
+        c.set("tags", "bla;blie")
+        self.assertEquals(["bla", "blie"], c.get('tags'))
 
 
 class PropertyConfigTests(SubversionTestCase):

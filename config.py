@@ -236,27 +236,6 @@ class SvnRepositoryConfig(Config):
     def set_user_option(self, name, value):
         self._get_uuid_config().set_user_option(name, value)
 
-    def set_layout(self, layout):
-        return self.set_user_option("layout", str(layout))
-
-    def get_branches(self):
-        branches_str = self._get_user_option("branches", use_global=False)
-        if branches_str is None:
-            return None
-        return [b.encode("utf-8") for b in branches_str.split(";") if b != ""]
-
-    def get_tags(self):
-        tags_str = self._get_user_option("tags", use_global=False)
-        if tags_str is None:
-            return None
-        return [t.encode("utf-8") for t in tags_str.split(";") if t != ""]
-
-    def set_tags(self, tags):
-        self.set_user_option("tags", "".join(["%s;" % t.decode("utf-8") for t in tags]))
-
-    def set_branches(self, branches):
-        self.set_user_option("branches", "".join(["%s;" % b.decode("utf-8") for b in branches]))
-
     def get_reuse_revisions(self):
         ret = self._get_user_option("reuse-revisions")
         if ret is None:
@@ -520,9 +499,25 @@ The bzr-svn repository layout that bzr-svn guessed.
 See `bzr help svn-layout` for details.
 ''')
 
+def svn_paths_from_store(text):
+    return [b.encode("utf-8") for b in text.split(";") if b != ""]
+
 svn_branches_option = _mod_bzr_config.Option('branches', default=None,
+           from_unicode=svn_paths_from_store,
            help='''\
 Paths in the Subversion repository to consider branches.
+
+This should be a comma-separated list of paths, each relative to the
+repository root. Asterisks may be used as wildcards, and will match
+a single path element.
+
+See `bzr help svn-layout` for more information on Subversion repository layouts.
+''')
+
+svn_tags_option = _mod_bzr_config.Option('tags', default=None,
+           from_unicode=svn_paths_from_store,
+           help='''\
+Paths in the Subversion repository to consider tags.
 
 This should be a comma-separated list of paths, each relative to the
 repository root. Asterisks may be used as wildcards, and will match

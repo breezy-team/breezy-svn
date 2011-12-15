@@ -724,7 +724,7 @@ class SvnRepository(ForeignRepository):
     def store_layout(self, layout):
         """Permanantly store the layout for this repository."""
         self.set_layout(layout)
-        self.get_config().set_layout(layout)
+        self.get_config_stack().set('layout', str(layout))
         self._layout_source = LAYOUT_SOURCE_CONFIG
 
     def get_layout(self):
@@ -746,8 +746,9 @@ class SvnRepository(ForeignRepository):
                 self._layout_source = LAYOUT_SOURCE_CONFIG
                 self._layout = layout.layout_registry.get(layoutname)()
         if self._layout is None:
-            branches = self.get_config().get_branches()
-            tags = self.get_config().get_tags()
+            config_stack = self.get_config_stack()
+            branches = config_stack.get('branches')
+            tags = config_stack.get('tags')
             if branches is not None:
                 self._layout_source = LAYOUT_SOURCE_CONFIG
                 self._layout = WildcardLayout(branches, tags or [])
