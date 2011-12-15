@@ -25,7 +25,7 @@ from bzrlib.controldir import (
 import bzrlib.gpg
 from bzrlib import version_info as bzrlib_version
 from bzrlib.repository import Repository
-from bzrlib.tests import KnownFailure, TestSkipped
+from bzrlib.tests import KnownFailure
 from bzrlib.tests.blackbox import ExternalBase
 
 from bzrlib.plugins.svn.convert import load_dumpfile
@@ -468,7 +468,8 @@ Node-copyfrom-path: x
         Sets up BZR_EDITOR so that if an editor is spawned it will run a
         script that just adds a known message to the start of the file.
         """
-        f = file('fed.py', 'wb')
+        path = os.path.join(self.test_dir, 'fed.py')
+        f = file(path, 'wb')
         f.write('#!%s\n' % sys.executable)
         f.write("""\
 # coding=utf-8
@@ -495,8 +496,8 @@ if len(sys.argv) == 2:
             self.overideEnv('BZR_EDITOR', 'fed.bat')
         else:
             # [non-win32] make python script executable and set BZR_EDITOR
-            os.chmod('fed.py', 0755)
-            self.overrideEnv('BZR_EDITOR', './fed.py')
+            os.chmod(path, 0755)
+            self.overrideEnv('BZR_EDITOR', path)
 
     def test_set_branching_scheme_local(self):
         self.make_fake_editor()
