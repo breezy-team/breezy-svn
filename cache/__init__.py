@@ -31,10 +31,6 @@ from bzrlib.config import (
     ensure_config_dir_exists,
     )
 
-# Compatibility with bzr < 2.5
-get_transport_from_path = getattr(_mod_transport, "get_transport_from_path",
-        _mod_transport.get_transport)
-
 from bzrlib.plugins.svn import version_info
 
 
@@ -126,7 +122,8 @@ class RepositoryCache(object):
         return dir
 
     def open_transport(self):
-        return get_transport_from_path(self.create_cache_dir().decode(osutils._fs_enc))
+        return _mod_transport.get_transport_from_path(
+            self.create_cache_dir().decode(osutils._fs_enc))
 
     def open_fileid_map(self):
         from bzrlib.plugins.svn.fileids import FileIdMapCache
