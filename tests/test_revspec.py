@@ -17,6 +17,7 @@
 Tests for revision specificiers.
 """
 
+from bzrlib import version_info as bzrlib_version
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
 from bzrlib.errors import (
@@ -61,7 +62,12 @@ class TestRevSpecsBySubversion(SubversionTestCase):
         branch = Branch.open(repos_url)
         revinfo = revspec._match_on(branch, None)
 
-        self.assertEquals(RevisionInfo.from_revision_id(branch, branch.last_revision(), branch.revision_history()), revinfo)
+        if bzrlib_version < (2, 5):
+            self.assertEquals(RevisionInfo.from_revision_id(branch,
+                branch.last_revision(), branch.revision_history()), revinfo)
+        else:
+            self.assertEquals(RevisionInfo.from_revision_id(branch,
+                branch.last_revision()), revinfo)
 
     def test_invalid_revnum(self):
         revspec = RevisionSpec.from_string("svn:foo")

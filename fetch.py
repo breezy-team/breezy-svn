@@ -1252,7 +1252,7 @@ class FetchRevisionFinder(object):
                     else:
                         raise
                 if (m != master_mapping and
-                    not m.is_branch_or_tag(revmeta.branch_path)):
+                    not m.is_branch_or_tag(revmeta.metarev.branch_path)):
                     continue
                 lhs_parent_revmeta = revmeta.get_lhs_parent_revmeta(m)
                 if (lhs_parent_revmeta is not None and
@@ -1266,7 +1266,7 @@ class FetchRevisionFinder(object):
                     needs_checking.append((revmeta, m))
         self.needed.extend(reversed(self.check_revmetas(needs_checking)))
 
-    def find_all(self, mapping):
+    def find_all(self, mapping, layout):
         """Find all revisions from the source repository that are not
         yet in the target repository.
 
@@ -1276,7 +1276,7 @@ class FetchRevisionFinder(object):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             all_revs = self.source._revmeta_provider.iter_all_revisions(
-                    self.source.get_layout(),
+                    layout,
                     check_unusual_path=mapping.is_branch_or_tag,
                     from_revnum=from_revnum, pb=pb)
             return self.find_iter_revisions(all_revs, mapping, lambda x: False)
@@ -1603,7 +1603,8 @@ class InterFromSvnRepository(InterRepository):
                     find_ghosts=find_ghosts,
                     exclude_non_mainline=exclude_non_mainline)
         else:
-            revisionfinder.find_all(self.source.get_mapping())
+            revisionfinder.find_all(self.source.get_mapping(),
+                    self.source.get_layout())
         return revisionfinder.get_missing()
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,

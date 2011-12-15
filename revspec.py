@@ -15,6 +15,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Custom revision specifier for Subversion."""
 
+from bzrlib import version_info as bzrlib_version
 from bzrlib.errors import (
     InvalidRevisionId,
     InvalidRevisionSpec,
@@ -66,11 +67,14 @@ class RevisionSpec_svn(RevisionSpec):
                 except InvalidRevisionId:
                     continue
             if len(ret) == 1:
-                revid = ret.pop()
-                history = list(graph.iter_lefthand_ancestry(
-                    revid, (NULL_REVISION,)))
-                history.reverse()
-                return RevisionInfo.from_revision_id(branch, revid, history)
+                if bzrlib_version < (2, 5):
+                    revid = ret.pop()
+                    history = list(graph.iter_lefthand_ancestry(
+                        revid, (NULL_REVISION,)))
+                    history.reverse()
+                    return RevisionInfo.from_revision_id(branch, revid, history)
+                else:
+                    return RevisionInfo.from_revision_id(branch, revid)
             elif len(ret) == 0:
                 raise InvalidRevisionSpec(self.user_spec, branch)
             else:
@@ -80,7 +84,13 @@ class RevisionSpec_svn(RevisionSpec):
 
     def _match_on_native(self, branch):
         try:
-            return RevisionInfo.from_revision_id(branch, branch.generate_revision_id(self._get_revnum()), branch.revision_history())
+            if bzrlib_version < (2, 5):
+                return RevisionInfo.from_revision_id(branch,
+                        branch.generate_revision_id(self._get_revnum()),
+                        branch.revision_history())
+            else:
+                return RevisionInfo.from_revision_id(branch,
+                        branch.generate_revision_id(self._get_revnum()))
         except ValueError:
             raise InvalidRevisionSpec(self.user_spec, branch)
         except NoSuchRevision:

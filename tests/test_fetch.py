@@ -76,6 +76,10 @@ from bzrlib.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
     )
+from bzrlib.plugins.svn.mapping import (
+    SVN_REVPROP_BZR_MAPPING_VERSION,
+    SVN_REVPROP_BZR_ROOT,
+    )
 from bzrlib.plugins.svn.tests import (
     SubversionTestCase,
     )
@@ -425,6 +429,35 @@ class TestFetchWorks(FetchTestCase):
             self.assertEqual("data", tree.get_file_text(tree.path2id("foo/bla"), "foo/bla"))
         finally:
             newrepos.unlock()
+
+    def test_fetch_mapping_upgrade(self):
+        from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3
+        from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
+        repos_url = self.make_svn_repository('d')
+
+        dc = self.get_commit_editor(repos_url)
+        br1 = dc.add_dir("trunk")
+        br2 = br1.add_dir("trunk/bloe")
+        br2.add_file("trunk/bloe/README").modify("BLA")
+        dc.close()
+
+        old_mapping = BzrSvnMappingv3(TrunkBranchingScheme(0))
+        self.client_set_revprop(repos_url, 1, SVN_REVPROP_BZR_MAPPING_VERSION, old_mapping.name)
+        self.client_set_revprop(repos_url, 1, SVN_REVPROP_BZR_ROOT, "trunk")
+
+        dc = self.get_commit_editor(repos_url)
+        dc.open_dir("trunk").add_file("trunk/a").modify("LA")
+        dc.close()
+
+        oldrepos = Repository.open(repos_url)
+        to_bzrdir = BzrDir.create("f")
+        repo = to_bzrdir.create_repository()
+        revfinder = FetchRevisionFinder(oldrepos, repo)
+        new_mapping = oldrepos.get_mapping()
+        revfinder.find_all(new_mapping, TrunkLayout())
+        self.assertEquals(
+            [("trunk", 1, old_mapping), ("trunk", 2, new_mapping)],
+            [(rm.metarev.branch_path, rm.metarev.revnum, mapping) for (rm, mapping) in revfinder.needed])
 
     def test_fetch_move_root(self):
         repos_url = self.make_svn_repository('d')

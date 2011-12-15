@@ -83,6 +83,18 @@ from bzrlib.plugins.svn.tests import (
     )
 
 
+def revision_history(branch):
+    branch.lock_read()
+    try:
+        graph = branch.repository.get_graph()
+        history = list(graph.iter_lefthand_ancestry(branch.last_revision(),
+            [NULL_REVISION]))
+    finally:
+        branch.unlock()
+    history.reverse()
+    return history
+
+
 class TestDPush(SubversionTestCase):
 
     def setUp(self):
@@ -535,7 +547,7 @@ class TestPush(SubversionTestCase):
         revid = wt.commit(message="Commit from Bzr")
 
         b = Branch.open("%s/trunk" % self.repos_url)
-        wt.branch.push(b, stop_revision=wt.branch.revision_history()[-2])
+        wt.branch.push(b, stop_revision=revision_history(wt.branch)[-2])
         mutter('log %r' % self.client_log("%s/trunk" % self.repos_url, 0, 4)[4][0])
         if not b.mapping.can_use_revprops and b.mapping.can_use_fileprops:
             self.assertEquals('M',
@@ -1013,7 +1025,7 @@ class PushNewBranchTests(SubversionTestCase):
         newdir = BzrDir.open(repos_url+"/trunk")
         newbranch = newdir.import_branch(bzrwt.branch)
         def check(b):
-            self.assertEquals([revid1, revid2, revid3], b.revision_history())
+            self.assertEquals([revid1, revid2, revid3], revision_history(b))
             tree = b.repository.revision_tree(revid3)
             self.assertEquals("origid", tree.path2id("registry.moved/c.c"))
             self.assertEquals("newid", tree.path2id("registry.moved/generic.c"))
@@ -1102,7 +1114,7 @@ class PushNewBranchTests(SubversionTestCase):
         newdir = BzrDir.open(repos_url+"/trunk")
         newbranch = newdir.import_branch(bzrwt.branch)
         def check(b):
-            self.assertEquals([revid1, revid2], b.revision_history())
+            self.assertEquals([revid1, revid2], revision_history(b))
             tree = b.repository.revision_tree(revid2)
             self.assertEquals("origid", tree.path2id("registry.moved/generic.c"))
             self.assertEquals("dirid", tree.path2id("registry.moved"))
@@ -1157,7 +1169,7 @@ class PushNewBranchTests(SubversionTestCase):
         trunk.set_append_revisions_only(False)
         trunk.pull(bzrwt.branch)
 
-        self.assertEquals([revid1, revid2, revid3], trunk.revision_history())
+        self.assertEquals([revid1, revid2, revid3], revision_history(trunk))
 
     def test_complex_replace_dir(self):
         repos_url = self.make_svn_repository("a")
@@ -1176,7 +1188,7 @@ class PushNewBranchTests(SubversionTestCase):
         newdir = BzrDir.open(repos_url+"/trunk")
         newbranch = newdir.import_branch(bzrwt.branch)
         self.assertEquals(revid2, newbranch.last_revision())
-        self.assertEquals([revid1, revid2], newbranch.revision_history())
+        self.assertEquals([revid1, revid2], revision_history(newbranch))
 
         os.mkdir("n")
         BzrDir.open(repos_url+"/trunk").sprout("n")
@@ -1256,20 +1268,20 @@ class TestPushTwice(SubversionTestCase):
         bzrdir = svndir.sprout("dc")
         wt = bzrdir.open_workingtree()
         revid = wt.commit(message="Commit from Bzr")
-        expected_history = wt.branch.revision_history()
+        expected_history = revision_history(wt.branch)
 
         svndir1 = BzrDir.open(repos_url+"/branches/a")
         svndir1.import_branch(wt.branch)
-        self.assertEquals(expected_history, svndir1.open_branch().revision_history())
+        self.assertEquals(expected_history, revision_history(svndir1.open_branch()))
 
         svndir2 = BzrDir.open(repos_url+"/branches/b")
         svndir2.import_branch(wt.branch)
-        self.assertEquals(expected_history, svndir2.open_branch().revision_history())
+        self.assertEquals(expected_history, revision_history(svndir2.open_branch()))
 
         svndir1.open_branch().pull(wt.branch)
-        self.assertEquals(expected_history, svndir1.open_branch().revision_history())
+        self.assertEquals(expected_history, revision_history(svndir1.open_branch()))
         svndir2.open_branch().pull(wt.branch)
-        self.assertEquals(expected_history, svndir2.open_branch().revision_history())
+        self.assertEquals(expected_history, revision_history(svndir2.open_branch()))
 
 
 class DetermineBranchPathTests(TestCase):

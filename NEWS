@@ -11,6 +11,17 @@ bzr-svn 1.2.0					  UNRELEASED
 
   * No longer supports bzr 2.3 and 2.4. (Jelmer Vernooij)
 
+ BUG FIXES
+
+  * Properly abort when the commit editor commit function fails
+    rather than complaining about busy connections.  (Jelmer Vernooij, #890529)
+
+  * Ignore .svn directories that aren't actually svn working
+    copies. (Jelmer Vernooij, #862910)
+
+  * Fix find_iter_revisions when accessing repository that contains
+    old mapping data. (Jelmer Vernooij, #898780)
+
 bzr-svn 1.1.1					  2011-10-25
 
  CHANGES

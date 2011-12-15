@@ -861,11 +861,10 @@ class SvnCommitBuilder(CommitBuilder):
                 finally:
                     for dir_editor in reversed(branch_editors):
                         dir_editor.close()
+                editor.close()
             except:
                 editor.abort()
                 raise
-            else:
-                editor.close()
         finally:
             self.repository.transport.add_connection(self.conn)
             self.conn = None
