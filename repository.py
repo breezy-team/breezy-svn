@@ -1226,7 +1226,7 @@ class SvnRepository(ForeignRepository):
         if branch is None:
             raise Exception("branch option is required for "
                             "SvnRepository.get_commit_builder")
-        append_revisions_only = branch.get_config().get_append_revisions_only()
+        append_revisions_only = branch.get_config_stack().get('append_revisions_only')
         if append_revisions_only is None:
             append_revisions_only = True
         base_revmeta, base_mapping = branch.last_revmeta(skip_hidden=False)

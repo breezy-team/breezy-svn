@@ -458,7 +458,10 @@ class SvnBranch(ForeignBranch):
         return SvnBranchStack(self.base, self.repository.uuid)
 
     def get_append_revisions_only(self):
-        return self.get_config().get_append_revisions_only()
+        value = self.get_config_stack().get('append_revisions_only')
+        if value is None:
+            value = True
+        return value
 
     def _get_nick(self, local=False, possible_master_transports=None):
         """Find the nick name for this branch.
