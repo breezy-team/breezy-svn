@@ -459,11 +459,6 @@ _mod_bzr_config.option_registry.register_lazy('push_merged_revisions',
 _mod_bzr_config.option_registry.register_lazy('allow_metadata_in_file_properties',
     'bzrlib.plugins.svn.config', 'svn_allow_metadata_in_fileprops')
 
-# FIXME Here as a place holder, until bzr gets append_revisions_only support
-_mod_bzr_config.option_registry.register_lazy('append_revisions_only',
-    'bzrlib.plugins.svn.config', 'append_revisions_only')
-
-
 def test_suite():
     """Returns the testsuite for bzr-svn."""
     from unittest import TestSuite
