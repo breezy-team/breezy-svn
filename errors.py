@@ -253,14 +253,6 @@ class AbsentPath(BzrError):
         BzrError.__init__(self, path=path)
 
 
-class AmbiguousRevisionSpec(InvalidRevisionSpec):
-
-    _fmt = """Revision specifier %(revspec)s is ambiguous for %(branch)s. """
-
-    def __init__(self, revspec, branch):
-        BzrError.__init__(self, revspec=revspec, branch=branch)
-
-
 class NoCustomBranchPaths(BzrError):
 
     _fmt = """Layout %(layout)r does not support custom branch paths."""

@@ -21,16 +21,12 @@ from bzrlib.errors import (
     InvalidRevisionSpec,
     NoSuchRevision,
     )
-from bzrlib.revision import (
-    NULL_REVISION,
-    )
 from bzrlib.revisionspec import (
     RevisionSpec,
     RevisionInfo,
     )
 
 from bzrlib.plugins.svn import lazy_check_versions
-from bzrlib.plugins.svn.errors import AmbiguousRevisionSpec
 from bzrlib.plugins.svn.mapping import mapping_registry
 
 class RevisionSpec_svn(RevisionSpec):
@@ -49,6 +45,13 @@ class RevisionSpec_svn(RevisionSpec):
         loc = self.spec.find(':')
         return int(self.spec[loc+1:])
 
+    def _create_revinfo(self, branch, revid):
+        if bzrlib_version < (2, 5):
+            history = branch.revision_history()
+            return RevisionInfo.from_revision_id(branch, revid, history)
+        else:
+            return RevisionInfo.from_revision_id(branch, revid)
+
     def _match_on_foreign(self, branch):
         ret = set()
         try:
@@ -63,22 +66,11 @@ class RevisionSpec_svn(RevisionSpec):
                     (found_uuid, found_branch_path, found_revnum), found_mapping = \
                             mapping_registry.parse_revision_id(revid)
                     if found_revnum == revnum:
+                        return self._create_revinfo(branch, revid)
                         ret.add(revid)
                 except InvalidRevisionId:
                     continue
-            if len(ret) == 1:
-                if bzrlib_version < (2, 5):
-                    revid = ret.pop()
-                    history = list(graph.iter_lefthand_ancestry(
-                        revid, (NULL_REVISION,)))
-                    history.reverse()
-                    return RevisionInfo.from_revision_id(branch, revid, history)
-                else:
-                    return RevisionInfo.from_revision_id(branch, revid)
-            elif len(ret) == 0:
-                raise InvalidRevisionSpec(self.user_spec, branch)
-            else:
-                raise AmbiguousRevisionSpec(self.user_spec, branch)
+            raise InvalidRevisionSpec(self.user_spec, branch)
         finally:
             branch.unlock()
 
