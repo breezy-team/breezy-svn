@@ -28,10 +28,13 @@ bzr-svn also adds new commands to Bazaar:
 For more information about bzr-svn, see the bzr-svn FAQ.
 
 """
+
+from __future__ import absolute_import
+
 import bzrlib
 import bzrlib.api
 
-from info import (
+from bzrlib.plugins.svn.info import (
     bzr_plugin_version as version_info,
     bzr_compatible_versions,
     subvertpy_minimum_version,
