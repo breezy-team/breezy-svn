@@ -22,6 +22,9 @@ bzr-svn 1.2.0					  UNRELEASED
   * Fix find_iter_revisions when accessing repository that contains
     old mapping data. (Jelmer Vernooij, #898780)
 
+  * Reset pycurl state after OPTIONS request.
+    (Jelmer Vernooij, #774571)
+
 bzr-svn 1.1.1					  2011-10-25
 
  CHANGES
