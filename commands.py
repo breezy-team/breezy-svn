@@ -324,7 +324,8 @@ class cmd_fix_svn_ancestry(Command):
         from bzrlib.controldir import ControlDir
         from bzrlib.repository import InterRepository, Repository
         from bzrlib import trace
-        correct_repo = ControlDir.open_containing(svn_repository)[0].find_repository()
+        correct_dir = ControlDir.open_containing(svn_repository)[0]
+        correct_repo = correct_dir.find_repository()
         repo_to_fix = Repository.open(directory)
         revids = repo_to_fix.all_revision_ids()
         present_revisions = correct_repo.has_revisions(revids)
@@ -333,9 +334,15 @@ class cmd_fix_svn_ancestry(Command):
         del repo_to_fix
         trace.note("Renaming existing repository to repository.backup.")
         dir_to_fix.control_transport.rename('repository', 'repository.backup')
+        backup_transport = dir_to_fix.control_transport.clone(
+            'repository.backup')
         old_repo = old_repo_format.open(dir_to_fix, _found=True,
-            _override_transport=dir_to_fix.control_transport.clone('repository.backup'))
-        new_repo = dir_to_fix.create_repository()
+            _override_transport=backup_transport)
+        new_repo = dir_to_fix.create_repository(
+            shared=old_repo.is_shared())
+        working_trees = old_repo.make_working_trees()
+        if working_trees is not None:
+            new_repo.set_make_working_trees(working_trees)
         interrepo = InterRepository.get(correct_repo, new_repo)
         revisionfinder = interrepo.get_revision_finder(True)
         trace.note("Finding revisions to fetch from SVN")
