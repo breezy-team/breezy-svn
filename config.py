@@ -528,7 +528,7 @@ def override_svn_revprops_from_store(text):
             return []
     else:
         # FIXME: Check for allowed values ?
-        return _mod_bzr_config.list_from_store(text)
+        return text.split(",")
 
 
 svn_override_revprops = _mod_bzr_config.Option('override-svn-revprops', default=None,
