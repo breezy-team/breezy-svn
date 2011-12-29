@@ -7,6 +7,9 @@ bzr-svn 1.2.0					  UNRELEASED
 
   * Follow redirects when using pycurl. (Jelmer Vernooij)
 
+  * New hidden command 'bzr fix-svn-ancestry' command.
+    (Jelmer Vernooij)
+
  CHANGES
 
   * No longer supports bzr 2.3 and 2.4. (Jelmer Vernooij)
