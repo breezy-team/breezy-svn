@@ -306,3 +306,51 @@ class cmd_svn_branches(Command):
         self.outf.write(gettext("Tags:\n"))
         for (project, path, name, has_props, revnum) in layout.get_tags(repository, revnum, prefix):
             self.outf.write("%s (%s)\n" % (path, name))
+
+
+class cmd_fix_svn_ancestry(Command):
+    """Fix the SVN ancestry of a repository.
+
+    This will fix revisions that were imported from Subversion with older
+    versions of bzr-svn but have some incorrect data.
+    """
+
+    takes_args = ['svn_repository']
+    takes_options = [
+        'directory',
+        Option('no-reconcile', help="Don't reconcile the new repository.")]
+
+    def run(self, svn_repository, directory=".", no_reconcile=False):
+        from bzrlib.controldir import ControlDir
+        from bzrlib.repository import InterRepository, Repository
+        from bzrlib import trace
+        correct_repo = ControlDir.open_containing(svn_repository)[0].find_repository()
+        repo_to_fix = Repository.open(directory)
+        revids = repo_to_fix.all_revision_ids()
+        present_revisions = correct_repo.has_revisions(revids)
+        dir_to_fix = repo_to_fix.bzrdir
+        old_repo_format = repo_to_fix._format
+        del repo_to_fix
+        trace.note("Renaming existing repository to repository.backup.")
+        dir_to_fix.control_transport.rename('repository', 'repository.backup')
+        old_repo = old_repo_format.open(dir_to_fix, _found=True,
+            _override_transport=dir_to_fix.control_transport.clone('repository.backup'))
+        new_repo = dir_to_fix.create_repository()
+        interrepo = InterRepository.get(correct_repo, new_repo)
+        revisionfinder = interrepo.get_revision_finder(True)
+        trace.note("Finding revisions to fetch from SVN")
+        for revid in present_revisions:
+            foreign_revid, mapping = correct_repo.lookup_bzr_revision_id(
+                revid)
+            revisionfinder.find_until(foreign_revid, mapping,
+                find_ghosts=False, exclude_non_mainline=False)
+        trace.note("Fetching correct SVN revisions")
+        interrepo.fetch(needed=revisionfinder.get_missing())
+        trace.note("Fetching other revisions")
+        new_repo.fetch(old_repo)
+        if not no_reconcile:
+            from bzrlib.reconcile import reconcile
+            trace.note("Reconciling new repository.")
+            reconcile(dir_to_fix)
+        trace.note('Removing backup')
+        dir_to_fix.control_transport.delete_tree('repository.backup')
