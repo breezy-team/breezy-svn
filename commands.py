@@ -312,7 +312,11 @@ class cmd_fix_svn_ancestry(Command):
     """Fix the SVN ancestry of a repository.
 
     This will fix revisions that were imported from Subversion with older
-    versions of bzr-svn but have some incorrect data.
+    versions of bzr-svn but have some incorrect metadata.
+
+    This command should be used in the bzr branch with the broken
+    imported revisions, and takes the location of the SVN repository
+    to fetch the fixed revisions from as an argument.
     """
 
     takes_args = ['svn_repository']
