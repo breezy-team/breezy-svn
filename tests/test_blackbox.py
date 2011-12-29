@@ -693,3 +693,30 @@ if len(sys.argv) == 2:
         self.run_bzr('svn-import d dc')
         cd = ControlDir.open('dc')
         self.assertEquals(set([None, "somebranch"]), set([b.name for b in cd.list_branches()]))
+
+
+class TestFixSvnAncestry(SubversionTestCase, ExternalBase):
+
+    def setUp(self):
+        ExternalBase.setUp(self)
+        self._init_client()
+
+    def tearDown(self):
+        ExternalBase.tearDown(self)
+
+    def test_smoke(self):
+        svn_tree = self.make_svn_branch_and_tree("d", "dc")
+        svn_revid = svn_tree.commit('some svn commit')
+
+        bzr_tree = svn_tree.bzrdir.sprout("e").open_workingtree()
+        bzr_revid = bzr_tree.commit('another commit')
+        self.assertEquals(
+            set([bzr_revid, svn_revid]),
+            set(bzr_tree.branch.repository.all_revision_ids()))
+
+        self.run_bzr("fix-svn-ancestry -d e d")
+
+        self.assertEquals(
+            set([bzr_revid, svn_revid]),
+            set(Repository.open("e").all_revision_ids()))
+
