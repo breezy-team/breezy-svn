@@ -55,7 +55,7 @@ if __name__ == '__main__':
           classifiers=[
               'Topic :: Software Development :: Version Control',
               'Environment :: Plugins',
-              'Development Status :: 4 - Beta',
+              'Development Status :: 5 - Production/Stable',
               'License :: OSI Approved :: GNU General Public License (GPL)',
               'Natural Language :: English',
               'Operating System :: OS Independent',
