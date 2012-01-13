@@ -1690,7 +1690,7 @@ class SvnCheckout(ControlDir):
         return wt.branch.create_checkout(path, lightweight=True,
             revision_id=revision_id).bzrdir
 
-    def open_workingtree(self, _unsupported=False, recommend_upgrade=False):
+    def open_workingtree(self, unsupported=False, recommend_upgrade=False):
         wt_format = SvnWorkingTreeFormat(self._format.version)
         ret = SvnWorkingTree(self, wt_format, self.local_path, self.entry)
         try:

@@ -378,7 +378,7 @@ class SvnRemoteAccess(ControlDir):
             ret = format_registry.make_bzrdir('development-colo')
         return ret
 
-    def open_workingtree(self, _unsupported=False,
+    def open_workingtree(self, unsupported=False,
             recommend_upgrade=True):
         """See ControlDir.open_workingtree().
 
