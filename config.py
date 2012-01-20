@@ -77,6 +77,7 @@ class SubversionStore(_mod_bzr_config.LockableIniFileStore):
             _mod_bzr_config.config_dir(),
             possible_transports=possible_transports)
         super(SubversionStore, self).__init__(t, 'subversion.conf')
+        self.id = 'subversion'
 
 
 class UUIDMatcher(_mod_bzr_config.SectionMatcher):
