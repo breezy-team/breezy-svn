@@ -84,7 +84,7 @@ class TrunkLayout(RepositoryLayout):
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
-        if name is None:
+        if name == "":
             return urlutils.join(project, "trunk").strip("/")
         else:
             return urlutils.join(project, "branches", name).strip("/")

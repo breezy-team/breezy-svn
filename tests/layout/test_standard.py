@@ -74,9 +74,9 @@ class TrunkLayoutTests(TestCase,LayoutTests):
         self.layout = TrunkLayout()
 
     def test_get_branch_path_default(self):
-        self.assertEquals("trunk", self.layout.get_branch_path(None))
+        self.assertEquals("trunk", self.layout.get_branch_path(""))
         self.assertEquals("myproj/trunk",
-            self.layout.get_branch_path(None, "myproj"))
+            self.layout.get_branch_path("", "myproj"))
 
     def test_get_branch_path_somepath(self):
         self.assertEquals("branches/abranch",

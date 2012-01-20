@@ -692,7 +692,7 @@ if len(sys.argv) == 2:
         self.run_bzr('init --development-colo dc')
         self.run_bzr('svn-import d dc')
         cd = ControlDir.open('dc')
-        self.assertEquals(set([None, "somebranch"]), set([b.name for b in cd.list_branches()]))
+        self.assertEquals(set(["", "somebranch"]), set([b.name for b in cd.list_branches()]))
 
 
 class TestFixSvnAncestry(SubversionTestCase, ExternalBase):

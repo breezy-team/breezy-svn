@@ -443,14 +443,13 @@ class SvnRemoteAccess(ControlDir):
         layout = repos.get_layout()
         if branch_name is None and getattr(self, "_get_selected_branch", False):
             branch_name = self._get_selected_branch()
-        if branch_name is None and layout.is_branch_or_tag(self._branch_path):
+        if branch_name == "" and layout.is_branch_or_tag(self._branch_path):
             return self._branch_path
         try:
-            if branch_name is not None:
-                branch_name = osutils.safe_utf8(branch_name)
+            branch_name = osutils.safe_utf8(branch_name)
             return layout.get_branch_path(branch_name, self._branch_path)
         except NoCustomBranchPaths:
-            if branch_name is None:
+            if branch_name == "":
                 return self._branch_path
             else:
                 raise errors.NoColocatedBranchSupport(layout)
