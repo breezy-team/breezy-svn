@@ -74,7 +74,7 @@ class TrunkLayout(RepositoryLayout):
     def get_branch_name(self, path, project=""):
         name = urlutils.split(path)[-1]
         if name == "trunk":
-            return None
+            return u""
         return name.decode("utf-8")
 
     def get_branch_path(self, name, project=""):
@@ -192,14 +192,14 @@ class RootLayout(RepositoryLayout):
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
-        if name is not None or project:
+        if name != "" or project:
             raise svn_errors.NoCustomBranchPaths(self)
         return ""
 
     def get_branch_name(self, path, project=""):
         if path != "":
             raise svn_errors.NoCustomBranchPaths(self)
-        return None
+        return u""
 
     def parse(self, path):
         """Parse a path.
@@ -262,7 +262,7 @@ class CustomLayout(RepositoryLayout):
         return None
 
     def get_branch_name(self, path, project=""):
-        return None
+        return u""
 
     def parse(self, path):
         """Parse a path.
@@ -361,8 +361,8 @@ class WildcardLayout(RepositoryLayout):
             if wildcard_matches(path, p):
                 for a, wc in zip(path.split("/"), p.split("/")):
                     if "*" in wc:
-                        return a
-                return path.split("/")[-1]
+                        return a.decode("utf-8")
+                return path.split("/")[-1].decode("utf-8")
         return None
 
     def get_tag_name(self, path, project=""):
@@ -377,10 +377,7 @@ class WildcardLayout(RepositoryLayout):
 
         :param path: Path inside the repository.
         """
-        name = self.get_item_name(self.branches, path, project)
-        if name is not None:
-            name = name.decode("utf-8")
-        return name
+        return self.get_item_name(self.branches, path, project)
 
     def is_branch(self, path, project=None):
         for bp in self.branches:

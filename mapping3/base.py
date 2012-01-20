@@ -67,7 +67,7 @@ class SchemeDerivedLayout(RepositoryLayout):
         return (type, proj, bp, rp)
 
     def get_tag_name(self, path, project=None):
-        return path.split("/")[-1]
+        return path.split("/")[-1].decode("utf-8")
 
     def get_branch_name(self, path, project=None):
         return path.split("/")[-1].decode("utf-8")

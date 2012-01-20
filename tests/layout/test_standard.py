@@ -56,7 +56,7 @@ class RootLayoutTests(TestCase,LayoutTests):
         self.layout = RootLayout()
 
     def test_get_branch_path_default(self):
-        self.assertEquals("", self.layout.get_branch_path(None))
+        self.assertEquals("", self.layout.get_branch_path(""))
         self.assertRaises(NoCustomBranchPaths,
             self.layout.get_branch_path, None, "proh")
 
@@ -87,7 +87,7 @@ class TrunkLayoutTests(TestCase,LayoutTests):
     def test_get_branch_name(self):
         self.assertEquals("abranch",
             self.layout.get_branch_name("branches/abranch"))
-        self.assertEquals(None,
+        self.assertEquals("",
             self.layout.get_branch_name("trunk"))
 
     def test_is_branch_parent(self):
