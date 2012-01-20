@@ -228,8 +228,7 @@ def dav_options(transport, url):
                     raise InvalidHttpResponse(transport.base,
                             "Invalid HTTP response: %d" % code)
                 finally:
-                    conn.setopt(pycurl.CUSTOMREQUEST, "GET")
-                    conn.setopt(pycurl.HTTPGET, 1)
+                    conn.unsetopt(pycurl.CUSTOMREQUEST)
     raise NotImplementedError
 
 
