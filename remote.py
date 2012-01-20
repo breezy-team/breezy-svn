@@ -502,6 +502,10 @@ class SvnRemoteAccess(ControlDir):
         self.open_branch()
         return None
 
+    def set_branch_reference(self, target_branch, name=None):
+        # Sorry, no branch references.
+        raise errors.IncompatibleFormat(target_branch._format, self._format)
+
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
             mapping=None, branch_path=None, repository=None, revnum=None,
             possible_transports=None):
