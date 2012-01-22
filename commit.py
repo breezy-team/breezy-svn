@@ -945,13 +945,13 @@ class SvnCommitBuilder(CommitBuilder):
         inv = mutable_inventory_from_tree(self.old_tree)
         revid = self._get_actual_revision_id()
         inv.apply_delta(self._get_basis_delta(revid))
-        return InventoryRevisionTree(self.repository, inv,
-            revid)
+        return InventoryRevisionTree(self.repository, inv, revid)
 
     def abort(self):
         if self.conn is not None:
             self.repository.transport.add_connection(self.conn)
-        self.repository.abort_write_group()
+        if self.repository.is_in_write_group():
+            self.repository.abort_write_group()
 
     def _visit_parent_dirs(self, path):
         """Add the parents of path to the list of paths to visit."""
