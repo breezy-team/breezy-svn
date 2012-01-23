@@ -160,6 +160,7 @@ class SvnRemoteFormat(ControlDirFormat):
         import os
         import subvertpy
         from subvertpy import repos
+        ERR_REPOS_BAD_ARGS = getattr(subvertpy, "ERR_REPOS_BAD_ARGS", 165002)
         # For subvertpy < 0.8.6
 
         if not isinstance(transport, LocalTransport):
@@ -172,6 +173,8 @@ class SvnRemoteFormat(ControlDirFormat):
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_DIR_NOT_EMPTY:
                 raise errors.BzrError("Directory is not empty")
+            if num == ERR_REPOS_BAD_ARGS:
+                raise errors.AlreadyControlDirError(local_path)
             raise
         # All revision property changes
         revprop_hook = os.path.join(local_path, "hooks", "pre-revprop-change")
