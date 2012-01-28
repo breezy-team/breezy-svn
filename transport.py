@@ -564,7 +564,7 @@ class SvnRaTransport(Transport):
         return self.svn_url[len(self.get_repos_root()):].strip("/")
 
     @convert_svn_error
-    def create_prefix(self):
+    def create_prefix(self, mode=None):
         create_branch_prefix(self.clone_root(),
                 {"svn:log": "Creating prefix"},
                 self.repos_path.split("/")[:-1])
