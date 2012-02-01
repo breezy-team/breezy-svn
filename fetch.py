@@ -193,7 +193,7 @@ class PathStrippingDirectoryEditor(object):
         self.actual = actual
 
     def open_directory(self, path, base_revnum):
-        """See `DirectoryEditor`."""
+        """See ``DirectoryEditor``."""
         if path.strip("/") == self.editor.prefix:
             t = self.editor.actual.open_root(base_revnum)
         elif self.actual is not None:
@@ -204,7 +204,7 @@ class PathStrippingDirectoryEditor(object):
         return PathStrippingDirectoryEditor(self.editor, path, t)
 
     def add_directory(self, path, copyfrom_path=None, copyfrom_rev=-1):
-        """See `DirectoryEditor`."""
+        """See ``DirectoryEditor``."""
         if path.strip("/") == self.editor.prefix:
             t = self.editor.actual.open_root(copyfrom_rev)
         elif self.actual is not None:
@@ -215,31 +215,31 @@ class PathStrippingDirectoryEditor(object):
         return PathStrippingDirectoryEditor(self.editor, path, t)
 
     def close(self):
-        """See `DirectoryEditor`."""
+        """See ``DirectoryEditor``."""
         if self.actual is not None:
             self.actual.close()
 
     def change_prop(self, name, value):
-        """See `DirectoryEditor`."""
+        """See ``DirectoryEditor``."""
         if self.actual is not None:
             self.actual.change_prop(name, value)
 
     def delete_entry(self, path, revnum):
-        """See `DirectoryEditor`."""
+        """See ``DirectoryEditor``."""
         if self.actual is not None:
             self.actual.delete_entry(self.editor.strip_prefix(path), revnum)
         else:
             raise AssertionError("delete_entry should not be called")
 
     def add_file(self, path, copyfrom_path=None, copyfrom_rev=-1):
-        """See `DirectoryEditor`."""
+        """See ``DirectoryEditor``."""
         if self.actual is not None:
             return self.actual.add_file(self.editor.strip_prefix(path),
                 self.editor.strip_copy_prefix(copyfrom_path), copyfrom_rev)
         raise AssertionError("add_file should not be called")
 
     def open_file(self, path, base_revnum):
-        """See `DirectoryEditor`."""
+        """See ``DirectoryEditor``."""
         if self.actual is not None:
             return self.actual.open_file(self.editor.strip_prefix(path),
                    base_revnum)

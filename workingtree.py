@@ -1004,7 +1004,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             return self.branch.basis_tree()
 
     def list_files(self, include_root=False, from_dir=None, recursive=True):
-        """See `Tree.list_files`."""
+        """See ``Tree.list_files``."""
         # TODO: This doesn't sort the output
         # TODO: This ignores unversioned files at the moment
         if from_dir is None:
