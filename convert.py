@@ -353,7 +353,8 @@ class RepositoryConverter(object):
                     target_branch.pull(source_branch, overwrite=True)
                 except NoSuchRevision:
                     if source_branch.check_path() == NODE_FILE:
-                        self.to_transport.delete_tree(source_branch.get_branch_path())
+                        self.to_transport.delete_tree(
+                            source_branch.get_branch_path())
                         continue
                     raise
                 if working_trees and not target_branch.bzrdir.has_workingtree():

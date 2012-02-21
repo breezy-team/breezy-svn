@@ -40,7 +40,6 @@ from bzrlib import (
     urlutils,
     )
 from bzrlib.branch import Branch
-from bzrlib.inventory import Inventory
 
 from bzrlib.plugins.svn.commit import dir_editor_send_changes
 
@@ -129,14 +128,12 @@ class RepositoryBackend(ServerRepositoryBackend):
         relpath = None # FIXME
         editor.set_target_revision(revnum)
         root = editor.open_root()
-        old_inv = Inventory(None)
         self.branch.repository.lock_read()
         try:
             new_tree = self.branch.repository.revision_tree(revid)
-            new_inv = new_tree.inventory
             modified_files = {}
             visit_dirs = set()
-            for name, ie in new_inv.iter_entries():
+            for path, ie in new_tree.iter_entries_by_dir():
                 if ie.kind == "directory":
                     visit_dirs.add(ie.file_id)
                 elif ie.kind == 'file':
@@ -144,7 +141,8 @@ class RepositoryBackend(ServerRepositoryBackend):
                 elif ie.kind == 'symlink':
                     modified_files[ie.file_id] = "link %s" % ie.symlink_target
 
-            dir_editor_send_changes(old_inv, new_inv, "", new_inv.root.file_id,
+            dir_editor_send_changes(None, new_tree, "",
+                    new_tree.get_root_id(),
                     root, "svn://localhost/", revnum-1, relpath,
                                 modified_files, visit_dirs)
             root.close()
