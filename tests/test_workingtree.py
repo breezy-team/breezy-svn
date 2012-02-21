@@ -42,7 +42,6 @@ from bzrlib.osutils import (
     )
 from bzrlib.repository import Repository
 from bzrlib.tests import (
-    KnownFailure,
     TestCase,
     )
 try:
@@ -315,13 +314,9 @@ class TestWorkingTree(SubversionTestCase):
         wt = self.make_svn_branch_and_tree('a', 'dc', lossy=True)
         self.assertEqual(wt.branch.generate_revision_id(1),
                          wt.basis_tree().get_revision_id())
-        inv = Inventory()
         root_id = wt.branch.repository.get_mapping().generate_file_id(
                 (wt.branch.repository.uuid, wt.branch.get_branch_path(), 1), u"")
-        inv.revision_id = wt.branch.generate_revision_id(1)
-        inv.add_path('', 'directory', root_id).revision = inv.revision_id
-
-        self.assertEqual(inv, wt.basis_tree().inventory)
+        self.assertEquals(wt.get_root_id(), root_id)
 
     def test_basis_tree(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
