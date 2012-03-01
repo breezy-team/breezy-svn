@@ -844,7 +844,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 "revision lhs parent %s does not match base tree revid %s" % \
                  (rev.parent_ids, self.bzr_base_tree.get_revision_id())
             basis_id = rev.parent_ids[0]
-            basis_inv = self.bzr_base_tree.inventory
+            try:
+                basis_inv = self.bzr_base_tree.root_inventory
+            except AttributeError:
+                basis_inv = self.bzr_base_tree.inventory
         except IndexError:
             basis_id = NULL_REVISION
             basis_inv = None
