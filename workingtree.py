@@ -733,6 +733,12 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 ie.executable = self.is_executable(id, relpath)
                 return ie
 
+    def iter_children(self, file_id, path=None):
+        """See Tree.iter_children."""
+        entry = self.iter_entries_by_dir([file_id]).next()[1]
+        for child in getattr(entry, 'children', {}).itervalues():
+            yield child.file_id
+
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
         """See WorkingTree.iter_entries_by_dir."""
         if specific_file_ids is not None:
