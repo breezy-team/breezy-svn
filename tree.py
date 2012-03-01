@@ -165,6 +165,12 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
     def get_file_stream_by_path(self, path):
         raise NotImplementedError(self.get_file_stream_by_path)
 
+    def iter_children(self, file_id, path=None):
+        """See Tree.iter_children."""
+        entry = self.iter_entries_by_dir([file_id]).next()[1]
+        for child in getattr(entry, 'children', {}).itervalues():
+            yield child.file_id
+
 
 # This maps SVN names for eol-styles to bzr names:
 eol_style = {
