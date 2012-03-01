@@ -148,7 +148,8 @@ class RepositoryConverter(object):
     def __init__(self, source_repos, output_url, layout=None,
                  create_shared_repo=True, working_trees=False, all=False,
                  format=None, filter_branch=None, keep=False,
-                 incremental=False, to_revnum=None, prefix=None):
+                 incremental=False, to_revnum=None, prefix=None,
+                 colocated=False):
         """Convert a Subversion repository and its' branches to a
         Bazaar repository.
 
@@ -182,15 +183,15 @@ class RepositoryConverter(object):
         try:
             target_dir = bzrdir.BzrDir.open_from_transport(self.to_transport)
         except NotBranchError:
-            colocated = getattr(format, "colocated_branches", False)
-
-            if colocated or create_shared_repo:
-                target_dir = self.get_dir(prefix, prefix)
-            else:
-                target_dir = None
+            target_dir = None
         else:
             format = target_dir._format
+
+        if colocated is None:
             colocated = getattr(format, "colocated_branches", False)
+
+        if target_dir is None and (colocated or create_shared_repo):
+            target_dir = self.get_dir(prefix, prefix)
 
         if create_shared_repo:
             try:

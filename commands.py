@@ -87,11 +87,12 @@ class cmd_svn_import(Command):
                               'with prefix.'),
                      Option('until', type=int,
                          help="Only import revisions up to specified Subversion revnum"),
+                     Option('colocated', help='Create colocated branches.'),
                     ]
 
     def run(self, from_location, to_location=None, format=None, trees=False,
             standalone=False, layout=None, all=False, prefix=None, keep=False,
-            restore=False, until=None):
+            restore=False, until=None, colocated=False):
         from bzrlib import (
             osutils,
             trace,
@@ -189,7 +190,8 @@ class cmd_svn_import(Command):
             convert_repository(from_repos, to_location, layout,
                 not standalone, trees, all, format=format,
                 filter_branch=filter_branch, keep=keep,
-                incremental=not restore, to_revnum=to_revnum, prefix=prefix)
+                incremental=not restore, to_revnum=to_revnum, prefix=prefix,
+                colocated=colocated)
 
             if tmp_repos is not None:
                 osutils.rmtree(tmp_repos)

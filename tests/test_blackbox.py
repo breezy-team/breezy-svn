@@ -689,8 +689,8 @@ if len(sys.argv) == 2:
         tags.add_dir("tags/release-1.0", "trunk")
         dc.close()
 
-        self.run_bzr('init --development-colo dc')
-        self.run_bzr('svn-import d dc')
+        self.run_bzr('init dc')
+        self.run_bzr('svn-import --colocated d dc')
         cd = ControlDir.open('dc')
         self.assertEquals(set(["", "somebranch"]), set([b.name for b in cd.list_branches()]))
 
