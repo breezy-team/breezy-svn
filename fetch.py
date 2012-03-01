@@ -712,19 +712,19 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
     def _delete_entry(self, old_parent_id, path, revnum):
         self._explicitly_deleted.add(path)
-        def rec_del(ie):
-            p = self.bzr_base_tree.id2path(ie.file_id)
+        def rec_del(fid):
+            p = self.bzr_base_tree.id2path(fid)
             if p in self._deleted:
                 return
             self._deleted.add(p)
-            if ie.file_id not in self.id_map.values():
-                self._inv_delta_append(p, None, ie.file_id, None)
-            if ie.kind != 'directory':
+            if fid not in self.id_map.values():
+                self._inv_delta_append(p, None, fid, None)
+            if self.bzr_base_tree.kind(fid) != 'directory':
                 return
-            for c in ie.children.values():
+            for c in self.bzr_base_tree.iter_children(fid):
                 rec_del(c)
         base_file_id = self._get_bzr_base_file_id(old_parent_id, path)
-        rec_del(self.bzr_base_tree.inventory[base_file_id])
+        rec_del(base_file_id)
 
     def get_svn_base_ie_open(self, parent_id, path, revnum):
         """Find the inventory entry against which svn is sending the
