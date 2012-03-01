@@ -1043,23 +1043,22 @@ class PushNewBranchTests(SubversionTestCase):
         revid1 = bzrwt.commit("Initial")
         bzrwt.lock_write()
         try:
-            old_ie = bzrwt.inventory.root.copy()
             new_ie = bzrwt.inventory.root.copy()
             foo_ie = bzrwt.inventory[bzrwt.path2id("foo")].copy()
             new_ie.file_id = "mynewroot"
             foo_ie.parent_id = new_ie.file_id
             bzrwt.apply_inventory_delta([
-                ("", None, old_ie.file_id, None),
+                ("", None, bzrwt.get_root_id(), None),
                 (None, "", new_ie.file_id, new_ie),
                 ("foo", "foo", foo_ie.file_id, foo_ie)])
         finally:
             bzrwt.unlock()
         revid2 = bzrwt.commit(message="Commit from Bzr")
-        return bzrwt, old_ie, new_ie, foo_ie, revid1, revid2
+        return bzrwt, new_ie, foo_ie, revid1, revid2
 
     def test_change_root(self):
         repos_url = self.make_svn_repository("a")
-        bzrwt, old_ie, new_ie, foo_ie, revid1, revid2 = self._create_bzrwt_with_changed_root()
+        bzrwt, new_ie, foo_ie, revid1, revid2 = self._create_bzrwt_with_changed_root()
         newdir = BzrDir.open(repos_url+"/trunk")
         newbranch = newdir.import_branch(bzrwt.branch)
         self.assertChangedPathsEquals({"trunk": ("R", None, -1, NODE_DIR),
@@ -1067,7 +1066,7 @@ class PushNewBranchTests(SubversionTestCase):
             newbranch.repository._revmeta_provider.get_revision("trunk", 2).metarev.paths)
         tree1 = newbranch.repository.revision_tree(revid1)
         tree2 = newbranch.repository.revision_tree(revid2)
-        self.assertEquals(tree1.path2id(""), old_ie.file_id)
+        self.assertEquals(tree1.path2id(""), bzrwt.get_root_id())
         self.assertEquals(tree2.path2id(""), new_ie.file_id)
         self.assertEquals(tree1.path2id("foo"), foo_ie.file_id)
         self.assertEquals(tree2.path2id("foo"), foo_ie.file_id)
@@ -1077,7 +1076,7 @@ class PushNewBranchTests(SubversionTestCase):
 
     def test_change_root_fetch(self):
         repos_url = self.make_svn_repository("a")
-        (bzrwt, old_ie, new_ie, foo_ie, revid1, revid2) = \
+        (bzrwt, new_ie, foo_ie, revid1, revid2) = \
             self._create_bzrwt_with_changed_root()
         newdir = BzrDir.open(repos_url+"/trunk")
         newbranch = newdir.import_branch(bzrwt.branch)
@@ -1097,7 +1096,7 @@ class PushNewBranchTests(SubversionTestCase):
 
         tree1 = newrepos.revision_tree(revid1)
         tree2 = newrepos.revision_tree(revid2)
-        self.assertEquals(tree1.path2id(""), old_ie.file_id)
+        self.assertEquals(tree1.path2id(""), bzrwt.get_root_id())
         self.assertEquals(tree2.path2id(""), new_ie.file_id)
         self.assertEquals(tree1.path2id("foo"), foo_ie.file_id)
         self.assertEquals(tree2.path2id("foo"), foo_ie.file_id)
