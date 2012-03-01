@@ -101,11 +101,14 @@ TEXT_CACHE_SIZE = 1024 * 1024 * 50
 def tree_parent_id_basename_to_file_id(tree, parent_id, basename):
     if parent_id is None and basename == "":
         return tree.get_root_id()
+    try:
+        inv = tree.root_inventory
+    except AttributeError:
+        inv = tree.inventory
     parent_id_basename_index = getattr(
-        tree.inventory, "parent_id_basename_to_file_id",
-        None)
+        inv, "parent_id_basename_to_file_id", None)
     if parent_id_basename_index is None:
-        return tree.inventory[parent_id].children[basename].file_id
+        return inv[parent_id].children[basename].file_id
     else:
         ret = parent_id_basename_index.iteritems(
             [(parent_id or '', basename.encode("utf-8"))])
