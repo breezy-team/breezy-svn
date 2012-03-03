@@ -205,8 +205,8 @@ class SubversionTargetPullResult(PullResult):
 class SvnBranch(ForeignBranch):
     """Maps to a Branch in a Subversion repository """
 
-    def __init__(self, repository, controldir, branch_path, mapping, revnum=None,
-            _skip_check=False):
+    def __init__(self, repository, controldir, branch_path, mapping,
+            revnum=None, project=None, _skip_check=False):
         """Instantiate a new SvnBranch.
 
         :param repository: SvnRepository this branch is part of.
@@ -236,12 +236,13 @@ class SvnBranch(ForeignBranch):
                 if num == ERR_FS_NO_SUCH_REVISION:
                     raise NotBranchError(self.base)
                 raise
-        try:
-            (type, self.project, _, ip) = self.layout.parse(branch_path)
-        except NotSvnBranchPath:
-            raise NotBranchError(branch_path)
-        if type not in ('branch', 'tag') or ip != '':
-            raise NotBranchError(branch_path)
+        if project is None:
+            try:
+                project = self.layout.get_branch_project(branch_path)
+            except NotSvnBranchPath:
+                raise NotBranchError(branch_path)
+        else:
+            self.project = project
         self.name = self.layout.get_branch_name(branch_path)
         if not isinstance(self.name, unicode):
             raise TypeError(self.name)

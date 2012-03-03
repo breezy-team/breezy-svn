@@ -427,10 +427,8 @@ class SvnRemoteAccess(ControlDir):
                 inter = InterToSvnRepository(source.repository, repos)
                 layout = repos.get_layout()
                 try:
-                    (type, project, _, ip) = layout.parse(target_branch_path)
+                    project = layout.get_branch_project(target_branch_path)
                 except NotSvnBranchPath:
-                    raise errors.NotBranchError(target_branch_path)
-                if type not in ('branch', 'tag') or ip != '':
                     raise errors.NotBranchError(target_branch_path)
                 inter.push_new_branch(layout, project, target_branch_path,
                         stop_revision, push_metadata=True, overwrite=overwrite)
