@@ -89,6 +89,14 @@ class RepositoryLayout(object):
         """
         raise NoCustomBranchPaths(self)
 
+    def get_branch_project(self, path):
+        """Parse a target path and extract the project.
+        """
+        (type, project, _, ip) = self.parse(path)
+        if type not in ('branch', 'tag') or ip != '':
+            raise NotSvnBranchPath(path)
+        return project
+
     def parse(self, path):
         """Parse a path.
 
