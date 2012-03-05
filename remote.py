@@ -568,6 +568,7 @@ class SvnRemoteAccess(ControlDir):
         return ret
 
     def destroy_branch(self, branch_name=None):
+        import subvertpy
         relpath = self._determine_relpath(branch_name)
         if relpath == "":
             raise errors.UnsupportedOperation(self.destroy_branch, self)
@@ -577,7 +578,13 @@ class SvnRemoteAccess(ControlDir):
             ce = conn.get_commit_editor({"svn:log": "Remove branch."})
             try:
                 root = ce.open_root()
-                root.delete_entry(basename)
+                try:
+                    root.delete_entry(basename)
+                except subvertpy.SubversionException, (_, num):
+                    if num == subvertpy.ERR_FS_TXN_OUT_OF_DATE:
+                        # Make sure the branch still exists
+                        self.open_branch(branch_name)
+                    raise
                 root.close()
             except:
                 ce.abort()
