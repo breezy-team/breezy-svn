@@ -484,10 +484,11 @@ class SvnRemoteAccess(ControlDir):
             if len(existing_bp_parts) == len(bp_parts) and relpath != "":
                 raise errors.AlreadyBranchError(repository.transport.base)
             if len(existing_bp_parts) < len(bp_parts)-1:
-                create_branch_container(repository.transport, relpath, "/".join(existing_bp_parts))
+                create_branch_container(repository.transport, relpath,
+                    "/".join(existing_bp_parts))
             if relpath != "":
-                create_branch_with_hidden_commit(repository, relpath, NULL_REVISION,
-                        set_metadata=(not lossy))
+                create_branch_with_hidden_commit(repository, relpath,
+                    NULL_REVISION, set_metadata=(not lossy))
             branch = SvnBranch(repository, self, relpath, mapping)
             if append_revisions_only == False:
                 branch.set_append_revisions_only(False)
@@ -509,7 +510,7 @@ class SvnRemoteAccess(ControlDir):
 
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
             mapping=None, branch_path=None, repository=None, revnum=None,
-            possible_transports=None):
+            possible_transports=None, project=None):
         """See ControlDir.open_branch()."""
         from bzrlib.plugins.svn.branch import SvnBranch
         if branch_path is None:
@@ -518,7 +519,8 @@ class SvnRemoteAccess(ControlDir):
             repository = self.find_repository()
         if mapping is None:
             mapping = repository.get_mapping()
-        return SvnBranch(repository, self, branch_path, mapping, revnum=revnum)
+        return SvnBranch(repository, self, branch_path, mapping, revnum=revnum,
+            project=project)
 
     def create_repository(self, shared=None, format=None):
         """See ControlDir.create_repository."""
@@ -604,7 +606,8 @@ class SvnRemoteAccess(ControlDir):
         branches = {}
         for project, bp, nick, has_props, revnum in layout.get_branches(repos,
                 repos.get_latest_revnum()):
-            b = self.open_branch(branch_path=bp, repository=repos)
+            b = self.open_branch(branch_path=bp, repository=repos,
+                project=project)
             branches[b.name] = b
         return branches
 
