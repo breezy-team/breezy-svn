@@ -658,8 +658,8 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         master_branch = self.make_svn_branch("d")
         os.mkdir("b")
         local_dir = master_branch.bzrdir.sprout("b")
-        wt = local_dir.open_workingtree()
         local_dir.open_branch().bind(master_branch)
+        wt = local_dir.open_workingtree()
         self.build_tree({'b/file': 'data'})
         wt.branch.nick = "somenick"
         wt.add('file')
@@ -671,8 +671,8 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         master_branch = self.make_svn_branch("d")
         os.mkdir("b")
         local_dir = master_branch.bzrdir.sprout("b")
-        wt = local_dir.open_workingtree()
         local_dir.open_branch().bind(master_branch)
+        wt = local_dir.open_workingtree()
         self.build_tree({'b/file': 'data'})
         rootid = wt.get_root_id()
         wt.branch.nick = "some-nick"
@@ -702,8 +702,8 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         master_branch = self.make_svn_branch("d") #1
         os.mkdir("b")
         local_dir = master_branch.bzrdir.sprout("b")
-        wt = local_dir.open_workingtree()
         local_dir.open_branch().bind(master_branch)
+        wt = local_dir.open_workingtree()
         wt.branch.nick = "some-nick"
         self.build_tree({'b/dir/file': 'data'})
         wt.add('dir')
