@@ -472,6 +472,8 @@ class SvnRemoteAccess(ControlDir):
             if mapping is None:
                 mapping = repository.get_mapping()
 
+            if name is not None and "/" in name:
+                raise errors.InvalidBranchName(name)
             relpath = self._determine_relpath(name).strip("/")
             if relpath == "":
                 if repository.get_latest_revnum() > 0:
