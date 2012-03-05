@@ -241,8 +241,7 @@ class SvnBranch(ForeignBranch):
                 project = self.layout.get_branch_project(branch_path)
             except NotSvnBranchPath:
                 raise NotBranchError(branch_path)
-        else:
-            self.project = project
+        self.project = project
         self.name = self.layout.get_branch_name(branch_path)
         if not isinstance(self.name, unicode):
             raise TypeError(self.name)
