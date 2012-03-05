@@ -1066,7 +1066,6 @@ class PushNewBranchTests(SubversionTestCase):
             newbranch.repository._revmeta_provider.get_revision("trunk", 2).metarev.paths)
         tree1 = newbranch.repository.revision_tree(revid1)
         tree2 = newbranch.repository.revision_tree(revid2)
-        self.assertEquals(tree1.path2id(""), bzrwt.get_root_id())
         self.assertEquals(tree2.path2id(""), new_ie.file_id)
         self.assertEquals(tree1.path2id("foo"), foo_ie.file_id)
         self.assertEquals(tree2.path2id("foo"), foo_ie.file_id)
@@ -1096,7 +1095,6 @@ class PushNewBranchTests(SubversionTestCase):
 
         tree1 = newrepos.revision_tree(revid1)
         tree2 = newrepos.revision_tree(revid2)
-        self.assertEquals(tree1.path2id(""), bzrwt.get_root_id())
         self.assertEquals(tree2.path2id(""), new_ie.file_id)
         self.assertEquals(tree1.path2id("foo"), foo_ie.file_id)
         self.assertEquals(tree2.path2id("foo"), foo_ie.file_id)
