@@ -1,4 +1,8 @@
-bzr-svn 1.2.1					  UNRELEASED
+bzr-svn 1.2.1					  2012-03-06
+
+ BUG FIXES
+
+  * Fix compatibility with bzr 2.5.0 proper. (Jelmer Vernooij)
 
 bzr-svn 1.2.0					  2011-01-23
 
