@@ -15,6 +15,8 @@
 
 """Subversion revision graph access."""
 
+from __future__ import absolute_import
+
 from bzrlib import (
     errors as _mod_errors,
     graph as _mod_graph,

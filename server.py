@@ -16,6 +16,7 @@
 
 """Subversion server implementation."""
 
+from __future__ import absolute_import
 
 from bzrlib.plugins.svn import lazy_check_versions
 lazy_check_versions()

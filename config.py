@@ -17,6 +17,7 @@
 
 """Stores per-repository settings."""
 
+from __future__ import absolute_import
 
 import os
 from subvertpy import (

@@ -17,6 +17,8 @@
 
 """Subversion remote ControlDir formats."""
 
+from __future__ import absolute_import
+
 import urllib
 
 from bzrlib import (

@@ -15,6 +15,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Random utility objects."""
 
+from __future__ import absolute_import
+
 class lazy_dict(object):
 
     def __init__(self, initial, create_fn, *args):

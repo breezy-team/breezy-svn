@@ -15,6 +15,8 @@
 
 """Subversion Meta-Revisions. This is where all the magic happens. """
 
+from __future__ import absolute_import
+
 from subvertpy import (
     properties,
     )

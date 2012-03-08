@@ -15,6 +15,8 @@
 
 """Utility functions for dealing with SVK properties."""
 
+from __future__ import absolute_import
+
 from bzrlib.plugins.svn import errors
 
 SVN_PROP_SVK_MERGE = 'svk:merge'

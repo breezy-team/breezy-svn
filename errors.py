@@ -17,6 +17,8 @@
 
 """Subversion-specific errors and conversion of Subversion-specific errors."""
 
+from __future__ import absolute_import
+
 import subvertpy
 import urllib
 

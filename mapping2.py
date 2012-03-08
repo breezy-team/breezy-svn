@@ -15,6 +15,7 @@
 
 """bzr<->svn mapping format 2."""
 
+from __future__ import absolute_import
 
 from bzrlib.errors import (
     InvalidRevisionId,

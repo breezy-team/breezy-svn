@@ -17,6 +17,8 @@
 
 """Handles branch-specific operations."""
 
+from __future__ import absolute_import
+
 from subvertpy import (
     ERR_FS_NO_SUCH_REVISION,
     NODE_DIR,

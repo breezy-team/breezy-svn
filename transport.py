@@ -16,6 +16,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Simple transport for accessing Subversion smart servers."""
 
+from __future__ import absolute_import
+
 import stat
 import subvertpy
 from subvertpy import (

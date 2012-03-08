@@ -15,6 +15,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Custom revision specifier for Subversion."""
 
+from __future__ import absolute_import
+
 from bzrlib import version_info as bzrlib_version
 from bzrlib.errors import (
     InvalidRevisionId,

@@ -17,6 +17,7 @@
 
 """Subversion-specific Bazaar command line subcommands."""
 
+from __future__ import absolute_import
 
 from bzrlib import (
     bzrdir,

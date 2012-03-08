@@ -16,6 +16,7 @@
 
 """Maps between Subversion and Bazaar semantics."""
 
+from __future__ import absolute_import
 
 import calendar
 from cStringIO import StringIO

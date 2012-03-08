@@ -15,6 +15,8 @@
 
 """Repository layouts."""
 
+from __future__ import absolute_import
+
 import subvertpy
 from subvertpy.ra import (
     DIRENT_KIND,

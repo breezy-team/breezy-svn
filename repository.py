@@ -15,6 +15,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Subversion repository access."""
 
+from __future__ import absolute_import
+
 from itertools import chain
 import subvertpy
 

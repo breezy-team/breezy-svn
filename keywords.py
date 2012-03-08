@@ -20,6 +20,7 @@
 
 """Support for keyword expansion similar to that done by svn:keywords."""
 
+from __future__ import absolute_import
 
 import re
 

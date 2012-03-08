@@ -16,6 +16,8 @@
 
 """Utility functions for dealing with changes dictionaries as return by Subversions' log functions."""
 
+from __future__ import absolute_import
+
 from subvertpy import NODE_DIR
 
 REV0_CHANGES = {"": ('A', None, -1, NODE_DIR)}

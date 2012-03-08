@@ -26,6 +26,7 @@ that the copy happened.
 of the inventory delta.
 """
 
+from __future__ import absolute_import
 
 from collections import defaultdict, deque
 

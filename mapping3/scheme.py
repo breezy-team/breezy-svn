@@ -15,6 +15,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Branching scheme implementations."""
 
+from __future__ import absolute_import
+
 import base64
 import bz2
 from subvertpy import properties

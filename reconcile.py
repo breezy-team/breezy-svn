@@ -17,6 +17,8 @@
 
 """Reconcile support."""
 
+from __future__ import absolute_import
+
 import bzrlib.reconcile
 
 from subvertpy import (

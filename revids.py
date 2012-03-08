@@ -16,6 +16,8 @@
 
 """Revision id generation and caching."""
 
+from __future__ import absolute_import
+
 import subvertpy
 
 from bzrlib import (

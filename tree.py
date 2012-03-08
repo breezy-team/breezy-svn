@@ -15,6 +15,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """Access to stored Subversion basis trees."""
 
+from __future__ import absolute_import
+
 from cStringIO import StringIO
 import os
 import subvertpy

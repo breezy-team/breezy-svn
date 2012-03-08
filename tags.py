@@ -15,6 +15,8 @@
 
 """Subversion Tags Dictionary."""
 
+from __future__ import absolute_import
+
 import subvertpy
 from subvertpy import (
     NODE_NONE,

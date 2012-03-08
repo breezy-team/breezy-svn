@@ -16,6 +16,7 @@
 
 """Version 4 mappings."""
 
+from __future__ import absolute_import
 
 import urllib
 
