@@ -149,7 +149,7 @@ class RepositoryConverter(object):
                  create_shared_repo=True, working_trees=False, all=False,
                  format=None, filter_branch=None, keep=False,
                  incremental=False, to_revnum=None, prefix=None,
-                 colocated=False):
+                 colocated=False, remember_parent=True):
         """Convert a Subversion repository and its' branches to a
         Bazaar repository.
 
@@ -162,6 +162,7 @@ class RepositoryConverter(object):
         :param all: Whether old revisions, even those not part of any
             existing branches, should be imported.
         :param format: Format to use
+        :param remember_parent: Remember parent branch location
         """
         assert not all or create_shared_repo
         if format is None:
@@ -271,7 +272,8 @@ class RepositoryConverter(object):
             if filter_branch is not None:
                 existing_branches = filter(filter_branch, existing_branches)
             self._create_branches(existing_branches, prefix,
-                  create_shared_repo, working_trees, colocated)
+                  create_shared_repo, working_trees, colocated,
+                  remember_parent)
         finally:
             source_repos.unlock()
 
@@ -303,7 +305,7 @@ class RepositoryConverter(object):
         missing = revfinder.get_missing()
         inter.fetch(needed=missing)
 
-    def _get_nested_branch(self, source_branch, prefix):
+    def _get_nested_branch(self, source_branch, prefix, remember_parent):
         target_dir = self.get_dir(source_branch.get_branch_path(), prefix)
         try:
             target_dir.find_repository()
@@ -313,10 +315,11 @@ class RepositoryConverter(object):
             return target_dir.open_branch()
         except NotBranchError:
             target_branch = target_dir.create_branch()
-            target_branch.set_parent(source_branch.base)
+            if remember_parent:
+                target_branch.set_parent(source_branch.base)
             return target_branch
 
-    def _get_colocated_branch(self, source_branch, prefix):
+    def _get_colocated_branch(self, source_branch, prefix, remember_parent):
         target_dir = self.get_dir(prefix, prefix)
 
         if source_branch.project in (None, ""):
@@ -332,11 +335,12 @@ class RepositoryConverter(object):
             return target_dir.open_branch(name)
         except NotBranchError:
             target_branch = target_dir.create_branch(name)
-            target_branch.set_parent(source_branch.base)
+            if remember_parent:
+                target_branch.set_parent(source_branch.base)
             return target_branch
 
     def _create_branches(self, existing_branches, prefix, shared,
-                         working_trees, colocated):
+                         working_trees, colocated, remember_parent):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             for i, source_branch in enumerate(existing_branches):
@@ -347,9 +351,11 @@ class RepositoryConverter(object):
                 except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
                     continue
                 if colocated:
-                    target_branch = self._get_colocated_branch(source_branch, prefix)
+                    target_branch = self._get_colocated_branch(source_branch,
+                            prefix, remember_parent)
                 else:
-                    target_branch = self._get_nested_branch(source_branch, prefix)
+                    target_branch = self._get_nested_branch(source_branch,
+                            prefix, remember_parent)
                 try:
                     target_branch.pull(source_branch, overwrite=True)
                 except NoSuchRevision:

@@ -191,7 +191,7 @@ class cmd_svn_import(Command):
                 not standalone, trees, all, format=format,
                 filter_branch=filter_branch, keep=keep,
                 incremental=not restore, to_revnum=to_revnum, prefix=prefix,
-                colocated=colocated)
+                colocated=colocated, remember_parent=(tmp_repos is None))
 
             if tmp_repos is not None:
                 osutils.rmtree(tmp_repos)

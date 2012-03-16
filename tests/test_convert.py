@@ -334,6 +334,7 @@ class TestConversion(SubversionTestCase):
 
         self.assertRaises(NotBranchError, Repository.open, "e")
 
+
 class TestConversionFromDumpfile(SubversionTestCase):
 
     def test_dumpfile_open_empty(self):
@@ -355,10 +356,13 @@ PROPS-END
 """)
         branch_path = os.path.join(self.test_dir, "f")
         repos = self.load_dumpfile(dumpfile, 'g')
-        convert_repository(repos, branch_path, RootLayout())
+        convert_repository(repos, branch_path, RootLayout(),
+            remember_parent=False)
         branch = Repository.open(branch_path)
         self.assertEqual(len(branch.all_revision_ids()), 1)
-        Branch.open(branch_path)
+        b = Branch.open(branch_path)
+        self.assertEquals(1, b.revno())
+        self.assertEquals(None, b.get_parent())
 
     def load_dumpfile(self, dumpfile, target_path):
         load_dumpfile(dumpfile, target_path)
