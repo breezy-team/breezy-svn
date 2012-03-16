@@ -996,7 +996,11 @@ class SubversionMappingRegistry(foreign.VcsMappingRegistry):
     revision_id_bzr_to_foreign = parse_revision_id
 
 
-mapping_registry = SubversionMappingRegistry()
+try:
+    mapping_registry = SubversionMappingRegistry("bzrlib.plugins.svn.mapping",
+        "mapping_registry")
+except TypeError:
+    mapping_registry = SubversionMappingRegistry()
 mapping_registry.register_lazy('v1', 'bzrlib.plugins.svn.mapping2',
                                'BzrSvnMappingv1',
                                'Original bzr-svn mapping format (bzr-svn 0.2.x)')
