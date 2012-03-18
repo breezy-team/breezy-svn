@@ -148,6 +148,7 @@ def repository_guess_layout(repository, revnum, branch_path=None):
     return logwalker_guess_layout(repository._log, revnum,
         branch_path=branch_path)
 
+
 def logwalker_guess_layout(logwalker, revnum, branch_path=None):
     pb = ui.ui_factory.nested_progress_bar()
     try:

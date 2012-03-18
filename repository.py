@@ -765,6 +765,9 @@ class SvnRepository(ForeignRepository):
         # Retrieve guessed-layout from config and see if it accepts
         # self._hinted_branch_path
         layoutname = config_stack.get('guessed-layout')
+        # Cope with 'None' being saved as layout name
+        if layoutname == 'None':
+            layoutname = None
         if layoutname is not None:
             config_guessed_layout = layout.layout_registry.get(layoutname)()
             if (self._hinted_branch_path is None or
@@ -780,7 +783,9 @@ class SvnRepository(ForeignRepository):
         (self._guessed_layout,
             self._guessed_appropriate_layout) = repository_guess_layout(self,
                     revnum, self._hinted_branch_path)
-        if self._guessed_layout != config_guessed_layout and revnum > 200:
+        if (self._guessed_layout != config_guessed_layout and
+            revnum > 200 and
+            self._guessed_layout is not None):
             config_stack.set('guessed-layout', self._guessed_layout)
 
     def get_guessed_layout(self):
