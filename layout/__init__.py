@@ -40,9 +40,16 @@ class RepositoryLayout(object):
     """Describes a repository layout."""
 
     def get_project_prefixes(self, project):
+        """Get the relevant path prefixes for a specific project.
+
+        :param project: Project name
+        :return: List of path prefixes relevant for project
+            (can include paths for other projects as well)
+        """
         return [project]
 
     def supports_tags(self):
+        """Whether this layout supports tags."""
         return True
 
     def get_tag_path(self, name, project=""):
