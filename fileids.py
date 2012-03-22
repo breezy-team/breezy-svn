@@ -96,6 +96,7 @@ def idmap_reverse_lookup(idmap, mapping, fileid):
     :param fileid: The file id to look up
     :return: Path
     """
+    assert type(fileid) is str
     if mapping.parseable_file_ids:
         try:
             (uuid, revnum, path) = mapping.parse_file_id(fileid)

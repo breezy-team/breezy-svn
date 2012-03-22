@@ -701,6 +701,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         raise NoSuchId(self, file_id)
 
     def _ie_from_entry(self, relpath, entry, parent_id):
+        assert type(parent_id) is str or parent_id is None
         assert type(relpath) == unicode
         (file_id, revid) = self._find_ids(relpath, entry)
         abspath = self.abspath(relpath)
@@ -756,7 +757,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     entry = self._get_entry(wc, path)
                     if entry.schedule == SCHEDULE_DELETE:
                         continue
-                    ie = self._ie_from_entry(path, entry, parent_id)
+                    ie = self._ie_from_entry(path, entry, parent_id[0])
                     if ie is not None:
                         yield path, ie
             finally:
@@ -1030,6 +1031,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     parent_id = fileids[parent_path]
                 except KeyError:
                     parent_id = self.path2id(parent_path)
+                    assert type(parent_id) is str
                     fileids[parent_path] = parent_id
             ie = self._ie_from_entry(relpath, entry, parent_id)
             if ie is not None:
