@@ -8,6 +8,9 @@ bzr-svn 1.2.2					  UNRELEASED
   * Cope with guessed layout being set as 'None' in
     the configuration file. (Jelmer Vernooij, #958719)
 
+  * Print proper error without traceback when encountering svn
+    working copy in too old format. (Jelmer Vernooij)
+
 bzr-svn 1.2.1					  2012-03-06
 
  BUG FIXES

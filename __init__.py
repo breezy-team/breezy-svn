@@ -75,6 +75,7 @@ from bzrlib.errors import (
     InvalidURL,
     NotBranchError,
     NoSuchFile,
+    UnsupportedFormatError,
     )
 from bzrlib.filters import (
     lazy_register_filter_stack_map,
@@ -172,8 +173,15 @@ class SvnWorkingTreeProber(SvnProber):
             raise NotBranchError(path=transport.base)
 
         self._check_versions()
+        import subvertpy
         from subvertpy.wc import check_wc
-        version = check_wc(transport.local_abspath('.').encode("utf-8"))
+        try:
+            version = check_wc(transport.local_abspath('.').encode("utf-8"))
+        except subvertpy.SubversionException, (msg, num):
+            ERR_WC_UPGRADE_REQUIRED = getattr(subvertpy, "ERR_WC_UPGRADE_REQUIRED", 155036) # subvertpy < 0.9.0
+            if num == ERR_WC_UPGRADE_REQUIRED:
+                raise UnsupportedFormatError(msg)
+            raise
         from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
         return SvnWorkingTreeDirFormat(version)
 
