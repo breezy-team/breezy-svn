@@ -80,18 +80,9 @@ from bzrlib.errors import (
 from bzrlib.filters import (
     lazy_register_filter_stack_map,
     )
-from bzrlib.foreign import (
-    foreign_vcs_registry,
-    )
-from bzrlib.help_topics import (
-    topic_registry,
-    )
 from bzrlib.repository import (
     format_registry as repository_format_registry,
     network_format_registry as repository_network_format_registry,
-    )
-from bzrlib.revisionspec import (
-    revspec_registry,
     )
 from bzrlib.transport import (
     ConnectedTransport,
@@ -342,9 +333,6 @@ register_lazy_transport('svn://', 'bzrlib.plugins.svn.transport',
                         'SvnRaTransport')
 register_lazy_transport('svn+', 'bzrlib.plugins.svn.transport',
                         'SvnRaTransport')
-topic_registry.register_lazy('svn-layout',
-                             'bzrlib.plugins.svn.layout',
-                             'help_layout', 'Subversion repository layouts')
 
 #BzrDirFormat.register_control_server_format(format.SvnRemoteFormat)
 # Register as the first control server format, since the default smart
@@ -382,21 +370,10 @@ format_registry.register_lazy("subversion-wc", "bzrlib.plugins.svn.workingtree",
                          "SvnWorkingTreeDirFormat",
                          "Subversion working copy. ",
                          native=False, hidden=True)
-revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec",
-    "RevisionSpec_svn")
 
 _mod_bzr_config.credential_store_registry.register_lazy(
     "subversion", "bzrlib.plugins.svn.auth", "SubversionCredentialStore",
     help=__doc__, fallback=True)
-
-
-foreign_vcs_registry.register_lazy("svn", "bzrlib.plugins.svn.mapping",
-                                   "foreign_vcs_svn")
-
-from bzrlib.transport import transport_server_registry
-transport_server_registry.register_lazy('svn',
-    'bzrlib.plugins.svn.server', 'serve_svn',
-    "Subversion svn_ra protocol. (default port: 3690)")
 
 
 plugin_cmds.register_lazy('cmd_svn_import', [], 'bzrlib.plugins.svn.commands')
@@ -452,13 +429,43 @@ install_lazy_named_hook("bzrlib.version_info_formats.format_rio",
 install_lazy_named_hook("bzrlib.info", "hooks",
         'repository', info_svn_repository, "svn repository info")
 
-from bzrlib.send import format_registry as send_format_registry
-send_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
-                                   'send_svn', 'Subversion diff format')
+try:
+    from bzrlib.registry import register_lazy
+except ImportError:
+    from bzrlib.diff import format_registry as diff_format_registry
+    diff_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
+            'SvnDiffTree', 'Subversion diff format')
 
-from bzrlib.diff import format_registry as diff_format_registry
-diff_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
-        'SvnDiffTree', 'Subversion diff format')
+    from bzrlib.revisionspec import (
+        revspec_registry,
+        )
+    revspec_registry.register_lazy("svn:", "bzrlib.plugins.svn.revspec",
+        "RevisionSpec_svn")
+
+    from bzrlib.send import format_registry as send_format_registry
+    send_format_registry.register_lazy('svn', 'bzrlib.plugins.svn.send',
+                                       'send_svn', 'Subversion diff format')
+    from bzrlib.foreign import (
+        foreign_vcs_registry,
+        )
+    foreign_vcs_registry.register_lazy("svn", "bzrlib.plugins.svn.mapping",
+                                       "foreign_vcs_svn")
+    from bzrlib.help_topics import topic_registry
+    topic_registry.register_lazy('svn-layout',
+                                 'bzrlib.plugins.svn.layout',
+                                 'help_layout', 'Subversion repository layouts')
+else:
+    register_lazy("bzrlib.diff", "format_registry", 'svn', 'bzrlib.plugins.svn.send',
+            'SvnDiffTree', help='Subversion diff format')
+    register_lazy("bzrlib.revisionspec", "revspec_registry", "svn:",
+            "bzrlib.plugins.svn.revspec", "RevisionSpec_svn")
+    register_lazy("bzrlib.send", "format_registry", 'svn',
+            'bzrlib.plugins.svn.send', 'send_svn', 'Subversion diff format')
+    register_lazy("bzrlib.foreign", "foreign_vcs_registry", "svn",
+            "bzrlib.plugins.svn.mapping", "foreign_vcs_svn")
+    register_lazy("bzrlib.help_topics", "topic_registry", 'svn-layout',
+            'bzrlib.plugins.svn.layout', 'help_layout',
+            'Subversion repository layouts')
 
 
 _mod_bzr_config.option_registry.register_lazy('layout',

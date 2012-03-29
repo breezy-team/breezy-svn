@@ -323,7 +323,10 @@ or "bzr info -v <url>".
 """
 
 
-layout_registry = registry.Registry()
+try:
+    layout_registry = registry.Registry("bzrlib.plugins.svn.layout", "layout_registry")
+except TypeError:
+    layout_registry = registry.Registry()
 layout_registry.register_lazy("root", "bzrlib.plugins.svn.layout.standard",
     "RootLayout")
 layout_registry.register_lazy("none", "bzrlib.plugins.svn.layout.standard",
@@ -351,6 +354,10 @@ class RepositoryRegistry(registry.Registry):
         except KeyError:
             return None
 
-repository_registry = RepositoryRegistry()
+try:
+    repository_registry = RepositoryRegistry("bzrlib.plugins.svn.layout",
+        "repository_registry")
+except TypeError:
+    repository_registry = RepositoryRegistry()
 repository_registry.register_lazy("13f79535-47bb-0310-9956-ffa450edef68",
         "bzrlib.plugins.svn.layout.standard", "TrunkLayout")
