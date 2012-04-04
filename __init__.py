@@ -78,7 +78,7 @@ from bzrlib.errors import (
     UnsupportedFormatError,
     )
 from bzrlib.filters import (
-    lazy_register_filter_stack_map,
+    filter_stacks_registry,
     )
 from bzrlib.repository import (
     format_registry as repository_format_registry,
@@ -387,7 +387,7 @@ plugin_cmds.register_lazy('cmd_fix_svn_ancestry', [],
                           'bzrlib.plugins.svn.commands')
 
 
-lazy_register_filter_stack_map("svn-keywords",
+filter_stacks_registry.register_lazy("svn-keywords",
         "bzrlib.plugins.svn.keywords", "create_svn_keywords_filter")
 
 
