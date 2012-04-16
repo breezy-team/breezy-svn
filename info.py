@@ -24,7 +24,7 @@ subvertpy_minimum_version = (0, 8, 8)
 # versions ending in 'exp' mean experimental mappings
 # versions ending in 'dev' mean development version
 # versions ending in 'final' mean release (well tested, etc)
-bzr_plugin_version = (1, 2, 2, 'final', 0)
+bzr_plugin_version = (1, 2, 3, 'dev', 0)
 
 bzr_commands = ["svn-import", "svn-layout"]
 
