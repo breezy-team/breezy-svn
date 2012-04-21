@@ -21,7 +21,52 @@ easy to clean up the code later, e.g.::
 		revspec_registry.register_lazy("svn", "bzrlib.plugins.svn.revspec", 
 									   "RevisionSpec_svn")
 
+Structure
+~~~~~~~~~
+
+bzr-svn provides Subversion-specific implementations of Branch, ControlDir,
+Prober, Repository and WorkingTree.
+
+Subversion essentially has two formats - the repository directory, which
+contains all the revision data and the branches, and the working copy, which is
+what the user works in.
+
+Because of this, bzr-svn provides two custom probers and dir implementations - 
+one that can probe for and open working copies and one which can probe for and
+open Subversion repositories.
+
+The control directory implementation for the working copy provides just a working
+tree. The control directory implementation for the repository exists not just for the
+file system directory of the repository itself but for each of the "virtual"
+file paths in the repository too.
+
+Most of the complexity in bzr-svn has to do with mapping Subversion history into 
+Bazaar history and making the distinction between what is a branch and what isn't.
+
+The "repository layout" is an object that takes a path and can tell whether it is
+the path to a branch, merely a path inside of a branch or something else. There
+are a couple of implementations of repository layouts which use common conventions
+(like the standard trunk;branches/XX;tags/YY approach, or a branch at the
+ repository root). If no repository layout is specified, bzr-svn will autodetect it
+using the code in layout/guess.py.
+
+A "mapping" describes a particular way in which bzr metadata is mapped onto svn
+and vice versa.
+
+There are three layers to the code that actually deals with analysis of history.
+
+logwalker.py provides an overall view of the history, sticking mostly to the
+Subversion semantics. There are two implementations - one that just calls out
+to Subversion and one that stores the history in a cache and reads from that
+cache later.
+
+metagraph.py provides the next layer, which wraps the logwalker and allows
+iterating over the history but split up by branch according to a specified branch
+layout.
+
+revmeta.py provides another layer, and allows walking over both branches and the
+relevant mappings.
+
 Coding Style, etc
 ~~~~~~~~~~~~~~~~~
 Please refer to HACKING in the Bazaar source distribution.
-
