@@ -13,10 +13,10 @@ you have control over the server it may be worthwhile to upgrade it.
 
 In the future it should hopefully be possible to use stacked branches.
 
-The Bazaar revno's differ from the Subversion revno's
------------------------------------------------------
+The Bazaar revnos differ from the Subversion revnos
+---------------------------------------------------
 That's right. Bazaar revision numbers are per-branch, whereas Subversion
-revno's are per-repository. If you would like to use Subversion revision
+revnos are per-repository. If you would like to use Subversion revision
 numbers, use the "svn:" revision specifier. For example:
 
 ::
