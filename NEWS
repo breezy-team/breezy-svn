@@ -1,5 +1,10 @@
 bzr-svn 1.2.3					 UNRELEASED
 
+ BUG FIXES
+
+  * Support show_base argument to ``WorkingTree.pull``.
+    (Jelmer Vernooij, #1018797)
+
 bzr-svn 1.2.2					  2012-04-16
 
  BUG FIXES

@@ -429,7 +429,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         """Check whether path is a control file (used by bzr or svn)."""
         return is_adm_dir(path)
 
-    def _update(self, branch_path, revnum):
+    def _update(self, branch_path, revnum, show_base):
         if revnum is None:
             # FIXME: should be able to use -1 here
             revnum = self.branch.get_revnum()
@@ -459,7 +459,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             ((uuid, branch_path, revnum), mapping) = self.branch.lookup_bzr_revision_id(revision)
         else:
             branch_path = self.branch.get_branch_path()
-        self._cached_base_revnum = self._update(branch_path, revnum)
+        self._cached_base_revnum = self._update(branch_path, revnum,
+            show_base=show_base)
         self._cached_base_revid = None
         self._cached_base_idmap = None
         return self.base_revnum - orig_revnum
@@ -1052,12 +1053,14 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return relpath[len(self.get_branch_path()):].strip("/")
 
     def pull(self, source, overwrite=False, stop_revision=None,
-             delta_reporter=None, possible_transports=None, local=False):
+             delta_reporter=None, possible_transports=None, local=False,
+             show_base=False):
         """Pull in changes from another branch into this working tree."""
         # FIXME: Use delta_reporter
         result = self.branch.pull(source, overwrite=overwrite,
             stop_revision=stop_revision, local=local)
-        fetched = self._update(self.branch.get_branch_path(), self.branch.get_revnum())
+        fetched = self._update(self.branch.get_branch_path(),
+            self.branch.get_revnum(), show_base=show_base)
         self._cached_base_revnum = fetched
         self._cached_base_revid = None
         self._cached_base_idmap = None
