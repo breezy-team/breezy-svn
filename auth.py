@@ -77,7 +77,7 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
                     host=self.host, path=self.path, realm=realm, ask=True)
         password = self.get_password(self.scheme, host=self.host,
             path=self.path, user=username,
-            realm=realm, prompt="%s %s password" % (realm, username))
+            realm=realm, prompt=u"%s %s password" % (realm, username))
         if type(password) == unicode:
             password = password.encode('utf-8')
         return (username.encode("utf-8"), password, False)
