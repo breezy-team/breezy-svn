@@ -227,6 +227,7 @@ def test_suite():
     suite = TestSuite()
 
     testmod_names = [
+            'test_auth',
             'test_branch',
             'test_branchprops',
             'test_cache',

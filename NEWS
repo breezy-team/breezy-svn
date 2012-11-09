@@ -5,6 +5,9 @@ bzr-svn 1.2.3					 UNRELEASED
   * Support show_base argument to ``WorkingTree.pull``.
     (Jelmer Vernooij, #1018797)
 
+  * Use unicode string for password prompt fixing ValueError
+    with newer bzr versions. (Martin Packman, #1076386)
+
 bzr-svn 1.2.2					  2012-04-16
 
  BUG FIXES
