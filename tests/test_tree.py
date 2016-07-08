@@ -29,14 +29,9 @@ from bzrlib.revision import (
 from bzrlib.tests import (
     TestSkipped,
     )
-try:
-    from bzrlib.tests.features import (
-        SymlinkFeature,
-        )
-except ImportError: # bzr < 2.5
-    from bzrlib.tests import (
-        SymlinkFeature,
-        )
+from bzrlib.tests.features import (
+    SymlinkFeature,
+    )
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn.tests import SubversionTestCase

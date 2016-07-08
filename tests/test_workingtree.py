@@ -27,7 +27,6 @@ from subvertpy.wc import (
 from bzrlib import (
     osutils,
     revision as _mod_revision,
-    version_info as bzrlib_version,
     )
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
@@ -44,16 +43,10 @@ from bzrlib.repository import Repository
 from bzrlib.tests import (
     TestCase,
     )
-try:
-    from bzrlib.tests.features import (
-        SymlinkFeature,
-        UnicodeFilenameFeature,
-        )
-except ImportError: # bzr < 2.5
-    from bzrlib.tests import (
-        SymlinkFeature,
-        UnicodeFilenameFeature,
-        )
+from bzrlib.tests.features import (
+    SymlinkFeature,
+    UnicodeFilenameFeature,
+    )
 from bzrlib.workingtree import WorkingTree
 
 from bzrlib.plugins.svn.layout.standard import TrunkLayout

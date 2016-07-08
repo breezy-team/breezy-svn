@@ -45,14 +45,9 @@ from bzrlib.tests import (
     TestCase,
     TestSkipped,
     )
-try:
-    from bzrlib.tests.features import (
-        UnicodeFilenameFeature
-        )
-except ImportError: # bzr < 2.5
-    from bzrlib.tests import (
-        UnicodeFilenameFeature
-        )
+from bzrlib.tests.features import (
+    UnicodeFilenameFeature
+    )
 from bzrlib.trace import mutter
 from bzrlib.workingtree import WorkingTree
 

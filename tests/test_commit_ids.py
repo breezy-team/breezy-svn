@@ -28,14 +28,9 @@ from bzrlib.tests import (
     TestCaseWithTransport,
     treeshape,
     )
-try:
-    from bzrlib.tests.features import (
-        SymlinkFeature,
-        )
-except ImportError: # bzr < 2.5
-    from bzrlib.tests import (
-        SymlinkFeature,
-        )
+from bzrlib.tests.features import (
+    SymlinkFeature,
+    )
 
 from bzrlib.workingtree import WorkingTree
 
@@ -51,10 +46,7 @@ class CommitIdTesting:
     def tree_items(self, tree):
         tree.lock_read()
         try:
-            try:
-                graph = tree._repository.get_file_graph()
-            except AttributeError: # bzr < 2.4
-                graph = tree._repository.texts
+            graph = tree._repository.get_file_graph()
             ret = {}
             for (path, versioned, kind, file_id, ie) in tree.list_files(
                     include_root=True, recursive=True):

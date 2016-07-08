@@ -58,10 +58,7 @@ class SvnRaTest(SubversionTestCase):
         t = SvnRaTransport("%s,branch=name" % repos_url)
         self.assertIsInstance(t, SvnRaTransport)
         self.assertEqual(t.svn_url, repos_url)
-        try:
-            self.assertEqual(t.get_segment_parameters(), {"branch": "name"})
-        except AttributeError: # bzr < 2.5
-            return
+        self.assertEqual(t.get_segment_parameters(), {"branch": "name"})
 
     def test_create_direct(self):
         repos_url = self.make_svn_repository('a')
