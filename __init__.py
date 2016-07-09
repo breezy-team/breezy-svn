@@ -153,6 +153,15 @@ class SvnProber(Prober):
 
 class SvnWorkingTreeProber(SvnProber):
 
+    @classmethod
+    def _check_versions(cls):
+        lazy_check_versions()
+        try:
+            from subvertpy.wc import WorkingCopy
+        except ImportError:
+            raise DependencyNotPresent(
+                "subvertpy.wc", "Installed Subvertpy does not support working copy operations")
+
     def probe_transport(self, transport):
         from bzrlib.transport.local import LocalTransport
 
@@ -175,8 +184,13 @@ class SvnWorkingTreeProber(SvnProber):
 
     @classmethod
     def known_formats(cls):
-        from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
-        return set([SvnWorkingTreeDirFormat()])
+        try:
+            cls._check_versions()
+        except DependencyNotPresent:
+            return set()
+        else:
+            from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
+            return set([SvnWorkingTreeDirFormat()])
 
 
 def dav_options(transport, url):
