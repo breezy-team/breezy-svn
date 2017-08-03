@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 
 from breezy import (
-    bzrdir,
+    controldir,
     )
 from breezy.commands import (
     Command,
@@ -66,8 +66,8 @@ class cmd_svn_import(Command):
     takes_options = [RegistryOption('format',
                             help='Specify a format for this repository. See'
                                  ' "bzr help formats" for details. Must support rich-root.',
-                            lazy_registry=('breezy.bzrdir', 'format_registry'),
-                            converter=lambda name: bzrdir.format_registry.make_bzrdir(name),
+                            lazy_registry=('breezy.controldir', 'format_registry'),
+                            converter=lambda name: controldir.format_registry.make_controldir(name),
                             value_switches=False, title='Repository format'),
                      Option('trees', help='Create working trees.'),
                      Option('standalone', help='Create standalone branches.'),
@@ -99,7 +99,7 @@ class cmd_svn_import(Command):
             trace,
             urlutils,
             )
-        from breezy.bzrdir import BzrDir
+        from breezy.controldir import ControlDir
         from breezy.errors import (
             BzrCommandError,
             NoRepositoryPresent,
@@ -129,7 +129,7 @@ class cmd_svn_import(Command):
         else:
             tmp_repos = None
 
-        from_dir = BzrDir.open(from_location)
+        from_dir = ControlDir.open(from_location)
 
         if not (isinstance(from_dir, SvnRemoteAccess) or
                 isinstance(from_dir, SvnCheckout)):
@@ -277,12 +277,12 @@ class cmd_svn_branches(Command):
 
     def run(self, location, layout=None):
         from breezy import errors
-        from breezy.bzrdir import BzrDir
+        from breezy.controldir import ControlDir
         from breezy.plugins.svn import gettext
         from breezy.plugins.svn.remote import SvnRemoteAccess
         from breezy.plugins.svn.workingtree import SvnCheckout
 
-        dir = BzrDir.open(location)
+        dir = ControlDir.open(location)
 
         if not (isinstance(dir, SvnRemoteAccess) or
                 isinstance(dir, SvnCheckout)):
@@ -336,7 +336,7 @@ class cmd_fix_svn_ancestry(Command):
         repo_to_fix = Repository.open(directory)
         revids = repo_to_fix.all_revision_ids()
         present_revisions = correct_repo.has_revisions(revids)
-        dir_to_fix = repo_to_fix.bzrdir
+        dir_to_fix = repo_to_fix.controldir
         old_repo_format = repo_to_fix._format
         del repo_to_fix
         trace.note("Renaming existing repository to repository.backup.")

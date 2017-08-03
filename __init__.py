@@ -33,7 +33,7 @@ from __future__ import absolute_import
 
 import breezy
 
-from breezy.plugins.svn.info import (
+from .info import (
     bzr_plugin_version as version_info,
     bzr_compatible_versions,
     subvertpy_minimum_version,
@@ -178,7 +178,7 @@ class SvnWorkingTreeProber(SvnProber):
             if num == ERR_WC_UPGRADE_REQUIRED:
                 raise UnsupportedFormatError(msg)
             raise
-        from breezy.plugins.svn.workingtree import SvnWorkingTreeDirFormat
+        from .workingtree import SvnWorkingTreeDirFormat
         return SvnWorkingTreeDirFormat(version)
 
     @classmethod
@@ -188,7 +188,7 @@ class SvnWorkingTreeProber(SvnProber):
         except DependencyNotPresent:
             return set()
         else:
-            from breezy.plugins.svn.workingtree import SvnWorkingTreeDirFormat
+            from .workingtree import SvnWorkingTreeDirFormat
             return set([SvnWorkingTreeDirFormat()])
 
 
@@ -301,8 +301,8 @@ class SvnRemoteProber(SvnProber):
                     raise NotBranchError(path=transport.base)
 
         self._check_versions()
-        from breezy.plugins.svn.transport import get_svn_ra_transport
-        from breezy.plugins.svn.errors import DavRequestFailed
+        from .transport import get_svn_ra_transport
+        from .errors import DavRequestFailed
         import subvertpy
         try:
             transport = get_svn_ra_transport(transport)
@@ -324,12 +324,12 @@ class SvnRemoteProber(SvnProber):
             else:
                 raise
 
-        from breezy.plugins.svn.remote import SvnRemoteFormat
+        from .remote import SvnRemoteFormat
         return SvnRemoteFormat()
 
     @classmethod
     def known_formats(cls):
-        from breezy.plugins.svn.remote import SvnRemoteFormat
+        from .remote import SvnRemoteFormat
         return set([SvnRemoteFormat()])
 
 
@@ -339,9 +339,9 @@ register_transport_proto('svn+http://')
 register_transport_proto('svn+https://')
 register_transport_proto('svn://',
     help="Access using the Subversion smart server.")
-register_lazy_transport('svn://', 'breezy.plugins.svn.transport',
+register_lazy_transport('svn://', __name__ + '.transport',
                         'SvnRaTransport')
-register_lazy_transport('svn+', 'breezy.plugins.svn.transport',
+register_lazy_transport('svn+', __name__ + '.transport',
                         'SvnRaTransport')
 
 #BzrDirFormat.register_control_server_format(format.SvnRemoteFormat)
@@ -353,23 +353,23 @@ ControlDirFormat.register_prober(SvnWorkingTreeProber)
 ControlDirFormat._server_probers.insert(0, SvnRemoteProber)
 
 network_format_registry.register_lazy("svn-wc",
-    'breezy.plugins.svn.workingtree', 'SvnWorkingTreeDirFormat')
+    __name__ + '.workingtree', 'SvnWorkingTreeDirFormat')
 network_format_registry.register_lazy("subversion",
-    'breezy.plugins.svn.remote', 'SvnRemoteFormat')
+    __name__ + '.remote', 'SvnRemoteFormat')
 branch_format_registry.register_extra_lazy(
-    'breezy.plugins.svn.branch', 'SvnBranchFormat')
+    __name__ + '.branch', 'SvnBranchFormat')
 from breezy.workingtree import (
     format_registry as workingtree_format_registry,
     )
 workingtree_format_registry.register_extra_lazy(
-    'breezy.plugins.svn.workingtree', 'SvnWorkingTreeFormat')
+    __name__ + '.workingtree', 'SvnWorkingTreeFormat')
 branch_network_format_registry.register_lazy("subversion",
-    'breezy.plugins.svn.branch', 'SvnBranchFormat')
+    __name__ + '.branch', 'SvnBranchFormat')
 repository_network_format_registry.register_lazy("subversion",
-    'breezy.plugins.svn.repository', 'SvnRepositoryFormat')
+    __name__ + '.repository', 'SvnRepositoryFormat')
 register_extra_lazy_repository_format = getattr(repository_format_registry,
     'register_extra_lazy')
-register_extra_lazy_repository_format('breezy.plugins.svn.repository',
+register_extra_lazy_repository_format(__name__ + '.repository',
     'SvnRepositoryFormat')
 
 format_registry.register_lazy("subversion", "breezy.plugins.svn.remote",
@@ -386,15 +386,15 @@ _mod_bzr_config.credential_store_registry.register_lazy(
     help=__doc__, fallback=True)
 
 
-plugin_cmds.register_lazy('cmd_svn_import', [], 'breezy.plugins.svn.commands')
+plugin_cmds.register_lazy('cmd_svn_import', [], __name__ + '.commands')
 plugin_cmds.register_lazy('cmd_svn_branching_scheme', [],
-                          'breezy.plugins.svn.mapping3.commands')
+                          __name__ + '.mapping3.commands')
 plugin_cmds.register_lazy('cmd_svn_layout', [],
-                          'breezy.plugins.svn.commands')
+                          __name__ + '.commands')
 plugin_cmds.register_lazy('cmd_svn_branches', [],
-                          'breezy.plugins.svn.commands')
+                          __name__ + '.commands')
 plugin_cmds.register_lazy('cmd_fix_svn_ancestry', [],
-                          'breezy.plugins.svn.commands')
+                          __name__ + '.commands')
 
 
 try:
@@ -451,7 +451,7 @@ try:
     from breezy.registry import register_lazy
 except ImportError:
     from breezy.diff import format_registry as diff_format_registry
-    diff_format_registry.register_lazy('svn', 'breezy.plugins.svn.send',
+    diff_format_registry.register_lazy('svn', __name__ + '.send',
             'SvnDiffTree', 'Subversion diff format')
 
     from breezy.revisionspec import (
@@ -461,7 +461,7 @@ except ImportError:
         "RevisionSpec_svn")
 
     from breezy.send import format_registry as send_format_registry
-    send_format_registry.register_lazy('svn', 'breezy.plugins.svn.send',
+    send_format_registry.register_lazy('svn', __name__ + '.send',
                                        'send_svn', 'Subversion diff format')
     from breezy.foreign import (
         foreign_vcs_registry,
@@ -470,38 +470,38 @@ except ImportError:
                                        "foreign_vcs_svn")
     from breezy.help_topics import topic_registry
     topic_registry.register_lazy('svn-layout',
-                                 'breezy.plugins.svn.layout',
+                                 __name__ + '.layout',
                                  'help_layout', 'Subversion repository layouts')
 else:
-    register_lazy("breezy.diff", "format_registry", 'svn', 'breezy.plugins.svn.send',
+    register_lazy("breezy.diff", "format_registry", 'svn', __name__ + '.send',
             'SvnDiffTree', help='Subversion diff format')
     register_lazy("breezy.revisionspec", "revspec_registry", "svn:",
             "breezy.plugins.svn.revspec", "RevisionSpec_svn")
     register_lazy("breezy.send", "format_registry", 'svn',
-            'breezy.plugins.svn.send', 'send_svn', 'Subversion diff format')
+            __name__ + '.send', 'send_svn', 'Subversion diff format')
     register_lazy("breezy.foreign", "foreign_vcs_registry", "svn",
             "breezy.plugins.svn.mapping", "foreign_vcs_svn")
     register_lazy("breezy.help_topics", "topic_registry", 'svn-layout',
-            'breezy.plugins.svn.layout', 'help_layout',
+            __name__ + '.layout', 'help_layout',
             'Subversion repository layouts')
 
 
 _mod_bzr_config.option_registry.register_lazy('layout',
-    'breezy.plugins.svn.config', 'svn_layout_option')
+    __name__ + '.config', 'svn_layout_option')
 _mod_bzr_config.option_registry.register_lazy('guessed-layout',
-    'breezy.plugins.svn.config', 'svn_guessed_layout_option')
+    __name__ + '.config', 'svn_guessed_layout_option')
 _mod_bzr_config.option_registry.register_lazy('branches',
-    'breezy.plugins.svn.config', 'svn_branches_option')
+    __name__ + '.config', 'svn_branches_option')
 _mod_bzr_config.option_registry.register_lazy('tags',
-    'breezy.plugins.svn.config', 'svn_tags_option')
+    __name__ + '.config', 'svn_tags_option')
 _mod_bzr_config.option_registry.register_lazy('override-svn-revprops',
-    'breezy.plugins.svn.config', 'svn_override_revprops')
+    __name__ + '.config', 'svn_override_revprops')
 _mod_bzr_config.option_registry.register_lazy('log-strip-trailing-newline',
-    'breezy.plugins.svn.config', 'svn_log_strip_trailing_new_line')
+    __name__ + '.config', 'svn_log_strip_trailing_new_line')
 _mod_bzr_config.option_registry.register_lazy('push_merged_revisions',
-    'breezy.plugins.svn.config', 'svn_push_merged_revisions')
+    __name__ + '.config', 'svn_push_merged_revisions')
 _mod_bzr_config.option_registry.register_lazy('allow_metadata_in_file_properties',
-    'breezy.plugins.svn.config', 'svn_allow_metadata_in_fileprops')
+    __name__ + '.config', 'svn_allow_metadata_in_fileprops')
 
 def test_suite():
     """Returns the testsuite for bzr-svn."""
