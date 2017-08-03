@@ -16,47 +16,47 @@
 import subvertpy
 from subvertpy import ra
 
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import (
+from breezy.branch import Branch
+from breezy.bzrdir import BzrDir
+from breezy.errors import (
     AppendRevisionsOnlyViolation,
     NoSuchRevision,
     )
-from bzrlib.repository import Repository
-from bzrlib.tests import (
+from breezy.repository import Repository
+from breezy.tests import (
     TestCase,
     TestNotApplicable,
     )
-from bzrlib.workingtree import WorkingTree
+from breezy.workingtree import WorkingTree
 
-from bzrlib.plugins.svn.config import (
+from breezy.plugins.svn.config import (
     BranchConfig,
     )
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     RequiresMetadataInFileProps,
     )
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     SVN_PROP_BZR_REVISION_ID,
     mapping_registry,
     )
-from bzrlib.plugins.svn.mapping3.base import (
+from breezy.plugins.svn.mapping3.base import (
     BzrSvnMappingv3,
     SVN_PROP_BZR_BRANCHING_SCHEME,
     set_property_scheme,
     )
-from bzrlib.plugins.svn.mapping3.scheme import (
+from breezy.plugins.svn.mapping3.scheme import (
     InvalidSvnBranchPath,
     ListBranchingScheme,
     NoBranchingScheme,
     )
-from bzrlib.plugins.svn.tests import (
+from breezy.plugins.svn.tests import (
     SubversionTestCase,
     )
-from bzrlib.plugins.svn.tests.test_mapping import (
+from breezy.plugins.svn.tests.test_mapping import (
     sha1,
     )
 
@@ -516,7 +516,7 @@ class RepositoryTests(SubversionTestCase):
                              wt.branch.last_revision()).parent_ids)
 
     def test_push_unnecessary_merge(self):
-        from bzrlib.debug import debug_flags
+        from breezy.debug import debug_flags
         debug_flags.add("commit")
         debug_flags.add("fetch")
         repos_url = self.make_svn_repository("a")

@@ -20,9 +20,9 @@
 
 from cStringIO import StringIO
 
-from bzrlib import tests
+from breezy import tests
 
-from bzrlib.plugins.svn.send import SvnDiffTree
+from breezy.plugins.svn.send import SvnDiffTree
 
 
 class TestDiffTreeNonSvn(tests.TestCaseWithTransport):

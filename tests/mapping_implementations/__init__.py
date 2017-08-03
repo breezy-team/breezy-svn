@@ -13,12 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib.tests import multiply_tests
-from bzrlib.plugins.svn.mapping import mapping_registry
+from breezy.tests import multiply_tests
+from breezy.plugins.svn.mapping import mapping_registry
 
 def load_tests(basic_tests, module, loader):
     result = loader.suiteClass()
-    prefix = "bzrlib.plugins.svn.tests.mapping_implementations"
+    prefix = "breezy.plugins.svn.tests.mapping_implementations"
     modules = ['test_base', 'test_branch', 'test_repository']
     module_name_list = ["%s.%s" % (prefix, m) for m in modules]
     format_scenarios = []

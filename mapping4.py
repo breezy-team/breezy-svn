@@ -20,14 +20,14 @@ from __future__ import absolute_import
 
 import urllib
 
-from bzrlib import (
+from breezy import (
     errors,
     )
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     mapping,
     )
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     InvalidFileId,
     )
 

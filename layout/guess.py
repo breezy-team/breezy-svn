@@ -18,14 +18,14 @@ from __future__ import absolute_import
 from subvertpy import SubversionException, ERR_FS_NOT_FOUND
 import urllib
 
-from bzrlib import ui
-from bzrlib.trace import mutter
+from breezy import ui
+from breezy.trace import mutter
 
-from bzrlib.plugins.svn.changes import (
+from breezy.plugins.svn.changes import (
     common_prefix,
     )
 
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.layout.standard import (
     CustomLayout,
     RootLayout,
     TrunkLayout,
@@ -166,8 +166,8 @@ def is_likely_branch_url(url):
     """Check whether url refers to a likely branch URL.
 
     """
-    from bzrlib.plugins.svn.transport import SvnRaTransport
-    from bzrlib.plugins.svn.logwalker import LogWalker
+    from breezy.plugins.svn.transport import SvnRaTransport
+    from breezy.plugins.svn.logwalker import LogWalker
     transport = SvnRaTransport(url)
     lw = LogWalker(transport=transport)
     svn_root_url = transport.get_repos_root()

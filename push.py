@@ -27,11 +27,11 @@ from subvertpy import (
     properties,
     )
 
-from bzrlib import (
+from breezy import (
     ui,
     urlutils,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     AlreadyBranchError,
     AppendRevisionsOnlyViolation,
     BzrError,
@@ -39,39 +39,39 @@ from bzrlib.errors import (
     NoSuchRevision,
     NotWriteLocked,
     )
-from bzrlib.repository import (
+from breezy.repository import (
     InterRepository,
     )
-from bzrlib.revision import (
+from breezy.revision import (
     NULL_REVISION,
     )
-from bzrlib.testament import (
+from breezy.testament import (
     StrictTestament,
     )
-from bzrlib.trace import (
+from breezy.trace import (
     mutter,
     )
 
-from bzrlib.plugins.svn.commit import (
+from breezy.plugins.svn.commit import (
     SvnCommitBuilder,
     )
-from bzrlib.plugins.svn.config import (
+from breezy.plugins.svn.config import (
     SvnBranchStack,
     )
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     ChangesRootLHSHistory,
     MissingPrefix,
     SubversionBranchDiverged,
     convert_svn_error,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     SVN_REVPROP_BZR_SKIP,
     )
-from bzrlib.plugins.svn.repository import (
+from breezy.plugins.svn.repository import (
     SvnRepositoryFormat,
     SvnRepository,
     )
-from bzrlib.plugins.svn.transport import (
+from breezy.plugins.svn.transport import (
     check_dirs_exist,
     create_branch_prefix,
     url_join_unescaped_path,

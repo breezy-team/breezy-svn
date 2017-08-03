@@ -16,7 +16,7 @@
 
 from __future__ import absolute_import
 
-from bzrlib.branch import Branch
+from breezy.branch import Branch
 import sys
 
 b = Branch.open(".")

@@ -25,14 +25,14 @@ from subvertpy import (
 import urlparse
 import urllib
 
-from bzrlib.config import (
+from breezy.config import (
     AuthenticationConfig,
     CredentialStore,
     )
-from bzrlib.trace import (
+from breezy.trace import (
     mutter,
     )
-from bzrlib.ui import (
+from breezy.ui import (
     ui_factory,
     )
 

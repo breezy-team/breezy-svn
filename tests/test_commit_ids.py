@@ -21,20 +21,20 @@
 import os
 import shutil
 
-from bzrlib import osutils
-from bzrlib.bzrdir import BzrDir
-from bzrlib.conflicts import ConflictList
-from bzrlib.tests import (
+from breezy import osutils
+from breezy.bzrdir import BzrDir
+from breezy.conflicts import ConflictList
+from breezy.tests import (
     TestCaseWithTransport,
     treeshape,
     )
-from bzrlib.tests.features import (
+from breezy.tests.features import (
     SymlinkFeature,
     )
 
-from bzrlib.workingtree import WorkingTree
+from breezy.workingtree import WorkingTree
 
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.tests import SubversionTestCase
 
 class CommitIdTesting:
     """Test that file ids and file revisions are appropriately recorded."""

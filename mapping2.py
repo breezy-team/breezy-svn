@@ -17,27 +17,27 @@
 
 from __future__ import absolute_import
 
-from bzrlib.errors import (
+from breezy.errors import (
     InvalidRevisionId,
     )
-from bzrlib.inventory import (
+from breezy.inventory import (
     ROOT_ID,
     )
 
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     LayoutUnusable,
     NotSvnBranchPath,
     NoLayoutTagSetSupport,
     )
-from bzrlib.plugins.svn.layout import (
+from breezy.plugins.svn.layout import (
     RepositoryLayout,
     get_root_paths,
     )
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     BzrSvnMapping,
     escape_svn_path,
     unescape_svn_path,

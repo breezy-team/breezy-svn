@@ -19,25 +19,25 @@
 import os
 import subvertpy
 
-from bzrlib import osutils
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import (
+from breezy import osutils
+from breezy.branch import Branch
+from breezy.bzrdir import (
     BzrDir,
     format_registry,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     AlreadyBranchError,
     NotBranchError,
     NoRepositoryPresent,
     NoWorkingTree,
     UnsupportedOperation,
     )
-from bzrlib.tests import TestCase
+from breezy.tests import TestCase
 
-from bzrlib.plugins.svn.layout.standard import RootLayout, TrunkLayout
-from bzrlib.plugins.svn.remote import SvnRemoteFormat
-from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.transport import SvnRaTransport
+from breezy.plugins.svn.layout.standard import RootLayout, TrunkLayout
+from breezy.plugins.svn.remote import SvnRemoteFormat
+from breezy.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.transport import SvnRaTransport
 
 class TestRemoteAccess(SubversionTestCase):
 

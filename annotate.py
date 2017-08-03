@@ -26,17 +26,17 @@ from subvertpy.delta import (
     apply_txdelta_window,
     )
 
-from bzrlib import (
+from breezy import (
     urlutils,
     )
-from bzrlib.annotate import (
+from breezy.annotate import (
     reannotate,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     NoSuchId,
     )
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     changes,
     )
 

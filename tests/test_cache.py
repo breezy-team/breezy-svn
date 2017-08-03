@@ -16,17 +16,17 @@
 
 import os
 
-from bzrlib.errors import (
+from breezy.errors import (
     NoSuchRevision,
     )
-from bzrlib.tests import (
+from breezy.tests import (
     TestCase,
     TestCaseInTempDir,
     TestSkipped,
     )
-from bzrlib.tests.features import Feature
+from breezy.tests.features import Feature
 
-from bzrlib.plugins.svn.mapping4 import (
+from breezy.plugins.svn.mapping4 import (
     BzrSvnMappingv4,
     )
 
@@ -99,7 +99,7 @@ class SqliteLogCacheTests(TestCase,LogCacheTests):
 
     def setUp(self):
         super(SqliteLogCacheTests, self).setUp()
-        from bzrlib.plugins.svn.cache.sqlitecache import SqliteLogCache
+        from breezy.plugins.svn.cache.sqlitecache import SqliteLogCache
         self.cache = SqliteLogCache()
 
 
@@ -108,7 +108,7 @@ class TdbLogCacheTests(TestCaseInTempDir,LogCacheTests):
     def setUp(self):
         super(TdbLogCacheTests, self).setUp()
         self.requireFeature(tdb_feature)
-        from bzrlib.plugins.svn.cache.tdbcache import TdbLogCache, tdb_open
+        from breezy.plugins.svn.cache.tdbcache import TdbLogCache, tdb_open
         import tdb
         self.cache = TdbLogCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
@@ -152,7 +152,7 @@ class SqliteRevidMapCacheTests(TestCase,RevidMapCacheTests):
 
     def setUp(self):
         super(SqliteRevidMapCacheTests, self).setUp()
-        from bzrlib.plugins.svn.cache.sqlitecache import SqliteRevisionIdMapCache
+        from breezy.plugins.svn.cache.sqlitecache import SqliteRevisionIdMapCache
         self.cache = SqliteRevisionIdMapCache()
 
 
@@ -161,7 +161,7 @@ class TdbRevidMapCacheTests(TestCaseInTempDir,RevidMapCacheTests):
     def setUp(self):
         super(TdbRevidMapCacheTests, self).setUp()
         self.requireFeature(tdb_feature)
-        from bzrlib.plugins.svn.cache.tdbcache import TdbRevisionIdMapCache, tdb_open
+        from breezy.plugins.svn.cache.tdbcache import TdbRevisionIdMapCache, tdb_open
         import tdb
         self.cache = TdbRevisionIdMapCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
@@ -211,7 +211,7 @@ class SqliteRevInfoCacheTests(TestCase,RevInfoCacheTests):
 
     def setUp(self):
         super(SqliteRevInfoCacheTests, self).setUp()
-        from bzrlib.plugins.svn.cache.sqlitecache import SqliteRevisionInfoCache
+        from breezy.plugins.svn.cache.sqlitecache import SqliteRevisionInfoCache
         self.cache = SqliteRevisionInfoCache()
 
 
@@ -220,7 +220,7 @@ class TdbRevInfoCacheTests(TestCaseInTempDir,RevInfoCacheTests):
     def setUp(self):
         super(TdbRevInfoCacheTests, self).setUp()
         self.requireFeature(tdb_feature)
-        from bzrlib.plugins.svn.cache.tdbcache import TdbRevisionInfoCache, tdb_open
+        from breezy.plugins.svn.cache.tdbcache import TdbRevisionInfoCache, tdb_open
         import tdb
         self.cache = TdbRevisionInfoCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))
 
@@ -252,7 +252,7 @@ class SqliteParentsCacheTests(TestCase,ParentsCacheTests):
 
     def setUp(self):
         super(SqliteParentsCacheTests, self).setUp()
-        from bzrlib.plugins.svn.cache.sqlitecache import SqliteParentsCache
+        from breezy.plugins.svn.cache.sqlitecache import SqliteParentsCache
         self.cache = SqliteParentsCache()
 
 
@@ -261,6 +261,6 @@ class TdbParentsCacheTests(TestCaseInTempDir,ParentsCacheTests):
     def setUp(self):
         super(TdbParentsCacheTests, self).setUp()
         self.requireFeature(tdb_feature)
-        from bzrlib.plugins.svn.cache.tdbcache import TdbParentsCache, tdb_open
+        from breezy.plugins.svn.cache.tdbcache import TdbParentsCache, tdb_open
         import tdb
         self.cache = TdbParentsCache(tdb_open("cache.tdb", 0, tdb.DEFAULT, os.O_RDWR|os.O_CREAT))

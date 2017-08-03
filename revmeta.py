@@ -21,26 +21,26 @@ from subvertpy import (
     properties,
     )
 
-from bzrlib import (
+from breezy import (
     errors as bzr_errors,
     trace,
     ui,
     )
-from bzrlib.foreign import (
+from breezy.foreign import (
     ForeignRevision,
     )
-from bzrlib.revision import (
+from breezy.revision import (
     NULL_REVISION,
     )
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     changes,
     errors as svn_errors,
     util,
     )
-from bzrlib.plugins.svn.cache import (
+from breezy.plugins.svn.cache import (
     CacheConcurrencyError,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     SVN_PROP_BZR_HIDDEN,
     SVN_PROP_BZR_REVPROP_REDIRECT,
     SVN_REVPROP_BZR_ROOT,
@@ -53,11 +53,11 @@ from bzrlib.plugins.svn.mapping import (
     parse_svn_revprops,
     revprops_complete,
     )
-from bzrlib.plugins.svn.metagraph import (
+from breezy.plugins.svn.metagraph import (
     MetaRevision,
     MetaRevisionGraph,
     )
-from bzrlib.plugins.svn.svk import (
+from breezy.plugins.svn.svk import (
     estimate_svk_ancestors,
     parse_svk_feature,
     svk_features_merged_since,

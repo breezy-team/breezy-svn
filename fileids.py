@@ -21,26 +21,26 @@ from __future__ import absolute_import
 
 import urllib
 
-from bzrlib import (
+from breezy import (
     ui,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     RevisionNotPresent,
     )
-from bzrlib.knit import (
+from breezy.knit import (
     make_file_factory,
     )
-from bzrlib.revision import (
+from breezy.revision import (
     NULL_REVISION,
     )
-from bzrlib.trace import (
+from breezy.trace import (
     mutter,
     )
-from bzrlib.versionedfile import (
+from breezy.versionedfile import (
     ConstantMapper,
     )
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     changes,
     errors,
     )

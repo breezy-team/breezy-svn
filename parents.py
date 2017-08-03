@@ -15,7 +15,7 @@
 
 from __future__ import absolute_import
 
-from bzrlib.revision import NULL_REVISION
+from breezy.revision import NULL_REVISION
 
 class DiskCachingParentsProvider(object):
     """Parents provider that caches parents in a SQLite database."""

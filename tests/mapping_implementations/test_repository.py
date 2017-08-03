@@ -15,24 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib import urlutils
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import (
+from breezy import urlutils
+from breezy.branch import Branch
+from breezy.bzrdir import BzrDir
+from breezy.errors import (
     NoSuchRevision,
     UnsupportedOperation,
     )
-from bzrlib.repository import Repository
-from bzrlib.revision import NULL_REVISION
-from bzrlib.tests import TestSkipped, TestNotApplicable
+from breezy.repository import Repository
+from breezy.revision import NULL_REVISION
+from breezy.tests import TestSkipped, TestNotApplicable
 
-from bzrlib.plugins.svn import errors as svn_errors
+from breezy.plugins.svn import errors as svn_errors
 from subvertpy import ra
-from bzrlib.plugins.svn.repository import find_branches_between
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.repository import find_branches_between
+from breezy.plugins.svn.layout.standard import (
     TrunkLayout, RootLayout, CustomLayout,)
-from bzrlib.plugins.svn.mapping import mapping_registry
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.mapping import mapping_registry
+from breezy.plugins.svn.tests import SubversionTestCase
 
 from subvertpy import NODE_DIR, NODE_FILE
 

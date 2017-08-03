@@ -18,7 +18,7 @@
 
 from __future__ import absolute_import
 
-from bzrlib.plugins.svn import lazy_check_versions
+from breezy.plugins.svn import lazy_check_versions
 lazy_check_versions()
 
 import os
@@ -36,13 +36,13 @@ from subvertpy.server import (
 import sys
 import time
 
-from bzrlib import (
+from breezy import (
     trace,
     urlutils,
     )
-from bzrlib.branch import Branch
+from breezy.branch import Branch
 
-from bzrlib.plugins.svn.commit import dir_editor_send_changes
+from breezy.plugins.svn.commit import dir_editor_send_changes
 
 
 def determine_changed_paths(repository, branch_path, rev, revno):

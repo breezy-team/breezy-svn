@@ -17,19 +17,19 @@
 
 from __future__ import absolute_import
 
-from bzrlib import version_info as bzrlib_version
-from bzrlib.errors import (
+from breezy import version_info as breezy_version
+from breezy.errors import (
     InvalidRevisionId,
     InvalidRevisionSpec,
     NoSuchRevision,
     )
-from bzrlib.revisionspec import (
+from breezy.revisionspec import (
     RevisionSpec,
     RevisionInfo,
     )
 
-from bzrlib.plugins.svn import lazy_check_versions
-from bzrlib.plugins.svn.mapping import mapping_registry
+from breezy.plugins.svn import lazy_check_versions
+from breezy.plugins.svn.mapping import mapping_registry
 
 class RevisionSpec_svn(RevisionSpec):
     """Selects a revision using a Subversion revision number."""
@@ -48,7 +48,7 @@ class RevisionSpec_svn(RevisionSpec):
         return int(self.spec[loc+1:])
 
     def _create_revinfo(self, branch, revid):
-        if bzrlib_version < (2, 5):
+        if breezy_version < (2, 5):
             history = branch.revision_history()
             return RevisionInfo.from_revision_id(branch, revid, history)
         else:
@@ -78,7 +78,7 @@ class RevisionSpec_svn(RevisionSpec):
 
     def _match_on_native(self, branch):
         try:
-            if bzrlib_version < (2, 5):
+            if breezy_version < (2, 5):
                 return RevisionInfo.from_revision_id(branch,
                         branch.generate_revision_id(self._get_revnum()),
                         branch.revision_history())

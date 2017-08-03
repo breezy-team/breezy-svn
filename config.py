@@ -24,14 +24,14 @@ from subvertpy import (
     properties,
     )
 
-from bzrlib import (
+from breezy import (
     atomicfile,
     config as _mod_bzr_config,
     osutils,
     trace,
     transport,
     )
-from bzrlib.config import (
+from breezy.config import (
     ConfigObj,
     config_dir,
     ensure_config_dir_exists,
@@ -42,7 +42,7 @@ from bzrlib.config import (
     STORE_GLOBAL,
     STORE_LOCATION,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     BzrError,
     )
 
@@ -250,7 +250,7 @@ class SvnRepositoryConfig(Config):
 
         :return: BranchingScheme instance.
         """
-        from bzrlib.plugins.svn.mapping3.scheme import BranchingScheme
+        from breezy.plugins.svn.mapping3.scheme import BranchingScheme
         schemename = self._get_user_option("branching-scheme", use_global=False)
         if schemename is not None:
             return BranchingScheme.find_scheme(schemename.encode('ascii'))
@@ -268,7 +268,7 @@ class SvnRepositoryConfig(Config):
 
         :return: BranchingScheme instance.
         """
-        from bzrlib.plugins.svn.mapping3.scheme import BranchingScheme
+        from breezy.plugins.svn.mapping3.scheme import BranchingScheme
         schemename = self._get_user_option("branching-scheme-guess",
                                            use_global=False)
         if schemename is not None:
@@ -438,8 +438,8 @@ class SubversionBuildPackageConfig(object):
     """Configuration object that behaves similar to svn-buildpackage when it reads its config."""
 
     def __init__(self, tree):
-        from bzrlib.plugins.svn.workingtree import SvnWorkingTree
-        from bzrlib.plugins.svn.tree import SubversionTree
+        from breezy.plugins.svn.workingtree import SvnWorkingTree
+        from breezy.plugins.svn.tree import SubversionTree
         if (isinstance(tree, SvnWorkingTree) and
             os.path.exists(os.path.join(tree.abspath("."), ".svn", "svn-layout"))):
             self.wt_layout_path = os.path.join(tree.abspath("."), ".svn", "svn-layout")

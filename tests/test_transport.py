@@ -22,16 +22,16 @@ from subvertpy import ra
 from unittest import TestCase
 import urlparse
 
-from bzrlib import urlutils
-from bzrlib.errors import (
+from breezy import urlutils
+from breezy.errors import (
     FileExists,
     InvalidURL,
     NoSuchFile,
     TransportNotPossible,
     )
 
-from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.transport import (
+from breezy.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.transport import (
     Connection,
     SvnRaTransport,
     bzr_to_svn_url,

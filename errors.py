@@ -22,11 +22,11 @@ from __future__ import absolute_import
 import subvertpy
 import urllib
 
-from bzrlib import (
+from breezy import (
     trace,
     )
-import bzrlib.errors
-from bzrlib.errors import (
+import breezy.errors
+from breezy.errors import (
     BzrError,
     ConnectionError,
     ConnectionReset,
@@ -201,7 +201,7 @@ class LayoutUnusable(BzrError):
         self.mapping = mapping
 
 
-class AppendRevisionsOnlyViolation(bzrlib.errors.AppendRevisionsOnlyViolation):
+class AppendRevisionsOnlyViolation(breezy.errors.AppendRevisionsOnlyViolation):
 
     _fmt = ('Operation denied because it would change the mainline history.'
             ' Set the append_revisions_only setting to False on'

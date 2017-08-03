@@ -15,8 +15,8 @@
 
 from __future__ import absolute_import
 
-from bzrlib.commands import Command
-from bzrlib.option import Option
+from breezy.commands import Command
+from breezy.option import Option
 
 class cmd_svn_branching_scheme(Command):
     """Show or change the branching scheme for a Subversion repository.
@@ -35,19 +35,19 @@ class cmd_svn_branching_scheme(Command):
     hidden = True
 
     def run(self, location=".", set=False, repository_wide=False):
-        from bzrlib import errors as bzr_errors
-        from bzrlib.bzrdir import BzrDir
-        from bzrlib.msgeditor import edit_commit_message
-        from bzrlib.trace import note
+        from breezy import errors as bzr_errors
+        from breezy.bzrdir import BzrDir
+        from breezy.msgeditor import edit_commit_message
+        from breezy.trace import note
 
-        from bzrlib.plugins.svn.repository import SvnRepository
-        from bzrlib.plugins.svn.mapping3.base import (
+        from breezy.plugins.svn.repository import SvnRepository
+        from breezy.plugins.svn.mapping3.base import (
             BzrSvnMappingv3,
             config_set_scheme,
             get_property_scheme,
             set_property_scheme,
             )
-        from bzrlib.plugins.svn.mapping3.scheme import (
+        from breezy.plugins.svn.mapping3.scheme import (
             scheme_from_branch_list,
             )
         def scheme_str(scheme):

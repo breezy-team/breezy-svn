@@ -24,61 +24,61 @@ import sys
 
 from subvertpy import NODE_DIR, NODE_FILE
 
-from bzrlib.branch import (
+from breezy.branch import (
     Branch,
     )
-from bzrlib.bzrdir import (
+from breezy.bzrdir import (
     BzrDir,
     )
-from bzrlib.osutils import (
+from breezy.osutils import (
     sha_string,
     )
-from bzrlib.repository import (
+from breezy.repository import (
     Repository,
     )
-from bzrlib.revision import (
+from breezy.revision import (
     NULL_REVISION,
     )
-from bzrlib.tests import (
+from breezy.tests import (
     KnownFailure,
     TestCase,
     TestSkipped,
     )
-from bzrlib.tests.features import (
+from breezy.tests.features import (
     SymlinkFeature,
     )
-from bzrlib.trace import (
+from breezy.trace import (
     mutter,
     )
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     remote,
     )
-from bzrlib.plugins.svn.convert import (
+from breezy.plugins.svn.convert import (
     load_dumpfile,
     )
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     InvalidFileName,
     SymlinkTargetContainsNewline,
     )
-from bzrlib.plugins.svn.fetch import (
+from breezy.plugins.svn.fetch import (
    FetchRevisionFinder,
    InterFromSvnRepository,
    check_filename,
    chunks_start_with_link,
    )
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     SVN_REVPROP_BZR_MAPPING_VERSION,
     SVN_REVPROP_BZR_ROOT,
     )
-from bzrlib.plugins.svn.tests import (
+from breezy.plugins.svn.tests import (
     SubversionTestCase,
     )
-from bzrlib.plugins.svn.transport import (
+from breezy.plugins.svn.transport import (
     SvnRaTransport,
     )
 
@@ -426,8 +426,8 @@ class TestFetchWorks(FetchTestCase):
             newrepos.unlock()
 
     def test_fetch_mapping_upgrade(self):
-        from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3
-        from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
+        from breezy.plugins.svn.mapping3.base import BzrSvnMappingv3
+        from breezy.plugins.svn.mapping3.scheme import TrunkBranchingScheme
         repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
@@ -2050,8 +2050,8 @@ Node-copyfrom-path: x
         dir = BzrDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos, "revid4")
-        from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3
-        from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
+        from breezy.plugins.svn.mapping3.base import BzrSvnMappingv3
+        from breezy.plugins.svn.mapping3.scheme import TrunkBranchingScheme
         revid3 = oldrepos.generate_revision_id(3, "trunk",
                 BzrSvnMappingv3(TrunkBranchingScheme(0)))
         self.assertEquals(set(["revid1", "revid2", revid3, "revid4"]),
@@ -2063,11 +2063,11 @@ Node-copyfrom-path: x
         oldrepos.set_layout(TrunkLayout(0))
         dir = BzrDir.create("f")
         newrepos = dir.create_repository()
-        from bzrlib.plugins.svn.mapping4 import BzrSvnMappingv4
+        from breezy.plugins.svn.mapping4 import BzrSvnMappingv4
         revid5 = oldrepos.generate_revision_id(5, "trunk", BzrSvnMappingv4())
         self.copy_content(oldrepos, newrepos, revid5)
-        from bzrlib.plugins.svn.mapping3.base import BzrSvnMappingv3
-        from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
+        from breezy.plugins.svn.mapping3.base import BzrSvnMappingv3
+        from breezy.plugins.svn.mapping3.scheme import TrunkBranchingScheme
         revid3 = oldrepos.generate_revision_id(3, "trunk",
                 BzrSvnMappingv3(TrunkBranchingScheme(0)))
         self.assertEquals(set(["revid1", "revid2", revid3, "revid4", revid5]),

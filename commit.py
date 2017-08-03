@@ -34,7 +34,7 @@ from subvertpy import (
     ra,
     )
 
-from bzrlib import (
+from breezy import (
     debug,
     graph as _mod_graph,
     osutils,
@@ -42,41 +42,41 @@ from bzrlib import (
     trace,
     ui,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     BzrError,
     NoSuchId,
     NoSuchRevision,
     RootMissing,
     )
-from bzrlib.inventory import (
+from breezy.inventory import (
     entry_factory,
     )
-from bzrlib.repository import (
+from breezy.repository import (
     CommitBuilder,
     )
-from bzrlib.revision import (
+from breezy.revision import (
     NULL_REVISION,
     )
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     mapping,
     )
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     convert_svn_error,
     ChangesRootLHSHistory,
     MissingPrefix,
     RevpropChangeFailed,
     )
-from bzrlib.plugins.svn.svk import (
+from breezy.plugins.svn.svk import (
     generate_svk_feature,
     parse_svk_features,
     serialize_svk_features,
     SVN_PROP_SVK_MERGE
     )
-from bzrlib.plugins.svn.transport import (
+from breezy.plugins.svn.transport import (
     url_join_unescaped_path,
     )
-from bzrlib.plugins.svn.util import (
+from breezy.plugins.svn.util import (
     lazy_dict,
     )
 
@@ -210,7 +210,7 @@ def file_editor_send_content_changes(reader, file_editor):
     if 'check' in debug.debug_flags:
         contents = reader.read()
         digest = delta.send_stream(StringIO(contents), txdelta)
-        from bzrlib.plugins.svn.fetch import md5_string
+        from breezy.plugins.svn.fetch import md5_string
         assert digest == md5_string(contents)
     else:
         delta.send_stream(reader, txdelta)
@@ -942,8 +942,8 @@ class SvnCommitBuilder(CommitBuilder):
         return ret
 
     def revision_tree(self):
-        from bzrlib.inventory import mutable_inventory_from_tree
-        from bzrlib.revisiontree import InventoryRevisionTree
+        from breezy.inventory import mutable_inventory_from_tree
+        from breezy.revisiontree import InventoryRevisionTree
         inv = mutable_inventory_from_tree(self.old_tree)
         revid = self._get_actual_revision_id()
         inv.apply_delta(self._get_basis_delta(revid))

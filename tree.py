@@ -27,28 +27,28 @@ from subvertpy import (
     )
 import urllib
 
-from bzrlib import (
+from breezy import (
     errors,
     rules,
     osutils,
     urlutils,
     )
-from bzrlib.branch import Branch
-from bzrlib.inventory import (
+from breezy.branch import Branch
+from breezy.inventory import (
     Inventory,
     InventoryDirectory,
     TreeReference,
     )
-from bzrlib.osutils import (
+from breezy.osutils import (
     md5,
     )
-from bzrlib.revision import (
+from breezy.revision import (
     CURRENT_REVISION,
     )
-from bzrlib.revisiontree import (
+from breezy.revisiontree import (
     RevisionTree,
     )
-from bzrlib.trace import mutter
+from breezy.trace import mutter
 
 
 class BasisTreeIncomplete(errors.BzrError):
@@ -671,7 +671,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         return orig_props
 
     def annotate_iter(self, file_id, default_revision=CURRENT_REVISION):
-        from bzrlib.plugins.svn.annotate import Annotater
+        from breezy.plugins.svn.annotate import Annotater
         annotater = Annotater(self.workingtree.branch.repository, file_id)
         annotater.check_file_revs(
             self.get_revision_id(), self.workingtree.get_branch_path(), 

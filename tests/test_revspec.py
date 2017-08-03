@@ -17,20 +17,20 @@
 Tests for revision specificiers.
 """
 
-from bzrlib import version_info as bzrlib_version
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import (
+from breezy import version_info as bzrlib_version
+from breezy.branch import Branch
+from breezy.bzrdir import BzrDir
+from breezy.errors import (
     BzrError,
     InvalidRevisionSpec,
     )
-from bzrlib.revisionspec import (
+from breezy.revisionspec import (
     RevisionInfo,
     RevisionSpec,
     )
-from bzrlib.tests import TestCase
+from breezy.tests import TestCase
 
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.tests import SubversionTestCase
 
 
 class TestRevSpec(TestCase):
@@ -62,7 +62,7 @@ class TestRevSpecsBySubversion(SubversionTestCase):
         branch = Branch.open(repos_url)
         revinfo = revspec._match_on(branch, None)
 
-        if bzrlib_version < (2, 5):
+        if breezy_version < (2, 5):
             self.assertEquals(RevisionInfo.from_revision_id(branch,
                 branch.last_revision(), branch.revision_history()), revinfo)
         else:

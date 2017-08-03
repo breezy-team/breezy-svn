@@ -19,22 +19,22 @@
 
 from __future__ import absolute_import
 
-import bzrlib.reconcile
+import breezy.reconcile
 
 from subvertpy import (
     SubversionException,
     properties,
     )
 
-from bzrlib import ui
+from breezy import ui
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     mapping,
     )
-from bzrlib.plugins.svn.commit import set_svn_revprops
+from breezy.plugins.svn.commit import set_svn_revprops
 
 
-class RepoReconciler(bzrlib.reconcile.RepoReconciler):
+class RepoReconciler(breezy.reconcile.RepoReconciler):
 
     def _set_skip_revprop(self, revnum, revprops):
         if not mapping.SVN_REVPROP_BZR_SKIP in revprops:

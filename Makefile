@@ -16,15 +16,15 @@
 #
 
 DEBUGGER ?= 
-BZR ?= $(shell which bzr)
-BZR_OPTIONS ?= 
+BRZ ?= $(shell which brz)
+BRZ_OPTIONS ?= 
 PYTHON ?= $(shell which python)
 SETUP ?= $(PYTHON) ./setup.py
 PYDOCTOR ?= pydoctor
 CTAGS ?= ctags
 PYLINT ?= pylint
 RST2HTML ?= $(if $(shell which rst2html.py 2>/dev/null), rst2html.py, rst2html)
-TESTS ?= "^bzrlib.plugins.svn." Subversion Svn
+TESTS ?= "^breezy.plugins.svn." Subversion Svn
 DESTDIR ?=
 
 REST_DOCS = README FAQ AUTHORS
@@ -52,10 +52,10 @@ clean::
 	rm -f *.so
 
 check:: build-inplace
-	BZR_PLUGINS_AT=svn@$(shell pwd) $(DEBUGGER) $(PYTHON) $(PYTHON_OPTIONS) $(BZR) $(BZR_OPTIONS) selftest $(TEST_OPTIONS) $(TESTS)
+	BRZ_PLUGINS_AT=svn@$(shell pwd) $(DEBUGGER) $(PYTHON) $(PYTHON_OPTIONS) $(BRZ) $(BRZ_OPTIONS) selftest $(TEST_OPTIONS) $(TESTS)
 
 coverage::
-	$(MAKE) check BZR_OPTIONS="--coverage coverage"
+	$(MAKE) check BRZ_OPTIONS="--coverage coverage"
 
 check-verbose::
 	$(MAKE) check TEST_OPTIONS=-v
@@ -79,13 +79,13 @@ strace-check::
 	$(MAKE) check DEBUGGER="strace $(STRACE_OPTIONS)"
 
 show-plugins::
-	BZR_PLUGINS_AT=svn@$(shell pwd) $(BZR) plugins -v
+	BRZ_PLUGINS_AT=svn@$(shell pwd) $(BRZ) plugins -v
 
 lint::
 	PYTHONPATH=$(PYTHONPATH):subvertpy $(PYLINT) -f parseable *.py */*.py
 
 pydoctor::
-	$(PYDOCTOR) --make-html -c bzr-svn.cfg
+	$(PYDOCTOR) --make-html -c brz-svn.cfg
 
 FAQ.html README.html AUTHORS.html: %.html: %
 	$(RST2HTML) $< > $@
@@ -98,19 +98,19 @@ ctags:: tags
 homepage.html: wiki.py README INSTALL
 	python wiki.py | tail -n +2 | rst2html > $@
 
-.PHONY: update-pot po/bzr-svn.pot
-update-pot: po/bzr-svn.pot
+.PHONY: update-pot po/brz-svn.pot
+update-pot: po/brz-svn.pot
 
 TRANSLATABLE_PYFILES:=$(shell find . -name '*.py' \
 		| grep -v 'tests/' \
 		)
 
-po/bzr-svn.pot: $(PYFILES) $(DOCFILES)
-	BZR_PLUGINS_AT=svn@$(shell pwd) bzr export-pot \
-          --plugin=svn > po/bzr-svn.pot
+po/brz-svn.pot: $(PYFILES) $(DOCFILES)
+	BRZ_PLUGINS_AT=svn@$(shell pwd) brz export-pot \
+          --plugin=svn > po/brz-svn.pot
 	echo $(TRANSLATABLE_PYFILES) | xargs \
-	  xgettext --package-name "bzr-svn" \
+	  xgettext --package-name "brz-svn" \
 	  --msgid-bugs-address "<bazaar@lists.canonical.com>" \
 	  --copyright-holder "Jelmer Vernooij <jelmer@samba.org>" \
 	  --from-code ISO-8859-1 --sort-by-file --join --add-comments=i18n: \
-	  -d bzr-svn -p po -o bzr-svn.pot
+	  -d brz-svn -p po -o brz-svn.pot

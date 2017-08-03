@@ -22,23 +22,23 @@ import bz2
 from subvertpy import properties
 import urllib
 
-from bzrlib import (
+from breezy import (
     ui,
     urlutils,
     )
-from bzrlib.errors import BzrError
-from bzrlib.trace import mutter
+from breezy.errors import BzrError
+from breezy.trace import mutter
 
-from bzrlib.plugins.svn.layout.guess import (
+from breezy.plugins.svn.layout.guess import (
     GUESS_SAMPLE_SIZE,
     find_commit_paths,
     )
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.layout.standard import (
     CustomLayout,
     RootLayout,
     TrunkLayout,
     )
-from bzrlib.plugins.svn.errors import LayoutUnusable
+from breezy.plugins.svn.errors import LayoutUnusable
 
 
 class InvalidSvnBranchPath(BzrError):

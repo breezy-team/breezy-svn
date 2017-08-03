@@ -18,14 +18,14 @@
 """Tests for svn-keywords."""
 
 
-from bzrlib.revision import (
+from breezy.revision import (
     Revision,
     )
-from bzrlib.tests import (
+from breezy.tests import (
     TestCase,
     )
 
-from bzrlib.plugins.svn.keywords import (
+from breezy.plugins.svn.keywords import (
     compress_keywords,
     keywords,
     )

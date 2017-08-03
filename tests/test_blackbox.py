@@ -18,21 +18,21 @@
 import os
 import sys
 
-from bzrlib.controldir import (
+from breezy.controldir import (
     ControlDir,
     format_registry,
     )
-import bzrlib.gpg
-from bzrlib import version_info as bzrlib_version
-from bzrlib.repository import Repository
-from bzrlib.tests import KnownFailure
-from bzrlib.tests.blackbox import ExternalBase
+import breezy.gpg
+from breezy import version_info as bzrlib_version
+from breezy.repository import Repository
+from breezy.tests import KnownFailure
+from breezy.tests.blackbox import ExternalBase
 
-from bzrlib.plugins.svn.convert import load_dumpfile
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.convert import load_dumpfile
+from breezy.plugins.svn.layout.standard import (
     RootLayout,
     )
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.tests import SubversionTestCase
 
 
 class TestBranch(SubversionTestCase, ExternalBase):
@@ -244,7 +244,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
     def test_info_workingtree(self):
         self.make_svn_branch_and_tree('d', 'dc')
         # Info is broken against bzr 2.3
-        if bzrlib_version < (2, 4, 0):
+        if breezy_version < (2, 4, 0):
             raise KnownFailure("bzr info against svn repositories is "
                 "known broken against 2.3")
         self.run_bzr('info -v dc')
@@ -461,7 +461,7 @@ Node-copyfrom-path: x
         self.run_bzr("commit -m test de")
         self.assertEquals("1\n", self.run_bzr("revno de")[0])
 
-    # this method imported from bzrlib.tests.test_msgeditor:
+    # this method imported from breezy.tests.test_msgeditor:
     def make_fake_editor(self, message='test message from fed\\n'):
         """Set up environment so that an editor will be a known script.
 
@@ -516,15 +516,15 @@ if len(sys.argv) == 2:
         This also registers the cleanup, so that we will revert to
         the original gpg strategy when done.
         """
-        self._oldstrategy = bzrlib.gpg.GPGStrategy
+        self._oldstrategy = breezy.gpg.GPGStrategy
 
         # monkey patch gpg signing mechanism
-        bzrlib.gpg.GPGStrategy = bzrlib.gpg.LoopbackGPGStrategy
+        breezy.gpg.GPGStrategy = bzrlib.gpg.LoopbackGPGStrategy
 
         self.addCleanup(self._fix_gpg_strategy)
 
     def _fix_gpg_strategy(self):
-        bzrlib.gpg.GPGStrategy = self._oldstrategy
+        breezy.gpg.GPGStrategy = self._oldstrategy
 
     def test_sign_my_commits(self):
         repos_url = self.make_repository('dc')

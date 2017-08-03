@@ -17,9 +17,9 @@
 
 from subvertpy import NODE_DIR
 
-from bzrlib.tests import TestCase
+from breezy.tests import TestCase
 
-from bzrlib.plugins.svn.changes import (
+from breezy.plugins.svn.changes import (
     apply_reverse_changes,
     changes_root,
     find_prev_location,

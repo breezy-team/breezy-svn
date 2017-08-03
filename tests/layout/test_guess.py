@@ -13,11 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib.plugins.svn.tests import (
+from breezy.plugins.svn.tests import (
     SubversionTestCase,
     )
 
-from bzrlib.plugins.svn.layout.guess import is_likely_branch_url
+from breezy.plugins.svn.layout.guess import is_likely_branch_url
 
 
 class URLIsLikelyBranch(SubversionTestCase):

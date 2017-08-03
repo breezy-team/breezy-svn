@@ -16,31 +16,31 @@
 
 """File id tests."""
 
-from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import RevisionNotPresent
-from bzrlib.repository import Repository
-from bzrlib.trace import mutter
-from bzrlib.tests import (
+from breezy.bzrdir import BzrDir
+from breezy.errors import RevisionNotPresent
+from breezy.repository import Repository
+from breezy.trace import mutter
+from breezy.tests import (
     TestCase,
     TestCaseWithMemoryTransport,
     )
-from bzrlib.workingtree import WorkingTree
+from breezy.workingtree import WorkingTree
 
-from bzrlib.plugins.svn.fileids import (
+from breezy.plugins.svn.fileids import (
     FileIdMapCache,
     get_local_changes,
     idmap_lookup,
     idmap_reverse_lookup,
     simple_apply_changes,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     mapping_registry,
     )
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
     )
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.tests import SubversionTestCase
 
 class MockRepo(object):
 

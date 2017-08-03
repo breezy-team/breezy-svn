@@ -16,7 +16,7 @@
 
 import subvertpy
 
-from bzrlib.errors import (
+from breezy.errors import (
     ConnectionError,
     ConnectionReset,
     LockActive,
@@ -25,9 +25,9 @@ from bzrlib.errors import (
     TransportError,
     UnexpectedEndOfContainerError,
     )
-from bzrlib.tests import TestCase
+from breezy.tests import TestCase
 
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     convert_error,
     convert_svn_error,
     DavRequestFailed,

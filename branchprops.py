@@ -24,11 +24,11 @@ from subvertpy import (
         SubversionException,
         )
 
-from bzrlib.errors import (
+from breezy.errors import (
         NoSuchRevision,
         )
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
         util,
         )
 

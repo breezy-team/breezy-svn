@@ -20,13 +20,13 @@ import os
 
 from subvertpy import NODE_DIR, NODE_FILE
 
-from bzrlib import debug
-from bzrlib.errors import NoSuchRevision
-from bzrlib.tests import TestCase
+from breezy import debug
+from breezy.errors import NoSuchRevision
+from breezy.tests import TestCase
 
-from bzrlib.plugins.svn import logwalker
-from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.transport import SvnRaTransport
+from breezy.plugins.svn import logwalker
+from breezy.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.transport import SvnRaTransport
 
 class TestLogWalker(SubversionTestCase):
 
@@ -630,7 +630,7 @@ class TestCachingLogWalker(TestLogWalker):
         self.assertEquals(0, walker.saved_minrevnum)
 
     def get_log_walker(self, transport):
-        from bzrlib.plugins.svn.cache.sqlitecache import SqliteLogCache
+        from breezy.plugins.svn.cache.sqlitecache import SqliteLogCache
         return logwalker.CachingLogWalker(super(TestCachingLogWalker, self).get_log_walker(transport), SqliteLogCache())
 
 

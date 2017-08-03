@@ -28,19 +28,19 @@ from subvertpy import (
     properties,
     )
 
-from bzrlib import (
+from breezy import (
     urlutils,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     BzrError,
     InvalidRevisionId,
     )
-from bzrlib.filters import (
+from breezy.filters import (
     ContentFilter,
     )
 
-from bzrlib.plugins.svn import gettext
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn import gettext
+from breezy.plugins.svn.mapping import (
     mapping_registry,
     )
 

@@ -26,12 +26,12 @@ from subvertpy import (
     wc,
     )
 
-from bzrlib import (
+from breezy import (
     tag,
     trace,
     urlutils,
     )
-from bzrlib.branch import (
+from breezy.branch import (
     Branch,
     BranchFormat,
     BranchCheckResult,
@@ -40,15 +40,15 @@ from bzrlib.branch import (
     InterBranch,
     PullResult,
     )
-from bzrlib.bzrdir import (
+from breezy.bzrdir import (
     BzrDir,
     format_registry,
     )
-from bzrlib.decorators import (
+from breezy.decorators import (
     needs_read_lock,
     needs_write_lock,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     DivergedBranches,
     InaccessibleParent,
     IncompatibleFormat,
@@ -63,44 +63,44 @@ from bzrlib.errors import (
     TokenLockingNotSupported,
     UnstackableBranchFormat,
     )
-from bzrlib.foreign import (
+from breezy.foreign import (
     ForeignBranch,
     )
-from bzrlib.revision import (
+from breezy.revision import (
     NULL_REVISION,
     is_null,
     ensure_null,
     )
-from bzrlib.symbol_versioning import (
+from breezy.symbol_versioning import (
     deprecated_method,
     deprecated_in,
     )
-from bzrlib.transport import get_transport
+from breezy.transport import get_transport
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     util,
     )
-from bzrlib.plugins.svn.config import (
+from breezy.plugins.svn.config import (
     BranchConfig,
     SvnBranchStack,
     )
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     NotSvnBranchPath,
     PushToEmptyBranch,
     SubversionBranchDiverged,
     )
-from bzrlib.plugins.svn.fetch import (
+from breezy.plugins.svn.fetch import (
     InterFromSvnRepository,
     )
-from bzrlib.plugins.svn.push import (
+from breezy.plugins.svn.push import (
     InterToSvnRepository,
     create_branch_with_hidden_commit,
     )
-from bzrlib.plugins.svn.tags import (
+from breezy.plugins.svn.tags import (
     SubversionTags,
     resolve_tags_svn_ancestry,
     )
-from bzrlib.plugins.svn.transport import (
+from breezy.plugins.svn.transport import (
     bzr_to_svn_url,
     )
 
@@ -387,7 +387,7 @@ class SvnBranch(ForeignBranch):
         :param revision_id: Tip of the checkout.
         :return: WorkingTree object of the checkout.
         """
-        from bzrlib.plugins.svn.workingtree import (
+        from breezy.plugins.svn.workingtree import (
             SvnCheckout,
             SvnWorkingTreeDirFormat,
             update_wc,
@@ -421,7 +421,7 @@ class SvnBranch(ForeignBranch):
         return dir.open_workingtree()
 
     def _get_checkout_format(self, lightweight=False):
-        from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
+        from breezy.plugins.svn.workingtree import SvnWorkingTreeDirFormat
         if lightweight:
             return SvnWorkingTreeDirFormat()
         else:
@@ -754,7 +754,7 @@ class SvnBranchFormat(BranchFormat):
 
     def __get_matchingbzrdir(self):
         """See BranchFormat.__get_matchingbzrdir()."""
-        from bzrlib.plugins.svn.remote import SvnRemoteFormat
+        from breezy.plugins.svn.remote import SvnRemoteFormat
         return SvnRemoteFormat()
 
     _matchingbzrdir = property(__get_matchingbzrdir)
@@ -764,13 +764,13 @@ class SvnBranchFormat(BranchFormat):
         return 'Subversion Smart Server'
 
     def get_foreign_tests_branch_factory(self):
-        from bzrlib.plugins.svn.tests.test_branch import ForeignTestsBranchFactory
+        from breezy.plugins.svn.tests.test_branch import ForeignTestsBranchFactory
         return ForeignTestsBranchFactory()
 
     def initialize(self, to_bzrdir, name=None, repository=None,
                    append_revisions_only=None):
         """See BranchFormat.initialize()."""
-        from bzrlib.plugins.svn.remote import SvnRemoteAccess
+        from breezy.plugins.svn.remote import SvnRemoteAccess
         if not isinstance(to_bzrdir, SvnRemoteAccess):
             raise IncompatibleFormat(self, to_bzrdir._format)
         return to_bzrdir.create_branch(name,
@@ -808,7 +808,7 @@ class InterFromSvnBranch(GenericInterBranch):
 
     @staticmethod
     def _get_branch_formats_to_test():
-        from bzrlib.branch import format_registry as branch_format_registry
+        from breezy.branch import format_registry as branch_format_registry
         return [(SvnBranchFormat(), branch_format_registry.get_default())]
 
     def fetch(self, stop_revision=None, fetch_tags=None, find_ghosts=False,
@@ -1024,7 +1024,7 @@ class InterToSvnBranch(InterBranch):
 
     @staticmethod
     def _get_branch_formats_to_test():
-        from bzrlib.branch import format_registry as branch_format_registry
+        from breezy.branch import format_registry as branch_format_registry
         return [
             (branch_format_registry.get_default(), SvnBranchFormat()),
             (SvnBranchFormat(), SvnBranchFormat())]

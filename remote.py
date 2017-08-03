@@ -21,28 +21,28 @@ from __future__ import absolute_import
 
 import urllib
 
-from bzrlib import (
+from breezy import (
     errors,
     osutils,
     trace,
     urlutils,
     )
-from bzrlib.branch import InterBranch
-from bzrlib.controldir import (
+from breezy.branch import InterBranch
+from breezy.controldir import (
     ControlDirFormat,
     ControlDir,
     format_registry,
     )
-from bzrlib.lockable_files import (
+from breezy.lockable_files import (
     TransportLock,
     )
-from bzrlib.revision import (
+from breezy.revision import (
     NULL_REVISION,
     )
-from bzrlib.push import (
+from breezy.push import (
     PushResult,
     )
-from bzrlib.transport import (
+from breezy.transport import (
     do_catching_redirections,
     get_transport,
     )
@@ -88,7 +88,7 @@ class SvnRemoteFormat(ControlDirFormat):
 
     @property
     def repository_format(self):
-        from bzrlib.plugins.svn.repository import SvnRepositoryFormat
+        from breezy.plugins.svn.repository import SvnRepositoryFormat
         return SvnRepositoryFormat()
 
     def is_supported(self):
@@ -96,7 +96,7 @@ class SvnRemoteFormat(ControlDirFormat):
         return True
 
     def get_branch_format(self):
-        from bzrlib.plugins.svn.branch import SvnBranchFormat
+        from breezy.plugins.svn.branch import SvnBranchFormat
         return SvnBranchFormat()
 
     def open(self, transport, _found=False):
@@ -128,7 +128,7 @@ class SvnRemoteFormat(ControlDirFormat):
         create_prefix=False, force_new_repo=False, stacked_on=None,
         stack_on_pwd=None, repo_format_name=None, make_working_trees=None,
         shared_repo=False, vfs_only=False):
-        from bzrlib.bzrdir import CreateRepository
+        from breezy.bzrdir import CreateRepository
         def make_directory(transport):
             transport.mkdir('.')
             return transport
@@ -156,9 +156,9 @@ class SvnRemoteFormat(ControlDirFormat):
 
     def initialize_on_transport(self, transport):
         """See ControlDir.initialize_on_transport()."""
-        from bzrlib.plugins.svn import lazy_check_versions
+        from breezy.plugins.svn import lazy_check_versions
         lazy_check_versions()
-        from bzrlib.transport.local import LocalTransport
+        from breezy.transport.local import LocalTransport
         import os
         import subvertpy
         from subvertpy import repos
@@ -182,7 +182,7 @@ class SvnRemoteFormat(ControlDirFormat):
         revprop_hook = os.path.join(local_path, "hooks", "pre-revprop-change")
         open(revprop_hook, 'w').write("#!/bin/sh")
         os.chmod(revprop_hook, os.stat(revprop_hook).st_mode | 0111)
-        from bzrlib.plugins.svn.transport import get_svn_ra_transport
+        from breezy.plugins.svn.transport import get_svn_ra_transport
         return self.open(get_svn_ra_transport(transport), _found=True)
 
     def supports_transport(self, transport):
@@ -215,7 +215,7 @@ class SvnRemoteAccess(ControlDir):
 
     def __init__(self, _transport, _format=None):
         """See ControlDir.__init__()."""
-        from bzrlib.plugins.svn.transport import bzr_to_svn_url, get_svn_ra_transport
+        from breezy.plugins.svn.transport import bzr_to_svn_url, get_svn_ra_transport
         _transport = get_svn_ra_transport(_transport)
         if _format is None:
             _format = SvnRemoteFormat()
@@ -283,8 +283,8 @@ class SvnRemoteAccess(ControlDir):
                recurse='down', possible_transports=None,
                accelerator_tree=None, hardlink=False, stacked=False,
                source_branch=None, create_tree_if_local=True):
-        from bzrlib.repository import InterRepository
-        from bzrlib.transport.local import LocalTransport
+        from breezy.repository import InterRepository
+        from breezy.transport.local import LocalTransport
         relpath = self._determine_relpath(None)
         if relpath == "":
             guessed_layout = self.find_repository().get_guessed_layout()
@@ -353,8 +353,8 @@ class SvnRemoteAccess(ControlDir):
 
         :return: instance of SvnRepository.
         """
-        from bzrlib.plugins.svn.errors import NoSvnRepositoryPresent
-        from bzrlib.plugins.svn.repository import SvnRepository
+        from breezy.plugins.svn.errors import NoSvnRepositoryPresent
+        from breezy.plugins.svn.repository import SvnRepository
         if self._branch_path == "":
             return SvnRepository(self, self.root_transport)
         raise NoSvnRepositoryPresent(self.root_transport.base)
@@ -367,7 +367,7 @@ class SvnRemoteAccess(ControlDir):
 
         :return: instance of SvnRepository.
         """
-        from bzrlib.plugins.svn.repository import SvnRepository
+        from breezy.plugins.svn.repository import SvnRepository
         transport = self.root_transport
         if self.root_url != transport.base:
             transport = transport.clone_root()
@@ -413,8 +413,8 @@ class SvnRemoteAccess(ControlDir):
         :param stop_revision: Tip of new branch
         :return: Branch object
         """
-        from bzrlib.plugins.svn.errors import NotSvnBranchPath
-        from bzrlib.plugins.svn.push import InterToSvnRepository
+        from breezy.plugins.svn.errors import NotSvnBranchPath
+        from breezy.plugins.svn.push import InterToSvnRepository
         source.lock_read()
         try:
             if stop_revision is None:
@@ -441,7 +441,7 @@ class SvnRemoteAccess(ControlDir):
             source.unlock()
 
     def _determine_relpath(self, branch_name):
-        from bzrlib.plugins.svn.errors import NoCustomBranchPaths
+        from breezy.plugins.svn.errors import NoCustomBranchPaths
         repos = self.find_repository()
         layout = repos.get_layout()
         if branch_name is None and getattr(self, "_get_selected_branch", False):
@@ -460,8 +460,8 @@ class SvnRemoteAccess(ControlDir):
     def create_branch(self, name=None, repository=None, mapping=None,
             lossy=False, append_revisions_only=None):
         """See ControlDir.create_branch()."""
-        from bzrlib.plugins.svn.branch import SvnBranch
-        from bzrlib.plugins.svn.push import (
+        from breezy.plugins.svn.branch import SvnBranch
+        from breezy.plugins.svn.push import (
             check_dirs_exist,
             create_branch_container,
             create_branch_with_hidden_commit,
@@ -516,7 +516,7 @@ class SvnRemoteAccess(ControlDir):
             mapping=None, branch_path=None, repository=None, revnum=None,
             possible_transports=None, project=None):
         """See ControlDir.open_branch()."""
-        from bzrlib.plugins.svn.branch import SvnBranch
+        from breezy.plugins.svn.branch import SvnBranch
         if branch_path is None:
             branch_path = self._determine_relpath(name)
         if repository is None:
@@ -529,7 +529,7 @@ class SvnRemoteAccess(ControlDir):
     def create_repository(self, shared=None, format=None):
         """See ControlDir.create_repository."""
         if shared == False:
-            from bzrlib.plugins.svn.repository import SvnRepositoryFormat
+            from breezy.plugins.svn.repository import SvnRepositoryFormat
             raise errors.IncompatibleFormat(
                 SvnRepositoryFormat(), self._format)
         return self.open_repository()
@@ -602,7 +602,7 @@ class SvnRemoteAccess(ControlDir):
         return False
 
     def get_config(self):
-        from bzrlib.plugins.svn.config import SvnRepositoryConfig
+        from breezy.plugins.svn.config import SvnRepositoryConfig
         if self._config is None:
             self._config = SvnRepositoryConfig(self.root_transport.base,
                 self.root_transport.get_uuid())

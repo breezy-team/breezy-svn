@@ -26,41 +26,41 @@ from subvertpy import (
     )
 from subvertpy.properties import time_to_cstring
 
-from bzrlib.branch import (
+from breezy.branch import (
     Branch,
     PullResult,
     )
-from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import (
+from breezy.bzrdir import BzrDir
+from breezy.errors import (
     BzrError,
     DivergedBranches,
     NoSuchId,
     )
-from bzrlib.inventory import (
+from breezy.inventory import (
     InventoryFile,
     InventoryLink,
     )
-from bzrlib.repository import Repository
-from bzrlib.tests import (
+from breezy.repository import Repository
+from breezy.tests import (
     TestCase,
     TestSkipped,
     )
-from bzrlib.tests.features import (
+from breezy.tests.features import (
     UnicodeFilenameFeature
     )
-from bzrlib.trace import mutter
-from bzrlib.workingtree import WorkingTree
+from breezy.trace import mutter
+from breezy.workingtree import WorkingTree
 
-from bzrlib.plugins.svn.commit import (
+from breezy.plugins.svn.commit import (
     file_editor_send_prop_changes,
     set_svn_revprops,
     _revision_id_to_svk_feature,
     )
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     RevpropChangeFailed,
     )
-from bzrlib.plugins.svn.mapping import mapping_registry
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.mapping import mapping_registry
+from breezy.plugins.svn.tests import SubversionTestCase
 
 
 class TestNativeCommit(SubversionTestCase):

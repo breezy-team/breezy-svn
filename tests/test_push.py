@@ -25,55 +25,55 @@ from subvertpy import (
     ra,
     )
 
-from bzrlib import osutils
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import (
+from breezy import osutils
+from breezy.branch import Branch
+from breezy.bzrdir import BzrDir
+from breezy.errors import (
     AlreadyBranchError,
     AppendRevisionsOnlyViolation,
     BzrError,
     DivergedBranches,
     )
-from bzrlib.inventory import InventoryDirectory
-from bzrlib.merge import (
+from breezy.inventory import InventoryDirectory
+from breezy.merge import (
     Merger,
     Merge3Merger,
     )
-from bzrlib.repository import (
+from breezy.repository import (
     InterRepository,
     Repository,
     )
-from bzrlib.revision import (
+from breezy.revision import (
     NULL_REVISION,
     Revision,
     )
-from bzrlib.trace import mutter
-from bzrlib.tests import (
+from breezy.trace import mutter
+from breezy.tests import (
     TestCase,
     )
-from bzrlib.tests.features import (
+from breezy.tests.features import (
     SymlinkFeature,
     )
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     transport,
     )
-from bzrlib.plugins.svn.branch import (
+from breezy.plugins.svn.branch import (
     InterToSvnBranch,
     )
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     MissingPrefix,
     )
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
     TrunkLayout0,
     )
-from bzrlib.plugins.svn.push import (
+from breezy.plugins.svn.push import (
     create_branch_container,
     determine_branch_path,
     )
-from bzrlib.plugins.svn.tests import (
+from breezy.plugins.svn.tests import (
     SubversionTestCase,
     )
 

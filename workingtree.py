@@ -45,8 +45,8 @@ from subvertpy.wc import (
     revision_status,
     )
 
-import bzrlib.add
-from bzrlib import (
+import breezy.add
+from breezy import (
     conflicts as _mod_conflicts,
     errors as bzr_errors,
     hashcache,
@@ -55,10 +55,10 @@ from bzrlib import (
     transport as _mod_transport,
     urlutils,
     )
-from bzrlib.decorators import (
+from breezy.decorators import (
     needs_read_lock,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     BadFilenameEncoding,
     BzrError,
     MergeModifiedFormatError,
@@ -75,53 +75,53 @@ from bzrlib.errors import (
     UnsupportedOperation,
     UninitializableFormat,
     )
-from bzrlib.inventory import (
+from breezy.inventory import (
     InventoryDirectory,
     InventoryFile,
     InventoryLink,
     )
-from bzrlib.lockable_files import (
+from breezy.lockable_files import (
     TransportLock,
     )
-from bzrlib.mutabletree import needs_tree_write_lock
-from bzrlib.revision import (
+from breezy.mutabletree import needs_tree_write_lock
+from breezy.revision import (
     CURRENT_REVISION,
     NULL_REVISION,
     )
-from bzrlib.trace import (
+from breezy.trace import (
     mutter,
     note,
     )
-from bzrlib.workingtree import (
+from breezy.workingtree import (
     MERGE_MODIFIED_HEADER_1,
     WorkingTree,
     WorkingTreeFormat,
     )
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     SvnWorkingTreeProber,
     svk,
     )
-from bzrlib.plugins.svn.branch import (
+from breezy.plugins.svn.branch import (
     SubversionReadLock,
     SubversionWriteLock,
     )
-from bzrlib.plugins.svn.commit import (
+from breezy.plugins.svn.commit import (
     _revision_id_to_svk_feature,
     )
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     convert_svn_error,
     NotSvnBranchPath,
     NoSvnRepositoryPresent,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     escape_svn_path,
     )
-from bzrlib.plugins.svn.transport import (
+from breezy.plugins.svn.transport import (
     SvnRaTransport,
     svn_config,
     )
-from bzrlib.plugins.svn.tree import (
+from breezy.plugins.svn.tree import (
     BasisTreeIncomplete,
     SvnBasisTree,
     SubversionTree,
@@ -131,8 +131,8 @@ from bzrlib.plugins.svn.tree import (
 ERR_WC_NODE_KIND_CHANGE = getattr(subvertpy, "ERR_WC_NODE_KIND_CHANGE", 155018)
 
 
-from bzrlib.controldir import Converter
-from bzrlib.controldir import (
+from breezy.controldir import Converter
+from breezy.controldir import (
     ControlDirFormat,
     ControlDir,
     format_registry,
@@ -896,7 +896,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         """See MutableTree.smart_add()."""
         assert isinstance(recurse, bool)
         if action is None:
-            action = bzrlib.add.AddAction()
+            action = breezy.add.AddAction()
         # TODO: use action
         if not file_list:
             # no paths supplied: add the entire tree.
@@ -1502,7 +1502,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     @needs_read_lock
     def annotate_iter(self, file_id, default_revision=CURRENT_REVISION):
-        from bzrlib.plugins.svn.annotate import Annotater
+        from breezy.plugins.svn.annotate import Annotater
         annotater = Annotater(self.branch.repository, file_id)
         parent_lines = []
         if len(self.get_parent_ids()) > 1:
@@ -1549,7 +1549,7 @@ class SvnWorkingTreeFormat(WorkingTreeFormat):
         raise NotImplementedError(self.initialize)
 
     def get_controldir_for_branch(self):
-        from bzrlib.plugins.svn.remote import SvnRemoteFormat
+        from breezy.plugins.svn.remote import SvnRemoteFormat
         return SvnRemoteFormat()
 
 
@@ -1600,15 +1600,15 @@ class SvnWorkingTreeDirFormat(ControlDirFormat):
 
     @property
     def repository_format(self):
-        from bzrlib.plugins.svn.repository import SvnRepositoryFormat
+        from breezy.plugins.svn.repository import SvnRepositoryFormat
         return SvnRepositoryFormat()
 
     def get_branch_format(self):
-        from bzrlib.plugins.svn.branch import SvnBranchFormat
+        from breezy.plugins.svn.branch import SvnBranchFormat
         return SvnBranchFormat()
 
     def supports_transport(self, transport):
-        from bzrlib.transport.local import LocalTransport
+        from breezy.transport.local import LocalTransport
         return isinstance(transport, LocalTransport)
 
 
@@ -1682,7 +1682,7 @@ class SvnCheckout(ControlDir):
         return filename == self._adm_dir or filename.startswith(self._adm_dir+'/')
 
     def get_remote_bzrdir(self):
-        from bzrlib.plugins.svn.remote import SvnRemoteAccess
+        from breezy.plugins.svn.remote import SvnRemoteAccess
         if self._remote_bzrdir is None:
             self._remote_bzrdir = SvnRemoteAccess(self.get_remote_transport())
         return self._remote_bzrdir
@@ -1756,7 +1756,7 @@ class SvnCheckout(ControlDir):
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
             mapping=None, revnum=None, possible_transports=None):
         """See ControlDir.open_branch()."""
-        from bzrlib.plugins.svn.branch import SvnBranch
+        from breezy.plugins.svn.branch import SvnBranch
         repos = self._find_repository()
         if mapping is None:
             mapping = repos.get_mapping()
@@ -1817,7 +1817,7 @@ class SvnCheckout(ControlDir):
         return self._dir_mode
 
     def get_config(self):
-        from bzrlib.plugins.svn.config import SvnRepositoryConfig
+        from breezy.plugins.svn.config import SvnRepositoryConfig
         if self._config is None:
             self._config = SvnRepositoryConfig(self.entry.url, self.entry.uuid)
         return self._config
@@ -1835,7 +1835,7 @@ class SvnCheckoutConverter(Converter):
 
     def convert(self, to_convert, pb):
         """See Converter.convert()."""
-        from bzrlib.branch import BranchReferenceFormat
+        from breezy.branch import BranchReferenceFormat
         remote_branch = to_convert.open_branch()
         bzrdir = self.target_format.initialize(to_convert.root_transport.base)
         branch = BranchReferenceFormat().initialize(bzrdir, remote_branch)

@@ -19,9 +19,9 @@ from functools import partial
 
 import subvertpy
 
-from bzrlib import urlutils
-from bzrlib.plugins.svn import errors as svn_errors
-from bzrlib.plugins.svn.layout import (
+from breezy import urlutils
+from breezy.plugins.svn import errors as svn_errors
+from breezy.plugins.svn.layout import (
     RepositoryLayout,
     get_root_paths,
     wildcard_matches,

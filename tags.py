@@ -23,23 +23,23 @@ from subvertpy import (
     properties,
     )
 
-from bzrlib import (
+from breezy import (
     errors as bzr_errors,
     ui,
     urlutils,
-    version_info as bzrlib_version,
+    version_info as breezy_version,
     )
-from bzrlib.tag import BasicTags
-from bzrlib.trace import mutter
+from breezy.tag import BasicTags
+from breezy.trace import mutter
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     errors as svn_errors,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     SVN_REVPROP_BZR_SKIP,
     mapping_registry,
     )
-from bzrlib.plugins.svn.transport import (
+from breezy.plugins.svn.transport import (
     check_dirs_exist,
     create_branch_prefix,
     )

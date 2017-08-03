@@ -13,17 +13,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib import (
+from breezy import (
     graph as _mod_graph,
     )
-from bzrlib.tests import (
+from breezy.tests import (
     TestCase,
     )
-from bzrlib.tests.test_graph import (
+from breezy.tests.test_graph import (
     InstrumentedParentsProvider,
     )
 
-from bzrlib.plugins.svn.parents import (
+from breezy.plugins.svn.parents import (
     DiskCachingParentsProvider,
     )
 
@@ -33,7 +33,7 @@ class TestCachingParentsProvider(TestCase):
         TestCase.setUp(self)
         dict_pp = _mod_graph.DictParentsProvider({'a':('b',)})
         self.inst_pp = InstrumentedParentsProvider(dict_pp)
-        from bzrlib.plugins.svn.cache.sqlitecache import SqliteParentsCache
+        from breezy.plugins.svn.cache.sqlitecache import SqliteParentsCache
         self.caching_pp = DiskCachingParentsProvider(self.inst_pp,
                 SqliteParentsCache())
 

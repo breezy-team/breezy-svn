@@ -27,14 +27,14 @@ from subvertpy import (
     repos,
     )
 
-from bzrlib import (
+from breezy import (
     bzrdir,
     controldir,
     osutils,
     ui,
     urlutils,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     BzrError,
     FileExists,
     IncompatibleRepositories,
@@ -43,17 +43,17 @@ from bzrlib.errors import (
     NoSuchRevision,
     NoRepositoryPresent,
     )
-from bzrlib.transport import (
+from breezy.transport import (
     get_transport,
     )
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     changes,
     )
-from bzrlib.plugins.svn.branch import (
+from breezy.plugins.svn.branch import (
     SvnBranch,
     )
-from bzrlib.plugins.svn.fetch import (
+from breezy.plugins.svn.fetch import (
     FetchRevisionFinder,
     InterFromSvnRepository,
     )

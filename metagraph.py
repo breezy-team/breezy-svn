@@ -24,12 +24,12 @@ from subvertpy import (
     NODE_DIR,
     )
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     changes,
     errors as svn_errors,
     )
 
-from bzrlib.plugins.svn.util import (
+from breezy.plugins.svn.util import (
     ListBuildingIterator,
     )
 

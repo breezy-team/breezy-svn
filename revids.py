@@ -20,20 +20,20 @@ from __future__ import absolute_import
 
 import subvertpy
 
-from bzrlib import (
+from breezy import (
     ui,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     NoSuchRevision,
     )
-from bzrlib.lru_cache import LRUCache
+from breezy.lru_cache import LRUCache
 
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     InvalidBzrSvnRevision,
     InvalidPropertyValue,
     warn_uuid_reuse,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     SVN_PROP_BZR_REVISION_ID,
     find_mapping_revprops,
     find_new_lines,

@@ -22,16 +22,16 @@ from subvertpy import (
     )
 import subvertpy.tests
 
-from bzrlib import osutils
-from bzrlib.bzrdir import (
+from breezy import osutils
+from breezy.bzrdir import (
     BzrDir,
     )
-from bzrlib.tests import (
+from breezy.tests import (
     TestCaseInTempDir,
     )
-from bzrlib.workingtree import WorkingTree
+from breezy.workingtree import WorkingTree
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     config,
     transport as _mod_svn_transport,
     )
@@ -220,7 +220,7 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
 def test_suite():
     from unittest import TestSuite
-    from bzrlib.tests import TestUtil
+    from breezy.tests import TestUtil
 
     loader = TestUtil.TestLoader()
 

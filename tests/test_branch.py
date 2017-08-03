@@ -19,32 +19,32 @@
 import os
 import subvertpy
 
-from bzrlib import urlutils
-from bzrlib.branch import (
+from breezy import urlutils
+from breezy.branch import (
     Branch,
     InterBranch,
     )
-from bzrlib.bzrdir import (
+from breezy.bzrdir import (
     BzrDir,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     NoSuchRevision,
     NoSuchTag,
     NotBranchError,
     TagsNotSupported,
     )
-from bzrlib.revision import NULL_REVISION
-from bzrlib.tests import (
+from breezy.revision import NULL_REVISION
+from breezy.tests import (
     TestCase,
     TestSkipped,
     )
-from bzrlib.trace import mutter
+from breezy.trace import mutter
 
-from bzrlib.plugins.svn.branch import (
+from breezy.plugins.svn.branch import (
     SvnBranchFormat,
     )
-from bzrlib.plugins.svn.convert import load_dumpfile
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.convert import load_dumpfile
+from breezy.plugins.svn.tests import SubversionTestCase
 
 
 class WorkingSubversionBranch(SubversionTestCase):
@@ -513,7 +513,7 @@ class WorkingSubversionBranch(SubversionTestCase):
             branch.repository.generate_revision_id(2, "trunk", branch.mapping))
 
     def test_break_lock(self):
-        # duplicated by bzrlib.tests.per_branch.test_break_lock
+        # duplicated by breezy.tests.per_branch.test_break_lock
         branch = self.make_svn_branch('a')
         self.assertRaises(NotImplementedError, branch.break_lock)
 

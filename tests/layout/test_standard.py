@@ -15,16 +15,16 @@
 
 import subvertpy
 
-from bzrlib.tests import (
+from breezy.tests import (
     TestCase,
     )
 
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     NoCustomBranchPaths,
     NotSvnBranchPath,
     NoLayoutTagSetSupport,
     )
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.layout.standard import (
     CustomLayout,
     RootLayout,
     TrunkLayout,

@@ -19,30 +19,30 @@
 
 import os
 
-from bzrlib import (
+from breezy import (
     debug,
     errors,
     trace,
     osutils,
     )
 
-from bzrlib.plugins.svn.cache import (
+from breezy.plugins.svn.cache import (
     CacheConcurrencyError,
     RepositoryCache,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     mapping_registry,
     )
-from bzrlib.plugins.svn.revids import (
+from breezy.plugins.svn.revids import (
     RevisionIdMapCache,
     )
-from bzrlib.plugins.svn.revmeta import (
+from breezy.plugins.svn.revmeta import (
     RevisionInfoCache,
     )
-from bzrlib.plugins.svn.logwalker import (
+from breezy.plugins.svn.logwalker import (
     LogCache,
     )
-from bzrlib.plugins.svn.parents import (
+from breezy.plugins.svn.parents import (
     ParentsCache,
     )
 

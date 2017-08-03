@@ -19,40 +19,40 @@
 import os, sys
 from subvertpy import repos
 
-from bzrlib.branch import (
+from breezy.branch import (
     Branch,
     )
-from bzrlib.bzrdir import (
+from breezy.bzrdir import (
     BzrDir,
     format_registry,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     IncompatibleRepositories,
     NotBranchError,
     NoSuchFile,
     )
-from bzrlib.urlutils import (
+from breezy.urlutils import (
     local_path_to_url,
     )
-from bzrlib.repository import (
+from breezy.repository import (
     Repository,
     )
-from bzrlib.tests import (
+from breezy.tests import (
     TestCaseInTempDir,
     TestCase,
     )
 
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
     )
-from bzrlib.plugins.svn.convert import (
+from breezy.plugins.svn.convert import (
     NotDumpFile,
     contains_parent_path,
     convert_repository,
     load_dumpfile,
     )
-from bzrlib.plugins.svn.tests import (
+from breezy.plugins.svn.tests import (
     SubversionTestCase,
     )
 

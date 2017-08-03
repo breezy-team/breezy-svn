@@ -20,18 +20,18 @@ import sys
 import threading
 import weakref
 
-import bzrlib
-from bzrlib import (
+import breezy
+from breezy import (
     osutils,
     trace,
     transport as _mod_transport,
     )
-from bzrlib.config import (
+from breezy.config import (
     config_dir,
     ensure_config_dir_exists,
     )
 
-from bzrlib.plugins.svn import version_info
+from breezy.plugins.svn import version_info
 
 
 class CacheConcurrencyError(Exception):
@@ -66,13 +66,13 @@ def create_cache_dir():
     else:
         name = 'svn-cache'
     if sys.platform in ("nt", "win32"):
-        from bzrlib.win32utils import get_local_appdata_location
+        from breezy.win32utils import get_local_appdata_location
         s = get_local_appdata_location()
         assert s is not None
         # This can return a unicode string or a plain string in
         # user encoding
         if type(s) == str:
-            s = s.decode(bzrlib.user_encoding)
+            s = s.decode(breezy.user_encoding)
         base_cache_dir = s.encode(osutils._fs_enc)
         cache_dir = os.path.join(base_cache_dir, name)
     else:
@@ -126,7 +126,7 @@ class RepositoryCache(object):
             self.create_cache_dir().decode(osutils._fs_enc))
 
     def open_fileid_map(self):
-        from bzrlib.plugins.svn.fileids import FileIdMapCache
+        from breezy.plugins.svn.fileids import FileIdMapCache
         return FileIdMapCache(self.open_transport())
 
     def open_revid_map(self):
@@ -145,10 +145,10 @@ class RepositoryCache(object):
         pass
 
 try:
-    from bzrlib.plugins.svn.cache.tdbcache import TdbRepositoryCache
+    from breezy.plugins.svn.cache.tdbcache import TdbRepositoryCache
     cache_cls = TdbRepositoryCache
 except ImportError:
-    from bzrlib.plugins.svn.cache.sqlitecache import SqliteRepositoryCache
+    from breezy.plugins.svn.cache.sqlitecache import SqliteRepositoryCache
     cache_cls = SqliteRepositoryCache
 
 def get_cache(uuid):

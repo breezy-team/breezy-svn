@@ -21,26 +21,26 @@ from __future__ import absolute_import
 
 import subvertpy
 
-from bzrlib import (
+from breezy import (
     debug,
     ui,
     trace,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     NoSuchRevision,
     )
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     changes,
     errors as bzrsvn_errors,
     )
-from bzrlib.plugins.svn.cache import (
+from breezy.plugins.svn.cache import (
     CacheConcurrencyError,
     )
-from bzrlib.plugins.svn.transport import (
+from breezy.plugins.svn.transport import (
     SvnRaTransport,
     )
-from bzrlib.plugins.svn.util import (
+from breezy.plugins.svn.util import (
     lazy_dict,
     )
 

@@ -24,19 +24,19 @@ from subvertpy.ra import (
     )
 from subvertpy.tests import TestCommitEditor
 
-from bzrlib.repository import Repository
+from breezy.repository import Repository
 
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     SVN_REVPROP_BZR_BASE_REVISION,
     SVN_REVPROP_BZR_REPOS_UUID,
     SVN_REVPROP_BZR_ROOT,
     SVN_REVPROP_BZR_MAPPING_VERSION,
     mapping_registry,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     SVN_REVPROP_BZR_TESTAMENT,
     )
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.tests import SubversionTestCase
 
 
 class TestWithRepository(SubversionTestCase):

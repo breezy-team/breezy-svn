@@ -24,20 +24,20 @@ from subvertpy import properties
 import time
 import urllib
 
-from bzrlib import (
+from breezy import (
     foreign,
     osutils,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     InvalidRevisionId,
     )
-from bzrlib.revision import (
+from breezy.revision import (
     NULL_REVISION,
     Revision,
     )
-from bzrlib.trace import mutter
+from breezy.trace import mutter
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     changes,
     errors,
     get_client_string,
@@ -106,7 +106,7 @@ unescape_svn_path = urllib.unquote
 
 
 # The following two functions don't use day names (which can vary by
-# locale) unlike the alternatives in bzrlib.timestamp
+# locale) unlike the alternatives in breezy.timestamp
 
 def format_highres_date(t, offset=0):
     """Format a date, such that it includes higher precision in the
@@ -352,7 +352,7 @@ class BzrSvnMapping(foreign.VcsMapping):
         super(BzrSvnMapping, self).__init__(foreign_vcs_svn)
         if ((version_info[3] == 'exp' or self.experimental) and
             not BzrSvnMapping._warned_experimental):
-            from bzrlib.trace import warning
+            from breezy.trace import warning
             warning("using experimental bzr-svn mappings; may break existing "
                     "branches in the most horrible ways")
             BzrSvnMapping._warned_experimental = True
@@ -998,20 +998,20 @@ class SubversionMappingRegistry(foreign.VcsMappingRegistry):
 
 
 try:
-    mapping_registry = SubversionMappingRegistry("bzrlib.plugins.svn.mapping",
+    mapping_registry = SubversionMappingRegistry("breezy.plugins.svn.mapping",
         "mapping_registry")
 except TypeError:
     mapping_registry = SubversionMappingRegistry()
-mapping_registry.register_lazy('v1', 'bzrlib.plugins.svn.mapping2',
+mapping_registry.register_lazy('v1', 'breezy.plugins.svn.mapping2',
                                'BzrSvnMappingv1',
                                'Original bzr-svn mapping format (bzr-svn 0.2.x)')
-mapping_registry.register_lazy('v2', 'bzrlib.plugins.svn.mapping2',
+mapping_registry.register_lazy('v2', 'breezy.plugins.svn.mapping2',
                                'BzrSvnMappingv2',
                                'Second format (bzr-svn 0.3.x)')
-mapping_registry.register_lazy('v3', 'bzrlib.plugins.svn.mapping3.base',
+mapping_registry.register_lazy('v3', 'breezy.plugins.svn.mapping3.base',
                                'BzrSvnMappingv3',
                                'Third format (bzr-svn 0.4.x)')
-mapping_registry.register_lazy('v4', 'bzrlib.plugins.svn.mapping4',
+mapping_registry.register_lazy('v4', 'breezy.plugins.svn.mapping4',
                                'BzrSvnMappingv4',
                                'Fourth format (bzr-svn 0.5.x)')
 mapping_registry.set_default('v4')
@@ -1134,12 +1134,12 @@ class ForeignSubversion(foreign.ForeignVcs):
 
     @property
     def branch_format(self):
-        from bzrlib.plugins.svn.branch import SvnBranchFormat
+        from breezy.plugins.svn.branch import SvnBranchFormat
         return SvnBranchFormat()
 
     @property
     def repository_format(self):
-        from bzrlib.plugins.svn.repository import SvnRepositoryFormat
+        from breezy.plugins.svn.repository import SvnRepositoryFormat
         return SvnRepositoryFormat()
 
     def __init__(self):

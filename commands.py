@@ -19,18 +19,18 @@
 
 from __future__ import absolute_import
 
-from bzrlib import (
+from breezy import (
     bzrdir,
     )
-from bzrlib.commands import (
+from breezy.commands import (
     Command,
     )
-from bzrlib.option import (
+from breezy.option import (
     RegistryOption,
     Option,
     )
 
-from bzrlib.plugins.svn import gettext
+from breezy.plugins.svn import gettext
 
 
 def get_layout(layoutname):
@@ -40,8 +40,8 @@ def get_layout(layoutname):
     """
     if isinstance(layoutname, unicode):
         layoutname = layoutname.encode("ascii")
-    from bzrlib.plugins.svn.layout import layout_registry
-    from bzrlib.errors import BzrCommandError
+    from breezy.plugins.svn.layout import layout_registry
+    from breezy.errors import BzrCommandError
 
     try:
         ret = layout_registry.get(layoutname)()
@@ -66,7 +66,7 @@ class cmd_svn_import(Command):
     takes_options = [RegistryOption('format',
                             help='Specify a format for this repository. See'
                                  ' "bzr help formats" for details. Must support rich-root.',
-                            lazy_registry=('bzrlib.bzrdir', 'format_registry'),
+                            lazy_registry=('breezy.bzrdir', 'format_registry'),
                             converter=lambda name: bzrdir.format_registry.make_bzrdir(name),
                             value_switches=False, title='Repository format'),
                      Option('trees', help='Create working trees.'),
@@ -94,21 +94,21 @@ class cmd_svn_import(Command):
     def run(self, from_location, to_location=None, format=None, trees=False,
             standalone=False, layout=None, all=False, prefix=None, keep=False,
             restore=False, until=None, colocated=False):
-        from bzrlib import (
+        from breezy import (
             osutils,
             trace,
             urlutils,
             )
-        from bzrlib.bzrdir import BzrDir
-        from bzrlib.errors import (
+        from breezy.bzrdir import BzrDir
+        from breezy.errors import (
             BzrCommandError,
             NoRepositoryPresent,
             )
-        from bzrlib.plugins.svn import gettext
-        from bzrlib.plugins.svn.convert import convert_repository
-        from bzrlib.plugins.svn.remote import SvnRemoteAccess
-        from bzrlib.plugins.svn.repository import SvnRepository
-        from bzrlib.plugins.svn.workingtree import SvnCheckout
+        from breezy.plugins.svn import gettext
+        from breezy.plugins.svn.convert import convert_repository
+        from breezy.plugins.svn.remote import SvnRemoteAccess
+        from breezy.plugins.svn.repository import SvnRepository
+        from breezy.plugins.svn.workingtree import SvnCheckout
         import os
         from subvertpy import NODE_NONE
 
@@ -121,7 +121,7 @@ class cmd_svn_import(Command):
             standalone = False
 
         if os.path.isfile(from_location):
-            from bzrlib.plugins.svn.convert import load_dumpfile
+            from breezy.plugins.svn.convert import load_dumpfile
             import tempfile
             tmp_repos = tempfile.mkdtemp(prefix='bzr-svn-dump-')
             load_dumpfile(from_location, tmp_repos)
@@ -214,14 +214,14 @@ class cmd_svn_layout(Command):
     takes_args = ["path?"]
 
     def run(self, path="."):
-        from bzrlib import (
+        from breezy import (
             errors,
             urlutils,
             )
-        from bzrlib.branch import Branch
-        from bzrlib.plugins.svn import gettext
-        from bzrlib.repository import Repository
-        from bzrlib.plugins.svn import errors as bzrsvn_errors
+        from breezy.branch import Branch
+        from breezy.plugins.svn import gettext
+        from breezy.repository import Repository
+        from breezy.plugins.svn import errors as bzrsvn_errors
 
         try:
             branch, _ = Branch.open_containing(path)
@@ -276,11 +276,11 @@ class cmd_svn_branches(Command):
     hidden = True
 
     def run(self, location, layout=None):
-        from bzrlib import errors
-        from bzrlib.bzrdir import BzrDir
-        from bzrlib.plugins.svn import gettext
-        from bzrlib.plugins.svn.remote import SvnRemoteAccess
-        from bzrlib.plugins.svn.workingtree import SvnCheckout
+        from breezy import errors
+        from breezy.bzrdir import BzrDir
+        from breezy.plugins.svn import gettext
+        from breezy.plugins.svn.remote import SvnRemoteAccess
+        from breezy.plugins.svn.workingtree import SvnCheckout
 
         dir = BzrDir.open(location)
 
@@ -328,9 +328,9 @@ class cmd_fix_svn_ancestry(Command):
         Option('no-reconcile', help="Don't reconcile the new repository.")]
 
     def run(self, svn_repository, directory=".", no_reconcile=False):
-        from bzrlib.controldir import ControlDir
-        from bzrlib.repository import InterRepository, Repository
-        from bzrlib import trace
+        from breezy.controldir import ControlDir
+        from breezy.repository import InterRepository, Repository
+        from breezy import trace
         correct_dir = ControlDir.open_containing(svn_repository)[0]
         correct_repo = correct_dir.find_repository()
         repo_to_fix = Repository.open(directory)
@@ -363,7 +363,7 @@ class cmd_fix_svn_ancestry(Command):
         trace.note("Fetching other revisions")
         new_repo.fetch(old_repo)
         if not no_reconcile:
-            from bzrlib.reconcile import reconcile
+            from breezy.reconcile import reconcile
             trace.note("Reconciling new repository.")
             reconcile(dir_to_fix)
         trace.note('Removing backup')

@@ -24,29 +24,29 @@ try:
 except AttributeError:
     raise ImportError("tdb is out of date: doesn't have a Tdb.get attribute")
 
-from bzrlib import (
+from breezy import (
     bencode,
     debug,
     errors,
     trace,
     )
 
-from bzrlib.plugins.svn.cache import (
+from breezy.plugins.svn.cache import (
     RepositoryCache,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     mapping_registry,
     )
-from bzrlib.plugins.svn.revids import (
+from breezy.plugins.svn.revids import (
     RevisionIdMapCache,
     )
-from bzrlib.plugins.svn.revmeta import (
+from breezy.plugins.svn.revmeta import (
     RevisionInfoCache,
     )
-from bzrlib.plugins.svn.logwalker import (
+from breezy.plugins.svn.logwalker import (
     LogCache,
     )
-from bzrlib.plugins.svn.parents import (
+from breezy.plugins.svn.parents import (
     ParentsCache,
     )
 

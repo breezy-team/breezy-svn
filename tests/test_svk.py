@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib.tests import TestCase
+from breezy.tests import TestCase
 
-from bzrlib.plugins.svn.svk import (
+from breezy.plugins.svn.svk import (
     parse_svk_feature,
     parse_svk_features,
     )

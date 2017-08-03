@@ -16,11 +16,11 @@
 
 """Tests for authentication module"""
 
-from bzrlib import (
+from breezy import (
     tests,
     ui,
     )
-from bzrlib.plugins.svn.auth import (
+from breezy.plugins.svn.auth import (
     SubversionAuthenticationConfig,
     )
 

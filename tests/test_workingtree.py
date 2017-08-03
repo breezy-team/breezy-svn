@@ -24,37 +24,37 @@ from subvertpy.wc import (
     check_wc,
     )
 
-from bzrlib import (
+from breezy import (
     osutils,
     revision as _mod_revision,
     )
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import (
+from breezy.branch import Branch
+from breezy.bzrdir import BzrDir
+from breezy.errors import (
     NoSuchFile,
     NotBranchError,
     OutOfDateTree,
     )
-from bzrlib.inventory import Inventory
-from bzrlib.osutils import (
+from breezy.inventory import Inventory
+from breezy.osutils import (
     supports_executable,
     )
-from bzrlib.repository import Repository
-from bzrlib.tests import (
+from breezy.repository import Repository
+from breezy.tests import (
     TestCase,
     )
-from bzrlib.tests.features import (
+from breezy.tests.features import (
     SymlinkFeature,
     UnicodeFilenameFeature,
     )
-from bzrlib.workingtree import WorkingTree
+from breezy.workingtree import WorkingTree
 
-from bzrlib.plugins.svn.layout.standard import TrunkLayout
-from bzrlib.plugins.svn.mapping3.base import config_set_scheme
-from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
-from bzrlib.plugins.svn.transport import svn_config
-from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.workingtree import (
+from breezy.plugins.svn.layout.standard import TrunkLayout
+from breezy.plugins.svn.mapping3.base import config_set_scheme
+from breezy.plugins.svn.mapping3.scheme import TrunkBranchingScheme
+from breezy.plugins.svn.transport import svn_config
+from breezy.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.workingtree import (
     CorruptWorkingTree,
     generate_ignore_list,
     )

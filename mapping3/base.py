@@ -20,24 +20,24 @@ from __future__ import absolute_import
 
 from subvertpy import properties
 
-from bzrlib import (
+from breezy import (
     errors as bzr_errors,
     osutils,
     )
 
-from bzrlib.plugins.svn import (
+from breezy.plugins.svn import (
     errors,
     mapping,
     )
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     NoCustomBranchPaths,
     NoLayoutTagSetSupport,
     )
-from bzrlib.plugins.svn.layout import (
+from breezy.plugins.svn.layout import (
     RepositoryLayout,
     get_root_paths,
     )
-from bzrlib.plugins.svn.mapping3.scheme import (
+from breezy.plugins.svn.mapping3.scheme import (
     BranchingScheme,
     InvalidSvnBranchPath,
     ListBranchingScheme,

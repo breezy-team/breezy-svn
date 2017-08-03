@@ -20,26 +20,26 @@ from subvertpy import (
     NODE_FILE,
     )
 
-from bzrlib.repository import Repository
+from breezy.repository import Repository
 
-from bzrlib.tests import TestCase
+from breezy.tests import TestCase
 
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.layout.standard import (
     CustomLayout,)
-from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.layout.standard import (
+from breezy.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.layout.standard import (
     RootLayout,
     TrunkLayout,
     )
-from bzrlib.plugins.svn.logwalker import (
+from breezy.plugins.svn.logwalker import (
     DictBasedLogWalker,
     )
-from bzrlib.plugins.svn.metagraph import (
+from breezy.plugins.svn.metagraph import (
     MetaRevision,
     filter_revisions,
     restrict_prefixes,
     )
-from bzrlib.plugins.svn.metagraph import (
+from breezy.plugins.svn.metagraph import (
     RevisionMetadataBrowser,
     )
 

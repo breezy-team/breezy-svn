@@ -41,7 +41,7 @@ from subvertpy.delta import (
     apply_txdelta_handler_chunks,
     )
 
-from bzrlib import (
+from breezy import (
     debug,
     delta,
     lru_cache,
@@ -50,46 +50,46 @@ from bzrlib import (
     ui,
     urlutils,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     NoSuchId,
     NoSuchRevision,
     )
-from bzrlib.inventory import (
+from breezy.inventory import (
     InventoryDirectory,
     InventoryFile,
     InventoryLink,
     )
-from bzrlib.revision import (
+from breezy.revision import (
     NULL_REVISION,
     )
-from bzrlib.revisiontree import InventoryRevisionTree
-from bzrlib.repository import (
+from breezy.revisiontree import InventoryRevisionTree
+from breezy.repository import (
     InterRepository,
     )
-from bzrlib.versionedfile import (
+from breezy.versionedfile import (
     ChunkedContentFactory,
     FulltextContentFactory,
     )
 
-from bzrlib.plugins.svn import changes
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn import changes
+from breezy.plugins.svn.errors import (
     AbsentPath,
     InvalidFileName,
     SymlinkTargetContainsNewline,
     TextChecksumMismatch,
     convert_svn_error,
     )
-from bzrlib.plugins.svn.fileids import (
+from breezy.plugins.svn.fileids import (
     get_local_changes,
     )
-from bzrlib.plugins.svn.mapping import (
+from breezy.plugins.svn.mapping import (
     SVN_PROP_BZR_PREFIX,
     )
-from bzrlib.plugins.svn.repository import (
+from breezy.plugins.svn.repository import (
     SvnRepository,
     SvnRepositoryFormat,
     )
-from bzrlib.plugins.svn.transport import (
+from breezy.plugins.svn.transport import (
     url_join_unescaped_path,
     )
 

@@ -16,10 +16,10 @@
 
 """Branching scheme tests."""
 
-from bzrlib.errors import BzrError
+from breezy.errors import BzrError
 
-from bzrlib.tests import TestCase
-from bzrlib.plugins.svn.mapping3.scheme import (
+from breezy.tests import TestCase
+from breezy.plugins.svn.mapping3.scheme import (
     BranchingScheme,
     InvalidSvnBranchPath,
     ListBranchingScheme,

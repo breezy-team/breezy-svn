@@ -18,24 +18,24 @@
 import os
 import subvertpy
 
-from bzrlib import osutils
-from bzrlib.inventory import (
+from breezy import osutils
+from breezy.inventory import (
     Inventory,
     TreeReference,
     )
-from bzrlib.revision import (
+from breezy.revision import (
     CURRENT_REVISION,
     )
-from bzrlib.tests import (
+from breezy.tests import (
     TestSkipped,
     )
-from bzrlib.tests.features import (
+from breezy.tests.features import (
     SymlinkFeature,
     )
-from bzrlib.workingtree import WorkingTree
+from breezy.workingtree import WorkingTree
 
-from bzrlib.plugins.svn.tests import SubversionTestCase
-from bzrlib.plugins.svn.tree import (
+from breezy.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.tree import (
     SvnBasisTree,
     inventory_add_external,
     )

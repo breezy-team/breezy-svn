@@ -18,7 +18,7 @@
 from __future__ import absolute_import
 
 import time
-from bzrlib import (
+from breezy import (
     branch as _mod_branch,
     diff as _mod_diff,
     errors,
@@ -117,7 +117,7 @@ class SvnDiffTree(_mod_diff.DiffTree):
     def _get_file_contents(self, tree, file_id, path, kind):
         if kind in (None, "directory"):
             return None
-        from bzrlib.plugins.svn.mapping import get_svn_file_contents
+        from breezy.plugins.svn.mapping import get_svn_file_contents
         f = get_svn_file_contents(tree, kind, file_id, path)
         return f.readlines()
 
@@ -191,7 +191,7 @@ class SvnMergeDirective(merge_directive.BaseMergeDirective):
     def from_objects(cls, repository, revision_id, time, timezone,
                      target_branch, local_target_branch=None,
                      public_branch=None, message=None):
-        from bzrlib.plugins.svn.repository import SvnRepository
+        from breezy.plugins.svn.repository import SvnRepository
         submit_branch = _mod_branch.Branch.open(target_branch)
         if not isinstance(submit_branch.repository, SvnRepository):
             raise errors.BzrError("Not a Subversion repository")

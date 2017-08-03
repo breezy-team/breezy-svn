@@ -19,27 +19,27 @@
 
 """Subversion repository tests."""
 
-from bzrlib.branch import (
+from breezy.branch import (
     Branch,
     )
-from bzrlib.bzrdir import (
+from breezy.bzrdir import (
     BzrDir,
     format_registry,
     )
-from bzrlib.config import GlobalConfig
-from bzrlib.errors import (
+from breezy.config import GlobalConfig
+from breezy.errors import (
     AppendRevisionsOnlyViolation,
     BadConversionTarget,
     UninitializableFormat,
     )
-from bzrlib.repository import Repository
-from bzrlib.tests import TestCase
+from breezy.repository import Repository
+from breezy.tests import TestCase
 
-from bzrlib.plugins.svn.tests import (
+from breezy.plugins.svn.tests import (
     SubversionTestCase,
     )
-from bzrlib.plugins.svn.layout.standard import TrunkLayout
-from bzrlib.plugins.svn.repository import (
+from breezy.plugins.svn.layout.standard import TrunkLayout
+from breezy.plugins.svn.repository import (
     SvnRepositoryFormat,
     )
 

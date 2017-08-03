@@ -16,11 +16,11 @@
 
 """Config tests."""
 
-from bzrlib import bzrdir
-from bzrlib.branch import Branch
-from bzrlib.repository import Repository
-from bzrlib.tests import test_config
-from bzrlib.plugins.svn.config import (
+from breezy import bzrdir
+from breezy.branch import Branch
+from breezy.repository import Repository
+from breezy.tests import test_config
+from breezy.plugins.svn.config import (
     NoSubversionBuildPackageConfig,
     PropertyConfig,
     SubversionBuildPackageConfig,
@@ -28,8 +28,8 @@ from bzrlib.plugins.svn.config import (
     SvnBranchStack,
     UUIDMatcher,
     )
-from bzrlib.plugins.svn.mapping3.scheme import TrunkBranchingScheme
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.mapping3.scheme import TrunkBranchingScheme
+from breezy.plugins.svn.tests import SubversionTestCase
 
 
 def build_subversion_store(test):

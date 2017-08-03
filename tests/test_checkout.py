@@ -16,22 +16,22 @@
 
 """Checkout tests."""
 
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import (
+from breezy.branch import Branch
+from breezy.bzrdir import (
     BzrDir,
     format_registry,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     NoRepositoryPresent,
     UninitializableFormat,
     )
-from bzrlib.tests import TestCase
+from breezy.tests import TestCase
 
-from bzrlib.plugins.svn.workingtree import (
+from breezy.plugins.svn.workingtree import (
     SvnWorkingTreeDirFormat,
     SvnWorkingTreeFormat,
     )
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.tests import SubversionTestCase
 
 class TestWorkingTreeFormat(TestCase):
 

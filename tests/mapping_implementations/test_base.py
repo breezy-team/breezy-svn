@@ -14,11 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from bzrlib.errors import InvalidRevisionId
-from bzrlib.revision import Revision
-from bzrlib.tests import TestCase, TestNotApplicable
+from breezy.errors import InvalidRevisionId
+from breezy.revision import Revision
+from breezy.tests import TestCase, TestNotApplicable
 
-from bzrlib.plugins.svn.mapping import mapping_registry, parse_svn_revprops
+from breezy.plugins.svn.mapping import mapping_registry, parse_svn_revprops
 from subvertpy import properties
 
 def changed_props(props):

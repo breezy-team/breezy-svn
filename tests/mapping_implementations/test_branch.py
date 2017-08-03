@@ -15,8 +15,8 @@
 
 """Branch tests."""
 
-from bzrlib.plugins.svn.mapping import mapping_registry
-from bzrlib.plugins.svn.tests import SubversionTestCase
+from breezy.plugins.svn.mapping import mapping_registry
+from breezy.plugins.svn.tests import SubversionTestCase
 
 class WorkingSubversionBranch(SubversionTestCase):
 

@@ -24,14 +24,14 @@ from subvertpy.ra import (
     DIRENT_CREATED_REV,
     )
 
-from bzrlib import (
+from breezy import (
     registry,
     urlutils,
     ui,
     )
-from bzrlib.trace import mutter
+from breezy.trace import mutter
 
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     NotSvnBranchPath,
     NoCustomBranchPaths,
     )
@@ -324,26 +324,26 @@ or "bzr info -v <url>".
 
 
 try:
-    layout_registry = registry.Registry("bzrlib.plugins.svn.layout", "layout_registry")
+    layout_registry = registry.Registry("breezy.plugins.svn.layout", "layout_registry")
 except TypeError:
     layout_registry = registry.Registry()
-layout_registry.register_lazy("root", "bzrlib.plugins.svn.layout.standard",
+layout_registry.register_lazy("root", "breezy.plugins.svn.layout.standard",
     "RootLayout")
-layout_registry.register_lazy("none", "bzrlib.plugins.svn.layout.standard",
+layout_registry.register_lazy("none", "breezy.plugins.svn.layout.standard",
     "RootLayout")
-layout_registry.register_lazy("trunk", "bzrlib.plugins.svn.layout.standard",
+layout_registry.register_lazy("trunk", "breezy.plugins.svn.layout.standard",
     "TrunkLayout0")
 for i in range(10):
     layout_registry.register_lazy("trunk%d" % i,
-        "bzrlib.plugins.svn.layout.standard", "TrunkLayout%d" % i)
+        "breezy.plugins.svn.layout.standard", "TrunkLayout%d" % i)
 layout_registry.register_lazy("trunk-variable",
-    "bzrlib.plugins.svn.layout.standard", "TrunkLayoutVariable")
+    "breezy.plugins.svn.layout.standard", "TrunkLayoutVariable")
 
-layout_registry.register_lazy("itrunk1", "bzrlib.plugins.svn.layout.standard",
+layout_registry.register_lazy("itrunk1", "breezy.plugins.svn.layout.standard",
     "InverseTrunkLayout1")
-layout_registry.register_lazy("itrunk2", "bzrlib.plugins.svn.layout.standard",
+layout_registry.register_lazy("itrunk2", "breezy.plugins.svn.layout.standard",
     "InverseTrunkLayout2")
-layout_registry.register_lazy("itrunk3", "bzrlib.plugins.svn.layout.standard",
+layout_registry.register_lazy("itrunk3", "breezy.plugins.svn.layout.standard",
     "InverseTrunkLayout3")
 
 class RepositoryRegistry(registry.Registry):
@@ -355,9 +355,9 @@ class RepositoryRegistry(registry.Registry):
             return None
 
 try:
-    repository_registry = RepositoryRegistry("bzrlib.plugins.svn.layout",
+    repository_registry = RepositoryRegistry("breezy.plugins.svn.layout",
         "repository_registry")
 except TypeError:
     repository_registry = RepositoryRegistry()
 repository_registry.register_lazy("13f79535-47bb-0310-9956-ffa450edef68",
-        "bzrlib.plugins.svn.layout.standard", "TrunkLayout")
+        "breezy.plugins.svn.layout.standard", "TrunkLayout")

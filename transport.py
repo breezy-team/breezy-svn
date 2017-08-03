@@ -33,37 +33,36 @@ import urlparse
 urlparse.uses_netloc.extend(['svn+http', 'svn+https'])
 import urllib
 
-import bzrlib
-from bzrlib import (
+import breezy
+from breezy import (
     debug,
     ui,
     urlutils,
     )
-from bzrlib.errors import (
+from breezy.errors import (
     BzrError,
     FileExists,
-    InvalidURL,
     NoSuchFile,
     NotLocalUrl,
     RedirectRequested,
     TransportNotPossible,
     )
-from bzrlib.trace import (
+from breezy.trace import (
     mutter,
     warning,
     )
-from bzrlib.transport import (
+from breezy.transport import (
     Transport,
     )
 
-import bzrlib.plugins.svn
-from bzrlib.plugins.svn.auth import (
+import breezy.plugins.svn
+from breezy.plugins.svn.auth import (
     create_auth_baton,
     )
-from bzrlib.plugins.svn.changes import (
+from breezy.plugins.svn.changes import (
     common_prefix,
     )
-from bzrlib.plugins.svn.errors import (
+from breezy.plugins.svn.errors import (
     convert_svn_error,
     DavRequestFailed,
     NoSvnRepositoryPresent,
@@ -238,7 +237,7 @@ def Connection(url, auth=None, config=None, readonly=False):
     assert type(url) == str, "URL not string: %r" % url
     try:
         ret = RemoteAccess(_url_escape_uri(url), auth=auth,
-                client_string_func=bzrlib.plugins.svn.get_client_string,
+                client_string_func=breezy.plugins.svn.get_client_string,
                 progress_cb=progress_cb,
                 config=config)
         if 'transport' in debug.debug_flags:
@@ -250,15 +249,15 @@ def Connection(url, auth=None, config=None, readonly=False):
         if num in (subvertpy.ERR_RA_SVN_REPOS_NOT_FOUND,):
             raise NoSvnRepositoryPresent(url=url)
         if num == subvertpy.ERR_BAD_URL:
-            raise InvalidURL(url)
+            raise urlutils.InvalidURL(url)
         if num in (subvertpy.ERR_RA_DAV_PATH_NOT_FOUND, subvertpy.ERR_FS_NOT_FOUND):
             raise NoSuchFile(url)
         if num == subvertpy.ERR_RA_ILLEGAL_URL:
-            raise InvalidURL(url, msg)
+            raise urlutils.InvalidURL(url, msg)
         if num == subvertpy.ERR_RA_DAV_RELOCATED:
             raise convert_relocate_error(url, num, msg)
         raise convert_error(e)
-    from bzrlib.plugins.svn import lazy_check_versions
+    from breezy.plugins.svn import lazy_check_versions
     lazy_check_versions()
     return ret
 
@@ -367,7 +366,7 @@ class SvnRaTransport(Transport):
         self._repos_root = None
         self._uuid = None
         self.capabilities = {}
-        from bzrlib.plugins.svn import lazy_check_versions
+        from breezy.plugins.svn import lazy_check_versions
         lazy_check_versions()
 
     def is_readonly(self):

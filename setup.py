@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     command_classes = {}
     try:
-        from bzrlib.bzr_distutils import build_mo
+        from breezy.bzr_distutils import build_mo
     except ImportError:
         pass
     else:
@@ -43,15 +43,15 @@ if __name__ == '__main__':
           author='Jelmer Vernooij',
           author_email='jelmer@samba.org',
           long_description=readme,
-          package_dir={'bzrlib.plugins.svn':'.' },
-          packages=['bzrlib.plugins.svn',
-                    'bzrlib.plugins.svn.cache',
-                    'bzrlib.plugins.svn.layout',
-                    'bzrlib.plugins.svn.mapping3',
-                    'bzrlib.plugins.svn.tests',
-                    'bzrlib.plugins.svn.tests.layout',
-                    'bzrlib.plugins.svn.tests.mapping3',
-                    'bzrlib.plugins.svn.tests.mapping_implementations'],
+          package_dir={'breezy.plugins.svn':'.' },
+          packages=['breezy.plugins.svn',
+                    'breezy.plugins.svn.cache',
+                    'breezy.plugins.svn.layout',
+                    'breezy.plugins.svn.mapping3',
+                    'breezy.plugins.svn.tests',
+                    'breezy.plugins.svn.tests.layout',
+                    'breezy.plugins.svn.tests.mapping3',
+                    'breezy.plugins.svn.tests.mapping_implementations'],
           classifiers=[
               'Topic :: Software Development :: Version Control',
               'Environment :: Plugins',
