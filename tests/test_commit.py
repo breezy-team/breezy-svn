@@ -30,13 +30,13 @@ from breezy.branch import (
     Branch,
     PullResult,
     )
-from breezy.bzrdir import BzrDir
+from breezy.controldir import ControlDir
 from breezy.errors import (
     BzrError,
     DivergedBranches,
     NoSuchId,
     )
-from breezy.inventory import (
+from breezy.bzr.inventory import (
     InventoryFile,
     InventoryLink,
     )
@@ -296,7 +296,7 @@ class TestNativeCommit(SubversionTestCase):
         self.make_checkout(repo + '/pyd/trunk', 'pyd')
         self.assertEqual("DATA", open('pyd/bar').read())
 
-        olddir = BzrDir.open("pyd")
+        olddir = ControlDir.open("pyd")
         os.mkdir('bc')
         newdir = olddir.sprout("bc")
         newdir.open_branch().pull(olddir.open_branch())
@@ -337,7 +337,7 @@ class TestPush(SubversionTestCase):
         self.client_add("sc/foo")
         self.client_commit("sc", "foo")
 
-        self.olddir = BzrDir.open("sc")
+        self.olddir = ControlDir.open("sc")
         os.mkdir("dc")
         self.newdir = self.olddir.sprout("dc")
 
@@ -352,7 +352,7 @@ class TestPush(SubversionTestCase):
         self.assertIsInstance(result, PullResult)
         self.assertEqual(result.old_revno, self.olddir.open_branch().revno())
         self.assertEqual(result.master_branch, target_branch)
-        self.assertEqual(result.source_branch.bzrdir.root_transport.base,
+        self.assertEqual(result.source_branch.controldir.root_transport.base,
                          self.newdir.root_transport.base)
 
     def test_child(self):
@@ -369,7 +369,7 @@ class TestPush(SubversionTestCase):
         self.client_add("sc/foo/bar")
         self.client_commit("sc", "second message")
 
-        olddir = BzrDir.open("sc")
+        olddir = ControlDir.open("sc")
 
         self.build_tree({'dc/file': 'data'})
         wt = self.newdir.open_workingtree()
@@ -589,7 +589,7 @@ class JoinedCommitTests(SubversionTestCase):
         self.client_add("sc/trunk")
         self.client_commit("sc", "foo")
 
-        self.olddir = BzrDir.open("sc/trunk")
+        self.olddir = ControlDir.open("sc/trunk")
         os.mkdir("dc")
         self.newdir = self.olddir.sprout("dc")
 
@@ -603,7 +603,7 @@ class JoinedCommitTests(SubversionTestCase):
         self.build_tree({"dc/lala": "data"})
         wt.add(["lala"])
         wt.commit(message="init")
-        joinedwt = BzrDir.create_standalone_workingtree("dc/newdir")
+        joinedwt = ControlDir.create_standalone_workingtree("dc/newdir")
         joinedwt.pull(Branch.open(repos_url+"/branches/newbranch"))
         wt.subsume(joinedwt)
         wt.commit(message="doe")
@@ -623,7 +623,7 @@ class TestPushNested(SubversionTestCase):
         self.client_add("sc/foo")
         self.client_commit("sc", "foo")
 
-        self.olddir = BzrDir.open("sc/foo/trunk")
+        self.olddir = ControlDir.open("sc/foo/trunk")
         os.mkdir("dc")
         self.newdir = self.olddir.sprout("dc")
 
@@ -644,7 +644,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
     def test_bind(self):
         master_branch = self.make_svn_branch("d")
         os.mkdir("b")
-        local_dir = master_branch.bzrdir.sprout("b")
+        local_dir = master_branch.controldir.sprout("b")
         wt = local_dir.open_workingtree()
         local_dir.open_branch().bind(master_branch)
         local_dir.open_branch().unbind()
@@ -652,7 +652,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
     def test_commit(self):
         master_branch = self.make_svn_branch("d")
         os.mkdir("b")
-        local_dir = master_branch.bzrdir.sprout("b")
+        local_dir = master_branch.controldir.sprout("b")
         local_dir.open_branch().bind(master_branch)
         wt = local_dir.open_workingtree()
         self.build_tree({'b/file': 'data'})
@@ -665,7 +665,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
     def test_fileid(self):
         master_branch = self.make_svn_branch("d")
         os.mkdir("b")
-        local_dir = master_branch.bzrdir.sprout("b")
+        local_dir = master_branch.controldir.sprout("b")
         local_dir.open_branch().bind(master_branch)
         wt = local_dir.open_workingtree()
         self.build_tree({'b/file': 'data'})
@@ -696,7 +696,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
     def test_nested_fileid(self):
         master_branch = self.make_svn_branch("d") #1
         os.mkdir("b")
-        local_dir = master_branch.bzrdir.sprout("b")
+        local_dir = master_branch.controldir.sprout("b")
         local_dir.open_branch().bind(master_branch)
         wt = local_dir.open_workingtree()
         wt.branch.nick = "some-nick"
@@ -727,7 +727,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         dc.close() # 1
 
         master_branch = Branch.open(repos_url+"/trunk")
-        trunk = master_branch.bzrdir.sprout("trunk")
+        trunk = master_branch.controldir.sprout("trunk")
         trunk.open_branch().bind(master_branch)
 
         config = master_branch.repository.get_config()

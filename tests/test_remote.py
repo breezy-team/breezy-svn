@@ -21,8 +21,8 @@ import subvertpy
 
 from breezy import osutils
 from breezy.branch import Branch
-from breezy.bzrdir import (
-    BzrDir,
+from breezy.controldir import (
+    ControlDir,
     format_registry,
     )
 from breezy.errors import (
@@ -50,7 +50,7 @@ class TestRemoteAccess(SubversionTestCase):
 
         old_tree.update()
 
-        x = BzrDir.open("dc")
+        x = ControlDir.open("dc")
         dir = x.clone("ec")
         new_tree = dir.open_workingtree()
         self.assertEquals(old_tree.branch.base, new_tree.branch.base)
@@ -59,7 +59,7 @@ class TestRemoteAccess(SubversionTestCase):
     def test_break_lock(self):
         repos_url = self.make_svn_repository("d")
 
-        x = BzrDir.open(repos_url)
+        x = ControlDir.open(repos_url)
         x.break_lock()
 
     def test_too_much_slashes(self):
@@ -67,34 +67,34 @@ class TestRemoteAccess(SubversionTestCase):
 
         repos_url = repos_url[:-1] + "///d"
 
-        BzrDir.open(repos_url)
+        ControlDir.open(repos_url)
 
     def test_open_workingtree(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url)
+        x = ControlDir.open(repos_url)
         self.assertRaises(NoWorkingTree, x.open_workingtree)
 
     def test_open_workingtree_recommend_arg(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url)
+        x = ControlDir.open(repos_url)
         self.assertRaises(NoWorkingTree,
                 x.open_workingtree, recommend_upgrade=True)
 
     def test_create_workingtree(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url)
+        x = ControlDir.open(repos_url)
         self.assertRaises(UnsupportedOperation, x.create_workingtree)
 
     def test_create_branch(self):
         repos_url = self.make_repository("d")
-        x = BzrDir.open(repos_url)
+        x = ControlDir.open(repos_url)
         # The default layout is "trunk"
         b = x.create_branch()
         self.assertEquals(repos_url+"/trunk", b.base)
 
     def test_create_branch_top(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url)
+        x = ControlDir.open(repos_url)
         x.open_repository().store_layout(RootLayout())
         b = x.create_branch()
         self.assertEquals(repos_url, b.base)
@@ -105,12 +105,12 @@ class TestRemoteAccess(SubversionTestCase):
         dc = self.get_commit_editor(repos_url)
         dc.add_file("bla").modify("contents")
         dc.close()
-        x = BzrDir.open(repos_url)
+        x = ControlDir.open(repos_url)
         self.assertRaises(AlreadyBranchError, x.create_branch)
 
     def test_create_branch_nested(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url+"/trunk")
+        x = ControlDir.open(repos_url+"/trunk")
         b = x.create_branch()
         self.assertEquals(repos_url+"/trunk", b.base)
         transport = SvnRaTransport(repos_url)
@@ -124,7 +124,7 @@ class TestRemoteAccess(SubversionTestCase):
         dc.add_dir("trunk")
         dc.close()
 
-        x = BzrDir.open(repos_url+"/trunk")
+        x = ControlDir.open(repos_url+"/trunk")
         x.destroy_branch()
         self.assertRaises(NotBranchError, x.open_branch)
 
@@ -135,17 +135,17 @@ class TestRemoteAccess(SubversionTestCase):
         dc.add_file("foo")
         dc.close()
 
-        BzrDir.open(repos_url+"/foo")
+        ControlDir.open(repos_url+"/foo")
 
     def test_create(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url)
+        x = ControlDir.open(repos_url)
         self.assertTrue(hasattr(x, 'svn_root_url'))
 
     def test_import_branch(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url+"/trunk")
-        origb = BzrDir.create_standalone_workingtree("origb")
+        x = ControlDir.open(repos_url+"/trunk")
+        origb = ControlDir.create_standalone_workingtree("origb")
         self.build_tree({'origb/twin': 'bla', 'origb/peaks': 'bloe'})
         origb.add(["twin", "peaks"])
         origb.commit("Message")
@@ -156,7 +156,7 @@ class TestRemoteAccess(SubversionTestCase):
 
     def test_open_repos_root(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url)
+        x = ControlDir.open(repos_url)
         repos = x.open_repository()
         self.assertTrue(hasattr(repos, 'uuid'))
 
@@ -167,13 +167,13 @@ class TestRemoteAccess(SubversionTestCase):
         dc.add_dir("trunk")
         dc.close()
 
-        x = BzrDir.open(repos_url+"/trunk")
+        x = ControlDir.open(repos_url+"/trunk")
         repos = x.find_repository()
         self.assertTrue(hasattr(repos, 'uuid'))
 
     def test_find_repos_root(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url)
+        x = ControlDir.open(repos_url)
         repos = x.find_repository()
         self.assertTrue(hasattr(repos, 'uuid'))
 
@@ -184,36 +184,36 @@ class TestRemoteAccess(SubversionTestCase):
         dc.add_dir("trunk")
         dc.close()
 
-        x = BzrDir.open(repos_url+"/trunk")
+        x = ControlDir.open(repos_url+"/trunk")
         self.assertRaises(NoRepositoryPresent, x.open_repository)
 
     def test_needs_format_upgrade_default(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url+"/trunk")
+        x = ControlDir.open(repos_url+"/trunk")
         self.assertTrue(x.needs_format_conversion(
-            format_registry.make_bzrdir("default")))
+            format_registry.make_controldir("default")))
 
     def test_needs_format_upgrade_self(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url+"/trunk")
+        x = ControlDir.open(repos_url+"/trunk")
         self.assertFalse(x.needs_format_conversion(SvnRemoteFormat()))
 
     def test_find_repository_not_found(self):
         repos_url = self.make_client('d', 'dc')
         osutils.rmtree("d")
         self.assertRaises(NoRepositoryPresent,
-                lambda: BzrDir.open("dc").find_repository())
+                lambda: ControlDir.open("dc").find_repository())
 
     def test_create_branch_named(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url)
+        x = ControlDir.open(repos_url)
         x.open_repository().store_layout(TrunkLayout())
         b = x.create_branch("foo")
         self.assertEquals(repos_url+"/branches/foo", b.base)
 
     def test_list_branches_trunk(self):
         repos_url = self.make_svn_repository("d")
-        x = BzrDir.open(repos_url)
+        x = ControlDir.open(repos_url)
         x.open_repository().store_layout(TrunkLayout())
         b1 = x.create_branch("foo")
         b2 = x.create_branch("bar")

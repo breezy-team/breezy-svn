@@ -29,13 +29,13 @@ from breezy import (
     revision as _mod_revision,
     )
 from breezy.branch import Branch
-from breezy.bzrdir import BzrDir
+from breezy.controldir import ControlDir
 from breezy.errors import (
     NoSuchFile,
     NotBranchError,
     OutOfDateTree,
     )
-from breezy.inventory import Inventory
+from breezy.bzr.inventory import Inventory
 from breezy.osutils import (
     supports_executable,
     )
@@ -136,10 +136,10 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_is_control_filename(self):
         self.make_svn_branch_and_tree('a', 'dc')
-        bzrdir = BzrDir.open("dc")
-        self.assertTrue(bzrdir.is_control_filename(".svn"))
-        self.assertTrue(bzrdir.is_control_filename(".svn/lock"))
-        self.assertFalse(bzrdir.is_control_filename("lock"))
+        controldir = ControlDir.open("dc")
+        self.assertTrue(controldir.is_control_filename(".svn"))
+        self.assertTrue(controldir.is_control_filename(".svn/lock"))
+        self.assertFalse(controldir.is_control_filename("lock"))
 
     def test_smart_add_recurse(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
@@ -604,12 +604,12 @@ class TestWorkingTree(SubversionTestCase):
         self.assertTrue(os.path.exists(os.path.join("de", ".svn")))
         self.assertFileEqual("data", "de/bla")
 
-    def test_status_bzrdir(self):
+    def test_status_controldir(self):
         self.make_svn_branch_and_tree('a', 'dc')
-        bzrdir = BzrDir.open("dc")
+        controldir = ControlDir.open("dc")
         self.assertTrue(os.path.exists(os.path.join("dc", ".svn")))
         self.assertTrue(not os.path.exists(os.path.join("dc", ".bzr")))
-        bzrdir.open_workingtree()
+        controldir.open_workingtree()
 
     def test_file_id_consistent(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')

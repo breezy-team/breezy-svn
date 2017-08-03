@@ -24,8 +24,8 @@ from breezy.branch import (
     Branch,
     InterBranch,
     )
-from breezy.bzrdir import (
-    BzrDir,
+from breezy.controldir import (
+    ControlDir,
     )
 from breezy.errors import (
     NoSuchRevision,
@@ -349,9 +349,9 @@ class WorkingSubversionBranch(SubversionTestCase):
     def make_branch(self, relpath):
         # The inherited make_branch is broken, thanks to the make_repository
         # from subvertpy.
-        bzrdir = self.make_bzrdir(relpath)
-        bzrdir._find_or_create_repository(True)
-        return bzrdir.create_branch()
+        controldir = self.make_controldir(relpath)
+        controldir._find_or_create_repository(True)
+        return controldir.create_branch()
 
     def test_interbranch_pull(self):
         svn_branch, (revid1, revid2) = self.make_tworev_branch()
@@ -393,7 +393,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.add_dir("trunk")
         dc.close()
 
-        olddir = BzrDir.open(repos_url+"/trunk")
+        olddir = ControlDir.open(repos_url+"/trunk")
         oldbranch = olddir.open_branch()
         newdir = olddir.sprout("mycopy")
         newbranch = newdir.open_branch()
@@ -813,7 +813,7 @@ foohosts""")
 
         url = "old/branches/foobranch"
         mutter('open %r' % url)
-        olddir = BzrDir.open(url)
+        olddir = ControlDir.open(url)
 
         newdir = olddir.sprout("new")
 
@@ -869,7 +869,7 @@ foohosts""")
 
         url = repos_url+"/branches/foobranch"
         mutter('open %r' % url)
-        olddir = BzrDir.open(url)
+        olddir = ControlDir.open(url)
 
         newdir = olddir.sprout("new")
 
@@ -975,7 +975,7 @@ foohosts""")
         foo.add_file("foo/bla").modify()
         sc.close()
 
-        olddir = BzrDir.open("sc")
+        olddir = ControlDir.open("sc")
 
         os.mkdir("dc")
 
@@ -1001,7 +1001,7 @@ foohosts""")
         sc.close()
 
         self.client_update('sc')
-        olddir = BzrDir.open("sc/branches/abranch")
+        olddir = ControlDir.open("sc/branches/abranch")
 
         os.mkdir("dc")
 
@@ -1030,7 +1030,7 @@ foohosts""")
 
         os.mkdir("dc")
 
-        newdir = tree.branch.bzrdir.sprout('dc')
+        newdir = tree.branch.controldir.sprout('dc')
 
         self.assertEqual(
                 tree.branch.last_revision(),
@@ -1049,7 +1049,7 @@ foohosts""")
 
         os.mkdir("dc")
 
-        newdir = tree.branch.bzrdir.sprout('dc')
+        newdir = tree.branch.controldir.sprout('dc')
         newdir.find_repository().get_revision(
                 newdir.open_branch().last_revision())
         newdir.find_repository().revision_tree(
@@ -1074,7 +1074,7 @@ class ForeignTestsBranchFactory(object):
 
     def make_empty_branch(self, transport):
         subvertpy.repos.create(transport.local_abspath("."))
-        dir = BzrDir.open_from_transport(transport)
+        dir = ControlDir.open_from_transport(transport)
         return dir.create_branch()
 
     def make_branch(self, transport):
@@ -1086,9 +1086,9 @@ class TestInterBranchFetch(SubversionTestCase):
     def make_branch(self, relpath):
         # The inherited make_branch is broken, thanks to the make_repository
         # from subvertpy.
-        bzrdir = self.make_bzrdir(relpath)
-        bzrdir._find_or_create_repository(True)
-        return bzrdir.create_branch()
+        controldir = self.make_controldir(relpath)
+        controldir._find_or_create_repository(True)
+        return controldir.create_branch()
 
     def make_tworev_branch(self):
         self.repos_url = self.make_repository("a")

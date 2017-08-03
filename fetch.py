@@ -54,7 +54,7 @@ from breezy.errors import (
     NoSuchId,
     NoSuchRevision,
     )
-from breezy.inventory import (
+from breezy.bzr.inventory import (
     InventoryDirectory,
     InventoryFile,
     InventoryLink,
@@ -62,11 +62,11 @@ from breezy.inventory import (
 from breezy.revision import (
     NULL_REVISION,
     )
-from breezy.revisiontree import InventoryRevisionTree
+from breezy.bzr.inventorytree import InventoryRevisionTree
 from breezy.repository import (
     InterRepository,
     )
-from breezy.versionedfile import (
+from breezy.bzr.versionedfile import (
     ChunkedContentFactory,
     FulltextContentFactory,
     )

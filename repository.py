@@ -32,7 +32,7 @@ from breezy.decorators import only_raises
 from breezy.foreign import (
     ForeignRepository,
     )
-from breezy.inventory import (
+from breezy.bzr.inventory import (
     Inventory,
     )
 from breezy.repository import (
@@ -40,7 +40,7 @@ from breezy.repository import (
     RepositoryFormat,
     needs_read_lock,
     )
-from breezy.revisiontree import InventoryRevisionTree
+from breezy.bzr.inventorytree import InventoryRevisionTree
 from breezy.revision import (
     NULL_REVISION,
     ensure_null,

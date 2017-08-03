@@ -39,9 +39,10 @@ from breezy.branch import (
     GenericInterBranch,
     InterBranch,
     PullResult,
+    UnstackableBranchFormat,
     )
-from breezy.bzrdir import (
-    BzrDir,
+from breezy.controldir import (
+    ControlDir,
     format_registry,
     )
 from breezy.decorators import (
@@ -53,7 +54,6 @@ from breezy.errors import (
     InaccessibleParent,
     IncompatibleFormat,
     InvalidRevisionId,
-    InvalidURL,
     LocalRequiresBoundBranch,
     LossyPushToSameVCS,
     NoSuchRevision,
@@ -61,7 +61,6 @@ from breezy.errors import (
     PathNotChild,
     ReadOnlyError,
     TokenLockingNotSupported,
-    UnstackableBranchFormat,
     )
 from breezy.foreign import (
     ForeignBranch,
@@ -358,7 +357,7 @@ class SvnBranch(ForeignBranch):
         :param hardlink: Whether to hardlink
         :return: WorkingTree object of checkout.
         """
-        checkout_branch = BzrDir.create_branch_convenience(
+        checkout_branch = ControlDir.create_branch_convenience(
             to_location, force_new_tree=False,
             format=self._get_checkout_format(lightweight=False))
         checkout = checkout_branch.bzrdir
@@ -983,7 +982,7 @@ class InterFromSvnBranch(GenericInterBranch):
             try:
                 relpath = self.source.user_transport.relpath(normalized)
                 source_is_master = (relpath == '')
-            except (PathNotChild, InvalidURL):
+            except (PathNotChild, urlutils.InvalidURL):
                 source_is_master = False
         if not local and bound_location and not source_is_master:
             # not pulling from master, so we need to update master.

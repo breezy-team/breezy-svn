@@ -27,8 +27,8 @@ from subvertpy import NODE_DIR, NODE_FILE
 from breezy.branch import (
     Branch,
     )
-from breezy.bzrdir import (
-    BzrDir,
+from breezy.controldir import (
+    ControlDir,
     )
 from breezy.osutils import (
     sha_string,
@@ -110,7 +110,7 @@ class TestFetchWorks(FetchTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(1))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -168,7 +168,7 @@ class TestFetchWorks(FetchTestCase):
         self.client_commit("dc", "strange revision") # 6
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -184,7 +184,7 @@ class TestFetchWorks(FetchTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.assertRaises(InvalidFileName, self.copy_content, oldrepos,
                 newrepos)
@@ -193,7 +193,7 @@ class TestFetchWorks(FetchTestCase):
         repos_url = self.make_svn_repository('d')
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(1))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos, NULL_REVISION)
 
@@ -216,7 +216,7 @@ class TestFetchWorks(FetchTestCase):
         self.client_commit("dc", "My Message")
         self.client_update("dc")
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -230,7 +230,7 @@ class TestFetchWorks(FetchTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -243,7 +243,7 @@ class TestFetchWorks(FetchTestCase):
         self.client_set_revprop(repos_url, 1, "bzr:gpg-signature", "SIGNATURE")
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         self.assertEquals("SIGNATURE", newrepos.get_signature_text(oldrepos.generate_revision_id(1, "trunk", oldrepos.get_mapping())))
@@ -269,7 +269,7 @@ class TestFetchWorks(FetchTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         rf = FetchRevisionFinder(oldrepos, newrepos)
         rm = oldrepos._revmeta_provider.get_revision("trunk", 3)
@@ -288,7 +288,7 @@ class TestFetchWorks(FetchTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -307,7 +307,7 @@ class TestFetchWorks(FetchTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -321,7 +321,7 @@ class TestFetchWorks(FetchTestCase):
         dc.close()
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -340,7 +340,7 @@ class TestFetchWorks(FetchTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -352,7 +352,7 @@ class TestFetchWorks(FetchTestCase):
         foo.add_file("foo/bla").modify("data")
         dc.close()
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -380,7 +380,7 @@ class TestFetchWorks(FetchTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -407,7 +407,7 @@ class TestFetchWorks(FetchTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -445,8 +445,8 @@ class TestFetchWorks(FetchTestCase):
         dc.close()
 
         oldrepos = Repository.open(repos_url)
-        to_bzrdir = BzrDir.create("f")
-        repo = to_bzrdir.create_repository()
+        to_controldir = ControlDir.create("f")
+        repo = to_controldir.create_repository()
         revfinder = FetchRevisionFinder(oldrepos, repo)
         new_mapping = oldrepos.get_mapping()
         revfinder.find_all(new_mapping, TrunkLayout())
@@ -476,8 +476,8 @@ class TestFetchWorks(FetchTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        to_bzrdir = BzrDir.create("f")
-        repo = to_bzrdir.create_repository()
+        to_controldir = ControlDir.create("f")
+        repo = to_controldir.create_repository()
         last_rev = oldrepos.generate_revision_id(3, "branch2",
             oldrepos.get_mapping())
         self.fetch(oldrepos, repo, last_rev)
@@ -500,7 +500,7 @@ class TestFetchWorks(FetchTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -536,7 +536,7 @@ class TestFetchWorks(FetchTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -622,7 +622,7 @@ Node-action: delete
         load_dumpfile("dumpfile", "old")
         oldrepos = Repository.open("old")
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -764,7 +764,7 @@ Node-copyfrom-path: u
         load_dumpfile("dumpfile", "old")
         oldrepos = Repository.open("old")
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -911,7 +911,7 @@ Node-copyfrom-path: bla
         load_dumpfile("dumpfile", "old")
         oldrepos = Repository.open("old")
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -1092,7 +1092,7 @@ Node-copyfrom-path: bla
         load_dumpfile("dumpfile", "old")
         oldrepos = Repository.open("old")
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -1234,7 +1234,7 @@ Node-copyfrom-path: x
         load_dumpfile("dumpfile", "old")
         oldrepos = Repository.open("old")
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -1398,7 +1398,7 @@ Node-copyfrom-path: x
         load_dumpfile("dumpfile", "old")
         oldrepos = Repository.open("old")
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -1450,7 +1450,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         lastrevid = oldrepos.generate_revision_id(4, "branches/1.0", oldrepos.get_mapping())
@@ -1473,7 +1473,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -1498,7 +1498,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -1521,7 +1521,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -1546,7 +1546,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -1576,7 +1576,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -1676,8 +1676,8 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir1 = BzrDir.create("f")
-        dir2 = BzrDir.create("g")
+        dir1 = ControlDir.create("f")
+        dir2 = ControlDir.create("g")
         newrepos1 = dir1.create_repository()
         newrepos2 = dir2.create_repository()
         self.copy_content(oldrepos, newrepos1)
@@ -1703,7 +1703,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -1729,7 +1729,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -1753,7 +1753,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -1785,7 +1785,7 @@ Node-copyfrom-path: x
         dc.close()
 
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         try:
             self.copy_content(oldrepos, newrepos)
@@ -1812,7 +1812,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -1838,7 +1838,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -1851,7 +1851,7 @@ Node-copyfrom-path: x
         # Now test the same thing again as two separate copy_content calls, to
         # check it also works if the symlink's "text" is not in the fetch
         # text_cache.
-        dir2 = BzrDir.create("f2")
+        dir2 = ControlDir.create("f2")
         newrepos2 = dir2.create_repository()
         self.copy_content(oldrepos, newrepos2,
               oldrepos.generate_revision_id(1, "", mapping))
@@ -1878,7 +1878,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -1904,7 +1904,7 @@ Node-copyfrom-path: x
         dc.open_file("mylink").change_prop("svn:special", "*")
         dc.close()
         oldrepos = Repository.open(repos_url)
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.set_layout(RootLayout())
         self.copy_content(oldrepos, newrepos)
@@ -1932,7 +1932,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -1971,7 +1971,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -2001,7 +2001,7 @@ Node-copyfrom-path: x
                              "%s:/branches/foo:2\n" % oldrepos.uuid)
         dc.close()
 
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -2047,7 +2047,7 @@ Node-copyfrom-path: x
         repos_url = self.build_intertwined()
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos, "revid4")
         from breezy.plugins.svn.mapping3.base import BzrSvnMappingv3
@@ -2061,7 +2061,7 @@ Node-copyfrom-path: x
         repos_url = self.build_intertwined()
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         from breezy.plugins.svn.mapping4 import BzrSvnMappingv4
         revid5 = oldrepos.generate_revision_id(5, "trunk", BzrSvnMappingv4())
@@ -2094,7 +2094,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -2130,7 +2130,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
@@ -2174,7 +2174,7 @@ Node-copyfrom-path: x
             'trunk/adir/foofile': (u'A', None, -1, NODE_FILE)},
               oldrepos._revmeta_provider.get_revision("trunk", 3).metarev.paths)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -2211,7 +2211,7 @@ Node-copyfrom-path: x
             'trunk/adir/foofile': (u'A', None, -1, NODE_FILE)},
               oldrepos._revmeta_provider.get_revision("trunk", 3).metarev.paths)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
 
@@ -2248,7 +2248,7 @@ Node-copyfrom-path: x
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         mapping = oldrepos.get_mapping()
         copyrev = oldrepos.generate_revision_id(2, "branches/abranch", mapping)
@@ -2291,7 +2291,7 @@ Node-copyfrom-path: x
         myproj.delete("oldlayout/myproj/trunk")
         dc.close()
 
-        oldbranch = BzrDir.open(repos_url+"/trunk/myproj")
+        oldbranch = ControlDir.open(repos_url+"/trunk/myproj")
         oldbranch.sprout("dc")
 
 

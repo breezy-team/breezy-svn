@@ -25,7 +25,6 @@ import urlparse
 from breezy import urlutils
 from breezy.errors import (
     FileExists,
-    InvalidURL,
     NoSuchFile,
     TransportNotPossible,
     )
@@ -43,7 +42,7 @@ from breezy.plugins.svn.transport import (
 class SvnRaTest(SubversionTestCase):
 
     def test_open_nonexisting(self):
-        self.assertRaises(InvalidURL, SvnRaTransport,
+        self.assertRaises(urlutils.InvalidURL, SvnRaTransport,
                           "svn+nonexisting://foo/bar")
 
     def test_create(self):

@@ -75,7 +75,7 @@ from breezy.errors import (
     UnsupportedOperation,
     UninitializableFormat,
     )
-from breezy.inventory import (
+from breezy.bzr.inventory import (
     InventoryDirectory,
     InventoryFile,
     InventoryLink,
@@ -93,9 +93,11 @@ from breezy.trace import (
     note,
     )
 from breezy.workingtree import (
-    MERGE_MODIFIED_HEADER_1,
     WorkingTree,
     WorkingTreeFormat,
+    )
+from breezy.bzr.workingtree import (
+    MERGE_MODIFIED_HEADER_1,
     )
 
 from breezy.plugins.svn import (
@@ -273,7 +275,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self.entry = entry
         self.basedir = local_path
         self._format = format
-        self.bzrdir = bzrdir
+        self.controldir = bzrdir
         self._branch = None
         self._cached_base_tree = None
         self._detect_case_handling()
@@ -287,7 +289,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._transport = control_transport
         cache_filename = control_transport.local_abspath('stat-cache')
         self._hashcache = hashcache.HashCache(self.basedir, cache_filename,
-            self.bzrdir._get_file_mode(),
+            self.controldir._get_file_mode(),
             self._content_filter_stack_provider())
         self._hashcache.read()
         self._lock_count = 0
@@ -318,7 +320,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def _detect_case_handling(self):
         try:
-            self.bzrdir.transport.stat("FoRmAt")
+            self.controldir.transport.stat("FoRmAt")
         except NoSuchFile:
             self.case_sensitive = True
         else:
@@ -355,7 +357,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def get_branch_path(self, revnum=None):
         if revnum is None:
             try:
-                return self.bzrdir.get_branch_path()
+                return self.controldir.get_branch_path()
             except RepositoryRootUnknown:
                 pass
         return self.branch.get_branch_path(revnum)
@@ -363,7 +365,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     @property
     def branch(self):
         if self._branch is None:
-            self._branch = self.bzrdir.open_branch(revnum=self.base_revnum)
+            self._branch = self.controldir.open_branch(revnum=self.base_revnum)
         return self._branch
 
     def __repr__(self):
@@ -791,7 +793,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 # e.g. directory deleted
                 continue
             for subf in os.listdir(dirabs):
-                if self.bzrdir.is_control_filename(subf):
+                if self.controldir.is_control_filename(subf):
                     continue
                 try:
                     (subf_norm, can_access) = osutils.normalized_filename(subf)
@@ -870,7 +872,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         if self.is_locked():
             self._cached_merges = merges
         self._transport.put_bytes('pending-merges', '\n'.join(merges),
-            mode=self.bzrdir._get_file_mode())
+            mode=self.controldir._get_file_mode())
         adm = self._get_wc(write_lock=True)
         try:
             old_svk_merges = svk.parse_svk_features(self._get_svk_merges(
@@ -1421,7 +1423,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     hash=hash)
         my_file = _mod_rio.rio_file(iter_stanzas(), MERGE_MODIFIED_HEADER_1)
         self._transport.put_file('merge-hashes', my_file,
-            mode=self.bzrdir._get_file_mode())
+            mode=self.controldir._get_file_mode())
 
     def update_basis_by_delta(self, new_revid, delta):
         """Update the parents of this tree after a commit.

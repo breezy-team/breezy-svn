@@ -34,7 +34,7 @@ from breezy import (
     urlutils,
     )
 from breezy.branch import Branch
-from breezy.inventory import (
+from breezy.bzr.inventory import (
     Inventory,
     InventoryDirectory,
     TreeReference,

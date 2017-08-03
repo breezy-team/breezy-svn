@@ -17,8 +17,8 @@
 """Checkout tests."""
 
 from breezy.branch import Branch
-from breezy.bzrdir import (
-    BzrDir,
+from breezy.controldir import (
+    ControlDir,
     format_registry,
     )
 from breezy.errors import (
@@ -58,7 +58,7 @@ class TestCheckoutFormat(TestCase):
 
     def test_get_converter(self):
         convert = self.format.get_converter(
-            format_registry.make_bzrdir('default'))
+            format_registry.make_controldir('default'))
 
     def test_initialize(self):
         self.assertRaises(UninitializableFormat,
@@ -69,38 +69,38 @@ class TestCheckout(SubversionTestCase):
 
     def test_not_for_writing(self):
         self.make_svn_branch_and_tree("d", "dc")
-        x = BzrDir.create_branch_convenience("dc/foo")
+        x = ControlDir.create_branch_convenience("dc/foo")
         self.assertFalse(hasattr(x.repository, "uuid"))
 
     def test_open_repository(self):
         self.make_svn_branch_and_tree("d", "dc")
-        x = BzrDir.open("dc")
+        x = ControlDir.open("dc")
         self.assertRaises(NoRepositoryPresent, x.open_repository)
 
     def test_create_repository(self):
         self.make_svn_branch_and_tree("d", "dc")
-        x = BzrDir.open("dc")
+        x = ControlDir.open("dc")
         self.assertRaises(UninitializableFormat, x.create_repository)
 
     def test_find_repository(self):
         self.make_svn_branch_and_tree("d", "dc")
-        x = BzrDir.open("dc")
+        x = ControlDir.open("dc")
         self.assertRaises(NoRepositoryPresent, x.find_repository)
 
     def test__find_repository(self):
         self.make_svn_branch_and_tree("d", "dc")
-        x = BzrDir.open("dc")
+        x = ControlDir.open("dc")
         self.assertTrue(hasattr(x._find_repository(), "uuid"))
 
     def test_needs_format_conversion_default(self):
         self.make_svn_branch_and_tree("d", "dc")
-        x = BzrDir.open("dc")
+        x = ControlDir.open("dc")
         self.assertTrue(x.needs_format_conversion(
-            format_registry.make_bzrdir('default')))
+            format_registry.make_controldir('default')))
 
     def test_needs_format_conversion_self(self):
         self.make_svn_branch_and_tree("d", "dc")
-        x = BzrDir.open("dc")
+        x = ControlDir.open("dc")
         self.assertFalse(x.needs_format_conversion(SvnWorkingTreeDirFormat()),
                 "%r vs %r" % (x._format.__class__, SvnWorkingTreeDirFormat))
 
@@ -118,5 +118,5 @@ class TestCheckout(SubversionTestCase):
         dc.close()
 
         self.client_update("dc")
-        x = BzrDir.open("dc/trunk")
+        x = ControlDir.open("dc/trunk")
         self.assertEquals(repos_url+"/trunk", x.open_branch().base)

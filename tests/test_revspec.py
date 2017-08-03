@@ -19,7 +19,7 @@ Tests for revision specificiers.
 
 from breezy import version_info as bzrlib_version
 from breezy.branch import Branch
-from breezy.bzrdir import BzrDir
+from breezy.controldir import ControlDir
 from breezy.errors import (
     BzrError,
     InvalidRevisionSpec,
@@ -96,5 +96,5 @@ class TestRevSpecsBySubversion(SubversionTestCase):
 
     def test_non_svn_branch(self):
         revspec = RevisionSpec.from_string("svn:0")
-        branch = BzrDir.create_standalone_workingtree("a").branch
+        branch = ControlDir.create_standalone_workingtree("a").branch
         self.assertRaises(BzrError, revspec._match_on, branch, None)

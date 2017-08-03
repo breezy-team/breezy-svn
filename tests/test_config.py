@@ -16,7 +16,7 @@
 
 """Config tests."""
 
-from breezy import bzrdir
+from breezy import controldir
 from breezy.branch import Branch
 from breezy.repository import Repository
 from breezy.tests import test_config
@@ -40,8 +40,8 @@ def build_svn_branch_stack(test):
     if getattr(test, 'backing_branch', None) is None:
         # First call, let's build the branch on disk
         repo = test.make_repository('branch', format='subversion')
-        test.backing_branch = bzrdir.BzrDir.open(repo.base
-                                                 ).create_branch(lossy=False)
+        test.backing_branch = controldir.ControlDir.open(
+                repo.base).create_branch(lossy=False)
     b = Branch.open('branch')
     return SvnBranchStack(b.base, b.repository.uuid)
 

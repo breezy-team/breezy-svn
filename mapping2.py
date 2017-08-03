@@ -20,7 +20,7 @@ from __future__ import absolute_import
 from breezy.errors import (
     InvalidRevisionId,
     )
-from breezy.inventory import (
+from breezy.bzr.inventory import (
     ROOT_ID,
     )
 

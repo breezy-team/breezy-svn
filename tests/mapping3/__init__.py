@@ -17,7 +17,7 @@ import subvertpy
 from subvertpy import ra
 
 from breezy.branch import Branch
-from breezy.bzrdir import BzrDir
+from breezy.controldir import ControlDir
 from breezy.errors import (
     AppendRevisionsOnlyViolation,
     NoSuchRevision,
@@ -329,7 +329,7 @@ class RepositoryTests(SubversionTestCase):
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
@@ -344,7 +344,7 @@ class RepositoryTests(SubversionTestCase):
 
         oldrepos = Repository.open(self.repos_url)
         oldrepos.set_layout(RootLayout())
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
@@ -359,7 +359,7 @@ class RepositoryTests(SubversionTestCase):
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         
@@ -385,7 +385,7 @@ class RepositoryTests(SubversionTestCase):
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
@@ -411,7 +411,7 @@ class RepositoryTests(SubversionTestCase):
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
@@ -520,7 +520,7 @@ class RepositoryTests(SubversionTestCase):
         debug_flags.add("commit")
         debug_flags.add("fetch")
         repos_url = self.make_svn_repository("a")
-        bzrwt = BzrDir.create_standalone_workingtree("c")
+        bzrwt = ControlDir.create_standalone_workingtree("c")
         self.build_tree({'c/registry/generic.c': "Tour"})
         bzrwt.add("registry")
         bzrwt.add("registry/generic.c")
@@ -528,7 +528,7 @@ class RepositoryTests(SubversionTestCase):
                               rev_id="initialrevid")
 
         # Push first branch into Subversion
-        newdir = BzrDir.open(repos_url+"/trunk")
+        newdir = ControlDir.open(repos_url+"/trunk")
         config = BranchConfig(repos_url+"/trunk", newdir.find_repository().uuid)
         config.set_user_option("allow_metadata_in_file_properties", "True")
 

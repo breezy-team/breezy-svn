@@ -23,8 +23,8 @@ from subvertpy import (
 import subvertpy.tests
 
 from breezy import osutils
-from breezy.bzrdir import (
-    BzrDir,
+from breezy.controldir import (
+    ControlDir,
     )
 from breezy.tests import (
     TestCaseInTempDir,
@@ -152,7 +152,7 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
 
     def make_svn_branch(self, relpath, lossy=False):
         repos_url = self.make_repository(relpath)
-        return BzrDir.open(repos_url).create_branch(lossy=lossy)
+        return ControlDir.open(repos_url).create_branch(lossy=lossy)
 
     def make_svn_repository(self, relpath, allow_revprop_changes=True):
         """Create an SVN repository.

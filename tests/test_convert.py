@@ -22,8 +22,8 @@ from subvertpy import repos
 from breezy.branch import (
     Branch,
     )
-from breezy.bzrdir import (
-    BzrDir,
+from breezy.controldir import (
+    ControlDir,
     format_registry,
     )
 from breezy.errors import (
@@ -208,7 +208,7 @@ class TestConversion(SubversionTestCase):
         self.assertFalse(os.path.exists("e/branches/anotherbranch"))
 
     def test_shared_import_continue(self):
-        dir = BzrDir.create("e")
+        dir = ControlDir.create("e")
         dir.create_repository(shared=True)
 
         convert_repository(Repository.open(self.repos_url), "e",
@@ -254,14 +254,14 @@ class TestConversion(SubversionTestCase):
                 TrunkLayout(0), working_trees=True)
 
     def test_shared_import_rootlayout_empty(self):
-        dir = BzrDir.create("e")
+        dir = ControlDir.create("e")
         dir.create_repository(shared=True)
 
         convert_repository(Repository.open(self.repos_url), "e",
                 RootLayout(), create_shared_repo=True)
 
     def test_shared_import_with_wt(self):
-        dir = BzrDir.create("e")
+        dir = ControlDir.create("e")
         dir.create_repository(shared=True)
 
         convert_repository(Repository.open(self.repos_url), "e",
@@ -272,7 +272,7 @@ class TestConversion(SubversionTestCase):
                         self.test_dir, "e", "trunk", "file")))
 
     def test_shared_import_without_wt(self):
-        dir = BzrDir.create("e")
+        dir = ControlDir.create("e")
         dir.create_repository(shared=True)
 
         convert_repository(Repository.open(self.repos_url), "e",
@@ -283,7 +283,7 @@ class TestConversion(SubversionTestCase):
                         self.test_dir, "e", "trunk", "file")))
 
     def test_shared_import_old_repos_fails(self):
-        dir = BzrDir.create("e", format=format_registry.make_bzrdir('knit'))
+        dir = ControlDir.create("e", format=format_registry.make_controldir('knit'))
         dir.create_repository(shared=True)
 
         self.assertRaises(IncompatibleRepositories,

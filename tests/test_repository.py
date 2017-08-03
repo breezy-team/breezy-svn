@@ -22,8 +22,8 @@
 from breezy.branch import (
     Branch,
     )
-from breezy.bzrdir import (
-    BzrDir,
+from breezy.controldir import (
+    ControlDir,
     format_registry,
     )
 from breezy.config import GlobalConfig
@@ -106,10 +106,10 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
     def test_format(self):
         """ Test repository format is correct """
         self.make_checkout(self.repos_url, 'ac')
-        bzrdir = BzrDir.open("ac")
+        controldir = ControlDir.open("ac")
         self.assertRaises(NotImplementedError,
-                bzrdir._format.get_format_string)
-        self.assertEqual(bzrdir._format.get_format_description(),
+                controldir._format.get_format_string)
+        self.assertEqual(controldir._format.get_format_description(),
                 "Subversion Local Checkout")
 
     def test_make_working_trees(self):
@@ -148,18 +148,18 @@ class SvnRepositoryFormatTests(TestCase):
     def test_conversion_target_incompatible(self):
         self.assertRaises(BadConversionTarget,
                           self.format.check_conversion_target,
-                          format_registry.make_bzrdir('weave').repository_format)
+                          format_registry.make_controldir('weave').repository_format)
 
     def test_conversion_target_compatible(self):
         self.format.check_conversion_target(
-          format_registry.make_bzrdir('rich-root').repository_format)
+          format_registry.make_controldir('rich-root').repository_format)
 
 
 class ForeignTestsRepositoryFactory(object):
 
     def make_repository(self, transport):
         subvertpy.repos.create(transport.local_abspath("."))
-        return BzrDir.open_from_transport(transport).open_repository()
+        return ControlDir.open_from_transport(transport).open_repository()
 
 
 class GetCommitBuilderTests(SubversionTestCase):

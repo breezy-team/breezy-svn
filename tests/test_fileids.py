@@ -16,7 +16,7 @@
 
 """File id tests."""
 
-from breezy.bzrdir import BzrDir
+from breezy.controldir import ControlDir
 from breezy.errors import RevisionNotPresent
 from breezy.repository import Repository
 from breezy.trace import mutter
@@ -104,8 +104,8 @@ class TestComplexFileids(SubversionTestCase):
         dc.add_file("bar", "foo", 1).modify("data2")
         dc.close()
 
-        bzrdir = BzrDir.open(repos_url)
-        repository = bzrdir.find_repository()
+        controldir = ControlDir.open(repos_url)
+        repository = controldir.find_repository()
 
         mapping = repository.get_mapping()
 
@@ -129,8 +129,8 @@ class TestComplexFileids(SubversionTestCase):
         dc.delete("foo")
         dc.close()
 
-        bzrdir = BzrDir.open(repos_url)
-        repository = bzrdir.find_repository()
+        controldir = ControlDir.open(repos_url)
+        repository = controldir.find_repository()
         mapping = repository.get_mapping()
 
         tree1 = repository.revision_tree(
@@ -152,8 +152,8 @@ class TestComplexFileids(SubversionTestCase):
         dc.add_file("foo").modify("data")
         dc.close()
 
-        bzrdir = BzrDir.open(repos_url)
-        repository = bzrdir.find_repository()
+        controldir = ControlDir.open(repos_url)
+        repository = controldir.find_repository()
 
         mapping = repository.get_mapping()
 
@@ -178,8 +178,8 @@ class TestComplexFileids(SubversionTestCase):
         branches.add_dir("branches/mybranch", "trunk", 1)
         dc.close()
 
-        bzrdir = BzrDir.open(repos_url + "/branches/mybranch")
-        repository = bzrdir.find_repository()
+        controldir = ControlDir.open(repos_url + "/branches/mybranch")
+        repository = controldir.find_repository()
 
         mapping = repository.get_mapping()
 

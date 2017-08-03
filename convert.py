@@ -28,7 +28,6 @@ from subvertpy import (
     )
 
 from breezy import (
-    bzrdir,
     controldir,
     osutils,
     ui,
@@ -69,7 +68,7 @@ def get_latest_svn_import_revision(repo, uuid):
     :param uuid: Subversion repository UUID.
     """
     try:
-        text = repo.bzrdir.transport.get_bytes(LATEST_IMPORT_REVISION_FILENAME)
+        text = repo.controldir.transport.get_bytes(LATEST_IMPORT_REVISION_FILENAME)
     except NoSuchFile:
         return 0
     (text_uuid, revnum) = text.strip().split(" ")
@@ -85,7 +84,7 @@ def put_latest_svn_import_revision(repo, uuid, revnum):
     :param uuid: Subversion repository UUID.
     :param revnum: A revision number.
     """
-    repo.bzrdir.transport.put_bytes(LATEST_IMPORT_REVISION_FILENAME,
+    repo.controldir.transport.put_bytes(LATEST_IMPORT_REVISION_FILENAME,
                              "%s %d\n" % (uuid, revnum))
 
 
@@ -167,7 +166,7 @@ class RepositoryConverter(object):
         """
         assert not all or create_shared_repo
         if format is None:
-            self._format = controldir.format_registry.make_bzrdir('default')
+            self._format = controldir.format_registry.make_controldir('default')
         else:
             self._format = format
 
@@ -183,7 +182,7 @@ class RepositoryConverter(object):
             layout = source_repos.get_layout()
 
         try:
-            target_dir = bzrdir.BzrDir.open_from_transport(self.to_transport)
+            target_dir = controldir.ControlDir.open_from_transport(self.to_transport)
         except NotBranchError:
             target_dir = None
         else:
@@ -365,8 +364,8 @@ class RepositoryConverter(object):
                             source_branch.get_branch_path())
                         continue
                     raise
-                if working_trees and not target_branch.bzrdir.has_workingtree():
-                    target_branch.bzrdir.create_workingtree()
+                if working_trees and not target_branch.controldir.has_workingtree():
+                    target_branch.controldir.create_workingtree()
         finally:
             pb.finished()
 
@@ -391,7 +390,7 @@ class RepositoryConverter(object):
             osutils.rmtree(fullpath)
 
     def get_dir(self, path, prefix=None):
-        """Open BzrDir for path, optionally creating it."""
+        """Open ControlDir for path, optionally creating it."""
         if prefix is not None:
             assert path.startswith(prefix)
             path = path[len(prefix):].strip("/")
@@ -401,7 +400,7 @@ class RepositoryConverter(object):
             return self.dirs[path]
         nt = self.to_transport.clone(path)
         try:
-            self.dirs[path] = bzrdir.BzrDir.open_from_transport(nt)
+            self.dirs[path] = controldir.ControlDir.open_from_transport(nt)
         except NotBranchError:
             nt.create_prefix()
             self.dirs[path] = self._format.initialize_on_transport(nt)

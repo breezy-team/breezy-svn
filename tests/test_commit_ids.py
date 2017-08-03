@@ -22,7 +22,7 @@ import os
 import shutil
 
 from breezy import osutils
-from breezy.bzrdir import BzrDir
+from breezy.controldir import ControlDir
 from breezy.conflicts import ConflictList
 from breezy.tests import (
     TestCaseWithTransport,

@@ -48,7 +48,7 @@ from breezy.errors import (
     NoSuchRevision,
     RootMissing,
     )
-from breezy.inventory import (
+from breezy.bzr.inventory import (
     entry_factory,
     )
 from breezy.repository import (

@@ -27,7 +27,7 @@ from breezy import (
 from breezy.errors import (
     RevisionNotPresent,
     )
-from breezy.knit import (
+from breezy.bzr.knit import (
     make_file_factory,
     )
 from breezy.revision import (
@@ -36,7 +36,7 @@ from breezy.revision import (
 from breezy.trace import (
     mutter,
     )
-from breezy.versionedfile import (
+from breezy.bzr.versionedfile import (
     ConstantMapper,
     )
 
