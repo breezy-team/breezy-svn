@@ -17,7 +17,7 @@
 
 DEBUGGER ?= 
 BRZ ?= $(shell which brz)
-BRZ_OPTIONS ?= 
+BRZ_OPTIONS ?= -Derror
 PYTHON ?= $(shell which python)
 SETUP ?= $(PYTHON) ./setup.py
 PYDOCTOR ?= pydoctor
