@@ -19,7 +19,7 @@ from __future__ import absolute_import
 
 bzr_plugin_name = "svn"
 
-subvertpy_minimum_version = (0, 8, 8)
+subvertpy_minimum_version = (0, 11, 0)
 
 # versions ending in 'exp' mean experimental mappings
 # versions ending in 'dev' mean development version

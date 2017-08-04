@@ -38,7 +38,7 @@ from subvertpy.wc import (
     SCHEDULE_NORMAL,
     SCHEDULE_REPLACE,
     CommittedQueue,
-    WorkingCopy,
+    Adm,
     cleanup,
     get_adm_dir,
     is_adm_dir,
@@ -515,7 +515,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def _get_wc(self, relpath=u"", write_lock=False, depth=0, base=None):
         """Open a working copy handle."""
         assert isinstance(relpath, unicode)
-        return WorkingCopy(base,
+        return Adm(base,
             self.abspath(relpath).rstrip("/").encode("utf-8"),
             write_lock, depth)
 
@@ -1647,7 +1647,7 @@ class SvnCheckout(ControlDir):
         encoded_path = self.local_path.encode("utf-8")
         # Open related remote repository + branch
         try:
-            wc = WorkingCopy(None, encoded_path)
+            wc = Adm(None, encoded_path)
         except subvertpy.SubversionException, (msg, num):
             if num == ERR_WC_UNSUPPORTED_FORMAT:
                 raise UnsupportedFormatError(msg, kind='workingtree')

@@ -28,6 +28,9 @@ from subvertpy import (
     )
 from subvertpy.client import get_config
 from subvertpy.ra import RemoteAccess
+from subvertpy.subr import (
+    uri_canonicalize as svn_uri_canonicalize,
+    )
 import sys
 import urlparse
 urlparse.uses_netloc.extend(['svn+http', 'svn+https'])
@@ -170,7 +173,7 @@ def bzr_to_svn_url(url):
         url.startswith("svn+https://")):
         url = url[len("svn+"):] # Skip svn+
 
-    url = _url_unescape_uri(url)
+    url = svn_uri_canonicalize(url)
 
     # The SVN libraries don't like trailing slashes...
     url = url.rstrip('/')
@@ -234,7 +237,6 @@ def Connection(url, auth=None, config=None, readonly=False):
         progress_cb = SubversionProgressReporter(url).update
     else:
         progress_cb = None
-    assert type(url) == str, "URL not string: %r" % url
     try:
         ret = RemoteAccess(_url_escape_uri(url), auth=auth,
                 client_string_func=breezy.plugins.svn.get_client_string,
@@ -648,7 +650,7 @@ class SvnRaTransport(Transport):
         return self.PhonyLock() # FIXME
 
     def clone_root(self):
-        url = self.get_repos_root()
+        url = str(self.get_repos_root())
         if self.is_readonly():
             url = "readonly+" + url
         return SvnRaTransport(url, self)

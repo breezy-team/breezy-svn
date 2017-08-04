@@ -295,7 +295,7 @@ class TdbRepositoryCache(RepositoryCache):
     def __init__(self, uuid):
         super(TdbRepositoryCache, self).__init__(uuid)
         cache_file = os.path.join(self.create_cache_dir(), 'cache.tdb')
-        assert isinstance(cache_file, str)
+        assert isinstance(cache_file, str), "expected str, got: %r" % cache_file
         db = tdb_open(cache_file, TDB_HASH_SIZE, tdb.DEFAULT,
                 os.O_RDWR|os.O_CREAT)
         try:

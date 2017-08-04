@@ -249,7 +249,7 @@ class CommitIdTesting:
         self.commit_tree(tree, "reva")
 
         os.mkdir('feature')
-        other_dir = tree.bzrdir.sprout('feature')
+        other_dir = tree.controldir.sprout('feature')
 
         self.build_tree_contents([
             ('main/bfile', 'contents-a'),
@@ -365,7 +365,7 @@ class SvnFetchCommitIdTesting(SubversionTestCase,CommitIdTesting):
         revid = tree.commit("This is a message", rev_id=revision_id)
         tempdir = osutils.mkdtemp(prefix='testbzrsvn-', suffix='.tmp', dir=self.test_dir)
         self.addCleanup(shutil.rmtree, tempdir)
-        to_branch = BzrDir.create_branch_and_repo(os.path.join(tempdir, 'branch'))
+        to_branch = ControlDir.create_branch_and_repo(os.path.join(tempdir, 'branch'))
         tree.branch.push(to_branch)
         return to_branch.basis_tree()
 

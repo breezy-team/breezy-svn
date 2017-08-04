@@ -114,7 +114,7 @@ class RepositoryCache(object):
     def create_cache_dir(self):
         cache_dir = create_cache_dir()
         assert isinstance(cache_dir, str)
-        dir = os.path.join(cache_dir, self.uuid)
+        dir = os.path.join(cache_dir, str(self.uuid))
         if not os.path.exists(dir):
             trace.note("Initialising Subversion metadata cache in %s.",
                        dir.decode(osutils._fs_enc))

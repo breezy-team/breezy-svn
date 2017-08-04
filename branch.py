@@ -219,7 +219,7 @@ class SvnBranch(ForeignBranch):
         :param _skip_check: If True, don't check if the branch actually exists.
         """
         self.repository = repository
-        self.bzrdir = controldir
+        self.controldir = controldir
         self._format = SvnBranchFormat()
         self.layout = self.repository.get_layout()
         self._branch_path = branch_path.strip("/")
@@ -360,7 +360,7 @@ class SvnBranch(ForeignBranch):
         checkout_branch = ControlDir.create_branch_convenience(
             to_location, force_new_tree=False,
             format=self._get_checkout_format(lightweight=False))
-        checkout = checkout_branch.bzrdir
+        checkout = checkout_branch.controldir
         checkout_branch.bind(self)
         # pull up to the specified revision_id to set the initial
         # branch tip correctly, and seed it with history.
@@ -405,7 +405,7 @@ class SvnBranch(ForeignBranch):
         svn_url, readonly = bzr_to_svn_url(urlutils.join(self.repository.base, bp))
         wc.ensure_adm(to_path.encode("utf-8"), uuid,
                       svn_url, bzr_to_svn_url(self.repository.base)[0], revnum)
-        adm = wc.WorkingCopy(None, to_path.encode("utf-8"), write_lock=True)
+        adm = wc.Adm(None, to_path.encode("utf-8"), write_lock=True)
         try:
             conn = self.repository.transport.connections.get(svn_url)
             try:
@@ -424,7 +424,7 @@ class SvnBranch(ForeignBranch):
         if lightweight:
             return SvnWorkingTreeDirFormat()
         else:
-            return format_registry.make_bzrdir('default')
+            return format_registry.make_controldir('default')
 
     def create_checkout(self, to_location, revision_id=None, lightweight=False,
                         accelerator_tree=None, hardlink=False):
@@ -751,12 +751,12 @@ class SvnBranchFormat(BranchFormat):
     def network_name(self):
         return "subversion"
 
-    def __get_matchingbzrdir(self):
-        """See BranchFormat.__get_matchingbzrdir()."""
+    def __get_matchingcontroldir(self):
+        """See BranchFormat.__get_matchingcontroldir()."""
         from breezy.plugins.svn.remote import SvnRemoteFormat
         return SvnRemoteFormat()
 
-    _matchingbzrdir = property(__get_matchingbzrdir)
+    _matchingcontroldir = property(__get_matchingcontroldir)
 
     def get_format_description(self):
         """See BranchFormat.get_format_description."""
@@ -766,13 +766,13 @@ class SvnBranchFormat(BranchFormat):
         from breezy.plugins.svn.tests.test_branch import ForeignTestsBranchFactory
         return ForeignTestsBranchFactory()
 
-    def initialize(self, to_bzrdir, name=None, repository=None,
+    def initialize(self, to_controldir, name=None, repository=None,
                    append_revisions_only=None):
         """See BranchFormat.initialize()."""
         from breezy.plugins.svn.remote import SvnRemoteAccess
-        if not isinstance(to_bzrdir, SvnRemoteAccess):
-            raise IncompatibleFormat(self, to_bzrdir._format)
-        return to_bzrdir.create_branch(name,
+        if not isinstance(to_controldir, SvnRemoteAccess):
+            raise IncompatibleFormat(self, to_controldir._format)
+        return to_controldir.create_branch(name,
             append_revisions_only=append_revisions_only)
 
     def supports_tags(self):

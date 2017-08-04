@@ -146,7 +146,7 @@ class SvnRepositoryFormat(RepositoryFormat):
     supports_unreferenced_revisions = False
 
     @property
-    def _matchingbzrdir(self):
+    def _matchingcontroldir(self):
         from breezy.plugins.svn.remote import SvnRemoteFormat
         return SvnRemoteFormat()
 
@@ -199,7 +199,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
 
     def report_results(self, verbose):
         note('checked repository %s format %s',
-             self.repository.bzrdir.root_transport,
+             self.repository.controldir.root_transport,
              self.repository._format)
         note('%6d revisions', self.checked_rev_cnt)
         if self.checked_roundtripped_cnt > 0:
@@ -446,7 +446,7 @@ class SvnRepository(ForeignRepository):
         self._revmeta_provider = revmeta.RevisionMetadataProvider(self,
                 self.revinfo_cache is not None)
 
-    def _get_bzrdir(self):
+    def _get_controldir(self):
         # This is done lazily since the actual repository root may not be
         # accessible, and we don't really need it.
         if self._some_controldir.svn_root_url == self._some_controldir.svn_url:
@@ -455,10 +455,10 @@ class SvnRepository(ForeignRepository):
         self._some_controldir = SvnRemoteAccess(self._some_controldir.root_transport.clone_root())
         return self._some_controldir
 
-    def _set_bzrdir(self, value):
+    def _set_controldir(self, value):
         self._some_controldir = value
 
-    bzrdir = property(_get_bzrdir, _set_bzrdir)
+    controldir = property(_get_controldir, _set_controldir)
 
     def break_lock(self):
         raise NotImplementedError(self.break_lock)
@@ -1096,7 +1096,7 @@ class SvnRepository(ForeignRepository):
         return False
 
     def get_config(self):
-        return self.bzrdir.get_config()
+        return self.controldir.get_config()
 
     def get_config_stack(self):
         return SvnRepositoryStack(self)
@@ -1165,7 +1165,7 @@ class SvnRepository(ForeignRepository):
         try:
             for project, bp, nick, has_props, revnum in layout.get_branches(self,
                     revnum):
-                branches.append(SvnBranch(self, self.bzrdir, bp, mapping,
+                branches.append(SvnBranch(self, self.controldir, bp, mapping,
                     _skip_check=True, revnum=revnum))
         finally:
             pb.finished()
