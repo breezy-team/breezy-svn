@@ -610,7 +610,7 @@ if len(sys.argv) == 2:
         cd = ControlDir.open('dc')
         self.assertEquals(
             cd.open_repository()._format,
-            format_registry.make_bzrdir('1.9-rich-root').repository_format)
+            format_registry.make_controldir('1.9-rich-root').repository_format)
 
     def test_svn_layout(self):
         svn_url = self.make_repository('d')
@@ -708,7 +708,7 @@ class TestFixSvnAncestry(SubversionTestCase, ExternalBase):
         svn_tree = self.make_svn_branch_and_tree("d", "dc")
         svn_revid = svn_tree.commit('some svn commit')
 
-        bzr_tree = svn_tree.bzrdir.sprout("e").open_workingtree()
+        bzr_tree = svn_tree.controldir.sprout("e").open_workingtree()
         bzr_revid = bzr_tree.commit('another commit')
         self.assertEquals(
             set([bzr_revid, svn_revid]),

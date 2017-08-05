@@ -128,7 +128,7 @@ class SvnRemoteFormat(ControlDirFormat):
         create_prefix=False, force_new_repo=False, stacked_on=None,
         stack_on_pwd=None, repo_format_name=None, make_working_trees=None,
         shared_repo=False, vfs_only=False):
-        from breezy.bzrdir import CreateRepository
+        from breezy.controldir import CreateRepository
         def make_directory(transport):
             transport.mkdir('.')
             return transport
@@ -232,7 +232,7 @@ class SvnRemoteAccess(ControlDir):
             raise AssertionError("SVN URL %r does not start with root %r" %
                 (self.svn_url, self.svn_root_url))
 
-        self._branch_path = urllib.unquote(self.svn_url[len(self.svn_root_url):])
+        self._branch_path = str(urllib.unquote(self.svn_url[len(self.svn_root_url):]))
 
     def break_lock(self):
         pass
@@ -240,7 +240,7 @@ class SvnRemoteAccess(ControlDir):
     def clone_on_transport(self, transport, revision_id=None,
         force_new_repo=False, preserve_stacking=False, stacked_on=None,
         create_prefix=False, use_existing_dir=True, no_tree=False):
-        """Clone this bzrdir and its contents to transport verbatim.
+        """Clone this controldir and its contents to transport verbatim.
 
         :param transport: The transport for the location to produce the clone
             at.  If the target directory does not exist, it will be created.
@@ -378,9 +378,9 @@ class SvnRemoteAccess(ControlDir):
 
     def cloning_metadir(self, require_stacking=False, require_colocated=False):
         """Produce a metadir suitable for cloning with."""
-        ret = format_registry.make_bzrdir('default')
+        ret = format_registry.make_controldir('default')
         if require_colocated and not ret.colocated_branches:
-            ret = format_registry.make_bzrdir('development-colo')
+            ret = format_registry.make_controldir('development-colo')
         return ret
 
     def open_workingtree(self, unsupported=False,

@@ -17,7 +17,7 @@
 
 from breezy import urlutils
 from breezy.branch import Branch
-from breezy.bzrdir import BzrDir
+from breezy.controldir import ControlDir
 from breezy.errors import (
     NoSuchRevision,
     UnsupportedOperation,
@@ -733,8 +733,8 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repository.set_layout(RootLayout())
         mapping = repository.get_mapping()
 
-        to_bzrdir = BzrDir.create("e")
-        to_repos = to_bzrdir.create_repository()
+        to_controldir = ControlDir.create("e")
+        to_repos = to_controldir.create_repository()
 
         repository.copy_content_into(to_repos,
                 repository.generate_revision_id(2, "", mapping))
@@ -812,7 +812,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
 
@@ -980,7 +980,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
-        dir = BzrDir.create("f")
+        dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
 

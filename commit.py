@@ -249,7 +249,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
     # remove if they no longer exist with the same name
     # or parents
     if base_tree.has_id(file_id) and base_tree.kind(file_id) == 'directory':
-        for child_name, child_ie in base_tree.inventory[file_id].children.iteritems():
+        for child_name, child_ie in base_tree.root_inventory[file_id].children.iteritems():
             new_child_ie = get_ie(child_ie.file_id)
             # remove if...
             if (
@@ -300,7 +300,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                 changed = True
             # copy if they existed at different location
             elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
-                    base_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
+                    base_tree.root_inventory[child_ie.file_id].parent_id != child_ie.parent_id):
                 mutter('copy %s %r -> %r', child_ie.kind,
                                   base_tree.id2path(child_ie.file_id),
                                   new_child_path)
@@ -361,7 +361,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                 changed = True
             # copy if they existed at different location
             elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
-                  base_tree.inventory[child_ie.file_id].parent_id != child_ie.parent_id):
+                  base_tree.root_inventory[child_ie.file_id].parent_id != child_ie.parent_id):
                 old_child_path = base_tree.id2path(child_ie.file_id).encode("utf-8")
                 mutter('copy dir %r -> %r', old_child_path, new_child_path)
                 copyfrom_url = url_join_unescaped_path(base_url, old_child_path)
@@ -682,7 +682,7 @@ class SvnCommitBuilder(CommitBuilder):
             yield (child_ie.name, child_ie)
         # Iterate over the children that were present previously
         try:
-            old_ie = self.old_tree.inventory[file_id]
+            old_ie = self.old_tree.root_inventory[file_id]
         except NoSuchId:
             pass
         else:
@@ -700,7 +700,7 @@ class SvnCommitBuilder(CommitBuilder):
         except KeyError:
             pass
         try:
-            return self.old_tree.inventory[file_id]
+            return self.old_tree.root_inventory[file_id]
         except NoSuchId:
             return None
 
@@ -942,8 +942,8 @@ class SvnCommitBuilder(CommitBuilder):
         return ret
 
     def revision_tree(self):
-        from breezy.inventory import mutable_inventory_from_tree
-        from breezy.revisiontree import InventoryRevisionTree
+        from breezy.bzr.inventory import mutable_inventory_from_tree
+        from breezy.bzr.inventorytree import InventoryRevisionTree
         inv = mutable_inventory_from_tree(self.old_tree)
         revid = self._get_actual_revision_id()
         inv.apply_delta(self._get_basis_delta(revid))

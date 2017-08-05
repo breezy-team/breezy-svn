@@ -36,18 +36,18 @@ class cmd_svn_branching_scheme(Command):
 
     def run(self, location=".", set=False, repository_wide=False):
         from breezy import errors as bzr_errors
-        from breezy.bzrdir import BzrDir
+        from breezy.controldir import controldir
         from breezy.msgeditor import edit_commit_message
         from breezy.trace import note
 
-        from breezy.plugins.svn.repository import SvnRepository
-        from breezy.plugins.svn.mapping3.base import (
+        from ..repository import SvnRepository
+        from ..mapping3.base import (
             BzrSvnMappingv3,
             config_set_scheme,
             get_property_scheme,
             set_property_scheme,
             )
-        from breezy.plugins.svn.mapping3.scheme import (
+        from .scheme import (
             scheme_from_branch_list,
             )
         def scheme_str(scheme):
