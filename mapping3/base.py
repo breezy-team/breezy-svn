@@ -314,10 +314,12 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
         assert revnum >= 0
         assert revnum > 0 or path == "", \
                 "Trying to generate revid for (%r,%r)" % (path, revnum)
-        return "%s%s:%s:%s:%d" % (cls.revid_prefix, scheme, uuid,
-                       mapping.escape_svn_path(path.strip("/")), revnum)
+        return b"%s%s:%s:%s:%d" % (
+                cls.revid_prefix, scheme, uuid,
+                mapping.escape_svn_path(path.strip("/")), revnum)
 
     def revision_id_foreign_to_bzr(self, (uuid, path, revnum)):
+        assert isinstance(path, str)
         return self._generate_revision_id(uuid, revnum, path, self.scheme)
 
     def __eq__(self, other):

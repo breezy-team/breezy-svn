@@ -83,12 +83,17 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps,
 
         return (uuid, branch_path, int(srevnum)), cls()
 
-    def revision_id_foreign_to_bzr(self, (uuid, path, revnum)):
-        return "svn-v4:%s:%s:%d" % (uuid, urllib.quote(path), revnum)
+    def revision_id_foreign_to_bzr(self, foreign_revid):
+        (uuid, path, revnum) = foreign_revid
+        assert isinstance(uuid, str)
+        return b"svn-v4:%s:%s:%d" % (uuid, str(urllib.quote(path)), revnum)
 
-    def generate_file_id(self, (uuid, branch, revnum), inv_path):
-        return "%d@%s:%s" % (revnum, uuid, mapping.escape_svn_path("%s/%s" %
-            (branch, inv_path.encode("utf-8"))))
+    def generate_file_id(self, foreign_revid, inv_path):
+        (uuid, branch, revnum) = foreign_revid
+        return b"%d@%s:%s" % (
+                revnum, uuid,
+                mapping.escape_svn_path(
+                    "%s/%s" % (branch, inv_path)))
 
     def parse_file_id(self, fileid):
         try:

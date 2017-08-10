@@ -155,11 +155,6 @@ class SvnWorkingTreeProber(SvnProber):
     @classmethod
     def _check_versions(cls):
         lazy_check_versions()
-        try:
-            from subvertpy.wc import WorkingCopy
-        except ImportError:
-            raise DependencyNotPresent(
-                "subvertpy.wc", "Installed Subvertpy does not support working copy operations")
 
     def probe_transport(self, transport):
         from breezy.transport.local import LocalTransport

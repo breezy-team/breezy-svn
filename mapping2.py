@@ -78,7 +78,7 @@ class BzrSvnMappingv1(BzrSvnMapping):
     @classmethod
     def revision_id_foreign_to_bzr(cls, (uuid, path, revnum)):
         assert isinstance(path, str)
-        return "svn-v1:%d@%s-%s" % (revnum, uuid, escape_svn_path(path))
+        return b"svn-v1:%d@%s-%s" % (revnum, uuid, escape_svn_path(path))
 
     def __eq__(self, other):
         return type(self) == type(other)
@@ -101,7 +101,8 @@ class BzrSvnMappingv1(BzrSvnMapping):
     def generate_file_id(self, foreign_revid, inv_path):
         if inv_path == u"":
             return ROOT_ID
-        return "%s-%s" % (self.revision_id_foreign_to_bzr(foreign_revid), escape_svn_path(inv_path.encode("utf-8")))
+        revid = self.revision_id_foreign_to_bzr(foreign_revid)
+        return b"%s-%s" % (revid, escape_svn_path(inv_path.encode("utf-8")))
 
     def import_fileid_map_fileprops(self, fileprops):
         return {}
@@ -170,7 +171,8 @@ class BzrSvnMappingv2(BzrSvnMappingv1):
         return (uuid, branch_path, revnum), cls(LegacyLayout.from_branch_path(branch_path))
 
     def revision_id_foreign_to_bzr(self, (uuid, path, revnum)):
-        return "svn-v2:%d@%s-%s" % (revnum, uuid, escape_svn_path(path))
+        assert isinstance(path, str)
+        return b"svn-v2:%d@%s-%s" % (revnum, uuid, escape_svn_path(path))
 
     def __eq__(self, other):
         return type(self) == type(other)

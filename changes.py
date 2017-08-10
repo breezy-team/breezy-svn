@@ -36,7 +36,6 @@ def find_prev_location(paths, branch_path, revnum):
     :note: If branch_path wasn't copied, this will return revnum-1 as the
         previous revision.
     """
-    assert type(branch_path) is str
     assert type(revnum) is int
     if revnum == 0:
         assert branch_path == ""

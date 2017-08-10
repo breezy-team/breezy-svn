@@ -20,6 +20,7 @@ from breezy import (
     tests,
     ui,
     )
+from breezy.tests import ui_testing
 from breezy.plugins.svn.auth import (
     SubversionAuthenticationConfig,
     )
@@ -28,17 +29,10 @@ from breezy.plugins.svn.auth import (
 class TestSubversionAuthenticationConfig(tests.TestCase):
     """Subversion specific authentication.conf handling tests"""
 
-    def override_ui(self, stdin):
-        stdout = tests.StringIOWrapper()
-        stderr = tests.StringIOWrapper()
-        ui.ui_factory = tests.TestUIFactory(stdin=stdin, stdout=stdout,
-            stderr=stderr)
-        return stdout, stderr
-
     def test_get_svn_simple(self):
         username, password = "a-user", "a-secret"
         realm = "REALM" # what does this mean in the context of svn?
-        stdout, stderr = self.override_ui(password + "\n")
+        ui.ui_factory = tests.TestUIFactory(stdin=password + "\n")
         conf = SubversionAuthenticationConfig("svn", username, None, None)
         got_user, got_pass, _ = conf.get_svn_simple(realm, username, True)
         self.assertIsInstance(got_user, str)
@@ -46,5 +40,5 @@ class TestSubversionAuthenticationConfig(tests.TestCase):
         self.assertIsInstance(got_pass, str)
         self.assertEquals(password, got_pass)
         self.assertEquals("%s %s password: " % (realm, username),
-            stderr.getvalue())
-        self.assertEquals("", stdout.getvalue())
+            ui.ui_factory.stderr.getvalue())
+        self.assertEquals("", ui.ui_factory.stdout.getvalue())

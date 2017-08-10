@@ -529,7 +529,6 @@ class MetaRevisionGraph(object):
         :return: iterator that returns tuples with branch path,
             changed paths, revision number, changed file properties and
         """
-        assert isinstance(branch_path, str)
         assert from_revnum >= to_revnum
 
         bp = branch_path

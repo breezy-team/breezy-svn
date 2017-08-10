@@ -100,7 +100,7 @@ def escape_svn_path(x):
     :param x: Path
     :return: Escaped path
     """
-    assert isinstance(x, str)
+    x = osutils.safe_utf8(x)
     return urllib.quote(x, "")
 unescape_svn_path = urllib.unquote
 
@@ -651,7 +651,7 @@ def parse_fileid_property(text):
     ret = {}
     for line in text.splitlines():
         (path, key) = line.split("\t", 1)
-        ret[urllib.unquote(path).decode("utf-8")] = osutils.safe_file_id(key)
+        ret[urllib.unquote(path).decode("utf-8")] = str(key)
     return ret
 
 

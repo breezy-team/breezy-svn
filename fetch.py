@@ -604,6 +604,7 @@ class FileRevisionBuildEditor(FileBuildEditor):
         else:
             # No delta was send, use the base chunks
             chunks = self.base_chunks
+        chunks = map(bytes, chunks)
         md5sum = osutils.md5()
         shasum = osutils.sha()
         text_size = 0

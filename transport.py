@@ -231,12 +231,7 @@ def convert_relocate_error(url, num, msg):
 
 
 def Connection(url, auth=None, config=None, readonly=False):
-    # Subvertpy <= 0.6.3 has a bug in the reference counting of the
-    # progress update function
-    if subvertpy.__version__ >= (0, 6, 3):
-        progress_cb = SubversionProgressReporter(url).update
-    else:
-        progress_cb = None
+    progress_cb = SubversionProgressReporter(url).update
     try:
         ret = RemoteAccess(_url_escape_uri(url), auth=auth,
                 client_string_func=breezy.plugins.svn.get_client_string,
@@ -441,7 +436,7 @@ class SvnRaTransport(Transport):
         if self._uuid is None:
             conn = self.get_any_connection()
             try:
-                return conn.get_uuid()
+                return str(conn.get_uuid())
             finally:
                 self.add_connection(conn)
         return self._uuid

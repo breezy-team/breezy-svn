@@ -32,6 +32,10 @@ from subvertpy import (
     ERR_WC_UNSUPPORTED_FORMAT,
     properties,
     )
+from subvertpy.ra import (
+    DEPTH_IMMEDIATES,
+    DEPTH_INFINITY,
+    )
 from subvertpy.wc import (
     SCHEDULE_ADD,
     SCHEDULE_DELETE,
@@ -166,14 +170,13 @@ def update_wc(context, basedir, conn, url, revnum):
     # FIXME: honor SVN_CONFIG_SECTION_HELPERS:SVN_CONFIG_OPTION_DIFF3_CMD
     # FIXME: honor SVN_CONFIG_SECTION_MISCELLANY:SVN_CONFIG_OPTION_USE_COMMIT_TIMES
     # FIXME: honor SVN_CONFIG_SECTION_MISCELLANY:SVN_CONFIG_OPTION_PRESERVED_CF_EXTS
-    editor = adm.get_update_editor(basedir, False, True, None, None, False,
-        True)
+    editor = context.get_update_editor(basedir, "")
     assert editor is not None
     reporter = conn.do_switch(revnum, "", True, url, editor)
     try:
         context.crawl_revisions(
                 basedir, reporter, restore_files=False,
-                recurse=True, use_commit_times=False)
+                depth=DEPTH_INFINITY, use_commit_times=False)
     except subvertpy.SubversionException, (msg, num):
         if num == subvertpy.ERR_RA_ILLEGAL_URL:
             raise BzrError(msg)
@@ -213,91 +216,42 @@ def generate_ignore_list(ignore_map):
     return ignores
 
 
-class Walker(object):
-    """Iterator of a Subversion working copy."""
-
-    def __init__(self, workingtree, start=u"", recursive=True):
-        """Create a new walker.
-
-        :param workingtree: bzr-svn working tree to walk over
-        :param start: Start path, relative to tree root
-        :param recursive: Whether to be recursive
-        """
-        self.workingtree = workingtree
-        self.todo = list([start])
-        self.pending = deque()
-        self.recursive = recursive
-
-    def __iter__(self):
-        return iter(self.next, None)
-
-    def next(self):
-        while not self.pending:
-            try:
-                p = self.todo.pop()
-            except IndexError:
-                return None
-            try:
-                wc = self.workingtree._get_wc(p)
-            except subvertpy.SubversionException, (_, num):
-                if num == subvertpy.ERR_WC_NOT_DIRECTORY:
-                    # Turns out it's not a directory after all
-                    wc = self.workingtree._get_wc(write_lock=False)
-                    try:
-                        try:
-                            self.pending.append((p, self.workingtree._get_entry(p)))
-                        except KeyError:
-                            pass
-                    finally:
-                        wc.close()
-                    continue
-                raise
-            try:
-                entries = wc.entries_read(True)
-                for name in sorted(entries):
-                    entry = entries[name]
-                    subp = osutils.pathjoin(p, name.decode("utf-8")).rstrip("/")
-                    if entry.kind == subvertpy.NODE_DIR and name != "":
-                        if self.recursive:
-                            self.todo.append(subp)
-                    else:
-                        self.pending.append((subp, entry))
-            finally:
-                wc.close()
-        return self.pending.popleft()
-
-
 class SvnWorkingTree(SubversionTree, WorkingTree):
     """WorkingTree implementation that uses a svn working copy for storage."""
 
-    def __init__(self, controldir, format, local_path, entry):
+    def __init__(self, controldir, format, local_path, status, context=None):
         self._reset_data()
         assert isinstance(local_path, unicode)
-        self.entry = entry
+        self._status = status
         self.basedir = local_path
         self._format = format
         self.controldir = controldir
         self._branch = None
         self._cached_base_tree = None
         self._detect_case_handling()
-        self.controldir = os.path.join(controldir.local_path, controldir._adm_dir, 'bzr')
+        self.bzr_controldir = os.path.join(
+                controldir.local_path,
+                controldir._adm_dir, 'bzr')
         try:
-            os.makedirs(self.controldir)
-            os.makedirs(os.path.join(self.controldir, 'lock'))
+            os.makedirs(self.bzr_controldir)
+            os.makedirs(os.path.join(self.bzr_controldir, 'lock'))
         except OSError:
             pass
         control_transport = controldir.transport.clone('bzr')
         self._transport = control_transport
         cache_filename = control_transport.local_abspath('stat-cache')
-        self._hashcache = hashcache.HashCache(self.basedir, cache_filename,
-            self.controldir._get_file_mode(),
-            self._content_filter_stack_provider())
+        self._hashcache = hashcache.HashCache(
+                self.basedir, cache_filename,
+                self.controldir._get_file_mode(),
+                self._content_filter_stack_provider())
         self._hashcache.read()
         self._lock_count = 0
         self._lock_mode = None
         self._control_files = None
         self.views = self._make_views()
-        self.context = Context()
+        if context is None:
+            context = Context()
+        self.context = context
 
     @property
     def mapping(self):
@@ -495,8 +449,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def all_file_ids(self):
         """See Tree.all_file_ids"""
         ret = set()
-        w = Walker(self)
-        for path, entry in w:
+        for path, entry in self.context.walk_status(self.abspath('.')):
             try:
                 ret.add(self.lookup_id(path)[0])
             except KeyError:
@@ -508,12 +461,12 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._change_fileid_mapping(None, old_path, wc)
         if not os.path.isdir(self.abspath(old_path)):
             return
-        for from_subpath, entry in Walker(self, old_path):
+        for from_subpath in self.context.walk_status(old_path):
             from_subpath = from_subpath.strip("/")
-            to_subpath = osutils.pathjoin(new_path,
-                from_subpath[len(old_path):].strip("/"))
-            self._change_fileid_mapping(self.path2id(from_subpath), to_subpath,
-                    wc)
+            to_subpath = osutils.pathjoin(
+                    new_path, from_subpath[len(old_path):].strip("/"))
+            self._change_fileid_mapping(
+                    self.path2id(from_subpath), to_subpath, wc)
             self._change_fileid_mapping(None, from_subpath, wc)
 
     def move(self, from_paths, to_dir=None, after=False, **kwargs):
@@ -579,8 +532,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         if entry.schedule == SCHEDULE_NORMAL:
             # Keep old id
             try:
-                return self.path_to_file_id(entry.cmt_rev, entry.revision,
-                        relpath)
+                return self.path_to_file_id(entry.cmt_rev, entry.revision, relpath)
             except KeyError:
                 if entry.revision == self._cached_base_revnum:
                     raise AssertionError("file %s:%d not in fileid map for %d" % (
@@ -606,22 +558,22 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def path2id(self, path):
         try:
-            entry = self._get_entry(path)
+            entry = self._get_status(path)
             (file_id, revision) = self._find_ids(osutils.safe_unicode(path), entry)
         except KeyError:
             return None
         else:
             return file_id
 
-    def _get_entry(self, path):
+    def _get_status(self, path):
         path = osutils.safe_utf8(self.abspath(path))
-        return self.context.entry(path)
+        return self.context.status(path)
 
     def filter_unversioned_files(self, paths):
         ret = set()
         for p in paths:
             try:
-                entry = self._get_entry(p)
+                entry = self._get_status(p)
             except KeyError:
                 ret.add(p)
             else:
@@ -712,7 +664,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     continue
                 parent = os.path.dirname(path)
                 parent_id = self.lookup_id(parent)
-                entry = self._get_entry(path)
+                entry = self._get_status(path)
                 if entry.schedule == SCHEDULE_DELETE:
                     continue
                 ie = self._ie_from_entry(path, entry, parent_id[0])
@@ -720,8 +672,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     yield path, ie
         else:
             fileids = {}
-            w = Walker(self)
-            for relpath, entry in w:
+            for relpath, entry in self.context.walk_status(self.abspath('.')):
                 if entry.schedule == SCHEDULE_DELETE:
                     continue
                 assert isinstance(relpath, unicode)
@@ -736,10 +687,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def extras(self):
         """See WorkingTree.extras."""
-        w = Walker(self)
         versioned_files = set()
         all_files = set()
-        for path, dir_entry in w:
+        for path, dir_entry in self.context.walk_status(self.abspath('.')):
             versioned_files.add(path)
             dirabs = self.abspath(path)
             if not osutils.isdir(dirabs):
@@ -957,12 +907,15 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             from_dir = u""
         else:
             from_dir = osutils.safe_unicode(from_dir)
-        w = Walker(self, from_dir, recursive=recursive)
+        if recursive:
+            depth = DEPTH_INFINITY
+        else:
+            depth = DEPTH_IMMEDIATES
         fileids = {}
-        for path, entry in w:
+        for path, entry in self.context.walk_status(from_dir, depth=depth):
             relpath = path.decode("utf-8")
-            if entry.schedule in (SCHEDULE_NORMAL, SCHEDULE_ADD,
-                    SCHEDULE_REPLACE):
+            if entry.schedule in (
+                    SCHEDULE_NORMAL, SCHEDULE_ADD, SCHEDULE_REPLACE):
                 versioned = 'V'
             else:
                 versioned = '?'
@@ -1050,7 +1003,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             if path == "":
                 return ("root-%s-%s" % (
                     escape_svn_path(self.get_branch_path()),
-                    self.entry.uuid), None)
+                    self._status.uuid), None)
             mutter("fileid map: %r", self._get_new_file_ids())
             raise
 
@@ -1086,7 +1039,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             old_abspath = osutils.safe_utf8(self.abspath(old_path))
             if not already_there:
                 self.remove([old_path], keep_files=True)
-            copyfrom = (urlutils.join(self.entry.url, old_path),
+            copyfrom = (urlutils.join(self._status.url, old_path),
                         self.base_revnum)
         else:
             try:
@@ -1094,7 +1047,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             except NoSuchId:
                 copyfrom = (None, -1)
             else:
-                copyfrom = (urlutils.join(self.entry.url, old_path),
+                copyfrom = (urlutils.join(self._status.url, old_path),
                             self.base_revnum)
         if new_path is not None:
             if not already_there:
@@ -1266,17 +1219,17 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def transmit_svn_dir_deltas(self, file_id, editor):
         path = self.id2path(file_id)
         encoded_path = self.abspath(path).encoded("utf-8")
-        entry = self.context.entry(encoded_path)
-        self._fix_kind(encoded_path, path, entry)
+        status = self.context.status(encoded_path)
+        self._fix_kind(encoded_path, path, status)
         self.context.transmit_prop_deltas(encoded_path, True, editor)
 
     def transmit_svn_file_deltas(self, file_id, path, editor):
         if path is None:
             path = self.id2path(file_id)
         encoded_path = self.abspath(path).encode("utf-8")
-        entry = self.context.entry(encoded_path)
-        self._fix_kind(encoded_path, path, entry)
-        self.context.transmit_prop_deltas(encoded_path, entry, editor)
+        status = self.context.status(encoded_path)
+        self._fix_kind(encoded_path, path, status)
+        self.context.transmit_prop_deltas(encoded_path, status, editor)
         self.context.transmit_text_deltas(encoded_path, True, editor)
 
     @needs_read_lock
@@ -1525,6 +1478,7 @@ class SvnCheckout(ControlDir):
         self._format = format
         self._mode_check_done = False
         self._config = None
+        self._context = Context()
         if transport.base.startswith("readonly+"):
             real_transport = transport._decorated
         else:
@@ -1532,30 +1486,26 @@ class SvnCheckout(ControlDir):
         SvnWorkingTreeProber().probe_transport(real_transport)
         self.local_path = real_transport.local_abspath(".")
 
-        encoded_path = self.local_path.encode("utf-8")
         # Open related remote repository + branch
         try:
-            wc = Adm(None, encoded_path)
+            version = self._context.check_wc(self.local_path)
         except subvertpy.SubversionException, (msg, num):
             if num == ERR_WC_UNSUPPORTED_FORMAT:
                 raise UnsupportedFormatError(msg, kind='workingtree')
             else:
                 raise
-        try:
-            try:
-                self.entry = wc.entry(encoded_path, True)
-            except subvertpy.SubversionException, (msg, num):
-                if num in (subvertpy.ERR_ENTRY_NOT_FOUND,
-                           subvertpy.ERR_NODE_UNKNOWN_KIND):
-                    raise CorruptWorkingTree(encoded_path,
-                        msg)
-                else:
-                    raise
-        finally:
-            wc.close()
 
-        self.svn_root_url = self.entry.repos
-        self.svn_url = self.entry.url
+        try:
+            self._status = self._context.status(self.local_path)
+        except subvertpy.SubversionException, (msg, num):
+            if num in (subvertpy.ERR_ENTRY_NOT_FOUND,
+                       subvertpy.ERR_NODE_UNKNOWN_KIND):
+                raise CorruptWorkingTree(self.local_path, msg)
+            else:
+                raise
+
+        self.svn_root_url = self._status.repos_root_url
+        self.svn_url = urlutils.join(self._status.repos_root_url, self._status.repos_relpath)
         self._remote_branch_transport = None
         self._remote_repo_transport = None
         self._remote_controldir = None
@@ -1569,7 +1519,8 @@ class SvnCheckout(ControlDir):
                 self.root_transport.abspath(".svn.backup"))
 
     def is_control_filename(self, filename):
-        return filename == self._adm_dir or filename.startswith(self._adm_dir+'/')
+        return (filename == self._adm_dir or
+                filename.startswith(self._adm_dir+'/'))
 
     def get_remote_controldir(self):
         from breezy.plugins.svn.remote import SvnRemoteAccess
@@ -1579,7 +1530,10 @@ class SvnCheckout(ControlDir):
 
     def get_remote_transport(self):
         if self._remote_branch_transport is None:
-            self._remote_branch_transport = SvnRaTransport(self.entry.url,
+            url = urlutils.join(
+                    self._status.repos_root_url,
+                    self._status.repos_relpath)
+            self._remote_branch_transport = SvnRaTransport(url,
                 from_transport=self._remote_repo_transport)
         return self._remote_branch_transport
 
@@ -1593,9 +1547,11 @@ class SvnCheckout(ControlDir):
         return wt.branch.create_checkout(path, lightweight=True,
             revision_id=revision_id).controldir
 
-    def open_workingtree(self, unsupported=False, recommend_upgrade=False):
+    def open_workingtree(self, unsupported=False, recommend_upgrade=False,
+                         context=None):
         wt_format = SvnWorkingTreeFormat(self._format.version)
-        ret = SvnWorkingTree(self, wt_format, self.local_path, self.entry)
+        ret = SvnWorkingTree(self, wt_format, self.local_path, self._status,
+                             context=context)
         try:
             # FIXME: This could potentially be done without actually
             # opening the branch?
@@ -1620,10 +1576,9 @@ class SvnCheckout(ControlDir):
         return self.get_remote_controldir().find_repository()
 
     def get_branch_path(self):
-        if self.entry.repos is None:
+        if self._status.repos_root_url is None:
             raise RepositoryRootUnknown()
-        assert self.entry.url.startswith(self.entry.repos)
-        return self.entry.url[len(self.entry.repos):].strip("/")
+        return self._status.repos_relpath
 
     def needs_format_conversion(self, format):
         return not isinstance(self._format, format.__class__)
@@ -1709,7 +1664,7 @@ class SvnCheckout(ControlDir):
     def get_config(self):
         from breezy.plugins.svn.config import SvnRepositoryConfig
         if self._config is None:
-            self._config = SvnRepositoryConfig(self.entry.url, self.entry.uuid)
+            self._config = SvnRepositoryConfig(self._status.url, self._status.uuid)
         return self._config
 
 

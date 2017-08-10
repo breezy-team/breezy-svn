@@ -386,7 +386,7 @@ class SvnBranch(ForeignBranch):
         :param revision_id: Tip of the checkout.
         :return: WorkingTree object of the checkout.
         """
-        from breezy.plugins.svn.workingtree import (
+        from .workingtree import (
             SvnCheckout,
             SvnWorkingTreeDirFormat,
             update_wc,
@@ -405,19 +405,16 @@ class SvnBranch(ForeignBranch):
         svn_url, readonly = bzr_to_svn_url(urlutils.join(self.repository.base, bp))
         wc.ensure_adm(to_path.encode("utf-8"), uuid,
                       svn_url, bzr_to_svn_url(self.repository.base)[0], revnum)
-        adm = wc.WorkingCopy(None, to_path.encode("utf-8"), write_lock=True)
+        context = wc.Context()
+        conn = self.repository.transport.connections.get(svn_url)
         try:
-            conn = self.repository.transport.connections.get(svn_url)
-            try:
-                update_wc(adm, to_path.encode("utf-8"), conn, svn_url, revnum)
-            finally:
-                if not conn.busy:
-                    self.repository.transport.add_connection(conn)
+            update_wc(context, to_path.encode("utf-8"), conn, svn_url, revnum)
         finally:
-            adm.close()
+            if not conn.busy:
+                self.repository.transport.add_connection(conn)
 
         dir = SvnCheckout(transport, SvnWorkingTreeDirFormat())
-        return dir.open_workingtree()
+        return dir.open_workingtree(context=context)
 
     def _get_checkout_format(self, lightweight=False):
         from breezy.plugins.svn.workingtree import SvnWorkingTreeDirFormat
@@ -614,6 +611,7 @@ class SvnBranch(ForeignBranch):
             revid = last_revmeta.get_revision_id(mapping)
         if self.is_locked():
             self._cached_last_revid = revid
+        assert isinstance(revid, str), "not str: %r" % revid
         return revid
 
     def get_push_merged_revisions(self):

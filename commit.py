@@ -569,7 +569,8 @@ class SvnCommitBuilder(CommitBuilder):
     def _check_properties(self):
         """Verify that all revision properties are OK."""
         for name, value in self._revprops.iteritems():
-            if not isinstance(name, basestring) or osutils.contains_whitespace(name):
+            if (not isinstance(name, basestring) or
+                osutils.contains_whitespace(name)):
                 raise ValueError("invalid property name %r" % name)
             if not isinstance(value, basestring):
                 raise ValueError("invalid property value %r for %r" %
@@ -589,8 +590,9 @@ class SvnCommitBuilder(CommitBuilder):
     def will_record_deletes(self):
         self._will_record_deletes = True
 
-    def _generate_revision_if_needed(self):
+    def _generate_revision_if_needed(self, revid):
         """See CommitBuilder._generate_revision_if_needed()."""
+        self._new_revision_id = revid
         self.random_revid = (self._new_revision_id is None)
 
     def finish_inventory(self):

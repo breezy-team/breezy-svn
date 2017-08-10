@@ -40,7 +40,7 @@ class TrunkLayout(RepositoryLayout):
         :param project: Optional name of the project the tag is for. Can include slashes.
         :return: Path of the tag.
         """
-        subpath = urlutils.join("tags", name.encode("utf-8")).strip("/")
+        subpath = urlutils.join("tags", name.strip("/"))
         if project in (None, ""):
             return subpath
         return urlutils.join(project, subpath)
@@ -77,7 +77,7 @@ class TrunkLayout(RepositoryLayout):
         name = urlutils.split(path)[-1]
         if name == "trunk":
             return u""
-        return name.decode("utf-8")
+        return name
 
     def get_branch_path(self, name, project=""):
         """Return the path at which the branch with specified name should be found.
@@ -97,7 +97,6 @@ class TrunkLayout(RepositoryLayout):
         :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
-        assert type(path) is str
         path = path.strip("/")
         parts = path.split("/")
         for i, p in enumerate(parts):
@@ -363,8 +362,8 @@ class WildcardLayout(RepositoryLayout):
             if wildcard_matches(path, p):
                 for a, wc in zip(path.split("/"), p.split("/")):
                     if "*" in wc:
-                        return a.decode("utf-8")
-                return path.split("/")[-1].decode("utf-8")
+                        return a
+                return path.split("/")[-1]
         return None
 
     def get_tag_name(self, path, project=""):
@@ -423,11 +422,12 @@ class WildcardLayout(RepositoryLayout):
 
         :return: Iterator over tuples with (project, branch path)
         """
-        return get_root_paths(repository, self.tags,
-             revnum, self.is_tag, project)
+        return get_root_paths(
+                repository, self.tags, revnum, self.is_tag, project)
 
     def __repr__(self):
-        return "%s(%r,%r)" % (self.__class__.__name__, self.branches, self.tags)
+        return "%s(%r,%r)" % (
+                self.__class__.__name__, self.branches, self.tags)
 
 
 class InverseTrunkLayout(RepositoryLayout):
@@ -441,10 +441,11 @@ class InverseTrunkLayout(RepositoryLayout):
         """Return the path at which the tag with specified name should be found.
 
         :param name: Name of the tag.
-        :param project: Optional name of the project the tag is for. Can include slashes.
+        :param project: Optional name of the project the tag is for. Can
+            include slashes.
         :return: Path of the tag."
         """
-        return urlutils.join("tags", project, name.encode("utf-8")).strip("/")
+        return urlutils.join("tags", project, name.strip("/"))
 
     def get_tag_name(self, path, project=""):
         """Determine the tag name from a tag path.
@@ -457,7 +458,8 @@ class InverseTrunkLayout(RepositoryLayout):
         """Return the path at which the branch with specified name should be found.
 
         :param name: Name of the branch.
-        :param project: Optional name of the project the branch is for. Can include slashes.
+        :param project: Optional name of the project the branch is for. Can
+            include slashes.
         :return: Path of the branch.
         """
         return urlutils.join("branches", project, name).strip("/")

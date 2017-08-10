@@ -151,6 +151,8 @@ class BzrMetaRevision(object):
         # Or generate it
         if revid is None:
             revid = mapping.revision_id_foreign_to_bzr(self.metarev.get_foreign_revid())
+            assert isinstance(revid, str), \
+                    "mapping %r returned non-str revid %r" % (mapping, revid)
 
         return revid
 
@@ -894,7 +896,6 @@ class RevisionMetadataProvider(object):
     def get_revision(self, path, revnum, changes=None, revprops=None,
                      changed_fileprops=None, fileprops=None, metaiterator=None):
         """Return a RevisionMetadata object for a specific svn (path,revnum)."""
-        assert isinstance(path, str)
         assert isinstance(revnum, int)
 
         if self.in_cache(path, revnum):
