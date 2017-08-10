@@ -186,7 +186,8 @@ class SubversionTags(BasicTags):
         if existing_bp_parts == bp_parts:
             self._parent_exists.add(parent)
             return True
-        create_branch_prefix(self.repository.transport,
+        create_branch_prefix(
+                self.repository.transport,
                 self._revprops("Add tags base directory."),
                 bp_parts, existing_bp_parts)
         self._parent_exists.add(parent)
@@ -195,7 +196,6 @@ class SubversionTags(BasicTags):
     def set_tag(self, tag_name, tag_target):
         """Set a new tag in a Subversion repository."""
         path = self.branch.layout.get_tag_path(tag_name, self.branch.project)
-        assert isinstance(path, str)
         parent = urlutils.dirname(path)
         try:
             (from_uuid, from_bp, from_revnum), mapping = self.repository.lookup_bzr_revision_id(tag_target, project=self.branch.project)

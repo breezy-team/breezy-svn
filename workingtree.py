@@ -253,6 +253,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             context = Context()
         self.context = context
 
+    def _cleanup(self):
+        pass
+
     @property
     def mapping(self):
         """bzr-svn mapping to use."""
@@ -879,8 +882,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         assert isinstance(files, list)
         for f, kind, file_id, copyfrom in zip(files, kinds, ids, _copyfrom):
             try:
-                utf8_abspath = osutils.safe_utf8(self.abspath(f))
-                self.context.add(utf8_abspath, copyfrom[0], copyfrom[1])
+                self.context.add(self.abspath(f), copyfrom[0], copyfrom[1])
             except subvertpy.SubversionException, (_, num):
                 if num in (subvertpy.ERR_ENTRY_EXISTS,
                            subvertpy.ERR_WC_SCHEDULE_CONFLICT):
