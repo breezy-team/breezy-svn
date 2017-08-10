@@ -73,7 +73,7 @@ leak-check::
 	$(MAKE) valgrind-check VALGRIND_OPTIONS="--leak-check=full --show-reachable=yes --num-callers=200 --leak-resolution=med --log-file=leaks.log"
 
 gdb-check:: build-inplace-debug
-	$(MAKE) check DEBUGGER="gdb --args $(GDB_OPTIONS)"
+	$(MAKE) check DEBUGGER="gdb --args $(GDB_OPTIONS)" TEST_OPTIONS="-v"
 
 strace-check::
 	$(MAKE) check DEBUGGER="strace $(STRACE_OPTIONS)"
