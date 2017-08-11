@@ -968,7 +968,6 @@ class BzrSvnMappingRevProps(object):
 class SubversionMappingRegistry(foreign.VcsMappingRegistry):
 
     def parse_mapping_name(self, name):
-        assert isinstance(name, str)
         assert name.startswith("svn-")
         name = name[len("svn-"):]
         if "-" in name:

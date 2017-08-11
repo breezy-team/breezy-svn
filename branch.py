@@ -403,24 +403,28 @@ class SvnBranch(ForeignBranch):
         transport.ensure_base()
         to_path = transport.local_abspath(".")
         svn_url, readonly = bzr_to_svn_url(urlutils.join(self.repository.base, bp))
-        context = wc.Context()
-        context.ensure_adm(to_path, svn_url, bzr_to_svn_url(self.repository.base)[0], uuid, revnum)
-        conn = self.repository.transport.connections.get(svn_url)
+        wc.ensure_adm(to_path.encode("utf-8"), uuid,
+                      svn_url, bzr_to_svn_url(self.repository.base)[0], revnum)
+        adm = wc.Adm(None, to_path.encode("utf-8"), write_lock=True)
         try:
-            update_wc(context, to_path, conn, svn_url, revnum)
+            conn = self.repository.transport.connections.get(svn_url)
+            try:
+                update_wc(adm, to_path.encode("utf-8"), conn, svn_url, revnum)
+            finally:
+                if not conn.busy:
+                    self.repository.transport.add_connection(conn)
         finally:
-            if not conn.busy:
-                self.repository.transport.add_connection(conn)
+            adm.close()
 
         dir = SvnCheckout(transport, SvnWorkingTreeDirFormat())
-        return dir.open_workingtree(context=context)
+        return dir.open_workingtree()
 
     def _get_checkout_format(self, lightweight=False):
-        from breezy.plugins.svn.workingtree import SvnWorkingTreeDirFormat
+        from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
         if lightweight:
             return SvnWorkingTreeDirFormat()
         else:
-            return format_registry.make_controldir('default')
+            return format_registry.make_bzrdir('default')
 
     def create_checkout(self, to_location, revision_id=None, lightweight=False,
                         accelerator_tree=None, hardlink=False):
