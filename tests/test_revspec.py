@@ -17,7 +17,6 @@
 Tests for revision specificiers.
 """
 
-from breezy import version_info as bzrlib_version
 from breezy.branch import Branch
 from breezy.controldir import ControlDir
 from breezy.errors import (
@@ -62,12 +61,8 @@ class TestRevSpecsBySubversion(SubversionTestCase):
         branch = Branch.open(repos_url)
         revinfo = revspec._match_on(branch, None)
 
-        if breezy_version < (2, 5):
-            self.assertEquals(RevisionInfo.from_revision_id(branch,
-                branch.last_revision(), branch.revision_history()), revinfo)
-        else:
-            self.assertEquals(RevisionInfo.from_revision_id(branch,
-                branch.last_revision()), revinfo)
+        self.assertEquals(RevisionInfo.from_revision_id(branch,
+            branch.last_revision()), revinfo)
 
     def test_invalid_revnum(self):
         revspec = RevisionSpec.from_string("svn:foo")

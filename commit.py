@@ -249,7 +249,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
     # remove if they no longer exist with the same name
     # or parents
     if base_tree.has_id(file_id) and base_tree.kind(file_id) == 'directory':
-        for child_name, child_ie in base_tree.root_inventory[file_id].children.iteritems():
+        for child_name, child_ie in base_tree.iter_child_entries(file_id):
             new_child_ie = get_ie(child_ie.file_id)
             # remove if...
             if (
@@ -300,7 +300,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                 changed = True
             # copy if they existed at different location
             elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
-                    base_tree.root_inventory[child_ie.file_id].parent_id != child_ie.parent_id):
+                  base_tree.root_inventory[child_ie.file_id].parent_id != child_ie.parent_id):
                 mutter('copy %s %r -> %r', child_ie.kind,
                                   base_tree.id2path(child_ie.file_id),
                                   new_child_path)
@@ -682,17 +682,19 @@ class SvnCommitBuilder(CommitBuilder):
         for child in self._updated_children[file_id]:
             (child_path, child_ie) = self._updated[child]
             yield (child_ie.name, child_ie)
-        # Iterate over the children that were present previously
+
         try:
-            old_ie = self.old_tree.root_inventory[file_id]
+            old_path = self.old_tree.id2path(file_id)
         except NoSuchId:
-            pass
-        else:
-            if old_ie.kind == 'directory':
-                for name, child_ie in old_ie.children.iteritems():
-                    if (not child_ie.file_id in self._deleted_fileids and
-                        not child_ie.file_id in self._updated):
-                        yield (name, child_ie)
+            return
+
+        # Iterate over the children that were present previously
+        if self.old_tree.kind(file_id, old_path) == 'directory':
+            for name, child_ie in self.old_tree.iter_child_entries(
+                    file_id, old_path):
+                if (not child_ie.file_id in self._deleted_fileids and
+                    not child_ie.file_id in self._updated):
+                    yield (name, child_ie)
 
     def _get_new_ie(self, file_id):
         if file_id in self._deleted_fileids:

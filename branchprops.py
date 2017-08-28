@@ -45,7 +45,6 @@ class PathPropertyProvider(object):
         :param revnum: Subversion revision number
         :return: Dictionary with properties
         """
-        assert isinstance(path, str)
         path = path.lstrip("/")
         return util.lazy_dict({}, self._real_get_properties, path, revnum)
 

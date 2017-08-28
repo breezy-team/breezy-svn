@@ -54,7 +54,7 @@ from breezy.plugins.svn.branch import (
     )
 from breezy.plugins.svn.fetch import (
     FetchRevisionFinder,
-    InterFromSvnRepository,
+    InterFromSvnToInventoryRepository,
     )
 
 
@@ -259,9 +259,9 @@ class RepositoryConverter(object):
                 pb.finished()
 
             if create_shared_repo:
-                if not InterFromSvnRepository.is_compatible(source_repos, target_repos):
+                if not InterFromSvnToInventoryRepository.is_compatible(source_repos, target_repos):
                     raise IncompatibleRepositories(source_repos, target_repos)
-                inter = InterFromSvnRepository.get(source_repos, target_repos)
+                inter = InterFromSvnToInventoryRepository.get(source_repos, target_repos)
                 self._fetch_to_shared_repo(inter, prefix, from_revnum, revmetas,
                                            revfinder, mapping, heads)
 

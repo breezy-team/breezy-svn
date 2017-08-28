@@ -63,7 +63,7 @@ from breezy.plugins.svn.errors import (
     )
 from breezy.plugins.svn.fetch import (
    FetchRevisionFinder,
-   InterFromSvnRepository,
+   InterFromSvnToInventoryRepository,
    check_filename,
    chunks_start_with_link,
    )
@@ -86,7 +86,7 @@ from breezy.plugins.svn.transport import (
 class FetchTestCase(SubversionTestCase):
 
     def get_inter(self, source, target):
-        return InterFromSvnRepository(source, target)
+        return InterFromSvnToInventoryRepository(source, target)
 
     def copy_content(self, source, target, revision_id=None):
         inter = self.get_inter(source, target)

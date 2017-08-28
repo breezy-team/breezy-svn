@@ -187,7 +187,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
 
     def __init__(self, scheme, guessed_scheme=None):
         mapping.BzrSvnMapping.__init__(self)
-        if isinstance(scheme, str):
+        if isinstance(scheme, str) or isinstance(scheme, unicode):
             try:
                 self.scheme = BranchingScheme.find_scheme(scheme)
             except UnknownBranchingScheme, e:
@@ -314,9 +314,9 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
         assert revnum >= 0
         assert revnum > 0 or path == "", \
                 "Trying to generate revid for (%r,%r)" % (path, revnum)
-        return b"%s%s:%s:%s:%d" % (
+        return str("%s%s:%s:%s:%d" % (
                 cls.revid_prefix, scheme, uuid,
-                mapping.escape_svn_path(path.strip("/")), revnum)
+                mapping.escape_svn_path(path.strip("/")), revnum))
 
     def revision_id_foreign_to_bzr(self, (uuid, path, revnum)):
         assert isinstance(path, str)

@@ -23,7 +23,6 @@ from breezy.controldir import (
     format_registry,
     )
 import breezy.gpg
-from breezy import version_info as bzrlib_version
 from breezy.repository import Repository
 from breezy.tests import KnownFailure
 from breezy.tests.blackbox import ExternalBase
@@ -516,15 +515,8 @@ if len(sys.argv) == 2:
         This also registers the cleanup, so that we will revert to
         the original gpg strategy when done.
         """
-        self._oldstrategy = breezy.gpg.GPGStrategy
-
         # monkey patch gpg signing mechanism
-        breezy.gpg.GPGStrategy = bzrlib.gpg.LoopbackGPGStrategy
-
-        self.addCleanup(self._fix_gpg_strategy)
-
-    def _fix_gpg_strategy(self):
-        breezy.gpg.GPGStrategy = self._oldstrategy
+        self.overrideAttr(breezy.gpg, 'GPGStrategy', breezy.gpg.LoopbackGPGStrategy)
 
     def test_sign_my_commits(self):
         repos_url = self.make_repository('dc')

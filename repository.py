@@ -52,7 +52,7 @@ from breezy.transport import (
     Transport,
     )
 
-from breezy.plugins.svn import (
+from . import (
     cache,
     changes,
     errors,
@@ -60,25 +60,25 @@ from breezy.plugins.svn import (
     logwalker,
     revmeta,
     )
-from breezy.plugins.svn.branchprops import (
+from .branchprops import (
     PathPropertyProvider,
     )
-from breezy.plugins.svn.config import SvnRepositoryStack
-from breezy.plugins.svn.fileids import (
+from .config import SvnRepositoryStack
+from .fileids import (
     CachingFileIdMapStore,
     FileIdMapStore,
     simple_apply_changes,
     )
-from breezy.plugins.svn.graph import (
+from .graph import (
     SubversionGraph,
     )
-from breezy.plugins.svn.layout.standard import (
+from .layout.standard import (
     WildcardLayout,
     )
-from breezy.plugins.svn.layout.guess import (
+from .layout.guess import (
     repository_guess_layout,
     )
-from breezy.plugins.svn.mapping import (
+from .mapping import (
     SVN_REVPROP_BZR_SIGNATURE,
     SVN_REVPROP_BZR_TIMESTAMP,
     BzrSvnMapping,
@@ -90,18 +90,18 @@ from breezy.plugins.svn.mapping import (
     parse_svn_dateprop,
     unpack_highres_date,
     )
-from breezy.plugins.svn.parents import (
+from .parents import (
     DiskCachingParentsProvider,
     )
-from breezy.plugins.svn.revids import (
+from .revids import (
     DiskCachingRevidMap,
     MemoryCachingRevidMap,
     RevidMap,
     )
-from breezy.plugins.svn.tree import (
+from .tree import (
     SvnRevisionTree,
     )
-from breezy.plugins.svn.filegraph import (
+from .filegraph import (
     PerFileParentProvider,
     )
 
@@ -147,7 +147,7 @@ class SvnRepositoryFormat(RepositoryFormat):
 
     @property
     def _matchingcontroldir(self):
-        from breezy.plugins.svn.remote import SvnRemoteFormat
+        from .remote import SvnRemoteFormat
         return SvnRemoteFormat()
 
     def __init__(self):
@@ -160,13 +160,13 @@ class SvnRepositoryFormat(RepositoryFormat):
         return "subversion"
 
     def initialize(self, controldir, shared=False, _internal=False):
-        from breezy.plugins.svn.remote import SvnRemoteAccess
+        from .remote import SvnRemoteAccess
         if not isinstance(controldir, SvnRemoteAccess):
             raise bzr_errors.UninitializableFormat(self)
         return controldir.open_repository()
 
     def get_foreign_tests_repository_factory(self):
-        from breezy.plugins.svn.tests.test_repository import (
+        from .tests.test_repository import (
             ForeignTestsRepositoryFactory,
             )
         return ForeignTestsRepositoryFactory()
@@ -348,9 +348,9 @@ def lazy_register_optimizers():
     if _optimizers_registered:
         return
     from breezy.repository import InterRepository
-    from breezy.plugins.svn import push, fetch
+    from . import push, fetch
     _optimizers_registered = True
-    InterRepository.register_optimiser(fetch.InterFromSvnRepository)
+    InterRepository.register_optimiser(fetch.InterFromSvnToInventoryRepository)
     InterRepository.register_optimiser(push.InterToSvnRepository)
 
 
@@ -451,7 +451,7 @@ class SvnRepository(ForeignRepository):
         # accessible, and we don't really need it.
         if self._some_controldir.svn_root_url == self._some_controldir.svn_url:
             return self._some_controldir
-        from breezy.plugins.svn.remote import SvnRemoteAccess
+        from .remote import SvnRemoteAccess
         self._some_controldir = SvnRemoteAccess(self._some_controldir.root_transport.clone_root())
         return self._some_controldir
 
@@ -535,7 +535,7 @@ class SvnRepository(ForeignRepository):
 
     def reconcile(self, other=None, thorough=False):
         """Reconcile this repository."""
-        from breezy.plugins.svn.reconcile import RepoReconciler
+        from .reconcile import RepoReconciler
         reconciler = RepoReconciler(self, thorough=thorough)
         reconciler.reconcile()
         return reconciler
@@ -685,7 +685,7 @@ class SvnRepository(ForeignRepository):
         """See Repository.get_delta_for_revision()."""
         parentrevmeta = revision.svn_meta.get_lhs_parent_revmeta(
             revision.mapping)
-        from breezy.plugins.svn.fetch import TreeDeltaBuildEditor
+        from .fetch import TreeDeltaBuildEditor
         if parentrevmeta is None:
             parentfileidmap = {}
             parent_branch_path = revision.svn_meta.metarev.branch_path
@@ -1150,7 +1150,7 @@ class SvnRepository(ForeignRepository):
 
         This will include branches inside other branches.
         """
-        from breezy.plugins.svn.branch import SvnBranch # avoid circular imports
+        from .branch import SvnBranch # avoid circular imports
         # All branches use this repository, so the using argument can be
         # ignored.
         if layout is None:
@@ -1229,7 +1229,7 @@ class SvnRepository(ForeignRepository):
         """See Repository.get_commit_builder()."""
         if self._lock_mode != 'w':
             raise bzr_errors.NotWriteLocked(self)
-        from breezy.plugins.svn.commit import SvnCommitBuilder
+        from .commit import SvnCommitBuilder
         if branch is None:
             raise Exception("branch option is required for "
                             "SvnRepository.get_commit_builder")

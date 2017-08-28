@@ -59,13 +59,13 @@ from breezy.transport import (
     )
 
 import breezy.plugins.svn
-from breezy.plugins.svn.auth import (
+from .auth import (
     create_auth_baton,
     )
-from breezy.plugins.svn.changes import (
+from .changes import (
     common_prefix,
     )
-from breezy.plugins.svn.errors import (
+from .errors import (
     convert_svn_error,
     DavRequestFailed,
     NoSvnRepositoryPresent,
@@ -254,7 +254,7 @@ def Connection(url, auth=None, config=None, readonly=False):
         if num == subvertpy.ERR_RA_DAV_RELOCATED:
             raise convert_relocate_error(url, num, msg)
         raise convert_error(e)
-    from breezy.plugins.svn import lazy_check_versions
+    from . import lazy_check_versions
     lazy_check_versions()
     return ret
 
@@ -345,8 +345,8 @@ class SvnRaTransport(Transport):
         if host.endswith(".codeplex.com"):
             warn_codeplex(host)
         if from_transport is None:
-            self.connections = ConnectionPool(self.svn_url,
-                readonly=readonly)
+            self.connections = ConnectionPool(
+                    self.svn_url, readonly=readonly)
             if credentials is not None:
                 assert isinstance(credentials, dict)
                 self.connections.set_credentials(credentials)
@@ -363,7 +363,7 @@ class SvnRaTransport(Transport):
         self._repos_root = None
         self._uuid = None
         self.capabilities = {}
-        from breezy.plugins.svn import lazy_check_versions
+        from . import lazy_check_versions
         lazy_check_versions()
 
     def is_readonly(self):
@@ -903,7 +903,6 @@ def check_dirs_exist(transport, bp_parts, base_rev):
     for i in range(len(bp_parts), 0, -1):
         current = bp_parts[:i]
         path = "/".join(current).strip("/")
-        assert isinstance(path, str)
         if transport.check_path(path, base_rev) == subvertpy.NODE_DIR:
             return current
     return []

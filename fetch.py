@@ -102,10 +102,7 @@ TEXT_CACHE_SIZE = 1024 * 1024 * 50
 def tree_parent_id_basename_to_file_id(tree, parent_id, basename):
     if parent_id is None and basename == "":
         return tree.get_root_id()
-    try:
-        inv = tree.root_inventory
-    except AttributeError:
-        inv = tree.inventory
+    inv = tree.root_inventory
     parent_id_basename_index = getattr(
         inv, "parent_id_basename_to_file_id", None)
     if parent_id_basename_index is None:
@@ -130,7 +127,7 @@ def tree_ancestors(tree, fileid, exceptions):
     todo = set([fileid])
     while todo:
         fileid = todo.pop()
-        for ie in tree.inventory[fileid].children.values():
+        for ie in tree.root_inventory[fileid].children.values():
             p = tree.id2path(ie.file_id)
             if p in exceptions:
                 continue
@@ -460,7 +457,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _close(self):
         if (not self.editor.bzr_base_tree.has_id(self.new_id) or
-            self.new_ie != self.editor.bzr_base_tree.inventory[self.new_id] or
+            self.new_ie != self.editor.bzr_base_tree.root_inventory[self.new_id] or
             self.bzr_base_path != self.path):
             self.new_ie.revision = self.editor._get_directory_revision(self.new_id)
             self.editor.texts.insert_record_stream([
@@ -494,7 +491,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             bzr_base_path = None
             bzr_base_ie = None
         else:
-            bzr_base_ie = self.editor.bzr_base_tree.inventory[file_id]
+            bzr_base_ie = self.editor.bzr_base_tree.root_inventory[file_id]
 
         return DirectoryRevisionBuildEditor(self.editor, bzr_base_path, path,
             file_id, bzr_base_ie, svn_base_ie, self.new_id,
@@ -509,7 +506,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         else:
             file_id = self.editor._get_new_file_id(path)
         try:
-            bzr_base_ie = self.editor.bzr_base_tree.inventory[file_id]
+            bzr_base_ie = self.editor.bzr_base_tree.root_inventory[file_id]
         except NoSuchId:
             bzr_base_ie = None
 
@@ -675,7 +672,7 @@ def ensure_inventories_in_repo(repo, trees):
         if revid == NULL_REVISION:
             continue
         if not real_inv_vf.get_parent_map([(revid, )]):
-            repo.add_inventory(revid, t.inventory, t.get_parent_ids())
+            repo.add_inventory(revid, t.root_inventory, t.get_parent_ids())
 
 
 class RevisionBuildEditor(DeltaBuildEditor):
@@ -702,7 +699,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self._new_file_paths = {}
         self._deleted = set()
         self._explicitly_deleted = set()
-        self.inventory = None
+        self._inventory = None
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
         self.lhs_parent_revmeta = lhs_parent_revmeta
         self._text_revisions_overrides = revmeta.get_text_revisions(mapping)
@@ -765,7 +762,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             file_id = tree_parent_id_basename_to_file_id(
                 self.svn_base_tree, parent_id,
                 urlutils.basename(path))
-        return (file_id, self.svn_base_tree.inventory[file_id])
+        return (file_id, self.svn_base_tree.root_inventory[file_id])
 
     def get_svn_base_ie_copyfrom(self, path, revnum):
         """Look up the base ie for the svn path, revnum.
@@ -802,7 +799,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             try:
                 return self._new_file_paths[file_id]
             except KeyError:
-                base_ie = self.bzr_base_tree.inventory[file_id]
+                base_ie = self.bzr_base_tree.root_inventory[file_id]
                 if base_ie.parent_id is None:
                     parent_path = ""
                 else:
@@ -813,10 +810,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
         for file_id in self.bzr_base_tree.all_file_ids():
             if file_id in self._new_file_paths:
                 continue
-            base_ie = self.bzr_base_tree.inventory[file_id]
+            base_ie = self.bzr_base_tree.root_inventory[file_id]
             for tree in self.bzr_parent_trees[1:]:
                 try:
-                    parent_ie = tree.inventory[file_id]
+                    parent_ie = tree.root_inventory[file_id]
                 except NoSuchId:
                     continue
                 if parent_ie.revision != base_ie.revision:
@@ -849,15 +846,12 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 "revision lhs parent %s does not match base tree revid %s" % \
                  (rev.parent_ids, self.bzr_base_tree.get_revision_id())
             basis_id = rev.parent_ids[0]
-            try:
-                basis_inv = self.bzr_base_tree.root_inventory
-            except AttributeError:
-                basis_inv = self.bzr_base_tree.inventory
+            basis_inv = self.bzr_base_tree.root_inventory
         except IndexError:
             basis_id = NULL_REVISION
             basis_inv = None
         present_parent_ids = self.target.has_revisions(rev.parent_ids)
-        rev.inventory_sha1, self.inventory = \
+        rev.inventory_sha1, self._inventory = \
             self.target.add_inventory_by_delta(basis_id, self._inv_delta,
             rev.revision_id,
             tuple([r for r in rev.parent_ids if r in present_parent_ids]),
@@ -895,7 +889,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 bzr_base_path = None
                 bzr_base_ie = None
             else:
-                bzr_base_ie = self.bzr_base_tree.inventory[file_id]
+                bzr_base_ie = self.bzr_base_tree.root_inventory[file_id]
 
             if bzr_base_path != u"":
                 self._delete_entry(None, u"", base_revnum)
@@ -924,7 +918,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         """'renew' the fileid of a path."""
         assert isinstance(path, unicode)
         old_file_id = self.bzr_base_tree.path2id(path)
-        old_ie = self.bzr_base_tree.inventory[old_file_id]
+        old_ie = self.bzr_base_tree.root_inventory[old_file_id]
         new_ie = old_ie.copy()
         new_ie.file_id = self._get_new_file_id(path)
         new_ie.parent_id = self._get_new_file_id(urlutils.dirname(path))
@@ -1010,7 +1004,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         revision = None
         for tree in self.bzr_parent_trees[1:]:
             try:
-                parent_ie = tree.inventory[ie.file_id]
+                parent_ie = tree.root_inventory[ie.file_id]
             except NoSuchId:
                 continue
             else:
@@ -1368,7 +1362,7 @@ class FetchRevisionFinder(object):
                 exclude_non_mainline=exclude_non_mainline))
 
 
-class InterFromSvnRepository(InterRepository):
+class InterFromSvnToInventoryRepository(InterRepository):
     """Svn to any repository actions."""
 
     _matching_repo_format = SvnRepositoryFormat()
@@ -1378,7 +1372,7 @@ class InterFromSvnRepository(InterRepository):
         return None
 
     def __init__(self, source, target):
-        super(InterFromSvnRepository, self).__init__(source, target)
+        super(InterFromSvnToInventoryRepository, self).__init__(source, target)
         def chunks_to_size(chunks):
             return sum(map(len, chunks))
         self._text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE,
@@ -1549,7 +1543,7 @@ class InterFromSvnRepository(InterRepository):
                         editor.abort()
                         raise
                     self._prev_tree = InventoryRevisionTree(self.target,
-                        editor.inventory, revid)
+                        editor.root_inventory, revid)
             except:
                 self.target.abort_write_group()
                 raise
@@ -1707,8 +1701,8 @@ class InterFromSvnRepository(InterRepository):
                         revmeta.branch_path)
 
                 def revfinish(revision, revprops, editor):
-                    assert editor.inventory is not None
-                    self._prev_inv = editor.inventory
+                    assert editor.root_inventory is not None
+                    self._prev_inv = editor.root_inventory
 
                 conn = self.source.transport.get_connection(revmetas[-1].branch_path)
                 try:
@@ -1727,9 +1721,11 @@ class InterFromSvnRepository(InterRepository):
         """Be compatible with SvnRepository."""
         if not isinstance(source, SvnRepository):
             return False
+        if getattr(target, 'inventories', None) is None:
+            return False
         if not target.supports_rich_root():
             return False
-        if not getattr(target._format, "supports_full_versioned_files", True):
+        if not target._format.supports_full_versioned_files:
             return False
         return True
 

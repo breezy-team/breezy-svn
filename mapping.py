@@ -972,7 +972,6 @@ class SubversionMappingRegistry(foreign.VcsMappingRegistry):
         name = name[len("svn-"):]
         if "-" in name:
             name, rest = name.split("-", 1)
-            assert isinstance(rest, str)
             try:
                 return self.get(name)(rest)
             except errors.UnknownMapping:

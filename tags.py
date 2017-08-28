@@ -178,7 +178,6 @@ class SubversionTags(BasicTags):
         """
         if parent in self._parent_exists:
             return True
-        assert isinstance(parent, str)
         bp_parts = parent.split("/")
         existing_bp_parts = check_dirs_exist(
                 self.repository.transport,

@@ -89,7 +89,7 @@ from breezy.plugins.svn.errors import (
     SubversionBranchDiverged,
     )
 from breezy.plugins.svn.fetch import (
-    InterFromSvnRepository,
+    InterFromSvnToInventoryRepository,
     )
 from breezy.plugins.svn.push import (
     InterToSvnRepository,
@@ -420,11 +420,11 @@ class SvnBranch(ForeignBranch):
         return dir.open_workingtree()
 
     def _get_checkout_format(self, lightweight=False):
-        from bzrlib.plugins.svn.workingtree import SvnWorkingTreeDirFormat
+        from .workingtree import SvnWorkingTreeDirFormat
         if lightweight:
             return SvnWorkingTreeDirFormat()
         else:
-            return format_registry.make_bzrdir('default')
+            return format_registry.make_controldir('default')
 
     def create_checkout(self, to_location, revision_id=None, lightweight=False,
                         accelerator_tree=None, hardlink=False):
@@ -842,7 +842,7 @@ class InterFromSvnBranch(GenericInterBranch):
 
     def _fetch_revmetas(self, revmetas, find_ghosts=False, limit=None,
             exclude_non_mainline=None):
-        interrepo = InterFromSvnRepository(self.source.repository,
+        interrepo = InterFromSvnToInventoryRepository(self.source.repository,
             self.target.repository)
         revisionfinder = interrepo.get_revision_finder()
         for revmeta, mapping in revmetas:

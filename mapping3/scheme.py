@@ -48,7 +48,6 @@ class InvalidSvnBranchPath(BzrError):
 repository layout. See 'bzr help svn-repository-layout' for details."""
 
     def __init__(self, path, layout):
-        assert isinstance(path, str)
         BzrError.__init__(self)
         self.path = urllib.quote(path)
         self.layout = layout
@@ -95,7 +94,6 @@ class BranchingScheme(object):
         :param name: Name of branching scheme.
         :return: Branching scheme instance.
         """
-        assert isinstance(name, str)
         if name.startswith("trunk"):
             if name == "trunk":
                 return TrunkBranchingScheme()
@@ -219,7 +217,6 @@ class ListBranchingScheme(BranchingScheme):
 
     def unprefix(self, path):
         """See BranchingScheme.unprefix()."""
-        assert isinstance(path, str)
         parts = path.strip("/").split("/")
         for pattern in self.split_branch_list:
             if self._pattern_cmp(parts[:len(pattern)], pattern):
@@ -269,7 +266,6 @@ class NoBranchingScheme(ListBranchingScheme):
 
     def unprefix(self, path):
         """See BranchingScheme.unprefix()."""
-        assert isinstance(path, str)
         return ("", "", path.strip("/"))
 
     def __str__(self):
@@ -298,7 +294,6 @@ class TrunkBranchingScheme(ListBranchingScheme):
         self.tag_list = ["*/" * level + "tags/*"]
 
     def get_tag_path(self, name, project=""):
-        assert isinstance(name, unicode)
         if project == "":
             return urlutils.join("tags", name.encode("utf-8"))
         return urlutils.join(project, "tags", name.encode("utf-8"))
@@ -346,7 +341,6 @@ class TrunkBranchingScheme(ListBranchingScheme):
 
     def unprefix(self, path):
         """See BranchingScheme.unprefix()."""
-        assert isinstance(path, str)
         parts = path.strip("/").split("/")
         if len(parts) == 0 or self.level >= len(parts):
             raise InvalidSvnBranchPath(path, self)
@@ -410,7 +404,6 @@ class SingleBranchingScheme(ListBranchingScheme):
 
     def unprefix(self, path):
         """See BranchingScheme.unprefix()."""
-        assert isinstance(path, str)
         path = path.strip("/")
         if not path.startswith(self.path):
             raise InvalidSvnBranchPath(path, self)
