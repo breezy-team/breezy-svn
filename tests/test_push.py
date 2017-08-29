@@ -1038,8 +1038,8 @@ class PushNewBranchTests(SubversionTestCase):
         revid1 = bzrwt.commit("Initial")
         bzrwt.lock_write()
         try:
-            new_ie = bzrwt.inventory.root.copy()
-            foo_ie = bzrwt.inventory[bzrwt.path2id("foo")].copy()
+            new_ie = bzrwt.root_inventory.root.copy()
+            foo_ie = bzrwt.root_inventory[bzrwt.path2id("foo")].copy()
             new_ie.file_id = "mynewroot"
             foo_ie.parent_id = new_ie.file_id
             bzrwt.apply_inventory_delta([

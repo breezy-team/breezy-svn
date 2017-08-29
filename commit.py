@@ -582,8 +582,6 @@ class SvnCommitBuilder(CommitBuilder):
             trace.mutter(text, *args)
 
     def get_basis_delta(self):
-        if not self._will_record_deletes:
-            raise AssertionError
         revid = self._get_actual_revision_id()
         return self._get_basis_delta(revid)
 

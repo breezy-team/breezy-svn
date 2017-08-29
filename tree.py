@@ -266,7 +266,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
             self._revmeta.metarev.branch_path)
 
     @property
-    def inventory(self):
+    def root_inventory(self):
         # FIXME
         if self._bzr_inventory is not None:
             return self._bzr_inventory
@@ -291,11 +291,11 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
 
     def all_file_ids(self):
         # FIXME
-        return set(self.inventory)
+        return set(self.root_inventory)
 
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
         # FIXME
-        return self.inventory.iter_entries_by_dir(
+        return self.root_inventory.iter_entries_by_dir(
             specific_file_ids=specific_file_ids, yield_parents=yield_parents)
 
     def kind(self, file_id, path=None):
@@ -318,12 +318,12 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         if path is None:
             path = self.id2path(file_id)
         # FIXME: More efficient implementation?
-        return self.inventory[file_id].text_size
+        return self.root_inventory[file_id].text_size
 
     def list_files(self, include_root=False, from_dir=None, recursive=True):
         # FIXME
         # The only files returned by this are those from the version
-        inv = self.inventory
+        inv = self.root_inventory
         if from_dir is None:
             from_dir_id = None
         else:
@@ -543,7 +543,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             root_adm.close()
 
     @property
-    def inventory(self):
+    def root_inventory(self):
         if self._bzr_inventory is not None:
             return self._bzr_inventory
         self._bzr_inventory = Inventory(root_id=None)
@@ -649,7 +649,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
 
     def kind(self, file_id, path=None):
         # FIXME
-        return self.inventory[file_id].kind
+        return self.root_inventory[file_id].kind
 
     def get_file_text(self, file_id, path=None):
         """See Tree.get_file_text()."""
@@ -695,7 +695,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
     def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
         # FIXME
         try:
-            return self.inventory.iter_entries_by_dir(
+            return self.root_inventory.iter_entries_by_dir(
                 specific_file_ids=specific_file_ids, yield_parents=yield_parents)
         except BasisTreeIncomplete:
             return self.real_tree.iter_entries_by_dir(

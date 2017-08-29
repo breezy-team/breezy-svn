@@ -244,7 +244,7 @@ def parse_revision_metadata(text, rev):
         elif key == "properties":
             in_properties = True
         elif key[0] == "\t" and in_properties:
-            name = str(key[1:])
+            name = key[1:].encode('utf-8')
             if not name in rev.properties:
                 rev.properties[name] = value.decode("utf-8")
             else:
@@ -325,7 +325,8 @@ def parse_bzr_svn_revprops(props, rev):
 
     for name, value in props.iteritems():
         if name.startswith(SVN_REVPROP_BZR_REVPROP_PREFIX):
-            rev.properties[name[len(SVN_REVPROP_BZR_REVPROP_PREFIX):]] = value.decode("utf-8")
+            bzrname = name[len(SVN_REVPROP_BZR_REVPROP_PREFIX):].encode('utf-8')
+            rev.properties[bzrname] = value.decode("utf-8")
         changed = True
 
     return changed

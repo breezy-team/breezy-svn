@@ -364,8 +364,8 @@ class SubversionTags(BasicTags):
             if k not in dest_dict:
                 self.delete_tag(k)
 
-    def merge_to(self, to_tags, overwrite=False, _from_revnum=None,
-                 _to_revnum=None):
+    def merge_to(self, to_tags, overwrite=False, ignore_master=False,
+                 _from_revnum=None, _to_revnum=None):
         """Copy tags between repositories if necessary and possible.
 
         This method has common command-line behaviour about handling

@@ -1008,10 +1008,14 @@ class SvnRepository(ForeignRepository):
         parentrevmeta = revmeta.get_lhs_parent_revmeta(mapping)
         return revmeta.get_revision(mapping, parentrevmeta)
 
-    def get_revisions(self, revision_ids):
+    def iter_revisions(self, revision_ids):
         """See Repository.get_revisions()."""
-        # TODO: More efficient implementation?
-        return map(self.get_revision, revision_ids)
+        for revision_id in revision_ids:
+            try:
+                rev = self.get_revision(revision_id)
+            except bzr_errors.NoSuchRevision:
+                rev = None
+            yield (revision_id, rev)
 
     def add_revision(self, rev_id, rev, inv=None, config=None):
         """See Repository.add_revision()."""
