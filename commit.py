@@ -249,7 +249,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
     # remove if they no longer exist with the same name
     # or parents
     if base_tree.has_id(file_id) and base_tree.kind(file_id) == 'directory':
-        for child_name, child_ie in base_tree.iter_child_entries(file_id):
+        for child_ie in base_tree.iter_child_entries(file_id):
             new_child_ie = get_ie(child_ie.file_id)
             # remove if...
             if (
@@ -261,20 +261,20 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                 child_ie.name != new_child_ie.name or
                 # ... kind changed
                 child_ie.kind != new_child_ie.kind):
-                mutter('removing %r(%r)', child_name, child_ie.file_id)
+                mutter('removing %r(%r)', child_ie.name, child_ie.file_id)
                 dir_editor.delete_entry(
-                    branch_relative_path(path, child_name.encode("utf-8")),
+                    branch_relative_path(path, child_ie.name.encode("utf-8")),
                     base_revnum)
                 changed = True
 
     # Loop over file children of file_id in new_inv
-    for child_name, child_ie in iter_children(file_id):
+    for child_ie in iter_children(file_id):
         assert child_ie is not None
 
         if not (child_ie.kind in ('file', 'symlink')):
             continue
 
-        new_child_path = path_join(path, child_name.encode("utf-8"))
+        new_child_path = path_join(path, child_ie.name.encode("utf-8"))
         full_new_child_path = branch_relative_path(new_child_path)
         child_editor = None
         try:
@@ -329,11 +329,11 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                 child_editor.close()
 
     # Loop over subdirectories of file_id in new_inv
-    for child_name, child_ie in iter_children(file_id):
+    for child_ie in iter_children(file_id):
         if child_ie.kind != 'directory':
             continue
 
-        new_child_path = path_join(path, child_name.encode("utf-8"))
+        new_child_path = path_join(path, child_ie.name.encode("utf-8"))
         child_editor = None
         try:
             # add them if they didn't exist in base_tree or changed kind
@@ -681,7 +681,7 @@ class SvnCommitBuilder(CommitBuilder):
         # Iterate over the children that were added during the commit
         for child in self._updated_children[file_id]:
             (child_path, child_ie) = self._updated[child]
-            yield (child_ie.name, child_ie)
+            yield child_ie
 
         try:
             old_path = self.old_tree.id2path(file_id)
@@ -689,12 +689,12 @@ class SvnCommitBuilder(CommitBuilder):
             return
 
         # Iterate over the children that were present previously
-        if self.old_tree.kind(file_id, old_path) == 'directory':
-            for name, child_ie in self.old_tree.iter_child_entries(
+        if self.old_tree.kind(file_id) == 'directory':
+            for child_ie in self.old_tree.iter_child_entries(
                     file_id, old_path):
                 if (not child_ie.file_id in self._deleted_fileids and
                     not child_ie.file_id in self._updated):
-                    yield (name, child_ie)
+                    yield child_ie
 
     def _get_new_ie(self, file_id):
         if file_id in self._deleted_fileids:

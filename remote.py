@@ -452,7 +452,6 @@ class SvnRemoteAccess(ControlDir):
         if branch_name == "" and layout.is_branch_or_tag(self._branch_path):
             return self._branch_path
         try:
-            branch_name = osutils.safe_utf8(branch_name)
             return layout.get_branch_path(branch_name, self._branch_path)
         except NoCustomBranchPaths:
             if branch_name == "":

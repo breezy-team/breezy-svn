@@ -699,7 +699,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self._new_file_paths = {}
         self._deleted = set()
         self._explicitly_deleted = set()
-        self._inventory = None
+        self.root_inventory = None
         super(RevisionBuildEditor, self).__init__(revmeta, mapping)
         self.lhs_parent_revmeta = lhs_parent_revmeta
         self._text_revisions_overrides = revmeta.get_text_revisions(mapping)
@@ -851,7 +851,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             basis_id = NULL_REVISION
             basis_inv = None
         present_parent_ids = self.target.has_revisions(rev.parent_ids)
-        rev.inventory_sha1, self._inventory = \
+        rev.inventory_sha1, self.root_inventory = \
             self.target.add_inventory_by_delta(basis_id, self._inv_delta,
             rev.revision_id,
             tuple([r for r in rev.parent_ids if r in present_parent_ids]),

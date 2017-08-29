@@ -228,7 +228,6 @@ class SvnBranch(ForeignBranch):
         self._lock_mode = None
         self._lock_count = 0
         self._clear_cached_state()
-        assert isinstance(self._branch_path, str)
         if not _skip_check:
             try:
                 if self.check_path() != NODE_DIR:
