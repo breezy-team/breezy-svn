@@ -170,8 +170,12 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
     def iter_children(self, file_id, path=None):
         """See Tree.iter_children."""
         entry = self.iter_entries_by_dir([file_id]).next()[1]
-        for child in getattr(entry, 'children', {}).itervalues():
+        for child in getattr(entry, 'children', {}).values():
             yield child.file_id
+
+    def iter_child_entries(self, file_id, path=None):
+        entry = self.iter_entries_by_dir([file_id]).next()[1]
+        return getattr(entry, 'children', {}).items()
 
 
 # This maps SVN names for eol-styles to bzr names:

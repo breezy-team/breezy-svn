@@ -244,8 +244,6 @@ class SvnBranch(ForeignBranch):
                 raise NotBranchError(branch_path)
         self.project = project
         self.name = self.layout.get_branch_name(branch_path)
-        if not isinstance(self.name, unicode):
-            raise TypeError(self.name)
 
     @property
     def control_url(self):
