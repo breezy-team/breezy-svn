@@ -76,32 +76,33 @@ from breezy.symbol_versioning import (
     )
 from breezy.transport import get_transport
 
-from breezy.plugins.svn import (
+from . import (
     util,
     )
-from breezy.plugins.svn.config import (
+from .config import (
     BranchConfig,
     SvnBranchStack,
     )
-from breezy.plugins.svn.errors import (
+from .errors import (
     NotSvnBranchPath,
     PushToEmptyBranch,
     SubversionBranchDiverged,
     )
-from breezy.plugins.svn.fetch import (
+from .fetch import (
     InterFromSvnToInventoryRepository,
     )
-from breezy.plugins.svn.push import (
+from .push import (
     InterToSvnRepository,
     create_branch_with_hidden_commit,
     )
-from breezy.plugins.svn.tags import (
+from .tags import (
     SubversionTags,
     resolve_tags_svn_ancestry,
     )
-from breezy.plugins.svn.transport import (
+from .transport import (
     bzr_to_svn_url,
     )
+
 
 class SubversionBranchCheckResult(BranchCheckResult):
     """Result of checking a Subversion branch."""
@@ -761,17 +762,17 @@ class SvnBranchFormat(BranchFormat):
         return 'Subversion Smart Server'
 
     def get_foreign_tests_branch_factory(self):
-        from breezy.plugins.svn.tests.test_branch import ForeignTestsBranchFactory
+        from .tests.test_branch import ForeignTestsBranchFactory
         return ForeignTestsBranchFactory()
 
     def initialize(self, to_controldir, name=None, repository=None,
                    append_revisions_only=None):
         """See BranchFormat.initialize()."""
-        from breezy.plugins.svn.remote import SvnRemoteAccess
+        from .remote import SvnRemoteAccess
         if not isinstance(to_controldir, SvnRemoteAccess):
             raise IncompatibleFormat(self, to_controldir._format)
-        return to_controldir.create_branch(name,
-            append_revisions_only=append_revisions_only)
+        return to_controldir.create_branch(
+                name, append_revisions_only=append_revisions_only)
 
     def supports_tags(self):
         return True
@@ -790,6 +791,9 @@ class SvnBranchFormat(BranchFormat):
 
     def tags_are_versioned(self):
         return True
+
+    def supports_store_uncommitted(self):
+        return False
 
 
 class InterFromSvnBranch(GenericInterBranch):

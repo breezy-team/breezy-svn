@@ -1534,6 +1534,8 @@ class SvnWorkingTreeFormat(WorkingTreeFormat):
 
     supports_versioned_directories = True
 
+    supports_store_uncommitted = False
+
     def __init__(self, version=None):
         self.version = version
 
