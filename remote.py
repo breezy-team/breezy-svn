@@ -131,7 +131,8 @@ class SvnRemoteFormat(ControlDirFormat):
         create_prefix=False, force_new_repo=False, stacked_on=None,
         stack_on_pwd=None, repo_format_name=None, make_working_trees=None,
         shared_repo=False, vfs_only=False):
-        from breezy.controldir import CreateRepository
+        # TODO(jelmer): This should really live in breezy.controldir
+        from breezy.bzr.bzrdir import CreateRepository
         def make_directory(transport):
             transport.mkdir('.')
             return transport

@@ -248,6 +248,7 @@ class TdbLogCache(LogCache, CacheTable):
 
         if revprops is None:
             revprops = {}
+        revprops = {key.encode('utf-8'): value for (key, value) in revprops.items()}
         self.db["revprops/%d" % revision] = bencode.bencode((revprops, all_revprops))
 
     def max_revnum(self):

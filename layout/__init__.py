@@ -280,7 +280,7 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None):
             for bp, has_props, revnum in expander.expand([],
                     pattern.strip("/").split("/")):
                 if verify_fn(bp, project):
-                    yield (project, bp, bp.split("/")[-1].decode('utf-8'), has_props,
+                    yield (project, bp, bp.split("/")[-1], has_props,
                            revnum)
     finally:
         pb.finished()

@@ -471,6 +471,8 @@ class SvnBranch(ForeignBranch):
         if ret is not None:
             return ret
         bp = self._branch_path.strip("/")
+        if isinstance(bp, str):
+            bp = bp.decode('utf-8')
         if self._branch_path == "":
             return self.base.split("/")[-1]
         return bp
