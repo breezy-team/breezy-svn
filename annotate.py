@@ -43,17 +43,16 @@ from breezy.plugins.svn import (
 
 class Annotater(object):
 
-    def __init__(self, repository, fileid):
+    def __init__(self, repository):
         self._text = ""
         self._annotated = []
         self._repository = repository
-        self.fileid = fileid
         self._related_revs = {}
 
     def get_annotated(self):
         return self._annotated
 
-    def check_file_revs(self, revid, branch_path, revnum, mapping, relpath=None):
+    def check_file_revs(self, revid, branch_path, revnum, mapping, relpath):
         self._annotated = []
         for (revmeta, hidden, mapping) in self._repository._revmeta_provider._iter_reverse_revmeta_mapping_history(
                 branch_path, revnum, to_revnum=0, mapping=mapping):
@@ -61,12 +60,6 @@ class Annotater(object):
                 continue
             self._related_revs[revmeta.metarev.revnum] = revmeta, mapping
         self._text = ""
-        if relpath is None:
-            tree = self._repository.revision_tree(revid)
-            try:
-                relpath = tree.id2path(self.fileid)
-            except NoSuchId:
-                return []
         path = urlutils.join(branch_path, relpath.encode("utf-8")).strip("/")
         try:
             self._repository.transport.get_file_revs(path, -1, revnum,
@@ -104,8 +97,7 @@ class Annotater(object):
                 stream.seek(0)
                 lines = stream.readlines()
                 self._text = "".join(lines)
-                if fileid == self.fileid:
-                    self._annotated = self.check_file(lines, revid, [self._annotated])
+                self._annotated = self.check_file(lines, revid, [self._annotated])
                 return
             stream.write(apply_txdelta_window(self._text, window))
         return apply_window

@@ -674,12 +674,12 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             wc.close()
         return orig_props
 
-    def annotate_iter(self, file_id, default_revision=CURRENT_REVISION):
-        from breezy.plugins.svn.annotate import Annotater
-        annotater = Annotater(self.workingtree.branch.repository, file_id)
+    def annotate_iter(self, path, default_revision=CURRENT_REVISION, file_id=None):
+        from .annotate import Annotater
+        annotater = Annotater(self.workingtree.branch.repository)
         annotater.check_file_revs(
-            self.get_revision_id(), self.workingtree.get_branch_path(), 
-            self.workingtree.base_revnum, self.mapping, self.id2path(file_id))
+            self.get_revision_id(), self.workingtree.get_branch_path(),
+            self.workingtree.base_revnum, self.mapping, path)
         return annotater.get_annotated()
 
     @property

@@ -32,13 +32,15 @@ from breezy.decorators import only_raises
 from breezy.foreign import (
     ForeignRepository,
     )
+from breezy.lock import (
+    LogicalLockResult,
+    )
 from breezy.bzr.inventory import (
     Inventory,
     )
 from breezy.repository import (
     Repository,
     RepositoryFormat,
-    needs_read_lock,
     )
 from breezy.bzr.inventorytree import InventoryRevisionTree
 from breezy.revision import (
@@ -109,17 +111,6 @@ LAYOUT_SOURCE_GUESSED = 'guess'
 LAYOUT_SOURCE_CONFIG = 'config'
 LAYOUT_SOURCE_OVERRIDDEN = 'overridden'
 LAYOUT_SOURCE_MAPPING_MANDATED = 'mapping-mandated'
-
-
-class SubversionRepositoryLock(object):
-    """Subversion lock."""
-
-    def __init__(self, repository):
-        self.repository_token = None
-        self.repository = repository
-
-    def unlock(self):
-        self.repository.unlock()
 
 
 class DummyLockableFiles(object):
@@ -469,11 +460,11 @@ class SvnRepository(ForeignRepository):
     def leave_lock_in_place(self):
         raise NotImplementedError(self.leave_lock_in_place)
 
-    @needs_read_lock
     def get_file_graph(self):
         """Return the graph walker for text revisions."""
-        return graph.Graph(graph.CachingParentsProvider(
-            PerFileParentProvider(self)))
+        with self.lock_read():
+            return graph.Graph(graph.CachingParentsProvider(
+                PerFileParentProvider(self)))
 
     def get_graph(self, other_repository=None):
         """Return the graph walker for this repository format"""
@@ -514,7 +505,7 @@ class SvnRepository(ForeignRepository):
             self._lock_mode = 'r'
             self._lock_count = 1
             self._parents_provider.enable_cache()
-        return self
+        return LogicalLockResult(self.unlock)
 
     @only_raises(bzr_errors.LockNotHeld, bzr_errors.LockBroken)
     def unlock(self):
@@ -570,7 +561,7 @@ class SvnRepository(ForeignRepository):
             self._lock_mode = 'w'
             self._lock_count = 1
             self._parents_provider.enable_cache()
-        return SubversionRepositoryLock(self)
+        return LogicalLockResult(self.unlock)
 
     def is_write_locked(self):
         return (self._lock_mode == 'w')
@@ -591,7 +582,6 @@ class SvnRepository(ForeignRepository):
             self._cached_revnum = revnum
         return revnum
 
-    @needs_read_lock
     def gather_stats(self, revid=None, committers=None):
         """See Repository.gather_stats()."""
         result = {}
@@ -600,39 +590,40 @@ class SvnRepository(ForeignRepository):
                 result['latestrev'] = timestamp
             result['firstrev'] = timestamp
 
-        count = 0
-        if committers is not None and revid is not None:
-            all_committers = set()
-            graph = self.get_graph()
-            revids = [r for (r,ps) in graph.iter_ancestry([revid]) if r !=
-                    NULL_REVISION and ps is not None]
-            for rev in self.get_revisions(revids):
-                if rev.committer != '':
-                    all_committers.add(rev.committer)
-                check_timestamp((rev.timestamp, rev.timezone))
-            result['committers'] = len(all_committers)
-            count = len(list(self.all_revision_ids()))
-        else:
-            mapping = self.get_mapping()
-            for revmeta in self._revmeta_provider.iter_all_revisions(
-                    self.get_layout(), mapping.is_branch_or_tag,
-                    self.get_latest_revnum()):
-                if revmeta.is_hidden(mapping):
-                    continue
-                try:
-                    timestamp = unpack_highres_date(
-                        revmeta.metarev.revprops[SVN_REVPROP_BZR_TIMESTAMP])
-                except KeyError:
-                    timestamp = parse_svn_dateprop(
-                        revmeta.metarev.revprops[
-                            subvertpy.properties.PROP_REVISION_DATE])
-                check_timestamp(timestamp)
-                count += 1
-        # Approximate number of revisions
-        result['revisions'] = count
-        result['svn-uuid'] = self.uuid
-        result['svn-last-revnum'] = self.get_latest_revnum()
-        return result
+        with self.lock_read():
+            count = 0
+            if committers is not None and revid is not None:
+                all_committers = set()
+                graph = self.get_graph()
+                revids = [r for (r,ps) in graph.iter_ancestry([revid]) if r !=
+                        NULL_REVISION and ps is not None]
+                for rev in self.get_revisions(revids):
+                    if rev.committer != '':
+                        all_committers.add(rev.committer)
+                    check_timestamp((rev.timestamp, rev.timezone))
+                result['committers'] = len(all_committers)
+                count = len(list(self.all_revision_ids()))
+            else:
+                mapping = self.get_mapping()
+                for revmeta in self._revmeta_provider.iter_all_revisions(
+                        self.get_layout(), mapping.is_branch_or_tag,
+                        self.get_latest_revnum()):
+                    if revmeta.is_hidden(mapping):
+                        continue
+                    try:
+                        timestamp = unpack_highres_date(
+                            revmeta.metarev.revprops[SVN_REVPROP_BZR_TIMESTAMP])
+                    except KeyError:
+                        timestamp = parse_svn_dateprop(
+                            revmeta.metarev.revprops[
+                                subvertpy.properties.PROP_REVISION_DATE])
+                    check_timestamp(timestamp)
+                    count += 1
+            # Approximate number of revisions
+            result['revisions'] = count
+            result['svn-uuid'] = self.uuid
+            result['svn-last-revnum'] = self.get_latest_revnum()
+            return result
 
     def _properties_to_set(self, mapping, target_config):
         """Determine what sort of custom properties to set when
@@ -1148,34 +1139,33 @@ class SvnRepository(ForeignRepository):
                 raise errors.RevpropChangeFailed(SVN_REVPROP_BZR_SIGNATURE)
             raise
 
-    @needs_read_lock
     def find_branches(self, using=False, layout=None, revnum=None, mapping=None):
         """Find branches underneath this repository.
 
         This will include branches inside other branches.
         """
         from .branch import SvnBranch # avoid circular imports
-        # All branches use this repository, so the using argument can be
-        # ignored.
-        if layout is None:
-            layout = self.get_layout()
-        if revnum is None:
-            revnum = self.get_latest_revnum()
+        with self.lock_read():
+            # All branches use this repository, so the using argument can be
+            # ignored.
+            if layout is None:
+                layout = self.get_layout()
+            if revnum is None:
+                revnum = self.get_latest_revnum()
 
-        branches = []
-        if mapping is None:
-            mapping = self.get_mapping()
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
-            for project, bp, nick, has_props, revnum in layout.get_branches(self,
-                    revnum):
-                branches.append(SvnBranch(self, self.controldir, bp, mapping,
-                    _skip_check=True, revnum=revnum))
-        finally:
-            pb.finished()
-        return branches
+            branches = []
+            if mapping is None:
+                mapping = self.get_mapping()
+            pb = ui.ui_factory.nested_progress_bar()
+            try:
+                for project, bp, nick, has_props, revnum in layout.get_branches(self,
+                        revnum):
+                    branches.append(SvnBranch(self, self.controldir, bp, mapping,
+                        _skip_check=True, revnum=revnum))
+            finally:
+                pb.finished()
+            return branches
 
-    @needs_read_lock
     def find_tags(self, project, layout=None, mapping=None, revnum=None):
         """Find tags underneath this repository for the specified project.
 
@@ -1184,40 +1174,41 @@ class SvnRepository(ForeignRepository):
         :param project: Name of the project to find tags for. None for all.
         :return: Dictionary mapping tag names to revision ids.
         """
-        if revnum is None:
-            revnum = self.get_latest_revnum()
+        with self.lock_read():
+            if revnum is None:
+                revnum = self.get_latest_revnum()
 
-        if layout is None:
-            layout = self.get_layout()
+            if layout is None:
+                layout = self.get_layout()
 
-        if mapping is None:
-            mapping = self.get_mapping()
+            if mapping is None:
+                mapping = self.get_mapping()
 
-        if not layout.supports_tags():
-            return {}
+            if not layout.supports_tags():
+                return {}
 
-        if layout in self._cached_tags and revnum == self.get_latest_revnum():
-            # Use the cache, if it's there
-            return self._cached_tags[layout]
+            if layout in self._cached_tags and revnum == self.get_latest_revnum():
+                # Use the cache, if it's there
+                return self._cached_tags[layout]
 
-        ret = {}
-        for (project, branch_path, name, has_props, revnum) in layout.get_tags(self,
-                revnum, project=project):
-            assert type(name) is unicode
-            base_revmeta = self._revmeta_provider.lookup_revision(branch_path, revnum)
-            ret[name] = base_revmeta.get_tag_revmeta(mapping)
+            ret = {}
+            for (project, branch_path, name, has_props, revnum) in layout.get_tags(self,
+                    revnum, project=project):
+                assert type(name) is unicode
+                base_revmeta = self._revmeta_provider.lookup_revision(branch_path, revnum)
+                ret[name] = base_revmeta.get_tag_revmeta(mapping)
 
-        if revnum == self.get_latest_revnum():
-            # Cache
-            self._cached_tags[layout] = ret
+            if revnum == self.get_latest_revnum():
+                # Cache
+                self._cached_tags[layout] = ret
 
-        return ret
+            return ret
 
-    @needs_read_lock
     def find_tags_between(self, project, layout, mapping, from_revnum,
                           to_revnum, tags=None):
-        return find_tags_between(self._revmeta_provider, project, layout,
-            mapping, from_revnum, to_revnum, tags)
+        with self.lock_read():
+            return find_tags_between(self._revmeta_provider, project, layout,
+                mapping, from_revnum, to_revnum, tags)
 
     def is_shared(self):
         """Return True if this repository is flagged as a shared repository."""

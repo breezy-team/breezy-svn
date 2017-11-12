@@ -58,9 +58,7 @@ from breezy import (
     transport as _mod_transport,
     urlutils,
     )
-from breezy.decorators import (
-    needs_read_lock,
-    )
+from breezy.branch import BranchWriteLockResult
 from breezy.errors import (
     BadFilenameEncoding,
     BzrError,
@@ -83,10 +81,12 @@ from breezy.bzr.inventory import (
     InventoryFile,
     InventoryLink,
     )
+from breezy.lock import (
+    LogicalLockResult,
+    )
 from breezy.lockable_files import (
     TransportLock,
     )
-from breezy.mutabletree import needs_tree_write_lock
 from breezy.revision import (
     CURRENT_REVISION,
     NULL_REVISION,
@@ -106,10 +106,6 @@ from breezy.workingtree import (
 from breezy.plugins.svn import (
     SvnWorkingTreeProber,
     svk,
-    )
-from breezy.plugins.svn.branch import (
-    SubversionReadLock,
-    SubversionWriteLock,
     )
 from breezy.plugins.svn.commit import (
     _revision_id_to_svk_feature,
@@ -1289,7 +1285,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         else:
             self._lock_mode = 'w'
             self._lock_count = 1
-        return SubversionWriteLock(self.unlock)
+        return BranchWriteLockResult(self.unlock, None)
 
     def lock_tree_write(self):
         ret = self._lock_write()
@@ -1325,7 +1321,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             self._lock_mode = 'r'
             self._lock_count = 1
         self.branch.lock_read()
-        return SubversionReadLock(self.unlock)
+        return LogicalLockResult(self.unlock)
 
     def unlock(self):
         self._lock_count -= 1
@@ -1388,7 +1384,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         finally:
             root_adm.close()
 
-    @needs_read_lock
     def merge_modified(self):
         """Return a dictionary of files modified by a merge.
 
@@ -1399,38 +1394,39 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         This returns a map of file_id->sha1, containing only files which are
         still in the working inventory and have that text hash.
         """
-        try:
-            hashfile = self._transport.get('merge-hashes')
-        except NoSuchFile:
-            return {}
-        try:
-            merge_hashes = {}
+        with self.lock_read():
             try:
-                if hashfile.next() != MERGE_MODIFIED_HEADER_1 + '\n':
+                hashfile = self._transport.get('merge-hashes')
+            except NoSuchFile:
+                return {}
+            try:
+                merge_hashes = {}
+                try:
+                    if hashfile.next() != MERGE_MODIFIED_HEADER_1 + '\n':
+                        raise MergeModifiedFormatError()
+                except StopIteration:
                     raise MergeModifiedFormatError()
-            except StopIteration:
-                raise MergeModifiedFormatError()
-            for s in _mod_rio.RioReader(hashfile):
-                # RioReader reads in Unicode, so convert file_ids back to utf8
-                file_id = osutils.safe_file_id(s.get("file_id"), warn=False)
-                if not self.has_id(file_id):
-                    continue
-                text_hash = s.get("hash")
-                if text_hash == self.get_file_sha1(file_id):
-                    merge_hashes[file_id] = text_hash
-            return merge_hashes
-        finally:
-            hashfile.close()
+                for s in _mod_rio.RioReader(hashfile):
+                    # RioReader reads in Unicode, so convert file_ids back to utf8
+                    file_id = osutils.safe_file_id(s.get("file_id"), warn=False)
+                    if not self.has_id(file_id):
+                        continue
+                    text_hash = s.get("hash")
+                    if text_hash == self.get_file_sha1(file_id):
+                        merge_hashes[file_id] = text_hash
+                return merge_hashes
+            finally:
+                hashfile.close()
 
-    @needs_tree_write_lock
     def set_merge_modified(self, modified_hashes):
         def iter_stanzas():
             for file_id, hash in modified_hashes.iteritems():
                 yield _mod_rio.Stanza(file_id=file_id.decode('utf8'),
                     hash=hash)
-        my_file = _mod_rio.rio_file(iter_stanzas(), MERGE_MODIFIED_HEADER_1)
-        self._transport.put_file('merge-hashes', my_file,
-            mode=self.controldir._get_file_mode())
+        with self.lock_write():
+            my_file = _mod_rio.rio_file(iter_stanzas(), MERGE_MODIFIED_HEADER_1)
+            self._transport.put_file('merge-hashes', my_file,
+                mode=self.controldir._get_file_mode())
 
     def update_basis_by_delta(self, new_revid, delta):
         """Update the parents of this tree after a commit.
@@ -1509,24 +1505,24 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 adm.close()
         self.set_parent_ids([new_revid])
 
-    @needs_read_lock
-    def annotate_iter(self, file_id, default_revision=CURRENT_REVISION):
-        from breezy.plugins.svn.annotate import Annotater
-        annotater = Annotater(self.branch.repository, file_id)
-        parent_lines = []
-        if len(self.get_parent_ids()) > 1:
-            graph = self.branch.repository.get_graph()
-            head_parents = graph.heads(self.get_parent_ids())
-        else:
-            head_parents = self.get_parent_ids()
-        for revid in head_parents:
-            foreign_revid, mapping = self.branch.repository.lookup_bzr_revision_id(
-                revid)
-            parent_lines.append(annotater.check_file_revs(revid, foreign_revid[1], foreign_revid[2],
-                self.mapping, None))
-        return annotater.check_file(
-            self.get_file_lines(file_id, self.id2path(file_id)),
-            default_revision, parent_lines)
+    def annotate_iter(self, path, default_revision=CURRENT_REVISION, file_id=None):
+        from .annotate import Annotater
+        with self.lock_read():
+            annotater = Annotater(self.branch.repository)
+            parent_lines = []
+            if len(self.get_parent_ids()) > 1:
+                graph = self.branch.repository.get_graph()
+                head_parents = graph.heads(self.get_parent_ids())
+            else:
+                head_parents = self.get_parent_ids()
+            for revid in head_parents:
+                foreign_revid, mapping = self.branch.repository.lookup_bzr_revision_id(
+                    revid)
+                parent_lines.append(annotater.check_file_revs(
+                    revid, foreign_revid[1], foreign_revid[2], self.mapping, path))
+            return annotater.check_file(
+                self.get_file_lines(file_id, path),
+                default_revision, parent_lines)
 
 
 class SvnWorkingTreeFormat(WorkingTreeFormat):

@@ -180,7 +180,7 @@ class TestBasisTree(SubversionTestCase):
         self.assertEquals([
             (repo.generate_revision_id(1, "", repo.get_mapping()), "x\n"),
             (repo.generate_revision_id(2, "", repo.get_mapping()), "y\n")],
-            tree.annotate_iter(tree.path2id("file")))
+            tree.annotate_iter("file"))
 
     def test_get_dir_properties(self):
         repos_url = self.make_client('a', 'dc')

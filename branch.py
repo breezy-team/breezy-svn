@@ -36,6 +36,7 @@ from breezy.branch import (
     BranchFormat,
     BranchCheckResult,
     BranchPushResult,
+    BranchWriteLockResult,
     GenericInterBranch,
     InterBranch,
     PullResult,
@@ -44,10 +45,6 @@ from breezy.branch import (
 from breezy.controldir import (
     ControlDir,
     format_registry,
-    )
-from breezy.decorators import (
-    needs_read_lock,
-    needs_write_lock,
     )
 from breezy.errors import (
     DivergedBranches,
@@ -64,6 +61,9 @@ from breezy.errors import (
     )
 from breezy.foreign import (
     ForeignBranch,
+    )
+from breezy.lock import (
+    LogicalLockResult,
     )
 from breezy.revision import (
     NULL_REVISION,
@@ -125,31 +125,6 @@ class SubversionSourcePullResult(PullResult):
                 to_file.write('Now on revision %d (svn revno: %d).\n' %
                         (self.new_revno, self.new_revmeta.metarev.revnum))
         self._show_tag_conficts(to_file)
-
-
-class SubversionWriteLock(object):
-    """A (dummy) write lock on a Subversion object."""
-
-    __slots__ = ('unlock', 'branch_token')
-
-    def __init__(self, unlock):
-        self.branch_token = None
-        self.unlock = unlock
-
-    def __repr__(self):
-        return "<%s>" % self.__class__.__name__
-
-
-class SubversionReadLock(object):
-    """A (dummy) read lock on a Subversion object."""
-
-    __slots__ = ('unlock')
-
-    def __init__(self, unlock):
-        self.unlock = unlock
-
-    def __repr__(self):
-        return "<%s>" % self.__class__.__name__
 
 
 class SubversionTargetBranchPushResult(BranchPushResult):
@@ -483,23 +458,23 @@ class SvnBranch(ForeignBranch):
     nick = property(_get_nick, _set_nick)
 
     @deprecated_method(deprecated_in((2, 4, 0)))
-    @needs_write_lock
     def set_revision_history(self, rev_history):
         """See Branch.set_revision_history()."""
-        if rev_history == []:
-            self._set_last_revision(NULL_REVISION)
-        else:
-            self._set_last_revision(rev_history[-1])
-        self._revision_history_cache = rev_history
+        with self.lock_write():
+            if rev_history == []:
+                self._set_last_revision(NULL_REVISION)
+            else:
+                self._set_last_revision(rev_history[-1])
+            self._revision_history_cache = rev_history
 
-    @needs_write_lock
     def set_last_revision_info(self, revno, revid):
         """See Branch.set_last_revision_info()."""
         if type(revid) != str:
             raise InvalidRevisionId(revid, self)
-        if self.last_revision() == revid:
-            return
-        self._set_last_revision(revid)
+        with self.lock_write():
+            if self.last_revision() == revid:
+                return
+            self._set_last_revision(revid)
 
     def _set_last_revision(self, revid):
         if revid == NULL_REVISION:
@@ -600,22 +575,22 @@ class SvnBranch(ForeignBranch):
         history.reverse()
         return history
 
-    @needs_read_lock
     def last_revision(self):
         """See Branch.last_revision()."""
-        # Shortcut for finding the tip. This avoids expensive generation time
-        # on large branches.
-        if self._cached_last_revid is not None:
-            return self._cached_last_revid
-        last_revmeta, mapping = self.last_revmeta(skip_hidden=True)
-        if last_revmeta is None:
-            revid = NULL_REVISION
-        else:
-            revid = last_revmeta.get_revision_id(mapping)
-        if self.is_locked():
-            self._cached_last_revid = revid
-        assert isinstance(revid, str), "not str: %r" % revid
-        return revid
+        with self.lock_write():
+            # Shortcut for finding the tip. This avoids expensive generation time
+            # on large branches.
+            if self._cached_last_revid is not None:
+                return self._cached_last_revid
+            last_revmeta, mapping = self.last_revmeta(skip_hidden=True)
+            if last_revmeta is None:
+                revid = NULL_REVISION
+            else:
+                revid = last_revmeta.get_revision_id(mapping)
+            if self.is_locked():
+                self._cached_last_revid = revid
+            assert isinstance(revid, str), "not str: %r" % revid
+            return revid
 
     def get_push_merged_revisions(self):
         return (self.layout.push_merged_revisions(self.project) and
@@ -640,7 +615,6 @@ class SvnBranch(ForeignBranch):
         self.tags.merge_to(source.tags, overwrite=False)
         return (revno, revid)
 
-    @needs_write_lock
     def generate_revision_history(self, revision_id, last_rev=None,
         other_branch=None):
         """Create a new revision history that will finish with revision_id.
@@ -651,14 +625,15 @@ class SvnBranch(ForeignBranch):
         :param other_branch: The other branch that DivergedBranches should
             raise with respect to.
         """
-        # stop_revision must be a descendant of last_revision
-        # make a new revision history from the graph
-        graph = self.repository.get_graph()
-        if last_rev is not None:
-            if not graph.is_ancestor(last_rev, revision_id):
-                # our previous tip is not merged into stop_revision
-                raise DivergedBranches(self, other_branch)
-        self._set_last_revision(revision_id)
+        with self.lock_write():
+            # stop_revision must be a descendant of last_revision
+            # make a new revision history from the graph
+            graph = self.repository.get_graph()
+            if last_rev is not None:
+                if not graph.is_ancestor(last_rev, revision_id):
+                    # our previous tip is not merged into stop_revision
+                    raise DivergedBranches(self, other_branch)
+            self._set_last_revision(revision_id)
 
     def _synchronize_history(self, destination, revision_id):
         """Synchronize last revision and revision history between branches.
@@ -695,7 +670,7 @@ class SvnBranch(ForeignBranch):
             self._lock_mode = 'w'
             self._lock_count = 1
         self.repository.lock_write()
-        return SubversionWriteLock(self.unlock)
+        return BranchWriteLockResult(self.unlock, None)
 
     def lock_read(self):
         """See Branch.lock_read()."""
@@ -706,7 +681,7 @@ class SvnBranch(ForeignBranch):
             self._lock_mode = 'r'
             self._lock_count = 1
         self.repository.lock_read()
-        return SubversionReadLock(self.unlock)
+        return LogicalLockResult(self.unlock)
 
     def unlock(self):
         """See Branch.unlock()."""
