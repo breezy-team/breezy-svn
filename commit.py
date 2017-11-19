@@ -166,13 +166,13 @@ def find_suitable_base(parents, ie):
     candidates = []
     # Filter out which parents have this file id
     for (tree, url, revnum) in parents:
-        if tree.has_id(ie.file_id) and ie.kind == tree.kind(ie.file_id):
+        if tree.has_id(ie.file_id) and ie.kind == tree.kind(tree.id2path(ie.file_id), ie.file_id):
             candidates.append((tree, url, revnum))
     if candidates == []:
         return None
     # Check if there's any candidate that has the *exact* revision we need
     for (tree, url, revnum) in candidates:
-        if tree.get_file_revision(ie.file_id) == ie.revision:
+        if tree.get_file_revision(tree.id2path(ie.file_id), ie.file_id) == ie.revision:
             return (tree, url, revnum)
     # TODO: Ideally we should now pick the candidate with the least changes
     # for now, just pick the first candidate
@@ -248,7 +248,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
     # Loop over entries of file_id in base_tree
     # remove if they no longer exist with the same name
     # or parents
-    if base_tree.has_id(file_id) and base_tree.kind(file_id) == 'directory':
+    if base_tree.has_id(file_id) and base_tree.kind(base_tree.id2path(file_id), file_id) == 'directory':
         for child_ie in base_tree.iter_child_entries(file_id):
             new_child_ie = get_ie(child_ie.file_id)
             # remove if...
@@ -280,7 +280,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         try:
             # add them if they didn't exist in base_tree or changed kind
             if (not base_tree.has_id(child_ie.file_id) or
-                base_tree.kind(child_ie.file_id) != child_ie.kind):
+                base_tree.kind(None, child_ie.file_id) != child_ie.kind):
                 mutter('adding %s %r', child_ie.kind, new_child_path)
 
                 # Do a copy operation if at all possible, to make
@@ -338,7 +338,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         try:
             # add them if they didn't exist in base_tree or changed kind
             if (not base_tree.has_id(child_ie.file_id) or
-                base_tree.kind(child_ie.file_id) != child_ie.kind):
+                base_tree.kind(None, child_ie.file_id) != child_ie.kind):
                 mutter('adding dir %r', child_ie.name)
 
                 # Do a copy operation if at all possible, to make
@@ -687,7 +687,7 @@ class SvnCommitBuilder(CommitBuilder):
             return
 
         # Iterate over the children that were present previously
-        if self.old_tree.kind(file_id) == 'directory':
+        if self.old_tree.kind(old_path, file_id) == 'directory':
             for child_ie in self.old_tree.iter_child_entries(
                     file_id, old_path):
                 if (not child_ie.file_id in self._deleted_fileids and
@@ -725,7 +725,7 @@ class SvnCommitBuilder(CommitBuilder):
             from_path = self.old_tree.id2path(file_id)
         except NoSuchId:
             return
-        if self.old_tree.kind(file_id) != 'directory':
+        if self.old_tree.kind(from_path, file_id) != 'directory':
             return
         for (p, v, k, fid, ie) in self.old_tree.list_files(include_root=False,
                 from_dir=from_path, recursive=True):
@@ -737,7 +737,7 @@ class SvnCommitBuilder(CommitBuilder):
             child_path = osutils.pathjoin(path, ie.name)
             self._override_file_ids[child_path] = fid
             self._override_text_revisions[child_path] = (
-                    self.old_tree.get_file_revision(fid))
+                    self.old_tree.get_file_revision(child_path, fid))
             if ie.kind == 'directory':
                 self._update_moved_dir_child_file_ids(child_path, fid)
 
@@ -977,18 +977,18 @@ class SvnCommitBuilder(CommitBuilder):
         carry_over_candidates = {}
         for ptree in parent_trees:
             try:
-                prevision = ptree.get_file_revision(new_ie.file_id)
+                ppath = ptree.id2path(new_ie.file_id)
             except NoSuchId:
                 continue
-            ppath = ptree.id2path(new_ie.file_id)
+            prevision = ptree.get_file_revision(ppath, new_ie.file_id)
             if (ptree.path2id(osutils.dirname(ppath)) == new_ie.parent_id and
                 osutils.basename(ppath) == new_ie.name and (
-                 (new_ie.kind == 'file' and ptree.kind(new_ie.file_id) == 'file' and
-                  ptree.get_file_sha1(new_ie.file_id) == new_ie.text_sha1 and
-                  ptree.is_executable(new_ie.file_id) == new_ie.executable) or
-                 (new_ie.kind == 'symlink' and ptree.kind(new_ie.file_id) == 'symlink' and
-                  ptree.get_symlink_target(new_ie.file_id) == new_ie.symlink_target) or
-                 (new_ie.kind == 'directory' and ptree.kind(new_ie.file_id) == 'directory'))):
+                 (new_ie.kind == 'file' and ptree.kind(ppath, new_ie.file_id) == 'file' and
+                  ptree.get_file_sha1(ppath, new_ie.file_id) == new_ie.text_sha1 and
+                  ptree.is_executable(ppath, new_ie.file_id) == new_ie.executable) or
+                 (new_ie.kind == 'symlink' and ptree.kind(ppath, new_ie.file_id) == 'symlink' and
+                  ptree.get_symlink_target(ppath, new_ie.file_id) == new_ie.symlink_target) or
+                 (new_ie.kind == 'directory' and ptree.kind(ppath, new_ie.file_id) == 'directory'))):
                 carry_over_candidates[prevision] = ptree
             parent_text_revisions.append(prevision)
         heads_set = self._heads(parent_text_revisions)
@@ -1004,10 +1004,10 @@ class SvnCommitBuilder(CommitBuilder):
             heads[0] in carry_over_candidates):
             # carry over situation
             parent_tree = carry_over_candidates[heads[0]]
-            return parent_tree.get_file_revision(new_ie.file_id), None
+            return parent_tree.get_file_revision(parent_tree.id2path(new_ie.file_id), new_ie.file_id), None
         if (len(heads) == 0 or
             (parent_trees[0].has_id(new_ie.file_id) and
-            heads == [parent_trees[0].get_file_revision(new_ie.file_id)])):
+            heads == [parent_trees[0].get_file_revision(parent_trees[0].id2path(new_ie.file_id), new_ie.file_id)])):
             # No need to explicitly store parent text ids
             text_parents = None
         else:
@@ -1017,11 +1017,11 @@ class SvnCommitBuilder(CommitBuilder):
     def record_delete(self, path, file_id):
         raise NotImplementedError(self.record_delete)
 
-    def _get_file_with_stat(self, tree, file_id):
+    def _get_file_with_stat(self, tree, path, file_id):
         def dummy_get_file_with_stat(file_id):
-            return tree.get_file(file_id), None
+            return tree.get_file(path, file_id), None
         return getattr(tree, "get_file_with_stat",
-                dummy_get_file_with_stat)(file_id)
+                dummy_get_file_with_stat)(path, file_id)
 
     def _record_change(self, tree, parent_trees,
             file_id, (old_path, new_path), new_kind, new_name, new_parent_id,
@@ -1030,7 +1030,7 @@ class SvnCommitBuilder(CommitBuilder):
         new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
         if new_kind == 'file':
             new_ie.executable = new_executable
-            file_obj, stat_val = self._get_file_with_stat(tree, file_id)
+            file_obj, stat_val = self._get_file_with_stat(tree, tree.id2path(file_id), file_id)
             new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
             (new_ie.revision, unusual_text_parents) = self._get_text_revision(
                 new_ie, new_path, parent_trees, force_change=force_change)
@@ -1117,7 +1117,7 @@ class SvnCommitBuilder(CommitBuilder):
             text_revisions = []
             for ptree in parent_trees:
                 try:
-                    text_revisions.append(ptree.get_file_revision(file_id))
+                    text_revisions.append(ptree.get_file_revision(ptree.id2path(file_id), file_id))
                 except NoSuchId:
                     continue
             heads = self._heads(text_revisions)
@@ -1132,9 +1132,9 @@ class SvnCommitBuilder(CommitBuilder):
                     parent_id = parent_trees[0].path2id("")
                     name = path
                 for data in self._record_change(tree, parent_trees,
-                    file_id, (path, path), parent_trees[0].kind(file_id),
+                    file_id, (path, path), parent_trees[0].kind(path, file_id),
                     name, parent_id,
-                    parent_trees[0].is_executable(file_id, path),
+                    parent_trees[0].is_executable(path, file_id),
                     force_change=True):
                     yield data
 
@@ -1213,8 +1213,9 @@ def get_svn_file_delta_transmitter(tree, old_tree, file_id, path, ie):
 
 def file_editor_send_prop_changes(old_tree, file_id, ie, editor):
     if old_tree.has_id(file_id):
-        old_executable = old_tree.is_executable(file_id)
-        old_special = (old_tree.kind(file_id) == 'symlink')
+        old_path = old_tree.id2path(file_id)
+        old_executable = old_tree.is_executable(old_path, file_id)
+        old_special = (old_tree.kind(old_path, file_id) == 'symlink')
     else:
         old_special = False
         old_executable = False

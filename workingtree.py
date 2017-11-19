@@ -306,17 +306,14 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         """bzr-svn mapping to use."""
         return self.branch.mapping
 
-    def stored_kind(self, file_id, path=None):
+    def stored_kind(self, path, file_id=None):
         try:
-            return self.basis_tree().kind(file_id, path)
+            return self.basis_tree().kind(path, file_id)
         except NoSuchId:
             return None
 
-    def kind(self, file_id, path=None):
-        if path is not None:
-            abspath = self.abspath(path)
-        else:
-            abspath = self.id2abspath(file_id)
+    def kind(self, path, file_id=None):
+        abspath = self.abspath(path)
         try:
             return osutils.file_kind(abspath)
         except NoSuchFile:
@@ -333,18 +330,14 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def _set_root_id(self, file_id):
         self._change_fileid_mapping(file_id, u"")
 
-    def get_file_mtime(self, file_id, path=None):
+    def get_file_mtime(self, path, file_id=None):
         """See Tree.get_file_mtime."""
-        if path is None:
-            path = self.id2path(file_id)
         return os.lstat(self.abspath(path)).st_mtime
 
     def _setup_directory_is_tree_reference(self):
         self._directory_is_tree_reference = self._directory_is_never_tree_reference
 
-    def get_file_sha1(self, file_id, path=None, stat_value=None):
-        if path is None:
-            path = self.id2path(file_id)
+    def get_file_sha1(self, path, file_id=None, stat_value=None):
         return self._hashcache.get_sha1(path, stat_value)
 
     @property
@@ -740,7 +733,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             else:
                 ie.text_sha1 = data['sha1']
                 ie.text_size = data['size']
-                ie.executable = self.is_executable(id, relpath)
+                ie.executable = self.is_executable(relpath)
                 return ie
 
     def iter_children(self, file_id, path=None):
@@ -944,7 +937,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def _fix_special(self, adm, abspath, relpath, kind=None):
         if kind is None:
-            kind = self.kind(None, relpath)
+            kind = self.kind(relpath)
         if kind == "file":
             value = None
         elif kind == "symlink":
@@ -954,7 +947,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         adm.prop_set(properties.PROP_SPECIAL, value, abspath)
 
     def _fix_kind(self, adm, abspath, relpath, entry):
-        kind = self.kind(None, relpath)
+        kind = self.kind(relpath)
         if ((entry.kind == subvertpy.NODE_DIR and kind in ('file', 'symlink')) or
             (entry.kind == subvertpy.NODE_FILE and kind == 'directory')):
             try:
@@ -983,7 +976,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         if _copyfrom is None:
             _copyfrom = [(None, -1)] * len(files)
         if kinds is None:
-            kinds = [self._kind(file) for file in files]
+            kinds = [self.kind(file) for file in files]
         assert isinstance(files, list)
         for f, kind, file_id, copyfrom in zip(files, kinds, ids, _copyfrom):
             wc = self._get_wc(os.path.dirname(osutils.safe_unicode(f)),
@@ -1072,11 +1065,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         self._cached_merges = None
         return result
 
-    def get_file_properties(self, file_id, path=None):
-        if path is None:
-            path = self.id2path(file_id)
-        else:
-            path = osutils.safe_unicode(path)
+    def get_file_properties(self, path, file_id=None):
         abspath = self.abspath(path)
         root_adm = self._get_wc(write_lock=False)
         try:
@@ -1144,7 +1133,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             wc.close()
 
     def _get_branch_props(self):
-        return self.get_file_properties(None, "")
+        return self.get_file_properties("")
 
     def _set_branch_props(self, wc, fileprops):
         for k, v in fileprops.iteritems():
@@ -1336,16 +1325,14 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return bool(stat.S_ISREG(mode) and stat.S_IEXEC & mode)
 
     if not osutils.supports_executable():
-        def is_executable(self, file_id, path=None):
+        def is_executable(self, path, file_id=None):
             basis_tree = self.basis_tree()
             if file_id in basis_tree:
-                return basis_tree.is_executable(file_id)
+                return basis_tree.is_executable(path, file_id)
             # Default to not executable
             return False
     else:
-        def is_executable(self, file_id, path=None):
-            if path is None:
-                path = self.id2path(file_id)
+        def is_executable(self, path, file_id=None):
             mode = os.lstat(self.abspath(path)).st_mode
             return bool(stat.S_ISREG(mode) and stat.S_IEXEC & mode)
 
@@ -1412,7 +1399,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     if not self.has_id(file_id):
                         continue
                     text_hash = s.get("hash")
-                    if text_hash == self.get_file_sha1(file_id):
+                    if text_hash == self.get_file_sha1(self.id2path(file_id), file_id):
                         merge_hashes[file_id] = text_hash
                 return merge_hashes
             finally:
@@ -1488,12 +1475,12 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 path = repos_path[len(revmeta.metarev.branch_path):].strip("/")
                 path = path.decode("utf-8")
                 try:
-                    kind = self.kind(None, path)
+                    kind = self.kind(path)
                 except NoSuchFile:
                     md5sum = None
                 else:
                     if kind == "file":
-                        md5sum = osutils.md5(self.get_file_text(None, path)).digest()
+                        md5sum = osutils.md5(self.get_file_text(path)).digest()
                     else:
                         md5sum = None
                 update_entry(cq, path, root_adm, md5sum)
@@ -1521,7 +1508,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 parent_lines.append(annotater.check_file_revs(
                     revid, foreign_revid[1], foreign_revid[2], self.mapping, path))
             return annotater.check_file(
-                self.get_file_lines(file_id, path),
+                self.get_file_lines(path, file_id),
                 default_revision, parent_lines)
 
 
