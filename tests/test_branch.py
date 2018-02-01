@@ -510,7 +510,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         self.assertNotEqual(orig_last_revid, branch.last_revision())
         self.assertEqual(
             branch.last_revision(),
-            branch.repository.generate_revision_id(2, "trunk", branch.mapping))
+            branch.repository.generate_revision_id(2, u"trunk", branch.mapping))
 
     def test_break_lock(self):
         # duplicated by breezy.tests.per_branch.test_break_lock

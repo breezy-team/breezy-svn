@@ -248,24 +248,29 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
     # Loop over entries of file_id in base_tree
     # remove if they no longer exist with the same name
     # or parents
-    if base_tree.has_id(file_id) and base_tree.kind(base_tree.id2path(file_id), file_id) == 'directory':
-        for child_ie in base_tree.iter_child_entries(file_id):
-            new_child_ie = get_ie(child_ie.file_id)
-            # remove if...
-            if (
-                # ... path no longer exists
-                new_child_ie is None or
-                # ... parent changed
-                child_ie.parent_id != new_child_ie.parent_id or
-                # ... name changed
-                child_ie.name != new_child_ie.name or
-                # ... kind changed
-                child_ie.kind != new_child_ie.kind):
-                mutter('removing %r(%r)', child_ie.name, child_ie.file_id)
-                dir_editor.delete_entry(
-                    branch_relative_path(path, child_ie.name.encode("utf-8")),
-                    base_revnum)
-                changed = True
+    try:
+        base_path = base_tree.id2path(file_id)
+    except NoSuchId:
+        base_path = None
+    else:
+        if base_tree.kind(base_path, file_id) == 'directory':
+            for child_ie in base_tree.iter_child_entries(base_path, file_id):
+                new_child_ie = get_ie(child_ie.file_id)
+                # remove if...
+                if (
+                    # ... path no longer exists
+                    new_child_ie is None or
+                    # ... parent changed
+                    child_ie.parent_id != new_child_ie.parent_id or
+                    # ... name changed
+                    child_ie.name != new_child_ie.name or
+                    # ... kind changed
+                    child_ie.kind != new_child_ie.kind):
+                    mutter('removing %r(%r)', child_ie.name, child_ie.file_id)
+                    dir_editor.delete_entry(
+                        branch_relative_path(path, child_ie.name.encode("utf-8")),
+                        base_revnum)
+                    changed = True
 
     # Loop over file children of file_id in new_inv
     for child_ie in iter_children(file_id):
@@ -280,7 +285,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         try:
             # add them if they didn't exist in base_tree or changed kind
             if (not base_tree.has_id(child_ie.file_id) or
-                base_tree.kind(None, child_ie.file_id) != child_ie.kind):
+                base_tree.kind(base_tree.id2path(child_ie.file_id), child_ie.file_id) != child_ie.kind):
                 mutter('adding %s %r', child_ie.kind, new_child_path)
 
                 # Do a copy operation if at all possible, to make
@@ -338,7 +343,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         try:
             # add them if they didn't exist in base_tree or changed kind
             if (not base_tree.has_id(child_ie.file_id) or
-                base_tree.kind(None, child_ie.file_id) != child_ie.kind):
+                base_tree.kind(base_tree.i2path(child_ie.file_id), child_ie.file_id) != child_ie.kind):
                 mutter('adding dir %r', child_ie.name)
 
                 # Do a copy operation if at all possible, to make
@@ -689,7 +694,7 @@ class SvnCommitBuilder(CommitBuilder):
         # Iterate over the children that were present previously
         if self.old_tree.kind(old_path, file_id) == 'directory':
             for child_ie in self.old_tree.iter_child_entries(
-                    file_id, old_path):
+                    old_path, file_id):
                 if (not child_ie.file_id in self._deleted_fileids and
                     not child_ie.file_id in self._updated):
                     yield child_ie
@@ -1035,7 +1040,7 @@ class SvnCommitBuilder(CommitBuilder):
             (new_ie.revision, unusual_text_parents) = self._get_text_revision(
                 new_ie, new_path, parent_trees, force_change=force_change)
             self.modified_files[file_id] = get_svn_file_delta_transmitter(
-                tree, self.old_tree, file_id, new_path, new_ie)
+                tree, self.old_tree, file_id, old_path, new_path, new_ie)
             if new_ie.revision is None:
                 yield file_id, new_path, (new_ie.text_sha1, stat_val)
         elif new_kind == 'symlink':
@@ -1043,7 +1048,7 @@ class SvnCommitBuilder(CommitBuilder):
             new_ie.revision, unusual_text_parents = self._get_text_revision(
                 new_ie, new_path, parent_trees, force_change=force_change)
             self.modified_files[file_id] = get_svn_file_delta_transmitter(
-                tree, self.old_tree, file_id, new_path, new_ie)
+                tree, self.old_tree, file_id, old_path, new_path, new_ie)
         elif new_kind == 'directory':
             (new_ie.revision, unusual_text_parents) = self._get_text_revision(
                 new_ie, new_path, parent_trees, force_change=force_change)
@@ -1180,7 +1185,7 @@ class SvnCommitBuilder(CommitBuilder):
         raise NotImplementedError(self.record_entry_contents)
 
 
-def send_svn_file_text_delta(tree, old_tree, file_id, path, ie, editor):
+def send_svn_file_text_delta(tree, old_tree, file_id, old_path, new_path, ie, editor):
     """Send the file text delta to a Subversion editor object.
 
     Tree can either be a native Subversion tree of some sort,
@@ -1189,36 +1194,34 @@ def send_svn_file_text_delta(tree, old_tree, file_id, path, ie, editor):
 
     :param tree: Tree
     :param old_tree: Base tree
-    :param file_id: File id
     :param editor: Editor to report changes to
     """
-    contents = mapping.get_svn_file_contents(tree, ie.kind, ie.file_id, path)
+    contents = mapping.get_svn_file_contents(tree, ie.kind, ie.file_id, new_path)
     try:
         file_editor_send_content_changes(contents, editor)
     finally:
         contents.close()
-    file_editor_send_prop_changes(old_tree, file_id, ie, editor)
+    file_editor_send_prop_changes(old_tree, old_path, ie, editor)
     editor.close()
 
 
-def get_svn_file_delta_transmitter(tree, old_tree, file_id, path, ie):
+def get_svn_file_delta_transmitter(tree, old_tree, file_id, old_path, new_path, ie):
     try:
         transmit_svn_file_deltas = getattr(tree, "transmit_svn_file_deltas")
     except AttributeError:
         return lambda editor: send_svn_file_text_delta(tree, old_tree,
-            file_id, path, ie, editor)
+            file_id, old_path, new_path, ie, editor)
     else:
-        return lambda editor: transmit_svn_file_deltas(ie.file_id, path, editor)
+        return lambda editor: transmit_svn_file_deltas(new_path, editor)
 
 
-def file_editor_send_prop_changes(old_tree, file_id, ie, editor):
-    if old_tree.has_id(file_id):
-        old_path = old_tree.id2path(file_id)
-        old_executable = old_tree.is_executable(old_path, file_id)
-        old_special = (old_tree.kind(old_path, file_id) == 'symlink')
-    else:
+def file_editor_send_prop_changes(old_tree, old_path, ie, editor):
+    if old_path is None:
         old_special = False
         old_executable = False
+    else:
+        old_executable = old_tree.is_executable(old_path)
+        old_special = (old_tree.kind(old_path) == 'symlink')
 
     if old_executable != ie.executable:
         if ie.executable:

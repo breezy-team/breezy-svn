@@ -487,15 +487,21 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         for file in files:
             self._change_fileid_mapping(None, file)
 
-    def unversion(self, file_ids):
+    def unversion(self, paths, file_ids=None):
         wc = self._get_wc(write_lock=True)
         try:
-            for file_id in file_ids:
-                path = self.id2path(file_id)
+            for path in paths:
                 wc.delete(osutils.safe_utf8(self.abspath(path)),
                           keep_local=True)
         finally:
             wc.close()
+
+    def all_versioned_paths(self):
+        ret = set()
+        w = Walker(self)
+        for path, entry in w:
+            ret.add(path)
+        return ret
 
     def all_file_ids(self):
         """See Tree.all_file_ids"""
@@ -1354,9 +1360,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         finally:
             root_adm.close()
 
-    def transmit_svn_file_deltas(self, file_id, path, editor):
-        if path is None:
-            path = self.id2path(file_id)
+    def transmit_svn_file_deltas(self, path, editor):
         encoded_path = self.abspath(path).encode("utf-8")
         root_adm = self._get_wc(write_lock=True)
         try:

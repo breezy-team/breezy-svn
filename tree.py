@@ -165,7 +165,7 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
         for child in getattr(entry, 'children', {}).values():
             yield child.file_id
 
-    def iter_child_entries(self, file_id, path=None):
+    def iter_child_entries(self, path, file_id=None):
         entry = self.iter_entries_by_dir([file_id]).next()[1]
         return iter(getattr(entry, 'children', {}).values())
 

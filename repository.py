@@ -1039,7 +1039,8 @@ class SvnRepository(ForeignRepository):
 
         :return: New revision id.
         """
-        assert isinstance(path, str)
+        if isinstance(path, unicode):
+            path = path.encode('utf-8')
         assert isinstance(revnum, int)
         foreign_revid = (self.uuid, path, revnum)
         return self.lookup_foreign_revision_id(foreign_revid, mapping)
@@ -1300,7 +1301,7 @@ def find_branches_between(logwalker, transport, layout, from_revnum, to_revnum,
             lambda p: transport.check_path(p, from_revnum),
             layout.get_project_prefixes(project))
     else:
-        prefixes = [""]
+        prefixes = [u""]
 
     created_branches = {}
     ret = []
@@ -1397,7 +1398,6 @@ def find_tags_between(revmeta_provider, project, layout, mapping, from_revnum,
         # Layout wasn't able to determine tag name from path
         if name is None:
             continue
-        name = name.decode("utf-8")
         assert type(name) is unicode
         ret[name] = revmeta
     return ret

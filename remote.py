@@ -236,7 +236,7 @@ class SvnRemoteAccess(ControlDir):
             raise AssertionError("SVN URL %r does not start with root %r" %
                 (self.svn_url, self.svn_root_url))
 
-        self._branch_path = str(urllib.unquote(self.svn_url[len(self.svn_root_url):]))
+        self._branch_path = urllib.unquote(self.svn_url[len(self.svn_root_url):])
 
     def break_lock(self):
         pass

@@ -718,7 +718,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             self._deleted.add(p)
             if fid not in self.id_map.values():
                 self._inv_delta_append(p, None, fid, None)
-            if self.bzr_base_tree.kind(fid) != 'directory':
+            if self.bzr_base_tree.kind(p, fid) != 'directory':
                 return
             for c in self.bzr_base_tree.iter_children(fid):
                 rec_del(c)

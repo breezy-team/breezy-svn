@@ -33,7 +33,7 @@ class TrunkLayout(RepositoryLayout):
         assert level is None or isinstance(level, int)
         self.level = level
 
-    def get_tag_path(self, name, project=""):
+    def get_tag_path(self, name, project=u""):
         """Return the path at which the tag with specified name should be found.
 
         :param name: Name of the tag.
@@ -45,26 +45,26 @@ class TrunkLayout(RepositoryLayout):
             return subpath
         return urlutils.join(project, subpath)
 
-    def is_branch_parent(self, path, project=""):
-        parts = path.strip("/").split("/")
+    def is_branch_parent(self, path, project=u""):
+        parts = path.strip(u"/").split(u"/")
         return (self.level is None or
                 len(parts) <= self.level or
-                (len(parts) == self.level+1 and parts[-1] == "branches"))
+                (len(parts) == self.level+1 and parts[-1] == u"branches"))
 
-    def is_tag_parent(self, path, project=""):
-        parts = path.strip("/").split("/")
+    def is_tag_parent(self, path, project=u""):
+        parts = path.strip(u"/").split(u"/")
         return (self.level is None or
                 len(parts) <= self.level or
-                (len(parts) == self.level+1 and parts[-1] == "tags"))
+                (len(parts) == self.level+1 and parts[-1] == u"tags"))
 
-    def get_tag_name(self, path, project=""):
+    def get_tag_name(self, path, project=u""):
         """Determine the tag name from a tag path.
 
         :param path: Path inside the repository.
         """
-        return urlutils.basename(path).strip("/")
+        return urlutils.basename(path).strip(u"/")
 
-    def push_merged_revisions(self, project=""):
+    def push_merged_revisions(self, project=u""):
         """Determine whether or not right hand side (merged) revisions should be pushed.
 
         Defaults to False.
@@ -73,9 +73,9 @@ class TrunkLayout(RepositoryLayout):
         """
         return True
 
-    def get_branch_name(self, path, project=""):
+    def get_branch_name(self, path, project=u""):
         name = urlutils.split(path)[-1]
-        if name == "trunk":
+        if name == u"trunk":
             return u""
         return name
 
@@ -97,24 +97,24 @@ class TrunkLayout(RepositoryLayout):
         :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
-        path = path.strip("/")
-        parts = path.split("/")
+        path = path.strip(u"/")
+        parts = path.split(u"/")
         for i, p in enumerate(parts):
-            if (i > 0 and parts[i-1] in ("branches", "tags")) or p == "trunk":
-                if i > 0 and parts[i-1] == "tags":
-                    t = "tag"
+            if (i > 0 and parts[i-1] in (u"branches", u"tags")) or p == u"trunk":
+                if i > 0 and parts[i-1] == u"tags":
+                    t = u"tag"
                     j = i-1
-                elif i > 0 and parts[i-1] == "branches":
-                    t = "branch"
+                elif i > 0 and parts[i-1] == u"branches":
+                    t = u"branch"
                     j = i-1
                 else:
-                    t = "branch"
+                    t = u"branch"
                     j = i
                 if self.level in (j, None):
                     return (t,
-                        "/".join(parts[:j]).strip("/"),
-                        "/".join(parts[:i+1]).strip("/"),
-                        "/".join(parts[i+1:]).strip("/"))
+                        u"/".join(parts[:j]).strip(u"/"),
+                        u"/".join(parts[:i+1]).strip(u"/"),
+                        u"/".join(parts[i+1:]).strip(u"/"))
         raise svn_errors.NotSvnBranchPath(path, self)
 
     def _add_project(self, path, project=None):

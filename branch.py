@@ -577,7 +577,7 @@ class SvnBranch(ForeignBranch):
 
     def last_revision(self):
         """See Branch.last_revision()."""
-        with self.lock_write():
+        with self.lock_read():
             # Shortcut for finding the tip. This avoids expensive generation time
             # on large branches.
             if self._cached_last_revid is not None:

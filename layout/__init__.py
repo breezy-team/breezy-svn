@@ -275,12 +275,11 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None):
     pb = ui.ui_factory.nested_progress_bar()
     try:
         for idx, pattern in enumerate(itemlist):
-            assert isinstance(pattern, str)
             pb.update("finding branches", idx, len(itemlist))
             for bp, has_props, revnum in expander.expand([],
-                    pattern.strip("/").split("/")):
+                    pattern.strip(u"/").split(u"/")):
                 if verify_fn(bp, project):
-                    yield (project, bp, bp.split("/")[-1], has_props,
+                    yield (project, bp, bp.split(u"/")[-1], has_props,
                            revnum)
     finally:
         pb.finished()
