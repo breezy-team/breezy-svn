@@ -151,9 +151,9 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
         file_id, file_revision = self.lookup_id(path)
         return file_revision
 
-    def iter_files_bytes(self, file_ids):
-        for file_id, identifier in file_ids:
-            cur_file = (self.get_file_text(self.id2path(file_id), file_id),)
+    def iter_files_bytes(self, desired_files):
+        for path, identifier in desired_files:
+            cur_file = (self.get_file_text(path),)
             yield identifier, cur_file
 
     def get_file_stream_by_path(self, path):
@@ -519,8 +519,6 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         self._real_tree = None
 
     def get_file_verifier(self, path, file_id=None, stat_value=None):
-        if path is None:
-            path = self.id2path(file_id)
         root_adm = self.workingtree._get_wc(write_lock=False)
         try:
             entry = self.workingtree._get_entry(root_adm, path)
