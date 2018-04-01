@@ -1515,6 +1515,34 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 self.get_file_lines(path, file_id),
                 default_revision, parent_lines)
 
+    def find_related_paths_across_trees(self, paths, trees=[],
+            require_versioned=True):
+        """Find related paths in tree corresponding to specified filenames in any
+        of `lookup_trees`.
+
+        All matches in all trees will be used, and all children of matched
+        directories will be used.
+
+        :param paths: The filenames to find related paths for (if None, returns
+            None)
+        :param trees: The trees to find file_ids within
+        :param require_versioned: if true, all specified filenames must occur in
+            at least one tree.
+        :return: a set of paths for the specified filenames and their children
+            in `tree`
+        """
+        if paths is None:
+            return None;
+        file_ids = self.paths2ids(
+                paths, trees, require_versioned=require_versioned)
+        ret = set()
+        for file_id in file_ids:
+            try:
+                ret.add(self.id2path(file_id))
+            except errors.NoSuchId:
+                pass
+        return ret
+
 
 class SvnWorkingTreeFormat(WorkingTreeFormat):
     """Subversion working copy format."""
