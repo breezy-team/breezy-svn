@@ -1030,7 +1030,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
         ret = []
         for tree in self.bzr_parent_trees:
             try:
-                revision = tree.get_file_revision(file_id)
+                path = tree.id2path(file_id)
+                revision = tree.get_file_revision(path, file_id)
             except NoSuchId:
                 pass
             else:

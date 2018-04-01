@@ -161,12 +161,12 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
 
     def iter_children(self, file_id, path=None):
         """See Tree.iter_children."""
-        entry = self.iter_entries_by_dir([file_id]).next()[1]
+        entry = self.iter_entries_by_dir(specific_files=[self.id2path(file_id)]).next()[1]
         for child in getattr(entry, 'children', {}).values():
             yield child.file_id
 
     def iter_child_entries(self, path, file_id=None):
-        entry = self.iter_entries_by_dir([file_id]).next()[1]
+        entry = self.iter_entries_by_dir(specific_files=[path]).next()[1]
         return iter(getattr(entry, 'children', {}).values())
 
     def find_related_paths_across_trees(self, paths, trees=[],
@@ -313,8 +313,16 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         # FIXME
         return set(self.root_inventory)
 
-    def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
-        # FIXME
+    def iter_entries_by_dir(self, specific_files=None, yield_parents=False):
+        if specific_files is not None:
+            specific_file_ids = []
+            for path in specific_files:
+                file_id = self.path2id(path)
+                if file_id is not None:
+                    specific_file_ids.append(file_id)
+        else:
+            specific_file_ids = None
+
         return self.root_inventory.iter_entries_by_dir(
             specific_file_ids=specific_file_ids, yield_parents=yield_parents)
 
@@ -700,14 +708,22 @@ class SvnBasisTree(SvnRevisionTreeCommon):
     def all_file_ids(self):
         return self.real_tree.all_file_ids()
 
-    def iter_entries_by_dir(self, specific_file_ids=None, yield_parents=False):
+    def iter_entries_by_dir(self, specific_files=None, yield_parents=False):
         # FIXME
+        if specific_files is not None:
+            specific_file_ids = []
+            for path in specific_files:
+                file_id = self.path2id(path)
+                if file_id is not None:
+                    specific_file_ids.append(file_id)
+        else:
+            specific_file_ids = None
         try:
             return self.root_inventory.iter_entries_by_dir(
                 specific_file_ids=specific_file_ids, yield_parents=yield_parents)
         except BasisTreeIncomplete:
             return self.real_tree.iter_entries_by_dir(
-                specific_file_ids=specific_file_ids,
+                specific_files=specific_files,
                 yield_parents=yield_parents)
 
     def find_related_paths_across_trees(self, paths, trees=[],
