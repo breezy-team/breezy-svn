@@ -189,8 +189,8 @@ class SvnWorkingTreeProber(SvnProber):
 
 def dav_options(transport, url):
     # FIXME: Integrate this into HttpTransport.options().
-    from breezy.transport.http._urllib import HttpTransport_urllib, Request
-    if isinstance(transport, HttpTransport_urllib):
+    from breezy.transport.http import HttpTransport, Request
+    if isinstance(transport, HttpTransport):
         req = Request('OPTIONS', url, accepted_errors=[200, 403, 404, 405])
         req.follow_redirections = True
         resp = transport._perform(req)

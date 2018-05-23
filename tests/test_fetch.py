@@ -415,15 +415,12 @@ class TestFetchWorks(FetchTestCase):
             oldrepos.generate_revision_id(1, "", mapping)))
         self.assertTrue(newrepos.has_revision(
             oldrepos.generate_revision_id(2, "", mapping)))
-        newrepos.lock_read()
-        try:
+        with newrepos.lock_read():
             tree = newrepos.revision_tree(
                     oldrepos.generate_revision_id(2, "", mapping))
             self.assertTrue(tree.has_filename("foo/bla"))
             self.assertTrue(tree.has_filename("foo"))
-            self.assertEqual("data", tree.get_file_text(tree.path2id("foo/bla"), "foo/bla"))
-        finally:
-            newrepos.unlock()
+            self.assertEqual("data", tree.get_file_text("foo/bla"))
 
     def test_fetch_mapping_upgrade(self):
         from breezy.plugins.svn.mapping3.base import BzrSvnMappingv3
@@ -1711,8 +1708,8 @@ Node-copyfrom-path: x
             oldrepos.generate_revision_id(1, "", mapping)))
         tree1 = newrepos.revision_tree(
                 oldrepos.generate_revision_id(1, "", mapping))
-        self.assertTrue(tree1.is_executable(tree1.path2id("bla")))
-        self.assertTrue(tree1.is_executable(tree1.path2id("blie")))
+        self.assertTrue(tree1.is_executable("bla"))
+        self.assertTrue(tree1.is_executable("blie"))
 
     def test_fetch_executable_persists(self):
         repos_url = self.make_svn_repository('d')
@@ -1735,10 +1732,10 @@ Node-copyfrom-path: x
         mapping = oldrepos.get_mapping()
         tree1 = newrepos.revision_tree(
                 oldrepos.generate_revision_id(1, "", mapping))
-        self.assertTrue(tree1.is_executable(tree1.path2id("bla")))
+        self.assertTrue(tree1.is_executable("bla"))
         tree2 = newrepos.revision_tree(
                 oldrepos.generate_revision_id(2, "", mapping))
-        self.assertTrue(tree2.is_executable(tree2.path2id("bla")))
+        self.assertTrue(tree2.is_executable("bla"))
 
     def test_fetch_symlink(self):
         self.requireFeature(SymlinkFeature)
@@ -1762,16 +1759,13 @@ Node-copyfrom-path: x
         tree1 = newrepos.revision_tree(
                 oldrepos.generate_revision_id(1, "", mapping))
         file_id = tree1.path2id("mylink")
-        self.assertEqual('symlink', tree1.kind(file_id))
-        self.assertEqual('bla', tree1.get_symlink_target(file_id))
-        self.assertEquals(None, tree1.get_file_sha1(file_id))
-        key = (file_id, tree1.get_file_revision(file_id))
-        newrepos.lock_read()
-        try:
+        self.assertEqual('symlink', tree1.kind('mylink'))
+        self.assertEqual('bla', tree1.get_symlink_target('mylink'))
+        self.assertEquals(None, tree1.get_file_sha1('mylink'))
+        key = (file_id, tree1.get_file_revision('mylink'))
+        with newrepos.lock_read():
             self.assertEquals(sha_string(""),
                 newrepos.texts.get_sha1s([key])[key])
-        finally:
-            newrepos.unlock()
 
     def test_fetch_symlink_with_newlines(self):
         self.requireFeature(SymlinkFeature)
@@ -1797,9 +1791,9 @@ Node-copyfrom-path: x
             oldrepos.generate_revision_id(1, "", mapping)))
         tree1 = newrepos.revision_tree(
                 oldrepos.generate_revision_id(1, "", mapping))
-        self.assertEqual('symlink', tree1.kind(tree1.path2id("mylink")))
+        self.assertEqual('symlink', tree1.kind("mylink"))
         self.assertEqual('bla\nbar\nbla',
-            tree1.get_symlink_target(tree1.path2id("mylink")))
+            tree1.get_symlink_target("mylink"))
 
     def test_fetch_special_non_symlink(self):
         repos_url = self.make_svn_repository('d')
@@ -1820,7 +1814,7 @@ Node-copyfrom-path: x
             oldrepos.generate_revision_id(1, "", mapping)))
         tree1 = newrepos.revision_tree(
                 oldrepos.generate_revision_id(1, "", mapping))
-        self.assertEqual('file', tree1.kind(tree1.path2id("mylink")))
+        self.assertEqual('file', tree1.kind("mylink"))
 
     def test_fetch_special_unbecomes_symlink(self):
         repos_url = self.make_svn_repository('d')
@@ -1846,7 +1840,7 @@ Node-copyfrom-path: x
             oldrepos.generate_revision_id(2, "", mapping)))
         tree1 = newrepos.revision_tree(
                 oldrepos.generate_revision_id(2, "", mapping))
-        self.assertEqual('file', tree1.kind(tree1.path2id("mylink")))
+        self.assertEqual('file', tree1.kind("mylink"))
 
         # Now test the same thing again as two separate copy_content calls, to
         # check it also works if the symlink's "text" is not in the fetch
@@ -1860,7 +1854,7 @@ Node-copyfrom-path: x
             oldrepos.generate_revision_id(2, "", mapping)))
         tree2 = newrepos2.revision_tree(
                 oldrepos.generate_revision_id(2, "", mapping))
-        self.assertEqual('file', tree2.kind(tree2.path2id("mylink")))
+        self.assertEqual('file', tree2.kind("mylink"))
 
     def test_fetch_special_becomes_symlink(self):
         repos_url = self.make_svn_repository('d')
@@ -1890,7 +1884,7 @@ Node-copyfrom-path: x
             "not allowing svn:special invalid files to be restored to symlinks "
             "yet",
             self.assertEqual,
-            'symlink', tree1.kind(tree1.path2id("mylink")))
+            'symlink', tree1.kind("mylink"))
 
     def test_fetch_symlink_kind_change(self):
         repos_url = self.make_svn_repository('d')
@@ -1915,9 +1909,9 @@ Node-copyfrom-path: x
                 oldrepos.generate_revision_id(1, "", mapping))
         tree2 = newrepos.revision_tree(
                 oldrepos.generate_revision_id(2, "", mapping))
-        self.assertEqual('file', tree1.kind(tree1.path2id("mylink")))
-        self.assertEqual('symlink', tree2.kind(tree2.path2id("mylink")))
-        self.assertEqual('bla', tree2.get_symlink_target(tree2.path2id("mylink")))
+        self.assertEqual('file', tree1.kind("mylink"))
+        self.assertEqual('symlink', tree2.kind("mylink"))
+        self.assertEqual('bla', tree2.get_symlink_target("mylink"))
 
     def test_fetch_executable_separate(self):
         repos_url = self.make_svn_repository('d')
@@ -1940,12 +1934,12 @@ Node-copyfrom-path: x
             oldrepos.generate_revision_id(1, "", mapping)))
         tree1 = newrepos.revision_tree(
                 oldrepos.generate_revision_id(1, "", mapping))
-        self.assertFalse(tree1.is_executable(tree1.path2id("bla")))
+        self.assertFalse(tree1.is_executable("bla"))
         tree2 = newrepos.revision_tree(
                 oldrepos.generate_revision_id(2, "", mapping))
-        self.assertTrue(tree2.is_executable(tree2.path2id("bla")))
+        self.assertTrue(tree2.is_executable("bla"))
         self.assertEqual(oldrepos.generate_revision_id(2, "", mapping),
-                         tree2.get_file_revision(tree2.path2id("bla")))
+                         tree2.get_file_revision("bla"))
 
     def test_fetch_hidden(self):
         repos_url = self.make_svn_repository('d')
@@ -2258,11 +2252,11 @@ Node-copyfrom-path: x
 
         tree = newrepos.revision_tree(lastrev)
         self.assertEqual(prevrev,
-                         tree.get_file_revision(tree.path2id("bdir/afile")))
+                         tree.get_file_revision("bdir/afile"))
 
         tree = newrepos.revision_tree(prevrev)
         self.assertEqual(copyrev,
-                         tree.get_file_revision(tree.path2id("bdir/stationary")))
+                         tree.get_file_revision("bdir/stationary"))
 
     def test_fetch_different_parent_path(self):
         repos_url = self.make_svn_repository('d')

@@ -244,7 +244,7 @@ class TestInventoryExternals(SubversionTestCase):
              'bla', inv.path2id('blie'),
              reference_revision=CURRENT_REVISION,
              revision=mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)))
-        ie = inv[inv.path2id('blie/bla')]
+        ie = inv.get_entry(inv.path2id('blie/bla'))
         self.assertEquals(expected_ie.file_id, ie.file_id)
         self.assertEquals(expected_ie.revision, ie.revision)
         self.assertEquals(expected_ie.name, ie.name)
@@ -266,7 +266,7 @@ class TestInventoryExternals(SubversionTestCase):
              'bla', 'blabloe',
              reference_revision=CURRENT_REVISION,
              revision=mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1))),
-             inv[inv.path2id('bla')])
+             inv.get_entry(inv.path2id('bla')))
 
     def test_add_simple_rev(self):
         branch = self.make_svn_branch('d', lossy=True) #1
@@ -282,7 +282,7 @@ class TestInventoryExternals(SubversionTestCase):
             revision=mapping.revision_id_foreign_to_bzr(
                 (repos.uuid, branch.get_branch_path(), 1)),
             reference_revision=branch.last_revision())
-        ie = inv[inv.path2id('bla')]
+        ie = inv.get_entry(inv.path2id('bla'))
         self.assertEqual(branch.last_revision(), ie.reference_revision)
         self.assertEquals(expected_ie.file_id, ie.file_id)
         self.assertEquals(expected_ie.revision, ie.revision)

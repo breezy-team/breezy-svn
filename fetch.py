@@ -127,7 +127,7 @@ def tree_ancestors(tree, fileid, exceptions):
     todo = set([fileid])
     while todo:
         fileid = todo.pop()
-        for ie in tree.root_inventory[fileid].children.values():
+        for ie in tree.root_inventory.get_entry(fileid).children.values():
             p = tree.id2path(ie.file_id)
             if p in exceptions:
                 continue
@@ -457,7 +457,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _close(self):
         if (not self.editor.bzr_base_tree.has_id(self.new_id) or
-            self.new_ie != self.editor.bzr_base_tree.root_inventory[self.new_id] or
+            self.new_ie != self.editor.bzr_base_tree.root_inventory.get_entry(self.new_id) or
             self.bzr_base_path != self.path):
             self.new_ie.revision = self.editor._get_directory_revision(self.new_id)
             self.editor.texts.insert_record_stream([
@@ -491,7 +491,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
             bzr_base_path = None
             bzr_base_ie = None
         else:
-            bzr_base_ie = self.editor.bzr_base_tree.root_inventory[file_id]
+            bzr_base_ie = self.editor.bzr_base_tree.root_inventory.get_entry(file_id)
 
         return DirectoryRevisionBuildEditor(self.editor, bzr_base_path, path,
             file_id, bzr_base_ie, svn_base_ie, self.new_id,
@@ -506,7 +506,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         else:
             file_id = self.editor._get_new_file_id(path)
         try:
-            bzr_base_ie = self.editor.bzr_base_tree.root_inventory[file_id]
+            bzr_base_ie = self.editor.bzr_base_tree.root_inventory.get_entry(file_id)
         except NoSuchId:
             bzr_base_ie = None
 
@@ -762,7 +762,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             file_id = tree_parent_id_basename_to_file_id(
                 self.svn_base_tree, parent_id,
                 urlutils.basename(path))
-        return (file_id, self.svn_base_tree.root_inventory[file_id])
+        return (file_id, self.svn_base_tree.root_inventory.get_entry(file_id))
 
     def get_svn_base_ie_copyfrom(self, path, revnum):
         """Look up the base ie for the svn path, revnum.
@@ -799,7 +799,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             try:
                 return self._new_file_paths[file_id]
             except KeyError:
-                base_ie = self.bzr_base_tree.root_inventory[file_id]
+                base_ie = self.bzr_base_tree.root_inventory.get_entry(file_id)
                 if base_ie.parent_id is None:
                     parent_path = ""
                 else:
@@ -810,10 +810,10 @@ class RevisionBuildEditor(DeltaBuildEditor):
         for file_id in self.bzr_base_tree.all_file_ids():
             if file_id in self._new_file_paths:
                 continue
-            base_ie = self.bzr_base_tree.root_inventory[file_id]
+            base_ie = self.bzr_base_tree.root_inventory.get_entry(file_id)
             for tree in self.bzr_parent_trees[1:]:
                 try:
-                    parent_ie = tree.root_inventory[file_id]
+                    parent_ie = tree.root_inventory.get_entry(file_id)
                 except NoSuchId:
                     continue
                 if parent_ie.revision != base_ie.revision:
@@ -889,7 +889,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 bzr_base_path = None
                 bzr_base_ie = None
             else:
-                bzr_base_ie = self.bzr_base_tree.root_inventory[file_id]
+                bzr_base_ie = self.bzr_base_tree.root_inventory.get_entry(file_id)
 
             if bzr_base_path != u"":
                 self._delete_entry(None, u"", base_revnum)
@@ -918,7 +918,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         """'renew' the fileid of a path."""
         assert isinstance(path, unicode)
         old_file_id = self.bzr_base_tree.path2id(path)
-        old_ie = self.bzr_base_tree.root_inventory[old_file_id]
+        old_ie = self.bzr_base_tree.root_inventory.get_entry(old_file_id)
         new_ie = old_ie.copy()
         new_ie.file_id = self._get_new_file_id(path)
         new_ie.parent_id = self._get_new_file_id(urlutils.dirname(path))
@@ -1004,7 +1004,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         revision = None
         for tree in self.bzr_parent_trees[1:]:
             try:
-                parent_ie = tree.root_inventory[ie.file_id]
+                parent_ie = tree.root_inventory.get_entry(ie.file_id)
             except NoSuchId:
                 continue
             else:

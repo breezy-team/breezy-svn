@@ -305,7 +305,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                 changed = True
             # copy if they existed at different location
             elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
-                  base_tree.root_inventory[child_ie.file_id].parent_id != child_ie.parent_id):
+                  base_tree.root_inventory.get_entry(child_ie.file_id).parent_id != child_ie.parent_id):
                 mutter('copy %s %r -> %r', child_ie.kind,
                                   base_tree.id2path(child_ie.file_id),
                                   new_child_path)
@@ -343,7 +343,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         try:
             # add them if they didn't exist in base_tree or changed kind
             if (not base_tree.has_id(child_ie.file_id) or
-                base_tree.kind(base_tree.i2path(child_ie.file_id), child_ie.file_id) != child_ie.kind):
+                base_tree.kind(base_tree.id2path(child_ie.file_id), child_ie.file_id) != child_ie.kind):
                 mutter('adding dir %r', child_ie.name)
 
                 # Do a copy operation if at all possible, to make
@@ -366,7 +366,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                 changed = True
             # copy if they existed at different location
             elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
-                  base_tree.root_inventory[child_ie.file_id].parent_id != child_ie.parent_id):
+                  base_tree.root_inventory.get_entry(child_ie.file_id).parent_id != child_ie.parent_id):
                 old_child_path = base_tree.id2path(child_ie.file_id).encode("utf-8")
                 mutter('copy dir %r -> %r', old_child_path, new_child_path)
                 copyfrom_url = url_join_unescaped_path(base_url, old_child_path)
@@ -707,7 +707,7 @@ class SvnCommitBuilder(CommitBuilder):
         except KeyError:
             pass
         try:
-            return self.old_tree.root_inventory[file_id]
+            return self.old_tree.root_inventory.get_entry(file_id)
         except NoSuchId:
             return None
 
@@ -1035,7 +1035,7 @@ class SvnCommitBuilder(CommitBuilder):
         new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
         if new_kind == 'file':
             new_ie.executable = new_executable
-            file_obj, stat_val = self._get_file_with_stat(tree, tree.id2path(file_id), file_id)
+            file_obj, stat_val = self._get_file_with_stat(tree, new_path, file_id)
             new_ie.text_size, new_ie.text_sha1 = osutils.size_sha_file(file_obj)
             (new_ie.revision, unusual_text_parents) = self._get_text_revision(
                 new_ie, new_path, parent_trees, force_change=force_change)
@@ -1044,7 +1044,7 @@ class SvnCommitBuilder(CommitBuilder):
             if new_ie.revision is None:
                 yield file_id, new_path, (new_ie.text_sha1, stat_val)
         elif new_kind == 'symlink':
-            new_ie.symlink_target = tree.get_symlink_target(file_id)
+            new_ie.symlink_target = tree.get_symlink_target(new_path, file_id)
             new_ie.revision, unusual_text_parents = self._get_text_revision(
                 new_ie, new_path, parent_trees, force_change=force_change)
             self.modified_files[file_id] = get_svn_file_delta_transmitter(

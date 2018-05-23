@@ -17,7 +17,7 @@
 
 from __future__ import absolute_import
 
-from cStringIO import StringIO
+from io import BytesIO
 import os
 import subvertpy
 from subvertpy import (
@@ -248,7 +248,7 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     assert ref_revnum is None or isinstance(ref_revnum, int)
     assert revid is None or isinstance(revid, str)
     (dir, name) = os.path.split(path)
-    parent = inv[parent_id]
+    parent = inv.get_entry(parent_id)
     if dir != "":
         for part in dir.split("/"):
             if parent.children.has_key(part):
@@ -311,9 +311,9 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
 
     def all_file_ids(self):
         # FIXME
-        return set(self.root_inventory)
+        return set(self.root_inventory.iter_all_ids())
 
-    def iter_entries_by_dir(self, specific_files=None, yield_parents=False):
+    def iter_entries_by_dir(self, specific_files=None):
         if specific_files is not None:
             specific_file_ids = []
             for path in specific_files:
@@ -324,10 +324,10 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
             specific_file_ids = None
 
         return self.root_inventory.iter_entries_by_dir(
-            specific_file_ids=specific_file_ids, yield_parents=yield_parents)
+            specific_file_ids=specific_file_ids)
 
     def kind(self, path, file_id=None):
-        stream = StringIO()
+        stream = BytesIO()
         try:
             (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
                     stream, self._revmeta.metarev.revnum)
@@ -344,7 +344,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         if file_id is None:
             file_id = self.path2id(path)
         # FIXME: More efficient implementation?
-        return self.root_inventory[file_id].text_size
+        return self.root_inventory.get_entry(file_id).text_size
 
     def list_files(self, include_root=False, from_dir=None, recursive=True):
         # FIXME
@@ -365,16 +365,16 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
             yield path, 'V', entry.kind, entry.file_id, entry
 
     def get_file(self, path, file_id=None):
-        stream = StringIO()
+        stream = BytesIO()
         (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
                 stream, self._revmeta.metarev.revnum)
         if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == "link ":
-            return StringIO()
+            return BytesIO()
         stream.seek(0)
         return stream
 
     def get_file_stream_by_path(self, path):
-        stream = StringIO()
+        stream = BytesIO()
         (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
                 stream, self._revmeta.metarev.revnum)
         stream.seek(0)
@@ -391,7 +391,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         encoded_path = path.encode("utf-8")
         try:
             (fetched_rev, props) = self.transport.get_file(encoded_path,
-                    StringIO(), self._revmeta.metarev.revnum)
+                    BytesIO(), self._revmeta.metarev.revnum)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NOT_FILE:
                 (dirents, fetched_rev, props) = self.transport.get_dir(
@@ -535,7 +535,7 @@ class FileTreeEditor(object):
         self.file_stream = None
 
     def apply_textdelta(self, base_checksum):
-        self.file_stream = StringIO()
+        self.file_stream = BytesIO()
         return delta.apply_txdelta_handler("", self.file_stream)
 
 
@@ -671,7 +671,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         # FIXME
         if file_id is None:
             file_id = self.path2id(file_id)
-        return self.root_inventory[file_id].kind
+        return self.root_inventory.get_entry(file_id).kind
 
     def get_file_text(self, path, file_id=None):
         """See Tree.get_file_text()."""
@@ -708,7 +708,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
     def all_file_ids(self):
         return self.real_tree.all_file_ids()
 
-    def iter_entries_by_dir(self, specific_files=None, yield_parents=False):
+    def iter_entries_by_dir(self, specific_files=None):
         # FIXME
         if specific_files is not None:
             specific_file_ids = []
@@ -720,11 +720,10 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             specific_file_ids = None
         try:
             return self.root_inventory.iter_entries_by_dir(
-                specific_file_ids=specific_file_ids, yield_parents=yield_parents)
+                specific_file_ids=specific_file_ids)
         except BasisTreeIncomplete:
             return self.real_tree.iter_entries_by_dir(
-                specific_files=specific_files,
-                yield_parents=yield_parents)
+                specific_files=specific_files)
 
     def find_related_paths_across_trees(self, paths, trees=[],
             require_versioned=True):

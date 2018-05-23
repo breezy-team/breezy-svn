@@ -308,7 +308,7 @@ class ConnectionPool(object):
         # Check if there is an existing connection we can use
         for c in self.connections:
             assert not c.busy, "busy connection in pool"
-            assert not c.url.endswith("/")
+            assert not c.url.endswith("/"), "%r ends with a /" % c.url
             if url == c.url or url.startswith(c.url+"/"):
                 self.connections.remove(c)
                 relpath = urlutils.relative_url(c.url+"/", url.rstrip("/")+"/")

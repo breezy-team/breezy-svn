@@ -463,15 +463,15 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({"dc/bla": "data"})
         self.client_add("dc/bla")
         self.client_set_prop("dc/bla", "svn:executable", "*")
-        self.assertTrue(tree.is_executable(tree.path2id("bla")))
+        self.assertTrue(tree.is_executable("bla"))
 
     def test_symlink(self):
         self.requireFeature(SymlinkFeature)
         tree = self.make_svn_branch_and_tree('a', 'dc')
         os.symlink("target", "dc/bla")
         self.client_add("dc/bla")
-        self.assertEqual('symlink', tree.kind(tree.path2id("bla")))
-        self.assertEqual("target", tree.get_symlink_target(tree.path2id("bla")))
+        self.assertEqual('symlink', tree.kind("bla"))
+        self.assertEqual("target", tree.get_symlink_target("bla"))
 
     def test_get_parent_ids(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
@@ -766,10 +766,10 @@ class TestWorkingTree(SubversionTestCase):
         wt = self.make_svn_branch_and_tree('a', 'dc')
         self.build_tree({'dc/thing': 'Foo'})
         self.client_add('dc/thing')
-        self.assertEquals('file', wt.kind(wt.path2id('thing')))
+        self.assertEquals('file', wt.kind('thing'))
         os.unlink('dc/thing')
         self.build_tree({'dc/thing': None})
-        self.assertEquals('directory', wt.kind(wt.path2id('thing')))
+        self.assertEquals('directory', wt.kind('thing'))
         entries = list(wt.iter_entries_by_dir())
         self.assertEquals(
             [("", "directory"), ("thing", "directory")],
@@ -779,10 +779,10 @@ class TestWorkingTree(SubversionTestCase):
         wt = self.make_svn_branch_and_tree('a', 'dc')
         self.build_tree({'dc/thing': None})
         self.client_add('dc/thing')
-        self.assertEquals('directory', wt.kind(wt.path2id('thing')))
+        self.assertEquals('directory', wt.kind('thing'))
         shutil.rmtree('dc/thing')
         self.build_tree({'dc/thing': 'Foo'})
-        self.assertEquals('file', wt.kind(wt.path2id('thing')))
+        self.assertEquals('file', wt.kind('thing'))
         entries = list(wt.iter_entries_by_dir())
         self.assertEquals(
             [("", "directory"), ("thing", "directory")],

@@ -748,7 +748,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         for child in getattr(entry, 'children', {}).itervalues():
             yield child.file_id
 
-    def iter_entries_by_dir(self, specific_files=None, yield_parents=False):
+    def iter_entries_by_dir(self, specific_files=None):
         """See WorkingTree.iter_entries_by_dir."""
         if specific_files is not None:
             wc = self._get_wc()
@@ -1435,7 +1435,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             the changes from the current left most parent revision to new_revid.
         """
         revmeta, mapping = self.branch.last_revmeta(True)
-        assert revmeta.get_revision_id(mapping) == new_revid
+        assert revmeta.get_revision_id(mapping) == new_revid, \
+                "%r != %r" % (revmeta.get_revision_id(mapping), new_revid)
         rev = revmeta.metarev.revnum
         self._cached_base_revnum = rev
         self._cached_base_revid = new_revid
@@ -1693,7 +1694,7 @@ class SvnCheckout(ControlDir):
         self.root_transport = transport
         self.transport = self.root_transport.clone(get_adm_dir())
 
-    def backup_controldir(self):
+    def backup_bzrdir(self):
         self.root_transport.copy_tree(".svn", ".svn.backup")
         return (self.root_transport.abspath(".svn"),
                 self.root_transport.abspath(".svn.backup"))
