@@ -70,6 +70,9 @@ from breezy.revision import (
     is_null,
     ensure_null,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.symbol_versioning import (
     deprecated_method,
     deprecated_in,
@@ -198,7 +201,9 @@ class SvnBranch(ForeignBranch):
         self.controldir = controldir
         self._format = SvnBranchFormat()
         self.layout = self.repository.get_layout()
-        self._branch_path = branch_path.strip("/")
+        if not isinstance(branch_path, text_type):
+            raise TypeError(branch_path)
+        self._branch_path = branch_path.strip(u"/")
         self.base = urlutils.join(self.repository.base, urlutils.escape(self._branch_path)).rstrip("/")
         super(SvnBranch, self).__init__(mapping)
         self._lock_mode = None

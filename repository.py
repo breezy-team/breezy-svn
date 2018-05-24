@@ -374,7 +374,7 @@ class SvnRepository(ForeignRepository):
         self._guessed_layout = None
         self._guessed_appropriate_layout = None
         self.transport = transport
-        self.uuid = transport.get_uuid()
+        self.uuid = transport.get_uuid().encode()
         assert self.uuid is not None
         self.base = transport.base
         assert self.base is not None
@@ -990,6 +990,7 @@ class SvnRepository(ForeignRepository):
     def _get_revmeta(self, revision_id):
         foreign_revid, mapping = self.lookup_bzr_revision_id(revision_id)
         (uuid, branch, revnum) = foreign_revid
+        assert isinstance(branch, text_type)
         revmeta = self._revmeta_provider.lookup_revision(branch, revnum)
         return revmeta, mapping
 
@@ -1026,6 +1027,7 @@ class SvnRepository(ForeignRepository):
         (uuid, path, revnum) = foreign_revid
         if uuid != self.uuid:
             raise errors.DifferentSubversionRepository(uuid, self.uuid)
+        assert isinstance(path, text_type)
         assert isinstance(newest_allowed, BzrSvnMapping)
 
         revmeta = self._revmeta_provider.lookup_revision(path, revnum)
@@ -1042,8 +1044,6 @@ class SvnRepository(ForeignRepository):
 
         :return: New revision id.
         """
-        if isinstance(path, text_type):
-            path = path.encode('utf-8')
         assert isinstance(revnum, int)
         foreign_revid = (self.uuid, path, revnum)
         return self.lookup_foreign_revision_id(foreign_revid, mapping)
@@ -1064,7 +1064,7 @@ class SvnRepository(ForeignRepository):
         try:
             foreign_revid, mapping = mapping_registry.parse_revision_id(revid)
             (uuid, branch_path, revnum) = foreign_revid
-            assert isinstance(branch_path, str)
+            assert isinstance(branch_path, text_type)
             assert isinstance(mapping, BzrSvnMapping)
             if uuid == self.uuid:
                 return (self.uuid, branch_path, revnum), mapping

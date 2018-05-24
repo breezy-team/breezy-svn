@@ -25,6 +25,9 @@ from breezy import (
     trace,
     osutils,
     )
+from breezy.sixish import (
+    text_type,
+    )
 
 from breezy.plugins.svn.cache import (
     CacheConcurrencyError,
@@ -215,7 +218,7 @@ class SqliteRevisionIdMapCache(RevisionIdMapCache, CacheTable):
 
         assert revid is not None and revid != ""
         assert isinstance(mapping, str)
-        assert isinstance(branch, str)
+        assert isinstance(branch, text_type)
         assert isinstance(min_revnum, int) and isinstance(max_revnum, int)
         assert min_revnum <= max_revnum
         self.mutter("insert revid %r:%r-%r -> %r", branch, min_revnum, max_revnum, revid)

@@ -93,7 +93,7 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps,
         return b"%d@%s:%s" % (
                 revnum, uuid,
                 mapping.escape_svn_path(
-                    "%s/%s" % (branch, inv_path)))
+                    u"%s/%s" % (branch, inv_path)))
 
     def parse_file_id(self, fileid):
         try:

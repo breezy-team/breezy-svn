@@ -534,7 +534,6 @@ class SvnRaTransport(Transport):
 
     def get_file_revs(self, path, start_revnum, end_revnum, handler,
                       include_merged_revisions=False):
-        assert type(path) is str
         conn, relpath = self.get_path_connection(path)
         try:
             return conn.get_file_revs(relpath, start_revnum, end_revnum, handler,
@@ -570,7 +569,7 @@ class SvnRaTransport(Transport):
                 self.repos_path.split("/")[:-1])
 
     @convert_svn_error
-    def mkdir(self, relpath, message="Creating directory"):
+    def mkdir(self, relpath, message=u"Creating directory"):
         relpath = urlutils.join(self.repos_path, relpath)
         dirname, basename = urlutils.split(relpath)
         conn = self.get_connection(dirname.strip("/"))

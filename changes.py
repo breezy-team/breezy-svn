@@ -20,6 +20,10 @@ from __future__ import absolute_import
 
 from subvertpy import NODE_DIR
 
+
+from breezy.sixish import text_type
+
+
 REV0_CHANGES = {"": ('A', None, -1, NODE_DIR)}
 
 
@@ -36,15 +40,16 @@ def find_prev_location(paths, branch_path, revnum):
     :note: If branch_path wasn't copied, this will return revnum-1 as the
         previous revision.
     """
-    assert type(revnum) is int
+    assert isinstance(revnum, int)
+    assert isinstance(branch_path, text_type)
     if revnum == 0:
-        assert branch_path == ""
+        assert branch_path == u""
         return None
     # If there are no special cases, just go try the
     # next revnum in history
     revnum -= 1
 
-    if branch_path == "":
+    if branch_path == u"":
         return (branch_path, revnum)
 
     # Make sure we get the right location for next time, if
@@ -54,7 +59,7 @@ def find_prev_location(paths, branch_path, revnum):
         if paths[branch_path][1] is None:
             return None # Was added here
         revnum = paths[branch_path][2]
-        assert type(paths[branch_path][1]) is str
+        assert isinstance(paths[branch_path][1], text_type)
         branch_path = paths[branch_path][1]
         return (branch_path, revnum)
 
@@ -66,7 +71,7 @@ def find_prev_location(paths, branch_path, revnum):
     for p in sorted(paths.keys(), reverse=True):
         if paths[p][0] == 'M':
             continue
-        if branch_path.startswith(p+"/"):
+        if branch_path.startswith(p+u"/"):
             if paths[p][0] not in ('A', 'R'):
                 raise AssertionError("Parent %r wasn't added" % (
                     p, paths[p][0]))
@@ -75,8 +80,8 @@ def find_prev_location(paths, branch_path, revnum):
                     "Empty parent %r added, but child %r wasn't added !?" % (
                         p, branch_path))
             revnum = paths[p][2]
-            branch_path = paths[p][1].encode("utf-8") + branch_path[len(p):]
-            return (branch_path.lstrip("/"), revnum)
+            branch_path = paths[p][1] + branch_path[len(p):]
+            return (branch_path.lstrip(u"/"), revnum)
 
     return (branch_path, revnum)
 
@@ -88,10 +93,10 @@ def changes_path(changes, path, parents=False):
     :param parents: Whether to consider a parent moving a change.
     """
     for p in changes:
-        assert type(p) is str
+        assert isinstance(p, text_type)
         if path_is_child(path, p):
             return True
-        if parents and path.startswith(p+"/") and changes[p][0] in ('R', 'A'):
+        if parents and path.startswith(p+u"/") and changes[p][0] in ('R', 'A'):
             return True
     return False
 
@@ -103,7 +108,7 @@ def changes_children(changes, path):
     :note: Does not consider changes to path itself.
     """
     for p in changes:
-        assert type(p) is str
+        assert isinstance(p, text_type)
         if path_is_child(path, p) and path != p:
             return True
     return False
@@ -119,13 +124,13 @@ def changes_root(paths):
     paths = sorted(paths)
     root = paths[0]
     for p in paths[1:]:
-        if p.startswith("%s/" % root): # new path is child of root
+        if p.startswith(u"%s/" % root): # new path is child of root
             continue
-        elif root.startswith("%s/" % p): # new path is parent of root
+        elif root.startswith(u"%s/" % p): # new path is parent of root
             root = p
         else:
-            if "" in paths:
-                return ""
+            if u"" in paths:
+                return u""
             return None # Mismatch
     return root
 
@@ -158,7 +163,7 @@ def apply_reverse_changes(branches, changes):
 
 def rebase_path(path, orig_parent, new_parent):
     """Rebase a path on a different parent."""
-    return (new_parent+"/"+path[len(orig_parent):].strip("/")).strip("/")
+    return (new_parent+u"/"+path[len(orig_parent):].strip(u"/")).strip(u"/")
 
 
 def changes_outside_branch_path(branch_path, paths):
@@ -171,20 +176,20 @@ def changes_outside_branch_path(branch_path, paths):
 
 def under_prefixes(path, prefixes):
     """Check if path is under one of prefixes."""
-    if prefixes is None or "" in prefixes:
+    if prefixes is None or u"" in prefixes:
         return True
     return any([x for x in prefixes if path_is_child(x, path)])
 
 
 def common_prefix(paths):
-    prefix = ""
+    prefix = u""
     if paths == []:
-        return ""
+        return u""
     # Find a common prefix
-    parts = paths[0].split("/")
+    parts = paths[0].split(u"/")
     for i in range(len(parts)+1):
         for j in paths:
-            if j.split("/")[:i] != parts[:i]:
+            if j.split(u"/")[:i] != parts[:i]:
                 return prefix
-        prefix = "/".join(parts[:i])
+        prefix = u"/".join(parts[:i])
     return prefix

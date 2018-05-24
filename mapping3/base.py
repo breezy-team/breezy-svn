@@ -70,10 +70,10 @@ class SchemeDerivedLayout(RepositoryLayout):
         return (type, proj, bp, rp)
 
     def get_tag_name(self, path, project=None):
-        return path.split("/")[-1].decode("utf-8")
+        return path.split(u"/")[-1]
 
     def get_branch_name(self, path, project=None):
-        return path.split("/")[-1].decode("utf-8")
+        return path.split(u"/")[-1]
 
     def supports_tags(self):
         return (self.scheme.tag_list != [])
@@ -86,7 +86,7 @@ class SchemeDerivedLayout(RepositoryLayout):
         return get_root_paths(repository, self.scheme.tag_list, revnum,
                 self.scheme.is_tag, project)
 
-    def get_tag_path(self, name, project=""):
+    def get_tag_path(self, name, project=u""):
         try:
             return self.scheme.get_tag_path(name, project)
         except NotImplementedError:
@@ -108,7 +108,7 @@ class SchemeDerivedLayout(RepositoryLayout):
 
     def push_merged_revisions(self, project=""):
         try:
-            self.scheme.get_branch_path("somebranch")
+            self.scheme.get_branch_path(u"somebranch")
             return True
         except NotImplementedError:
             return False
@@ -243,7 +243,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
     def generate_file_id(self, (uuid, branch, revnum), inv_path):
         assert isinstance(uuid, str)
         assert isinstance(revnum, int)
-        assert isinstance(branch, str)
+        assert isinstance(branch, text_type)
         if not isinstance(inv_path, text_type):
             raise TypeError(inv_path)
         inv_path = inv_path.encode("utf-8")
@@ -263,8 +263,8 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
             (uuid, bp, ip) = rest.split(":", 2)
         except ValueError:
             raise errors.InvalidFileId(file_id)
-        return (uuid, revnum, ("%s/%s" % (mapping.unescape_svn_path(bp),
-            mapping.unescape_svn_path(ip))).strip("/"))
+        return (uuid, revnum, (u"%s/%s" % (mapping.unescape_svn_path(bp),
+            mapping.unescape_svn_path(ip))).strip(u"/"))
 
     @classmethod
     def _parse_revision_id(cls, revid):
@@ -319,7 +319,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
                 "Trying to generate revid for (%r,%r)" % (path, revnum)
         return b"%s%s:%s:%s:%d" % (
                 cls.revid_prefix, scheme, uuid,
-                mapping.escape_svn_path(path.strip("/")), revnum)
+                mapping.escape_svn_path(path.strip(u"/")), revnum)
 
     def revision_id_foreign_to_bzr(self, (uuid, path, revnum)):
         assert isinstance(path, text_type)

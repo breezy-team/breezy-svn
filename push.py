@@ -440,15 +440,12 @@ class InterToSvnRepository(InterRepository):
             base_revid = NULL_REVISION
 
         mutter('pushing %r (%r)', rev.revision_id, rev.parent_ids)
-        self.source.lock_read()
-        try:
+        with self.source.lock_read():
             revid, foreign_info = push_revision_tree(self.get_graph(),
                 self.target, target_path, target_config, self.source,
                 base_revid, rev.revision_id, rev, base_foreign_revid,
                 base_mapping, push_metadata=push_metadata,
                 root_action=root_action)
-        finally:
-            self.source.unlock()
         assert revid == rev.revision_id or not push_metadata
         self._add_path_info(target_path, revid, foreign_info)
         return (revid, foreign_info)
@@ -574,85 +571,78 @@ class InterToSvnRepository(InterRepository):
     def copy_content(self, revision_id=None, pb=None, project=None,
             mapping=None, limit=None, lossy=False, exclude_non_mainline=None):
         """See InterRepository.copy_content."""
-        self.source.lock_read()
-        try:
-            self.target.lock_write()
-            try:
-                graph = self.get_graph()
-                if revision_id is not None:
-                    heads = [revision_id]
+        with self.source.lock_read(), self.target.lock_write():
+            graph = self.get_graph()
+            if revision_id is not None:
+                heads = [revision_id]
+            else:
+                heads = graph.heads(self.source.all_revision_ids())
+                exclude_non_mainline = False
+            todo = []
+            # Go back over the LHS parent until we reach a revid we know
+            for head in heads:
+                for revid in graph.iter_lefthand_ancestry(head,
+                        (NULL_REVISION, None)):
+                    if self._target_has_revision(revid):
+                        break
+                    todo.append(revid)
+            todo.reverse()
+            if limit is not None:
+                # FIXME: This only considers mainline revisions.
+                # Properly keeping track of how many revisions have been
+                # pushed will be fairly complicated though, so for the
+                # moment this is reasonable enough (and passes tests).
+                todo = todo[:limit]
+            mutter("pushing %r into svn", todo)
+            base_foreign_info = None
+            layout = self.target.get_layout()
+            for rev in self.source.get_revisions(todo):
+                if pb is not None:
+                    pb.update("pushing revisions",
+                        todo.index(rev.revision_id), len(todo))
+                mutter('pushing %r', rev.revision_id)
+
+                if base_foreign_info is None:
+                    if rev.parent_ids:
+                        base_revid = rev.parent_ids[0]
+                    else:
+                        base_revid = NULL_REVISION
+                    base_foreign_info  = self._get_foreign_revision_info(
+                        base_revid)
+
+                (base_foreign_revid, base_mapping) = base_foreign_info
+                if base_foreign_revid is None:
+                    target_project = None
                 else:
-                    heads = graph.heads(self.source.all_revision_ids())
-                    exclude_non_mainline = False
-                todo = []
-                # Go back over the LHS parent until we reach a revid we know
-                for head in heads:
-                    for revid in graph.iter_lefthand_ancestry(head,
-                            (NULL_REVISION, None)):
-                        if self._target_has_revision(revid):
-                            break
-                        todo.append(revid)
-                todo.reverse()
-                if limit is not None:
-                    # FIXME: This only considers mainline revisions.
-                    # Properly keeping track of how many revisions have been
-                    # pushed will be fairly complicated though, so for the
-                    # moment this is reasonable enough (and passes tests).
-                    todo = todo[:limit]
-                mutter("pushing %r into svn", todo)
-                base_foreign_info = None
-                layout = self.target.get_layout()
-                for rev in self.source.get_revisions(todo):
-                    if pb is not None:
-                        pb.update("pushing revisions",
-                            todo.index(rev.revision_id), len(todo))
-                    mutter('pushing %r', rev.revision_id)
-
-                    if base_foreign_info is None:
-                        if rev.parent_ids:
-                            base_revid = rev.parent_ids[0]
-                        else:
-                            base_revid = NULL_REVISION
-                        base_foreign_info  = self._get_foreign_revision_info(
-                            base_revid)
-
-                    (base_foreign_revid, base_mapping) = base_foreign_info
-                    if base_foreign_revid is None:
-                        target_project = None
-                    else:
-                        (_, target_project, _, _) = layout.parse(
-                            base_foreign_revid[1])
-                    bp = determine_branch_path(rev, layout, target_project)
-                    mutter("pushing revision include %r to %s",
-                            rev.revision_id, bp)
-                    target_config = self._get_branch_config(bp)
-                    can_push_merged = layout.push_merged_revisions(target_project)
-                    if exclude_non_mainline is None:
-                        push_merged = can_push_merged and (
-                            target_config.get('push_merged_revisions'))
-                    else:
-                        push_merged = (not exclude_non_mainline)
-                    if push_merged and not can_push_merged:
-                        raise BzrError(
-                            "Unable to push merged revisions, layout "
-                            "does not provide branch path")
-                    append_revisions_only = target_config.get('append_revisions_only')
-                    if append_revisions_only is None:
-                        append_revisions_only = True
-                    root_action = self._get_root_action(bp, rev.parent_ids,
-                        overwrite=False,
-                        append_revisions_only=append_revisions_only,
-                        create_prefix=True)
-                    (pushed_revid,
-                            base_foreign_info) = self.push_revision_inclusive(
-                        bp, target_config, rev, push_metadata=not lossy,
-                        push_merged=push_merged, root_action=root_action,
-                        layout=layout, project=target_project,
-                        base_foreign_info=base_foreign_info)
-            finally:
-                self.source.unlock()
-        finally:
-            self.target.unlock()
+                    (_, target_project, _, _) = layout.parse(
+                        base_foreign_revid[1])
+                bp = determine_branch_path(rev, layout, target_project)
+                mutter("pushing revision include %r to %s",
+                        rev.revision_id, bp)
+                target_config = self._get_branch_config(bp)
+                can_push_merged = layout.push_merged_revisions(target_project)
+                if exclude_non_mainline is None:
+                    push_merged = can_push_merged and (
+                        target_config.get('push_merged_revisions'))
+                else:
+                    push_merged = (not exclude_non_mainline)
+                if push_merged and not can_push_merged:
+                    raise BzrError(
+                        "Unable to push merged revisions, layout "
+                        "does not provide branch path")
+                append_revisions_only = target_config.get('append_revisions_only')
+                if append_revisions_only is None:
+                    append_revisions_only = True
+                root_action = self._get_root_action(bp, rev.parent_ids,
+                    overwrite=False,
+                    append_revisions_only=append_revisions_only,
+                    create_prefix=True)
+                (pushed_revid,
+                        base_foreign_info) = self.push_revision_inclusive(
+                    bp, target_config, rev, push_metadata=not lossy,
+                    push_merged=push_merged, root_action=root_action,
+                    layout=layout, project=target_project,
+                    base_foreign_info=base_foreign_info)
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
         fetch_spec=None, project=None, mapping=None, target_is_empty=False,

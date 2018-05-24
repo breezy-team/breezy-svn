@@ -50,18 +50,18 @@ def guess_layout_from_branch_path(relpath):
     :param relpath: Relative URL to a branch.
     :return: New Branchinglayout instance.
     """
-    parts = relpath.strip("/").split("/")
+    parts = relpath.strip(u"/").split(u"/")
     for i in range(0, len(parts)):
-        if parts[i] == "trunk" and i == len(parts)-1:
+        if parts[i] == u"trunk" and i == len(parts)-1:
             return TrunkLayout(level=i)
-        elif parts[i] in ("branches", "tags") and i == len(parts)-2:
+        elif parts[i] in (u"branches", u"tags") and i == len(parts)-2:
             return TrunkLayout(level=i)
 
-    if len(parts) == 1 and parts[0] == "wiki":
+    if len(parts) == 1 and parts[0] == u"wiki":
         # Google code keeps the wiki in Subversion
         return TrunkLayout(level=0)
 
-    if parts == [""]:
+    if parts == [u""]:
         return RootLayout()
     return CustomLayout([relpath])
 
@@ -73,14 +73,14 @@ def guess_layout_from_path(relpath):
     :param relpath: Relative path in repository
     :return: New Branchinglayout instance.
     """
-    parts = relpath.strip("/").split("/")
+    parts = relpath.strip(u"/").split(u"/")
     for i in range(0, len(parts)):
-        if parts[i] == "trunk":
+        if parts[i] == u"trunk":
             return TrunkLayout(level=i)
-        elif parts[i] in ("branches", "tags"):
+        elif parts[i] in (u"branches", u"tags"):
             return TrunkLayout(level=i)
 
-    if len(parts) > 0 and parts[0] == "wiki":
+    if len(parts) > 0 and parts[0] == u"wiki":
         # Google code keeps the wiki in Subversion
         return TrunkLayout(level=0)
 
@@ -136,7 +136,7 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
         if layout.is_branch(relpath):
             return (best_match, layout)
 
-    if relpath == "" or relpath is None:
+    if relpath == u"" or relpath is None:
         guessed_layout = TrunkLayout()
     else:
         guessed_layout = guess_layout_from_branch_path(relpath)

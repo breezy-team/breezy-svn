@@ -67,8 +67,8 @@ class TestWithRepository(SubversionTestCase):
 
         repos = Repository.open(repos_url)
 
-        revmeta1 = repos._revmeta_provider.get_revision("bp", 1)
-        revmeta2 = repos._revmeta_provider.get_revision("bp", 2)
+        revmeta1 = repos._revmeta_provider.get_revision(u"bp", 1)
+        revmeta2 = repos._revmeta_provider.get_revision(u"bp", 2)
 
         self.assertEquals(
             mapping.revision_id_foreign_to_bzr((repos.uuid, "bp", 1)),
@@ -88,10 +88,10 @@ class TestWithRepository(SubversionTestCase):
 
         repos = Repository.open(repos_url)
 
-        revmeta1 = repos._revmeta_provider.get_revision("", 1)
+        revmeta1 = repos._revmeta_provider.get_revision(u"", 1)
         self.assertEquals("data\n", revmeta1.get_testament())
 
-        revmeta2 = repos._revmeta_provider.get_revision("", 2)
+        revmeta2 = repos._revmeta_provider.get_revision(u"", 2)
         self.assertIs(None, revmeta2.get_testament())
 
     def test_get_changed_properties(self):
@@ -115,10 +115,10 @@ class TestWithRepository(SubversionTestCase):
 
         repos = Repository.open(repos_url)
 
-        revmeta1 = repos._revmeta_provider.get_revision("", 1)
-        revmeta2 = repos._revmeta_provider.get_revision("", 2)
-        revmeta3 = repos._revmeta_provider.get_revision("", 3)
-        revmeta4 = repos._revmeta_provider.get_revision("", 4)
+        revmeta1 = repos._revmeta_provider.get_revision(u"", 1)
+        revmeta2 = repos._revmeta_provider.get_revision(u"", 2)
+        revmeta3 = repos._revmeta_provider.get_revision(u"", 3)
+        revmeta4 = repos._revmeta_provider.get_revision(u"", 4)
 
         self.assertFalse(revmeta1.knows_changed_fileprops())
 
@@ -156,8 +156,8 @@ class TestWithRepository(SubversionTestCase):
 
         repos = Repository.open(repos_url)
 
-        revmeta1 = repos._revmeta_provider.get_revision("", 1)
-        revmeta2 = repos._revmeta_provider.get_revision("", 2)
+        revmeta1 = repos._revmeta_provider.get_revision(u"", 1)
+        revmeta2 = repos._revmeta_provider.get_revision(u"", 2)
 
         self.assertTrue(revmeta1.changes_branch_root())
         self.assertFalse(revmeta2.changes_branch_root())
@@ -175,8 +175,8 @@ class TestWithRepository(SubversionTestCase):
 
         repos = Repository.open(repos_url)
 
-        revmeta1 = repos._revmeta_provider.get_revision("", 1)
-        revmeta2 = repos._revmeta_provider.get_revision("", 2)
+        revmeta1 = repos._revmeta_provider.get_revision(u"", 1)
+        revmeta2 = repos._revmeta_provider.get_revision(u"", 2)
 
         self.assertChangedPathsEquals({"": ("M", None, -1, NODE_DIR)}, 
                           revmeta1.metarev.paths)
@@ -192,7 +192,7 @@ class TestWithRepository(SubversionTestCase):
 
         provider = self.make_provider(repos_url)
 
-        revmeta1 = provider.get_revision("", 1)
+        revmeta1 = provider.get_revision(u"", 1)
 
         self.assertEquals((provider.repository.uuid, "", 1),
                 revmeta1.metarev.get_foreign_revid())
@@ -205,7 +205,7 @@ class TestWithRepository(SubversionTestCase):
         dc.close()
 
         provider = self.make_provider(repos_url)
-        revmeta1 = provider.get_revision("", 1)
+        revmeta1 = provider.get_revision(u"", 1)
         self.assertEquals(set(["svn:date", "svn:author", "svn:log"]),
                           set(revmeta1.metarev.revprops.keys()))
 
@@ -217,7 +217,7 @@ class TestWithRepository(SubversionTestCase):
         dc.close()
 
         provider = self.make_provider(repos_url)
-        revmeta1 = provider.get_revision("", 1)
+        revmeta1 = provider.get_revision(u"", 1)
         self.assertFalse(revmeta1.metarev.is_changes_root())
-        revmeta1 = provider.get_revision("bloe", 1)
+        revmeta1 = provider.get_revision(u"bloe", 1)
         self.assertTrue(revmeta1.metarev.is_changes_root())

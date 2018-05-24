@@ -20,6 +20,7 @@ from functools import partial
 import subvertpy
 
 from breezy import urlutils
+from breezy.sixish import text_type
 from breezy.plugins.svn import errors as svn_errors
 from breezy.plugins.svn.layout import (
     RepositoryLayout,
@@ -40,8 +41,8 @@ class TrunkLayout(RepositoryLayout):
         :param project: Optional name of the project the tag is for. Can include slashes.
         :return: Path of the tag.
         """
-        subpath = urlutils.join("tags", name.strip("/"))
-        if project in (None, ""):
+        subpath = urlutils.join(u"tags", name.strip(u"/"))
+        if project in (None, u""):
             return subpath
         return urlutils.join(project, subpath)
 
@@ -86,10 +87,10 @@ class TrunkLayout(RepositoryLayout):
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
-        if name == "":
-            return urlutils.join(project, "trunk").strip("/")
+        if name == u"":
+            return urlutils.join(project, u"trunk").strip(u"/")
         else:
-            return urlutils.join(project, "branches", name).strip("/")
+            return urlutils.join(project, u"branches", name).strip(u"/")
 
     def parse(self, path):
         """Parse a path.
@@ -128,7 +129,7 @@ class TrunkLayout(RepositoryLayout):
         :return: Iterator over tuples with (project, branch path, has_props, revnum)
         """
         return get_root_paths(repository,
-             [self._add_project(x, project) for x in "branches/*", "trunk"],
+             [self._add_project(x, project) for x in u"branches/*", u"trunk"],
              revnum, self.is_branch, project)
 
     def get_tags(self, repository, revnum, project=None):
@@ -136,7 +137,7 @@ class TrunkLayout(RepositoryLayout):
 
         :return: Iterator over tuples with (project, branch path, has_props, revnum)
         """
-        return get_root_paths(repository, [self._add_project("tags/*", project)],
+        return get_root_paths(repository, [self._add_project(u"tags/*", project)],
                 revnum, self.is_tag, project)
 
     def __repr__(self):
@@ -208,10 +209,10 @@ class RootLayout(RepositoryLayout):
         :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
-        return ('branch', '', '', path)
+        return ('branch', u'', u'', path)
 
     def is_branch_path(self, bp, project=None):
-        return (bp == "")
+        return (bp == u"")
 
     def is_tag_path(self, tp, project=None):
         return False
@@ -221,7 +222,7 @@ class RootLayout(RepositoryLayout):
 
         :return: Iterator over tuples with (project, branch path)
         """
-        return [("", "", "trunk", None, revnum)]
+        return [(u"", u"", u"trunk", None, revnum)]
 
     def get_tags(self, repository, revnum, project=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
@@ -240,8 +241,8 @@ class RootLayout(RepositoryLayout):
 class CustomLayout(RepositoryLayout):
 
     def __init__(self, branches=[], tags=[]):
-        self.branches = [b.strip("/") for b in branches]
-        self.tags = [t.strip("/") for t in tags]
+        self.branches = [b.strip(u"/") for b in branches]
+        self.tags = [t.strip(u"/") for t in tags]
 
     def supports_tags(self):
         return (self.tags != [])
@@ -273,12 +274,12 @@ class CustomLayout(RepositoryLayout):
         """
         path = path.strip("/")
         for bp in sorted(self.branches):
-            if path.startswith("%s/" % bp) or bp == path:
-                return ("branch", bp, bp, path[len(bp):].strip("/"))
+            if path.startswith(u"%s/" % bp) or bp == path:
+                return (u"branch", bp, bp, path[len(bp):].strip(u"/"))
 
         for tp in sorted(self.tags):
-            if path.startswith("%s/" % tp) or tp == path:
-                return ("tag", tp, tp, path[len(tp):].strip("/"))
+            if path.startswith(u"%s/" % tp) or tp == path:
+                return (u"tag", tp, tp, path[len(tp):].strip(u"/"))
 
         raise svn_errors.NotSvnBranchPath(path)
 
@@ -316,7 +317,7 @@ class CustomLayout(RepositoryLayout):
 
     def _is_prefix(self, prefixes, path, project=None):
         for branch in prefixes:
-            if branch.startswith("%s/" % path):
+            if branch.startswith(u"%s/" % path):
                 return True
         return False
 
@@ -330,8 +331,8 @@ class CustomLayout(RepositoryLayout):
 class WildcardLayout(RepositoryLayout):
 
     def __init__(self, branches=[], tags=[]):
-        self.branches = [b.strip("/") for b in branches]
-        self.tags = [t.strip("/") for t in tags]
+        self.branches = [b.strip(u"/") for b in branches]
+        self.tags = [t.strip(u"/") for t in tags]
         assert all([type(b) is str for b in self.branches + self.tags])
 
     def supports_tags(self):
@@ -349,21 +350,21 @@ class WildcardLayout(RepositoryLayout):
         if len(self.tags) == 0:
             raise svn_errors.NoLayoutTagSetSupport(self,
                 "no tag paths set")
-        if self.tags[0].count("*") == 0:
+        if self.tags[0].count(u"*") == 0:
             raise svn_errors.NoLayoutTagSetSupport(self,
                 "no asterisk in tag path")
-        if self.tags[0].count("*") > 1:
+        if self.tags[0].count(u"*") > 1:
             raise svn_errors.NoLayoutTagSetSupport(self,
                 "can only handle a single asterisk in tag path")
-        return self.tags[0].replace("*", name)
+        return self.tags[0].replace(u"*", name)
 
-    def get_item_name(self, possibilities, path, project=""):
+    def get_item_name(self, possibilities, path, project=u""):
         for p in possibilities:
             if wildcard_matches(path, p):
-                for a, wc in zip(path.split("/"), p.split("/")):
-                    if "*" in wc:
+                for a, wc in zip(path.split(u"/"), p.split(u"/")):
+                    if u"*" in wc:
                         return a
-                return path.split("/")[-1]
+                return path.split(u"/")[-1]
         return None
 
     def get_tag_name(self, path, project=""):
@@ -373,7 +374,7 @@ class WildcardLayout(RepositoryLayout):
         """
         return self.get_item_name(self.tags, path, project)
 
-    def get_branch_name(self, path, project=""):
+    def get_branch_name(self, path, project=u""):
         """Determine the tag name from a branch path.
 
         :param path: Path inside the repository.
@@ -398,14 +399,14 @@ class WildcardLayout(RepositoryLayout):
         :return: Tuple with type ('tag', 'branch'), project name, branch path
             and path inside the branch
         """
-        path = path.strip("/")
-        parts = path.split("/")
+        path = path.strip(u"/")
+        parts = path.split(u"/")
         for i in range(len(parts)+1):
-            bp = "/".join(parts[:i])
+            bp = u"/".join(parts[:i])
             if self.is_branch(bp):
-                return ("branch", bp, bp, path[len(bp):].strip("/"))
+                return ("branch", bp, bp, path[len(bp):].strip(u"/"))
             if self.is_tag(bp):
-                return ("tag", bp, bp, path[len(bp):].strip("/"))
+                return ("tag", bp, bp, path[len(bp):].strip(u"/"))
 
         raise svn_errors.NotSvnBranchPath(path)
 
@@ -473,18 +474,18 @@ class InverseTrunkLayout(RepositoryLayout):
         :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
-        assert type(path) is str
-        path = path.strip("/")
-        parts = path.split("/")
+        assert isinstance(path, text_type)
+        path = path.strip(u"/")
+        parts = path.split(u"/")
         if len(parts) == 0:
             raise svn_errors.NotSvnBranchPath(path)
-        if parts[0] == "trunk":
+        if parts[0] == u"trunk":
             if len(parts) < (self.level + 1):
                 raise svn_errors.NotSvnBranchPath(path)
             return ("branch",
-                    "/".join(parts[1:self.level+2]),
-                    "/".join(parts[:self.level+1]),
-                    "/".join(parts[self.level+1:]))
+                    u"/".join(parts[1:self.level+2]),
+                    u"/".join(parts[:self.level+1]),
+                    u"/".join(parts[self.level+1:]))
         elif parts[0] in ("branches", "tags"):
             if len(parts) < (self.level + 2):
                 raise svn_errors.NotSvnBranchPath(path)
@@ -493,18 +494,18 @@ class InverseTrunkLayout(RepositoryLayout):
             else:
                 t = "tag"
             return (t,
-                    "/".join(parts[1:self.level+1]),
-                    "/".join(parts[:self.level+2]),
-                    "/".join(parts[self.level+2:]))
+                    u"/".join(parts[1:self.level+1]),
+                    u"/".join(parts[:self.level+2]),
+                    u"/".join(parts[self.level+2:]))
         raise svn_errors.NotSvnBranchPath(path)
 
     def _add_project(self, path, project=None):
         if project is None:
-            project = "*/" * self.level
-        if path == "trunk":
+            project = u"*/" * self.level
+        if path == u"trunk":
             return urlutils.join(path, project)
         else:
-            return urlutils.join(urlutils.join(path, project), "*")
+            return urlutils.join(urlutils.join(path, project), u"*")
 
     def get_branches(self, repository, revnum, project=None):
         """Return a list of paths that refer to branches in a specific revision.

@@ -105,7 +105,13 @@ def escape_svn_path(x):
     """
     x = osutils.safe_utf8(x)
     return urllib.quote(x, "")
-unescape_svn_path = urllib.unquote
+def unescape_svn_path(x):
+    """Unescape a path for use by Subversion.
+
+    :param x: Escaped path
+    :return: Unescaped path
+    """
+    return urllib.unquote(x).decode('utf-8')
 
 
 # The following two functions don't use day names (which can vary by

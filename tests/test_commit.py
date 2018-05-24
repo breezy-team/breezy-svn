@@ -427,15 +427,15 @@ class TestPush(SubversionTestCase):
 
         repos = self.olddir._find_repository()
         mapping = repos.get_mapping()
-        tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
-        self.assertEqual(repos.generate_revision_id(2, "", mapping),
+        tree = repos.revision_tree(repos.generate_revision_id(2, u"", mapping))
+        self.assertEqual(repos.generate_revision_id(2, u"", mapping),
                          tree.get_file_revision('foo/bla'))
         self.assertEqual(wt.branch.last_revision(),
-          repos.generate_revision_id(2, "", mapping))
+          repos.generate_revision_id(2, u"", mapping))
         self.assertEqual(wt.branch.last_revision(),
                         self.olddir.open_branch().last_revision())
         self.assertEqual("other data",
-            repos.revision_tree(repos.generate_revision_id(2, "", mapping)).get_file_text("foo/bla"))
+            repos.revision_tree(repos.generate_revision_id(2, u"", mapping)).get_file_text("foo/bla"))
 
     def test_simple(self):
         self.build_tree({'dc/file': 'data'})
@@ -447,11 +447,11 @@ class TestPush(SubversionTestCase):
 
         repos = self.olddir._find_repository()
         mapping = repos.get_mapping()
-        tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
+        tree = repos.revision_tree(repos.generate_revision_id(2, u"", mapping))
         self.assertTrue(tree.has_filename('file'))
         self.assertEqual(wt.branch.last_revision(),
-                repos.generate_revision_id(2, "", mapping))
-        self.assertEqual(repos.generate_revision_id(2, "", mapping),
+                repos.generate_revision_id(2, u"", mapping))
+        self.assertEqual(repos.generate_revision_id(2, u"", mapping),
                         self.olddir.open_branch().last_revision())
 
     def test_pull_after_push(self):
@@ -464,17 +464,17 @@ class TestPush(SubversionTestCase):
 
         repos = self.olddir._find_repository()
         mapping = repos.get_mapping()
-        tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
+        tree = repos.revision_tree(repos.generate_revision_id(2, u"", mapping))
         self.assertTrue(tree.has_filename('file'))
         self.assertEquals(wt.branch.last_revision(),
-                         repos.generate_revision_id(2, "", mapping))
+                         repos.generate_revision_id(2, u"", mapping))
 
-        self.assertEqual(repos.generate_revision_id(2, "", mapping),
+        self.assertEqual(repos.generate_revision_id(2, u"", mapping),
                         self.olddir.open_branch().last_revision())
 
         self.newdir.open_branch().pull(self.olddir.open_branch())
 
-        self.assertEqual(repos.generate_revision_id(2, "", mapping),
+        self.assertEqual(repos.generate_revision_id(2, u"", mapping),
                         self.newdir.open_branch().last_revision())
 
     def test_message(self):
@@ -489,7 +489,7 @@ class TestPush(SubversionTestCase):
         mapping = repos.get_mapping()
         self.assertEqual("Commit from Bzr",
             repos.get_revision(
-                repos.generate_revision_id(2, "", mapping)).message)
+                repos.generate_revision_id(2, u"", mapping)).message)
 
     def test_message_nordic(self):
         self.build_tree({'dc/file': 'data'})
@@ -502,7 +502,7 @@ class TestPush(SubversionTestCase):
         repos = self.olddir._find_repository()
         mapping = repos.get_mapping()
         self.assertEqual(u"\xe6\xf8\xe5", repos.get_revision(
-            repos.generate_revision_id(2, "", mapping)).message)
+            repos.generate_revision_id(2, u"", mapping)).message)
 
     def test_commit_rename_file(self):
         self.build_tree({'dc/vla': "data"})

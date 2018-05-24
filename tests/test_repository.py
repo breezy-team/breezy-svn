@@ -188,7 +188,7 @@ class GetCommitBuilderTests(SubversionTestCase):
         branches.add_dir("branches/dir")
         cb.close()
 
-        otherrevid = self.branch.repository.generate_revision_id(2, "branches/dir",
+        otherrevid = self.branch.repository.generate_revision_id(2, u"branches/dir",
             self.branch.mapping)
 
         other_tree = self.branch.repository.revision_tree(otherrevid)
@@ -213,7 +213,7 @@ class GetCommitBuilderTests(SubversionTestCase):
         branches.add_dir("branches/dir")
         cb.close()
 
-        otherrevid = self.branch.repository.generate_revision_id(2, "branches/dir",
+        otherrevid = self.branch.repository.generate_revision_id(2, u"branches/dir",
             self.branch.mapping)
 
         self.branch.lock_write()

@@ -92,6 +92,7 @@ class RevidMap(object):
                     continue
                 revno, revid, hidden = mapping.get_revision_id_revprops(revprops)
                 if revid is not None:
+                    assert isinstance(branch_path, text_type)
                     yield (revid, branch_path.strip("/"), revnum, mapping)
 
     def find_branch_tips(self, layout, from_revnum, to_revnum, project=None):
@@ -295,6 +296,7 @@ class DiskCachingRevidMap(object):
 
         ((uuid, branch_path, revnum), mapping) = self.actual.bisect_fileprop_revid_revnum(revid,
             branch_path, min_revnum, max_revnum)
+        assert isinstance(branch_path, text_type)
         self.remember_entry(revid, branch_path, revnum, revnum, mapping.name)
         return (uuid, branch_path, revnum), mapping
 

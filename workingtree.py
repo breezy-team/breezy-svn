@@ -1765,7 +1765,7 @@ class SvnCheckout(ControlDir):
         if self.entry.repos is None:
             raise RepositoryRootUnknown()
         assert self.entry.url.startswith(self.entry.repos)
-        return self.entry.url[len(self.entry.repos):].strip("/")
+        return self.entry.url[len(self.entry.repos):].strip("/").decode('utf-8')
 
     def needs_format_conversion(self, format):
         return not isinstance(self._format, format.__class__)

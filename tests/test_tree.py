@@ -178,8 +178,8 @@ class TestBasisTree(SubversionTestCase):
         tree = SvnBasisTree(wt)
         repo = wt.branch.repository
         self.assertEquals([
-            (repo.generate_revision_id(1, "", repo.get_mapping()), "x\n"),
-            (repo.generate_revision_id(2, "", repo.get_mapping()), "y\n")],
+            (repo.generate_revision_id(1, u"", repo.get_mapping()), "x\n"),
+            (repo.generate_revision_id(2, u"", repo.get_mapping()), "y\n")],
             tree.annotate_iter("file"))
 
     def test_get_dir_properties(self):
@@ -304,7 +304,7 @@ class TestSvnRevisionTree(SubversionTestCase):
         self.repos = tree.branch.repository
         mapping = self.repos.get_mapping()
         self.tree = self.repos.revision_tree(
-                self.repos.generate_revision_id(2, "trunk", mapping))
+                self.repos.generate_revision_id(2, u"trunk", mapping))
 
     def test_get_parent_ids_first(self):
         mapping = self.repos.get_mapping()

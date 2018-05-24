@@ -24,6 +24,10 @@ from subvertpy import (
     NODE_DIR,
     )
 
+from breezy.sixish import (
+    text_type,
+    )
+
 from breezy.plugins.svn import (
     changes,
     errors as svn_errors,
@@ -57,9 +61,9 @@ def restrict_prefixes(prefixes, prefix):
     """
     ret = set()
     for p in prefixes:
-        if prefix == "" or p == prefix or p.startswith(prefix+"/"):
+        if prefix == u"" or p == prefix or p.startswith(prefix+u"/"):
             ret.add(p)
-        elif prefix.startswith(p+"/") or p == "":
+        elif prefix.startswith(p+u"/") or p == u"":
             ret.add(prefix)
     return ret
 
@@ -79,6 +83,8 @@ class MetaRevision(object):
             revprops=None):
         self._lhs_parent_known = False
         self._lhs_parent = None
+        if not isinstance(branch_path, text_type):
+            raise TypeError(branch_path)
         self.branch_path = branch_path
         self.revnum = revnum
         self.uuid = uuid
@@ -530,6 +536,7 @@ class MetaRevisionGraph(object):
             changed paths, revision number, changed file properties and
         """
         assert from_revnum >= to_revnum
+        assert isinstance(branch_path, text_type)
 
         bp = branch_path
         i = 0
@@ -542,7 +549,7 @@ class MetaRevisionGraph(object):
             from_revnum, to_revnum, pb=pb):
             assert bp is not None
             next = changes.find_prev_location(paths, bp, revnum)
-            assert revnum > 0 or bp == ""
+            assert revnum > 0 or bp == u""
 
             if changes.changes_path(paths, bp, False):
                 yield (bp, paths, revnum, revprops)
@@ -567,6 +574,8 @@ class MetaRevisionGraph(object):
 
         :return: iterator that returns RevisionMetadata objects.
         """
+        if not isinstance(branch_path, text_type):
+            raise TypeError(branch_path)
         history_iter = self.iter_changes(branch_path, from_revnum,
                                          to_revnum, pb=pb, limit=limit)
 
@@ -603,7 +612,7 @@ class MetaRevisionGraph(object):
             prefixes = filter(self._log._transport.has,
                               layout.get_project_prefixes(project))
         else:
-            prefixes = [""]
+            prefixes = [u""]
 
         if prefix is not None:
             prefixes = list(restrict_prefixes(prefixes, prefix))

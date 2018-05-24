@@ -51,6 +51,7 @@ from breezy.errors import (
 from breezy.bzr.inventory import (
     entry_factory,
     )
+from breezy.sixish import text_type
 from breezy.repository import (
     CommitBuilder,
     )
@@ -102,7 +103,7 @@ def _revision_id_to_svk_feature(revid, lookup_revid):
     :param revid: Revision id to convert.
     :return: Matching SVK feature identifier.
     """
-    assert isinstance(revid, str)
+    assert isinstance(revid, bytes)
     foreign_revid, _ = lookup_revid(revid)
     # TODO: What about renamed revisions? Should use
     # repository.lookup_bzr_revision_id here.
@@ -268,7 +269,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                     child_ie.kind != new_child_ie.kind):
                     mutter('removing %r(%r)', child_ie.name, child_ie.file_id)
                     dir_editor.delete_entry(
-                        branch_relative_path(path, child_ie.name.encode("utf-8")),
+                        branch_relative_path(path, child_ie.name),
                         base_revnum)
                     changed = True
 
@@ -279,7 +280,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         if not (child_ie.kind in ('file', 'symlink')):
             continue
 
-        new_child_path = path_join(path, child_ie.name.encode("utf-8"))
+        new_child_path = path_join(path, child_ie.name)
         full_new_child_path = branch_relative_path(new_child_path)
         child_editor = None
         try:
@@ -292,7 +293,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                 # the log a bit easier to read for Subversion people
                 new_base = find_suitable_base(parents, child_ie)
                 if new_base is not None:
-                    child_base_path = new_base[0].id2path(child_ie.file_id).encode("utf-8")
+                    child_base_path = new_base[0].id2path(child_ie.file_id)
                     copyfrom_url = url_join_unescaped_path(new_base[1], child_base_path)
                     copyfrom_revnum = new_base[2]
                 else:
@@ -304,14 +305,14 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                             copyfrom_url, copyfrom_revnum)
                 changed = True
             # copy if they existed at different location
-            elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
+            elif (base_tree.id2path(child_ie.file_id) != new_child_path or
                   base_tree.root_inventory.get_entry(child_ie.file_id).parent_id != child_ie.parent_id):
                 mutter('copy %s %r -> %r', child_ie.kind,
                                   base_tree.id2path(child_ie.file_id),
                                   new_child_path)
                 child_editor = dir_editor.add_file(full_new_child_path,
                     url_join_unescaped_path(base_url,
-                        base_tree.id2path(child_ie.file_id).encode("utf-8")),
+                        base_tree.id2path(child_ie.file_id)),
                     base_revnum)
                 changed = True
             # open if they existed at the same location
@@ -338,7 +339,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
         if child_ie.kind != 'directory':
             continue
 
-        new_child_path = path_join(path, child_ie.name.encode("utf-8"))
+        new_child_path = path_join(path, child_ie.name)
         child_editor = None
         try:
             # add them if they didn't exist in base_tree or changed kind
@@ -351,8 +352,8 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                 new_base = find_suitable_base(parents, child_ie)
                 if new_base is not None:
                     child_base = new_base
-                    child_base_path = new_base[0].id2path(child_ie.file_id).encode("utf-8")
-                    assert isinstance(new_base[1], str)
+                    child_base_path = new_base[0].id2path(child_ie.file_id)
+                    assert isinstance(new_base[1], text_type)
                     copyfrom_url = url_join_unescaped_path(new_base[1], child_base_path)
                     copyfrom_revnum = new_base[2]
                 else:
@@ -365,9 +366,9 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                     branch_relative_path(new_child_path), copyfrom_url, copyfrom_revnum)
                 changed = True
             # copy if they existed at different location
-            elif (base_tree.id2path(child_ie.file_id).encode("utf-8") != new_child_path or
+            elif (base_tree.id2path(child_ie.file_id) != new_child_path or
                   base_tree.root_inventory.get_entry(child_ie.file_id).parent_id != child_ie.parent_id):
-                old_child_path = base_tree.id2path(child_ie.file_id).encode("utf-8")
+                old_child_path = base_tree.id2path(child_ie.file_id)
                 mutter('copy dir %r -> %r', old_child_path, new_child_path)
                 copyfrom_url = url_join_unescaped_path(base_url, old_child_path)
                 copyfrom_revnum = base_revnum
@@ -379,7 +380,7 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
                 child_base = (base_tree, base_url, base_revnum)
             # open if they existed at the same location and
             # the directory was touched
-            elif new_child_path.decode('utf-8') in visit_dirs:
+            elif new_child_path in visit_dirs:
                 mutter('open dir %r', new_child_path)
 
                 child_editor = dir_editor.open_directory(
@@ -446,6 +447,8 @@ class SvnCommitBuilder(CommitBuilder):
 
         # revision ids are either specified or predictable
         self.revmeta = None
+        if not isinstance(branch_path, text_type):
+            raise TypeError(branch_path)
         self.branch_path = branch_path
         self.root_action = root_action
         self._override_file_ids = {}
@@ -863,7 +866,6 @@ class SvnCommitBuilder(CommitBuilder):
                                 trace.warning(
                                     "Setting property %r with invalid characters "
                                     "in name", prop)
-                            assert isinstance(newvalue, str)
                             self.mutter("Setting root file property %r -> %r",
                                 prop, newvalue)
                             branch_editors[-1].change_prop(prop, newvalue)

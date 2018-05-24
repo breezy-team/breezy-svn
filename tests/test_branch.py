@@ -231,7 +231,7 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         b = Branch.open(repos_url + "/trunk")
         b.tags.set_tag(u"mytag",
-            b.repository.generate_revision_id(1, "trunk",
+            b.repository.generate_revision_id(1, u"trunk",
                 b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR,
@@ -252,7 +252,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         b = Branch.open(repos_url + "/trunk/gui")
         self.assertRaises(TagsNotSupported,
             b.tags.set_tag, u"mytag",
-            b.repository.generate_revision_id(1, "trunk/gui",
+            b.repository.generate_revision_id(1, u"trunk/gui",
                 b.repository.get_mapping()))
 
     def test_tag_lookup(self):
@@ -267,7 +267,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         b = Branch.open(repos_url + "/trunk")
         self.assertEquals("", b.project)
         self.assertEquals(
-            b.repository.generate_revision_id(1, "tags/foo",
+            b.repository.generate_revision_id(1, u"tags/foo",
                 b.repository.get_mapping()),
             b.tags.lookup_tag("foo"))
 
@@ -342,8 +342,8 @@ class WorkingSubversionBranch(SubversionTestCase):
         b = Branch.open(repos_url)
         mapping = b.repository.get_mapping()
         uuid = b.repository.uuid
-        revid1 = mapping.revision_id_foreign_to_bzr((uuid, '', 0))
-        revid2 = mapping.revision_id_foreign_to_bzr((uuid, '', 1))
+        revid1 = mapping.revision_id_foreign_to_bzr((uuid, u'', 0))
+        revid2 = mapping.revision_id_foreign_to_bzr((uuid, u'', 1))
         return b, (revid1, revid2)
 
     def make_branch(self, relpath):
@@ -885,9 +885,9 @@ foohosts""")
         host_fileid = tree.path2id("hosts")
         mapping = oldbranch.repository.get_mapping()
         self.assertVersionsPresentEquals(texts, host_fileid, [
-            mapping.revision_id_foreign_to_bzr((uuid, "trunk", 1)),
-            mapping.revision_id_foreign_to_bzr((uuid, "trunk", 2)),
-            mapping.revision_id_foreign_to_bzr((uuid, "trunk", 3)),
+            mapping.revision_id_foreign_to_bzr((uuid, u"trunk", 1)),
+            mapping.revision_id_foreign_to_bzr((uuid, u"trunk", 2)),
+            mapping.revision_id_foreign_to_bzr((uuid, u"trunk", 3)),
             oldbranch.generate_revision_id(6)])
         newbranch.repository.unlock()
 
@@ -910,7 +910,10 @@ foohosts""")
 
         branch = Branch.open('d')
         mapping = branch.repository.get_mapping()
-        self.assertEqual(mapping.revision_id_foreign_to_bzr((branch.repository.uuid, "", 1)), branch.generate_revision_id(1))
+        self.assertEqual(
+                mapping.revision_id_foreign_to_bzr(
+                    (branch.repository.uuid, u"", 1)),
+                branch.generate_revision_id(1))
 
     def test_create_checkout(self):
         repos_url = self.make_repository('d')
@@ -1101,7 +1104,7 @@ class TestInterBranchFetch(SubversionTestCase):
         b = Branch.open(self.repos_url+"/trunk")
         mapping = b.repository.get_mapping()
         uuid = b.repository.uuid
-        revid1 = mapping.revision_id_foreign_to_bzr((uuid, 'trunk', 1))
+        revid1 = mapping.revision_id_foreign_to_bzr((uuid, u'trunk', 1))
         return b, revid1
 
     def test_fetch_stop_revision(self):
@@ -1128,7 +1131,7 @@ class TestInterBranchFetch(SubversionTestCase):
 
         mapping = svn_branch.repository.get_mapping()
         uuid = svn_branch.repository.uuid
-        revid2 = mapping.revision_id_foreign_to_bzr((uuid, 'tags/foo', 2))
+        revid2 = mapping.revision_id_foreign_to_bzr((uuid, u'tags/foo', 2))
 
         new_branch = self.make_branch("b")
         inter_branch = InterBranch.get(svn_branch, new_branch)

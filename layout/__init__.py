@@ -29,6 +29,9 @@ from breezy import (
     urlutils,
     ui,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.trace import mutter
 
 from breezy.plugins.svn.errors import (
@@ -52,7 +55,7 @@ class RepositoryLayout(object):
         """Whether this layout supports tags."""
         return True
 
-    def get_tag_path(self, name, project=""):
+    def get_tag_path(self, name, project=u""):
         """Return the path at which the tag with specified name should be found.
 
         :param name: Name of the tag.
@@ -62,14 +65,14 @@ class RepositoryLayout(object):
         """
         raise NotImplementedError
 
-    def get_tag_name(self, path, project=""):
+    def get_tag_name(self, path, project=u""):
         """Determine the tag name from a tag path.
 
         :param path: Path inside the repository.
         """
         raise NotImplementedError
 
-    def push_merged_revisions(self, project=""):
+    def push_merged_revisions(self, project=u""):
         """Determine whether or not right hand side revisions should be pushed.
 
         Defaults to False.
@@ -78,7 +81,7 @@ class RepositoryLayout(object):
         """
         return False
 
-    def get_branch_name(self, path, project=""):
+    def get_branch_name(self, path, project=u""):
         """Return the name of a branch from the path.
 
         :param path: utf8-encoded branch path
@@ -87,7 +90,7 @@ class RepositoryLayout(object):
         """
         raise NotImplementedError(self.get_branch_name)
 
-    def get_branch_path(self, name, project=""):
+    def get_branch_path(self, name, project=u""):
         """Return the path at which the branch with specified name should be
         found.
 
@@ -146,10 +149,10 @@ class RepositoryLayout(object):
         return False
 
     def is_branch_parent(self, path, project=None):
-        return self.is_branch(urlutils.join(path, "trunk"), project)
+        return self.is_branch(urlutils.join(path, u"trunk"), project)
 
     def is_tag_parent(self, path, project=None):
-        return self.is_tag(urlutils.join(path, "trunk"), project)
+        return self.is_tag(urlutils.join(path, u"trunk"), project)
 
     def is_branch_or_tag(self, path, project=None):
         return self.is_branch(path, project) or self.is_tag(path, project)
@@ -158,14 +161,14 @@ class RepositoryLayout(object):
         return (self.is_branch_parent(path, project) or
                 self.is_tag_parent(path, project))
 
-    def get_branches(self, repository, revnum, project="", pb=None):
+    def get_branches(self, repository, revnum, project=u"", pb=None):
         """Retrieve a list of paths that refer to branches in a specific revision.
 
         :return: Iterator over tuples with (project, branch path, branch name, has_props, revnum)
         """
         raise NotImplementedError(self.get_branches)
 
-    def get_tags(self, repository, revnum, project="", pb=None):
+    def get_tags(self, repository, revnum, project=u"", pb=None):
         """Retrieve a list of paths that refer to tags in a specific revision.
 
         :return: Iterator over tuples with (project, branch path, branch name, has_props, revnum)
@@ -205,8 +208,9 @@ class BranchPatternExpander(object):
             raise
 
     def get_children(self, path):
+        assert isinstance(path, text_type)
         try:
-            assert not path.startswith("/")
+            assert not path.startswith(u"/")
             dirents = self.transport.get_dir(path, self.revnum,
                 DIRENT_KIND|DIRENT_HAS_PROPS|DIRENT_CREATED_REV)[0]
         except subvertpy.SubversionException, (msg, num):
@@ -226,7 +230,7 @@ class BranchPatternExpander(object):
         :param todo: List of path elements to still evaluate (including wildcards)
         """
         mutter('expand branches: %r, %r', begin, todo)
-        path = "/".join(begin)
+        path = u"/".join(begin)
         if (self.project is not None and
             not self.project.startswith(path) and
             not path.startswith(self.project)):
@@ -239,7 +243,7 @@ class BranchPatternExpander(object):
             else:
                 return []
         # Not a wildcard? Just expand next bits
-        if todo[0] != "*":
+        if todo[0] != u"*":
             return self.expand(begin+[todo[0]], todo[1:])
         children = self.get_children(path)
         if children is None:
@@ -251,7 +255,7 @@ class BranchPatternExpander(object):
                 pb.update("browsing branches", idx, len(children))
                 if len(todo) == 1:
                     # Last path element, so return directly
-                    ret.append(("/".join(begin+[c]), has_props, revnum))
+                    ret.append((u"/".join(begin+[c]), has_props, revnum))
                 else:
                     ret += self.expand(begin+[c], todo[1:])
         finally:

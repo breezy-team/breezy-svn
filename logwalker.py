@@ -29,6 +29,9 @@ from breezy import (
 from breezy.errors import (
     NoSuchRevision,
     )
+from breezy.sixish import (
+    text_type,
+    )
 
 from breezy.plugins.svn import (
     changes,
@@ -90,7 +93,7 @@ def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths,
     if prefixes is not None:
         prefixes = set(prefixes)
 
-    if prefixes in (None, set([""]), set()):
+    if prefixes in (None, set([u""]), set()):
         return iter_all_changes(from_revnum, to_revnum, get_revision_paths,
                 revprop_list, limit)
     else:
@@ -101,7 +104,7 @@ def iter_changes(prefixes, from_revnum, to_revnum, get_revision_paths,
 def iter_prefixes_changes(from_prefixes, from_revnum, to_revnum,
     get_revision_paths, revprop_list, limit=0):
     assert type(from_prefixes) is set
-    from_prefixes = set([p.strip("/") for p in from_prefixes])
+    from_prefixes = set([p.strip(u"/") for p in from_prefixes])
 
     assert from_revnum >= to_revnum, "path: %r, %d >= %d" % (
             from_prefixes, from_revnum, to_revnum)
@@ -125,7 +128,8 @@ def iter_prefixes_changes(from_prefixes, from_revnum, to_revnum,
         next = {}
         # Find the location of each prefix for the next iteration
         for prefix in prefixes:
-            assert type(prefix) is str, "%r" % prefix
+            if not isinstance(prefix, text_type):
+                raise TypeError(prefix)
             try:
                 (p, r) = changes.find_prev_location(revpaths, prefix,
                         revnum)
@@ -254,10 +258,10 @@ class CachingLogWalker(object):
 
         self.mutter("latest change: %r:%r", path, revnum)
         try:
-            revnum = self.cache.find_latest_change(path.strip("/"), revnum)
+            revnum = self.cache.find_latest_change(path.strip(u"/"), revnum)
         except NotImplementedError:
             return self.actual.find_latest_change(path, revnum)
-        if revnum is None and path == "":
+        if revnum is None and path == u"":
             return 0
 
         return revnum
@@ -367,7 +371,7 @@ class CachingLogWalker(object):
                 if to_revnum > self.saved_maxrevnum:
                     self.mutter("get_log %d->%d", to_revnum,
                             self.saved_maxrevnum)
-                    self.actual._transport.get_log(rcvr, [""], to_revnum,
+                    self.actual._transport.get_log(rcvr, [u""], to_revnum,
                         self.saved_maxrevnum, 0, True, True, False,
                         todo_revprops)
                     if to_revnum > self.saved_maxrevnum and to_revnum > 0:
@@ -401,8 +405,8 @@ def strip_slashes(changed_paths):
         if v[1] is None:
             copyfrom_path = None
         else:
-            copyfrom_path = v[1].strip("/")
-        revpaths[k.strip("/")] = (v[0], copyfrom_path, v[2], kind)
+            copyfrom_path = v[1].strip(u"/")
+        revpaths[k.strip(u"/")] = (v[0], copyfrom_path, v[2], kind)
     return revpaths
 
 
@@ -497,7 +501,7 @@ class LogWalker(object):
             return changes.REV0_CHANGES
 
         try:
-            log_iter = self._transport.iter_log([""], revnum, revnum, 1, True,
+            log_iter = self._transport.iter_log([u""], revnum, revnum, 1, True,
                 True, False, [])
             return strip_slashes(log_iter.next()[0])
         except subvertpy.SubversionException, (_, num):

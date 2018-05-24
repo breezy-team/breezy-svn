@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import
 
+from breezy.sixish import text_type
+
 from breezy.plugins.svn import errors
 
 SVN_PROP_SVK_MERGE = 'svk:merge'
@@ -44,7 +46,7 @@ def parse_svk_feature(feature):
     except ValueError:
         raise errors.InvalidPropertyValue(SVN_PROP_SVK_MERGE,
                 "not enough colons")
-    return (uuid, branch.strip("/"), int(revnum))
+    return (uuid, branch.strip("/").decode('utf-8'), int(revnum))
 
 
 def generate_svk_feature((uuid, branch, revnum)):
@@ -57,8 +59,8 @@ def generate_svk_feature((uuid, branch, revnum)):
     """
     assert isinstance(revnum, int)
     assert isinstance(uuid, str)
-    assert isinstance(branch, str) and (branch == "" or branch[0] != "/")
-    return "%s:/%s:%d" % (uuid, branch, revnum)
+    assert isinstance(branch, text_type) and (branch == u"" or not branch.startswith(u"/"))
+    return b"%s:/%s:%d" % (uuid, branch.encode('utf-8'), revnum)
 
 
 def estimate_svk_ancestors(fileprops):

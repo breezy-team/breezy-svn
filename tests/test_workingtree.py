@@ -499,7 +499,7 @@ class TestWorkingTree(SubversionTestCase):
         tree = WorkingTree.open("dc/trunk")
 
         tree.set_pending_merges([
-            tree.branch.repository.generate_revision_id(1, "branches/foo", tree.branch.mapping), "c"])
+            tree.branch.repository.generate_revision_id(1, u"branches/foo", tree.branch.mapping), "c"])
         self.assertEqual("%s:/branches/foo:1\n" % tree.branch.repository.uuid,
                          self.client_get_prop("dc/trunk", "svk:merge"))
 

@@ -323,8 +323,8 @@ class FileIdMapStore(object):
         next_parent_revs = []
         if mapping.is_branch("") and branch == "":
             map = DictFileIdMap({
-                u"": (mapping.generate_file_id((uuid, "", 0), u""),
-                      mapping.revision_id_foreign_to_bzr((uuid, "", 0)),
+                u"": (mapping.generate_file_id((uuid, u"", 0), u""),
+                      mapping.revision_id_foreign_to_bzr((uuid, u"", 0)),
                       None)
                 })
         else:
@@ -443,7 +443,7 @@ class CachingFileIdMapStore(object):
         if len(next_parent_revs) == 0:
             if mapping.is_branch("") and branch == "":
                 map = DictFileIdMap({
-                    u"": (mapping.generate_file_id((uuid, "", 0), u""),
+                    u"": (mapping.generate_file_id((uuid, u"", 0), u""),
                           NULL_REVISION, None)})
             else:
                 map = DictFileIdMap({})

@@ -82,7 +82,7 @@ class TdbRevisionIdMapCache(RevisionIdMapCache, CacheTable):
         """See RevisionIdMapCache.last_revnum_checked."""
 
         try:
-            return int(self.db["revidmap-last/%s" % str(layout)])
+            return int(self.db[b"revidmap-last/%s" % str(layout)].decode())
         except KeyError:
             return 0
 
@@ -91,17 +91,17 @@ class TdbRevisionIdMapCache(RevisionIdMapCache, CacheTable):
 
         self.mutter('lookup-revid %s', revid)
         try:
-            (min_revnum, max_revnum, mapping_name, path) = self.db["native-revid/" + revid].split(" ", 3)
+            (min_revnum, max_revnum, mapping_name, path) = self.db[b"native-revid/" + revid].split(b" ", 3)
         except KeyError:
             raise errors.NoSuchRevision(self, revid)
-        return (path, int(min_revnum), int(max_revnum), mapping_name)
+        return (path.decode('utf-8'), int(min_revnum), int(max_revnum), mapping_name)
 
     def lookup_branch_revnum(self, revnum, path, mapping):
         """See RevisionIdMapCache.lookup_branch_revnum."""
 
         self.mutter('lookup-branch-revnum %s:%d', path, revnum)
         try:
-            return self.db["foreign-revid/%d %s %s" % (revnum, getattr(mapping, "name", mapping), path)]
+            return self.db[b"foreign-revid/%d %s %s" % (revnum, getattr(mapping, "name", mapping), path)]
         except KeyError:
             return None
 
@@ -109,7 +109,7 @@ class TdbRevisionIdMapCache(RevisionIdMapCache, CacheTable):
         """See RevisionIdMapCache.insert_revid."""
 
         mappingname = getattr(mapping, "name", mapping)
-        self.db[b"native-revid/" + revid] = b"%d %d %s %s" % (min_revnum, max_revnum, mappingname, branch)
+        self.db[b"native-revid/" + revid] = b"%d %d %s %s" % (min_revnum, max_revnum, mappingname, branch.encode('utf-8'))
         if min_revnum == max_revnum:
             self.db[b"foreign-revid/%d %s %s" % (min_revnum, mappingname, branch)] = revid
 
@@ -182,7 +182,7 @@ class TdbLogCache(LogCache, CacheTable):
         self.mutter("get-revision-paths %d", revnum)
         ret = {}
         try:
-            db = bencode.bdecode(self.db["paths/%d" % revnum])
+            db = bencode.bdecode(self.db[b"paths/%d" % revnum])
         except KeyError:
             raise KeyError("missing revision paths for %d" % revnum)
         for key, v in db.iteritems():
@@ -191,9 +191,11 @@ class TdbLogCache(LogCache, CacheTable):
             except ValueError:
                 (action, cp, cr) = v
                 kind = NODE_UNKNOWN
-            if cp == "" and cr == -1:
+            if cp == b"" and cr == -1:
                 cp = None
-            ret[key] = (action, cp, cr, kind)
+            else:
+                cp = cp.decode('utf-8')
+            ret[key.decode('utf-8')] = (action, cp, cr, kind)
         return ret
 
     def insert_paths(self, rev, orig_paths, revprops, all_revprops):
@@ -208,23 +210,23 @@ class TdbLogCache(LogCache, CacheTable):
                 v = orig_paths[p]
                 copyfrom_path = v[1]
                 if copyfrom_path is not None:
-                    copyfrom_path = copyfrom_path.strip("/")
+                    copyfrom_path = copyfrom_path.strip("/").encode('utf-8')
                 else:
-                    copyfrom_path = ""
+                    copyfrom_path = b""
                     assert orig_paths[p][2] == -1
                 try:
                     kind = v[3]
                 except IndexError:
                     kind = NODE_UNKNOWN
-                new_paths[p.strip("/")] = (v[0], copyfrom_path, v[2], kind)
-            self.db["paths/%d" % rev] = bencode.bencode(new_paths)
+                new_paths[p.strip(u"/").encode('utf-8')] = (v[0], copyfrom_path, v[2], kind)
+            self.db[b"paths/%d" % rev] = bencode.bencode(new_paths)
             min_revnum = self.min_revnum()
             if min_revnum is None:
                 min_revnum = rev
             else:
                 min_revnum = min(min_revnum, rev)
-            self.db["log-min"] = str(min_revnum)
-            self.db["log-last"] = str(max(self.max_revnum(), rev))
+            self.db[b"log-min"] = str(min_revnum)
+            self.db[b"log-last"] = str(max(self.max_revnum(), rev))
         except:
             self.db.transaction_cancel()
             raise
@@ -234,7 +236,7 @@ class TdbLogCache(LogCache, CacheTable):
     def drop_revprops(self, revnum):
         """See LogCache.drop_revprops."""
 
-        self.db["revprops/%d" % revnum] = bencode.bencode({})
+        self.db[b"revprops/%d" % revnum] = bencode.bencode({})
 
     def get_revprops(self, revnum):
         """See LogCache.get_revprops."""
@@ -249,13 +251,13 @@ class TdbLogCache(LogCache, CacheTable):
         if revprops is None:
             revprops = {}
         revprops = {key.encode('utf-8'): value for (key, value) in revprops.items()}
-        self.db["revprops/%d" % revision] = bencode.bencode((revprops, all_revprops))
+        self.db[b"revprops/%d" % revision] = bencode.bencode((revprops, all_revprops))
 
     def max_revnum(self):
         """See LogCache.last_revnum."""
 
         try:
-            return int(self.db["log-last"])
+            return int(self.db[b"log-last"].decode())
         except KeyError:
             return 0
 
@@ -263,7 +265,7 @@ class TdbLogCache(LogCache, CacheTable):
         """See LogCache.min_revnum."""
 
         try:
-            return int(self.db["log-min"])
+            return int(self.db[b"log-min"].decode())
         except KeyError:
             return None
 
@@ -273,7 +275,7 @@ class TdbParentsCache(ParentsCache, CacheTable):
     def insert_parents(self, revid, parents):
         """See ParentsCache.insert_parents."""
 
-        self.db["parents/%s" % revid] = " ".join(parents)
+        self.db[b"parents/%s" % revid] = b" ".join(parents)
 
     def lookup_parents(self, revid):
         """See ParentsCache.lookup_parents."""
@@ -281,8 +283,8 @@ class TdbParentsCache(ParentsCache, CacheTable):
         self.mutter("lookup-parents %s", revid)
         try:
             return tuple(
-                [p for p in self.db["parents/%s" % revid].split(" ")
-                    if p != ""])
+                [p for p in self.db[b"parents/%s" % revid].split(b" ")
+                    if p != b""])
         except KeyError:
             return None
 
@@ -300,9 +302,9 @@ class TdbRepositoryCache(RepositoryCache):
         db = tdb_open(cache_file, TDB_HASH_SIZE, tdb.DEFAULT,
                 os.O_RDWR|os.O_CREAT)
         try:
-            assert int(db["version"]) == CACHE_DB_VERSION
+            assert int(db[b"version"].decode()) == CACHE_DB_VERSION
         except KeyError:
-            db["version"] = str(CACHE_DB_VERSION)
+            db[b"version"] = b"%d" % CACHE_DB_VERSION
         self._db = db
 
     def open_revid_map(self):

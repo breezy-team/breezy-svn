@@ -246,7 +246,7 @@ class TestFetchWorks(FetchTestCase):
         dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
-        self.assertEquals("SIGNATURE", newrepos.get_signature_text(oldrepos.generate_revision_id(1, "trunk", oldrepos.get_mapping())))
+        self.assertEquals("SIGNATURE", newrepos.get_signature_text(oldrepos.generate_revision_id(1, u"trunk", oldrepos.get_mapping())))
 
     def test_fetch_invalid_svk_rev(self):
         repos_url = self.make_svn_repository('d')
@@ -364,7 +364,7 @@ class TestFetchWorks(FetchTestCase):
         newrepos = Repository.open("f")
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
-        self.assertTrue(oldrepos.has_revision(oldrepos.generate_revision_id(2, "", mapping)))
+        self.assertTrue(oldrepos.has_revision(oldrepos.generate_revision_id(2, u"", mapping)))
 
     def test_fetch_delete_recursive(self):
         repos_url = self.make_svn_repository('d')
@@ -384,9 +384,9 @@ class TestFetchWorks(FetchTestCase):
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
-        tree = newrepos.revision_tree(oldrepos.generate_revision_id(1, "", mapping))
+        tree = newrepos.revision_tree(oldrepos.generate_revision_id(1, u"", mapping))
         self.assertEquals(3, len(tree.all_file_ids()))
-        tree = newrepos.revision_tree(oldrepos.generate_revision_id(2, "", mapping))
+        tree = newrepos.revision_tree(oldrepos.generate_revision_id(2, u"", mapping))
         self.assertEquals(1, len(tree.all_file_ids()))
 
     def test_fetch_local(self):
@@ -412,12 +412,12 @@ class TestFetchWorks(FetchTestCase):
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(2, "", mapping)))
+            oldrepos.generate_revision_id(2, u"", mapping)))
         with newrepos.lock_read():
             tree = newrepos.revision_tree(
-                    oldrepos.generate_revision_id(2, "", mapping))
+                    oldrepos.generate_revision_id(2, u"", mapping))
             self.assertTrue(tree.has_filename("foo/bla"))
             self.assertTrue(tree.has_filename("foo"))
             self.assertEqual("data", tree.get_file_text("foo/bla"))
@@ -475,7 +475,7 @@ class TestFetchWorks(FetchTestCase):
         oldrepos.set_layout(RootLayout())
         to_controldir = ControlDir.create("f")
         repo = to_controldir.create_repository()
-        last_rev = oldrepos.generate_revision_id(3, "branch2",
+        last_rev = oldrepos.generate_revision_id(3, u"branch2",
             oldrepos.get_mapping())
         self.fetch(oldrepos, repo, last_rev)
         self.assertEquals(repo.revision_tree(last_rev).get_root_id(),
@@ -502,13 +502,13 @@ class TestFetchWorks(FetchTestCase):
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(2, "", mapping)))
+            oldrepos.generate_revision_id(2, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         tree2 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(2, "", mapping))
+                oldrepos.generate_revision_id(2, u"", mapping))
         self.assertNotEqual(tree1.path2id("bla"), tree2.path2id("bla"))
 
     def test_fetch_copy_subdir(self):
@@ -624,9 +624,9 @@ Node-action: delete
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         self.assertTrue(tree1.has_filename(u"x\xe1"))
 
     def test_fetch_replace_with_subreplace(self):
@@ -766,13 +766,13 @@ Node-copyfrom-path: u
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(3, "", mapping)))
+            oldrepos.generate_revision_id(3, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         tree2 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(3, "", mapping))
+                oldrepos.generate_revision_id(3, u"", mapping))
 
     def test_fetch_replace_self(self):
         filename = os.path.join(self.test_dir, "dumpfile")
@@ -913,13 +913,13 @@ Node-copyfrom-path: bla
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(3, "", mapping)))
+            oldrepos.generate_revision_id(3, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         tree2 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(3, "", mapping))
+                oldrepos.generate_revision_id(3, u"", mapping))
         self.assertEqual(tree1.path2id("bla"), tree2.path2id("bla"))
 
     def test_fetch_replace_backup(self):
@@ -1094,13 +1094,13 @@ Node-copyfrom-path: bla
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(3, "", mapping)))
+            oldrepos.generate_revision_id(3, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         tree2 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(3, "", mapping))
+                oldrepos.generate_revision_id(3, u"", mapping))
         self.assertEqual(tree1.path2id("bla"), tree2.path2id("bla"))
 
     def test_fetch_replace_unrelated(self):
@@ -1236,13 +1236,13 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(4, "", mapping)))
+            oldrepos.generate_revision_id(4, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         tree2 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(4, "", mapping))
+                oldrepos.generate_revision_id(4, u"", mapping))
         self.assertNotEqual(tree1.path2id("x"), tree2.path2id("x"))
 
     def test_fetch_replace_related(self):
@@ -1400,13 +1400,13 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(5, "", mapping)))
+            oldrepos.generate_revision_id(5, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         tree2 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(5, "", mapping))
+                oldrepos.generate_revision_id(5, u"", mapping))
         self.assertNotEqual(tree1.path2id("y"), tree2.path2id("y"))
 
     def test_fetch_dir_replace_self(self):
@@ -1450,7 +1450,7 @@ Node-copyfrom-path: x
         dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         self.copy_content(oldrepos, newrepos)
-        lastrevid = oldrepos.generate_revision_id(4, "branches/1.0", oldrepos.get_mapping())
+        lastrevid = oldrepos.generate_revision_id(4, u"branches/1.0", oldrepos.get_mapping())
         tree = newrepos.revision_tree(lastrevid)
         self.assertTrue(tree.path2id("dir1/file.txt") is not None)
 
@@ -1476,7 +1476,7 @@ Node-copyfrom-path: x
 
         branch = Branch.open("%s/branches/mybranch" % repos_url)
         mapping = oldrepos.get_mapping()
-        self.assertEqual(oldrepos.generate_revision_id(2, "branches/mybranch", mapping),
+        self.assertEqual(oldrepos.generate_revision_id(2, u"branches/mybranch", mapping),
                          branch.last_revision())
 
     def test_fetch_dir_from_non_branch(self):
@@ -1500,7 +1500,7 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
 
         branch = Branch.open("%s/trunk" % repos_url)
-        self.assertEqual(oldrepos.generate_revision_id(2, "trunk", oldrepos.get_mapping()),
+        self.assertEqual(oldrepos.generate_revision_id(2, u"trunk", oldrepos.get_mapping()),
                          branch.last_revision())
 
     def test_fetch_from_non_branch(self):
@@ -1524,7 +1524,7 @@ Node-copyfrom-path: x
 
         branch = Branch.open("%s/trunk" % repos_url)
         self.assertEqual(
-            oldrepos.generate_revision_id(2, "trunk", oldrepos.get_mapping()),
+            oldrepos.generate_revision_id(2, u"trunk", oldrepos.get_mapping()),
             branch.last_revision())
 
     def test_fetch_branch_downgrade(self):
@@ -1580,17 +1580,17 @@ Node-copyfrom-path: x
         mapping = oldrepos.get_mapping()
 
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "trunk", mapping)))
+            oldrepos.generate_revision_id(1, u"trunk", mapping)))
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(2, "trunk", mapping)))
+            oldrepos.generate_revision_id(2, u"trunk", mapping)))
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(3, "trunk", mapping)))
+            oldrepos.generate_revision_id(3, u"trunk", mapping)))
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(4, "branches/foobranch", mapping)))
+            oldrepos.generate_revision_id(4, u"branches/foobranch", mapping)))
         self.assertFalse(newrepos.has_revision(
-            oldrepos.generate_revision_id(4, "trunk", mapping)))
+            oldrepos.generate_revision_id(4, u"trunk", mapping)))
         self.assertFalse(newrepos.has_revision(
-            oldrepos.generate_revision_id(2, "", mapping)))
+            oldrepos.generate_revision_id(2, u"", mapping)))
 
     def test_fetch_copy_root_id_kept(self):
         repos_url = self.make_svn_repository('d')
@@ -1616,7 +1616,7 @@ Node-copyfrom-path: x
         mapping = repos.get_mapping()
 
         tree = repos.revision_tree(
-             repos.generate_revision_id(3, "branches/foobranch", mapping))
+             repos.generate_revision_id(3, u"branches/foobranch", mapping))
 
         self.assertEqual(
             mapping.generate_file_id((repos.uuid, "trunk", 1), u""),
@@ -1660,7 +1660,7 @@ Node-copyfrom-path: x
         mapping = repos.get_mapping()
 
         tree = repos.revision_tree(
-             repos.generate_revision_id(6, "branches/foobranch", mapping))
+             repos.generate_revision_id(6, u"branches/foobranch", mapping))
 
     def test_fetch_consistent(self):
         repos_url = self.make_svn_repository('d')
@@ -1681,9 +1681,9 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos2)
         mapping = oldrepos.get_mapping()
         tree1 = newrepos1.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         tree2 = newrepos2.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         self.assertFalse(tree1.changes_from(tree2).has_changed())
 
     def test_fetch_executable(self):
@@ -1705,9 +1705,9 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         self.assertTrue(tree1.is_executable("bla"))
         self.assertTrue(tree1.is_executable("blie"))
 
@@ -1731,10 +1731,10 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         self.assertTrue(tree1.is_executable("bla"))
         tree2 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(2, "", mapping))
+                oldrepos.generate_revision_id(2, u"", mapping))
         self.assertTrue(tree2.is_executable("bla"))
 
     def test_fetch_symlink(self):
@@ -1755,9 +1755,9 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         file_id = tree1.path2id("mylink")
         self.assertEqual('symlink', tree1.kind('mylink'))
         self.assertEqual('bla', tree1.get_symlink_target('mylink'))
@@ -1788,9 +1788,9 @@ Node-copyfrom-path: x
                 "Bazaar doesn't support newlines in symlink targets (#219832)")
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         self.assertEqual('symlink', tree1.kind("mylink"))
         self.assertEqual('bla\nbar\nbla',
             tree1.get_symlink_target("mylink"))
@@ -1811,9 +1811,9 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         self.assertEqual('file', tree1.kind("mylink"))
 
     def test_fetch_special_unbecomes_symlink(self):
@@ -1837,9 +1837,9 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(2, "", mapping)))
+            oldrepos.generate_revision_id(2, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(2, "", mapping))
+                oldrepos.generate_revision_id(2, u"", mapping))
         self.assertEqual('file', tree1.kind("mylink"))
 
         # Now test the same thing again as two separate copy_content calls, to
@@ -1848,12 +1848,12 @@ Node-copyfrom-path: x
         dir2 = ControlDir.create("f2")
         newrepos2 = dir2.create_repository()
         self.copy_content(oldrepos, newrepos2,
-              oldrepos.generate_revision_id(1, "", mapping))
+              oldrepos.generate_revision_id(1, u"", mapping))
         self.copy_content(oldrepos, newrepos2)
         self.assertTrue(newrepos2.has_revision(
-            oldrepos.generate_revision_id(2, "", mapping)))
+            oldrepos.generate_revision_id(2, u"", mapping)))
         tree2 = newrepos2.revision_tree(
-                oldrepos.generate_revision_id(2, "", mapping))
+                oldrepos.generate_revision_id(2, u"", mapping))
         self.assertEqual('file', tree2.kind("mylink"))
 
     def test_fetch_special_becomes_symlink(self):
@@ -1877,9 +1877,9 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(2, "", mapping)))
+            oldrepos.generate_revision_id(2, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(2, "", mapping))
+                oldrepos.generate_revision_id(2, u"", mapping))
         self.expectFailure(
             "not allowing svn:special invalid files to be restored to symlinks "
             "yet",
@@ -1904,11 +1904,11 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         tree2 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(2, "", mapping))
+                oldrepos.generate_revision_id(2, u"", mapping))
         self.assertEqual('file', tree1.kind("mylink"))
         self.assertEqual('symlink', tree2.kind("mylink"))
         self.assertEqual('bla', tree2.get_symlink_target("mylink"))
@@ -1931,14 +1931,14 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(1, "", mapping)))
+            oldrepos.generate_revision_id(1, u"", mapping)))
         tree1 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(1, "", mapping))
+                oldrepos.generate_revision_id(1, u"", mapping))
         self.assertFalse(tree1.is_executable("bla"))
         tree2 = newrepos.revision_tree(
-                oldrepos.generate_revision_id(2, "", mapping))
+                oldrepos.generate_revision_id(2, u"", mapping))
         self.assertTrue(tree2.is_executable("bla"))
-        self.assertEqual(oldrepos.generate_revision_id(2, "", mapping),
+        self.assertEqual(oldrepos.generate_revision_id(2, u"", mapping),
                          tree2.get_file_revision("bla"))
 
     def test_fetch_hidden(self):
@@ -2001,9 +2001,9 @@ Node-copyfrom-path: x
 
         mapping = oldrepos.get_mapping()
 
-        rev = newrepos.get_revision(oldrepos.generate_revision_id(3, "trunk", mapping))
+        rev = newrepos.get_revision(oldrepos.generate_revision_id(3, u"trunk", mapping))
         mutter('parent ids: %r' % rev.parent_ids)
-        self.assertTrue(oldrepos.generate_revision_id(2, "branches/foo", mapping) in rev.parent_ids)
+        self.assertTrue(oldrepos.generate_revision_id(2, u"branches/foo", mapping) in rev.parent_ids)
 
     def build_intertwined(self):
         repos_url = self.make_svn_repository('d')
@@ -2046,7 +2046,7 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos, "revid4")
         from breezy.plugins.svn.mapping3.base import BzrSvnMappingv3
         from breezy.plugins.svn.mapping3.scheme import TrunkBranchingScheme
-        revid3 = oldrepos.generate_revision_id(3, "trunk",
+        revid3 = oldrepos.generate_revision_id(3, u"trunk",
                 BzrSvnMappingv3(TrunkBranchingScheme(0)))
         self.assertEquals(set(["revid1", "revid2", revid3, "revid4"]),
                 set(newrepos.all_revision_ids()))
@@ -2058,11 +2058,11 @@ Node-copyfrom-path: x
         dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         from breezy.plugins.svn.mapping4 import BzrSvnMappingv4
-        revid5 = oldrepos.generate_revision_id(5, "trunk", BzrSvnMappingv4())
+        revid5 = oldrepos.generate_revision_id(5, u"trunk", BzrSvnMappingv4())
         self.copy_content(oldrepos, newrepos, revid5)
         from breezy.plugins.svn.mapping3.base import BzrSvnMappingv3
         from breezy.plugins.svn.mapping3.scheme import TrunkBranchingScheme
-        revid3 = oldrepos.generate_revision_id(3, "trunk",
+        revid3 = oldrepos.generate_revision_id(3, u"trunk",
                 BzrSvnMappingv3(TrunkBranchingScheme(0)))
         self.assertEquals(set(["revid1", "revid2", revid3, "revid4", revid5]),
                 set(newrepos.all_revision_ids()))
@@ -2093,11 +2093,11 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertEquals(set([
-            oldrepos.generate_revision_id(0, "", mapping),
-            oldrepos.generate_revision_id(1, "", mapping),
-            oldrepos.generate_revision_id(2, "", mapping),
-            oldrepos.generate_revision_id(3, "", mapping),
-            oldrepos.generate_revision_id(4, "", mapping),
+            oldrepos.generate_revision_id(0, u"", mapping),
+            oldrepos.generate_revision_id(1, u"", mapping),
+            oldrepos.generate_revision_id(2, u"", mapping),
+            oldrepos.generate_revision_id(3, u"", mapping),
+            oldrepos.generate_revision_id(4, u"", mapping),
             ]), set(newrepos.all_revision_ids()))
 
     def test_fetch_property_change_only_trunk(self):
@@ -2129,10 +2129,10 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
         mapping = oldrepos.get_mapping()
         self.assertEquals(set([
-            oldrepos.generate_revision_id(1, "trunk", mapping),
-            oldrepos.generate_revision_id(2, "trunk", mapping),
-            oldrepos.generate_revision_id(3, "trunk", mapping),
-            oldrepos.generate_revision_id(4, "trunk", mapping),
+            oldrepos.generate_revision_id(1, u"trunk", mapping),
+            oldrepos.generate_revision_id(2, u"trunk", mapping),
+            oldrepos.generate_revision_id(3, u"trunk", mapping),
+            oldrepos.generate_revision_id(4, u"trunk", mapping),
             ]), set(newrepos.all_revision_ids()))
 
     def test_fetch_replace_self_open(self):
@@ -2245,9 +2245,9 @@ Node-copyfrom-path: x
         dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         mapping = oldrepos.get_mapping()
-        copyrev = oldrepos.generate_revision_id(2, "branches/abranch", mapping)
-        prevrev = oldrepos.generate_revision_id(3, "branches/abranch", mapping)
-        lastrev = oldrepos.generate_revision_id(4, "branches/abranch", mapping)
+        copyrev = oldrepos.generate_revision_id(2, u"branches/abranch", mapping)
+        prevrev = oldrepos.generate_revision_id(3, u"branches/abranch", mapping)
+        lastrev = oldrepos.generate_revision_id(4, u"branches/abranch", mapping)
         self.copy_content(oldrepos, newrepos, lastrev)
 
         tree = newrepos.revision_tree(lastrev)
