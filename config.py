@@ -411,7 +411,7 @@ class PropertyConfig(object):
     """ConfigObj-like class that looks at Subversion file ids."""
 
     def __init__(self, tree, path, prefix=""):
-        self.properties = tree.get_file_properties(tree.path2id(path), path)
+        self.properties = tree.get_file_properties(path)
         self.prefix = prefix
 
     def __getitem__(self, option_name):
@@ -445,8 +445,7 @@ class SubversionBuildPackageConfig(object):
             self.wt_layout_path = os.path.join(tree.abspath("."), ".svn", "svn-layout")
             self.option_source = ConfigObj(self.wt_layout_path, encoding="utf-8")
         elif tree.has_filename("debian/svn-layout"):
-            file_id = tree.path2id("debian/svn-layout")
-            layout_file = tree.get_file(file_id, "debian/svn-layout")
+            layout_file = tree.get_file("debian/svn-layout")
             self.option_source = ConfigObj(layout_file, encoding="utf-8")
         elif isinstance(tree, SubversionTree) and tree.has_filename("debian"):
             self.option_source = PropertyConfig(tree, "debian", "svn-bp:")
@@ -455,7 +454,7 @@ class SubversionBuildPackageConfig(object):
         self.tree = tree
 
     def get_merge_with_upstream(self):
-        props = self.tree.get_file_properties(self.tree.path2id("debian"), "debian")
+        props = self.tree.get_file_properties("debian")
         return "mergeWithUpstream" in props
 
     def __getitem__(self, option_name):

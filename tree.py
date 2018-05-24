@@ -48,6 +48,9 @@ from breezy.revision import (
 from breezy.revisiontree import (
     RevisionTree,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.trace import mutter
 
 
@@ -224,8 +227,7 @@ class SvnRulesSearcher(object):
             return None
 
     def get_items(self, path):
-        file_id = self.tree.path2id(path)
-        for k, v in self.tree.get_file_properties(path, file_id).iteritems():
+        for k, v in self.tree.get_file_properties(path).iteritems():
             prop = self._map_property(k, v)
             if prop is not None:
                 yield prop
@@ -570,7 +572,8 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         if self.get_root_id() is None:
             return self._bzr_inventory
         def add_file_to_inv(relpath, id, revid, adm):
-            assert isinstance(relpath, unicode)
+            if not isinstance(relpath, text_type):
+                raise TypeError(relpath)
             (propchanges, props) = adm.get_prop_diffs(
                 self.workingtree.abspath(relpath).encode("utf-8"))
             if props.has_key(properties.PROP_SPECIAL):
@@ -602,7 +605,8 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             return (None, None)
 
         def add_dir_to_inv(relpath, adm, parent_id):
-            assert isinstance(relpath, unicode)
+            if not isinstance(relpath, text_type):
+                raise TypeError(relpath)
             entries = adm.entries_read(False)
             entry = entries[""]
             (id, revid) = find_ids(entry)
@@ -619,8 +623,10 @@ class SvnBasisTree(SvnRevisionTreeCommon):
                 if name == "":
                     continue
 
-                assert isinstance(relpath, unicode)
-                assert isinstance(name, str)
+                if not isinstance(relpath, text_type):
+                    raise TypeError(relpath)
+                if not isinstance(name, bytes):
+                    raise TypeError(name)
 
                 subrelpath = os.path.join(relpath, name.decode("utf-8"))
 
@@ -663,7 +669,8 @@ class SvnBasisTree(SvnRevisionTreeCommon):
 
     def get_file_stream_by_path(self, name):
         """See Tree.get_file_stream_by_path()."""
-        assert isinstance(name, unicode)
+        if not isinstance(name, text_type):
+            raise TypeError(name)
         wt_path = self.workingtree.abspath(name).encode("utf-8")
         return wc.get_pristine_contents(wt_path)
 

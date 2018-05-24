@@ -33,6 +33,9 @@ from breezy.bzr.knit import (
 from breezy.revision import (
     NULL_REVISION,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.trace import (
     mutter,
     )
@@ -132,7 +135,8 @@ def determine_text_revisions(changes, default_revid, specific_revids):
     ret = {}
     ret.update(specific_revids)
     for p, (action, copy_from) in changes.iteritems():
-        assert isinstance(p, unicode)
+        if not isinstance(p, text_type):
+            raise TypeError(p)
         # The root changes often because of file properties, so we don't
         # consider it really changing.
         if action in ('A', 'R', 'M') and p not in ret and p != u"":
@@ -175,7 +179,8 @@ def simple_apply_changes(new_file_id, changes):
     delta = {}
     for p in sorted(changes.keys(), reverse=False):
         (action, copy_from) = changes[p]
-        assert isinstance(p, unicode)
+        if not isinstance(p, unicode):
+            raise TypeError(p)
         # Only generate new file ids for root if it's new
         if action in ('A', 'R') and (p != u"" or copy_from is None):
             delta[p] = new_file_id(p)
@@ -227,7 +232,8 @@ class DictFileIdMap(FileIdMap):
                         del self.data[xp]
 
         for x in sorted(text_revisions.keys() + delta.keys()):
-            assert isinstance(x, unicode)
+            if not isinstance(x, text_type):
+                raise TypeError(x)
             # Entry was added
             if (x in delta and
                 (not x in self.data or self.data[x][0] != delta[x])):
@@ -357,9 +363,12 @@ class FileIdMapCache(object):
 
         for path in sorted(_map.keys()):
             (id, changed_revid, created_revid) = _map[path]
-            assert isinstance(path, unicode)
-            assert isinstance(id, str)
-            assert isinstance(changed_revid, str)
+            if not isinstance(path, text_type):
+                raise TypeError(path)
+            if not isinstance(id, bytes):
+                raise TypeError(id)
+            if not isinstance(changed_revid, bytes):
+                raise TypeError(changed_revid)
             assert created_revid is None or isinstance(created_revid, tuple)
             if created_revid is None:
                 optional_child_create_revid = ""

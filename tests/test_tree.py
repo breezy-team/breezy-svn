@@ -74,7 +74,7 @@ class TestBasisTree(SubversionTestCase):
         self.client_update("dc")
 
         tree = SvnBasisTree(tree)
-        self.assertTrue(tree.is_executable(tree.path2id("file")))
+        self.assertTrue(tree.is_executable("file"))
 
     def test_executable_changed(self):
         tree = self.make_svn_branch_and_tree("d", "dc")
@@ -86,7 +86,7 @@ class TestBasisTree(SubversionTestCase):
         self.client_update("dc")
         self.client_set_prop("dc/file", "svn:executable", "*")
         tree = SvnBasisTree(tree)
-        self.assertFalse(tree.is_executable(tree.path2id("file")))
+        self.assertFalse(tree.is_executable("file"))
 
     def test_symlink(self):
         tree = self.make_svn_branch_and_tree("d", "dc")
@@ -100,9 +100,9 @@ class TestBasisTree(SubversionTestCase):
         self.client_update("dc")
         tree = SvnBasisTree(tree)
         self.assertEqual('symlink',
-                         tree.kind(tree.path2id("file")))
+                         tree.kind("file"))
         self.assertEqual("target",
-                         tree.get_symlink_target(tree.path2id("file")))
+                         tree.get_symlink_target("file"))
 
     def test_symlink_with_newlines_in_target(self):
         repos_url = self.make_client("d", "dc")
@@ -116,9 +116,9 @@ class TestBasisTree(SubversionTestCase):
         self.client_update("dc")
         tree = SvnBasisTree(WorkingTree.open("dc"))
         self.assertEqual('symlink',
-                         tree.kind(tree.path2id("file")))
+                         tree.kind("file"))
         self.assertEqual("target\nbar\nbla",
-                         tree.get_symlink_target(tree.path2id("file")))
+                         tree.get_symlink_target("file"))
 
     def test_symlink_not_special(self):
         tree = self.make_svn_branch_and_tree("d", "dc")
@@ -139,7 +139,7 @@ class TestBasisTree(SubversionTestCase):
                 raise TestSkipped("Unable to run test with svn 1.4")
             raise
         tree = SvnBasisTree(tree)
-        self.assertEqual('file', tree.kind(tree.path2id("file")))
+        self.assertEqual('file', tree.kind("file"))
 
     def test_symlink_next(self):
         tree = self.make_svn_branch_and_tree("d", "dc")
@@ -158,9 +158,9 @@ class TestBasisTree(SubversionTestCase):
         self.client_update("dc")
 
         tree = SvnBasisTree(tree)
-        self.assertEqual('symlink', tree.kind(tree.path2id("file")))
+        self.assertEqual('symlink', tree.kind("file"))
         self.assertEqual("target",
-                         tree.get_symlink_target(tree.path2id("file")))
+                         tree.get_symlink_target("file"))
 
     def test_annotate_iter(self):
         repos_url = self.make_client("d", "dc")
@@ -190,7 +190,7 @@ class TestBasisTree(SubversionTestCase):
         self.client_commit('dc', 'msg')
         self.client_set_prop("dc/bla", "bzrbla", "bloe2")
         t = WorkingTree.open('dc').basis_tree()
-        props = t.get_file_properties(t.path2id('bla'), 'bla')
+        props = t.get_file_properties('bla')
         self.assertEquals("bloe", props["bzrbla"])
 
     def test_get_file_properties(self):
@@ -201,7 +201,7 @@ class TestBasisTree(SubversionTestCase):
         self.client_commit('dc', 'msg')
         self.client_set_prop("dc/bla", "bzrbla", "bloe2")
         t = WorkingTree.open('dc').basis_tree()
-        props = t.get_file_properties(t.path2id('bla'), 'bla')
+        props = t.get_file_properties('bla')
         self.assertEquals("bloe", props["bzrbla"])
 
     def test_executable_link(self):
@@ -224,8 +224,8 @@ class TestBasisTree(SubversionTestCase):
 
         wt = WorkingTree.open("dc")
         tree = SvnBasisTree(wt)
-        self.assertFalse(tree.is_executable(tree.path2id("file")))
-        self.assertFalse(wt.is_executable(wt.path2id("file")))
+        self.assertFalse(tree.is_executable("file"))
+        self.assertFalse(wt.is_executable("file"))
 
 
 class TestInventoryExternals(SubversionTestCase):
@@ -323,7 +323,7 @@ class TestSvnRevisionTree(SubversionTestCase):
 
     def test_get_file_lines(self):
         self.assertEqual(["data"],
-                self.tree.get_file_lines(self.tree.path2id("foo/bla")))
+                self.tree.get_file_lines("foo/bla"))
 
     def test_executable(self):
         self.client_set_prop("dc/foo/bla", "svn:executable", "*")
@@ -334,7 +334,7 @@ class TestSvnRevisionTree(SubversionTestCase):
         tree = self.repos.revision_tree(
                 self.repos.generate_revision_id(3, self.branch.get_branch_path(), mapping))
 
-        self.assertTrue(tree.is_executable(tree.path2id("foo/bla")))
+        self.assertTrue(tree.is_executable("foo/bla"))
 
     def test_symlink(self):
         self.requireFeature(SymlinkFeature)
@@ -347,9 +347,8 @@ class TestSvnRevisionTree(SubversionTestCase):
         tree = self.repos.revision_tree(
             self.repos.generate_revision_id(3, self.branch.get_branch_path(), mapping))
 
-        self.assertEqual('symlink', tree.kind(tree.path2id("bar")))
-        self.assertEqual('foo/bla',
-                tree.get_symlink_target(tree.path2id("bar")))
+        self.assertEqual('symlink', tree.kind("bar"))
+        self.assertEqual('foo/bla', tree.get_symlink_target("bar"))
 
     def test_not_executable(self):
-        self.assertFalse(self.tree.is_executable(self.tree.path2id("foo/bla")))
+        self.assertFalse(self.tree.is_executable("foo/bla"))

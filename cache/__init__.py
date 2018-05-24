@@ -71,7 +71,7 @@ def create_cache_dir():
         assert s is not None
         # This can return a unicode string or a plain string in
         # user encoding
-        if type(s) == str:
+        if isinstance(s, bytes):
             s = s.decode(breezy.user_encoding)
         base_cache_dir = s.encode(osutils._fs_enc)
         cache_dir = os.path.join(base_cache_dir, name)

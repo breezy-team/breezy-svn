@@ -719,7 +719,7 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({"dc/bla": None})
         self.client_add("dc/bla")
         self.client_set_prop("dc/bla", "bzrbla", "bloe")
-        props = wt.get_file_properties(wt.path2id('bla'), 'bla')
+        props = wt.get_file_properties('bla')
         self.assertEquals("bloe", props["bzrbla"])
 
     def test_get_file_properties(self):
@@ -727,7 +727,7 @@ class TestWorkingTree(SubversionTestCase):
         self.build_tree({"dc/bla": "data"})
         self.client_add("dc/bla")
         self.client_set_prop("dc/bla", "bzrbla", "bloe")
-        props = wt.get_file_properties(wt.path2id('bla'), 'bla')
+        props = wt.get_file_properties('bla')
         self.assertEquals("bloe", props["bzrbla"])
 
     def test_invdelta_remove(self):

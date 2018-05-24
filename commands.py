@@ -29,6 +29,9 @@ from breezy.option import (
     RegistryOption,
     Option,
     )
+from breezy.sixish import (
+    text_type,
+    )
 
 from breezy.plugins.svn import gettext
 
@@ -38,7 +41,7 @@ def get_layout(layoutname):
 
     :param layout: Name of the layout to retrieve.
     """
-    if isinstance(layoutname, unicode):
+    if isinstance(layoutname, text_type):
         layoutname = layoutname.encode("ascii")
     from breezy.plugins.svn.layout import layout_registry
     from breezy.errors import BzrCommandError

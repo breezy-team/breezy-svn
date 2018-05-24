@@ -291,12 +291,12 @@ class TestPush(SubversionTestCase):
         mapping = repos.get_mapping()
         self.assertEquals(newid, svnbranch.last_revision())
         tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
-        self.assertEqual(newid, tree.get_file_revision(tree.path2id('foo/bla')))
+        self.assertEqual(newid, tree.get_file_revision('foo/bla'))
         self.assertEqual(wt.branch.last_revision(),
           repos.generate_revision_id(2, "", mapping))
         self.assertEqual(repos.generate_revision_id(2, "", mapping),
                         self.svndir.open_branch().last_revision())
-        self.assertEqual("other data", tree.get_file_text(tree.path2id("foo/bla")))
+        self.assertEqual("other data", tree.get_file_text("foo/bla"))
 
     def test_simple(self):
         self.build_tree({'dc/file': 'data'})
@@ -350,7 +350,7 @@ class TestPush(SubversionTestCase):
         self.assertTrue(os.path.islink("dc/south"))
         wt = self.controldir.open_workingtree()
         wt.add('south')
-        self.assertEquals("bla", wt.get_symlink_target(wt.path2id("south")))
+        self.assertEquals("bla", wt.get_symlink_target("south"))
         wt.commit(message="Commit from Bzr")
 
         self.svndir.open_branch().pull(self.controldir.open_branch())
@@ -359,8 +359,8 @@ class TestPush(SubversionTestCase):
         mapping = repos.get_mapping()
         tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
         self.assertTrue(tree.has_filename('south'))
-        self.assertEquals('symlink', tree.kind(tree.path2id('south')))
-        self.assertEquals('bla', tree.get_symlink_target(tree.path2id('south')))
+        self.assertEquals('symlink', tree.kind('south'))
+        self.assertEquals('bla', tree.get_symlink_target('south'))
 
     def test_pull_after_push(self):
         self.build_tree({'dc/file': 'data'})
@@ -413,11 +413,11 @@ class TestPush(SubversionTestCase):
         b = Branch.open("b")
 
         def check_tree_revids(rtree):
-            self.assertEqual(rtree.get_file_revision(rtree.path2id("file")),
+            self.assertEqual(rtree.get_file_revision("file"),
                              revid)
-            self.assertEqual(rtree.get_file_revision(rtree.path2id("foo")),
+            self.assertEqual(rtree.get_file_revision("foo"),
                              self.revid1)
-            self.assertEqual(rtree.get_file_revision(rtree.path2id("foo/bla")),
+            self.assertEqual(rtree.get_file_revision("foo/bla"),
                              revid)
             self.assertEqual(rtree.get_revision_id(), b.last_revision())
 
@@ -746,9 +746,9 @@ class PushNewBranchTests(SubversionTestCase):
     def test_push_merge_unchanged_file(self):
         def check_tree(t):
             self.assertEquals(base_revid,
-                t.get_file_revision(t.path2id("bar.txt")))
+                t.get_file_revision("bar.txt"))
             self.assertEquals(other_revid,
-                t.get_file_revision(t.path2id("bar2.txt")))
+                t.get_file_revision("bar2.txt"))
         repos_url = self.make_svn_repository("test")
 
         dc = self.get_commit_editor(repos_url)
@@ -1039,7 +1039,7 @@ class PushNewBranchTests(SubversionTestCase):
         bzrwt.lock_write()
         try:
             new_ie = bzrwt.root_inventory.root.copy()
-            foo_ie = bzrwt.root_inventory[bzrwt.path2id("foo")].copy()
+            foo_ie = bzrwt.root_inventory.get_entry(bzrwt.path2id("foo")).copy()
             new_ie.file_id = "mynewroot"
             foo_ie.parent_id = new_ie.file_id
             bzrwt.apply_inventory_delta([

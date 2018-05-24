@@ -429,13 +429,13 @@ class TestPush(SubversionTestCase):
         mapping = repos.get_mapping()
         tree = repos.revision_tree(repos.generate_revision_id(2, "", mapping))
         self.assertEqual(repos.generate_revision_id(2, "", mapping),
-                         tree.get_file_revision(tree.path2id('foo/bla')))
+                         tree.get_file_revision('foo/bla'))
         self.assertEqual(wt.branch.last_revision(),
           repos.generate_revision_id(2, "", mapping))
         self.assertEqual(wt.branch.last_revision(),
                         self.olddir.open_branch().last_revision())
         self.assertEqual("other data",
-            repos.revision_tree(repos.generate_revision_id(2, "", mapping)).get_file_text(tree.path2id("foo/bla")))
+            repos.revision_tree(repos.generate_revision_id(2, "", mapping)).get_file_text("foo/bla"))
 
     def test_simple(self):
         self.build_tree({'dc/file': 'data'})

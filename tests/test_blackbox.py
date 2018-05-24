@@ -242,10 +242,6 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def test_info_workingtree(self):
         self.make_svn_branch_and_tree('d', 'dc')
-        # Info is broken against bzr 2.3
-        if breezy_version < (2, 4, 0):
-            raise KnownFailure("bzr info against svn repositories is "
-                "known broken against 2.3")
         self.run_bzr('info -v dc')
 
     def test_dumpfile(self):

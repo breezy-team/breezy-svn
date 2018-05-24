@@ -26,6 +26,9 @@ from breezy import (
 from breezy.errors import (
     NoSuchRevision,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.lru_cache import LRUCache
 
 from breezy.plugins.svn.errors import (
@@ -100,7 +103,8 @@ class RevidMap(object):
         for (branch, revno, exists) in self.repos.find_fileprop_paths(
                 layout, from_revnum, to_revnum, project,
                 check_removed=check_removed):
-            assert type(branch) is unicode, "branch is %r" % branch
+            if not isinstance(branch, text_type):
+                raise TypeError(branch)
             assert type(revno) is int
             iterator = self.repos._revmeta_provider.iter_reverse_branch_changes(
                     branch, revno, to_revnum=0, limit=0)

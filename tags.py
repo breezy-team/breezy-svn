@@ -29,6 +29,9 @@ from breezy import (
     urlutils,
     version_info as breezy_version,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.tag import BasicTags
 from breezy.trace import mutter
 
@@ -68,7 +71,8 @@ def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
         except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY,):
             continue
         for name in names:
-            assert isinstance(name, unicode)
+            if not isinstance(name, text_type):
+                raise TypeError(name)
             yield (name, (revmeta, mapping, revid))
 
 
@@ -103,7 +107,8 @@ def resolve_tags_svn_ancestry(branch, tag_revmetas):
                 # No more tag revmetas to resolve, just return immediately
                 return ret
             for name in reverse_tag_revmetas[revmeta]:
-                assert isinstance(name, unicode)
+                if not isinstance(name, text_type):
+                    raise TypeError(name)
                 ret[name] = (revmeta, mapping, revmeta.get_revision_id(mapping))
             del reverse_tag_revmetas[revmeta]
     finally:

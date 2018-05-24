@@ -42,6 +42,9 @@ from breezy.repository import (
     Repository,
     RepositoryFormat,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.bzr.inventorytree import InventoryRevisionTree
 from breezy.revision import (
     NULL_REVISION,
@@ -1039,7 +1042,7 @@ class SvnRepository(ForeignRepository):
 
         :return: New revision id.
         """
-        if isinstance(path, unicode):
+        if isinstance(path, text_type):
             path = path.encode('utf-8')
         assert isinstance(revnum, int)
         foreign_revid = (self.uuid, path, revnum)
@@ -1195,7 +1198,8 @@ class SvnRepository(ForeignRepository):
             ret = {}
             for (project, branch_path, name, has_props, revnum) in layout.get_tags(self,
                     revnum, project=project):
-                assert type(name) is unicode
+                if not isinstance(name, text_type):
+                    raise TypeError(name)
                 base_revmeta = self._revmeta_provider.lookup_revision(branch_path, revnum)
                 ret[name] = base_revmeta.get_tag_revmeta(mapping)
 
@@ -1398,6 +1402,7 @@ def find_tags_between(revmeta_provider, project, layout, mapping, from_revnum,
         # Layout wasn't able to determine tag name from path
         if name is None:
             continue
-        assert type(name) is unicode
+        if not isinstance(name, text_type):
+            raise TypeError(name)
         ret[name] = revmeta
     return ret

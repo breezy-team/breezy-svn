@@ -341,6 +341,8 @@ class SvnRaTransport(Transport):
     def __init__(self, url, from_transport=None, credentials=None):
         self.svn_url, readonly = bzr_to_svn_url(url)
         Transport.__init__(self, url)
+        if not isinstance(url, str):
+            url = url.encode()
         host = urlutils.parse_url(url)[3]
         if host.endswith(".codeplex.com"):
             warn_codeplex(host)

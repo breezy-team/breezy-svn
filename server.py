@@ -138,7 +138,7 @@ class RepositoryBackend(ServerRepositoryBackend):
                 if ie.kind == "directory":
                     visit_dirs.add(ie.file_id)
                 elif ie.kind == 'file':
-                    modified_files[ie.file_id] = new_tree.get_file_text(ie.file_id)
+                    modified_files[ie.file_id] = new_tree.get_file_text(path)
                 elif ie.kind == 'symlink':
                     modified_files[ie.file_id] = "link %s" % ie.symlink_target
 
@@ -164,16 +164,16 @@ class RepositoryBackend(ServerRepositoryBackend):
             revnum = self.get_latest_revnum()
         branch_path, revid = self._get_revid(revnum)
         tree = self.branch.repository.revision_tree(revid)
-        file_id = tree.path2id(path[len(branch_path):].strip("/"))
-        if file_id is None:
+        tree_path = path[len(branch_path):].strip("/")
+        if not tree.is_versioned(tree_path):
             return None
         ret = { "name": urlutils.basename(path) }
-        if tree.kind(file_id) == "directory":
+        if tree.kind(tree_path) == "directory":
             ret["kind"] = subvertpy.NODE_DIR
             ret["size"] = 0
         else:
             ret["kind"] = subvertpy.NODE_FILE
-            ret["size"] = tree.get_file_size(file_id)
+            ret["size"] = tree.get_file_size(tree_path)
         ret["has-props"] = True
         ret["created-rev"] = 0 # FIXME
         ret["created-date"] = "" # FIXME

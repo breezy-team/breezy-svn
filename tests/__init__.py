@@ -26,6 +26,9 @@ from breezy import osutils
 from breezy.controldir import (
     ControlDir,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.tests import (
     TestCaseInTempDir,
     )
@@ -171,7 +174,7 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
     def setUp(self):
         self._init_client()
         TestCaseInTempDir.setUp(self)
-        if type(self.test_dir) == unicode:
+        if isinstance(self.test_dir, text_type):
             self.test_dir = self.test_dir.encode(osutils._fs_enc)
 
     def tearDown(self):

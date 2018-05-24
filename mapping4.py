@@ -42,8 +42,8 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps,
 
     TODO: Add variable with required features.
     """
-    revid_prefix = "svn-v4"
-    upgrade_suffix = "-svn4"
+    revid_prefix = b"svn-v4"
+    upgrade_suffix = b"-svn4"
     experimental = False
     roundtripping = True
     can_use_revprops = True
@@ -164,7 +164,7 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps,
             fileprops[mapping.SVN_PROP_BZR_REVPROP_REDIRECT] = str(revnum)
 
     def newer_than(self, other_mapping):
-        if other_mapping.revid_prefix[:6] in ("svn-v1", "svn-v2", "svn-v3"):
+        if other_mapping.revid_prefix[:6] in (b"svn-v1", b"svn-v2", b"svn-v3"):
             return True
         return False
 

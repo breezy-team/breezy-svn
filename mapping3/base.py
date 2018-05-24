@@ -24,6 +24,7 @@ from breezy import (
     errors as bzr_errors,
     osutils,
     )
+from breezy.sixish import text_type
 
 from breezy.plugins.svn import (
     errors,
@@ -176,8 +177,8 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
     as well if possible.
     """
     experimental = False
-    upgrade_suffix = "-svn3"
-    revid_prefix = "svn-v3-"
+    upgrade_suffix = b"-svn3"
+    revid_prefix = b"svn-v3-"
     roundtripping = True
     can_use_fileprops = True
     must_use_fileprops = True
@@ -187,7 +188,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
 
     def __init__(self, scheme, guessed_scheme=None):
         mapping.BzrSvnMapping.__init__(self)
-        if isinstance(scheme, str) or isinstance(scheme, unicode):
+        if isinstance(scheme, bytes) or isinstance(scheme, text_type):
             try:
                 self.scheme = BranchingScheme.find_scheme(scheme)
             except UnknownBranchingScheme, e:
@@ -243,12 +244,13 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
         assert isinstance(uuid, str)
         assert isinstance(revnum, int)
         assert isinstance(branch, str)
-        assert isinstance(inv_path, unicode)
+        if not isinstance(inv_path, text_type):
+            raise TypeError(inv_path)
         inv_path = inv_path.encode("utf-8")
-        ret = "%d@%s:%s:%s" % (revnum, uuid, mapping.escape_svn_path(branch),
+        ret = b"%d@%s:%s:%s" % (revnum, uuid, mapping.escape_svn_path(branch),
                                mapping.escape_svn_path(inv_path))
         if len(ret) > 150:
-            ret = "%d@%s:%s;%s" % (revnum, uuid,
+            ret = b"%d@%s:%s;%s" % (revnum, uuid,
                                 mapping.escape_svn_path(branch),
                                 osutils.sha(inv_path).hexdigest())
         assert isinstance(ret, str)
@@ -266,7 +268,8 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
 
     @classmethod
     def _parse_revision_id(cls, revid):
-        assert isinstance(revid, str)
+        if not isinstance(revid, bytes):
+            raise TypeError(revid)
 
         if not revid.startswith(cls.revid_prefix):
             raise bzr_errors.InvalidRevisionId(revid, "")
@@ -310,16 +313,16 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
     @classmethod
     def _generate_revision_id(cls, uuid, revnum, path, scheme):
         assert isinstance(revnum, int)
-        assert isinstance(path, str)
+        assert isinstance(path, text_type)
         assert revnum >= 0
-        assert revnum > 0 or path == "", \
+        assert revnum > 0 or path == u"", \
                 "Trying to generate revid for (%r,%r)" % (path, revnum)
-        return str("%s%s:%s:%s:%d" % (
+        return b"%s%s:%s:%s:%d" % (
                 cls.revid_prefix, scheme, uuid,
-                mapping.escape_svn_path(path.strip("/")), revnum))
+                mapping.escape_svn_path(path.strip("/")), revnum)
 
     def revision_id_foreign_to_bzr(self, (uuid, path, revnum)):
-        assert isinstance(path, str)
+        assert isinstance(path, text_type)
         return self._generate_revision_id(uuid, revnum, path, self.scheme)
 
     def __eq__(self, other):

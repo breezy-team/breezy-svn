@@ -54,7 +54,7 @@ class BzrSvnMappingv1(BzrSvnMapping):
     """
     name = "v1"
     roundtripping = False
-    revid_prefix = "svn-v1"
+    revid_prefix = b"svn-v1"
     restricts_branch_paths = True
     can_use_fileprops= True
 
@@ -153,7 +153,7 @@ class BzrSvnMappingv2(BzrSvnMappingv1):
     """
     name = "v2"
     roundtripping = False
-    revid_prefix = "svn-v2"
+    revid_prefix = b"svn-v2"
     restricts_branch_paths = True
     can_use_fileprops = True
 

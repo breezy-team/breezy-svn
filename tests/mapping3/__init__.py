@@ -180,7 +180,7 @@ class RepositoryTests(SubversionTestCase):
         mapping = repos.get_mapping()
         if not mapping.roundtripping:
             raise TestNotApplicable()
-        revid = repos.generate_revision_id(1, "", mapping)
+        revid = repos.generate_revision_id(1, u"", mapping)
         self.assertEquals("someid", revid)
 
     def test_generate_revision_id_forced_revid_invalid(self):
@@ -191,9 +191,9 @@ class RepositoryTests(SubversionTestCase):
 
         repos = Repository.open(self.repos_url)
         mapping = repos.get_mapping()
-        revid = repos.generate_revision_id(1, "", mapping)
+        revid = repos.generate_revision_id(1, u"", mapping)
         self.assertEquals(
-                mapping.revision_id_foreign_to_bzr((repos.uuid, "", 1)),
+                mapping.revision_id_foreign_to_bzr((repos.uuid, u"", 1)),
                 revid)
 
     def test_revision_ghost_parents(self):
@@ -210,14 +210,14 @@ class RepositoryTests(SubversionTestCase):
         mapping = repository.get_mapping()
         self.assertEqual((),
                 repository.get_revision(
-                    repository.generate_revision_id(0, "", mapping)).parent_ids)
-        self.assertEqual((repository.generate_revision_id(0, "", mapping),),
+                    repository.generate_revision_id(0, u"", mapping)).parent_ids)
+        self.assertEqual((repository.generate_revision_id(0, u"", mapping),),
                 repository.get_revision(
-                    repository.generate_revision_id(1, "", mapping)).parent_ids)
-        self.assertEqual((repository.generate_revision_id(1, "", mapping),
+                    repository.generate_revision_id(1, u"", mapping)).parent_ids)
+        self.assertEqual((repository.generate_revision_id(1, u"", mapping),
             "ghostparent"), 
                 repository.get_revision(
-                    repository.generate_revision_id(2, "", mapping)).parent_ids)
+                    repository.generate_revision_id(2, u"", mapping)).parent_ids)
  
     def test_get_revision_id_overriden(self):
         self.make_checkout(self.repos_url, 'dc')
@@ -235,12 +235,12 @@ class RepositoryTests(SubversionTestCase):
         mapping = repository.get_mapping()
         if not mapping.roundtripping:
             raise TestNotApplicable
-        revid = mapping.revision_id_foreign_to_bzr((repository.uuid, "", 2))
+        revid = mapping.revision_id_foreign_to_bzr((repository.uuid, u"", 2))
         rev = repository.get_revision("myrevid")
-        self.assertEqual((repository.generate_revision_id(1, "", mapping),),
+        self.assertEqual((repository.generate_revision_id(1, u"", mapping),),
                 rev.parent_ids)
         self.assertEqual(rev.revision_id, 
-                         repository.generate_revision_id(2, "", mapping))
+                         repository.generate_revision_id(2, u"", mapping))
         self.assertEqual(author, rev.committer)
         self.assertIsInstance(rev.properties, dict)
 
@@ -251,9 +251,9 @@ class RepositoryTests(SubversionTestCase):
         dc.close()
         repository = Repository.open(self.repos_url)
         mapping = repository.get_mapping()
-        self.assertEqual(((repository.uuid, "", 1), mapping), repository.lookup_bzr_revision_id( 
-            mapping.revision_id_foreign_to_bzr((repository.uuid, "", 1)))[:2])
-        self.assertEqual(((repository.uuid, "", 1), mapping),
+        self.assertEqual(((repository.uuid, u"", 1), mapping), repository.lookup_bzr_revision_id( 
+            mapping.revision_id_foreign_to_bzr((repository.uuid, u"", 1)))[:2])
+        self.assertEqual(((repository.uuid, u"", 1), mapping),
                 repository.lookup_bzr_revision_id("myid")[:2])
 
     def test_lookup_revision_id_overridden_invalid(self):
@@ -264,8 +264,8 @@ class RepositoryTests(SubversionTestCase):
 
         repository = Repository.open(self.repos_url)
         mapping = repository.get_mapping()
-        self.assertEqual(((repository.uuid, "", 1), mapping), repository.lookup_bzr_revision_id( 
-            mapping.revision_id_foreign_to_bzr((repository.uuid, "", 1)))[:2])
+        self.assertEqual(((repository.uuid, u"", 1), mapping), repository.lookup_bzr_revision_id( 
+            mapping.revision_id_foreign_to_bzr((repository.uuid, u"", 1)))[:2])
         self.assertRaises(NoSuchRevision, repository.lookup_bzr_revision_id, 
             "corrupt-entry")
 
@@ -283,11 +283,11 @@ class RepositoryTests(SubversionTestCase):
         self.client_commit("dc", "foobar")
         repository = Repository.open(self.repos_url)
         mapping = repository.get_mapping()
-        self.assertEqual(((repository.uuid, "", 2), mapping), repository.lookup_bzr_revision_id( 
-            mapping.revision_id_foreign_to_bzr((repository.uuid, "", 2)))[:2])
-        self.assertEqual(((repository.uuid, "", 1), mapping), repository.lookup_bzr_revision_id( 
-            mapping.revision_id_foreign_to_bzr((repository.uuid, "", 1)))[:2])
-        self.assertEqual(((repository.uuid, "", 2), mapping), repository.lookup_bzr_revision_id( 
+        self.assertEqual(((repository.uuid, u"", 2), mapping), repository.lookup_bzr_revision_id( 
+            mapping.revision_id_foreign_to_bzr((repository.uuid, u"", 2)))[:2])
+        self.assertEqual(((repository.uuid, u"", 1), mapping), repository.lookup_bzr_revision_id( 
+            mapping.revision_id_foreign_to_bzr((repository.uuid, u"", 1)))[:2])
+        self.assertEqual(((repository.uuid, u"", 2), mapping), repository.lookup_bzr_revision_id( 
             "corrupt-entry")[:2])
 
     def test_lookup_revision_id_overridden_not_found(self):
@@ -334,7 +334,7 @@ class RepositoryTests(SubversionTestCase):
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
         self.assertEqual("bla", newrepos.revision_tree(
-            oldrepos.generate_revision_id(1, "", mapping)).path2id("test"))
+            oldrepos.generate_revision_id(1, u"", mapping)).path2id("test"))
 
     def test_fetch_ghosts(self):
         dc = self.get_commit_editor(self.repos_url)
@@ -349,7 +349,7 @@ class RepositoryTests(SubversionTestCase):
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
 
-        rev = newrepos.get_revision(oldrepos.generate_revision_id(1, "", mapping))
+        rev = newrepos.get_revision(oldrepos.generate_revision_id(1, u"", mapping))
         self.assertTrue("aghost" in rev.parent_ids)
 
     def test_fetch_invalid_ghosts(self):
@@ -365,8 +365,8 @@ class RepositoryTests(SubversionTestCase):
         
         mapping = oldrepos.get_mapping()
 
-        rev = newrepos.get_revision(oldrepos.generate_revision_id(1, "", mapping))
-        self.assertEqual([oldrepos.generate_revision_id(0, "", mapping)], rev.parent_ids)
+        rev = newrepos.get_revision(oldrepos.generate_revision_id(1, u"", mapping))
+        self.assertEqual([oldrepos.generate_revision_id(0, u"", mapping)], rev.parent_ids)
 
     def test_fetch_complex_ids_dirs(self):
         dc = self.get_commit_editor(self.repos_url)
@@ -389,7 +389,7 @@ class RepositoryTests(SubversionTestCase):
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
-        tree = newrepos.revision_tree(oldrepos.generate_revision_id(2, "", mapping))
+        tree = newrepos.revision_tree(oldrepos.generate_revision_id(2, u"", mapping))
         self.assertEquals("bloe", tree.path2id("dir"))
         self.assertIs(None, tree.path2id("dir/adir"))
         self.assertEquals("bla", tree.path2id("bdir"))
@@ -415,7 +415,7 @@ class RepositoryTests(SubversionTestCase):
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
         mapping = oldrepos.get_mapping()
-        tree = newrepos.revision_tree(oldrepos.generate_revision_id(2, "", mapping))
+        tree = newrepos.revision_tree(oldrepos.generate_revision_id(2, u"", mapping))
         self.assertEquals("bloe", tree.path2id("dir"))
         self.assertIs(None, tree.path2id("dir/adir"))
         self.assertEquals("bla", tree.path2id("bdir"))
@@ -543,7 +543,7 @@ class RepositoryTests(SubversionTestCase):
         registry.open_file("trunk/registry/generic.c").modify("BLA")
         dc.close()
         mapping = newdir.find_repository().get_mapping()
-        merge_revid = newdir.find_repository().generate_revision_id(2, "trunk", mapping)
+        merge_revid = newdir.find_repository().generate_revision_id(2, u"trunk", mapping)
 
         # Merge 
         self.build_tree({'c/registry/generic.c': "DE"})
@@ -584,7 +584,7 @@ class RepositoryTests(SubversionTestCase):
 
         mapping = repos.get_mapping()
 
-        self.assertEqual((42, repos.generate_revision_id(1, "", mapping)),
+        self.assertEqual((42, repos.generate_revision_id(1, u"", mapping)),
                 branch.last_revision_info())
 
         dc = self.get_commit_editor(repos_url)
@@ -597,7 +597,7 @@ class RepositoryTests(SubversionTestCase):
         mapping = repos.get_mapping()
 
         self.assertEqual(
-            (43, repos.generate_revision_id(2, "", mapping)),
+            (43, repos.generate_revision_id(2, u"", mapping)),
             branch.last_revision_info())
 
 

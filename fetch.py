@@ -62,6 +62,9 @@ from breezy.bzr.inventory import (
 from breezy.revision import (
     NULL_REVISION,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.bzr.inventorytree import InventoryRevisionTree
 from breezy.repository import (
     InterRepository,
@@ -164,7 +167,8 @@ def check_filename(path):
     :param path: Path to check
     :raises InvalidFileName:
     """
-    assert isinstance(path, unicode)
+    if not isinstance(path, text_type):
+        raise TypeError(path)
     if u"\\" in path:
         raise InvalidFileName(path)
 
@@ -425,7 +429,8 @@ class FileBuildEditor(object):
             trace.mutter('unsupported file property %r', name)
 
     def close(self, checksum=None):
-        assert isinstance(self.path, unicode)
+        if not isinstance(self.path, text_type):
+            raise TypeError(self.path)
         return self._close()
 
 
@@ -720,8 +725,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
                 self._inv_delta_append(p, None, fid, None)
             if self.bzr_base_tree.kind(p, fid) != 'directory':
                 return
-            for c in self.bzr_base_tree.iter_children(fid):
-                rec_del(c)
+            for c in self.bzr_base_tree.iter_child_entries(p, fid):
+                rec_del(c.file_id)
         base_file_id = self._get_bzr_base_file_id(old_parent_id, path)
         rec_del(base_file_id)
 
@@ -734,7 +739,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
         :param revnum: Revision number from which to open
         :return: Tuple with file id and inventory entry
         """
-        assert type(path) is unicode
+        if not isinstance(path, text_type):
+            raise TypeError(path)
         assert (type(parent_id) is str or (parent_id is None and path == ""))
         if path == u"":
             if self.lhs_parent_revmeta is not None:
@@ -916,7 +922,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
 
     def _renew_fileid(self, path):
         """'renew' the fileid of a path."""
-        assert isinstance(path, unicode)
+        if not isinstance(path, text_type):
+            raise TypeError(path)
         old_file_id = self.bzr_base_tree.path2id(path)
         old_ie = self.bzr_base_tree.root_inventory.get_entry(old_file_id)
         new_ie = old_ie.copy()
@@ -952,7 +959,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
         return self.id_map.get(new_path)
 
     def _get_bzr_base_file_id(self, parent_id, path):
-        assert isinstance(path, unicode)
+        if not isinstance(path, unicode):
+            raise TypeError(path)
         assert (isinstance(parent_id, str) or
                 (parent_id is None and path == ""))
         basename = urlutils.basename(path)
@@ -960,7 +968,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
             self.bzr_base_tree, parent_id, basename)
 
     def _get_existing_file_id(self, old_parent_id, new_parent_id, path):
-        assert isinstance(path, unicode)
+        if not isinstance(path, text_type):
+            raise TypeError(path)
         assert isinstance(old_parent_id, str) or old_parent_id is None
         assert isinstance(new_parent_id, str) or new_parent_id is None
         ret = self._get_map_id(path)
@@ -975,7 +984,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
             return self._get_new_file_id(path)
 
     def _get_new_file_id(self, new_path):
-        assert isinstance(new_path, unicode)
+        if not isinstance(new_path, text_type):
+            raise TypeError(new_path)
         ret = self._get_map_id(new_path)
         if ret is not None:
             return ret

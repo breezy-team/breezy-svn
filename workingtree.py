@@ -91,6 +91,9 @@ from breezy.revision import (
     CURRENT_REVISION,
     NULL_REVISION,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.trace import (
     mutter,
     note,
@@ -272,7 +275,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def __init__(self, controldir, format, local_path, entry):
         self._reset_data()
-        assert isinstance(local_path, unicode)
+        if not isinstance(local_path, text_type):
+            raise TypeError(local_path)
         self.entry = entry
         self.basedir = local_path
         self._format = format
@@ -382,8 +386,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         ignores.update(svn_config.get_default_ignores())
 
         def dir_add(wc, prefix, patprefix):
-            assert isinstance(prefix, unicode)
-            assert isinstance(patprefix, str)
+            if not isinstance(prefix, text_type):
+                raise TypeError(prefix)
+            if not isinstance(patprefix, bytes):
+                raise TypeError(patprefix)
             ignorestr = wc.prop_get(properties.PROP_IGNORE,
                 self.abspath(prefix).rstrip("/").encode("utf-8"))
             if ignorestr is not None:
@@ -517,13 +523,15 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     @convert_svn_error
     def _get_wc(self, relpath=u"", write_lock=False, depth=0, base=None):
         """Open a working copy handle."""
-        assert isinstance(relpath, unicode)
+        if not isinstance(relpath, text_type):
+            raise TypeError(relpath)
         return Adm(base,
             self.abspath(relpath).rstrip("/").encode("utf-8"),
             write_lock, depth)
 
     def _get_rel_wc(self, relpath, write_lock=False):
-        assert isinstance(relpath, unicode)
+        if not isinstance(relpath, text_type):
+            raise TypeError(relpath)
         dir = os.path.dirname(relpath)
         file = os.path.basename(relpath)
         return (self._get_wc(dir, write_lock), file)
@@ -571,7 +579,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         if after:
             raise NotImplementedError("rename_one after not supported")
         from_wc = None
-        from_id = self.path2id(from_rel)
         self._rename_fileid(from_rel, to_rel)
         (to_wc, to_file) = self._get_rel_wc(to_rel, write_lock=True)
         try:
@@ -596,14 +603,16 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         :param path: Path of the file
         :return: Tuple with file id and revision id.
         """
-        assert type(path) == unicode
+        if not isinstance(path, text_type):
+            raise TypeError(path)
         path = osutils.normpath(path)
         if path == u".":
             path = u""
         return self.lookup_id(path)
 
     def _find_ids(self, relpath, entry):
-        assert type(relpath) == unicode
+        if not isinstance(relpath, text_type):
+            raise TypeError(relpath)
         assert entry.schedule in (SCHEDULE_NORMAL,
                                   SCHEDULE_DELETE,
                                   SCHEDULE_ADD,
@@ -708,7 +717,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def _ie_from_entry(self, relpath, entry, parent_id):
         assert type(parent_id) is str or parent_id is None
-        assert type(relpath) == unicode
+        if not isinstance(relpath, text_type):
+            raise TypeError(relpath)
         (file_id, revid) = self._find_ids(relpath, entry)
         abspath = self.abspath(relpath)
         basename = os.path.basename(relpath)
@@ -770,7 +780,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             for relpath, entry in w:
                 if entry.schedule == SCHEDULE_DELETE:
                     continue
-                assert isinstance(relpath, unicode)
+                if not isinstance(relpath, text_type):
+                    raise TypeError(relpath)
                 if relpath == u"":
                     parent_id = None
                 else:

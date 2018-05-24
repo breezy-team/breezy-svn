@@ -29,6 +29,9 @@ from breezy.config import (
     AuthenticationConfig,
     CredentialStore,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.trace import (
     mutter,
     )
@@ -78,7 +81,7 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
         password = self.get_password(self.scheme, host=self.host,
             path=self.path, user=username,
             realm=realm, prompt=u"%s %s password" % (realm, username))
-        if type(password) == unicode:
+        if isinstance(password, text_type):
             password = password.encode('utf-8')
         return (username.encode("utf-8"), password, False)
 
