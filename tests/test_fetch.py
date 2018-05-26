@@ -272,11 +272,11 @@ class TestFetchWorks(FetchTestCase):
         dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         rf = FetchRevisionFinder(oldrepos, newrepos)
-        rm = oldrepos._revmeta_provider.get_revision("trunk", 3)
+        rm = oldrepos._revmeta_provider.get_revision(u"trunk", 3)
         mapping = oldrepos.get_mapping()
-        self.assertEquals((uuid, "trunk", 3), rm.metarev.get_foreign_revid())
+        self.assertEquals((uuid, u"trunk", 3), rm.metarev.get_foreign_revid())
         self.assertEquals(
-            (mapping.revision_id_foreign_to_bzr((uuid, "branches/trunk", 1)), ),
+            (mapping.revision_id_foreign_to_bzr((uuid, u"branches/trunk", 1)), ),
             rm.get_rhs_parents(mapping, rm.get_lhs_parent_revmeta(mapping)))
         self.assertEquals([], list(rf.find_rhs_parents([(rm, mapping)])))
 
@@ -1970,8 +1970,8 @@ Node-copyfrom-path: x
         self.copy_content(oldrepos, newrepos)
 
         mapping = oldrepos.get_mapping()
-        self.assertTrue(newrepos.has_revision(mapping.revision_id_foreign_to_bzr((oldrepos.uuid, "branches/brancha", 3))))
-        self.assertTrue(newrepos.has_revision(mapping.revision_id_foreign_to_bzr((oldrepos.uuid, "trunk", 1))))
+        self.assertTrue(newrepos.has_revision(mapping.revision_id_foreign_to_bzr((oldrepos.uuid, u"branches/brancha", 3))))
+        self.assertTrue(newrepos.has_revision(mapping.revision_id_foreign_to_bzr((oldrepos.uuid, u"trunk", 1))))
         self.assertFalse(newrepos.has_revision(mapping.revision_id_foreign_to_bzr((oldrepos.uuid, "branches/brancha", 2))))
 
     def test_fetch_svk_merge(self):
@@ -2166,7 +2166,7 @@ Node-copyfrom-path: x
         self.assertChangedPathsEquals({
             'trunk/adir': (u'R', 'trunk/adir', 2, NODE_DIR),
             'trunk/adir/foofile': (u'A', None, -1, NODE_FILE)},
-              oldrepos._revmeta_provider.get_revision("trunk", 3).metarev.paths)
+              oldrepos._revmeta_provider.get_revision(u"trunk", 3).metarev.paths)
         oldrepos.set_layout(TrunkLayout(0))
         dir = ControlDir.create("f")
         newrepos = dir.create_repository()
@@ -2203,7 +2203,7 @@ Node-copyfrom-path: x
         self.assertChangedPathsEquals({
             'trunk/adir': (u'R', 'trunk/adir', 1, NODE_DIR),
             'trunk/adir/foofile': (u'A', None, -1, NODE_FILE)},
-              oldrepos._revmeta_provider.get_revision("trunk", 3).metarev.paths)
+              oldrepos._revmeta_provider.get_revision(u"trunk", 3).metarev.paths)
         oldrepos.set_layout(TrunkLayout(0))
         dir = ControlDir.create("f")
         newrepos = dir.create_repository()

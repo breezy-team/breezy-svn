@@ -386,11 +386,11 @@ class SvnRaTransport(Transport):
             urlutils.join(self.svn_url, path))
 
     def get_paths_connection(self, paths):
-        paths = [p.strip("/") for p in paths]
+        paths = [p.strip(u"/") for p in paths]
         prefix = common_prefix(paths)
         subpaths = [urlutils.determine_relative_path(prefix, p) for p in paths]
         conn, relprefix = self.get_path_connection(prefix)
-        if relprefix == "":
+        if relprefix == u"":
             relsubpaths = subpaths
         else:
             relsubpaths = [urlutils.join(relprefix, p) for p in subpaths]

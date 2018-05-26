@@ -124,26 +124,26 @@ class RevidMapCacheTests(object):
         self.assertRaises(NoSuchRevision, lambda: self.cache.lookup_revid("bla"))
 
     def test_lookup_revid(self):
-        self.cache.insert_revid("bla", "mypath", 42, 42, "brainslug")
+        self.cache.insert_revid("bla", u"mypath", 42, 42, "brainslug")
         self.assertEquals(("mypath", 42, 42, "brainslug"),
                 self.cache.lookup_revid("bla"))
 
     def test_lookup_revid_space(self):
-        self.cache.insert_revid("bla", "my path", 42, 42, "brainslug")
+        self.cache.insert_revid("bla", u"my path", 42, 42, "brainslug")
         self.assertEquals(("my path", 42, 42, "brainslug"),
                 self.cache.lookup_revid("bla"))
 
     def test_lookup_branch(self):
-        self.cache.insert_revid("bla", "mypath", 42, 42, "brainslug")
+        self.cache.insert_revid("bla", u"mypath", 42, 42, "brainslug")
         self.assertEquals("bla",
-                self.cache.lookup_branch_revnum(42, "mypath", "brainslug"))
+                self.cache.lookup_branch_revnum(42, u"mypath", "brainslug"))
 
     def test_lookup_branch_nonexistant(self):
         self.assertIs(None,
-                self.cache.lookup_branch_revnum(42, "mypath", "foo"))
+                self.cache.lookup_branch_revnum(42, u"mypath", "foo"))
 
     def test_lookup_branch_incomplete(self):
-        self.cache.insert_revid("bla", "mypath", 42, 200, "brainslug")
+        self.cache.insert_revid("bla", u"mypath", 42, 200, "brainslug")
         self.assertEquals(None,
                 self.cache.lookup_branch_revnum(42, "mypath", "brainslug"))
 

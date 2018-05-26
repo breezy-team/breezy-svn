@@ -148,8 +148,8 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.close()
 
         b = Branch.open(repos_url + "/trunk")
-        target = b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping())
-        b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
+        target = b.repository.generate_revision_id(1, b"trunk", b.repository.get_mapping())
+        b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, u"trunk", b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR,
                 b.repository.transport.check_path("tags/mytag", 3))
@@ -175,17 +175,17 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.close()
 
         b = Branch.open(repos_url + "/trunk")
-        b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
+        b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, u"trunk", b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR,
                 b.repository.transport.check_path("tags/mytag", 3))
         self.assertEquals(3, b.repository.get_latest_revnum())
 
-        oldtagrevid = b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping())
+        oldtagrevid = b.repository.generate_revision_id(1, u"trunk", b.repository.get_mapping())
         b = Branch.open(repos_url + "/trunk")
         self.assertEquals({u"mytag": oldtagrevid}, b.tags.get_tag_dict())
 
-        newtagrevid = b.repository.generate_revision_id(2, "trunk", b.repository.get_mapping())
+        newtagrevid = b.repository.generate_revision_id(2, u"trunk", b.repository.get_mapping())
         b.tags.set_tag(u"mytag", newtagrevid)
 
         self.assertEquals(subvertpy.NODE_DIR,

@@ -292,7 +292,7 @@ class DiskCachingRevidMap(object):
             if min_revnum == max_revnum:
                 return (self.actual.repos.uuid, branch_path, min_revnum), mapping
             assert min_revnum <= max_revnum
-            assert isinstance(branch_path, str)
+            assert isinstance(branch_path, unicode)
 
         ((uuid, branch_path, revnum), mapping) = self.actual.bisect_fileprop_revid_revnum(revid,
             branch_path, min_revnum, max_revnum)
