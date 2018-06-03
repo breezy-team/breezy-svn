@@ -186,7 +186,7 @@ class SqliteRevisionIdMapCache(RevisionIdMapCache, CacheTable):
     def lookup_revid(self, revid):
         """See RevisionIdMapCache.lookup_revid."""
 
-        assert isinstance(revid, str)
+        assert isinstance(revid, bytes)
         self.mutter("lookup revid %r", revid)
         ret = self.execute(
             "select path, min_revnum, max_revnum, mapping from revmap where revid=? order by abs(min_revnum-max_revnum) asc", (revid,)).fetchone()
@@ -202,7 +202,7 @@ class SqliteRevisionIdMapCache(RevisionIdMapCache, CacheTable):
         """See RevisionIdMapCache.lookup_branch_revnum."""
 
         assert isinstance(revnum, int)
-        assert isinstance(path, str)
+        assert isinstance(path, text_type)
         assert isinstance(mapping, str)
         row = self.execute(
                 "select revid from revmap where max_revnum=? and min_revnum=? and path=? and mapping=?", (revnum, revnum, path, mapping)).fetchone()

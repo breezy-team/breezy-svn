@@ -101,7 +101,7 @@ class TdbRevisionIdMapCache(RevisionIdMapCache, CacheTable):
 
         self.mutter('lookup-branch-revnum %s:%d', path, revnum)
         try:
-            return self.db[b"foreign-revid/%d %s %s" % (revnum, getattr(mapping, "name", mapping), path)]
+            return self.db[b"foreign-revid/%d %s %s" % (revnum, getattr(mapping, "name", mapping), path.encode('utf-8'))]
         except KeyError:
             return None
 
@@ -109,9 +109,10 @@ class TdbRevisionIdMapCache(RevisionIdMapCache, CacheTable):
         """See RevisionIdMapCache.insert_revid."""
 
         mappingname = getattr(mapping, "name", mapping)
-        self.db[b"native-revid/" + revid] = b"%d %d %s %s" % (min_revnum, max_revnum, mappingname, branch.encode('utf-8'))
+        encoded_branch_path = branch.encode('utf-8')
+        self.db[b"native-revid/" + revid] = b"%d %d %s %s" % (min_revnum, max_revnum, mappingname, encoded_branch_path)
         if min_revnum == max_revnum:
-            self.db[b"foreign-revid/%d %s %s" % (min_revnum, mappingname, branch)] = revid
+            self.db[b"foreign-revid/%d %s %s" % (min_revnum, mappingname, encoded_branch_path)] = revid
 
 
 class TdbRevisionInfoCache(RevisionInfoCache, CacheTable):
@@ -123,7 +124,8 @@ class TdbRevisionInfoCache(RevisionInfoCache, CacheTable):
             orig_mapping_name = original_mapping.name
         else:
             orig_mapping_name = ""
-        self.db[b"original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])] = orig_mapping_name
+        encoded_branch_path = foreign_revid[1].encode('utf-8')
+        self.db[b"original-mapping/%d %s" % (foreign_revid[2], encoded_branch_path)] = orig_mapping_name
 
     def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden),
             stored_lhs_parent_revid):
@@ -131,8 +133,9 @@ class TdbRevisionInfoCache(RevisionInfoCache, CacheTable):
 
         if revid is None:
             revid = mapping.revision_id_foreign_to_bzr(foreign_revid)
-        self.db[b"foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])] = revid
-        basekey = b"%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
+        encoded_branch_path = foreign_revid[1].encode('utf-8')
+        self.db[b"foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, encoded_branch_path)] = revid
+        basekey = b"%d %s %s" % (foreign_revid[2], mapping.name, encoded_branch_path)
         assert not hidden or revno is None
         if revno is not None:
             self.db[b"revno/%s" % basekey] = b"%d" % revno
@@ -146,7 +149,7 @@ class TdbRevisionInfoCache(RevisionInfoCache, CacheTable):
 
         self.mutter("get-revision %r,%r", foreign_revid, mapping)
         basekey = b"%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
-        revid = self.db[b"foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1])]
+        revid = self.db[b"foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1].encode('utf-8'))]
         stored_lhs_parent_revid = self.db.get(b"lhs-parent-revid/%s" % basekey)
         try:
             revno = int(self.db[b"revno/%s" % basekey])
@@ -163,7 +166,8 @@ class TdbRevisionInfoCache(RevisionInfoCache, CacheTable):
         """See RevisionInfoCache.get_original_mapping."""
 
         self.mutter("get-original-mapping %r", foreign_revid)
-        ret = self.db[b"original-mapping/%d %s" % (foreign_revid[2], foreign_revid[1])]
+        ret = self.db[b"original-mapping/%d %s" % (
+            foreign_revid[2], foreign_revid[1].encode('utf-8'))]
         if ret == "":
             return None
         return mapping_registry.parse_mapping_name("svn-" + ret)

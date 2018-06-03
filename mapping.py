@@ -918,7 +918,10 @@ class BzrSvnMappingRevProps(object):
         return tuple(svn_revprops.get(SVN_REVPROP_BZR_MERGE, "").splitlines())
 
     def get_branch_root(self, revprops):
-        return revprops.get(SVN_REVPROP_BZR_ROOT)
+        path = revprops.get(SVN_REVPROP_BZR_ROOT)
+        if path is None:
+            return None
+        return path.decode('utf-8')
 
     def get_repository_uuid(self, revprops):
         return revprops.get(SVN_REVPROP_BZR_REPOS_UUID)

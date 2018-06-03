@@ -788,7 +788,7 @@ class PushNewBranchTests(SubversionTestCase):
         self.assertTrue(os.path.exists("bzrco1/bar2.txt"))
         wt1.branch.push(Branch.open(repos_url+"/trunk"))
         r = Repository.open(repos_url)
-        revmeta = r._revmeta_provider.get_revision("trunk", 3)
+        revmeta = r._revmeta_provider.get_revision(u"trunk", 3)
 
         os.mkdir("cpy")
         cpy = ControlDir.create("cpy")
@@ -1058,7 +1058,7 @@ class PushNewBranchTests(SubversionTestCase):
         newbranch = newdir.import_branch(bzrwt.branch)
         self.assertChangedPathsEquals({"trunk": ("R", None, -1, NODE_DIR),
                            "trunk/foo": ("A", "trunk/foo", 1, NODE_FILE)},
-            newbranch.repository._revmeta_provider.get_revision("trunk", 2).metarev.paths)
+            newbranch.repository._revmeta_provider.get_revision(u"trunk", 2).metarev.paths)
         tree1 = newbranch.repository.revision_tree(revid1)
         tree2 = newbranch.repository.revision_tree(revid2)
         self.assertEquals(tree2.path2id(""), new_ie.file_id)
@@ -1412,7 +1412,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
 
         paths = self.client_log(self.svn_repo_url, 2, 0)[2][0]
         self.assertEquals(paths,
-            {'/trunk': ('R', None, -1), '/trunk/a': ('A', None, -1)})
+            {u'/trunk': ('R', None, -1), u'/trunk/a': ('A', None, -1)})
 
     def test_push_first_revision_append_revisions_only(self):
         ce = self.get_commit_editor(self.svn_repo_url, "msg")
@@ -1420,7 +1420,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         ce.close()
 
         paths = self.client_log(self.svn_repo_url, 1, 0)[1][0]
-        self.assertEquals(paths, {'/trunk': ('A', None, -1)})
+        self.assertEquals(paths, {u'/trunk': ('A', None, -1)})
 
         config = self.interrepo._get_branch_config("trunk")
         rev1 = self.from_repo.get_revision(self.revid1)

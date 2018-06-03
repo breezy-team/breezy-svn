@@ -1471,10 +1471,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         def update_entry(cq, path, root_adm, md5sum=None):
             mutter('updating entry for %s', path)
             adm = root_adm.probe_try(
-                self.abspath(path).encode("utf-8"), True, 1)
-            cq.queue(self.abspath(path).rstrip("/").encode("utf-8"), adm,
-                True, None, False, False, md5sum)
+                self.abspath(path), True, 1)
             adms_to_close.add(adm)
+            cq.queue(self.abspath(path).rstrip("/"), adm,
+                True, None, False, False, md5sum)
 
         cq = CommittedQueue()
         root_adm = self._get_wc(self.abspath("."), write_lock=True, depth=-1)
@@ -1485,7 +1485,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     continue
                 assert changes[0] in ('A', 'M', 'R')
                 path = repos_path[len(revmeta.metarev.branch_path):].strip("/")
-                path = path.decode("utf-8")
                 try:
                     kind = self.kind(path)
                 except NoSuchFile:

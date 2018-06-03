@@ -170,19 +170,19 @@ class RevInfoCacheTests(object):
 
     def test_get_unknown_revision(self):
         self.assertRaises(KeyError,
-            self.cache.get_revision, ("bfdshfksdjh", "mypath", 1),
+            self.cache.get_revision, ("bfdshfksdjh", u"mypath", 1),
             BzrSvnMappingv4())
 
     def test_get_revision(self):
-        self.cache.insert_revision(("fsdkjhfsdkjhfsd", "mypath", 1),
+        self.cache.insert_revision(("fsdkjhfsdkjhfsd", u"mypath", 1),
             BzrSvnMappingv4(), (42, "somerevid", False), "oldlhs")
         self.assertEquals(((42, "somerevid", False), "oldlhs"),
-            self.cache.get_revision(("bfdshfksdjh", "mypath", 1),
+            self.cache.get_revision(("bfdshfksdjh", u"mypath", 1),
             BzrSvnMappingv4()))
 
     def test_get_revision_null_revid(self):
         mapping = BzrSvnMappingv4()
-        foreign_revid = ("fsdkjhfsdkjhfsd", "mypath", 1)
+        foreign_revid = ("fsdkjhfsdkjhfsd", u"mypath", 1)
         self.cache.insert_revision(foreign_revid,
             mapping, (None, None, False), "oldlhs")
         self.assertEquals(
@@ -190,21 +190,21 @@ class RevInfoCacheTests(object):
             self.cache.get_revision(foreign_revid, mapping))
 
     def test_get_original_mapping_none(self):
-        self.cache.set_original_mapping(("fsdkjhfsdkjhfsd", "mypath", 1),
+        self.cache.set_original_mapping(("fsdkjhfsdkjhfsd", u"mypath", 1),
             None)
-        self.assertEquals(None, self.cache.get_original_mapping(("fkjhfsdkjh", "mypath", 1)))
+        self.assertEquals(None, self.cache.get_original_mapping(("fkjhfsdkjh", u"mypath", 1)))
 
     def test_get_original_mapping_unicode(self):
-        self.cache.set_original_mapping(("fsdkjhfsdkjhfsd", 'path\xc3\xad', 1), None)
-        self.assertEquals(None, self.cache.get_original_mapping(("fkjhfsdkjh", 'path\xc3\xad', 1)))
+        self.cache.set_original_mapping(("fsdkjhfsdkjhfsd", u'path\xed', 1), None)
+        self.assertEquals(None, self.cache.get_original_mapping(("fkjhfsdkjh", u'path\xed', 1)))
 
     def test_get_original_mapping_unknown(self):
-        self.assertRaises(KeyError, self.cache.get_original_mapping, ("fkjhfsdkjh", "mypath", 1))
+        self.assertRaises(KeyError, self.cache.get_original_mapping, ("fkjhfsdkjh", u"mypath", 1))
 
     def test_get_original_mapping_v4(self):
-        self.cache.set_original_mapping(("fsdkjhfsdkjhfsd", "mypath", 1),
+        self.cache.set_original_mapping(("fsdkjhfsdkjhfsd", u"mypath", 1),
             BzrSvnMappingv4())
-        self.assertEquals(BzrSvnMappingv4(), self.cache.get_original_mapping(("fkjhfsdkjh", "mypath", 1)))
+        self.assertEquals(BzrSvnMappingv4(), self.cache.get_original_mapping(("fkjhfsdkjh", u"mypath", 1)))
 
 
 class SqliteRevInfoCacheTests(TestCase,RevInfoCacheTests):

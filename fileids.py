@@ -73,9 +73,9 @@ def idmap_lookup(get, mapping, path):
         return get(path)
     except KeyError:
         base = path
-        while base != "":
+        while base != u"":
             if u"/" in base:
-                base = base.rsplit("/", 1)[0]
+                base = base.rsplit(u"/", 1)[0]
             else:
                 base = u""
             try:
@@ -156,16 +156,16 @@ def get_local_changes(paths, branch):
         if not changes.path_is_child(branch, p):
             continue
         data = paths[p]
-        new_p = p[len(branch):].strip("/")
+        new_p = p[len(branch):].strip(u"/")
         if data[1] is not None:
             # Branch copy
-            if new_p == "":
+            if new_p == u"":
                 data = ('M', None)
             else:
                 data = (data[0], (data[1], data[2]))
         else:
             data = (data[0], None)
-        new_paths[new_p.decode("utf-8")] = data
+        new_paths[new_p] = data
     return new_paths
 
 
@@ -371,11 +371,11 @@ class FileIdMapCache(object):
                 raise TypeError(changed_revid)
             assert created_revid is None or isinstance(created_revid, tuple)
             if created_revid is None:
-                optional_child_create_revid = ""
+                optional_child_create_revid = b""
             else:
-                optional_child_create_revid = "\t%s:%d:%s" % (
-                    created_revid[0], created_revid[2], created_revid[1])
-            lines.append("%s\t%s\t%s%s\n" % (
+                optional_child_create_revid = b"\t%s:%d:%s" % (
+                    created_revid[0], created_revid[2], created_revid[1].encode('utf-8'))
+            lines.append(b"%s\t%s\t%s%s\n" % (
                 urllib.quote(path.encode("utf-8")),
                 urllib.quote(id),
                 urllib.quote(changed_revid),

@@ -409,7 +409,8 @@ class SvnRemoteAccess(ControlDir):
         """See ControlDir.needs_format_conversion()."""
         return not isinstance(self._format, format.__class__)
 
-    def import_branch(self, source, stop_revision=None, overwrite=False, name=None):
+    def import_branch(self, source, stop_revision=None, overwrite=False,
+            name=None, lossy=False):
         """Create a new branch in this repository, possibly
         with the specified history, optionally importing revisions.
 
@@ -419,8 +420,7 @@ class SvnRemoteAccess(ControlDir):
         """
         from .errors import NotSvnBranchPath
         from .push import InterToSvnRepository
-        source.lock_read()
-        try:
+        with source.lock_read():
             if stop_revision is None:
                 stop_revision = source.last_revision()
             if stop_revision == NULL_REVISION:
@@ -428,8 +428,7 @@ class SvnRemoteAccess(ControlDir):
             relpath = self._determine_relpath(name)
             target_branch_path = relpath.lstrip("/")
             repos = self.find_repository()
-            repos.lock_write()
-            try:
+            with repos.lock_write():
                 inter = InterToSvnRepository(source.repository, repos)
                 layout = repos.get_layout()
                 try:
@@ -437,12 +436,8 @@ class SvnRemoteAccess(ControlDir):
                 except NotSvnBranchPath:
                     raise errors.NotBranchError(target_branch_path)
                 inter.push_new_branch(layout, project, target_branch_path,
-                        stop_revision, push_metadata=True, overwrite=overwrite)
+                        stop_revision, push_metadata=(not lossy), overwrite=overwrite)
                 return self.open_branch(name)
-            finally:
-                repos.unlock()
-        finally:
-            source.unlock()
 
     def _determine_relpath(self, branch_name):
         from .errors import NoCustomBranchPaths
@@ -538,7 +533,7 @@ class SvnRemoteAccess(ControlDir):
         return self.open_repository()
 
     def push_branch(self, source, revision_id=None, overwrite=False,
-        remember=False, create_prefix=False, name=None):
+        remember=False, create_prefix=False, name=None, lossy=False):
         ret = SubversionPushResult()
         ret.source_branch = source
         ret.workingtree_updated = None
@@ -549,18 +544,15 @@ class SvnRemoteAccess(ControlDir):
             if source.get_push_location() is None or remember:
                 source.set_push_location(target_branch.base)
             ret.target_branch = target_branch
-            target_branch.lock_write()
-            try:
+            with target_branch.lock_write():
                 ret.branch_push_result = source.push(
                     target_branch, stop_revision=revision_id,
-                    overwrite=overwrite)
-            finally:
-                target_branch.unlock()
+                    overwrite=overwrite, lossy=lossy)
         except errors.NotBranchError:
             if create_prefix:
                 self.root_transport.create_prefix()
             ret.target_branch = self.import_branch(source, revision_id,
-                overwrite=overwrite)
+                overwrite=overwrite, lossy=lossy)
             ret.target_branch_path = "/" + ret.target_branch.get_branch_path()
             tag_ret = source.tags.merge_to(ret.target_branch.tags,
                 overwrite)

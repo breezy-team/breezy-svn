@@ -131,6 +131,8 @@ def push_revision_tree(graph, target_repo, branch_path, config_stack, source_rep
     :param root_action: Action to take on the tree root
     :return: Revision id of newly created revision.
     """
+    if not isinstance(branch_path, text_type):
+        raise TypeError(branch_path)
     if target_repo._lock_mode != 'w':
         raise NotWriteLocked(target_repo)
     assert rev.revision_id in (None, revision_id)

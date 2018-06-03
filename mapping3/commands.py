@@ -36,7 +36,7 @@ class cmd_svn_branching_scheme(Command):
 
     def run(self, location=".", set=False, repository_wide=False):
         from breezy import errors as bzr_errors
-        from breezy.controldir import controldir
+        from breezy.controldir import ControlDir
         from breezy.msgeditor import edit_commit_message
         from breezy.trace import note
 
@@ -54,7 +54,7 @@ class cmd_svn_branching_scheme(Command):
             if scheme is None:
                 return ""
             return "".join(map(lambda x: x+"\n", scheme.to_lines()))
-        dir = BzrDir.open_containing(location)[0]
+        dir = ControlDir.open_containing(location)[0]
         repos = dir.find_repository()
         if not isinstance(repos, SvnRepository):
             raise bzr_errors.BzrCommandError("Not a Subversion repository: %s" % location)

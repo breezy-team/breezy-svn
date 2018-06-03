@@ -123,7 +123,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         output, err = self.run_bzr("push -d dc %s/trunk" % repos_url, retcode=3)
         self.assertTrue(('ERROR: These branches have diverged.  See "bzr help diverged-branches" for more information.\n' in err) or ('ERROR: These branches have diverged.  Try using "merge" and then "push".\n' in err))
 
-    def test_dpush_empty_existing(self):
+    def test_push_lossy_empty_existing(self):
         repos_url = self.make_repository('d')
 
         dc = self.get_commit_editor(repos_url)
@@ -136,7 +136,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("commit -m msg dc")
         self.run_bzr_error(
             ['ERROR: Empty branch already exists at /trunk. Specify --overwrite or remove it before pushing.\n'],
-            ["dpush", "-d", "dc", "%s/trunk" % repos_url])
+            ["push", "--lossy", "-d", "dc", "%s/trunk" % repos_url])
 
     def test_push_verbose(self):
         repos_url = self.make_repository('d')
@@ -186,14 +186,14 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("push --overwrite -d dc %s/trunk" % repos_url)
         self.assertEquals("", self.run_bzr("status dc")[0])
 
-    def test_dpush_empty(self):
+    def test_push_lossy_empty(self):
         repos_url = self.make_repository('dp')
         Repository.open(repos_url).store_layout(RootLayout())
         self.run_bzr("init dc")
         os.chdir("dc")
-        self.run_bzr("dpush %s" % repos_url)
+        self.run_bzr("push --lossy %s" % repos_url)
 
-    def test_dpush(self):
+    def test_push_lossy(self):
         repos_url = self.make_repository('d')
         Repository.open(repos_url).store_layout(RootLayout())
 
@@ -204,10 +204,10 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("branch %s dc" % repos_url)
         self.build_tree({"dc/foo": "blaaaa"})
         self.run_bzr("commit -m msg dc")
-        self.run_bzr("dpush -d dc %s" % repos_url)
+        self.run_bzr("push --lossy -d dc %s" % repos_url)
         self.assertEquals("", self.run_bzr("status dc")[0])
 
-    def test_dpush_new(self):
+    def test_push_lossy_new(self):
         repos_url = self.make_repository('d')
         Repository.open(repos_url).store_layout(RootLayout())
 
@@ -219,26 +219,9 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.build_tree({"dc/foofile": "blaaaa"})
         self.run_bzr("add dc/foofile")
         self.run_bzr("commit -m msg dc")
-        self.run_bzr("dpush -d dc %s" % repos_url)
+        self.run_bzr("push --lossy -d dc %s" % repos_url)
         self.assertEquals("3\n", self.run_bzr("revno dc")[0])
         self.assertEquals("", self.run_bzr("status dc")[0])
-
-    def test_dpush_wt_diff(self):
-        repos_url = self.make_repository('d')
-        Repository.open(repos_url).store_layout(RootLayout())
-
-        dc = self.get_commit_editor(repos_url)
-        dc.add_file("foo").modify()
-        dc.close()
-
-        self.run_bzr("branch %s dc" % repos_url)
-        self.build_tree({"dc/foofile": "blaaaa"})
-        self.run_bzr("add dc/foofile")
-        self.run_bzr("commit -m msg dc")
-        self.build_tree({"dc/foofile": "blaaaal"})
-        self.run_bzr("dpush -d dc %s" % repos_url)
-        self.assertEquals('modified:\n  foofile\n',
-                self.run_bzr("status dc")[0])
 
     def test_info_workingtree(self):
         self.make_svn_branch_and_tree('d', 'dc')

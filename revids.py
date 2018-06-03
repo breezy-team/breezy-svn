@@ -238,7 +238,7 @@ class DiskCachingRevidMap(object):
         try:
             (branch_path, min_revnum, max_revnum, \
                     mapping) = self.cache.lookup_revid(revid)
-            assert type(branch_path) is str
+            assert isinstance(branch_path, text_type)
             assert type(mapping) is str
             # Entry already complete?
             assert min_revnum <= max_revnum
