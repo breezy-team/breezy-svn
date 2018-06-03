@@ -316,12 +316,12 @@ class RevisionMetadataBrowser(object):
         :param project: Project name
         :param pb: Optional progress bar
         """
-        if prefixes in ([""], None):
+        if prefixes in ([u""], None):
             self.from_prefixes = None
             self._pending_prefixes = None
             self._prefixes = None
         else:
-            self.from_prefixes = [prefix.strip("/") for prefix in prefixes]
+            self.from_prefixes = [prefix.strip(u"/") for prefix in prefixes]
             self._pending_prefixes = defaultdict(set)
             self._prefixes = set(self.from_prefixes)
         self.from_revnum = from_revnum

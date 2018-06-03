@@ -471,11 +471,11 @@ if len(sys.argv) == 2:
 "%s" fed.py %%1
 """ % sys.executable)
             f.close()
-            self.overideEnv('BZR_EDITOR', 'fed.bat')
+            self.overideEnv('BRZ_EDITOR', 'fed.bat')
         else:
             # [non-win32] make python script executable and set BZR_EDITOR
             os.chmod(path, 0755)
-            self.overrideEnv('BZR_EDITOR', path)
+            self.overrideEnv('BRZ_EDITOR', path)
 
     def test_set_branching_scheme_local(self):
         self.make_fake_editor()

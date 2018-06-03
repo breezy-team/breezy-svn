@@ -88,7 +88,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.close()
 
         b = Branch.open(repos_url + "/trunk")
-        revid = b.repository.generate_revision_id(1, "trunk",
+        revid = b.repository.generate_revision_id(1, u"trunk",
             b.repository.get_mapping())
 
         revtagdict = b.tags.get_reverse_tag_dict()
@@ -129,7 +129,7 @@ class WorkingSubversionBranch(SubversionTestCase):
 
         b = Branch.open(repos_url + "/trunk")
         b.tags.set_tag(u"mytag",
-            b.repository.generate_revision_id(1, "trunk", b.repository.get_mapping()))
+            b.repository.generate_revision_id(1, u"trunk", b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR,
                 b.repository.transport.check_path("tags/mytag", 3))
@@ -148,7 +148,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.close()
 
         b = Branch.open(repos_url + "/trunk")
-        target = b.repository.generate_revision_id(1, b"trunk", b.repository.get_mapping())
+        target = b.repository.generate_revision_id(1, u"trunk", b.repository.get_mapping())
         b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, u"trunk", b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR,

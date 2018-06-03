@@ -1082,11 +1082,11 @@ class PushNewBranchTests(SubversionTestCase):
         oldrepos.copy_content_into(newrepos)
 
         log = self.client_log(repos_url, 2, 0)
-        self.assertEquals({'/trunk': ('A', None, -1),
-                           '/trunk/foo': ('A', None, -1)},
+        self.assertEquals({u'/trunk': ('A', None, -1),
+                           u'/trunk/foo': ('A', None, -1)},
                            log[1][0])
-        self.assertEquals({'/trunk': ('R', None, -1),
-                           '/trunk/foo': ('A', '/trunk/foo', 1)}, log[2][0])
+        self.assertEquals({u'/trunk': ('R', None, -1),
+                           u'/trunk/foo': ('A', u'/trunk/foo', 1)}, log[2][0])
 
         tree1 = newrepos.revision_tree(revid1)
         tree2 = newrepos.revision_tree(revid2)
@@ -1352,8 +1352,8 @@ class ForeignRevisionInfoTests(InterToSvnRepositoryTestCase):
             revids_check.append(revid)
             return ("someuuid", "somebranch", 42)
         self.to_repo.lookup_bzr_revision_id = lookup
-        self.assertEquals(("someuuid", "somebranch", 42),
-            self.interrepo._get_foreign_revision_info("auuid", "trunk"))
+        self.assertEquals(("someuuid", u"somebranch", 42),
+            self.interrepo._get_foreign_revision_info("auuid", u"trunk"))
         self.assertEquals(["auuid"], revids_check)
 
 
@@ -1370,7 +1370,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
     def test_push_first_revision_with_metadata(self):
         self.to_repo.lock_write()
         self.addCleanup(self.to_repo.unlock)
-        self.interrepo.push_single_revision("trunk",
+        self.interrepo.push_single_revision(u"trunk",
             self.interrepo._get_branch_config("trunk"),
             self.from_repo.get_revision(self.revid1),
             push_metadata=True, base_foreign_info=(None, None), root_action=("create",))
@@ -1382,7 +1382,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
     def test_push_first_revision_without_metadata(self):
         self.to_repo.lock_write()
         self.addCleanup(self.to_repo.unlock)
-        self.interrepo.push_single_revision("trunk",
+        self.interrepo.push_single_revision(u"trunk",
             self.interrepo._get_branch_config("trunk"),
             self.from_repo.get_revision(self.revid1),
             push_metadata=False, base_foreign_info=(None, None), root_action=("create",))
@@ -1406,7 +1406,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         self.addCleanup(self.to_repo.unlock)
 
         # With append revisions only disabled but overwrite it should work
-        self.interrepo.push_single_revision("trunk", config, rev1,
+        self.interrepo.push_single_revision(u"trunk", config, rev1,
             push_metadata=False, base_foreign_info=(None, None),
             root_action=("replace", 2))
 
@@ -1428,7 +1428,7 @@ class PushRevisionTests(InterToSvnRepositoryTestCase):
         self.to_repo.lock_write()
         self.addCleanup(self.to_repo.unlock)
 
-        self.interrepo.push_single_revision("trunk", config, rev1,
+        self.interrepo.push_single_revision(u"trunk", config, rev1,
             push_metadata=False, base_foreign_info=(None, None), root_action=("replace", 1))
 
         paths = self.client_log(self.svn_repo_url, 2, 0)[2][0]
@@ -1467,7 +1467,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.to_repo.lock_write()
         self.addCleanup(self.to_repo.unlock)
         rev1 = self.from_repo.get_revision(self.revid1)
-        self.interrepo.push_single_revision("trunk",
+        self.interrepo.push_single_revision(u"trunk",
             config, rev1, push_metadata=True, root_action=("create", ),
             base_foreign_info=(None, None))
         rev_merged = self.from_repo.get_revision(self.revid_merge)
@@ -1480,9 +1480,9 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
             base_foreign_info=foreign_rev_info)
         log = self.client_log(self.svn_repo_url, 2, 0)
         self.assertEquals(log[1][0],
-            {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
+            {u'/trunk': ('A', None, -1), u'/trunk/a': ('A', None, -1)})
         self.assertEquals(log[2][0],
-            {'/trunk': ('M', None, -1), '/trunk/b': ('A', None, -1)})
+            {u'/trunk': ('M', None, -1), u'/trunk/b': ('A', None, -1)})
 
     def test_push_merged(self):
         config = self.interrepo._get_branch_config("trunk")
@@ -1491,7 +1491,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.to_repo.lock_write()
         self.addCleanup(self.to_repo.unlock)
         rev1 = self.from_repo.get_revision(self.revid1)
-        self.interrepo.push_single_revision("trunk",
+        self.interrepo.push_single_revision(u"trunk",
             config, rev1, push_metadata=True, root_action=("create", ),
             base_foreign_info=(None, None))
         rev_merged = self.from_repo.get_revision(self.revid_merge)
@@ -1503,15 +1503,15 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
                 rev_merged.parent_ids[0]))
         log = self.client_log(self.svn_repo_url, 4, 0)
         self.assertEquals(log[1][0],
-            {'/trunk': ('A', None, -1), '/trunk/a': ('A', None, -1)})
-        self.assertEquals(log[2][0], {'/branches': ('A', None, -1)})
+            {u'/trunk': ('A', None, -1), u'/trunk/a': ('A', None, -1)})
+        self.assertEquals(log[2][0], {u'/branches': ('A', None, -1)})
         self.assertEquals(log[2][3], "Add branches directory.")
         self.assertEquals(log[3][3], 'msg2')
         self.assertEquals(log[3][0],
-            {'/branches/tree2': ('A', None, -1), '/branches/tree2/b': ('A', None, -1)})
+            {u'/branches/tree2': ('A', None, -1), u'/branches/tree2/b': ('A', None, -1)})
         self.assertEquals(log[4][0],
-            {'/trunk': ('M', None, -1),
-             '/trunk/b': ('A', '/branches/tree2/b', 3)})
+            {u'/trunk': ('M', None, -1),
+             u'/trunk/b': ('A', u'/branches/tree2/b', 3)})
         self.assertEquals(log[4][3], 'merge')
 
     def test_push_merged_again(self):
@@ -1523,11 +1523,11 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.to_repo.lock_write()
         self.addCleanup(self.to_repo.unlock)
         rev1 = self.from_repo.get_revision(self.revid1)
-        self.interrepo.push_single_revision("trunk",
+        self.interrepo.push_single_revision(u"trunk",
             config, rev1, push_metadata=True, root_action=("create", ),
             base_foreign_info=(None, None))
         rev_merged = self.from_repo.get_revision(self.revid_merge)
-        self.interrepo.push_revision_inclusive("trunk", config,
+        self.interrepo.push_revision_inclusive(u"trunk", config,
             rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
             push_metadata=True, root_action=("open",  self.to_repo.get_latest_revnum()),
@@ -1547,8 +1547,8 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
 
         log = self.client_log(self.svn_repo_url, 6, 4)
         self.assertEquals(log[5][3], 'msg2 again')
-        self.assertEquals(log[5][0], {'/branches/tree2': ('M', None, -1)})
-        self.assertEquals(log[6][0], {'/trunk': ('M', None, -1)})
+        self.assertEquals(log[5][0], {u'/branches/tree2': ('M', None, -1)})
+        self.assertEquals(log[6][0], {u'/trunk': ('M', None, -1)})
         self.assertEquals(log[6][3], 'merge again')
 
 
@@ -1562,19 +1562,19 @@ class CreateBranchContainerTests(SubversionTestCase):
     def test_create_single(self):
         create_branch_container(self.repo.transport, "branches/abranch", "")
         log = self.client_log(self.repos_url, 1, 0)
-        self.assertEquals(log[1][0], {'/branches': ('A', None, -1)})
+        self.assertEquals(log[1][0], {u'/branches': ('A', None, -1)})
         self.assertEquals(log[1][3], "Add branches directory.")
 
     def test_create_double(self):
-        create_branch_container(self.repo.transport, "project/branches/abranch", "")
+        create_branch_container(self.repo.transport, u"project/branches/abranch", "")
         paths = self.client_log(self.repos_url, 1, 0)[1][0]
         self.assertEquals(paths,
-            {'/project': ('A', None, -1), '/project/branches': ('A', None, -1)})
+            {u'/project': ('A', None, -1), u'/project/branches': ('A', None, -1)})
 
     def test_part_exists(self):
         dc = self.get_commit_editor(self.repos_url)
         dc.add_dir("project")
         dc.close()
-        create_branch_container(self.repo.transport, "project/branches/abranch", "project")
+        create_branch_container(self.repo.transport, u"project/branches/abranch", u"project")
         paths = self.client_log(self.repos_url, 2, 0)[2][0]
-        self.assertEquals(paths, {'/project/branches': ('A', None, -1)})
+        self.assertEquals(paths, {u'/project/branches': ('A', None, -1)})

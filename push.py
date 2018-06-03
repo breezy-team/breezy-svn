@@ -45,6 +45,9 @@ from breezy.repository import (
 from breezy.revision import (
     NULL_REVISION,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.testament import (
     StrictTestament,
     )

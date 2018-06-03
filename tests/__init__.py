@@ -23,6 +23,7 @@ from subvertpy import (
 import subvertpy.tests
 
 from breezy import osutils
+from breezy.config import GlobalStack
 from breezy.controldir import (
     ControlDir,
     )
@@ -174,8 +175,6 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
     def setUp(self):
         self._init_client()
         TestCaseInTempDir.setUp(self)
-        if isinstance(self.test_dir, text_type):
-            self.test_dir = self.test_dir.encode(osutils._fs_enc)
 
     def tearDown(self):
         del self.client_ctx

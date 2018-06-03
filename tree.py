@@ -370,7 +370,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         stream = BytesIO()
         (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
                 stream, self._revmeta.metarev.revnum)
-        if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == "link ":
+        if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == b"link ":
             return BytesIO()
         stream.seek(0)
         return stream

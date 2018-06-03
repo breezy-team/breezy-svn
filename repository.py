@@ -41,6 +41,7 @@ from breezy.bzr.inventory import (
 from breezy.repository import (
     Repository,
     RepositoryFormat,
+    RepositoryWriteLockResult,
     )
 from breezy.sixish import (
     text_type,
@@ -491,7 +492,10 @@ class SvnRepository(ForeignRepository):
             repo = repos.Repository(local_path)
             pack_fs = getattr(repo, "pack_fs", None)
             if pack_fs is not None:
-                pack_fs()
+                try:
+                    pack_fs()
+                except NotImplementedError:
+                    pass
 
     def get_transaction(self):
         """See Repository.get_transaction()."""
@@ -564,7 +568,7 @@ class SvnRepository(ForeignRepository):
             self._lock_mode = 'w'
             self._lock_count = 1
             self._parents_provider.enable_cache()
-        return LogicalLockResult(self.unlock)
+        return RepositoryWriteLockResult(self.unlock, None)
 
     def is_write_locked(self):
         return (self._lock_mode == 'w')

@@ -52,17 +52,17 @@ class TestMetaRevisionGraph(SubversionTestCase):
         repos_url = self.make_svn_repository("a")
 
         dc = self.get_commit_editor(repos_url)
-        foo = dc.add_dir("foo")
-        foo.add_dir("foo/bar")
+        foo = dc.add_dir(u"foo")
+        foo.add_dir(u"foo/bar")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_dir("bla", "foo", 1)
+        dc.add_dir(u"bla", "foo", 1)
         dc.close()
 
         repos = Repository.open(repos_url)
-        repos.set_layout(CustomLayout(["bla/bar"]))
-        ret = list(repos._revmeta_provider._graph.iter_changes('bla/bar', 2, 0))
+        repos.set_layout(CustomLayout([u"bla/bar"]))
+        ret = list(repos._revmeta_provider._graph.iter_changes(u'bla/bar', 2, 0))
         self.assertEquals(1, len(ret))
         self.assertEquals("foo/bar", ret[0][0])
 
@@ -121,155 +121,155 @@ class MetadataBrowserTests(TestCase):
 
     def test_trunk_layout_simple(self):
         browser = self.get_browser(None, 2, 0, TrunkLayout(),
-                { 1: { "trunk": ('A', None, -1, NODE_DIR)},
-                  2: { "trunk": ('M', None, -1, NODE_DIR)}})
+                { 1: { u"trunk": ('A', None, -1, NODE_DIR)},
+                  2: { u"trunk": ('M', None, -1, NODE_DIR)}})
         rev1 = browser.next()
-        self.assertEquals(('revision', FakeRevision('trunk',2)), rev1)
+        self.assertEquals(('revision', FakeRevision(u'trunk',2)), rev1)
         rev2 = browser.next()
-        self.assertEquals(('revision', FakeRevision('trunk',1)), rev2)
+        self.assertEquals(('revision', FakeRevision(u'trunk',1)), rev2)
         self.assertTrue(rev1[1]._lhs_parent_known)
         self.assertTrue(rev2[1]._lhs_parent_known)
         self.assertRaises(StopIteration, browser.next)
 
     def test_trunk_layout_movefrom_non_branch(self):
         browser = self.get_browser(None, 2, 0, TrunkLayout(),
-                { 1: { "old-trunk": ('A', None, -1, NODE_DIR)},
-                  2: { "trunk": ('A', "old-trunk", 1, NODE_DIR)}})
+                { 1: { u"old-trunk": ('A', None, -1, NODE_DIR)},
+                  2: { u"trunk": ('A', u"old-trunk", 1, NODE_DIR)}})
         rev1 = browser.next()
-        self.assertEquals(('revision', FakeRevision('trunk',2)), rev1)
+        self.assertEquals(('revision', FakeRevision(u'trunk',2)), rev1)
         rev2 = browser.next()
-        self.assertEquals(('revision', FakeRevision('old-trunk',1)), rev2)
+        self.assertEquals(('revision', FakeRevision(u'old-trunk',1)), rev2)
         self.assertTrue(rev1[1]._lhs_parent_known)
         self.assertTrue(rev2[1]._lhs_parent_known)
         self.assertRaises(StopIteration, browser.next)
 
     def test_trunk_layout_movefrom_oldbranch(self):
         browser = self.get_browser(None, 3, 0, TrunkLayout(),
-                { 1: { "old-trunk": ('A', None, -1, NODE_DIR)},
-                  2: { "old-trunk": ('D', None, -1, NODE_DIR)},
-                  3: { "trunk": ('A', "old-trunk", 1, NODE_DIR)}})
+                { 1: { u"old-trunk": ('A', None, -1, NODE_DIR)},
+                  2: { u"old-trunk": ('D', None, -1, NODE_DIR)},
+                  3: { u"trunk": ('A', u"old-trunk", 1, NODE_DIR)}})
         rev1 = browser.next()
-        self.assertEquals(('revision', FakeRevision('trunk',3)), rev1)
-        self.assertEquals(('delete', ("old-trunk", 2)), browser.next())
+        self.assertEquals(('revision', FakeRevision(u'trunk',3)), rev1)
+        self.assertEquals(('delete', (u"old-trunk", 2)), browser.next())
         rev2 = browser.next()
-        self.assertEquals(('revision', FakeRevision('old-trunk',1)), rev2)
+        self.assertEquals(('revision', FakeRevision(u'old-trunk',1)), rev2)
         self.assertTrue(rev1[1]._lhs_parent_known)
         self.assertTrue(rev2[1]._lhs_parent_known)
         self.assertRaises(StopIteration, browser.next)
 
     def test_trunk_layout_copiedbranch(self):
         browser = self.get_browser(None, 2, 0, TrunkLayout(),
-                { 1: { "trunk": ('A', None, -1, NODE_DIR)},
-                  2: { "branches": ('A', None, -1, NODE_DIR),
-                       "branches/foo": ('A', "trunk", 1, NODE_DIR)}})
+                { 1: { u"trunk": ('A', None, -1, NODE_DIR)},
+                  2: { u"branches": ('A', None, -1, NODE_DIR),
+                       u"branches/foo": ('A', u"trunk", 1, NODE_DIR)}})
         rev1 = browser.next()
-        self.assertEquals(('revision', FakeRevision('branches/foo',2)), rev1)
+        self.assertEquals(('revision', FakeRevision(u'branches/foo',2)), rev1)
         rev2 = browser.next()
-        self.assertEquals(('revision', FakeRevision('trunk',1)), rev2)
+        self.assertEquals(('revision', FakeRevision(u'trunk',1)), rev2)
         self.assertTrue(rev1[1]._lhs_parent_known)
         self.assertTrue(rev2[1]._lhs_parent_known)
         self.assertRaises(StopIteration, browser.next)
 
     def test_subdir_becomes_branch_root(self):
         browser = self.get_browser(None, 2, 0, TrunkLayout(),
-                { 1: { "trunk": ('A', None, -1, NODE_DIR),
-                       "trunk/mysubdir": ('A', None, -1, NODE_DIR),
-                       "trunk/mysubdir/myfile": ('A', None, -1, NODE_FILE)},
-                  2: { "trunk": ('R', "trunk/mysubdir", 1, NODE_DIR) }})
-        self.assertEquals(('delete', ('trunk', 2)), browser.next())
+                { 1: { u"trunk": ('A', None, -1, NODE_DIR),
+                       u"trunk/mysubdir": ('A', None, -1, NODE_DIR),
+                       u"trunk/mysubdir/myfile": ('A', None, -1, NODE_FILE)},
+                  2: { u"trunk": ('R', u"trunk/mysubdir", 1, NODE_DIR) }})
+        self.assertEquals(('delete', (u'trunk', 2)), browser.next())
         rev1 = browser.next()
-        self.assertEquals(('revision', FakeRevision('trunk',2)), rev1)
+        self.assertEquals(('revision', FakeRevision(u'trunk',2)), rev1)
         rev2 = browser.next()
-        self.assertEquals(('revision', FakeRevision('trunk/mysubdir',1)), rev2)
+        self.assertEquals(('revision', FakeRevision(u'trunk/mysubdir',1)), rev2)
         rev3 = browser.next()
-        self.assertEquals(('revision', FakeRevision('trunk',1)), rev3)
+        self.assertEquals(('revision', FakeRevision(u'trunk',1)), rev3)
         self.assertTrue(rev1[1]._lhs_parent_known)
         self.assertTrue(rev2[1]._lhs_parent_known)
         self.assertTrue(rev3[1]._lhs_parent_known)
         self.assertRaises(StopIteration, browser.next)
 
     def test_copyfrom_revnum_skipped(self):
-        browser = self.get_browser(["python"], 4, 0, TrunkLayout(1),
-                { 1: { "python": ('A', None, -1, NODE_DIR),
-                       "python/tags": ('A', None, -1, NODE_DIR),
-                       "python/trunk": ('A', None, -1, NODE_DIR)},
-                  2: { "foo": ('A', None, -1, NODE_DIR) },
-                  3: { "bar": ('A', None, -1, NODE_DIR) },
-                  4: { "python/tags/bla": ('A', 'python/trunk', 2, NODE_DIR)}})
+        browser = self.get_browser([u"python"], 4, 0, TrunkLayout(1),
+                { 1: { u"python": ('A', None, -1, NODE_DIR),
+                       u"python/tags": ('A', None, -1, NODE_DIR),
+                       u"python/trunk": ('A', None, -1, NODE_DIR)},
+                  2: { u"foo": ('A', None, -1, NODE_DIR) },
+                  3: { u"bar": ('A', None, -1, NODE_DIR) },
+                  4: { u"python/tags/bla": ('A', u'python/trunk', 2, NODE_DIR)}})
         rev1 = browser.next()
-        self.assertEquals(('revision', FakeRevision('python/tags/bla',4)), rev1)
+        self.assertEquals(('revision', FakeRevision(u'python/tags/bla',4)), rev1)
         rev2 = browser.next()
-        self.assertEquals(('revision', FakeRevision('python/trunk',1)), rev2)
+        self.assertEquals(('revision', FakeRevision(u'python/trunk',1)), rev2)
         self.assertRaises(StopIteration, browser.next)
         self.assertTrue(rev1[1]._lhs_parent_known)
 
     def test_chaco(self):
-        rev3 = { "packages/chaco2/trunk/debian/rules": ("M", None, -1, NODE_FILE)}
-        rev4 = { "packages/chaco2": ("D", None, -1, NODE_DIR),
-              "packages/enthought-chaco2": ("A", "packages/chaco2", 3, NODE_DIR),
-              "packages/enthought-chaco2/trunk": ("D", None, -1, NODE_DIR)}
-        rev5 = { "packages/enthought-chaco2/trunk": ("A", None, -1, NODE_DIR),
-                "packages/enthought-chaco2/trunk/debian": ("A", None, -1, NODE_DIR)}
-        browser = self.get_browser(["packages"], 5, 3, TrunkLayout(2),
+        rev3 = { u"packages/chaco2/trunk/debian/rules": ("M", None, -1, NODE_FILE)}
+        rev4 = { u"packages/chaco2": ("D", None, -1, NODE_DIR),
+              u"packages/enthought-chaco2": ("A", u"packages/chaco2", 3, NODE_DIR),
+              u"packages/enthought-chaco2/trunk": ("D", None, -1, NODE_DIR)}
+        rev5 = { u"packages/enthought-chaco2/trunk": ("A", None, -1, NODE_DIR),
+                u"packages/enthought-chaco2/trunk/debian": ("A", None, -1, NODE_DIR)}
+        browser = self.get_browser([u"packages"], 5, 3, TrunkLayout(2),
                 { 3: rev3, 4: rev4, 5: rev5 })
         rev1 = browser.next()
         self.assertEquals(('revision',
-            FakeRevision('packages/enthought-chaco2/trunk',5)), rev1)
+            FakeRevision(u'packages/enthought-chaco2/trunk',5)), rev1)
         rev2 = browser.next()
-        self.assertEquals(('delete', ('packages/enthought-chaco2/trunk', 4)), rev2)
+        self.assertEquals(('delete', (u'packages/enthought-chaco2/trunk', 4)), rev2)
         rev3 = browser.next()
-        self.assertEquals(('delete', ('packages/enthought-chaco2/trunk', 4)), rev3)
+        self.assertEquals(('delete', (u'packages/enthought-chaco2/trunk', 4)), rev3)
         rev4 = browser.next()
-        self.assertEquals(('revision', FakeRevision('packages/chaco2/trunk',3)), rev4)
+        self.assertEquals(('revision', FakeRevision(u'packages/chaco2/trunk',3)), rev4)
         self.assertRaises(StopIteration, browser.next)
         self.assertTrue(rev1[1]._lhs_parent_known)
         self.assertFalse(rev4[1]._lhs_parent_known)
 
     def test_follow_prefixes(self):
-        rev1 = { "foo": ('A', None, -1, NODE_DIR),
-                 "foo/trunk": ('A', None, -1, NODE_DIR) }
-        rev2 = { "bar": ('A', 'foo', 1, NODE_DIR) }
-        rev3 = { "bar/trunk": ('M', None, -1, NODE_DIR) }
-        browser = self.get_browser(["bar"], 4, 0, TrunkLayout(1),
+        rev1 = { u"foo": ('A', None, -1, NODE_DIR),
+                 u"foo/trunk": ('A', None, -1, NODE_DIR) }
+        rev2 = { u"bar": ('A', 'foo', 1, NODE_DIR) }
+        rev3 = { u"bar/trunk": ('M', None, -1, NODE_DIR) }
+        browser = wwself.get_browser(["bar"], 4, 0, TrunkLayout(1),
                 { 1: rev1, 2: rev2, 3: rev3 })
         rev1 = browser.next()
-        self.assertEquals(('revision', FakeRevision('bar/trunk', 3)), rev1)
+        self.assertEquals(('revision', FakeRevision(u'bar/trunk', 3)), rev1)
         rev2 = browser.next()
-        self.assertEquals(('revision', FakeRevision('foo/trunk', 1)), rev2)
+        self.assertEquals(('revision', FakeRevision(u'foo/trunk', 1)), rev2)
         self.assertRaises(StopIteration, browser.next)
         self.assertTrue(rev1[1]._lhs_parent_known)
         self.assertTrue(rev2[1]._lhs_parent_known)
 
     def test_pointless_root_commit(self):
-        rev1 = { "foo": ('A', None, -1, NODE_DIR) }
+        rev1 = { u"foo": ('A', None, -1, NODE_DIR) }
         rev2 = {}
-        rev3 = { "bar": ('A', None, -1, NODE_DIR) }
-        browser = self.get_browser([""], 3, 0, RootLayout(),
+        rev3 = { u"bar": ('A', None, -1, NODE_DIR) }
+        browser = self.get_browser([u""], 3, 0, RootLayout(),
                 { 1: rev1, 2: rev2, 3: rev3 })
         rev1 = browser.next()
-        self.assertEquals(("revision", FakeRevision("", 3)), rev1)
+        self.assertEquals(("revision", FakeRevision(u"", 3)), rev1)
         rev2 = browser.next()
-        self.assertEquals(("revision", FakeRevision("", 2)), rev2)
+        self.assertEquals(("revision", FakeRevision(u"", 2)), rev2)
         rev3 = browser.next()
-        self.assertEquals(("revision", FakeRevision("", 1)), rev3)
+        self.assertEquals(("revision", FakeRevision(u"", 1)), rev3)
         rev4 = browser.next()
-        self.assertEquals(("revision", FakeRevision("", 0)), rev4)
+        self.assertEquals(("revision", FakeRevision(u"", 0)), rev4)
 
     def test_ignore_sideeffects(self):
-        browser = self.get_browser(["python"], 8, 0, TrunkLayout(1),
-                { 1: { "python": ('A', None, -1, NODE_DIR),
-                       "python/tags": ('A', None, -1, NODE_DIR),
-                       "python/trunk": ('A', None, -1, NODE_DIR)},
-                  5: { "python/trunk/bar": ('A', None, -1, NODE_FILE),
-                       "something/trunk": ("M", None ,-1, NODE_DIR)},
-                  6: { "python/branches/bla": ("A", "something/trunk", 5, NODE_DIR) }
+        browser = self.get_browser([u"python"], 8, 0, TrunkLayout(1),
+                { 1: { u"python": ('A', None, -1, NODE_DIR),
+                       u"python/tags": ('A', None, -1, NODE_DIR),
+                       u"python/trunk": ('A', None, -1, NODE_DIR)},
+                  5: { u"python/trunk/bar": ('A', None, -1, NODE_FILE),
+                       u"something/trunk": ("M", None ,-1, NODE_DIR)},
+                  6: { u"python/branches/bla": ("A", u"something/trunk", 5, NODE_DIR) }
                   })
         rev1 = browser.next()
-        self.assertEquals(('revision', FakeRevision('python/branches/bla',6)), rev1)
+        self.assertEquals(('revision', FakeRevision(u'python/branches/bla',6)), rev1)
         rev2 = browser.next()
-        self.assertEquals(('revision', FakeRevision('python/trunk',5)), rev2)
+        self.assertEquals(('revision', FakeRevision(u'python/trunk',5)), rev2)
         rev3 = browser.next()
-        self.assertEquals(('revision', FakeRevision('python/trunk',1)), rev3)
+        self.assertEquals(('revision', FakeRevision(u'python/trunk',1)), rev3)
         self.assertRaises(StopIteration, browser.next)
         self.assertFalse(rev1[1]._lhs_parent_known)
         self.assertTrue(rev2[1]._lhs_parent_known)

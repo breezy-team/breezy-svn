@@ -148,8 +148,9 @@ class TdbRevisionInfoCache(RevisionInfoCache, CacheTable):
         """See RevisionInfoCache.get_revision."""
 
         self.mutter("get-revision %r,%r", foreign_revid, mapping)
-        basekey = b"%d %s %s" % (foreign_revid[2], mapping.name, foreign_revid[1])
-        revid = self.db[b"foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, foreign_revid[1].encode('utf-8'))]
+        encoded_branch_path = foreign_revid[1].encode('utf-8')
+        basekey = b"%d %s %s" % (foreign_revid[2], mapping.name, encoded_branch_path)
+        revid = self.db[b"foreign-revid/%d %d %s %s" % (foreign_revid[2], foreign_revid[2], mapping.name, encoded_branch_path)]
         stored_lhs_parent_revid = self.db.get(b"lhs-parent-revid/%s" % basekey)
         try:
             revno = int(self.db[b"revno/%s" % basekey])

@@ -119,7 +119,7 @@ def iter_prefixes_changes(from_prefixes, from_revnum, to_revnum,
 
         # Report this revision if any affected paths are changed
         if any(changes.changes_path(revpaths, prefix, True) for prefix in prefixes):
-            assert type(revnum) is int
+            assert isinstance(revnum, int)
             yield (revpaths, revnum, revprop_list(revnum))
             i += 1
             if limit != 0 and i == limit:
