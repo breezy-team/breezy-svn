@@ -110,11 +110,11 @@ class MetadataBrowserTests(TestCase):
 
     def test_root_layout_simple(self):
         browser = self.get_browser(None, 1, 0, RootLayout(),
-                { 1: { "bla": ('A', None, -1, NODE_DIR)}})
+                { 1: { u"bla": ('A', None, -1, NODE_DIR)}})
         rev1 = browser.next()
-        self.assertEquals(('revision', FakeRevision('',1)), rev1)
+        self.assertEquals(('revision', FakeRevision(u'', 1)), rev1)
         rev2 = browser.next()
-        self.assertEquals(('revision', FakeRevision('',0)), rev2)
+        self.assertEquals(('revision', FakeRevision(u'', 0)), rev2)
         self.assertTrue(rev1[1]._lhs_parent_known)
         self.assertTrue(rev2[1]._lhs_parent_known)
         self.assertRaises(StopIteration, browser.next)
@@ -230,7 +230,7 @@ class MetadataBrowserTests(TestCase):
                  u"foo/trunk": ('A', None, -1, NODE_DIR) }
         rev2 = { u"bar": ('A', 'foo', 1, NODE_DIR) }
         rev3 = { u"bar/trunk": ('M', None, -1, NODE_DIR) }
-        browser = wwself.get_browser(["bar"], 4, 0, TrunkLayout(1),
+        browser = self.get_browser([u"bar"], 4, 0, TrunkLayout(1),
                 { 1: rev1, 2: rev2, 3: rev3 })
         rev1 = browser.next()
         self.assertEquals(('revision', FakeRevision(u'bar/trunk', 3)), rev1)

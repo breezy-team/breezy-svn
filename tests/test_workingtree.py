@@ -29,6 +29,7 @@ from breezy import (
     revision as _mod_revision,
     )
 from breezy.branch import Branch
+from breezy.config import GlobalStack
 from breezy.controldir import ControlDir
 from breezy.errors import (
     NoSuchFile,
@@ -60,6 +61,12 @@ from breezy.plugins.svn.workingtree import (
     )
 
 class TestWorkingTree(SubversionTestCase):
+
+    def setUp(self):
+        super(TestWorkingTree, self).setUp()
+        config = GlobalStack()
+        config.set('allow_metadata_in_file_properties', True)
+        config.store.save()
 
     def assertCleanTree(self, wt):
         delta = wt.changes_from(wt.basis_tree())

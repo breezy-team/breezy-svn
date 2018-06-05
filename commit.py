@@ -1198,7 +1198,7 @@ def send_svn_file_text_delta(tree, old_tree, file_id, old_path, new_path, ie, ed
     :param old_tree: Base tree
     :param editor: Editor to report changes to
     """
-    contents = mapping.get_svn_file_contents(tree, ie.kind, ie.file_id, new_path)
+    contents = mapping.get_svn_file_contents(tree, ie.kind, new_path, ie.file_id)
     try:
         file_editor_send_content_changes(contents, editor)
     finally:

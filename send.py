@@ -45,9 +45,9 @@ class SvnDiffTree(_mod_diff.DiffTree):
             except AttributeError:
                 return None
 
-    def _get_svn_rev_info(self, tree, file_id):
+    def _get_svn_rev_info(self, tree, path):
         try:
-            rev = tree.get_file_revision(file_id)
+            rev = tree.get_file_revision(path)
         except errors.NoSuchId:
             return '(revision 0)'
         except AttributeError:
@@ -118,8 +118,8 @@ class SvnDiffTree(_mod_diff.DiffTree):
         if kind in (None, "directory"):
             return None
         from breezy.plugins.svn.mapping import get_svn_file_contents
-        f = get_svn_file_contents(tree, kind, file_id, path)
-        return f.readlines()
+        with get_svn_file_contents(tree, kind, path, file_id) as f:
+            return f.readlines()
 
     def _show_diff(self, specific_files, extra_trees):
         iterator = self.new_tree.iter_changes(self.old_tree,
@@ -127,9 +127,6 @@ class SvnDiffTree(_mod_diff.DiffTree):
                                                extra_trees=extra_trees,
                                                require_versioned=True)
         has_changes = 0
-        def get_encoded_path(path):
-            if path is not None:
-                return path.encode(self.path_encoding, "replace")
         for (file_id, paths, changed_content, versioned, parent, name, kind,
              executable) in iterator:
             # The root does not get diffed, and items with no known kind (that
@@ -137,35 +134,33 @@ class SvnDiffTree(_mod_diff.DiffTree):
             if parent == (None, None) or kind == (None, None):
                 continue
             oldpath, newpath = paths
-            oldpath_encoded = get_encoded_path(paths[0])
-            newpath_encoded = get_encoded_path(paths[1])
             renamed = (parent[0], name[0]) != (parent[1], name[1])
             old_properties = self._get_file_properties(self.old_tree,
-                    oldpath_encoded, kind[0], executable[0])
+                    oldpath, kind[0], executable[0])
             new_properties = self._get_file_properties(self.new_tree,
-                    newpath_encoded, kind[1], executable[1])
-            old_version = self._get_svn_rev_info(self.old_tree, file_id)
-            new_version = self._get_svn_rev_info(self.new_tree, file_id)
+                    newpath, kind[1], executable[1])
+            old_version = self._get_svn_rev_info(self.old_tree, oldpath)
+            new_version = self._get_svn_rev_info(self.new_tree, newpath)
 
-            if oldpath_encoded == newpath_encoded:
+            if oldpath == newpath:
                 if changed_content:
                     old_contents = self._get_file_contents(self.old_tree,
-                            file_id, oldpath_encoded, kind[0])
+                            file_id, oldpath, kind[0])
                     new_contents = self._get_file_contents(self.new_tree,
-                            file_id, newpath_encoded, kind[1])
-                    self._write_contents_diff(oldpath_encoded, old_version,
+                            file_id, newpath, kind[1])
+                    self._write_contents_diff(oldpath, old_version,
                             old_contents, new_version, new_contents)
-                self._write_properties_diff(oldpath_encoded, old_properties, new_properties)
+                self._write_properties_diff(oldpath, old_properties, new_properties)
             else:
                 old_contents = self._get_file_contents(self.old_tree, file_id,
-                        oldpath_encoded, kind[0])
+                        oldpath, kind[0])
                 new_contents = self._get_file_contents(self.new_tree, file_id,
-                        newpath_encoded, kind[1])
-                self._write_contents_diff(oldpath_encoded, old_version,
+                        newpath, kind[1])
+                self._write_contents_diff(oldpath, old_version,
                         old_contents, new_version, [])
-                self._write_contents_diff(newpath_encoded, old_version, [],
+                self._write_contents_diff(newpath, old_version, [],
                         new_version, new_contents)
-                self._write_properties_diff(newpath_encoded, {}, new_properties)
+                self._write_properties_diff(newpath, {}, new_properties)
 
             has_changes = (changed_content or renamed)
 

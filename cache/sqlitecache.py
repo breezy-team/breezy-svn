@@ -268,7 +268,7 @@ class SqliteRevisionInfoCache(RevisionInfoCache, CacheTable):
             orig_mapping_name = original_mapping.name
         else:
             orig_mapping_name = None
-        self.execute("replace into original_mapping (path, revnum, original_mapping) values (?, ?, ?)", (foreign_revid[1].decode("utf-8"), foreign_revid[2], orig_mapping_name))
+        self.execute("replace into original_mapping (path, revnum, original_mapping) values (?, ?, ?)", (foreign_revid[1], foreign_revid[2], orig_mapping_name))
 
     def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden),
             stored_lhs_parent_revid):
@@ -298,7 +298,7 @@ class SqliteRevisionInfoCache(RevisionInfoCache, CacheTable):
     def get_original_mapping(self, foreign_revid):
         """See RevisionInfoCache.get_original_mapping."""
 
-        row = self.execute("select original_mapping from original_mapping where path = ? and revnum = ?", (foreign_revid[1].decode("utf-8"), foreign_revid[2])).fetchone()
+        row = self.execute("select original_mapping from original_mapping where path = ? and revnum = ?", (foreign_revid[1], foreign_revid[2])).fetchone()
         if row is None:
             raise KeyError(foreign_revid)
         if row[0] is None:

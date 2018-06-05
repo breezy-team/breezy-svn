@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 
 import calendar
-from cStringIO import StringIO
+from io import BytesIO
 from subvertpy import properties
 import time
 import urllib
@@ -1134,12 +1134,12 @@ def revprops_complete(revprops):
             SVN_REVPROP_BZR_HIDDEN in revprops)
 
 
-def get_svn_file_contents(tree, kind, file_id, path):
+def get_svn_file_contents(tree, kind, path, file_id=None):
     if kind == "file":
         return tree.get_file(path, file_id)
     elif kind == "symlink":
         target = tree.get_symlink_target(path, file_id)
-        return StringIO("link %s" % target.encode("utf-8"))
+        return BytesIO(b"link %s" % target.encode("utf-8"))
     else:
         raise AssertionError
 

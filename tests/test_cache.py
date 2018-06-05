@@ -145,7 +145,7 @@ class RevidMapCacheTests(object):
     def test_lookup_branch_incomplete(self):
         self.cache.insert_revid("bla", u"mypath", 42, 200, "brainslug")
         self.assertEquals(None,
-                self.cache.lookup_branch_revnum(42, "mypath", "brainslug"))
+                self.cache.lookup_branch_revnum(42, u"mypath", "brainslug"))
 
 
 class SqliteRevidMapCacheTests(TestCase,RevidMapCacheTests):

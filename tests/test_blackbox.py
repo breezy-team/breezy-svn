@@ -18,6 +18,7 @@
 import os
 import sys
 
+from breezy.config import GlobalStack
 from breezy.controldir import (
     ControlDir,
     format_registry,
@@ -38,6 +39,9 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def setUp(self):
         ExternalBase.setUp(self)
+        config = GlobalStack()
+        config.set('allow_metadata_in_file_properties', True)
+        config.store.save()
         self._init_client()
 
     def tearDown(self):
@@ -397,13 +401,13 @@ Node-copyfrom-path: x
 
     def test_svn_import_bzr_branch(self):
         self.run_bzr('init foo')
-        self.run_bzr_error(['bzr: ERROR: Source repository is not a Subversion repository.\n'],
+        self.run_bzr_error(['brz: ERROR: Source repository is not a Subversion repository.\n'],
                            ['svn-import', 'foo', 'dc'])
 
     def test_svn_import_bzr_repo(self):
         self.run_bzr('init-repo foo')
         self.run_bzr('init foo/bar')
-        self.run_bzr_error(['bzr: ERROR: Source repository is not a Subversion repository.\n'],
+        self.run_bzr_error(['brz: ERROR: Source repository is not a Subversion repository.\n'],
                            ['svn-import', 'foo/bar', 'dc'])
 
     def test_list(self):
@@ -670,6 +674,9 @@ class TestFixSvnAncestry(SubversionTestCase, ExternalBase):
 
     def setUp(self):
         ExternalBase.setUp(self)
+        config = GlobalStack()
+        config.set('allow_metadata_in_file_properties', True)
+        config.store.save()
         self._init_client()
 
     def tearDown(self):

@@ -316,9 +316,9 @@ class RepositoryTests(SubversionTestCase):
         repos = Repository.open(self.repos_url)
         set_property_scheme(repos, ListBranchingScheme(["bla/*"]))
         self.client_update("dc")
-        self.assertEquals("bla/*\n", 
+        self.assertEquals("bla/*\n",
                    self.client_get_prop("dc", SVN_PROP_BZR_BRANCHING_SCHEME))
-        self.assertEquals("Updating branching scheme for Bazaar.", 
+        self.assertEquals("Updating branching scheme for Bazaar.",
                 self.client_log(self.repos_url, 1, 1)[1][3])
 
     def test_fetch_fileid_renames(self):

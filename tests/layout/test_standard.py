@@ -15,6 +15,7 @@
 
 import subvertpy
 
+from breezy.sixish import text_type
 from breezy.tests import (
     TestCase,
     )
@@ -39,7 +40,7 @@ class LayoutTests(object):
             path = self.layout.get_tag_path("foo", "")
         except NoLayoutTagSetSupport:
             return
-        self.assertIsInstance(path, str)
+        self.assertIsInstance(path, text_type)
 
     def test_tag_path_is_tag(self):
         try:

@@ -466,12 +466,12 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        items = [l[:2] for l in walker.iter_changes(["branches/abranch"], 2)]
+        items = [l[:2] for l in walker.iter_changes([u"branches/abranch"], 2)]
         self.assertLogEquals([
-            ({'branches/abranch': ('A', 'trunk', 1, NODE_DIR)}, 2),
-            ({'branches': (u'A', None, -1, NODE_DIR),
-                'trunk/afile': ('A', None, -1, NODE_FILE),
-                'trunk': (u'A', None, -1, NODE_DIR)}, 1)], items)
+            ({u'branches/abranch': ('A', u'trunk', 1, NODE_DIR)}, 2),
+            ({u'branches': (u'A', None, -1, NODE_DIR),
+                u'trunk/afile': ('A', None, -1, NODE_FILE),
+                u'trunk': (u'A', None, -1, NODE_DIR)}, 1)], items)
 
     def test_revprop_list(self):
         repos_url = self.make_svn_repository("a")

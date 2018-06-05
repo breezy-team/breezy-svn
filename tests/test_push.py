@@ -1473,7 +1473,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         rev_merged = self.from_repo.get_revision(self.revid_merge)
         foreign_rev_info = self.interrepo._get_foreign_revision_info(
             rev_merged.parent_ids[0])
-        self.interrepo.push_revision_inclusive("trunk", config,
+        self.interrepo.push_revision_inclusive(u"trunk", config,
             rev_merged, push_merged=False,
             layout=TrunkLayout0(), project="",
             push_metadata=True, root_action=("open", self.to_repo.get_latest_revnum()),
@@ -1495,7 +1495,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
             config, rev1, push_metadata=True, root_action=("create", ),
             base_foreign_info=(None, None))
         rev_merged = self.from_repo.get_revision(self.revid_merge)
-        self.interrepo.push_revision_inclusive("trunk", config,
+        self.interrepo.push_revision_inclusive(u"trunk", config,
             rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
             push_metadata=True, root_action=("open",  self.to_repo.get_latest_revnum()),
@@ -1539,7 +1539,7 @@ class PushRevisionInclusiveTests(InterToSvnRepositoryTestCase):
         self.from_repo.unlock()
         self.from_repo.lock_read()
         rev_merged = self.from_repo.get_revision(revid_merge)
-        self.interrepo.push_revision_inclusive("trunk", config,
+        self.interrepo.push_revision_inclusive(u"trunk", config,
             rev_merged, push_merged=True,
             layout=TrunkLayout0(), project="",
             push_metadata=True, root_action=("open",  self.to_repo.get_latest_revnum()),

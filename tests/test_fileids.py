@@ -348,13 +348,13 @@ class GetMapTests(SubversionTestCase):
         dc.close()
 
         self.assertEqual({
-            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""),
-                 self.repos.generate_revision_id(1, "trunk", self.mapping),
+            u"": (self.mapping.generate_file_id((self.repos.uuid, u"trunk", 1), u""),
+                 self.repos.generate_revision_id(1, u"trunk", self.mapping),
                  None),
-            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"),
-                     self.repos.generate_revision_id(3, "trunk", self.mapping),
+            u"file": (self.mapping.generate_file_id((self.repos.uuid, u"trunk", 2), u"file"),
+                     self.repos.generate_revision_id(3, u"trunk", self.mapping),
                      None)},
-            self.get_map("trunk", 3, self.mapping))
+            self.get_map(u"trunk", 3, self.mapping))
 
     def test_sibling_unrelated(self):
         self.repos.set_layout(TrunkLayout(0))
@@ -406,16 +406,16 @@ class GetMapTests(SubversionTestCase):
         dc.close()
 
         self.assertEqual({
-            "": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 1), u""),
-                 self.repos.generate_revision_id(1, "trunk", self.mapping),
+            u"": (self.mapping.generate_file_id((self.repos.uuid, u"trunk", 1), u""),
+                 self.repos.generate_revision_id(1, u"trunk", self.mapping),
                  None),
-            "bar": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 3), u"bar"),
-                    self.repos.generate_revision_id(3, "trunk", self.mapping),
-                    (self.repos.uuid, "trunk", 3)),
-            "file": (self.mapping.generate_file_id((self.repos.uuid, "trunk", 2), u"file"),
-                     self.repos.generate_revision_id(2, "trunk", self.mapping),
+            u"bar": (self.mapping.generate_file_id((self.repos.uuid, u"trunk", 3), u"bar"),
+                    self.repos.generate_revision_id(3, u"trunk", self.mapping),
+                    (self.repos.uuid, u"trunk", 3)),
+            u"file": (self.mapping.generate_file_id((self.repos.uuid, u"trunk", 2), u"file"),
+                     self.repos.generate_revision_id(2, u"trunk", self.mapping),
                      None)},
-            self.get_map("trunk", 3, self.mapping))
+            self.get_map(u"trunk", 3, self.mapping))
 
     def test_copy_nested_modified(self):
         self.repos.set_layout(TrunkLayout(0))

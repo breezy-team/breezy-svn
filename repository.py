@@ -935,7 +935,9 @@ class SvnRepository(ForeignRepository):
                 tree = self.revision_tree(revid)
             except bzr_errors.NoSuchRevision:
                 raise bzr_errors.RevisionNotPresent(revid, self)
-            for identifier, curfile in tree.iter_files_bytes(files):
+            for identifier, curfile in tree.iter_files_bytes(
+                    [(tree.id2path(file_id), identifier)
+                        for (file_id, identifier) in files]):
                 yield identifier, curfile
 
     def revision_trees(self, revids):

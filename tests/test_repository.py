@@ -26,7 +26,10 @@ from breezy.controldir import (
     ControlDir,
     format_registry,
     )
-from breezy.config import GlobalConfig
+from breezy.config import (
+    GlobalConfig,
+    GlobalStack,
+    )
 from breezy.errors import (
     AppendRevisionsOnlyViolation,
     BadConversionTarget,
@@ -166,6 +169,10 @@ class GetCommitBuilderTests(SubversionTestCase):
 
     def setUp(self):
         super(GetCommitBuilderTests, self).setUp()
+        stack = GlobalStack()
+        stack.set('allow_metadata_in_file_properties', True)
+        stack.store.save()
+
         self.repos_url = self.make_svn_repository("d")
         dc = self.get_commit_editor(self.repos_url)
         dc.add_dir('trunk')

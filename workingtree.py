@@ -523,10 +523,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     @convert_svn_error
     def _get_wc(self, relpath=u"", write_lock=False, depth=0, base=None):
         """Open a working copy handle."""
-        if not isinstance(relpath, text_type):
-            raise TypeError(relpath)
         return Adm(base,
-            self.abspath(relpath).rstrip("/").encode("utf-8"),
+            self.abspath(relpath).rstrip("/"),
             write_lock, depth)
 
     def _get_rel_wc(self, relpath, write_lock=False):
