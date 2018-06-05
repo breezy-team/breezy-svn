@@ -19,7 +19,6 @@ import os
 import subvertpy
 
 from breezy import osutils
-from breezy.config import GlobalStack
 from breezy.bzr.inventory import (
     Inventory,
     TreeReference,
@@ -43,12 +42,6 @@ from breezy.plugins.svn.tree import (
 
 
 class TestBasisTree(SubversionTestCase):
-
-    def setUp(self):
-        super(TestBasisTree, self).setUp()
-        stack = GlobalStack()
-        stack.set('allow_metadata_in_file_properties', True)
-        stack.store.save()
 
     def test_file_verifiers(self):
         tree = self.make_svn_branch_and_tree("d", "dc")
@@ -303,9 +296,6 @@ class TestSvnRevisionTree(SubversionTestCase):
 
     def setUp(self):
         super(TestSvnRevisionTree, self).setUp()
-        stack = GlobalStack()
-        stack.set('allow_metadata_in_file_properties', True)
-        stack.store.save()
         tree = self.make_svn_branch_and_tree('d', 'dc') #1
         self.build_tree({'dc/foo/bla': "data"})
         self.client_add("dc/foo")

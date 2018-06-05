@@ -91,10 +91,11 @@ def warn_setting_fileprops(uuid):
     if uuid in _fileprops_warned_repos:
         return
     _fileprops_warned_repos.add(uuid)
-    trace.warning("Storing Bazaar metadata in file properties. "
-                  "Use `bzr dpush` for lossfull push without file properties."
-                  "Upgrade the server to Subversion 1.5 or later to use "
-                  "(less visible) revision properties.")
+    trace.warning(
+            "Storing Bazaar metadata in file properties. "
+            "Use `bzr push --lossy` for lossfull push without file properties."
+            "Upgrade the server to Subversion 1.5 or later to use "
+            "(less visible) revision properties.")
 
 
 def _revision_id_to_svk_feature(revid, lookup_revid):

@@ -175,6 +175,9 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
     def setUp(self):
         self._init_client()
         TestCaseInTempDir.setUp(self)
+        stack = GlobalStack()
+        stack.set('allow_metadata_in_file_properties', True)
+        stack.store.save()
 
     def tearDown(self):
         del self.client_ctx

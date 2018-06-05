@@ -199,23 +199,6 @@ def apply_prop_changes(orig_props, prop_changes):
     return orig_props
 
 
-def generate_ignore_list(ignore_map):
-    """Create a list of ignores, ordered by directory.
-
-    :param ignore_map: Dictionary with paths as keys, patterns as values.
-    :return: list of ignores
-    """
-    ignores = []
-    keys = ignore_map.keys()
-    for k in sorted(keys):
-        elements = ["."]
-        if k.strip("/") != "":
-            elements.append(k.strip("/"))
-        elements.append(ignore_map[k].strip("/"))
-        ignores.append("/".join(elements))
-    return ignores
-
-
 class Walker(object):
     """Iterator of a Subversion working copy."""
 

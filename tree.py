@@ -315,6 +315,9 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         # FIXME
         return set(self.root_inventory.iter_all_ids())
 
+    def all_versioned_paths(self):
+        return set(p for p, e in self.iter_entries_by_dir())
+
     def iter_entries_by_dir(self, specific_files=None):
         if specific_files is not None:
             specific_file_ids = []
@@ -383,11 +386,8 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         return stream
 
     def get_file_text(self, path, file_id=None):
-        my_file = self.get_file(path, file_id)
-        try:
+        with self.get_file(path, file_id) as my_file:
             return my_file.read()
-        finally:
-            my_file.close()
 
     def get_file_properties(self, path, file_id=None):
         encoded_path = path.encode("utf-8")

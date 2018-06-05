@@ -125,7 +125,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("add dc/foo")
         self.run_bzr("commit -m msg dc")
         output, err = self.run_bzr("push -d dc %s/trunk" % repos_url, retcode=3)
-        self.assertTrue(('ERROR: These branches have diverged.  See "bzr help diverged-branches" for more information.\n' in err) or ('ERROR: These branches have diverged.  Try using "merge" and then "push".\n' in err))
+        self.assertTrue(('ERROR: These branches have diverged.  See "brz help diverged-branches" for more information.\n' in err) or ('ERROR: These branches have diverged.  Try using "merge" and then "push".\n' in err))
 
     def test_push_lossy_empty_existing(self):
         repos_url = self.make_repository('d')
@@ -559,7 +559,7 @@ if len(sys.argv) == 2:
 
         output, err = self.run_bzr('push %s/branches/my-branch' % svn_url)
         self.assertEquals(output, '')
-        self.assertEquals(err, 'Created new branch at /branches/my-branch.\n')
+        self.assertTrue(err.endswith('Created new branch at /branches/my-branch.\n'))
         os.chdir(cwd)
 
         self.run_bzr('co %s/trunk bzr-trunk' % svn_url)

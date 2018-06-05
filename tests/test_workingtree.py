@@ -57,7 +57,6 @@ from breezy.plugins.svn.transport import svn_config
 from breezy.plugins.svn.tests import SubversionTestCase
 from breezy.plugins.svn.workingtree import (
     CorruptWorkingTree,
-    generate_ignore_list,
     )
 
 class TestWorkingTree(SubversionTestCase):
@@ -794,21 +793,3 @@ class TestWorkingTree(SubversionTestCase):
         self.assertEquals(
             [("", "directory"), ("thing", "directory")],
             [(p, e.kind) for (p, e) in entries])
-
-
-class IgnoreListTests(TestCase):
-
-    def test_empty(self):
-        self.assertEquals([], generate_ignore_list({}))
-
-    def test_simple(self):
-        self.assertEquals(["./twin/peaks"],
-                generate_ignore_list({"twin": "peaks"}))
-
-    def test_toplevel(self):
-        self.assertEquals(["./twin*"],
-                generate_ignore_list({"": "twin*"}))
-
-    def test_multiple(self):
-        self.assertEquals(["./twin*", "./twin/peaks"],
-                generate_ignore_list({"twin": "peaks", "": "twin*"}))
