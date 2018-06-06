@@ -45,6 +45,7 @@ from subvertpy.wc import (
     cleanup,
     get_adm_dir,
     is_adm_dir,
+    match_ignore_list,
     revision_status,
     )
 
@@ -406,6 +407,16 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             dir_add(wc, u"", ".")
 
         return ignores
+
+    def is_ignored(self, path):
+        dirname = os.path.dirname(path)
+        with self._get_wc(relpath=dirname) as wc:
+            ignores = svn_config.get_default_ignores()
+            ignorestr = wc.prop_get(properties.PROP_IGNORE,
+                self.abspath(dirname))
+            if ignorestr is not None:
+                ignores.extend(ignorestr.splitlines())
+            return match_ignore_list(os.path.basename(path), ignores)
 
     def flush(self):
         pass
