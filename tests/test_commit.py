@@ -207,10 +207,10 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEquals(None, wt.path2id("foo"))
         wt.commit(message="doe") # 4
         paths = self.client_log(wt.branch.base, 4, 0)[4][0]
-        self.assertEquals('D', paths["/trunk/foo"][0])
-        self.assertEquals('A', paths["/trunk/bar"][0])
-        self.assertEquals('/trunk/foo', paths["/trunk/bar"][1])
-        self.assertEquals(3, paths["/trunk/bar"][2])
+        self.assertEquals('D', paths[u"/trunk/foo"][0])
+        self.assertEquals('A', paths[u"/trunk/bar"][0])
+        self.assertEquals(u'/trunk/foo', paths[u"/trunk/bar"][1])
+        self.assertEquals(3, paths[u"/trunk/bar"][2])
         svnrepo = Repository.open(wt.branch.repository.base)
         revmeta = svnrepo._revmeta_provider.get_revision(wt.branch.get_branch_path(), 4)
         self.assertEquals({u"bar": oldid},
@@ -226,10 +226,10 @@ class TestNativeCommit(SubversionTestCase):
         self.assertTrue(wt.has_filename("bar"))
         wt.commit(message="doe") #3
         paths = self.client_log(wt.branch.base, 3, 0)[3][0]
-        self.assertEquals('D', paths["/trunk/adir/foo"][0])
-        self.assertEquals('A', paths["/trunk/bar"][0])
-        self.assertEquals('/trunk/adir/foo', paths["/trunk/bar"][1])
-        self.assertEquals(2, paths["/trunk/bar"][2])
+        self.assertEquals('D', paths[u"/trunk/adir/foo"][0])
+        self.assertEquals('A', paths[u"/trunk/bar"][0])
+        self.assertEquals(u'/trunk/adir/foo', paths[u"/trunk/bar"][1])
+        self.assertEquals(2, paths[u"/trunk/bar"][2])
 
     def test_commit_sets_mergeinfo(self):
         repos_url = self.make_repository('d')

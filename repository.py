@@ -805,8 +805,7 @@ class SvnRepository(ForeignRepository):
         ret = SubversionRepositoryCheckResult(self)
         # FIXME: If this is a local repository, call out to subvertpy.repos.verify_fs.
         # bug=843944
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             if revision_ids is not None:
                 for i, (revid, revmeta, mapping) in enumerate(
                         self._iter_revmetas(revision_ids)):
@@ -824,8 +823,6 @@ class SvnRepository(ForeignRepository):
                     pb.update("checking revisions",
                         last_revnum-revmeta.metarev.revnum, last_revnum)
                     ret.check_revmeta(revmeta)
-        finally:
-            pb.finished()
         return ret
 
     def get_inventory(self, revision_id):
@@ -1166,14 +1163,11 @@ class SvnRepository(ForeignRepository):
             branches = []
             if mapping is None:
                 mapping = self.get_mapping()
-            pb = ui.ui_factory.nested_progress_bar()
-            try:
+            with ui.ui_factory.nested_progress_bar() as pb:
                 for project, bp, nick, has_props, revnum in layout.get_branches(self,
                         revnum):
                     branches.append(SvnBranch(self, self.controldir, bp, mapping,
                         _skip_check=True, revnum=revnum))
-            finally:
-                pb.finished()
             return branches
 
     def find_tags(self, project, layout=None, mapping=None, revnum=None):
@@ -1307,6 +1301,7 @@ def find_branches_between(logwalker, transport, layout, from_revnum, to_revnum,
     """
     assert from_revnum >= to_revnum
     if project is not None:
+        assert isinstance(project, text_type)
         prefixes = filter(
             lambda p: transport.check_path(p, from_revnum),
             layout.get_project_prefixes(project))
@@ -1316,8 +1311,7 @@ def find_branches_between(logwalker, transport, layout, from_revnum, to_revnum,
     created_branches = {}
     ret = []
 
-    pb = ui.ui_factory.nested_progress_bar()
-    try:
+    with ui.ui_factory.nested_progress_bar() as pb:
         for (paths, i, revprops) in logwalker.iter_changes(prefixes,
                 from_revnum, to_revnum):
             if ((isinstance(revprops, dict) or revprops.is_loaded) and
@@ -1359,8 +1353,6 @@ def find_branches_between(logwalker, transport, layout, from_revnum, to_revnum,
                                            subvertpy.ERR_RA_DAV_FORBIDDEN):
                                     continue
                                 raise
-    finally:
-        pb.finished()
 
     for p, i in created_branches.iteritems():
         ret.append((p, i, True))
@@ -1373,8 +1365,7 @@ def find_tags_between(revmeta_provider, project, layout, mapping, from_revnum,
     if tags is None:
         tags = {}
     assert from_revnum <= to_revnum
-    pb = ui.ui_factory.nested_progress_bar()
-    try:
+    with ui.ui_factory.nested_progress_bar() as pb:
         entries = []
         for kind, item in revmeta_provider.iter_all_changes(layout,
                 mapping.is_branch_or_tag, to_revnum, from_revnum,
@@ -1399,8 +1390,6 @@ def find_tags_between(revmeta_provider, project, layout, mapping, from_revnum,
                     if (changes.path_is_child(t, path) and
                         revnum > lastrevnum):
                         del tags[t]
-    finally:
-        pb.finished()
 
     ret = {}
     for path, (lastrevnum, revmeta) in tags.iteritems():

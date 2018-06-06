@@ -358,9 +358,7 @@ class SqliteLogCache(LogCache, CacheTable):
         result = self.execute("select path, action, copyfrom_path, copyfrom_rev, kind from changed_path where rev=?", (revnum,))
         paths = {}
         for p, act, cf, cr, kind in result:
-            if cf is not None:
-                cf = cf.encode("utf-8")
-            paths[p.encode("utf-8")] = (act, cf, cr, kind)
+            paths[p] = (act, cf, cr, kind)
         return paths
 
     def insert_paths(self, rev, orig_paths, revprops, all_revprops):

@@ -182,37 +182,37 @@ class TrunkVariableLayoutTests(TestCase):
 class WildcardLayoutTests(TestCase):
 
     def test_is_branch_simple(self):
-        x = WildcardLayout(["foo"])
+        x = WildcardLayout([u"foo"])
         self.assertTrue(x.is_branch("foo"))
         self.assertFalse(x.is_branch("foo/bar"))
         self.assertFalse(x.is_branch(""))
 
     def test_wildcard(self):
-        x = WildcardLayout(["*"])
+        x = WildcardLayout([u"*"])
         self.assertTrue(x.is_branch("foo"))
         self.assertFalse(x.is_branch("foo/bar"))
         self.assertFalse(x.is_branch(""))
 
     def test_get_tag_name(self):
-        x = WildcardLayout(["trunk"], ["tags/*"])
+        x = WildcardLayout([u"trunk"], [u"tags/*"])
         self.assertEquals("bla", x.get_tag_name("tags/bla"))
-        x = WildcardLayout(["trunk"], ["tags/bla"])
+        x = WildcardLayout([u"trunk"], [u"tags/bla"])
         self.assertEquals("bla", x.get_tag_name("tags/bla"))
-        x = WildcardLayout(["trunk"], ["tags/bla"])
+        x = WildcardLayout([u"trunk"], [u"tags/bla"])
         self.assertEquals(None, x.get_tag_name("bla"))
 
     def test_get_branch_name(self):
-        x = WildcardLayout(["trunk"], ["tags/*"])
+        x = WildcardLayout([u"trunk"], [u"tags/*"])
         self.assertEquals("trunk", x.get_branch_name("trunk"))
-        x = WildcardLayout(["trunk"], ["tags/bla"])
+        x = WildcardLayout([u"trunk"], [u"tags/bla"])
         self.assertEquals(None, x.get_branch_name("tags/bla"))
-        x = WildcardLayout(["trunk"], ["tags/bla"])
+        x = WildcardLayout([u"trunk"], [u"tags/bla"])
         self.assertEquals(None, x.get_branch_name("bla"))
 
     def test_get_tag_path(self):
-        x = WildcardLayout(["trunk"], ["tags/*"])
+        x = WildcardLayout([u"trunk"], [u"tags/*"])
         self.assertEquals("tags/bla", x.get_tag_path("bla"))
-        x = WildcardLayout(["trunk"], [])
+        x = WildcardLayout([u"trunk"], [])
         self.assertRaises(NoLayoutTagSetSupport, x.get_tag_path, "bla")
 
 

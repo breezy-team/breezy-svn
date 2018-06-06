@@ -77,7 +77,7 @@ class FindPrevLocationTests(TestCase):
 
     def test_from_root(self):
         self.assertEquals((u"tools", 3),
-            find_prev_location({u"trunk": ("A", "", 3)}, u"trunk/tools", 5))
+            find_prev_location({u"trunk": ("A", u"", 3)}, u"trunk/tools", 5))
 
 
 class ChangesRootTests(TestCase):

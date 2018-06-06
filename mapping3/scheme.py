@@ -489,9 +489,8 @@ def guess_scheme_from_history(changed_paths, last_revnum,
              relpath a valid branch path.
     """
     potentials = {}
-    pb = ui.ui_factory.nested_progress_bar()
     scheme_cache = {}
-    try:
+    with ui.ui_factory.nested_progress_bar() as pb:
         for (revpaths, revnum, revprops) in changed_paths:
             assert isinstance(revpaths, dict)
             pb.update("analyzing repository layout", last_revnum-revnum,
@@ -504,8 +503,6 @@ def guess_scheme_from_history(changed_paths, last_revnum,
                     potentials[str(scheme)] = 0
                 potentials[str(scheme)] += 1
                 scheme_cache[str(scheme)] = scheme
-    finally:
-        pb.finished()
 
     entries = potentials.items()
     entries.sort(lambda (a, b), (c, d): d - b)
@@ -556,14 +553,11 @@ def scheme_from_layout(layout):
 
 
 def repository_guess_scheme(repository, last_revnum, branch_path=None):
-    pb = ui.ui_factory.nested_progress_bar()
-    try:
+    with ui.ui_factory.nested_progress_bar() as pb:
         (guessed_scheme, scheme) = guess_scheme_from_history(
             repository._log.iter_changes(None, last_revnum,
                 max(0, last_revnum-GUESS_SAMPLE_SIZE)),
             last_revnum, branch_path)
-    finally:
-        pb.finished()
     mutter("Guessed branching scheme: %r, guess scheme to use: %r" %
             (guessed_scheme, scheme))
     return (guessed_scheme, scheme)

@@ -53,8 +53,7 @@ class RepoReconciler(breezy.reconcile.RepoReconciler):
             to_revnum = self.repo.get_latest_revnum()
         graph = self.repo.get_graph()
         assert from_revnum <= to_revnum
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             for (paths, revnum, revprops) in self.repo._log.iter_changes(None,
                     to_revnum, from_revnum, pb=pb):
                 if revnum == 0:
@@ -88,8 +87,6 @@ class RepoReconciler(breezy.reconcile.RepoReconciler):
                 if changed_revprops != {}:
                     num_changed += 1
                 # Might as well update the cache while we're at it
-        finally:
-            pb.finished()
 
 
 def export_as_mapping(revmeta, graph, old_mapping, new_mapping):

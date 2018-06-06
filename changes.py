@@ -24,14 +24,14 @@ from subvertpy import NODE_DIR
 from breezy.sixish import text_type
 
 
-REV0_CHANGES = {"": ('A', None, -1, NODE_DIR)}
+REV0_CHANGES = {u"": ('A', None, -1, NODE_DIR)}
 
 
 def path_is_child(branch_path, path):
     """Check whether path is or is under branch_path."""
-    return (branch_path == "" or
+    return (branch_path == u"" or
             branch_path == path or
-            path.startswith(branch_path+"/"))
+            path.startswith(branch_path+u"/"))
 
 
 def find_prev_location(paths, branch_path, revnum):

@@ -72,10 +72,10 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertLogEquals( [({'trunk': ('A', '', 1, NODE_DIR)}, 2),
-             ({'bla': ('A', None, -1, NODE_FILE)}, 1),
-             ({'': ('A', None, -1, NODE_DIR)}, 0)],
-            (l[:2] for l in walker.iter_changes(["trunk"], 2, 0)))
+        self.assertLogEquals( [({u'trunk': ('A', u'', 1, NODE_DIR)}, 2),
+             ({u'bla': ('A', None, -1, NODE_FILE)}, 1),
+             ({u'': ('A', None, -1, NODE_DIR)}, 0)],
+            (l[:2] for l in walker.iter_changes([u"trunk"], 2, 0)))
 
     def test_get_branch_follow_branch(self):
         repos_url = self.make_svn_repository("a")
@@ -93,7 +93,7 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertEqual(2, len(list(walker.iter_changes(["branches/foo"], 3))))
+        self.assertEqual(2, len(list(walker.iter_changes([u"branches/foo"], 3))))
 
     def test_get_branch_follow_multiple(self):
         repos_url = self.make_svn_repository("a")
@@ -111,9 +111,9 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertLogEquals( [({'branches/foo': ('A', 'trunk', 2, 2)}, 3),
-             ({'trunk': ('A', None, -1, 2)}, 1)],
-                (l[:2] for l in walker.iter_changes(["branches/foo", "trunk"], 3, 0)))
+        self.assertLogEquals( [({u'branches/foo': ('A', u'trunk', 2, 2)}, 3),
+             ({u'trunk': ('A', None, -1, 2)}, 1)],
+                (l[:2] for l in walker.iter_changes([u"branches/foo", u"trunk"], 3, 0)))
 
     def test_get_branch_follow_branch_changing_parent(self):
         repos_url = self.make_svn_repository("a")
@@ -134,10 +134,10 @@ class TestLogWalker(SubversionTestCase):
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
         self.assertLogEquals([
-            ({"branches/abranch": ('A', 'trunk', 2, NODE_DIR)}, 3),
-            ({"trunk/foo": ('A', None, -1, NODE_FILE),
-              "trunk": ('A', None, -1, NODE_DIR)}, 1)
-            ], [l[:2] for l in walker.iter_changes(["branches/abranch/foo"], 3)])
+            ({u"branches/abranch": ('A', u'trunk', 2, NODE_DIR)}, 3),
+            ({u"trunk/foo": ('A', None, -1, NODE_FILE),
+              u"trunk": ('A', None, -1, NODE_DIR)}, 1)
+            ], [l[:2] for l in walker.iter_changes([u"branches/abranch/foo"], 3)])
 
     def test_get_branch_invalid_revision(self):
         repos_url = self.make_svn_repository("a")
@@ -156,7 +156,7 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertEqual(2, len(list(walker.iter_changes([""], 1))))
+        self.assertEqual(2, len(list(walker.iter_changes([u""], 1))))
 
     def test_branch_log_specific(self):
         repos_url = self.make_svn_repository("a")
@@ -171,7 +171,7 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertEqual(1, len(list(walker.iter_changes(["branches/brancha"],
+        self.assertEqual(1, len(list(walker.iter_changes([u"branches/brancha"],
             1))))
 
     def test_iter_changes_ignore_unchanged(self):
@@ -191,7 +191,7 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertEqual(1, len(list(walker.iter_changes(["branches/brancha"],
+        self.assertEqual(1, len(list(walker.iter_changes([u"branches/brancha"],
             2))))
 
     def test_find_latest_none(self):
@@ -202,7 +202,7 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertEqual(1, walker.find_latest_change("", 1))
+        self.assertEqual(1, walker.find_latest_change(u"", 1))
 
     def test_find_latest_children_root(self):
         repos_url = self.make_svn_repository("a")
@@ -213,7 +213,7 @@ class TestLogWalker(SubversionTestCase):
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
         self.assertEqual(1,
-            walker.find_latest_change("", 1))
+            walker.find_latest_change(u"", 1))
 
     def test_find_latest_case(self):
         repos_url = self.make_svn_repository("a")
@@ -230,7 +230,7 @@ class TestLogWalker(SubversionTestCase):
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
         self.assertEqual(1,
-            walker.find_latest_change("branches", 2))
+            walker.find_latest_change(u"branches", 2))
 
     def test_find_latest_parent(self):
         repos_url = self.make_svn_repository("a")
@@ -248,7 +248,7 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertEqual(2, walker.find_latest_change("tags/tmp/foo", 2))
+        self.assertEqual(2, walker.find_latest_change(u"tags/tmp/foo", 2))
 
     def test_find_latest_parent_just_modify(self):
         repos_url = self.make_svn_repository("a")
@@ -271,7 +271,7 @@ class TestLogWalker(SubversionTestCase):
         cb.close()
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
-        self.assertEqual(2, walker.find_latest_change("tags/tmp/foo", 3))
+        self.assertEqual(2, walker.find_latest_change(u"tags/tmp/foo", 3))
 
     def test_find_latest_parentmoved(self):
         repos_url = self.make_svn_repository("a")
@@ -287,7 +287,7 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertIs(2, walker.find_latest_change("bla/tmp", 2))
+        self.assertIs(2, walker.find_latest_change(u"bla/tmp", 2))
 
     def test_find_latest_nonexistant(self):
         repos_url = self.make_svn_repository("a")
@@ -303,8 +303,8 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertIs(None, walker.find_latest_change("bloe", 2))
-        self.assertIs(None, walker.find_latest_change("bloe/bla", 2))
+        self.assertIs(None, walker.find_latest_change(u"bloe", 2))
+        self.assertIs(None, walker.find_latest_change(u"bloe/bla", 2))
 
     def test_find_latest_change(self):
         repos_url = self.make_svn_repository("a")
@@ -315,7 +315,7 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertEqual(1, walker.find_latest_change("branches", 1))
+        self.assertEqual(1, walker.find_latest_change(u"branches", 1))
 
     def test_find_latest_change_children(self):
         repos_url = self.make_svn_repository("a")
@@ -331,7 +331,7 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertEqual(2, walker.find_latest_change("branches", 2))
+        self.assertEqual(2, walker.find_latest_change(u"branches", 2))
 
     def test_find_latest_change_prop(self):
         repos_url = self.make_svn_repository("a")
@@ -351,7 +351,7 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertEqual(3, walker.find_latest_change("branches", 3))
+        self.assertEqual(3, walker.find_latest_change(u"branches", 3))
 
     def test_find_latest_change_file(self):
         repos_url = self.make_svn_repository("a")
@@ -372,7 +372,7 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertEqual(3, walker.find_latest_change("branches/foo", 3))
+        self.assertEqual(3, walker.find_latest_change(u"branches/foo", 3))
 
     def test_find_latest_change_newer(self):
         repos_url = self.make_svn_repository("a")
@@ -393,7 +393,7 @@ class TestLogWalker(SubversionTestCase):
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertEqual(2, walker.find_latest_change("branches/foo", 2))
+        self.assertEqual(2, walker.find_latest_change(u"branches/foo", 2))
 
     def test_follow_history_branch_replace(self):
         repos_url = self.make_svn_repository("a")
@@ -413,9 +413,9 @@ class TestLogWalker(SubversionTestCase):
         cb.close()
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
-        self.assertLogEquals([({"trunk/data": ('A', None, -1, NODE_FILE),
-                               "trunk": ('A', None, -1, NODE_DIR)}, 3)],
-                             [l[:2] for l in walker.iter_changes(["trunk"], 3)])
+        self.assertLogEquals([({u"trunk/data": ('A', None, -1, NODE_FILE),
+                                u"trunk": ('A', None, -1, NODE_DIR)}, 3)],
+                             [l[:2] for l in walker.iter_changes([u"trunk"], 3)])
 
     def test_follow_history(self):
         repos_url = self.make_svn_repository("a")
@@ -433,8 +433,8 @@ class TestLogWalker(SubversionTestCase):
         repos_url = self.make_svn_repository("a")
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
 
-        self.assertLogEquals([({'': ('A', None, -1, NODE_DIR)}, 0)],
-                [l[:2] for l in walker.iter_changes([""], 0)])
+        self.assertLogEquals([({u'': ('A', None, -1, NODE_DIR)}, 0)],
+                [l[:2] for l in walker.iter_changes([u""], 0)])
 
     def test_later_update(self):
         repos_url = self.make_svn_repository("a")
@@ -445,11 +445,11 @@ class TestLogWalker(SubversionTestCase):
         cb.add_file("foo")
         cb.close()
 
-        for (paths, rev, revprops) in walker.iter_changes([""], 1):
-            self.assertTrue(rev == 0 or paths.has_key("foo"))
+        for (paths, rev, revprops) in walker.iter_changes([u""], 1):
+            self.assertTrue(rev == 0 or paths.has_key(u"foo"))
             self.assertTrue(rev in (0, 1))
 
-        self.assertRaises(NoSuchRevision, lambda: list(walker.iter_changes([""], 2)))
+        self.assertRaises(NoSuchRevision, lambda: list(walker.iter_changes([u""], 2)))
 
     def test_get_branch_log_follow(self):
         repos_url = self.make_svn_repository("a")
@@ -522,9 +522,10 @@ class TestLogWalker(SubversionTestCase):
         cb.close()
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
-        self.assertLogEquals([({'bar/trunk': (u'M', None, -1, NODE_DIR)}, 3),
-                           ({'bar': (u'A', 'foo', 1, NODE_DIR)}, 2),
-                           ({"foo": ('A', None, -1, NODE_DIR), 'foo/trunk': (u'A', None, -1, NODE_DIR)}, 1)], [l[:2] for l in walker.iter_changes(["bar"], 3)])
+        self.assertLogEquals([({u'bar/trunk': (u'M', None, -1, NODE_DIR)}, 3),
+                           ({u'bar': (u'A', u'foo', 1, NODE_DIR)}, 2),
+                           ({u"foo": ('A', None, -1, NODE_DIR), 
+                             u'foo/trunk': (u'A', None, -1, NODE_DIR)}, 1)], [l[:2] for l in walker.iter_changes([u"bar"], 3)])
 
     def test_iter_changes_property_change(self):
         repos_url = self.make_svn_repository('d')
@@ -550,11 +551,11 @@ class TestLogWalker(SubversionTestCase):
         cb.close()
 
         walker = self.get_log_walker(transport=SvnRaTransport(repos_url))
-        self.assertLogEquals([({'trunk': (u'M', None, -1, NODE_DIR)}, 3),
-                           ({'trunk': (u'M', None, -1, NODE_DIR)}, 2),
-                           ({'trunk/bla': (u'A', None, -1, NODE_FILE),
-                             'trunk': (u'A', None, -1, NODE_DIR)}, 1)],
-                           [l[:2] for l in walker.iter_changes(["trunk"], 3)])
+        self.assertLogEquals([({u'trunk': (u'M', None, -1, NODE_DIR)}, 3),
+                           ({u'trunk': (u'M', None, -1, NODE_DIR)}, 2),
+                           ({u'trunk/bla': (u'A', None, -1, NODE_FILE),
+                             u'trunk': (u'A', None, -1, NODE_DIR)}, 1)],
+                           [l[:2] for l in walker.iter_changes([u"trunk"], 3)])
 
     def test_iter_changes_pointless(self):
         repos_url = self.make_svn_repository('d')
@@ -639,12 +640,12 @@ class DictBasedLogwalkerTestCase(TestCase):
 
     def test_empty(self):
         lw = logwalker.DictBasedLogWalker({}, {})
-        self.assertEquals([({'': ('A', None, -1, NODE_DIR)}, 0, {})],
-                list(lw.iter_changes([""], 0)))
+        self.assertEquals([({u'': ('A', None, -1, NODE_DIR)}, 0, {})],
+                list(lw.iter_changes([u""], 0)))
 
     def test_simple_root(self):
-        lw = logwalker.DictBasedLogWalker({1:{"/": ('A', None, -1, NODE_DIR)}},
+        lw = logwalker.DictBasedLogWalker({1:{u"/": ('A', None, -1, NODE_DIR)}},
                 {1:{"svn:log": "foo"}})
-        self.assertEquals([({'/': ('A', None, -1, NODE_DIR)}, 1, {'svn:log': 'foo'}),
-            ({'': ('A', None, -1, NODE_DIR)}, 0, {})],
+        self.assertEquals([({u'/': ('A', None, -1, NODE_DIR)}, 1, {'svn:log': u'foo'}),
+            ({u'': ('A', None, -1, NODE_DIR)}, 0, {})],
                 list(lw.iter_changes([""], 1)))

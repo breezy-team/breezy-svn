@@ -178,9 +178,9 @@ class TestWithRepository(SubversionTestCase):
         revmeta1 = repos._revmeta_provider.get_revision(u"", 1)
         revmeta2 = repos._revmeta_provider.get_revision(u"", 2)
 
-        self.assertChangedPathsEquals({"": ("M", None, -1, NODE_DIR)}, 
+        self.assertChangedPathsEquals({u"": ("M", None, -1, NODE_DIR)}, 
                           revmeta1.metarev.paths)
-        self.assertChangedPathsEquals({"bar": ("A", None, -1, NODE_FILE)},
+        self.assertChangedPathsEquals({u"bar": ("A", None, -1, NODE_FILE)},
                           revmeta2.metarev.paths)
 
     def test_foreign_revid(self):

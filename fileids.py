@@ -336,15 +336,12 @@ class FileIdMapStore(object):
 
         # No history -> empty map
         todo = list(self.repos._revmeta_provider._iter_reverse_revmeta_mapping_history(branch, revnum, to_revnum=0, mapping=mapping))
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             for i, (revmeta, hidden, mapping) in enumerate(reversed(todo)):
                 pb.update('generating file id map', i, len(todo))
                 if hidden:
                     continue
                 self.update_idmap(map, revmeta, mapping)
-        finally:
-            pb.finished()
         return map
 
 
@@ -418,8 +415,7 @@ class CachingFileIdMapStore(object):
         next_parent_revs = []
 
         # No history -> empty map
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             for revmeta, hidden, mapping in self.repos._revmeta_provider._iter_reverse_revmeta_mapping_history(branch, revnum, to_revnum=0, mapping=mapping):
                 pb.update("fetching changes for file ids",
                     revnum-revmeta.metarev.revnum, revnum)
@@ -433,8 +429,6 @@ class CachingFileIdMapStore(object):
                     break
                 except RevisionNotPresent:
                     todo.append((revmeta, mapping))
-        finally:
-            pb.finished()
 
         # target revision was present
         if len(todo) == 0:
@@ -448,9 +442,7 @@ class CachingFileIdMapStore(object):
             else:
                 map = DictFileIdMap({})
 
-        pb = ui.ui_factory.nested_progress_bar()
-
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             for i, (revmeta, mapping) in enumerate(reversed(todo)):
                 pb.update('generating file id map', i, len(todo))
                 revid = revmeta.get_revision_id(mapping)
@@ -460,7 +452,5 @@ class CachingFileIdMapStore(object):
                     revnum == revmeta.metarev.revnum):
                     self.cache.save(revid, parent_revs, map.as_dict())
                 next_parent_revs = [revid]
-        finally:
-            pb.finished()
         return map
 

@@ -235,8 +235,7 @@ class RepositoryConverter(object):
                 heads = None
             else:
                 heads = set()
-            pb = ui.ui_factory.nested_progress_bar()
-            try:
+            with ui.ui_factory.nested_progress_bar() as pb:
                 for kind, item in it:
                     if kind == "revision":
                         pb.update("finding branches", to_revnum-item.metarev.revnum,
@@ -255,8 +254,6 @@ class RepositoryConverter(object):
                     elif kind == "delete":
                         (path, revnum) = item
                         deleted.add(path)
-            finally:
-                pb.finished()
 
             if create_shared_repo:
                 if not InterFromSvnToInventoryRepository.is_compatible(source_repos, target_repos):
@@ -294,14 +291,11 @@ class RepositoryConverter(object):
             return False
 
         # TODO: Skip revisions in removed branches unless all=True
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             pb.update("checking revisions to fetch", 0,
                       len(revmetas))
             revfinder.find_iter_revisions(revmetas, mapping,
                 needs_manual_check, pb=pb, heads=heads)
-        finally:
-            pb.finished()
         missing = revfinder.get_missing()
         inter.fetch(needed=missing)
 
@@ -341,8 +335,7 @@ class RepositoryConverter(object):
 
     def _create_branches(self, existing_branches, prefix, shared,
                          working_trees, colocated, remember_parent):
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             for i, source_branch in enumerate(existing_branches):
                 try:
                     pb.update("%s:%d" % (source_branch.get_branch_path(),
@@ -366,8 +359,6 @@ class RepositoryConverter(object):
                     raise
                 if working_trees and not target_branch.controldir.has_workingtree():
                     target_branch.controldir.create_workingtree()
-        finally:
-            pb.finished()
 
     def _remove_branches(self, removed_branches, exceptions):
         """Recursively remove a set of branches.

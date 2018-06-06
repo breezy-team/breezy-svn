@@ -39,6 +39,7 @@ from breezy.bzr.inventory import (
     InventoryDirectory,
     TreeReference,
     )
+from breezy.bzr.inventorytree import find_ids_across_trees
 from breezy.osutils import (
     md5,
     )
@@ -83,6 +84,25 @@ class SubversionTree(object):
         """Get the RulesSearcher for this tree given the default one."""
         return rules._StackedRulesSearcher(
             [SvnRulesSearcher(self), default_searcher])
+
+    def paths2ids(self, paths, trees=[], require_versioned=True):
+        """Return all the ids that can be reached by walking from paths.
+
+        Each path is looked up in this tree and any extras provided in
+        trees, and this is repeated recursively: the children in an extra tree
+        of a directory that has been renamed under a provided path in this tree
+        are all returned, even if none exist under a provided path in this
+        tree, and vice versa.
+
+        :param paths: An iterable of paths to start converting to ids from.
+            Alternatively, if paths is None, no ids should be calculated and None
+            will be returned. This is offered to make calling the api unconditional
+            for code that *might* take a list of files.
+        :param trees: Additional trees to consider.
+        :param require_versioned: If False, do not raise NotVersionedError if
+            an element of paths is not versioned in this tree and all of trees.
+        """
+        return find_ids_across_trees(paths, [self] + list(trees), require_versioned)
 
 
 class SvnRevisionTreeCommon(SubversionTree,RevisionTree):

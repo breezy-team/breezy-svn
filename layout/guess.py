@@ -100,9 +100,8 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
              relpath a valid branch path.
     """
     potentials = {}
-    pb = ui.ui_factory.nested_progress_bar()
     layout_cache = {}
-    try:
+    with ui.ui_factory.nested_progress_bar() as pb:
         for (revpaths, revnum, revprops) in changed_paths:
             assert isinstance(revpaths, dict)
             pb.update("analyzing repository layout", last_revnum-revnum,
@@ -115,8 +114,6 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
                     potentials[str(layout)] = 0
                 potentials[str(layout)] += 1
                 layout_cache[str(layout)] = layout
-    finally:
-        pb.finished()
 
     entries = potentials.items()
     entries.sort(lambda (a, b), (c, d): d - b)
@@ -150,13 +147,10 @@ def repository_guess_layout(repository, revnum, branch_path=None):
 
 
 def logwalker_guess_layout(logwalker, revnum, branch_path=None):
-    pb = ui.ui_factory.nested_progress_bar()
-    try:
+    with ui.ui_factory.nested_progress_bar() as pb:
         (guessed_layout, layout) = guess_layout_from_history(
             logwalker.iter_changes(None, revnum,
                 max(0, revnum-GUESS_SAMPLE_SIZE)), revnum, branch_path)
-    finally:
-        pb.finished()
     mutter("Guessed repository layout: %r, guess layout to use: %r" %
             (guessed_layout, layout))
     return (guessed_layout, layout)

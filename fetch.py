@@ -1286,15 +1286,12 @@ class FetchRevisionFinder(object):
         :return: List with revmeta, mapping tuples to fetch
         """
         from_revnum = self.source.get_latest_revnum()
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             all_revs = self.source._revmeta_provider.iter_all_revisions(
                     layout,
                     check_unusual_path=mapping.is_branch_or_tag,
                     from_revnum=from_revnum, pb=pb)
             return self.find_iter_revisions(all_revs, mapping, lambda x: False)
-        finally:
-            pb.finished()
 
     def find_mainline(self, foreign_revid, mapping, find_ghosts=False,
                       exclude_non_mainline=None):
@@ -1305,8 +1302,7 @@ class FetchRevisionFinder(object):
         # TODO: Do binary search to find first revision to fetch if
         # fetch_ghosts=False ?
         needs_checking = []
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             for revmeta, hidden, mapping in self.source._revmeta_provider._iter_reverse_revmeta_mapping_history(
                 branch_path, revnum, to_revnum=0, mapping=mapping):
                 if hidden:
@@ -1330,8 +1326,6 @@ class FetchRevisionFinder(object):
                     self._check_present_interval = min(
                         self._check_present_interval*2, MAX_CHECK_PRESENT_INTERVAL)
                 self.checked.add((revmeta.metarev.get_foreign_revid(), mapping))
-        finally:
-            pb.finished()
         for r in self.check_revmetas(needs_checking):
             revmetas.appendleft(r)
         # Determine if there are any RHS parents to fetch
@@ -1679,8 +1673,7 @@ class InterFromSvnToInventoryRepository(InterRepository):
         """
         self._prev_inv = None
         activeranges = defaultdict(list)
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             for i, (revmeta, mapping) in enumerate(revs):
                 pb.update("determining revision ranges", i, len(revs))
                 p = revmeta.get_direct_lhs_parent_revmeta()
@@ -1688,8 +1681,6 @@ class InterFromSvnToInventoryRepository(InterRepository):
                 range.append(revmeta)
                 del activeranges[p,mapping]
                 activeranges[revmeta,mapping] = range
-        finally:
-            pb.finished()
 
         def cmprange((ak, av),(bk, bv)):
             return cmp(av[0], bv[0])

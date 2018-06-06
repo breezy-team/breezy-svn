@@ -187,19 +187,19 @@ class RootLayout(RepositoryLayout):
         """
         raise AssertionError("should never be reached, there can't be any tag paths in this layout")
 
-    def get_branch_path(self, name, project=""):
+    def get_branch_path(self, name, project=u""):
         """Return the path at which the branch with specified name should be found.
 
         :param name: Name of the branch.
         :param project: Optional name of the project the branch is for. Can include slashes.
         :return: Path of the branch.
         """
-        if name != "" or project:
+        if name != u"" or project:
             raise svn_errors.NoCustomBranchPaths(self)
-        return ""
+        return u""
 
-    def get_branch_name(self, path, project=""):
-        if path != "":
+    def get_branch_name(self, path, project=u""):
+        if path != u"":
             raise svn_errors.NoCustomBranchPaths(self)
         return u""
 
@@ -247,7 +247,7 @@ class CustomLayout(RepositoryLayout):
     def supports_tags(self):
         return (self.tags != [])
 
-    def get_tag_path(self, name, project=""):
+    def get_tag_path(self, name, project=u""):
         """Return the path at which the tag with specified name should be found.
 
         :param name: Name of the tag.
@@ -256,7 +256,7 @@ class CustomLayout(RepositoryLayout):
         """
         raise svn_errors.NoLayoutTagSetSupport(self)
 
-    def get_tag_name(self, path, project=""):
+    def get_tag_name(self, path, project=u""):
         """Determine the tag name from a tag path.
 
         :param path: Path inside the repository.
@@ -333,7 +333,7 @@ class WildcardLayout(RepositoryLayout):
     def __init__(self, branches=[], tags=[]):
         self.branches = [b.strip(u"/") for b in branches]
         self.tags = [t.strip(u"/") for t in tags]
-        assert all([type(b) is str for b in self.branches + self.tags])
+        assert all([isinstance(b, text_type) for b in self.branches + self.tags])
 
     def supports_tags(self):
         return (self.tags != [])

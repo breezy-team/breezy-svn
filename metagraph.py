@@ -321,6 +321,7 @@ class RevisionMetadataBrowser(object):
             self._pending_prefixes = None
             self._prefixes = None
         else:
+            assert all(isinstance(p, text_type) for p in prefixes)
             self.from_prefixes = [prefix.strip(u"/") for prefix in prefixes]
             self._pending_prefixes = defaultdict(set)
             self._prefixes = set(self.from_prefixes)
@@ -413,6 +414,7 @@ class RevisionMetadataBrowser(object):
         assert self.from_revnum >= self.to_revnum
         count = self.from_revnum-self.to_revnum
         for (paths, revnum, revprops) in self._iter_log:
+            assert all(isinstance(p, text_type) for p in paths), "%r" % paths
             assert revnum <= self.from_revnum
             if self._pb:
                 self._pb.update("discovering revisions",
@@ -440,7 +442,7 @@ class RevisionMetadataBrowser(object):
             deletes = []
 
             if paths == {}:
-                paths = {"": ("M", None, -1, NODE_DIR)}
+                paths = {u"": ("M", None, -1, NODE_DIR)}
 
             # Find out what branches have changed
             for p in sorted(paths):

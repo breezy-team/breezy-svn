@@ -1056,8 +1056,8 @@ class PushNewBranchTests(SubversionTestCase):
         bzrwt, new_ie, foo_ie, revid1, revid2 = self._create_bzrwt_with_changed_root()
         newdir = ControlDir.open(repos_url+"/trunk")
         newbranch = newdir.import_branch(bzrwt.branch)
-        self.assertChangedPathsEquals({"trunk": ("R", None, -1, NODE_DIR),
-                           "trunk/foo": ("A", "trunk/foo", 1, NODE_FILE)},
+        self.assertChangedPathsEquals({u"trunk": ("R", None, -1, NODE_DIR),
+                           u"trunk/foo": ("A", u"trunk/foo", 1, NODE_FILE)},
             newbranch.repository._revmeta_provider.get_revision(u"trunk", 2).metarev.paths)
         tree1 = newbranch.repository.revision_tree(revid1)
         tree2 = newbranch.repository.revision_tree(revid2)

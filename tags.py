@@ -94,8 +94,7 @@ def resolve_tags_svn_ancestry(branch, tag_revmetas):
     ret = {}
     # Try to find the tags that are in the ancestry of this branch
     # and use their appropriate mapping
-    pb = ui.ui_factory.nested_progress_bar()
-    try:
+    with ui.ui_factory.nested_progress_bar() as pb:
         for (revmeta, hidden, mapping) in branch._iter_revision_meta_ancestry(
             pb=pb):
             if revmeta not in reverse_tag_revmetas:
@@ -111,8 +110,6 @@ def resolve_tags_svn_ancestry(branch, tag_revmetas):
                     raise TypeError(name)
                 ret[name] = (revmeta, mapping, revmeta.get_revision_id(mapping))
             del reverse_tag_revmetas[revmeta]
-    finally:
-        pb.finished()
     ret.update(_resolve_reverse_tags_fallback(branch, reverse_tag_revmetas))
     return ret
 

@@ -54,7 +54,7 @@ class TestBasisTree(SubversionTestCase):
         self.client_update("dc")
 
         tree = SvnBasisTree(tree)
-        self.assertEquals(tree.get_file_verifier(None, "file"),
+        self.assertEquals(tree.get_file_verifier("file"),
             ("MD5", osutils.md5("new contents").hexdigest()))
 
     def test_root_id(self):

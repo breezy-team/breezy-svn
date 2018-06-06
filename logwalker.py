@@ -61,6 +61,7 @@ def iter_all_changes(from_revnum, to_revnum, get_revision_paths,
     while ((not ascending and revnum >= to_revnum) or
            (ascending and revnum <= to_revnum)):
         revpaths = get_revision_paths(revnum)
+        assert all(isinstance(p, text_type) for p in revpaths)
 
         # Report this revision if any affected paths are changed
         yield (revpaths, revnum, revprop_list(revnum))
@@ -116,6 +117,7 @@ def iter_prefixes_changes(from_prefixes, from_revnum, to_revnum,
     while revnum >= to_revnum:
         prefixes = todo_prefixes.pop(revnum)
         revpaths = get_revision_paths(revnum)
+        assert all(isinstance(p, text_type) for p in revpaths)
 
         # Report this revision if any affected paths are changed
         if any(changes.changes_path(revpaths, prefix, True) for prefix in prefixes):
@@ -248,7 +250,7 @@ class CachingLogWalker(object):
         :param path: Path to check for changes
         :param revnum: First revision to check
         """
-        assert isinstance(path, str)
+        assert isinstance(path, text_type)
         assert isinstance(revnum, int) and revnum >= 0
         try:
             self._fetch_revisions(revnum)
@@ -362,7 +364,7 @@ class CachingLogWalker(object):
                 if self.saved_minrevnum:
                     rcvr.total += self.saved_minrevnum
                     self.mutter("get_log %d->%d", self.saved_minrevnum, 0)
-                    self.actual._transport.get_log(rcvr, [""],
+                    self.actual._transport.get_log(rcvr, [u""],
                         self.saved_minrevnum - 1, 0, 0, True, True, False,
                         todo_revprops)
                     if self.saved_minrevnum:
@@ -429,7 +431,7 @@ class LogWalker(object):
         :param path: Path to check for changes
         :param revnum: First revision to check
         """
-        assert isinstance(path, str)
+        assert isinstance(path, text_type)
         assert isinstance(revnum, int) and revnum >= 0
 
         try:

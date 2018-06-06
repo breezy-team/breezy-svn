@@ -18,6 +18,8 @@
 
 from __future__ import absolute_import
 
+from breezy.sixish import text_type
+
 from breezy.plugins.svn import lazy_check_versions
 lazy_check_versions()
 
@@ -46,8 +48,9 @@ from breezy.plugins.svn.commit import dir_editor_send_changes
 
 
 def determine_changed_paths(repository, branch_path, rev, revno):
+    assert isinstance(branch_path, text_type)
     def fixpath(p):
-        return "%s/%s" % (branch_path, p.encode("utf-8"))
+        return u"%s/%s" % (branch_path, p)
     changes = {}
     changes[branch_path] = ("M", None, -1) # Always changes
     delta = repository.get_revision_delta(rev.revision_id)

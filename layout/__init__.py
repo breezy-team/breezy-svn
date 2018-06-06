@@ -49,6 +49,7 @@ class RepositoryLayout(object):
         :return: List of path prefixes relevant for project
             (can include paths for other projects as well)
         """
+        assert isinstance(project, text_type)
         return [project]
 
     def supports_tags(self):
@@ -249,8 +250,7 @@ class BranchPatternExpander(object):
         if children is None:
             return []
         ret = []
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             for idx, (c, has_props, revnum) in enumerate(children):
                 pb.update("browsing branches", idx, len(children))
                 if len(todo) == 1:
@@ -258,8 +258,6 @@ class BranchPatternExpander(object):
                     ret.append((u"/".join(begin+[c]), has_props, revnum))
                 else:
                     ret += self.expand(begin+[c], todo[1:])
-        finally:
-            pb.finished()
         return ret
 
 
@@ -276,8 +274,7 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None):
     """
     expander = BranchPatternExpander(repository.transport, revnum, project)
 
-    pb = ui.ui_factory.nested_progress_bar()
-    try:
+    with ui.ui_factory.nested_progress_bar() as pb:
         for idx, pattern in enumerate(itemlist):
             pb.update("finding branches", idx, len(itemlist))
             for bp, has_props, revnum in expander.expand([],
@@ -285,8 +282,6 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None):
                 if verify_fn(bp, project):
                     yield (project, bp, bp.split(u"/")[-1], has_props,
                            revnum)
-    finally:
-        pb.finished()
 
 
 help_layout = """Subversion repository layouts.

@@ -194,11 +194,11 @@ class WorkingSubversionBranch(SubversionTestCase):
         b = Branch.open(repos_url + "/trunk")
         log = self.client_log(repos_url, 4, 0)
         self.assertEquals(log[0][0], None)
-        self.assertEquals(log[1][0], {'/tags': ('A', None, -1),
-                                      '/trunk': ('A', None, -1)})
-        self.assertEquals(log[2][0], {'/trunk/bla': ('A', None, -1)})
-        self.assertEquals(log[3][0], {'/tags/mytag': ('A', '/trunk', 1)})
-        self.assertEquals(log[4][0], {'/tags/mytag': ('R', '/trunk', 2)})
+        self.assertEquals(log[1][0], {u'/tags': ('A', None, -1),
+                                      u'/trunk': ('A', None, -1)})
+        self.assertEquals(log[2][0], {u'/trunk/bla': ('A', None, -1)})
+        self.assertEquals(log[3][0], {u'/tags/mytag': ('A', u'/trunk', 1)})
+        self.assertEquals(log[4][0], {u'/tags/mytag': ('R', u'/trunk', 2)})
 
         self.assertEquals({u"mytag": newtagrevid}, b.tags.get_tag_dict())
 

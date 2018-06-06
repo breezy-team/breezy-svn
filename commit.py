@@ -134,8 +134,7 @@ def update_svk_features(oldvalue, merges, lookup_revid=None):
 
 def update_mergeinfo(lookup_revid, graph, oldvalue, baserevid, merges):
     """Update a svn:mergeinfo property to include a specified list of merges."""
-    pb = ui.ui_factory.nested_progress_bar()
-    try:
+    with ui.ui_factory.nested_progress_bar() as pb:
         mergeinfo = properties.parse_mergeinfo_property(oldvalue)
         for i, merge in enumerate(merges):
             pb.update("updating mergeinfo property", i, len(merges))
@@ -149,8 +148,6 @@ def update_mergeinfo(lookup_revid, graph, oldvalue, baserevid, merges):
 
                 properties.mergeinfo_add_revision(mergeinfo, "/" + path,
                     revnum)
-    finally:
-        pb.finished()
     newvalue = properties.generate_mergeinfo_property(mergeinfo)
     if newvalue != oldvalue:
         return newvalue

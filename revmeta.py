@@ -445,8 +445,7 @@ class BzrMetaRevision(object):
         total_hidden = 0
         hidden_seen = 0
         lm = self
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             while lm and mapping.is_branch_or_tag(lm.metarev.branch_path):
                 pb.update("determining revno", self.metarev.revnum-lm.metarev.revnum,
                           self.metarev.revnum)
@@ -459,8 +458,6 @@ class BzrMetaRevision(object):
                 extra += 1
                 lm = lm.get_direct_lhs_parent_revmeta()
                 mapping = lhs_mapping
-        finally:
-            pb.finished()
         return extra - total_hidden
 
     def get_rhs_parents(self, mapping, parentrevmeta):

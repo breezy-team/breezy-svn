@@ -384,8 +384,7 @@ class InterToSvnRepository(InterRepository):
         """
         assert todo != []
         revid_map = {}
-        pb = ui.ui_factory.nested_progress_bar()
-        try:
+        with ui.ui_factory.nested_progress_bar() as pb:
             for rev in self.source.get_revisions(todo):
                 pb.update("pushing revisions", todo.index(rev.revision_id),
                           len(todo))
@@ -406,8 +405,6 @@ class InterToSvnRepository(InterRepository):
                 revid_map[rev.revision_id] = (last_revid, last_foreign_info)
                 root_action = ("open", last_foreign_info[0][2])
             return revid_map
-        finally:
-            pb.finished()
 
     def push_revision_inclusive(self, target_path, target_config, rev,
             push_merged, layout, project, root_action, push_metadata,
