@@ -402,11 +402,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 finally:
                     subwc.close()
 
-        wc = self._get_wc()
-        try:
+        with self._get_wc() as wc:
             dir_add(wc, u"", ".")
-        finally:
-            wc.close()
 
         return ignores
 
@@ -422,17 +419,14 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             # FIXME: should be able to use -1 here
             revnum = self.branch.get_revnum()
         old_branch_path = self.get_branch_path()
-        adm = self._get_wc(write_lock=True, depth=-1)
-        try:
+        with self._get_wc(write_lock=True, depth=-1) as adm:
             conn = self.branch.repository.transport.get_connection(old_branch_path)
             try:
-                update_wc(adm, self.basedir.encode("utf-8"), conn, 
+                update_wc(adm, self.basedir.encode("utf-8"), conn,
                         urlutils.join(self.branch.repository.transport.svn_url, branch_path),
                         revnum)
             finally:
                 self.branch.repository.transport.add_connection(conn)
-        finally:
-            adm.close()
         return revnum
 
     def update(self, change_reporter=None, possible_transports=None,
@@ -459,8 +453,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         # FIXME: Use to_file argument
         # FIXME: Use verbose argument
         assert isinstance(files, list)
-        wc = self._get_wc(write_lock=True)
-        try:
+        with self._get_wc(write_lock=True) as wc:
             for file in files:
                 try:
                     wc.delete(osutils.safe_utf8(self.abspath(file)),
@@ -470,20 +463,15 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                         note("%s does not exist." % file)
                     else:
                         raise
-        finally:
-            wc.close()
 
         for file in files:
             self._change_fileid_mapping(None, file)
 
     def unversion(self, paths, file_ids=None):
-        wc = self._get_wc(write_lock=True)
-        try:
+        with self._get_wc(write_lock=True) as wc:
             for path in paths:
                 wc.delete(osutils.safe_utf8(self.abspath(path)),
                           keep_local=True)
-        finally:
-            wc.close()
 
     def all_versioned_paths(self):
         ret = set()
@@ -541,17 +529,11 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 osutils.safe_utf8(to_dir),
                 osutils.safe_utf8(os.path.basename(from_path)))
             self._rename_fileid(from_path, new_path)
-            to_wc = self._get_wc(osutils.safe_unicode(to_dir), write_lock=True)
-            try:
+            with self._get_wc(osutils.safe_unicode(to_dir), write_lock=True) as to_wc:
                 to_wc.copy(from_abspath,
                     osutils.safe_utf8(os.path.basename(from_path)))
-            finally:
-                to_wc.close()
-            from_wc = self._get_wc(write_lock=True)
-            try:
+            with self._get_wc(write_lock=True) as from_wc:
                 from_wc.delete(from_abspath)
-            finally:
-                from_wc.close()
 
     def rename_one(self, from_rel, to_rel, after=False):
         from_rel = osutils.safe_unicode(from_rel)
@@ -627,8 +609,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return self.path2id("")
 
     def path2id(self, path):
-        wc = self._get_wc()
-        try:
+        with self._get_wc() as wc:
             try:
                 entry = self._get_entry(wc, path)
                 (file_id, revision) = self._find_ids(osutils.safe_unicode(path), entry)
@@ -636,8 +617,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 return None
             else:
                 return file_id
-        finally:
-            wc.close()
 
     def _get_entry(self, wc, path):
         path = osutils.safe_utf8(self.abspath(path))
@@ -651,8 +630,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def filter_unversioned_files(self, paths):
         ret = set()
-        wc = self._get_wc()
-        try:
+        with self._get_wc() as wc:
             for p in paths:
                 try:
                     entry = self._get_entry(wc, p)
@@ -661,8 +639,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 else:
                     if entry.schedule == SCHEDULE_DELETE:
                         ret.add(p)
-        finally:
-            wc.close()
         return ret
 
     def has_or_had_id(self, file_id):
@@ -742,8 +718,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def iter_entries_by_dir(self, specific_files=None):
         """See WorkingTree.iter_entries_by_dir."""
         if specific_files is not None:
-            wc = self._get_wc()
-            try:
+            with self._get_wc() as wc:
                 for path in specific_files:
                     parent = os.path.dirname(path)
                     parent_id = self.lookup_id(parent)
@@ -753,8 +728,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     ie = self._ie_from_entry(path, entry, parent_id[0])
                     if ie is not None:
                         yield path, ie
-            finally:
-                wc.close()
         else:
             fileids = {}
             w = Walker(self)
@@ -864,8 +837,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             self._cached_merges = merges
         self._transport.put_bytes('pending-merges', '\n'.join(merges),
             mode=self.controldir._get_file_mode())
-        adm = self._get_wc(write_lock=True)
-        try:
+        with self._get_wc(write_lock=True) as adm:
             old_svk_merges = svk.parse_svk_features(self._get_svk_merges(
                 self._get_base_branch_props()))
             svk_merges = set(old_svk_merges)
@@ -882,8 +854,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     svk.SVN_PROP_SVK_MERGE,
                     svk.serialize_svk_features(svk_merges),
                     self.basedir.encode("utf-8"))
-        finally:
-            adm.close()
 
     def smart_add(self, file_list, recurse=True, action=None, save=True):
         """See MutableTree.smart_add()."""
@@ -901,8 +871,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             todo = []
             file_path = os.path.abspath(osutils.safe_unicode(file_path))
             f = self.relpath(file_path)
-            wc = self._get_wc(os.path.dirname(f.encode(osutils._fs_enc)).decode(osutils._fs_enc), write_lock=True)
-            try:
+            with self._get_wc(os.path.dirname(f.encode(osutils._fs_enc)).decode(osutils._fs_enc), write_lock=True) as wc:
                 if self.filter_unversioned_files([f]):
                     if save:
                         mutter('adding %r', file_path)
@@ -921,8 +890,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                         if ignore_glob is not None:
                             ignored[ignore_glob].append(c_path)
                         todo.append(c_path)
-            finally:
-                wc.close()
             if todo != []:
                 cadded, cignored = self.smart_add(todo, recurse, action, save)
                 added.extend(cadded)
@@ -973,9 +940,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             kinds = [self.kind(file) for file in files]
         assert isinstance(files, list)
         for f, kind, file_id, copyfrom in zip(files, kinds, ids, _copyfrom):
-            wc = self._get_wc(os.path.dirname(osutils.safe_unicode(f)),
-                              write_lock=True)
-            try:
+            with self._get_wc(os.path.dirname(osutils.safe_unicode(f)),
+                    write_lock=True) as wc:
                 try:
                     utf8_abspath = osutils.safe_utf8(self.abspath(f))
                     wc.add(utf8_abspath, copyfrom[0], copyfrom[1])
@@ -987,8 +953,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                         raise NoSuchFile(path=f)
                     raise
                 self._fix_special(wc, utf8_abspath, f)
-            finally:
-                wc.close()
             if file_id is not None:
                 self._change_fileid_mapping(file_id, f)
 
@@ -1061,23 +1025,17 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def get_file_properties(self, path, file_id=None):
         abspath = self.abspath(path)
-        root_adm = self._get_wc(write_lock=False)
-        try:
-            adm = root_adm.probe_try(abspath.encode("utf-8"), False, 2)
+        with self._get_wc(write_lock=False) as root_adm, \
+             root_adm.probe_try(abspath.encode("utf-8"), False, 2) as adm:
             try:
-                try:
-                    (prop_changes, orig_props) = adm.get_prop_diffs(
-                        abspath.encode("utf-8"))
-                except subvertpy.SubversionException, (_, num):
-                    if num in (subvertpy.ERR_WC_NOT_DIRECTORY,
-                               subvertpy.ERR_WC_NOT_LOCKED):
-                        return {}
-                    raise
-            finally:
-                adm.close()
-            return apply_prop_changes(orig_props, prop_changes)
-        finally:
-            root_adm.close()
+                (prop_changes, orig_props) = adm.get_prop_diffs(
+                    abspath.encode("utf-8"))
+            except subvertpy.SubversionException, (_, num):
+                if num in (subvertpy.ERR_WC_NOT_DIRECTORY,
+                           subvertpy.ERR_WC_NOT_LOCKED):
+                    return {}
+                raise
+        return apply_prop_changes(orig_props, prop_changes)
 
     def _change_fileid_mapping(self, id, path, wc=None):
         """Change the file id mapping for a particular path."""
@@ -1115,16 +1073,13 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             raise
 
     def _get_changed_branch_props(self):
-        wc = self._get_wc()
-        try:
+        with self._get_wc() as wc:
             ret = {}
             (prop_changes, orig_props) = wc.get_prop_diffs(
                 self.basedir.encode("utf-8"))
             for k,v in prop_changes:
                 ret[k] = (orig_props.get(k), v)
             return ret
-        finally:
-            wc.close()
 
     def _get_branch_props(self):
         return self.get_file_properties("")
@@ -1134,13 +1089,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             wc.prop_set(k, v, self.basedir.encode("utf-8"))
 
     def _get_base_branch_props(self):
-        wc = self._get_wc()
-        try:
+        with self._get_wc() as wc:
             (prop_changes, orig_props) = wc.get_prop_diffs(
                 self.basedir.encode("utf-8"))
             return orig_props
-        finally:
-            wc.close()
 
     def _get_new_file_ids(self):
         return self.mapping.import_fileid_map_fileprops(
@@ -1336,32 +1288,20 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def transmit_svn_dir_deltas(self, file_id, editor):
         path = self.id2path(file_id)
         encoded_path = self.abspath(path).encoded("utf-8")
-        root_adm = self._get_wc(write_lock=True)
-        try:
-            adm = root_adm.probe_try(encoded_path, True, 1)
-            try:
-                entry = adm.entry(encoded_path)
-                self._fix_kind(root_adm, encoded_path, path, entry)
-                root_adm.transmit_prop_deltas(encoded_path, True, editor)
-            finally:
-                adm.close()
-        finally:
-            root_adm.close()
+        with self._get_wc(write_lock=True) as root_adm, \
+            root_adm.probe_try(encoded_path, True, 1) as adm:
+            entry = adm.entry(encoded_path)
+            self._fix_kind(root_adm, encoded_path, path, entry)
+            root_adm.transmit_prop_deltas(encoded_path, True, editor)
 
     def transmit_svn_file_deltas(self, path, editor):
         encoded_path = self.abspath(path).encode("utf-8")
-        root_adm = self._get_wc(write_lock=True)
-        try:
-            adm = root_adm.probe_try(encoded_path, True, 1)
-            try:
-                entry = adm.entry(encoded_path)
-                self._fix_kind(adm, encoded_path, path, entry)
-                root_adm.transmit_prop_deltas(encoded_path, entry, editor)
-                root_adm.transmit_text_deltas(encoded_path, True, editor)
-            finally:
-                adm.close()
-        finally:
-            root_adm.close()
+        with self._get_wc(write_lock=True) as root_adm, \
+            root_adm.probe_try(encoded_path, True, 1) as adm:
+            entry = adm.entry(encoded_path)
+            self._fix_kind(adm, encoded_path, path, entry)
+            root_adm.transmit_prop_deltas(encoded_path, entry, editor)
+            root_adm.transmit_text_deltas(encoded_path, True, editor)
 
     def merge_modified(self):
         """Return a dictionary of files modified by a merge.
