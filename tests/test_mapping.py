@@ -282,34 +282,34 @@ class ParseRevisionIdTests(TestCase):
 class EscapeTest(TestCase):
 
     def test_escape_svn_path_none(self):
-        self.assertEqual("", escape_svn_path(""))
+        self.assertEqual("", escape_svn_path(u""))
 
     def test_escape_svn_path_simple(self):
-        self.assertEqual("ab", escape_svn_path("ab"))
+        self.assertEqual("ab", escape_svn_path(u"ab"))
 
     def test_escape_svn_path_percent(self):
-        self.assertEqual("a%25b", escape_svn_path("a%b"))
+        self.assertEqual("a%25b", escape_svn_path(u"a%b"))
 
     def test_escape_svn_path_whitespace(self):
-        self.assertEqual("foobar%20", escape_svn_path("foobar "))
+        self.assertEqual("foobar%20", escape_svn_path(u"foobar "))
 
     def test_escape_svn_path_slash(self):
-        self.assertEqual("foobar%2F", escape_svn_path("foobar/"))
+        self.assertEqual("foobar%2F", escape_svn_path(u"foobar/"))
 
     def test_escape_svn_path_special_char(self):
-        self.assertEqual("foobar%8A", escape_svn_path("foobar\x8a"))
+        self.assertEqual("foobar%8A", escape_svn_path(u"foobar\x8a"))
 
     def test_unescape_svn_path_slash(self):
-        self.assertEqual("foobar/", unescape_svn_path("foobar%2F"))
+        self.assertEqual("foobar/", unescape_svn_path(u"foobar%2F"))
 
     def test_unescape_svn_path_none(self):
-        self.assertEqual("foobar", unescape_svn_path("foobar"))
+        self.assertEqual("foobar", unescape_svn_path(u"foobar"))
 
     def test_unescape_svn_path_percent(self):
-        self.assertEqual("foobar%b", unescape_svn_path("foobar%25b"))
+        self.assertEqual("foobar%b", unescape_svn_path(u"foobar%25b"))
 
     def test_escape_svn_path_nordic(self):
-        self.assertEqual("foobar%C3%A6", escape_svn_path(u"foobar\xe6".encode("utf-8")))
+        self.assertEqual("foobar%C3%A6", escape_svn_path(u"foobar\xe6"))
 
 
 class EstimateBzrAncestorsTests(TestCase):

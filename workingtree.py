@@ -1117,7 +1117,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                                       file_id, ie):
         already_there = (
             old_path == new_path and
-            base_tree.kind(file_id) == ie.kind)
+            base_tree.kind(old_path) == ie.kind)
         if old_path is not None:
             old_abspath = osutils.safe_utf8(self.abspath(old_path))
             if not already_there:

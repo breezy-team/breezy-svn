@@ -219,17 +219,17 @@ class WildcardLayoutTests(TestCase):
 class CustomLayoutTests(TestCase):
 
     def test_is_branch(self):
-        x = CustomLayout(["foo/bar"])
-        self.assertTrue(x.is_branch("foo/bar"))
-        self.assertFalse(x.is_branch("foo"))
+        x = CustomLayout([u"foo/bar"])
+        self.assertTrue(x.is_branch(u"foo/bar"))
+        self.assertFalse(x.is_branch(u"foo"))
 
     def test_is_branch_parent(self):
-        x = CustomLayout(["foo/bar"])
-        self.assertFalse(x.is_branch_parent("foo/bar"))
-        self.assertTrue(x.is_branch_parent("foo"))
+        x = CustomLayout([u"foo/bar"])
+        self.assertFalse(x.is_branch_parent(u"foo/bar"))
+        self.assertTrue(x.is_branch_parent(u"foo"))
 
     def test_get_branches(self):
-        x = CustomLayout(["foo/bar"])
+        x = CustomLayout([u"foo/bar"])
         class MockTransport(object):
 
             def __init__(self, available_paths):
@@ -247,5 +247,5 @@ class CustomLayoutTests(TestCase):
             def __init__(self, available_paths):
                 self.transport = MockTransport(available_paths)
 
-        self.assertEquals([(None, "foo/bar", "bar", None, 3)],
-            x.get_branches(MockRepository({"foo/bar": 3}), 3))
+        self.assertEquals([(None, u"foo/bar", u"bar", None, 3)],
+            x.get_branches(MockRepository({u"foo/bar": 3}), 3))
