@@ -295,6 +295,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return self.branch.mapping
 
     def stored_kind(self, path, file_id=None):
+        assert path is not None
         try:
             return self.basis_tree().kind(path, file_id)
         except NoSuchId:
@@ -720,11 +721,11 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 ie.executable = self.is_executable(relpath)
                 return ie
 
-    def iter_children(self, file_id, path=None):
-        """See Tree.iter_children."""
-        entry = self.iter_entries_by_dir(specific_files=[self.id2path(file_id)]).next()[1]
+    def iter_child_entries(self, path, file_id=None):
+        """See Tree.iter_child_entries."""
+        entry = self.iter_entries_by_dir(specific_files=[path]).next()[1]
         for child in getattr(entry, 'children', {}).itervalues():
-            yield child.file_id
+            yield child
 
     def iter_entries_by_dir(self, specific_files=None):
         """See WorkingTree.iter_entries_by_dir."""
@@ -1353,7 +1354,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             for file_id, hash in modified_hashes.iteritems():
                 yield _mod_rio.Stanza(file_id=file_id.decode('utf8'),
                     hash=hash)
-        with self.lock_write():
+        with self.lock_tree_write():
             my_file = _mod_rio.rio_file(iter_stanzas(), MERGE_MODIFIED_HEADER_1)
             self._transport.put_file('merge-hashes', my_file,
                 mode=self.controldir._get_file_mode())
@@ -1587,7 +1588,7 @@ class SvnCheckout(ControlDir):
 
     @property
     def control_url(self):
-        return urlutils.join(self.user_transport, get_adm_dir())
+        return urlutils.join(self.user_url, get_adm_dir())
 
     @property
     def user_transport(self):

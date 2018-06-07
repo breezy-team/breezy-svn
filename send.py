@@ -48,7 +48,7 @@ class SvnDiffTree(_mod_diff.DiffTree):
     def _get_svn_rev_info(self, tree, path):
         try:
             rev = tree.get_file_revision(path)
-        except errors.NoSuchId:
+        except errors.NoSuchFile:
             return '(revision 0)'
         except AttributeError:
             # Not a revision tree

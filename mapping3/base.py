@@ -59,6 +59,7 @@ class SchemeDerivedLayout(RepositoryLayout):
         self.scheme = scheme
 
     def parse(self, path):
+        assert isinstance(path, text_type)
         try:
             (proj, bp, rp) = self.scheme.unprefix(path)
         except InvalidSvnBranchPath, e:

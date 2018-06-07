@@ -339,6 +339,8 @@ class RevisionMetadataBrowser(object):
         self._actions = []
         self._iter_log = self._graph._log.iter_changes(self.from_prefixes,
                 self.from_revnum, self.to_revnum, pb=pb)
+        if project is not None and not isinstance(project, text_type):
+            raise TypeError(project)
         self._project = project
         self._pb = pb
         self._iter = self.do()
@@ -456,7 +458,7 @@ class RevisionMetadataBrowser(object):
                     pass
                 else:
                     # Did something change inside a branch?
-                    if action != 'D' or ip != "":
+                    if action != 'D' or ip != u"":
                         changed_bps.add(bp)
                 for u in self._unusual:
                     if (p == u and not action in ('D', 'R')) or changes.path_is_child(u, p):

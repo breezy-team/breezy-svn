@@ -106,7 +106,8 @@ class RepositoryLayout(object):
         """Parse a target path and extract the project.
         """
         (type, project, _, ip) = self.parse(path)
-        if type not in ('branch', 'tag') or ip != '':
+        assert isinstance(project, text_type)
+        if type not in ('branch', 'tag') or ip != u'':
             raise NotSvnBranchPath(path)
         return project
 
@@ -123,6 +124,7 @@ class RepositoryLayout(object):
 
         """
         (pt, parsed_project, bp, ip) = self.parse(path)
+        assert isinstance(bp, text_type)
         if project is not None and parsed_project != project:
             raise NotSvnBranchPath(path, self)
         return (pt, bp, ip)

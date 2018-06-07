@@ -27,6 +27,7 @@ from breezy import (
     urlutils,
     )
 from breezy.errors import BzrError
+from breezy.sixish import text_type
 from breezy.trace import mutter
 
 from breezy.plugins.svn.layout.guess import (
@@ -217,12 +218,12 @@ class ListBranchingScheme(BranchingScheme):
 
     def unprefix(self, path):
         """See BranchingScheme.unprefix()."""
-        parts = path.strip("/").split("/")
+        parts = path.strip(u"/").split(u"/")
         for pattern in self.split_branch_list:
             if self._pattern_cmp(parts[:len(pattern)], pattern):
-                return ("/".join(parts[:len(pattern)]),
-                        "/".join(parts[:len(pattern)]),
-                        "/".join(parts[len(pattern):]))
+                return (u"/".join(parts[:len(pattern)]),
+                        u"/".join(parts[:len(pattern)]),
+                        u"/".join(parts[len(pattern):]))
         raise InvalidSvnBranchPath(path, self)
 
     def __eq__(self, other):
@@ -266,7 +267,8 @@ class NoBranchingScheme(ListBranchingScheme):
 
     def unprefix(self, path):
         """See BranchingScheme.unprefix()."""
-        return ("", "", path.strip("/"))
+        assert isinstance(path, text_type)
+        return (u"", u"", path.strip(u"/"))
 
     def __str__(self):
         return "none"
@@ -289,72 +291,73 @@ class TrunkBranchingScheme(ListBranchingScheme):
     def __init__(self, level=0):
         self.level = level
         ListBranchingScheme.__init__(self,
-            ["*/" * level + "trunk",
-             "*/" * level + "branches/*"])
-        self.tag_list = ["*/" * level + "tags/*"]
+            [u"*/" * level + u"trunk",
+             u"*/" * level + u"branches/*"])
+        self.tag_list = [u"*/" * level + u"tags/*"]
 
     def get_tag_path(self, name, project=""):
-        if project == "":
-            return urlutils.join("tags", name.encode("utf-8"))
-        return urlutils.join(project, "tags", name.encode("utf-8"))
+        if project == u"":
+            return urlutils.join(u"tags", name)
+        return urlutils.join(project, u"tags", name)
 
     def get_branch_path(self, name, project=""):
         # Only implemented for level 0
-        if name == "trunk":
-            if project == "":
-                return "trunk"
+        if name == u"trunk":
+            if project == u"":
+                return u"trunk"
             else:
-                return urlutils.join(project, "trunk")
+                return urlutils.join(project, u"trunk")
         else:
-            if project == "":
-                return urlutils.join("branches", name)
+            if project == u"":
+                return urlutils.join(u"branches", name)
             else:
-                return urlutils.join(project, "branches", name)
+                return urlutils.join(project, u"branches", name)
 
     def is_branch(self, path, project=None):
         """See BranchingScheme.is_branch()."""
-        parts = path.strip("/").split("/")
+        parts = path.strip(u"/").split(u"/")
 
-        if project is not None and project != "/".join(parts[0:self.level]):
+        if project is not None and project != u"/".join(parts[0:self.level]):
             return False
 
-        if len(parts) == self.level+1 and parts[self.level] == "trunk":
+        if len(parts) == self.level+1 and parts[self.level] == u"trunk":
             return True
 
-        if len(parts) == self.level+2 and parts[self.level] == "branches":
+        if len(parts) == self.level+2 and parts[self.level] == u"branches":
             return True
 
         return False
 
     def is_tag(self, path, project=None):
         """See BranchingScheme.is_tag()."""
-        parts = path.strip("/").split("/")
+        parts = path.strip(u"/").split(u"/")
 
-        if project is not None and project != "/".join(parts[0:self.level]):
+        if project is not None and project != u"/".join(parts[0:self.level]):
             return False
 
         if len(parts) == self.level+2 and \
-           (parts[self.level] == "tags"):
+           (parts[self.level] == u"tags"):
             return True
 
         return False
 
     def unprefix(self, path):
         """See BranchingScheme.unprefix()."""
-        parts = path.strip("/").split("/")
+        assert isinstance(path, text_type)
+        parts = path.strip(u"/").split(u"/")
         if len(parts) == 0 or self.level >= len(parts):
             raise InvalidSvnBranchPath(path, self)
 
-        if parts[self.level] == "trunk" or parts[self.level] == "hooks":
-            return ("/".join(parts[0:self.level]).strip("/"),
-                    "/".join(parts[0:self.level+1]).strip("/"),
-                    "/".join(parts[self.level+1:]).strip("/"))
-        elif ((parts[self.level] == "tags" or
-               parts[self.level] == "branches") and
+        if parts[self.level] == u"trunk" or parts[self.level] == u"hooks":
+            return (u"/".join(parts[0:self.level]).strip(u"/"),
+                    u"/".join(parts[0:self.level+1]).strip(u"/"),
+                    u"/".join(parts[self.level+1:]).strip(u"/"))
+        elif ((parts[self.level] == u"tags" or
+               parts[self.level] == u"branches") and
               len(parts) >= self.level+2):
-            return ("/".join(parts[0:self.level]).strip("/"),
-                    "/".join(parts[0:self.level+2]).strip("/"),
-                    "/".join(parts[self.level+2:]).strip("/"))
+            return (u"/".join(parts[0:self.level]).strip(u"/"),
+                    u"/".join(parts[0:self.level+2]).strip(u"/"),
+                    u"/".join(parts[self.level+2:]).strip(u"/"))
         else:
             raise InvalidSvnBranchPath(path, self)
 
@@ -365,14 +368,14 @@ class TrunkBranchingScheme(ListBranchingScheme):
         return "%s(%d)" % (self.__class__.__name__, self.level)
 
     def is_branch_parent(self, path, project=None):
-        parts = path.strip("/").split("/")
+        parts = path.strip(u"/").split(u"/")
         if len(parts) <= self.level:
             return True
-        return self.is_branch(path+"/trunk", project)
+        return self.is_branch(path+u"/trunk", project)
 
     def is_tag_parent(self, path, project=None):
-        parts = path.strip("/").split("/")
-        return self.is_tag(path+"/aname", project)
+        parts = path.strip(u"/").split(u"/")
+        return self.is_tag(path+u"/aname", project)
 
 
 

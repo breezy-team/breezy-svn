@@ -222,6 +222,7 @@ class SvnBranch(ForeignBranch):
                 project = self.layout.get_branch_project(branch_path)
             except NotSvnBranchPath:
                 raise NotBranchError(branch_path)
+        assert isinstance(project, text_type)
         self.project = project
         self.name = self.layout.get_branch_name(branch_path)
 
@@ -1124,25 +1125,15 @@ class InterToSvnBranch(InterBranch):
         result.master_branch = self.target
         result.local_branch = None
         result.source_branch = self.source
-        if lossy:
-            self.source.lock_write()
-        else:
-            self.source.lock_read()
-        try:
-            self.target.lock_write()
-            try:
-                (result.old_revid, result.new_revid, result.revidmap) = (
-                        self._basic_push(
-                            stop_revision=stop_revision, overwrite=overwrite,
-                            lossy=lossy, fetch_non_mainline=fetch_non_mainline))
-                self.update_tags(result, overwrite)
-                for hook in Branch.hooks['post_push']:
-                    hook(result)
-                return result
-            finally:
-                self.target.unlock()
-        finally:
-            self.source.unlock()
+        with self.source.lock_read(), self.target.lock_write():
+            (result.old_revid, result.new_revid, result.revidmap) = (
+                    self._basic_push(
+                        stop_revision=stop_revision, overwrite=overwrite,
+                        lossy=lossy, fetch_non_mainline=fetch_non_mainline))
+            self.update_tags(result, overwrite)
+            for hook in Branch.hooks['post_push']:
+                hook(result)
+            return result
 
     def pull(self, overwrite=False, stop_revision=None,
              run_hooks=True, possible_transports=None,
@@ -1155,22 +1146,15 @@ class InterToSvnBranch(InterBranch):
         result.local_branch = None
         result.target_branch = self.target
         result.master_branch = self.target
-        self.source.lock_read()
-        try:
-            self.target.lock_write()
-            try:
-                (result.old_revid, result.new_revid, result.revidmap) = \
-                    self._update_revisions(stop_revision, overwrite,
-                            fetch_non_mainline=fetch_non_mainline)
-                self.update_tags(result, overwrite)
-                if run_hooks:
-                    for hook in Branch.hooks['post_pull']:
-                        hook(result)
-                return result
-            finally:
-                self.target.unlock()
-        finally:
-            self.source.unlock()
+        with self.source.lock_read(), self.target.lock_write():
+            (result.old_revid, result.new_revid, result.revidmap) = \
+                self._update_revisions(stop_revision, overwrite,
+                        fetch_non_mainline=fetch_non_mainline)
+            self.update_tags(result, overwrite)
+            if run_hooks:
+                for hook in Branch.hooks['post_pull']:
+                    hook(result)
+            return result
 
     @classmethod
     def is_compatible(self, source, target):

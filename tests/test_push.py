@@ -195,9 +195,10 @@ class TestDPush(SubversionTestCase):
 
         self.assertEquals(set([newid1, newid2]), set(revid_map.keys()))
         repos = self.svndir.find_repository()
-        revmeta = repos._revmeta_provider.get_revision("", 3)
+        revmeta = repos._revmeta_provider.get_revision(u"", 3)
         self.assertChangedPathsEquals(
-                {'': ('M', None, -1, 2), "foo/bliel": ('A', None, -1, NODE_FILE)}, revmeta.metarev.paths)
+                {u'': ('M', None, -1, 2),
+                 u"foo/bliel": ('A', None, -1, NODE_FILE)}, revmeta.metarev.paths)
 
     def test_diverged(self):
         dc = self.commit_editor()
@@ -576,13 +577,13 @@ class TestPush(SubversionTestCase):
 
         self.svndir.open_branch().pull(wt.branch)
 
-        paths = self.svndir.find_repository()._revmeta_provider.get_revision("", 3).metarev.paths
+        paths = self.svndir.find_repository()._revmeta_provider.get_revision(u"", 3).metarev.paths
         self.assertChangedPathsEquals({
-            'trunk': ('M', None, -1, NODE_DIR),
-            'trunk/comics': (u'R', None, -1, NODE_DIR),
-            'trunk/comics/bin': (u'A', 'trunk/comics/bin', 2, NODE_DIR),
-            'trunk/comics/core': (u'A', 'trunk/comics', 2, NODE_DIR),
-            'trunk/comics/core/bin': (u'D', None, -1, NODE_DIR)}, paths)
+            u'trunk': ('M', None, -1, NODE_DIR),
+            u'trunk/comics': ('R', None, -1, NODE_DIR),
+            u'trunk/comics/bin': ('A', u'trunk/comics/bin', 2, NODE_DIR),
+            u'trunk/comics/core': ('A', u'trunk/comics', 2, NODE_DIR),
+            u'trunk/comics/core/bin': ('D', None, -1, NODE_DIR)}, paths)
 
 
 class PushNewBranchTests(SubversionTestCase):

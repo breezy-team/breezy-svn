@@ -75,50 +75,50 @@ class TrunkLayoutTests(TestCase,LayoutTests):
         self.layout = TrunkLayout()
 
     def test_get_branch_path_default(self):
-        self.assertEquals("trunk", self.layout.get_branch_path(""))
-        self.assertEquals("myproj/trunk",
-            self.layout.get_branch_path("", "myproj"))
+        self.assertEquals(u"trunk", self.layout.get_branch_path(u""))
+        self.assertEquals(u"myproj/trunk",
+            self.layout.get_branch_path(u"", u"myproj"))
 
     def test_get_branch_path_somepath(self):
-        self.assertEquals("branches/abranch",
-            self.layout.get_branch_path("abranch"))
-        self.assertEquals("proj/a/branches/abranch",
-            self.layout.get_branch_path("abranch", "proj/a"))
+        self.assertEquals(u"branches/abranch",
+            self.layout.get_branch_path(u"abranch"))
+        self.assertEquals(u"proj/a/branches/abranch",
+            self.layout.get_branch_path(u"abranch", u"proj/a"))
 
     def test_get_branch_name(self):
-        self.assertEquals("abranch",
-            self.layout.get_branch_name("branches/abranch"))
-        self.assertEquals("",
-            self.layout.get_branch_name("trunk"))
+        self.assertEquals(u"abranch",
+            self.layout.get_branch_name(u"branches/abranch"))
+        self.assertEquals(u"",
+            self.layout.get_branch_name(u"trunk"))
 
     def test_is_branch_parent(self):
-        self.assertEquals(True, self.layout.is_branch_parent("foo/bar"))
+        self.assertEquals(True, self.layout.is_branch_parent(u"foo/bar"))
 
     def test_is_tag_parent(self):
-        self.assertEquals(True, self.layout.is_tag_parent("foo/bar"))
+        self.assertEquals(True, self.layout.is_tag_parent(u"foo/bar"))
 
     def test_parse_trunk(self):
-        self.assertEquals(("branch", "", "trunk", ""), 
-                          self.layout.parse("trunk"))
+        self.assertEquals(("branch", u"", u"trunk", u""),
+                          self.layout.parse(u"trunk"))
 
     def test_parse_trunk_tags(self):
-        self.assertEquals(("branch", "", "trunk", "tags"), 
-                          self.layout.parse("trunk/tags"))
+        self.assertEquals(("branch", u"", u"trunk", u"tags"),
+                          self.layout.parse(u"trunk/tags"))
 
     def test_parse_tag(self):
-        self.assertEquals(("tag", "", "tags/foo", ""), 
-                          self.layout.parse("tags/foo"))
+        self.assertEquals(("tag", u"", u"tags/foo", u""),
+                          self.layout.parse(u"tags/foo"))
 
     def test_parse_branch(self):
-        self.assertEquals(("branch", "", "branches/foo", ""), 
-                          self.layout.parse("branches/foo"))
+        self.assertEquals(("branch", u"", u"branches/foo", u""),
+                          self.layout.parse(u"branches/foo"))
 
     def test_parse_branch_project(self):
-        self.assertEquals(("branch", "bla", "bla/branches/foo", ""), 
-                          self.layout.parse("bla/branches/foo"))
+        self.assertEquals(("branch", u"bla", u"bla/branches/foo", u""),
+                          self.layout.parse(u"bla/branches/foo"))
 
     def test_parse_branches(self):
-        self.assertRaises(NotSvnBranchPath, self.layout.parse, "branches")
+        self.assertRaises(NotSvnBranchPath, self.layout.parse, u"branches")
 
 
 class Trunk2LayoutTests(TestCase):
@@ -128,22 +128,22 @@ class Trunk2LayoutTests(TestCase):
         self.layout = TrunkLayout(2)
 
     def test_is_branch_parent_trunk(self):
-        self.assertEquals(False, self.layout.is_branch_parent("foo/bar/trunk"))
+        self.assertEquals(False, self.layout.is_branch_parent(u"foo/bar/trunk"))
 
     def test_is_branch_parent_lev2(self):
-        self.assertEquals(True, self.layout.is_branch_parent("foo/bar"))
+        self.assertEquals(True, self.layout.is_branch_parent(u"foo/bar"))
 
     def test_is_branch_parent_lev1(self):
-        self.assertEquals(True, self.layout.is_branch_parent("foo"))
+        self.assertEquals(True, self.layout.is_branch_parent(u"foo"))
 
     def test_is_branch_parent_lev3(self):
-        self.assertEquals(False, self.layout.is_branch_parent("foo/bar/blie"))
+        self.assertEquals(False, self.layout.is_branch_parent(u"foo/bar/blie"))
 
     def test_is_branch_parent_branches(self):
-        self.assertEquals(True, self.layout.is_branch_parent("foo/bar/branches"))
+        self.assertEquals(True, self.layout.is_branch_parent(u"foo/bar/branches"))
 
     def test_is_branch_parent_tags(self):
-        self.assertEquals(False, self.layout.is_branch_parent("foo/bar/tags"))
+        self.assertEquals(False, self.layout.is_branch_parent(u"foo/bar/tags"))
 
 
 class TrunkVariableLayoutTests(TestCase):
@@ -153,30 +153,30 @@ class TrunkVariableLayoutTests(TestCase):
         self.layout = TrunkLayout(None)
 
     def test_is_trunk_branch(self):
-        self.assertEquals(True, self.layout.is_branch("foo/bar/trunk"))
-        self.assertEquals(True, self.layout.is_branch("trunk"))
+        self.assertEquals(True, self.layout.is_branch(u"foo/bar/trunk"))
+        self.assertEquals(True, self.layout.is_branch(u"trunk"))
 
     def test_is_foo_branch(self):
-        self.assertEquals(False, self.layout.is_branch("foo"))
+        self.assertEquals(False, self.layout.is_branch(u"foo"))
 
     def test_is_branch_parent_trunk(self):
-        self.assertEquals(True, self.layout.is_branch_parent("foo/bar/trunk"))
+        self.assertEquals(True, self.layout.is_branch_parent(u"foo/bar/trunk"))
 
     def test_is_branch_parent_lev2(self):
-        self.assertEquals(True, self.layout.is_branch_parent("foo/bar"))
+        self.assertEquals(True, self.layout.is_branch_parent(u"foo/bar"))
 
     def test_is_branch_parent_lev1(self):
-        self.assertEquals(True, self.layout.is_branch_parent("foo"))
+        self.assertEquals(True, self.layout.is_branch_parent(u"foo"))
 
     def test_is_branch_parent_lev3(self):
-        self.assertEquals(True, self.layout.is_branch_parent("foo/bar/blie"))
+        self.assertEquals(True, self.layout.is_branch_parent(u"foo/bar/blie"))
 
     def test_is_branch_parent_branches(self):
-        self.assertEquals(True, self.layout.is_branch_parent("foo/bar/branches"))
+        self.assertEquals(True, self.layout.is_branch_parent(u"foo/bar/branches"))
 
     def test_is_branch_parent_tags(self):
-        self.assertEquals(True, self.layout.is_branch_parent("bar/tags"))
-        self.assertEquals(True, self.layout.is_branch_parent("foo/bar/tags"))
+        self.assertEquals(True, self.layout.is_branch_parent(u"bar/tags"))
+        self.assertEquals(True, self.layout.is_branch_parent(u"foo/bar/tags"))
 
 
 class WildcardLayoutTests(TestCase):

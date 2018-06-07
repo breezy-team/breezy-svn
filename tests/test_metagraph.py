@@ -228,7 +228,7 @@ class MetadataBrowserTests(TestCase):
     def test_follow_prefixes(self):
         rev1 = { u"foo": ('A', None, -1, NODE_DIR),
                  u"foo/trunk": ('A', None, -1, NODE_DIR) }
-        rev2 = { u"bar": ('A', 'foo', 1, NODE_DIR) }
+        rev2 = { u"bar": ('A', u'foo', 1, NODE_DIR) }
         rev3 = { u"bar/trunk": ('M', None, -1, NODE_DIR) }
         browser = self.get_browser([u"bar"], 4, 0, TrunkLayout(1),
                 { 1: rev1, 2: rev2, 3: rev3 })

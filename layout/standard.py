@@ -98,18 +98,19 @@ class TrunkLayout(RepositoryLayout):
         :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
+        assert isinstance(path, text_type)
         path = path.strip(u"/")
         parts = path.split(u"/")
         for i, p in enumerate(parts):
             if (i > 0 and parts[i-1] in (u"branches", u"tags")) or p == u"trunk":
                 if i > 0 and parts[i-1] == u"tags":
-                    t = u"tag"
+                    t = "tag"
                     j = i-1
                 elif i > 0 and parts[i-1] == u"branches":
-                    t = u"branch"
+                    t = "branch"
                     j = i-1
                 else:
-                    t = u"branch"
+                    t = "branch"
                     j = i
                 if self.level in (j, None):
                     return (t,
@@ -209,6 +210,7 @@ class RootLayout(RepositoryLayout):
         :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
+        assert isinstance(path, text_type)
         return ('branch', u'', u'', path)
 
     def is_branch_path(self, bp, project=None):
@@ -243,6 +245,7 @@ class CustomLayout(RepositoryLayout):
     def __init__(self, branches=[], tags=[]):
         self.branches = [b.strip(u"/") for b in branches]
         self.tags = [t.strip(u"/") for t in tags]
+        assert all([isinstance(b, text_type) for b in self.branches + self.tags])
 
     def supports_tags(self):
         return (self.tags != [])
@@ -263,7 +266,7 @@ class CustomLayout(RepositoryLayout):
         """
         return None
 
-    def get_branch_name(self, path, project=""):
+    def get_branch_name(self, path, project=u""):
         return u""
 
     def parse(self, path):
@@ -272,14 +275,15 @@ class CustomLayout(RepositoryLayout):
         :return: Tuple with type ('tag', 'branch'), project name, branch path and path
             inside the branch
         """
-        path = path.strip("/")
+        assert isinstance(path, text_type)
+        path = path.strip(u"/")
         for bp in sorted(self.branches):
             if path.startswith(u"%s/" % bp) or bp == path:
-                return (u"branch", bp, bp, path[len(bp):].strip(u"/"))
+                return ("branch", bp, bp, path[len(bp):].strip(u"/"))
 
         for tp in sorted(self.tags):
             if path.startswith(u"%s/" % tp) or tp == path:
-                return (u"tag", tp, tp, path[len(tp):].strip(u"/"))
+                return ("tag", tp, tp, path[len(tp):].strip(u"/"))
 
         raise svn_errors.NotSvnBranchPath(path)
 
@@ -338,7 +342,7 @@ class WildcardLayout(RepositoryLayout):
     def supports_tags(self):
         return (self.tags != [])
 
-    def get_tag_path(self, name, project=""):
+    def get_tag_path(self, name, project=u""):
         """Return the path at which the tag with specified name should be found.
 
         :param name: Name of the tag.
@@ -399,6 +403,7 @@ class WildcardLayout(RepositoryLayout):
         :return: Tuple with type ('tag', 'branch'), project name, branch path
             and path inside the branch
         """
+        assert isinstance(path, text_type)
         path = path.strip(u"/")
         parts = path.split(u"/")
         for i in range(len(parts)+1):
@@ -486,10 +491,10 @@ class InverseTrunkLayout(RepositoryLayout):
                     u"/".join(parts[1:self.level+2]),
                     u"/".join(parts[:self.level+1]),
                     u"/".join(parts[self.level+1:]))
-        elif parts[0] in ("branches", "tags"):
+        elif parts[0] in (u"branches", u"tags"):
             if len(parts) < (self.level + 2):
                 raise svn_errors.NotSvnBranchPath(path)
-            if parts[0] == "branches":
+            if parts[0] == u"branches":
                 t = "branch"
             else:
                 t = "tag"

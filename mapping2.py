@@ -23,6 +23,7 @@ from breezy.errors import (
 from breezy.bzr.inventory import (
     ROOT_ID,
     )
+from breezy.sixish import text_type
 
 from breezy.plugins.svn.errors import (
     LayoutUnusable,
@@ -211,54 +212,56 @@ class TrunkLegacyLayout(LegacyLayout):
         self.level = level
 
     def parse(self, path):
-        parts = path.strip("/").split("/")
+        assert isinstance(path, text_type)
+        parts = path.strip(u"/").split(u"/")
         if len(parts) == 0 or self.level >= len(parts):
             raise NotSvnBranchPath(path, self)
 
-        if parts[self.level] == "trunk" or parts[self.level] == "hooks":
+        if parts[self.level] == u"trunk" or parts[self.level] == u"hooks":
             return ("branch",
-                    "/".join(parts[0:self.level]),
-                    "/".join(parts[0:self.level+1]).strip("/"),
-                    "/".join(parts[self.level+1:]).strip("/"))
-        elif ((parts[self.level] == "tags" or parts[self.level] == "branches") and
+                    u"/".join(parts[0:self.level]),
+                    u"/".join(parts[0:self.level+1]).strip(u"/"),
+                    u"/".join(parts[self.level+1:]).strip(u"/"))
+        elif ((parts[self.level] == u"tags" or parts[self.level] == u"branches") and
               len(parts) >= self.level+2):
             return ("branch",
-                    "/".join(parts[0:self.level]),
-                    "/".join(parts[0:self.level+2]).strip("/"),
-                    "/".join(parts[self.level+2:]).strip("/"))
+                    u"/".join(parts[0:self.level]),
+                    u"/".join(parts[0:self.level+2]).strip(u"/"),
+                    u"/".join(parts[self.level+2:]).strip(u"/"))
         else:
             raise NotSvnBranchPath(path, self)
 
     def is_branch(self, path, project=None):
-        parts = path.strip("/").split("/")
-        if len(parts) == self.level+1 and parts[self.level] == "trunk":
+        parts = path.strip(u"/").split(u"/")
+        if len(parts) == self.level+1 and parts[self.level] == u"trunk":
             return True
 
         if len(parts) == self.level+2 and \
-           (parts[self.level] == "branches" or parts[self.level] == "tags"):
+           (parts[self.level] == u"branches" or parts[self.level] == u"tags"):
             return True
 
         return False
 
-    def get_branches(self, repository, revnum, project="", pb=None):
+    def get_branches(self, repository, revnum, project=u"", pb=None):
         return get_root_paths(repository,
-             [("*/" * self.level) + x for x in "branches/*", "tags/*", "trunk"],
+             [(u"*/" * self.level) + x for x in u"branches/*", u"tags/*", u"trunk"],
              revnum, self.is_branch, project)
 
-    def get_tags(self, repository, revnum, project="", pb=None):
+    def get_tags(self, repository, revnum, project=u"", pb=None):
         return []
 
 
 class RootLegacyLayout(LegacyLayout):
 
     def parse(self, path):
-        return ("branch", "", "", path)
+        assert isinstance(path, text_type)
+        return ("branch", u"", u"", path)
 
     def is_branch(self, path, project=None):
-        return path == ""
+        return path == u""
 
     def get_branches(self, repository, revnum, project="", pb=None):
-        return [("", "", "trunk", True)]
+        return [(u"", u"", u"trunk", True)]
 
     def get_tags(self, repository, revnum, project="", pb=None):
         return []

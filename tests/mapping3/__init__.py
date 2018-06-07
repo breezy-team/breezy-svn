@@ -362,7 +362,7 @@ class RepositoryTests(SubversionTestCase):
         dir = ControlDir.create("f")
         newrepos = dir.create_repository()
         oldrepos.copy_content_into(newrepos)
-        
+
         mapping = oldrepos.get_mapping()
 
         rev = newrepos.get_revision(oldrepos.generate_revision_id(1, u"", mapping))
@@ -465,6 +465,7 @@ class RepositoryTests(SubversionTestCase):
         self.make_checkout(self.repos_url, "dc")
 
         wt = WorkingTree.open("dc")
+        wt.branch.get_config().set_user_option("allow_metadata_in_file_properties", "False")
         self.build_tree({'dc/foo/bla': "data", 'dc/bla': "otherdata"})
         wt.add('bla')
         self.assertRaises(RequiresMetadataInFileProps, wt.commit,

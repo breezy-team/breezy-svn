@@ -290,9 +290,9 @@ class SvnRemoteAccess(ControlDir):
         from breezy.repository import InterRepository
         from breezy.transport.local import LocalTransport
         relpath = self._determine_relpath(None)
-        if relpath == "":
+        if relpath == u"":
             guessed_layout = self.find_repository().get_guessed_layout()
-            if guessed_layout is not None and not guessed_layout.is_branch(""):
+            if guessed_layout is not None and not guessed_layout.is_branch(u""):
                 trace.warning('Cloning Subversion repository as branch. '
                         'To import the individual branches in the repository, '
                         'use "bzr svn-import".')

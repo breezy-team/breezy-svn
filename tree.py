@@ -75,6 +75,7 @@ class SubversionTree(object):
         :raises KeyError: raised if path was not found
         :return: tuple with file id and text revision
         """
+        assert isinstance(path, text_type) or isinstance(path, bytes), "%r" % path
         return self.id_map.lookup(self.mapping, path)[:2]
 
     def lookup_path(self, file_id):
@@ -181,12 +182,6 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
 
     def get_file_stream_by_path(self, path):
         raise NotImplementedError(self.get_file_stream_by_path)
-
-    def iter_children(self, file_id, path=None):
-        """See Tree.iter_children."""
-        entry = self.iter_entries_by_dir(specific_files=[self.id2path(file_id)]).next()[1]
-        for child in getattr(entry, 'children', {}).values():
-            yield child.file_id
 
     def iter_child_entries(self, path, file_id=None):
         entry = self.iter_entries_by_dir(specific_files=[path]).next()[1]
@@ -393,7 +388,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         stream = BytesIO()
         (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
                 stream, self._revmeta.metarev.revnum)
-        if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == b"link ":
+        if properties.PROP_SPECIAL in props and stream.read(5) == b"link ":
             return BytesIO()
         stream.seek(0)
         return stream
@@ -689,15 +684,12 @@ class SvnBasisTree(SvnRevisionTreeCommon):
 
     def get_file_stream_by_path(self, name):
         """See Tree.get_file_stream_by_path()."""
-        if not isinstance(name, text_type):
-            raise TypeError(name)
-        wt_path = self.workingtree.abspath(name).encode("utf-8")
+        wt_path = self.workingtree.abspath(name)
         return wc.get_pristine_contents(wt_path)
 
     def kind(self, path, file_id=None):
-        # FIXME
         if file_id is None:
-            file_id = self.path2id(file_id)
+            file_id = self.path2id(path)
         return self.root_inventory.get_entry(file_id).kind
 
     def get_file_text(self, path, file_id=None):

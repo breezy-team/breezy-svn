@@ -198,7 +198,7 @@ class RepositoryConverter(object):
             try:
                 target_repos = target_dir.open_repository()
                 target_repos_is_empty = False # FIXME: Call Repository.is_empty() ?
-                if not layout.is_branch("") and not target_repos.is_shared() and not colocated:
+                if not layout.is_branch(u"") and not target_repos.is_shared() and not colocated:
                     raise BzrError("Repository %r is not shared." % target_repos)
             except NoRepositoryPresent:
                 target_repos = target_dir.create_repository(shared=True)

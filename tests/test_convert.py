@@ -123,7 +123,7 @@ class TestConversion(SubversionTestCase):
 
         convert_repository(Repository.open(self.repos_url), "e",
                            TrunkLayout(1),
-                           all=True, create_shared_repo=True, prefix="bar")
+                           all=True, create_shared_repo=True, prefix=u"bar")
 
     def test_sets_parent_urls(self):
         convert_repository(Repository.open(self.repos_url), "e",
@@ -152,7 +152,7 @@ class TestConversion(SubversionTestCase):
                            all=False, create_shared_repo=True)
         newrepos = Repository.open("e")
         oldrepos.set_layout(TrunkLayout(0))
-        revid = oldrepos.generate_revision_id(2, "branches/somebranch",
+        revid = oldrepos.generate_revision_id(2, u"branches/somebranch",
             oldrepos.get_mapping())
         self.assertFalse(newrepos.has_revision(revid))
 
@@ -166,7 +166,8 @@ class TestConversion(SubversionTestCase):
         convert_repository(oldrepos, "e", TrunkLayout(0))
         newrepos = Repository.open("e")
         oldrepos.set_layout(TrunkLayout(0))
-        self.assertFalse(newrepos.has_revision(oldrepos.generate_revision_id(2, "branches/somebranch", oldrepos.get_mapping())))
+        self.assertFalse(newrepos.has_revision(
+            oldrepos.generate_revision_id(2, u"branches/somebranch", oldrepos.get_mapping())))
 
     def test_fetch_dead(self):
         dc = self.get_commit_editor()
@@ -185,7 +186,7 @@ class TestConversion(SubversionTestCase):
                            all=True, create_shared_repo=True)
         newrepos = Repository.open("e")
         self.assertTrue(newrepos.has_revision(
-            oldrepos.generate_revision_id(3, "branches/somebranch", oldrepos.get_mapping())))
+            oldrepos.generate_revision_id(3, u"branches/somebranch", oldrepos.get_mapping())))
 
     def test_fetch_filter(self):
         dc = self.get_commit_editor()
@@ -304,13 +305,13 @@ class TestConversion(SubversionTestCase):
         dc.close()
 
         self.assertEqual(
-                Repository.open(self.repos_url).generate_revision_id(2, "trunk", mapping),
+                Repository.open(self.repos_url).generate_revision_id(2, u"trunk", mapping),
                 Branch.open("e/trunk").last_revision())
 
         convert_repository(Repository.open(self.repos_url), "e",
                 TrunkLayout(0), create_shared_repo=True)
 
-        self.assertEqual(Repository.open(self.repos_url).generate_revision_id(3, "trunk", mapping),
+        self.assertEqual(Repository.open(self.repos_url).generate_revision_id(3, u"trunk", mapping),
                         Branch.open("e/trunk").last_revision())
 
 
@@ -488,7 +489,7 @@ class TestPrefixed(SubversionTestCase):
     def test_convert_simple(self):
         oldrepos = Repository.open(self.repos_url)
         convert_repository(oldrepos, "e", TrunkLayout(1),
-                prefix="base", create_shared_repo=True)
+                prefix=u"base", create_shared_repo=True)
         self.assertTrue(os.path.exists("e/trunk"))
         self.assertTrue(os.path.exists("e/branches/abranch"))
         self.assertFalse(os.path.exists("e/base"))

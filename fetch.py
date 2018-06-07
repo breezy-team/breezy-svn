@@ -1628,8 +1628,7 @@ class InterFromSvnToInventoryRepository(InterRepository):
         # Loop over all the revnums until revision_id
         # (or youngest_revnum) and call self.target.add_revision()
         # or self.target.add_inventory() each time
-        self.target.lock_write()
-        try:
+        with self.target.lock_write():
             if needed is None:
                 needed = self._get_needed(target_is_empty=target_is_empty,
                     revision_id=revision_id, fetch_spec=fetch_spec,
@@ -1662,8 +1661,6 @@ class InterFromSvnToInventoryRepository(InterRepository):
             # intentionally, it's a fairly expensive check.
             assert revision_id is None or self.target.has_revision(
                 revision_id)
-        finally:
-            self.target.unlock()
 
     def _fetch_revisions_chunks(self, revs, pb=None):
         """Copy a set of related revisions using svn.ra.replay.

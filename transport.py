@@ -50,6 +50,9 @@ from breezy.errors import (
     RedirectRequested,
     TransportNotPossible,
     )
+from breezy.sixish import (
+    text_type,
+    )
 from breezy.trace import (
     mutter,
     warning,
@@ -309,6 +312,7 @@ class ConnectionPool(object):
         for c in self.connections:
             assert not c.busy, "busy connection in pool"
             assert not c.url.endswith("/"), "%r ends with a /" % c.url
+            assert isinstance(url, text_type)
             if url == c.url or url.startswith(c.url+"/"):
                 self.connections.remove(c)
                 relpath = urlutils.relative_url(c.url+"/", url.rstrip("/")+"/")
@@ -569,7 +573,7 @@ class SvnRaTransport(Transport):
                 self.repos_path.split("/")[:-1])
 
     @convert_svn_error
-    def mkdir(self, relpath, message=u"Creating directory"):
+    def mkdir(self, relpath, mode=None, message=u"Creating directory"):
         relpath = urlutils.join(self.repos_path, relpath)
         dirname, basename = urlutils.split(relpath)
         conn = self.get_connection(dirname.strip("/"))

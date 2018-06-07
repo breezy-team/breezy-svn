@@ -257,7 +257,9 @@ class PropertyConfigTests(SubversionTestCase):
 
         repos = Repository.open(repos_url)
 
-        cfg = PropertyConfig(repos.revision_tree(repos.generate_revision_id(1, "", repos.get_mapping())), "foo")
+        cfg = PropertyConfig(
+                repos.revision_tree(
+                    repos.generate_revision_id(1, u"", repos.get_mapping())), "foo")
 
         self.assertEquals("bar", cfg["bla"])
 
