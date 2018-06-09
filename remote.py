@@ -529,7 +529,7 @@ class SvnRemoteAccess(ControlDir):
 
     def create_repository(self, shared=None, format=None):
         """See ControlDir.create_repository."""
-        if shared == False:
+        if shared:
             from .repository import SvnRepositoryFormat
             raise errors.IncompatibleFormat(
                 SvnRepositoryFormat(), self._format)

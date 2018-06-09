@@ -1056,9 +1056,6 @@ class InterToSvnBranch(InterBranch):
             stop_revision, overwrite=overwrite, push_metadata=(not lossy))
         self.target._clear_cached_state()
         new_last_revid = self.target.last_revision()
-        if lossy:
-            reverse_inter = InterFromSvnBranch(self.target, self.source)
-            reverse_inter.fetch(stop_revision=new_last_revid)
         return (old_last_revid,
                 new_last_revid,
                 dict([(k, v[0]) for (k, v) in revid_map.iteritems()]))

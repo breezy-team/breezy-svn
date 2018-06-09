@@ -38,6 +38,7 @@ from breezy.errors import (
     DivergedBranches,
     NoSuchRevision,
     NotWriteLocked,
+    RevisionNotPresent,
     )
 from breezy.repository import (
     InterRepository,
@@ -583,11 +584,14 @@ class InterToSvnRepository(InterRepository):
             todo = []
             # Go back over the LHS parent until we reach a revid we know
             for head in heads:
-                for revid in graph.iter_lefthand_ancestry(head,
-                        (NULL_REVISION, None)):
-                    if self._target_has_revision(revid):
-                        break
-                    todo.append(revid)
+                try:
+                    for revid in graph.iter_lefthand_ancestry(head,
+                            (NULL_REVISION, None)):
+                        if self._target_has_revision(revid):
+                            break
+                        todo.append(revid)
+                except RevisionNotPresent as e:
+                    raise NoSuchRevision(self.source, e.revision_id)
             todo.reverse()
             if limit is not None:
                 # FIXME: This only considers mainline revisions.

@@ -245,7 +245,7 @@ class CustomLayoutTests(TestCase):
         class MockRepository(object):
 
             def __init__(self, available_paths):
-                self.transport = MockTransport(available_paths)
+                self.svn_transport = MockTransport(available_paths)
 
         self.assertEquals([(None, u"foo/bar", u"bar", None, 3)],
             x.get_branches(MockRepository({u"foo/bar": 3}), 3))

@@ -578,22 +578,20 @@ class SvnRaTransport(Transport):
         dirname, basename = urlutils.split(relpath)
         conn = self.get_connection(dirname.strip("/"))
         try:
-            ce = conn.get_commit_editor({"svn:log": message})
-            try:
-                node = ce.open_root(-1)
-                node.add_directory(relpath, None, -1).close()
-                node.close()
-            except subvertpy.SubversionException, (msg, num):
-                ce.abort()
-                if num == ERR_FS_NOT_FOUND:
-                    raise NoSuchFile(msg)
-                if num == ERR_FS_NOT_DIRECTORY:
-                    raise NoSuchFile(msg)
-                if num == subvertpy.ERR_FS_ALREADY_EXISTS:
-                    raise FileExists(msg)
-                raise
-            else:
-                ce.close()
+            with conn.get_commit_editor({"svn:log": message}) as ce:
+                try:
+                    node = ce.open_root(-1)
+                    node.add_directory(relpath, None, -1).close()
+                    node.close()
+                except subvertpy.SubversionException, (msg, num):
+                    ce.abort()
+                    if num == ERR_FS_NOT_FOUND:
+                        raise NoSuchFile(msg)
+                    if num == ERR_FS_NOT_DIRECTORY:
+                        raise NoSuchFile(msg)
+                    if num == subvertpy.ERR_FS_ALREADY_EXISTS:
+                        raise FileExists(msg)
+                    raise
         finally:
             self.add_connection(conn)
 
@@ -869,8 +867,7 @@ def create_branch_prefix(transport, revprops, bp_parts, existing_bp_parts=None):
     if existing_bp_parts is None:
         existing_bp_parts = check_dirs_exist(conn, bp_parts, -1)
     try:
-        ci = convert_svn_error(conn.get_commit_editor)(revprops)
-        try:
+        with convert_svn_error(conn.get_commit_editor)(revprops) as ci:
             root = ci.open_root()
             name = None
             batons = [root]
@@ -888,10 +885,6 @@ def create_branch_prefix(transport, revprops, bp_parts, existing_bp_parts=None):
                 batons.append(batons[-1].add_directory(name))
             for baton in reversed(batons):
                 baton.close()
-        except:
-            ci.abort()
-            raise
-        ci.close()
     finally:
         transport.add_connection(conn)
 

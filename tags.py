@@ -219,10 +219,9 @@ class SubversionTags(BasicTags):
                (from_uuid, from_bp, from_revnum), deletefirst)
         conn = self.repository.svn_transport.get_connection(parent)
         try:
-            ci = svn_errors.convert_svn_error(conn.get_commit_editor)(
+            with svn_errors.convert_svn_error(conn.get_commit_editor)(
                     self._revprops("Add tag %s" % tag_name.encode("utf-8"),
-                    {tag_name.encode("utf-8"): tag_target}))
-            try:
+                    {tag_name.encode("utf-8"): tag_target})) as ci:
                 root = ci.open_root()
                 if deletefirst:
                     root.delete_entry(urlutils.basename(path))
@@ -230,10 +229,6 @@ class SubversionTags(BasicTags):
                     urlutils.join(self.repository.base, from_bp), from_revnum)
                 tag_dir.close()
                 root.close()
-            except:
-                ci.abort()
-                raise
-            ci.close()
             # FIXME: This shouldn't have to remove the entire cache, just update it
             self.repository._clear_cached_state()
         finally:
