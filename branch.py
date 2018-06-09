@@ -227,14 +227,6 @@ class SvnBranch(ForeignBranch):
         self.name = self.layout.get_branch_name(branch_path)
 
     @property
-    def control_url(self):
-        return self.base
-
-    @property
-    def user_url(self):
-        return self.base
-
-    @property
     def user_transport(self):
         return self.repository.transport.clone(self.get_branch_path())
 
