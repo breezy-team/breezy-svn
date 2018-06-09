@@ -503,7 +503,7 @@ class SvnRemoteAccess(ControlDir):
         # No branch is a reference branch, but we should
         # still raise the appropriate errors if there is no
         # branch with the specified name.
-        self.open_branch()
+        self.open_branch(name=name)
         return None
 
     def set_branch_reference(self, target_branch, name=None):

@@ -103,52 +103,52 @@ class NoScheme(TestCase):
         self.assertEqual("none", NoBranchingScheme().__str__())
 
     def test_is_branch_empty(self):
-        self.assertTrue(NoBranchingScheme().is_branch(""))
+        self.assertTrue(NoBranchingScheme().is_branch(u""))
 
     def test_is_branch_slash(self):
-        self.assertTrue(NoBranchingScheme().is_branch("/"))
+        self.assertTrue(NoBranchingScheme().is_branch(u"/"))
 
     def test_is_branch_dir_slash(self):
-        self.assertFalse(NoBranchingScheme().is_branch("/foo"))
+        self.assertFalse(NoBranchingScheme().is_branch(u"/foo"))
 
     def test_is_branch_dir_slash_nested(self):
-        self.assertFalse(NoBranchingScheme().is_branch("/foo/foo"))
+        self.assertFalse(NoBranchingScheme().is_branch(u"/foo/foo"))
 
     def test_is_branch_dir(self):
-        self.assertFalse(NoBranchingScheme().is_branch("foo/bar"))
+        self.assertFalse(NoBranchingScheme().is_branch(u"foo/bar"))
 
     def test_is_branch_dir_doubleslash(self):
-        self.assertFalse(NoBranchingScheme().is_branch("//foo/bar"))
+        self.assertFalse(NoBranchingScheme().is_branch(u"//foo/bar"))
 
     def test_is_tag_empty(self):
-        self.assertFalse(NoBranchingScheme().is_tag(""))
+        self.assertFalse(NoBranchingScheme().is_tag(u""))
 
     def test_is_tag_slash(self):
-        self.assertFalse(NoBranchingScheme().is_tag("/"))
+        self.assertFalse(NoBranchingScheme().is_tag(u"/"))
 
     def test_unprefix(self):
-        self.assertEqual(NoBranchingScheme().unprefix(""), ("", "", ""))
+        self.assertEqual(NoBranchingScheme().unprefix(u""), ("", "", ""))
 
     def test_unprefix_slash(self):
-        self.assertEqual(NoBranchingScheme().unprefix("/"), ("", "", ""))
+        self.assertEqual(NoBranchingScheme().unprefix(u"/"), ("", "", ""))
 
     def test_unprefix_nested(self):
-        self.assertEqual(NoBranchingScheme().unprefix("foo/foo"), ("", "", "foo/foo"))
+        self.assertEqual(NoBranchingScheme().unprefix(u"foo/foo"), ("", "", "foo/foo"))
 
     def test_unprefix_slash_nested(self):
-        self.assertEqual(NoBranchingScheme().unprefix("/foo/foo"), ("", "", "foo/foo"))
+        self.assertEqual(NoBranchingScheme().unprefix(u"/foo/foo"), ("", "", "foo/foo"))
 
     def test_is_branch_parent_root(self):
-        self.assertFalse(NoBranchingScheme().is_branch_parent(""))
+        self.assertFalse(NoBranchingScheme().is_branch_parent(u""))
 
     def test_is_branch_parent_other(self):
-        self.assertFalse(NoBranchingScheme().is_branch_parent("trunk/foo"))
+        self.assertFalse(NoBranchingScheme().is_branch_parent(u"trunk/foo"))
 
     def test_is_tag_parent_root(self):
-        self.assertFalse(NoBranchingScheme().is_tag_parent(""))
+        self.assertFalse(NoBranchingScheme().is_tag_parent(u""))
 
     def test_is_tag_parent_other(self):
-        self.assertFalse(NoBranchingScheme().is_tag_parent("trunk/foo"))
+        self.assertFalse(NoBranchingScheme().is_tag_parent(u"trunk/foo"))
 
 
 class ListScheme(TestCase):
@@ -369,49 +369,49 @@ class TrunkScheme(TestCase):
         self.assertTrue(scheme.is_branch("/bar/branches/trunk"))
 
     def test_unprefix_empty(self):
-        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme().unprefix, "")
+        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme().unprefix, u"")
 
     def test_unprefix_topdir(self):
-        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme().unprefix, "branches")
+        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme().unprefix, u"branches")
 
     def test_unprefix_slash(self):
-        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme().unprefix, "/")
+        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme().unprefix, u"/")
 
     def test_unprefix_unknown_sub(self):
-        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme().unprefix, "blie/bloe/bla")
+        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme().unprefix, u"blie/bloe/bla")
 
     def test_unprefix_unknown(self):
-        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme().unprefix, "aa")
+        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme().unprefix, u"aa")
 
     def test_unprefix_slash_branch(self):
-        self.assertEqual(TrunkBranchingScheme().unprefix("/trunk"), ("", "trunk", ""))
+        self.assertEqual(TrunkBranchingScheme().unprefix(u"/trunk"), ("", "trunk", ""))
 
     def test_unprefix_nested_branch_sub(self):
-        self.assertEqual(TrunkBranchingScheme().unprefix("branches/ver1/foo"), ("", "branches/ver1", "foo"))
+        self.assertEqual(TrunkBranchingScheme().unprefix(u"branches/ver1/foo"), ("", "branches/ver1", "foo"))
 
     def test_unprefix_nested_tag_sub(self):
-        self.assertEqual(TrunkBranchingScheme().unprefix("tags/ver1"), ("", "tags/ver1", ""))
+        self.assertEqual(TrunkBranchingScheme().unprefix(u"tags/ver1"), ("", "tags/ver1", ""))
 
     def test_unprefix_doubleslash_branch(self):
-        self.assertEqual(TrunkBranchingScheme().unprefix("//trunk/foo"), ("", "trunk", "foo"))
+        self.assertEqual(TrunkBranchingScheme().unprefix(u"//trunk/foo"), ("", "trunk", "foo"))
 
     def test_unprefix_slash_tag(self):
-        self.assertEqual(TrunkBranchingScheme().unprefix("/tags/ver2/foo/bar"), ("", "tags/ver2", "foo/bar"))
+        self.assertEqual(TrunkBranchingScheme().unprefix(u"/tags/ver2/foo/bar"), ("", "tags/ver2", "foo/bar"))
 
     def test_unprefix_level(self):
-        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme(1).unprefix, "trunk")
+        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme(1).unprefix, u"trunk")
 
     def test_unprefix_level_wrong_level(self):
-        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme(1).unprefix, "/branches/foo")
+        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme(1).unprefix, u"/branches/foo")
 
     def test_unprefix_level_wrong_level_nested(self):
-        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme(1).unprefix, "branches/ver1/foo")
+        self.assertRaises(InvalidSvnBranchPath, TrunkBranchingScheme(1).unprefix, u"branches/ver1/foo")
 
     def test_unprefix_level_correct_branch(self):
-        self.assertEqual(TrunkBranchingScheme(1).unprefix("/foo/trunk"), ("foo", "foo/trunk", ""))
+        self.assertEqual(TrunkBranchingScheme(1).unprefix(u"/foo/trunk"), ("foo", "foo/trunk", ""))
 
     def test_unprefix_level_correct_nested(self):
-        self.assertEqual(TrunkBranchingScheme(1).unprefix("data/tags/ver1"), ("data", "data/tags/ver1", ""))
+        self.assertEqual(TrunkBranchingScheme(1).unprefix(u"data/tags/ver1"), ("data", "data/tags/ver1", ""))
 
     def test_str0(self):
         self.assertEqual("trunk0", TrunkBranchingScheme().__str__())
@@ -420,49 +420,49 @@ class TrunkScheme(TestCase):
         self.assertEqual("trunk1", TrunkBranchingScheme(1).__str__())
         
     def test_is_branch_parent_root(self):
-        self.assertTrue(TrunkBranchingScheme().is_branch_parent(""))
+        self.assertTrue(TrunkBranchingScheme().is_branch_parent(u""))
 
     def test_is_tag_parent_root(self):
-        self.assertFalse(TrunkBranchingScheme().is_tag_parent(""))
+        self.assertFalse(TrunkBranchingScheme().is_tag_parent(u""))
 
     def test_is_branch_parent_branches(self):
-        self.assertTrue(TrunkBranchingScheme().is_branch_parent("branches"))
+        self.assertTrue(TrunkBranchingScheme().is_branch_parent(u"branches"))
 
     def test_is_tagparent_branches(self):
-        self.assertFalse(TrunkBranchingScheme().is_tag_parent("branches"))
+        self.assertFalse(TrunkBranchingScheme().is_tag_parent(u"branches"))
 
     def test_is_tagparent_tags(self):
-        self.assertTrue(TrunkBranchingScheme().is_tag_parent("tags"))
+        self.assertTrue(TrunkBranchingScheme().is_tag_parent(u"tags"))
 
     def test_is_branch_parent_tags(self):
-        self.assertFalse(TrunkBranchingScheme().is_branch_parent("tags"))
+        self.assertFalse(TrunkBranchingScheme().is_branch_parent(u"tags"))
 
     def test_is_branch_parent_trunk(self):
-        self.assertFalse(TrunkBranchingScheme().is_branch_parent("trunk"))
+        self.assertFalse(TrunkBranchingScheme().is_branch_parent(u"trunk"))
 
     def test_is_branch_parent_level(self):
-        self.assertTrue(TrunkBranchingScheme(1).is_branch_parent("anything"))
+        self.assertTrue(TrunkBranchingScheme(1).is_branch_parent(u"anything"))
 
     def test_is_tag_parent_level(self):
-        self.assertFalse(TrunkBranchingScheme(1).is_tag_parent("anything"))
+        self.assertFalse(TrunkBranchingScheme(1).is_tag_parent(u"anything"))
 
     def test_is_branch_parent_level_root(self):
-        self.assertTrue(TrunkBranchingScheme(1).is_branch_parent(""))
+        self.assertTrue(TrunkBranchingScheme(1).is_branch_parent(u""))
 
     def test_is_branch_parent_level_strange(self):
-        self.assertFalse(TrunkBranchingScheme(1).is_branch_parent("trunk/foo"))
+        self.assertFalse(TrunkBranchingScheme(1).is_branch_parent(u"trunk/foo"))
 
     def test_is_branch_parent_level_inside(self):
-        self.assertFalse(TrunkBranchingScheme(1).is_branch_parent("foo/trunk/foo"))
+        self.assertFalse(TrunkBranchingScheme(1).is_branch_parent(u"foo/trunk/foo"))
 
     def test_is_branch_parent_level_branches(self):
-        self.assertTrue(TrunkBranchingScheme(1).is_branch_parent("anything/branches"))
+        self.assertTrue(TrunkBranchingScheme(1).is_branch_parent(u"anything/branches"))
 
     def test_is_tag_parent_level_tags(self):
-        self.assertTrue(TrunkBranchingScheme(1).is_tag_parent("anything/tags"))
+        self.assertTrue(TrunkBranchingScheme(1).is_tag_parent(u"anything/tags"))
 
     def test_is_branch_parent_other(self):
-        self.assertFalse(TrunkBranchingScheme().is_branch_parent("trunk/foo"))
+        self.assertFalse(TrunkBranchingScheme().is_branch_parent(u"trunk/foo"))
 
     def test_get_tag_path_zero(self):
         self.assertEquals("tags/foo", 
@@ -470,19 +470,19 @@ class TrunkScheme(TestCase):
 
     def test_get_tag_path_nonzero(self):
         self.assertEquals("my/project/tags/foo",
-                          TrunkBranchingScheme(2).get_tag_path(u"foo", "my/project"))
+                          TrunkBranchingScheme(2).get_tag_path(u"foo", u"my/project"))
 
     def test_get_branch_path_zero(self):
         self.assertEquals("branches/foo", 
-                          TrunkBranchingScheme().get_branch_path("foo"))
+                          TrunkBranchingScheme().get_branch_path(u"foo"))
 
     def test_get_branch_path_zero_trunk(self):
         self.assertEquals("trunk", 
-                          TrunkBranchingScheme().get_branch_path("trunk"))
+                          TrunkBranchingScheme().get_branch_path(u"trunk"))
 
     def test_get_branch_path_nonzero(self):
         self.assertEquals("my/project/branches/foo",
-                          TrunkBranchingScheme(2).get_branch_path("foo", "my/project"))
+                          TrunkBranchingScheme(2).get_branch_path(u"foo", u"my/project"))
 
 
 class SingleBranchingSchemeTests(TestCase):

@@ -46,6 +46,8 @@ class SvnDiffTree(_mod_diff.DiffTree):
                 return None
 
     def _get_svn_rev_info(self, tree, path):
+        if path is None:
+            return '(revision 0)'
         try:
             rev = tree.get_file_revision(path)
         except errors.NoSuchFile:

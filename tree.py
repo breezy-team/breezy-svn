@@ -75,7 +75,7 @@ class SubversionTree(object):
         :raises KeyError: raised if path was not found
         :return: tuple with file id and text revision
         """
-        assert isinstance(path, text_type) or isinstance(path, bytes), "%r" % path
+        assert isinstance(path, text_type) or isinstance(path, bytes), "was: %r" % path
         return self.id_map.lookup(self.mapping, path)[:2]
 
     def lookup_path(self, file_id):
