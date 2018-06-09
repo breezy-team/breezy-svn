@@ -31,6 +31,7 @@ from breezy.branch import (
     InterBranch,
     UnstackableBranchFormat,
     )
+from breezy.bzr.bzrdir import CreateRepository
 from breezy.controldir import (
     ControlDirFormat,
     ControlDir,
@@ -131,8 +132,6 @@ class SvnRemoteFormat(ControlDirFormat):
         create_prefix=False, force_new_repo=False, stacked_on=None,
         stack_on_pwd=None, repo_format_name=None, make_working_trees=None,
         shared_repo=False, vfs_only=False):
-        # TODO(jelmer): This should really live in breezy.controldir
-        from breezy.bzr.bzrdir import CreateRepository
         def make_directory(transport):
             transport.mkdir('.')
             return transport
@@ -186,8 +185,7 @@ class SvnRemoteFormat(ControlDirFormat):
         revprop_hook = os.path.join(local_path, "hooks", "pre-revprop-change")
         open(revprop_hook, 'w').write("#!/bin/sh")
         os.chmod(revprop_hook, os.stat(revprop_hook).st_mode | 0111)
-        from .transport import get_svn_ra_transport
-        return self.open(get_svn_ra_transport(transport), _found=True)
+        return self.open(transport, _found=True)
 
     def supports_transport(self, transport):
         try:
@@ -220,17 +218,18 @@ class SvnRemoteAccess(ControlDir):
     def __init__(self, _transport, _format=None):
         """See ControlDir.__init__()."""
         from .transport import bzr_to_svn_url, get_svn_ra_transport
-        _transport = get_svn_ra_transport(_transport)
+        svn_transport = get_svn_ra_transport(_transport)
         if _format is None:
             _format = SvnRemoteFormat()
         self._format = _format
         self._config = None
+        self.svn_transport = svn_transport
         self.transport = None
         self.root_transport = _transport
 
         self.svn_url, readonly = bzr_to_svn_url(self.root_transport.base)
-        self.svn_root_url = _transport.get_svn_repos_root()
-        self.root_url = _transport.get_repos_root()
+        self.svn_root_url = svn_transport.get_svn_repos_root()
+        self.root_url = svn_transport.get_repos_root()
 
         if not self.svn_url.lower().startswith(self.svn_root_url.lower()):
             raise AssertionError("SVN URL %r does not start with root %r" %
@@ -360,7 +359,7 @@ class SvnRemoteAccess(ControlDir):
         from .errors import NoSvnRepositoryPresent
         from .repository import SvnRepository
         if self._branch_path == "":
-            return SvnRepository(self, self.root_transport)
+            return SvnRepository(self, self.root_transport, self.svn_transport)
         raise NoSvnRepositoryPresent(self.root_transport.base)
 
     def _find_or_create_repository(self, force_new_repo=False):
@@ -372,13 +371,17 @@ class SvnRemoteAccess(ControlDir):
         :return: instance of SvnRepository.
         """
         from .repository import SvnRepository
-        transport = self.root_transport
-        if self.root_url != transport.base:
-            transport = transport.clone_root()
-        if _ignore_branch_path:
-            return SvnRepository(self, transport)
+        from .transport import get_svn_ra_transport
+        if self.root_url != self.root_transport.base:
+            transport = get_transport(self.root_url, possible_transports=[self.root_transport])
+            svn_transport = get_svn_ra_transport(transport)
         else:
-            return SvnRepository(self, transport, self._branch_path)
+            transport = self.root_transport
+            svn_transport = self.svn_transport
+        if _ignore_branch_path:
+            return SvnRepository(self, transport, svn_transport)
+        else:
+            return SvnRepository(self, transport, svn_transport, self._branch_path)
 
     def cloning_metadir(self, require_stacking=False, require_colocated=False):
         """Produce a metadir suitable for cloning with."""
@@ -481,12 +484,12 @@ class SvnRemoteAccess(ControlDir):
                     raise errors.AlreadyBranchError(repository.transport.base)
                 # TODO: Set NULL_REVISION in SVN_PROP_BZR_BRANCHING_SCHEME on rev0
             bp_parts = relpath.split("/")
-            existing_bp_parts = check_dirs_exist(repository.transport, bp_parts,
+            existing_bp_parts = check_dirs_exist(repository.svn_transport, bp_parts,
                 -1)
             if len(existing_bp_parts) == len(bp_parts) and relpath != "":
                 raise errors.AlreadyBranchError(repository.transport.base)
             if len(existing_bp_parts) < len(bp_parts)-1:
-                create_branch_container(repository.transport, relpath,
+                create_branch_container(repository.svn_transport, relpath,
                     "/".join(existing_bp_parts))
             if relpath != "":
                 create_branch_with_hidden_commit(repository, relpath,
@@ -550,7 +553,7 @@ class SvnRemoteAccess(ControlDir):
                     overwrite=overwrite, lossy=lossy)
         except errors.NotBranchError:
             if create_prefix:
-                self.root_transport.create_prefix()
+                self.svn_transport.create_prefix()
             ret.target_branch = self.import_branch(source, revision_id,
                 overwrite=overwrite, lossy=lossy)
             ret.target_branch_path = "/" + ret.target_branch.get_branch_path()
@@ -570,25 +573,19 @@ class SvnRemoteAccess(ControlDir):
         if relpath == "":
             raise errors.UnsupportedOperation(self.destroy_branch, self)
         dirname, basename = urlutils.split(relpath)
-        conn = self.root_transport.get_connection(dirname.strip("/"))
+        conn = self.svn_transport.get_connection(dirname.strip("/"))
         try:
-            ce = conn.get_commit_editor({"svn:log": "Remove branch."})
-            try:
-                root = ce.open_root()
-                try:
-                    root.delete_entry(basename)
-                except subvertpy.SubversionException, (_, num):
-                    if num == subvertpy.ERR_FS_TXN_OUT_OF_DATE:
-                        # Make sure the branch still exists
-                        self.open_branch(branch_name)
-                    raise
-                root.close()
-            except:
-                ce.abort()
-                raise
-            ce.close()
+            with conn.get_commit_editor({"svn:log": "Remove branch."}) as ce:
+                with ce.open_root() as root:
+                    try:
+                        root.delete_entry(basename)
+                    except subvertpy.SubversionException, (_, num):
+                        if num == subvertpy.ERR_FS_TXN_OUT_OF_DATE:
+                            # Make sure the branch still exists
+                            self.open_branch(branch_name)
+                        raise
         finally:
-            self.root_transport.add_connection(conn)
+            self.svn_transport.add_connection(conn)
 
     def destroy_repository(self):
         raise errors.UnsupportedOperation(self.destroy_repository, self)
@@ -600,7 +597,7 @@ class SvnRemoteAccess(ControlDir):
         from .config import SvnRepositoryConfig
         if self._config is None:
             self._config = SvnRepositoryConfig(self.root_transport.base,
-                self.root_transport.get_uuid())
+                self.svn_transport.get_uuid())
         return self._config
 
     def list_branches(self):

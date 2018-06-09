@@ -62,7 +62,7 @@ class Annotater(object):
         self._text = ""
         path = urlutils.join(branch_path, relpath.encode("utf-8")).strip("/")
         try:
-            self._repository.transport.get_file_revs(path, -1, revnum,
+            self._repository.svn_transport.get_file_revs(path, -1, revnum,
                 self._handler, include_merged_revisions=True)
         except subvertpy.SubversionException, (msg, num):
             if num == subvertpy.ERR_FS_NOT_FILE:

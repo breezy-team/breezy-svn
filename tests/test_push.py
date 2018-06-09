@@ -1561,13 +1561,13 @@ class CreateBranchContainerTests(SubversionTestCase):
         self.repo = Repository.open(self.repos_url)
 
     def test_create_single(self):
-        create_branch_container(self.repo.transport, "branches/abranch", "")
+        create_branch_container(self.repo.svn_transport, "branches/abranch", "")
         log = self.client_log(self.repos_url, 1, 0)
         self.assertEquals(log[1][0], {u'/branches': ('A', None, -1)})
         self.assertEquals(log[1][3], "Add branches directory.")
 
     def test_create_double(self):
-        create_branch_container(self.repo.transport, u"project/branches/abranch", "")
+        create_branch_container(self.repo.svn_transport, u"project/branches/abranch", "")
         paths = self.client_log(self.repos_url, 1, 0)[1][0]
         self.assertEquals(paths,
             {u'/project': ('A', None, -1), u'/project/branches': ('A', None, -1)})
@@ -1576,6 +1576,6 @@ class CreateBranchContainerTests(SubversionTestCase):
         dc = self.get_commit_editor(self.repos_url)
         dc.add_dir("project")
         dc.close()
-        create_branch_container(self.repo.transport, u"project/branches/abranch", u"project")
+        create_branch_container(self.repo.svn_transport, u"project/branches/abranch", u"project")
         paths = self.client_log(self.repos_url, 2, 0)[2][0]
         self.assertEquals(paths, {u'/project/branches': ('A', None, -1)})

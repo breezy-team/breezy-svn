@@ -146,7 +146,7 @@ def get_property_scheme(repository, revnum=None):
 
 
 def set_property_scheme(repository, scheme):
-    conn = repository.transport.get_connection()
+    conn = repository.svn_transport.get_connection()
     try:
         editor = conn.get_commit_editor(
             {properties.PROP_REVISION_LOG: "Updating branching scheme for Bazaar."},
@@ -157,7 +157,7 @@ def set_property_scheme(repository, scheme):
         root.close()
         editor.close()
     finally:
-        repository.transport.add_connection(conn)
+        repository.svn_transport.add_connection(conn)
 
 
 def config_set_scheme(repository, scheme, guessed_scheme, mandatory=False):

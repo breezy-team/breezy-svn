@@ -432,13 +432,13 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             revnum = self.branch.get_revnum()
         old_branch_path = self.get_branch_path()
         with self._get_wc(write_lock=True, depth=-1) as adm:
-            conn = self.branch.repository.transport.get_connection(old_branch_path)
+            conn = self.branch.repository.svn_transport.get_connection(old_branch_path)
             try:
                 update_wc(adm, self.basedir.encode("utf-8"), conn,
-                        urlutils.join(self.branch.repository.transport.svn_url, branch_path),
+                        urlutils.join(self.branch.repository.svn_transport.svn_url, branch_path),
                         revnum)
             finally:
-                self.branch.repository.transport.add_connection(conn)
+                self.branch.repository.svn_transport.add_connection(conn)
         return revnum
 
     def update(self, change_reporter=None, possible_transports=None,

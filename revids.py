@@ -76,7 +76,7 @@ class RevidMap(object):
 
         :return: First revision number on which a revision property was found, or None
         """
-        if self.repos.transport.has_capability("log-revprops") != True:
+        if self.repos.svn_transport.has_capability("log-revprops") != True:
             return
         for (paths, revnum, revprops) in self.repos._log.iter_changes(None, from_revnum, to_revnum):
             if pb is not None:

@@ -754,7 +754,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
                     svn_base_path = "."
                 else:
                     # Map copyfrom_path to the path that's related to the lhs parent branch path.
-                    prev_locations = self.source.transport.get_locations(
+                    prev_locations = self.source.svn_transport.get_locations(
                         copyfrom_path, copyfrom_revnum, [self.lhs_parent_revmeta.metarev.revnum])
                     copyfrom_path = prev_locations[self.lhs_parent_revmeta.metarev.revnum].strip("/")
                     svn_base_path = urlutils.determine_relative_path(
@@ -865,7 +865,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         self.target.add_revision(self.revid, rev)
 
         # Only fetch signature if it's cheap
-        if self.source.transport.has_capability("log-revprops"):
+        if self.source.svn_transport.has_capability("log-revprops"):
             signature = self.revmeta.get_signature()
             if signature is not None:
                 self.target.add_signature_text(self.revid, signature)
@@ -1383,9 +1383,9 @@ class InterFromSvnToInventoryRepository(InterRepository):
         self._text_cache = lru_cache.LRUSizeCache(TEXT_CACHE_SIZE,
                                                   compute_size=chunks_to_size)
 
-        self._use_replay_range = self.source.transport.has_capability(
+        self._use_replay_range = self.source.svn_transport.has_capability(
             "partial-replay") and False
-        self._use_replay = self.source.transport.has_capability(
+        self._use_replay = self.source.svn_transport.has_capability(
             "partial-replay") and False
 
     def copy_content(self, revision_id=None, pb=None):
@@ -1467,7 +1467,7 @@ class InterFromSvnToInventoryRepository(InterRepository):
             parent_revnum = parent_revmeta.metarev.revnum
             start_empty = False
 
-        conn = self.source.transport.get_connection(parent_branch)
+        conn = self.source.svn_transport.get_connection(parent_branch)
         try:
             assert revmeta.metarev.revnum > parent_revnum or start_empty
 
@@ -1490,17 +1490,17 @@ class InterFromSvnToInventoryRepository(InterRepository):
                 raise
         finally:
             if not conn.busy:
-                self.source.transport.add_connection(conn)
+                self.source.svn_transport.add_connection(conn)
 
     def _fetch_revision_replay(self, editor, revmeta, parent_revmeta):
         assert revmeta.revnum >= 0
-        conn = self.source.transport.get_connection(revmeta.branch_path)
+        conn = self.source.svn_transport.get_connection(revmeta.branch_path)
         try:
             conn.replay(revmeta.revnum, 0, editor_strip_prefix(editor, revmeta.branch_path),
                 True)
         finally:
             if not conn.busy:
-                self.source.transport.add_connection(conn)
+                self.source.svn_transport.add_connection(conn)
 
     def _fetch_revisions_nochunks(self, revs, pb=None, use_replay=False):
         """Copy a set of related revisions using svn.ra.switch.
@@ -1703,12 +1703,12 @@ class InterFromSvnToInventoryRepository(InterRepository):
                     assert editor.root_inventory is not None
                     self._prev_inv = editor.root_inventory
 
-                conn = self.source.transport.get_connection(revmetas[-1].branch_path)
+                conn = self.source.svn_transport.get_connection(revmetas[-1].branch_path)
                 try:
                     conn.replay_range(revmetas[0].revnum, revmetas[-1].revnum, 0, (revstart, revfinish), True)
                 finally:
                     if not conn.busy:
-                        self.source.transport.add_connection(conn)
+                        self.source.svn_transport.add_connection(conn)
         except:
             self.target.abort_write_group()
             raise

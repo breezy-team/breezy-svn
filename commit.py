@@ -188,7 +188,7 @@ def set_svn_revprops(repository, revnum, revprops):
     """
     for (name, value) in revprops.iteritems():
         try:
-            repository.transport.change_rev_prop(revnum, name, value)
+            repository.svn_transport.change_rev_prop(revnum, name, value)
         except SubversionException, (_, num):
             if num == ERR_REPOS_DISABLED_FEATURE:
                 raise RevpropChangeFailed(name)
@@ -441,7 +441,7 @@ class SvnCommitBuilder(CommitBuilder):
         self.new_inventory = None
         self._any_changes = False
 
-        self.conn = self.repository.transport.get_connection()
+        self.conn = self.repository.svn_transport.get_connection()
 
         # revision ids are either specified or predictable
         self.revmeta = None
@@ -485,7 +485,7 @@ class SvnCommitBuilder(CommitBuilder):
             self._base_revmeta = self.repository._revmeta_provider.lookup_revision(
                 self.base_path, self.base_revnum)
             self._base_branch_props = self._base_revmeta.get_fileprops()
-            self.base_url = urlutils.join(self.repository.transport.svn_url,
+            self.base_url = urlutils.join(self.repository.svn_transport.svn_url,
                                           self.base_path)
 
         self.mapping = self.repository.get_mapping()
@@ -506,7 +506,7 @@ class SvnCommitBuilder(CommitBuilder):
         self._touched_dirs = set()
         self._will_record_deletes = False
         self.modified_files = {}
-        self.supports_custom_revprops = self.repository.transport.has_capability(
+        self.supports_custom_revprops = self.repository.svn_transport.has_capability(
             "commit-revprops")
         if (self.supports_custom_revprops is None and
             self.mapping.can_use_revprops and
@@ -532,7 +532,7 @@ class SvnCommitBuilder(CommitBuilder):
             # Set hint for potential clients that they have to check revision
             # properties
             if (not self.set_custom_fileprops and
-                not self.repository.transport.has_capability("log-revprops")):
+                not self.repository.svn_transport.has_capability("log-revprops")):
                 # Tell clients about first approximate use of revision
                 # properties
                 self.mapping.export_revprop_redirect(
@@ -677,7 +677,7 @@ class SvnCommitBuilder(CommitBuilder):
             if tree is None:
                 tree = self.repository.revision_tree(p)
             ret.append((tree,
-                urlutils.join(self.repository.transport.svn_url, base_path),
+                urlutils.join(self.repository.svn_transport.svn_url, base_path),
                 base_revnum))
         return ret
 
@@ -763,7 +763,6 @@ class SvnCommitBuilder(CommitBuilder):
         self._update_properties()
         self._check_properties()
         bp_parts = self.branch_path.split("/")
-        lock = self.repository.transport.lock_write(".")
 
         self._changed_fileprops = {}
 
@@ -875,9 +874,8 @@ class SvnCommitBuilder(CommitBuilder):
                 editor.abort()
                 raise
         finally:
-            self.repository.transport.add_connection(self.conn)
+            self.repository.svn_transport.add_connection(self.conn)
             self.conn = None
-            lock.unlock()
 
         (result_revision, result_date, result_author) = self.revision_metadata
         self.result_foreign_revid = (self.repository.uuid, self.branch_path,
@@ -958,7 +956,7 @@ class SvnCommitBuilder(CommitBuilder):
 
     def abort(self):
         if self.conn is not None:
-            self.repository.transport.add_connection(self.conn)
+            self.repository.svn_transport.add_connection(self.conn)
         if self.repository.is_in_write_group():
             self.repository.abort_write_group()
 

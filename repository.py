@@ -139,6 +139,7 @@ class SvnRepositoryFormat(RepositoryFormat):
     supports_versioned_directories = True
     supports_nesting_repositories = False
     supports_unreferenced_revisions = False
+    supports_overriding_transport = False
 
     @property
     def _matchingcontroldir(self):
@@ -357,7 +358,7 @@ class SvnRepository(ForeignRepository):
 
     chk_bytes = None
 
-    def __init__(self, some_dir, transport, branch_path=None):
+    def __init__(self, some_dir, transport, svn_transport, branch_path=None):
         lazy_register_optimizers()
         self.vcs = foreign_vcs_svn
         _revision_store = None
@@ -367,6 +368,7 @@ class SvnRepository(ForeignRepository):
         control_files = DummyLockableFiles(transport)
         Repository.__init__(self, SvnRepositoryFormat(), some_dir, control_files)
         self._transport = transport
+        self.svn_transport = svn_transport
         self._cached_revnum = None
         self._lock_mode = None
         self._lock_count = 0
@@ -375,13 +377,13 @@ class SvnRepository(ForeignRepository):
         self._guessed_layout = None
         self._guessed_appropriate_layout = None
         self.transport = transport
-        self.uuid = transport.get_uuid().encode()
+        self.uuid = svn_transport.get_uuid().encode()
         assert self.uuid is not None
         self.base = transport.base
         assert self.base is not None
         self._serializer = None
         self.get_config().add_location(self.base)
-        self._log = logwalker.LogWalker(transport=transport)
+        self._log = logwalker.LogWalker(transport=svn_transport)
         self.fileid_map = FileIdMapStore(simple_apply_changes, self)
         self.revmap = RevidMap(self)
         self._default_mapping = None
@@ -447,7 +449,7 @@ class SvnRepository(ForeignRepository):
         if self._some_controldir.svn_root_url == self._some_controldir.svn_url:
             return self._some_controldir
         from .remote import SvnRemoteAccess
-        self._some_controldir = SvnRemoteAccess(self._some_controldir.root_transport.clone_root())
+        self._some_controldir = SvnRemoteAccess(self._some_controldir.svn_transport.clone_root())
         return self._some_controldir
 
     def _set_controldir(self, value):
@@ -584,7 +586,7 @@ class SvnRepository(ForeignRepository):
         """
         if self._cached_revnum is not None:
             return self._cached_revnum
-        revnum = self.transport.get_latest_revnum()
+        revnum = self.svn_transport.get_latest_revnum()
         if self.is_locked():
             self._cached_revnum = revnum
         return revnum
@@ -639,7 +641,7 @@ class SvnRepository(ForeignRepository):
         :return: tuple with two booleans: whether to use revision properties
             and whether to use file properties.
         """
-        supports_custom_revprops = self.transport.has_capability(
+        supports_custom_revprops = self.svn_transport.has_capability(
             "commit-revprops")
         if supports_custom_revprops and mapping.can_use_revprops:
             use_revprops = True
@@ -698,10 +700,10 @@ class SvnRepository(ForeignRepository):
         editor = TreeDeltaBuildEditor(revision.svn_meta, revision.mapping,
             self.get_fileid_map(revision.svn_meta, revision.mapping),
             parentfileidmap, specific_fileids=specific_fileids)
-        conn = self.transport.get_connection(parent_branch_path)
+        conn = self.svn_transport.get_connection(parent_branch_path)
         try:
             reporter = conn.do_diff(revision.svn_meta.metarev.revnum, "",
-                    urlutils.join(self.transport.get_svn_repos_root(),
+                    urlutils.join(self.svn_transport.get_svn_repos_root(),
                         revision.svn_meta.metarev.branch_path).rstrip("/"), editor,
                     True, True, False)
             try:
@@ -711,7 +713,7 @@ class SvnRepository(ForeignRepository):
                 reporter.abort()
                 raise
         finally:
-            self.transport.add_connection(conn)
+            self.svn_transport.add_connection(conn)
         editor.sort()
         return editor.delta
 
@@ -914,7 +916,7 @@ class SvnRepository(ForeignRepository):
         if uuid != self.uuid:
             return False
         try:
-            kind = self.transport.check_path(path, revnum)
+            kind = self.svn_transport.check_path(path, revnum)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 return False
@@ -1089,7 +1091,7 @@ class SvnRepository(ForeignRepository):
     def seen_bzr_revprops(self):
         """Check for the presence of bzr-specific custom revision properties.
         """
-        if self.transport.has_capability("commit-revprops") == False:
+        if self.svn_transport.has_capability("commit-revprops") == False:
             return False
         for revmeta in self._revmeta_provider.iter_all_revisions(
                 self.get_layout(), None, self.get_latest_revnum()):
@@ -1139,7 +1141,7 @@ class SvnRepository(ForeignRepository):
         foreign_revid, mapping = self.lookup_bzr_revision_id(revision_id)
         (uuid, path, revnum) = foreign_revid
         try:
-            self.transport.change_rev_prop(revnum, SVN_REVPROP_BZR_SIGNATURE,
+            self.svn_transport.change_rev_prop(revnum, SVN_REVPROP_BZR_SIGNATURE,
                 signature)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_REPOS_DISABLED_FEATURE:
@@ -1284,7 +1286,7 @@ class SvnRepository(ForeignRepository):
                 (project, branch, nick, has_props, revnum) in it if has_props
                 in (True, None)))
         else:
-            return iter(find_branches_between(self._log, self.transport,
+            return iter(find_branches_between(self._log, self.svn_transport,
                 layout, from_revnum, to_revnum, project))
 
 

@@ -291,7 +291,7 @@ class CustomLayout(RepositoryLayout):
         ret = []
         for b in entries:
             try:
-                r = repository.transport.get_dir(b, revnum)[1]
+                r = repository.svn_transport.get_dir(b, revnum)[1]
             except subvertpy.SubversionException, (msg, num):
                 if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
                            subvertpy.ERR_FS_NOT_FOUND,

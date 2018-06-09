@@ -274,7 +274,7 @@ def get_root_paths(repository, itemlist, revnum, verify_fn, project=None):
     :param pb: Optional progress bar.
     :return: Iterator over project, branch path, nick, has_props, revnum
     """
-    expander = BranchPatternExpander(repository.transport, revnum, project)
+    expander = BranchPatternExpander(repository.svn_transport, revnum, project)
 
     with ui.ui_factory.nested_progress_bar() as pb:
         for idx, pattern in enumerate(itemlist):

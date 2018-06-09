@@ -299,7 +299,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         self._rules_searcher = None
         self.id_map = repository.get_fileid_map(self._revmeta, self.mapping)
         self.file_properties = {}
-        self.transport = repository.transport.clone(
+        self.transport = repository.svn_transport.clone(
             self._revmeta.metarev.branch_path)
 
     @property
@@ -309,9 +309,9 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
             return self._bzr_inventory
         self._bzr_inventory = Inventory()
         self._bzr_inventory.revision_id = self.get_revision_id()
-        root_repos = self._repository.transport.get_svn_repos_root()
+        root_repos = self._repository.svn_transport.get_svn_repos_root()
         editor = TreeBuildEditor(self)
-        conn = self._repository.transport.get_connection()
+        conn = self._repository.svn_transport.get_connection()
         try:
             reporter = conn.do_switch(
                 self._revmeta.metarev.revnum, "", True,
@@ -323,7 +323,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
                 reporter.abort()
                 raise
         finally:
-            self._repository.transport.add_connection(conn)
+            self._repository.svn_transport.add_connection(conn)
         return self._bzr_inventory
 
     def all_file_ids(self):
@@ -609,8 +609,8 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             return ie
 
         def find_ids(entry):
-            assert entry.url.startswith(self._repository.transport.svn_url)
-            relpath = urllib.unquote(entry.url[len(self._repository.transport.svn_url):].strip("/"))
+            assert entry.url.startswith(self._repository.svn_transport.svn_url)
+            relpath = urllib.unquote(entry.url[len(self._repository.svn_transport.svn_url):].strip("/"))
             assert isinstance(relpath, str)
             if entry.schedule in (wc.SCHEDULE_NORMAL,
                                   wc.SCHEDULE_DELETE,

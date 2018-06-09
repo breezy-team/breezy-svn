@@ -252,7 +252,7 @@ class SvnBranch(ForeignBranch):
         return self.supports_tags()
 
     def check_path(self):
-        return self.repository.transport.check_path(self._branch_path,
+        return self.repository.svn_transport.check_path(self._branch_path,
             self.repository.get_latest_revnum())
 
     def supports_tags(self):
@@ -286,7 +286,7 @@ class SvnBranch(ForeignBranch):
         if revnum == last_revmeta.metarev.revnum:
             return last_revmeta.metarev.branch_path
 
-        locations = self.repository.transport.get_locations(
+        locations = self.repository.svn_transport.get_locations(
                 last_revmeta.metarev.branch_path, last_revmeta.metarev.revnum,
                 [revnum])
 
@@ -384,16 +384,13 @@ class SvnBranch(ForeignBranch):
         svn_url, readonly = bzr_to_svn_url(urlutils.join(self.repository.base, bp))
         wc.ensure_adm(to_path.encode("utf-8"), uuid,
                       svn_url, bzr_to_svn_url(self.repository.base)[0], revnum)
-        adm = wc.Adm(None, to_path.encode("utf-8"), write_lock=True)
-        try:
-            conn = self.repository.transport.connections.get(svn_url)
+        with wc.Adm(None, to_path.encode("utf-8"), write_lock=True) as adm:
+            conn = self.repository.svn_transport.connections.get(svn_url)
             try:
                 update_wc(adm, to_path.encode("utf-8"), conn, svn_url, revnum)
             finally:
                 if not conn.busy:
-                    self.repository.transport.add_connection(conn)
-        finally:
-            adm.close()
+                    self.repository.svn_transport.add_connection(conn)
 
         dir = SvnCheckout(transport, SvnWorkingTreeDirFormat())
         return dir.open_workingtree()
@@ -432,10 +429,10 @@ class SvnBranch(ForeignBranch):
         raise NoSuchRevision(self, revnum)
 
     def get_config(self):
-        return BranchConfig(self.base, self.repository.uuid)
+        return BranchConfig(self.user_url, self.repository.uuid)
 
     def get_config_stack(self):
-        return SvnBranchStack(self.base, self.repository.uuid)
+        return SvnBranchStack(self.user_url, self.repository.uuid)
 
     def get_append_revisions_only(self):
         value = self.get_config_stack().get('append_revisions_only')
@@ -840,8 +837,7 @@ class InterFromSvnBranch(GenericInterBranch):
                          graph=None, fetch_tags=None,
                          fetch_non_mainline=None):
         "See InterBranch.update_revisions."""
-        self.source.lock_read()
-        try:
+        with self.source.lock_read():
             if stop_revision is None:
                 stop_revision = self.source.last_revision()
                 if is_null(stop_revision):
@@ -859,20 +855,15 @@ class InterFromSvnBranch(GenericInterBranch):
             if not overwrite:
                 if graph is None:
                     graph = self.target.repository.get_graph()
-                self.target.lock_read()
-                try:
+                with self.target.lock_read():
                     if self.target._check_if_descendant_or_diverged(
                             stop_revision, last_rev, graph, self.source):
                         # stop_revision is a descendant of last_rev, but we
                         # aren't overwriting, so we're done.
                         return self.target.last_revision_info()
-                finally:
-                    self.target.unlock()
             self.target._clear_cached_state()
             self.target.generate_revision_history(stop_revision)
             return self.target.last_revision_info()
-        finally:
-            self.source.unlock()
 
     def _basic_push(self, overwrite=False, stop_revision=None,
             fetch_non_mainline=False):
@@ -1017,20 +1008,16 @@ class InterToSvnBranch(InterBranch):
         parent_revids = tuple(graph.get_parent_map([revid])[revid])
         if parent_revids != (NULL_REVISION,):
             return False
-        tree_contents = self.target.repository.transport.get_dir(
+        tree_contents = self.target.repository.svn_transport.get_dir(
             self.target.get_branch_path(), self.target.get_revnum())[0]
         return tree_contents == {}
 
     def copy_content_into(self, revision_id=None):
         if revision_id is None:
             revision_id = self.source.last_revision()
-        self.source.lock_read()
-        try:
-            self.target.lock_write()
-            try:
+        with self.source.lock_read():
+            with self.target.lock_write():
                 self._push(revision_id, overwrite=True, push_metadata=True)
-            finally:
-                self.target.unlock()
             try:
                 parent = self.source.get_parent()
             except InaccessibleParent, e:
@@ -1038,8 +1025,6 @@ class InterToSvnBranch(InterBranch):
             else:
                 if parent:
                     self.target.set_parent(parent)
-        finally:
-            self.source.unlock()
 
     def _push(self, stop_revision, overwrite, push_metadata):
         old_last_revid = self.target.last_revision()

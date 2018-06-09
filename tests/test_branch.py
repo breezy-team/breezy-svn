@@ -132,7 +132,7 @@ class WorkingSubversionBranch(SubversionTestCase):
             b.repository.generate_revision_id(1, u"trunk", b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR,
-                b.repository.transport.check_path("tags/mytag", 3))
+                b.repository.svn_transport.check_path("tags/mytag", 3))
 
     def test_tag_set_dupe(self):
         repos_url = self.make_repository('a')
@@ -152,7 +152,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, u"trunk", b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR,
-                b.repository.transport.check_path("tags/mytag", 3))
+                b.repository.svn_transport.check_path("tags/mytag", 3))
         self.assertEquals(3, b.repository.get_latest_revnum())
 
         b.tags.set_tag(u"mytag", target)
@@ -178,7 +178,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         b.tags.set_tag(u"mytag", b.repository.generate_revision_id(1, u"trunk", b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR,
-                b.repository.transport.check_path("tags/mytag", 3))
+                b.repository.svn_transport.check_path("tags/mytag", 3))
         self.assertEquals(3, b.repository.get_latest_revnum())
 
         oldtagrevid = b.repository.generate_revision_id(1, u"trunk", b.repository.get_mapping())
@@ -189,7 +189,7 @@ class WorkingSubversionBranch(SubversionTestCase):
         b.tags.set_tag(u"mytag", newtagrevid)
 
         self.assertEquals(subvertpy.NODE_DIR,
-                b.repository.transport.check_path("tags/mytag", 4))
+                b.repository.svn_transport.check_path("tags/mytag", 4))
         self.assertEquals(4, b.repository.get_latest_revnum())
         b = Branch.open(repos_url + "/trunk")
         log = self.client_log(repos_url, 4, 0)
@@ -235,10 +235,10 @@ class WorkingSubversionBranch(SubversionTestCase):
                 b.repository.get_mapping()))
 
         self.assertEquals(subvertpy.NODE_DIR,
-                b.repository.transport.check_path("tags", 3))
+                b.repository.svn_transport.check_path("tags", 3))
 
         self.assertEquals(subvertpy.NODE_DIR,
-                b.repository.transport.check_path("tags/mytag", 4))
+                b.repository.svn_transport.check_path("tags/mytag", 4))
         self.assertEquals(4, b.repository.get_latest_revnum())
 
     def test_tag_set_not_supported(self):

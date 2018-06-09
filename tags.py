@@ -182,13 +182,13 @@ class SubversionTags(BasicTags):
             return True
         bp_parts = parent.split("/")
         existing_bp_parts = check_dirs_exist(
-                self.repository.transport,
+                self.repository.svn_transport,
                 bp_parts, self.repository.get_latest_revnum())
         if existing_bp_parts == bp_parts:
             self._parent_exists.add(parent)
             return True
         create_branch_prefix(
-                self.repository.transport,
+                self.repository.svn_transport,
                 self._revprops("Add tags base directory."),
                 bp_parts, existing_bp_parts)
         self._parent_exists.add(parent)
@@ -217,7 +217,7 @@ class SubversionTags(BasicTags):
             return
         mutter("setting tag %s from %r (deletefirst: %r)", path,
                (from_uuid, from_bp, from_revnum), deletefirst)
-        conn = self.repository.transport.get_connection(parent)
+        conn = self.repository.svn_transport.get_connection(parent)
         try:
             ci = svn_errors.convert_svn_error(conn.get_commit_editor)(
                     self._revprops("Add tag %s" % tag_name.encode("utf-8"),
@@ -237,7 +237,7 @@ class SubversionTags(BasicTags):
             # FIXME: This shouldn't have to remove the entire cache, just update it
             self.repository._clear_cached_state()
         finally:
-            self.repository.transport.add_connection(conn)
+            self.repository.svn_transport.add_connection(conn)
 
     def _revprops(self, message, tags_dict=None):
         """Create a revprops dictionary.
@@ -246,13 +246,13 @@ class SubversionTags(BasicTags):
         revision later.
         """
         revprops = {properties.PROP_REVISION_LOG: message, }
-        if self.repository.transport.has_capability("commit-revprops"):
+        if self.repository.svn_transport.has_capability("commit-revprops"):
             revprops[SVN_REVPROP_BZR_SKIP] = ""
         return revprops
 
     def _lookup_tag_revmeta(self, path):
         revnum = self.repository.get_latest_revnum()
-        if self.repository.transport.check_path(path, revnum) == NODE_NONE:
+        if self.repository.svn_transport.check_path(path, revnum) == NODE_NONE:
             raise KeyError
         tip, hidden, mapping = self.repository._revmeta_provider._iter_reverse_revmeta_mapping_history(
             path, revnum, to_revnum=0, mapping=self.branch.mapping).next()
@@ -331,7 +331,7 @@ class SubversionTags(BasicTags):
     def delete_tag(self, tag_name):
         path = self.branch.layout.get_tag_path(tag_name, self.branch.project)
         parent = urlutils.dirname(path)
-        conn = self.repository.transport.get_connection(parent)
+        conn = self.repository.svn_transport.get_connection(parent)
         try:
             if conn.check_path(urlutils.basename(path),
                     self.repository.get_latest_revnum()) != subvertpy.NODE_DIR:
@@ -351,7 +351,7 @@ class SubversionTags(BasicTags):
             self.repository._clear_cached_state()
         finally:
             assert not conn.busy
-            self.repository.transport.add_connection(conn)
+            self.repository.svn_transport.add_connection(conn)
 
     def _set_tag_dict(self, dest_dict):
         cur_dict = self.get_tag_dict()

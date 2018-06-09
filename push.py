@@ -251,13 +251,13 @@ class InterToSvnRepository(InterRepository):
         """
         assert not append_revisions_only or not overwrite
         bp_parts = path.split("/")
-        existing_bp_parts = check_dirs_exist(self.target.transport, bp_parts,
+        existing_bp_parts = check_dirs_exist(self.target.svn_transport, bp_parts,
             -1)
         if (len(existing_bp_parts) != len(bp_parts) and
             len(existing_bp_parts)+1 != len(bp_parts)):
             existing_path = "/".join(existing_bp_parts)
             if create_prefix:
-                create_branch_container(self.target.transport, path,
+                create_branch_container(self.target.svn_transport, path,
                     existing_path)
                 return ("create", )
             raise MissingPrefix(path, existing_path)
@@ -732,7 +732,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
         if set_custom_revprops:
             mapping.export_hidden_revprops(branch_path, revprops)
             if (not set_custom_fileprops and
-                not repository.transport.has_capability("log-revprops")):
+                not repository.svn_transport.has_capability("log-revprops")):
                 # Tell clients about first approximate use of revision
                 # properties
                 mapping.export_revprop_redirect(
@@ -742,7 +742,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
     parent = urlutils.dirname(branch_path)
 
     bp_parts = branch_path.split("/")
-    existing_bp_parts = check_dirs_exist(repository.transport, bp_parts, -1)
+    existing_bp_parts = check_dirs_exist(repository.svn_transport, bp_parts, -1)
     if len(bp_parts) not in (len(existing_bp_parts), len(existing_bp_parts)+1):
         raise MissingPrefix("/".join(bp_parts), "/".join(existing_bp_parts))
 
@@ -754,10 +754,9 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
     def done(revno, *args):
         foreign_revid.append(revno)
 
-    conn = repository.transport.get_connection(parent)
+    conn = repository.svn_transport.get_connection(parent)
     try:
-        ci = convert_svn_error(conn.get_commit_editor)(revprops, done)
-        try:
+        with convert_svn_error(conn.get_commit_editor)(revprops, done) as ci:
             root = ci.open_root()
             if deletefirst:
                 try:
@@ -772,11 +771,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
                 branch_dir.change_prop(k, nv)
             branch_dir.close()
             root.close()
-        except:
-            ci.abort()
-            raise
-        ci.close()
         repository._cache_add_new_revision(foreign_revid[2], revid, None)
         return revid, (tuple(foreign_revid), mapping)
     finally:
-        repository.transport.add_connection(conn)
+        repository.svn_transport.add_connection(conn)

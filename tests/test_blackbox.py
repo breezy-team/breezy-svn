@@ -595,7 +595,7 @@ if len(sys.argv) == 2:
         dc.close()
 
         self.assertEquals(
-            'Repository root: %s\n'
+            'Repository root: %s/\n'
             'Layout: trunk-variable\n'
             'Branch path: trunk\n'
             'Tag container directory: tags\n'
