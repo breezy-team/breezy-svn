@@ -139,7 +139,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("add dc/foo")
         self.run_bzr("commit -m msg dc")
         self.run_bzr_error(
-            ['ERROR: Empty branch already exists at /trunk. Specify --overwrite or remove it before pushing.\n'],
+            ['ERROR: Empty branch already exists at .*/trunk/. Specify --overwrite or remove it before pushing.\n'],
             ["push", "--lossy", "-d", "dc", "%s/trunk" % repos_url])
 
     def test_push_verbose(self):

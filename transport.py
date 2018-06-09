@@ -580,11 +580,9 @@ class SvnRaTransport(Transport):
         try:
             with conn.get_commit_editor({"svn:log": message}) as ce:
                 try:
-                    node = ce.open_root(-1)
-                    node.add_directory(relpath, None, -1).close()
-                    node.close()
+                    with ce.open_root(-1) as node:
+                        node.add_directory(relpath, None, -1).close()
                 except subvertpy.SubversionException, (msg, num):
-                    ce.abort()
                     if num == ERR_FS_NOT_FOUND:
                         raise NoSuchFile(msg)
                     if num == ERR_FS_NOT_DIRECTORY:

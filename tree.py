@@ -349,7 +349,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
     def kind(self, path, file_id=None):
         stream = BytesIO()
         try:
-            (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
+            (fetched_rev, props) = self.transport.get_file(path,
                     stream, self._revmeta.metarev.revnum)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NOT_FILE:
@@ -386,7 +386,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
 
     def get_file(self, path, file_id=None):
         stream = BytesIO()
-        (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
+        (fetched_rev, props) = self.transport.get_file(path,
                 stream, self._revmeta.metarev.revnum)
         if properties.PROP_SPECIAL in props and stream.read(5) == b"link ":
             return BytesIO()
@@ -395,7 +395,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
 
     def get_file_stream_by_path(self, path):
         stream = BytesIO()
-        (fetched_rev, props) = self.transport.get_file(path.encode("utf-8"),
+        (fetched_rev, props) = self.transport.get_file(path,
                 stream, self._revmeta.metarev.revnum)
         stream.seek(0)
         return stream
@@ -405,20 +405,19 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
             return my_file.read()
 
     def get_file_properties(self, path, file_id=None):
-        encoded_path = path.encode("utf-8")
         try:
-            (fetched_rev, props) = self.transport.get_file(encoded_path,
+            (fetched_rev, props) = self.transport.get_file(path,
                     BytesIO(), self._revmeta.metarev.revnum)
         except subvertpy.SubversionException, (_, num):
             if num == subvertpy.ERR_FS_NOT_FILE:
                 (dirents, fetched_rev, props) = self.transport.get_dir(
-                    encoded_path, self._revmeta.metarev.revnum)
+                    path, self._revmeta.metarev.revnum)
             else:
                 raise
         return props
 
     def has_filename(self, path):
-        kind = self.transport.check_path(path.encode("utf-8"), self._revmeta.metarev.revnum)
+        kind = self.transport.check_path(path, self._revmeta.metarev.revnum)
         return kind in (subvertpy.NODE_DIR, subvertpy.NODE_FILE)
 
     def __repr__(self):
@@ -572,12 +571,9 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         self._real_tree = None
 
     def get_file_verifier(self, path, file_id=None, stat_value=None):
-        root_adm = self.workingtree._get_wc(write_lock=False)
-        try:
+        with self.workingtree._get_wc(write_lock=False) as root_adm:
             entry = self.workingtree._get_entry(root_adm, path)
             return ("MD5", entry.checksum)
-        finally:
-            root_adm.close()
 
     @property
     def root_inventory(self):
@@ -663,11 +659,8 @@ class SvnBasisTree(SvnRevisionTreeCommon):
                     if subid is not None:
                         add_file_to_inv(subrelpath, subid, subrevid, adm)
 
-        adm = self.workingtree._get_wc()
-        try:
+        with self.workingtree._get_wc() as adm:
             add_dir_to_inv(u"", adm, None)
-        finally:
-            adm.close()
         return self._bzr_inventory
 
     def has_filename(self, path):
@@ -690,23 +683,30 @@ class SvnBasisTree(SvnRevisionTreeCommon):
     def kind(self, path, file_id=None):
         if file_id is None:
             file_id = self.path2id(path)
+        if file_id is None:
+            raise errors.NoSuchFile(path, self)
         return self.root_inventory.get_entry(file_id).kind
 
     def get_file_text(self, path, file_id=None):
         """See Tree.get_file_text()."""
-        return self.get_file_stream_by_path(path).read()
+        f = self.get_file_stream_by_path(path)
+        try:
+            return f.read()
+        finally:
+            f.close()
+
+    def get_file(self, path, file_id=None):
+        return self.get_file_stream_by_path(path)
 
     def get_file_properties(self, path, file_id=None):
         """See SubversionTree.get_file_properties()."""
         abspath = self.workingtree.abspath(path)
         if not os.path.isdir(abspath.encode(osutils._fs_enc)):
-            wc = self.workingtree._get_wc(urlutils.split(path)[0])
+            wc_path = urlutils.dirname(path)
         else:
-            wc = self.workingtree._get_wc(path)
-        try:
+            wc_path = path
+        with self.workingtree._get_wc(wc_path) as wc:
             (_, orig_props) = wc.get_prop_diffs(abspath.encode("utf-8"))
-        finally:
-            wc.close()
         return orig_props
 
     def annotate_iter(self, path, file_id=None, default_revision=CURRENT_REVISION):

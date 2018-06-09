@@ -263,10 +263,13 @@ class NoCustomBranchPaths(BzrError):
         BzrError.__init__(self, layout=layout)
 
 
-class PushToEmptyBranch(DivergedBranches):
+class PushToEmptyBranch(BzrError):
 
-    _fmt = ("Empty branch already exists at /trunk. "
+    _fmt = ("Empty branch already exists at %(target)s. "
             "Specify --overwrite or remove it before pushing.")
+
+    def __init__(self, target, source):
+        BzrError.__init__(self, source=source.user_url, target=target.user_url)
 
 
 class PropertyChangeFailed(BzrError):
