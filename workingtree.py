@@ -321,7 +321,12 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def get_file_mtime(self, path, file_id=None):
         """See Tree.get_file_mtime."""
-        return os.lstat(self.abspath(path)).st_mtime
+        try:
+            return os.lstat(self.abspath(path)).st_mtime
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                raise NoSuchFile(path=path)
+            raise
 
     def _setup_directory_is_tree_reference(self):
         self._directory_is_tree_reference = self._directory_is_never_tree_reference
@@ -462,6 +467,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def remove(self, files, verbose=False, to_file=None, keep_files=True,
                force=False):
         """Remove files from the working tree."""
+        if not isinstance(files, list):
+            files = [files]
         # FIXME: Use to_file argument
         # FIXME: Use verbose argument
         assert isinstance(files, list)
@@ -737,6 +744,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     entry = self._get_entry(wc, path)
                     if entry.schedule == SCHEDULE_DELETE:
                         continue
+                    if not isinstance(path, text_type):
+                        path = path.decode('utf-8')
                     ie = self._ie_from_entry(path, entry, parent_id[0])
                     if ie is not None:
                         yield path, ie
