@@ -731,8 +731,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def iter_child_entries(self, path, file_id=None):
         """See Tree.iter_child_entries."""
         entry = self.iter_entries_by_dir(specific_files=[path]).next()[1]
-        for child in getattr(entry, 'children', {}).itervalues():
-            yield child
+        return getattr(entry, 'children', {}).itervalues()
 
     def iter_entries_by_dir(self, specific_files=None):
         """See WorkingTree.iter_entries_by_dir."""
@@ -961,11 +960,11 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             kinds = [self.kind(file) for file in files]
         assert isinstance(files, list)
         for f, kind, file_id, copyfrom in zip(files, kinds, ids, _copyfrom):
-            with self._get_wc(os.path.dirname(osutils.safe_unicode(f)),
-                    write_lock=True) as wc:
+            f = f.rstrip('/')
+            with self._get_wc(os.path.dirname(f), write_lock=True) as wc:
                 try:
-                    utf8_abspath = osutils.safe_utf8(self.abspath(f))
-                    wc.add(utf8_abspath, copyfrom[0], copyfrom[1])
+                    abspath = self.abspath(f)
+                    wc.add(abspath, copyfrom[0], copyfrom[1])
                 except subvertpy.SubversionException, (_, num):
                     if num in (subvertpy.ERR_ENTRY_EXISTS,
                                subvertpy.ERR_WC_SCHEDULE_CONFLICT):
@@ -973,7 +972,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     elif num == subvertpy.ERR_WC_PATH_NOT_FOUND:
                         raise NoSuchFile(path=f)
                     raise
-                self._fix_special(wc, utf8_abspath, f)
+                self._fix_special(wc, abspath, f)
             if file_id is not None:
                 self._change_fileid_mapping(file_id, f)
 
