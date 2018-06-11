@@ -33,6 +33,11 @@ from breezy import (
     osutils,
     urlutils,
     )
+from breezy.tree import (
+    TreeDirectory,
+    TreeFile,
+    TreeLink,
+    )
 from breezy.branch import Branch
 from breezy.bzr.inventory import (
     Inventory,
@@ -58,6 +63,48 @@ from breezy.trace import mutter
 class BasisTreeIncomplete(errors.BzrError):
     _fmt = "The Subversion basis tree can not be retrieved because it is incomplete."""
     internal_error = True
+
+
+class SubversionTreeDirectory(TreeDirectory):
+    """Describes a directory in a subversion tree."""
+
+    kind = 'directory'
+
+    def __init__(self, file_id, name, parent_id):
+        self.file_id = file_id
+        self.name = name
+        self.parent_id = parent_id
+        self.executable = False
+
+
+class SubversionTreeLink(TreeLink):
+    """Describes a link in a subversion tree."""
+
+    kind = 'symlink'
+
+    def __init__(self, file_id, name, parent_id):
+        self.file_id = file_id
+        self.name = name
+        self.parent_id = parent_id
+        self.symlink_target = None
+        self.executable = False
+        self.text_size = None
+        self.text_sha1 = None
+
+
+class SubversionTreeFile(TreeFile):
+    """Describes a file in a subversion tree."""
+
+    kind = 'file'
+
+    def __init__(self, file_id, name, parent_id):
+        self.file_id = file_id
+        self.name = name
+        self.parent_id = parent_id
+        self.text_sha1 = None
+        self.text_size = None
+        self.text_id = None
+        self.executable = False
 
 
 class SubversionTree(object):
@@ -327,7 +374,6 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         return self._bzr_inventory
 
     def all_file_ids(self):
-        # FIXME
         return set(self.root_inventory.iter_all_ids())
 
     def all_versioned_paths(self):

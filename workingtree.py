@@ -31,6 +31,7 @@ import subvertpy
 from subvertpy import (
     ERR_BAD_FILENAME,
     ERR_WC_UNSUPPORTED_FORMAT,
+    ERR_WC_NODE_KIND_CHANGE,
     properties,
     )
 from subvertpy.ra import (
@@ -77,11 +78,6 @@ from breezy.errors import (
     UnsupportedFormatError,
     UnsupportedOperation,
     UninitializableFormat,
-    )
-from breezy.bzr.inventory import (
-    InventoryDirectory,
-    InventoryFile,
-    InventoryLink,
     )
 from breezy.lock import (
     LogicalLockResult,
@@ -131,11 +127,10 @@ from breezy.plugins.svn.tree import (
     BasisTreeIncomplete,
     SvnBasisTree,
     SubversionTree,
+    SubversionTreeDirectory,
+    SubversionTreeLink,
+    SubversionTreeFile,
     )
-
-# Compatibility with subvertpy < 0.8.9
-ERR_WC_NODE_KIND_CHANGE = getattr(subvertpy, "ERR_WC_NODE_KIND_CHANGE", 155018)
-
 
 from breezy.controldir import Converter
 from breezy.controldir import (
@@ -700,24 +695,24 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         abspath = self.abspath(relpath)
         basename = os.path.basename(relpath)
         if entry.kind == subvertpy.NODE_DIR:
-            ie = InventoryDirectory(file_id, basename, parent_id)
+            ie = SubversionTreeDirectory(file_id, basename, parent_id)
             ie.revision = revid
             return ie
         elif os.path.islink(abspath):
-            ie = InventoryLink(file_id, basename, parent_id)
+            ie = SubversionTreeLink(file_id, basename, parent_id)
             ie.revision = revid
             target_path = os.readlink(abspath.encode(osutils._fs_enc))
             ie.symlink_target = target_path.decode(osutils._fs_enc)
             return ie
         else:
-            ie = InventoryFile(file_id, basename, parent_id)
+            ie = SubversionTreeFile(file_id, basename, parent_id)
             ie.revision = revid
             try:
                 data = osutils.fingerprint_file(
                     open(abspath.encode(osutils._fs_enc)))
             except IOError, e:
                 if e.errno == errno.EISDIR:
-                    ie = InventoryDirectory(file_id, basename, parent_id)
+                    ie = SubversionTreeDirectory(file_id, basename, parent_id)
                     ie.revision = None
                     return ie
                 elif e.errno == errno.ENOENT:
