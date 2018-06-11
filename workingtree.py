@@ -224,12 +224,6 @@ class Walker(object):
                 wc = self.workingtree._get_wc(p)
             except subvertpy.SubversionException, (_, num):
                 if num == subvertpy.ERR_WC_NOT_DIRECTORY:
-                    # Turns out it's not a directory after all
-                    with self.workingtree._get_wc(write_lock=False) as wc:
-                        try:
-                            self.pending.append((p, self.workingtree._get_entry(wc, p)))
-                        except KeyError:
-                            pass
                     continue
                 raise
             try:
