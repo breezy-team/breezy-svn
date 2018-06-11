@@ -25,6 +25,7 @@ from collections import (
 
 import errno
 import os
+import posixpath
 import stat
 import subvertpy
 
@@ -310,7 +311,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         """See Tree.get_file_mtime."""
         try:
             return os.lstat(self.abspath(path)).st_mtime
-        except IOError as e:
+        except EnvironmentError as e:
             if e.errno == errno.ENOENT:
                 raise NoSuchFile(path=path)
             raise
@@ -615,6 +616,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return self.path2id("")
 
     def path2id(self, path):
+        if isinstance(path, list):
+            path = "/".join(path)
         with self._get_wc() as wc:
             try:
                 entry = self._get_entry(wc, path)
@@ -1004,7 +1007,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             if ie is not None:
                 fileids[relpath] = ie.file_id
             if include_root or relpath != u"":
-                yield relpath, versioned, ie.kind, ie.file_id, ie
+                yield posixpath.relpath(relpath, from_dir), versioned, ie.kind, ie.file_id, ie
 
     def revision_tree(self, revid):
         return self.branch.repository.revision_tree(revid)
