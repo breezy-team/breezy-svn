@@ -537,6 +537,9 @@ class SvnRemoteAccess(ControlDir):
 
     def push_branch(self, source, revision_id=None, overwrite=False,
         remember=False, create_prefix=False, name=None, lossy=False):
+        from .branch import SvnBranch
+        if lossy and isinstance(source, SvnBranch):
+            raise errors.LossyPushToSameVCS(source, self)
         ret = SubversionPushResult()
         ret.source_branch = source
         ret.workingtree_updated = None
