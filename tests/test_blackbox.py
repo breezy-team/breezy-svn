@@ -427,7 +427,7 @@ Node-copyfrom-path: x
         dc.add_file("bla").modify("ha")
         dc.close()
         self.assertEquals(
-                "Repository branch (format: subversion)\nLocation:\n  shared repository: a\n  repository branch: a\n",
+                "Standalone branch (format: subversion)\nLocation:\n  branch root: a\n",
                 self.run_bzr('info a')[0])
 
     def test_lightweight_checkout_lightweight_checkout(self):

@@ -104,7 +104,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         dc.close()
 
         repository = Repository.open(self.repos_url)
-        self.assertTrue(repository.is_shared())
+        self.assertFalse(repository.is_shared())
 
     def test_format(self):
         """ Test repository format is correct """

@@ -1007,7 +1007,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             if ie is not None:
                 fileids[relpath] = ie.file_id
             if include_root or relpath != u"":
-                yield posixpath.relpath(relpath, from_dir), versioned, ie.kind, ie.file_id, ie
+                yield (posixpath.relpath(relpath, from_dir) if from_dir else relpath), versioned, ie.kind, ie.file_id, ie
 
     def revision_tree(self, revid):
         return self.branch.repository.revision_tree(revid)
