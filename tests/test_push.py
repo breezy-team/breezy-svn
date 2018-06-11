@@ -1214,8 +1214,8 @@ class PushNewBranchTests(SubversionTestCase):
         svnbranch = svndir.open_branch()
         svnbranch.pull(wt.branch)
         self.assertEquals(svnbranch.last_revision(), wt.branch.last_revision())
-        self.assertEquals(2, svndir.root_transport.get_latest_revnum())
-        self.assertEquals(["myfile"], svndir.root_transport.list_dir("."))
+        self.assertEquals(2, svndir.svn_transport.get_latest_revnum())
+        self.assertEquals(["myfile"], svndir.svn_transport.list_dir("."))
         paths = svnbranch.repository._revmeta_provider._log.get_revision_paths(2)
         self.assertChangedPathEquals(('R', "trunk/mysubdir", 1, NODE_DIR),
                 paths['trunk'])

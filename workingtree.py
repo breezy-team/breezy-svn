@@ -225,14 +225,11 @@ class Walker(object):
             except subvertpy.SubversionException, (_, num):
                 if num == subvertpy.ERR_WC_NOT_DIRECTORY:
                     # Turns out it's not a directory after all
-                    wc = self.workingtree._get_wc(write_lock=False)
-                    try:
+                    with self.workingtree._get_wc(write_lock=False) as wc:
                         try:
                             self.pending.append((p, self.workingtree._get_entry(wc, p)))
                         except KeyError:
                             pass
-                    finally:
-                        wc.close()
                     continue
                 raise
             try:
@@ -243,7 +240,7 @@ class Walker(object):
                     if entry.kind == subvertpy.NODE_DIR and name != "":
                         if self.recursive:
                             self.todo.append(subp)
-                    else:
+                    if name != '' or subp == '':
                         self.pending.append((subp, entry))
             finally:
                 wc.close()
@@ -294,7 +291,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         assert path is not None
         try:
             return self.basis_tree().kind(path, file_id)
-        except NoSuchId:
+        except NoSuchFile:
             return None
 
     def kind(self, path, file_id=None):
@@ -736,7 +733,10 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 for path in specific_files:
                     parent = os.path.dirname(path)
                     parent_id = self.lookup_id(parent)
-                    entry = self._get_entry(wc, path)
+                    try:
+                        entry = self._get_entry(wc, path)
+                    except KeyError:
+                        raise NoSuchFile(path, self)
                     if entry.schedule == SCHEDULE_DELETE:
                         continue
                     if not isinstance(path, text_type):

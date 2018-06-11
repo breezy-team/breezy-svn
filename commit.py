@@ -741,9 +741,10 @@ class SvnCommitBuilder(CommitBuilder):
                 # No need to set fid
                 continue
             child_path = osutils.pathjoin(path, ie.name)
+            old_child_path = osutils.pathjoin(from_path, ie.name)
             self._override_file_ids[child_path] = fid
             self._override_text_revisions[child_path] = (
-                    self.old_tree.get_file_revision(child_path, fid))
+                    self.old_tree.get_file_revision(old_child_path, fid))
             if ie.kind == 'directory':
                 self._update_moved_dir_child_file_ids(child_path, fid)
 

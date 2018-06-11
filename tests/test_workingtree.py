@@ -362,10 +362,9 @@ class TestWorkingTree(SubversionTestCase):
     def test_update_unversioned_exists(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
 
-        dc = self.get_commit_editor(tree.branch.base)
-        f = dc.add_file("somefile")
-        f.modify()
-        dc.close()
+        with self.get_commit_editor(tree.branch.base) as dc:
+            f = dc.add_file("somefile")
+            f.modify()
 
         self.build_tree({'dc/somefile': 'some contents'})
         tree.update()
@@ -373,10 +372,9 @@ class TestWorkingTree(SubversionTestCase):
     def test_pull(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
 
-        dc = self.get_commit_editor(tree.branch.repository.base)
-        branches = dc.add_dir("branches")
-        foo = branches.add_dir("branches/foo", "trunk")
-        dc.close()
+        with self.get_commit_editor(tree.branch.repository.base) as dc:
+            branches = dc.add_dir("branches")
+            foo = branches.add_dir("branches/foo", "trunk")
 
         old_revid = tree.last_revision()
         br = Branch.open("%s/branches/foo" % tree.branch.repository.base)

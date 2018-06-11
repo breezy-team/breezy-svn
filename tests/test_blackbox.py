@@ -125,7 +125,9 @@ class TestBranch(SubversionTestCase, ExternalBase):
         self.run_bzr("add dc/foo")
         self.run_bzr("commit -m msg dc")
         output, err = self.run_bzr("push -d dc %s/trunk" % repos_url, retcode=3)
-        self.assertTrue(('ERROR: These branches have diverged.  See "brz help diverged-branches" for more information.\n' in err) or ('ERROR: These branches have diverged.  Try using "merge" and then "push".\n' in err))
+        self.run_bzr_error(
+            ['ERROR: Empty branch already exists at .*/trunk/. Specify --overwrite or remove it before pushing.\n'],
+            ["push", "-d", "dc", "%s/trunk" % repos_url])
 
     def test_push_lossy_empty_existing(self):
         repos_url = self.make_repository('d')
