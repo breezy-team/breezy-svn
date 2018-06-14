@@ -32,9 +32,8 @@ from subvertpy.subr import (
     uri_canonicalize as svn_uri_canonicalize,
     )
 import sys
-import urlparse
-urlparse.uses_netloc.extend(['svn+http', 'svn+https'])
 import urllib
+import urlparse
 
 import breezy
 from breezy import (
@@ -59,8 +58,11 @@ from breezy.trace import (
     )
 from breezy.transport import (
     Transport,
+    register_urlparse_netloc_protocol,
     )
 
+register_urlparse_netloc_protocol('svn+http')
+register_urlparse_netloc_protocol('svn+https')
 import breezy.plugins.svn
 from .auth import (
     create_auth_baton,
@@ -78,7 +80,8 @@ from .errors import (
 
 try:
     svn_config = get_config()
-except subvertpy.SubversionException, (msg, num):
+except subvertpy.SubversionException as e:
+    msg, num = e.args
     if num == subvertpy.ERR_MALFORMED_FILE:
         raise BzrError(msg)
     raise
@@ -244,7 +247,7 @@ def Connection(url, auth=None, config=None, readonly=False):
             ret = MutteringRemoteAccess(ret)
         if readonly:
             ret = ReadonlyRemoteAccess(ret)
-    except subvertpy.SubversionException, e:
+    except subvertpy.SubversionException as e:
         msg, num = e.args
         if num in (subvertpy.ERR_RA_SVN_REPOS_NOT_FOUND,):
             raise NoSvnRepositoryPresent(url=url)
@@ -503,7 +506,7 @@ class SvnRaTransport(Transport):
                         limit, discover_changed_paths, strict_node_history,
                         include_merged_revisions,
                         revprops)
-            except subvertpy.SubversionException, e:
+            except subvertpy.SubversionException as e:
                 msg, num = e.args
                 if num == subvertpy.ERR_RA_DAV_REQUEST_FAILED:
                     raise DavRequestFailed(msg)
@@ -549,7 +552,8 @@ class SvnRaTransport(Transport):
         assert len(relpath) == 0 or relpath[0] != "/"
         try:
             (dirents, _, _) = self.get_dir(relpath, self.get_latest_revnum())
-        except subvertpy.SubversionException, (_, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num == ERR_FS_NOT_DIRECTORY:
                 raise NoSuchFile(relpath)
             raise
@@ -582,7 +586,8 @@ class SvnRaTransport(Transport):
                 try:
                     with ce.open_root(-1) as node:
                         node.add_directory(relpath, None, -1).close()
-                except subvertpy.SubversionException, (msg, num):
+                except subvertpy.SubversionException as e:
+                    msg, num = e.args
                     if num == ERR_FS_NOT_FOUND:
                         raise NoSuchFile(msg)
                     if num == ERR_FS_NOT_DIRECTORY:
@@ -602,7 +607,8 @@ class SvnRaTransport(Transport):
         try:
             try:
                 self.capabilities[cap] = conn.has_capability(cap)
-            except subvertpy.SubversionException, (msg, num):
+            except subvertpy.SubversionException as e:
+                msg, num = e.args
                 if num != subvertpy.ERR_UNKNOWN_CAPABILITY:
                     raise
                 self.capabilities[cap] = None

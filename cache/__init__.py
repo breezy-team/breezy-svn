@@ -30,6 +30,7 @@ from breezy.config import (
     config_dir,
     ensure_config_dir_exists,
     )
+from breezy.sixish import text_type
 
 from breezy.plugins.svn import version_info
 
@@ -86,7 +87,7 @@ def create_cache_dir():
                 pass
             else:
                 cache_dir = os.path.join(xdg_cache_home, "bazaar", "svn")
-        if type(cache_dir) == unicode:
+        if isinstance(cache_dir, text_type):
             cache_dir = cache_dir.encode(osutils._fs_enc)
 
     if not os.path.exists(cache_dir):

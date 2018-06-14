@@ -202,7 +202,8 @@ class BranchPatternExpander(object):
     def get_latest_change(self, path):
         try:
             return self.transport.get_dir(path, self.revnum, 0)[1]
-        except subvertpy.SubversionException, (msg, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
                        subvertpy.ERR_FS_NOT_FOUND,
                        subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
@@ -216,7 +217,8 @@ class BranchPatternExpander(object):
             assert not path.startswith(u"/")
             dirents = self.transport.get_dir(path, self.revnum,
                 DIRENT_KIND|DIRENT_HAS_PROPS|DIRENT_CREATED_REV)[0]
-        except subvertpy.SubversionException, (msg, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
                        subvertpy.ERR_FS_NOT_FOUND,
                        subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,

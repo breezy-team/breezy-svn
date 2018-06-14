@@ -21,8 +21,8 @@ from __future__ import absolute_import
 
 from collections import defaultdict
 
-from cStringIO import (
-    StringIO,
+from io import (
+    BytesIO,
     )
 from subvertpy import (
     ERR_BAD_PROPERTY_VALUE ,
@@ -189,7 +189,8 @@ def set_svn_revprops(repository, revnum, revprops):
     for (name, value) in revprops.iteritems():
         try:
             repository.svn_transport.change_rev_prop(revnum, name, value)
-        except SubversionException, (_, num):
+        except SubversionException as e:
+            msg, num = e.args
             if num == ERR_REPOS_DISABLED_FEATURE:
                 raise RevpropChangeFailed(name)
             else:
@@ -208,7 +209,7 @@ def file_editor_send_content_changes(reader, file_editor):
     # full contents.
     if 'check' in debug.debug_flags:
         contents = reader.read()
-        digest = delta.send_stream(StringIO(contents), txdelta)
+        digest = delta.send_stream(BytesIO(contents), txdelta)
         from breezy.plugins.svn.fetch import md5_string
         assert digest == md5_string(contents)
     else:
@@ -222,8 +223,8 @@ def path_join(basepath, name):
         return name
 
 
-def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
-    (iter_children, get_ie), path, file_id, dir_editor, branch_path,
+def dir_editor_send_changes(base_tuple, parents,
+    browse_tuple, path, file_id, dir_editor, branch_path,
     modified_files, visit_dirs):
     """Pass the changes to a directory to the commit editor.
 
@@ -232,6 +233,8 @@ def dir_editor_send_changes((base_tree, base_url, base_revnum), parents,
     :param dir_editor: Subversion DirEditor object.
     :return: Boolean indicating whether any changes were made
     """
+    (base_tree, base_url, base_revnum) = base_tuple
+    (iter_children, get_ie) = browse_tuple
     changed = False
     def mutter(text, *args):
         if 'commit' in debug.debug_flags:
@@ -624,7 +627,8 @@ class SvnCommitBuilder(CommitBuilder):
             try:
                 ret.append(ret[-1].open_directory(
                     "/".join(elements[0:i+1]), -1))
-            except SubversionException, (_, num):
+            except SubversionException as e:
+                msg, num = e.args
                 if num == ERR_FS_NOT_DIRECTORY:
                     raise MissingPrefix("/".join(elements), "/".join(elements[0:i]))
                 else:
@@ -825,7 +829,8 @@ class SvnCommitBuilder(CommitBuilder):
             try:
                 try:
                     root = editor.open_root(self.base_revnum)
-                except SubversionException, (msg, num):
+                except SubversionException as e:
+                    msg, num = e.args
                     if num == ERR_BAD_PROPERTY_VALUE:
                         raise ValueError("Invalid property contents: %r" % msg)
                     raise
@@ -1028,8 +1033,9 @@ class SvnCommitBuilder(CommitBuilder):
                 dummy_get_file_with_stat)(path, file_id)
 
     def _record_change(self, tree, parent_trees,
-            file_id, (old_path, new_path), new_kind, new_name, new_parent_id,
+            file_id, paths, new_kind, new_name, new_parent_id,
             new_executable, force_change=False):
+        (old_path, new_path) = paths
         self._override_file_ids[new_path] = file_id
         new_ie = entry_factory[new_kind](file_id, new_name, new_parent_id)
         if new_kind == 'file':

@@ -239,7 +239,8 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
         try:
             fileprop_mappings = find_mappings_fileprops(
                 revmeta.get_changed_fileprops())
-        except subvertpy.SubversionException, (_, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num == subvertpy.ERR_FS_NOT_DIRECTORY:
                 return
             raise
@@ -912,12 +913,14 @@ class SvnRepository(ForeignRepository):
 
         return self.has_foreign_revision(foreign_revid)
 
-    def has_foreign_revision(self, (uuid, path, revnum)):
+    def has_foreign_revision(self, foreign_revid):
+        (uuid, path, revnum) = foreign_revid
         if uuid != self.uuid:
             return False
         try:
             kind = self.svn_transport.check_path(path, revnum)
-        except subvertpy.SubversionException, (_, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 return False
             raise
@@ -1143,7 +1146,8 @@ class SvnRepository(ForeignRepository):
         try:
             self.svn_transport.change_rev_prop(revnum, SVN_REVPROP_BZR_SIGNATURE,
                 signature)
-        except subvertpy.SubversionException, (_, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num == subvertpy.ERR_REPOS_DISABLED_FEATURE:
                 raise errors.RevpropChangeFailed(SVN_REVPROP_BZR_SIGNATURE)
             raise
@@ -1350,7 +1354,8 @@ def find_branches_between(logwalker, transport, layout, from_revnum, to_revnum,
                                         created_branches[n] = i
                                     elif layout.is_branch_or_tag_parent(n, project):
                                         parents.append(n)
-                            except subvertpy.SubversionException, (_, num):
+                            except subvertpy.SubversionException as e:
+                                msg, num = e.args
                                 if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
                                            subvertpy.ERR_RA_DAV_FORBIDDEN):
                                     continue

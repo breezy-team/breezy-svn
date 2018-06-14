@@ -122,7 +122,8 @@ class RevidMap(object):
                 if revmeta.consider_bzr_fileprops():
                     for revid, bzr_revno, mapping_name in revmeta.get_roundtrip_ancestor_revids():
                         revids.add(((bzr_revno, revid), mapping_name))
-            except subvertpy.SubversionException, (_, num):
+            except subvertpy.SubversionException as e:
+                msg, num = e.args
                 if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
                            subvertpy.ERR_RA_DAV_FORBIDDEN):
                     continue
@@ -157,7 +158,7 @@ class RevidMap(object):
                 if not propname.startswith(SVN_PROP_BZR_REVISION_ID):
                     continue
                 try:
-                    new_lines = find_new_lines((oldpropvalue, propvalue))
+                    new_lines = find_new_lines(oldpropvalue, propvalue)
                     if len(new_lines) != 1:
                         continue
                 except ValueError:
@@ -242,7 +243,7 @@ class DiskCachingRevidMap(object):
             if min_revnum == max_revnum:
                 return ((self.actual.repos.uuid, branch_path, min_revnum),
                         mapping_registry.parse_mapping_name("svn-" + mapping))
-        except NoSuchRevision, e:
+        except NoSuchRevision as e:
             last_revnum = self._get_last_revnum()
             last_checked = self._get_last_checked(layout, project)
             if last_checked > last_revnum:
@@ -283,7 +284,7 @@ class DiskCachingRevidMap(object):
             if min_revnum == max_revnum:
                 return (self.actual.repos.uuid, branch_path, min_revnum), mapping
             assert min_revnum <= max_revnum
-            assert isinstance(branch_path, unicode)
+            assert isinstance(branch_path, text_type)
 
         ((uuid, branch_path, revnum), mapping) = self.actual.bisect_fileprop_revid_revnum(revid,
             branch_path, min_revnum, max_revnum)

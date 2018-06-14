@@ -141,7 +141,7 @@ def convert_svn_error(unbound):
     def convert(*args, **kwargs):
         try:
             return unbound(*args, **kwargs)
-        except subvertpy.SubversionException, svn_err:
+        except subvertpy.SubversionException as svn_err:
             mapped_err = convert_error(svn_err)
             if svn_err is mapped_err:
                 # Bare 'raise' preserves the original traceback, whereas

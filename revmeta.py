@@ -104,7 +104,7 @@ class BzrMetaRevision(object):
                  '_changed_fileprops', '_fileprops',
                  '_consider_bzr_fileprops',
                  '_consider_bzr_revprops', '_estimated_fileprop_ancestors',
-                 'children', 'metarev', 'provider',
+                 'metarev', 'provider',
                  '_revprop_redirect_revnum')
 
     def __repr__(self):

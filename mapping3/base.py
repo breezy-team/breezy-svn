@@ -62,7 +62,7 @@ class SchemeDerivedLayout(RepositoryLayout):
         assert isinstance(path, text_type)
         try:
             (proj, bp, rp) = self.scheme.unprefix(path)
-        except InvalidSvnBranchPath, e:
+        except InvalidSvnBranchPath as e:
             raise errors.NotSvnBranchPath(e.path)
         if self.scheme.is_tag(bp):
             type = "tag"
@@ -192,7 +192,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
         if isinstance(scheme, bytes) or isinstance(scheme, text_type):
             try:
                 self.scheme = BranchingScheme.find_scheme(scheme)
-            except UnknownBranchingScheme, e:
+            except UnknownBranchingScheme as e:
                 raise errors.UnknownMapping(self, str(e))
         else:
             self.scheme = scheme

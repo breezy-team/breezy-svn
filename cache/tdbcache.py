@@ -127,10 +127,10 @@ class TdbRevisionInfoCache(RevisionInfoCache, CacheTable):
         encoded_branch_path = foreign_revid[1].encode('utf-8')
         self.db[b"original-mapping/%d %s" % (foreign_revid[2], encoded_branch_path)] = orig_mapping_name
 
-    def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden),
+    def insert_revision(self, foreign_revid, mapping, revdata,
             stored_lhs_parent_revid):
         """See RevisionInfoCache.insert_revision."""
-
+        (revno, revid, hidden) = revdata
         if revid is None:
             revid = mapping.revision_id_foreign_to_bzr(foreign_revid)
         encoded_branch_path = foreign_revid[1].encode('utf-8')

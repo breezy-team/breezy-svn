@@ -179,7 +179,7 @@ def simple_apply_changes(new_file_id, changes):
     delta = {}
     for p in sorted(changes.keys(), reverse=False):
         (action, copy_from) = changes[p]
-        if not isinstance(p, unicode):
+        if not isinstance(p, text_type):
             raise TypeError(p)
         # Only generate new file ids for root if it's new
         if action in ('A', 'R') and (p != u"" or copy_from is None):
@@ -409,8 +409,9 @@ class CachingFileIdMapStore(object):
         self.repos = actual.repos
         self.get_idmap_delta = actual.get_idmap_delta
 
-    def get_map(self, (uuid, branch, revnum), mapping):
+    def get_map(self, foreign_revid, mapping):
         """Make sure the map is up to date until revnum."""
+        (uuid, branch, revnum) = foreign_revid
         todo = []
         next_parent_revs = []
 

@@ -130,7 +130,7 @@ class TrunkLayout(RepositoryLayout):
         :return: Iterator over tuples with (project, branch path, has_props, revnum)
         """
         return get_root_paths(repository,
-             [self._add_project(x, project) for x in u"branches/*", u"trunk"],
+             [self._add_project(x, project) for x in [u"branches/*", u"trunk"]],
              revnum, self.is_branch, project)
 
     def get_tags(self, repository, revnum, project=None):
@@ -292,7 +292,8 @@ class CustomLayout(RepositoryLayout):
         for b in entries:
             try:
                 r = repository.svn_transport.get_dir(b, revnum)[1]
-            except subvertpy.SubversionException, (msg, num):
+            except subvertpy.SubversionException as e:
+                msg, num = e.args
                 if num in (subvertpy.ERR_FS_NOT_DIRECTORY,
                            subvertpy.ERR_FS_NOT_FOUND,
                            subvertpy.ERR_RA_DAV_PATH_NOT_FOUND,
@@ -518,7 +519,7 @@ class InverseTrunkLayout(RepositoryLayout):
         :return: Iterator over tuples with (project, branch path)
         """
         return get_root_paths(repository,
-             [self._add_project(x, project) for x in "branches", "trunk"],
+             [self._add_project(x, project) for x in ["branches", "trunk"]],
              revnum, self.is_branch, project)
 
     def get_tags(self, repository, revnum, project=None):

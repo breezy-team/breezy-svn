@@ -1012,7 +1012,7 @@ class InterToSvnBranch(InterBranch):
                 self._push(revision_id, overwrite=True, push_metadata=True)
             try:
                 parent = self.source.get_parent()
-            except InaccessibleParent, e:
+            except InaccessibleParent as e:
                 trace.mutter('parent was not accessible to copy: %s', e)
             else:
                 if parent:
@@ -1034,7 +1034,7 @@ class InterToSvnBranch(InterBranch):
                     stop_revision=stop_revision, overwrite=overwrite,
                     push_metadata=push_metadata, push_merged=push_merged,
                     layout=self.target.layout, project=self.target.project)
-        except SubversionBranchDiverged, e:
+        except SubversionBranchDiverged as e:
             if self._target_is_empty(interrepo.get_graph(), e.target_revid):
                 raise PushToEmptyBranch(self.target, self.source)
             raise DivergedBranches(self.target, self.source)

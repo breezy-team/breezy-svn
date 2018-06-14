@@ -175,7 +175,8 @@ def update_wc(adm, basedir, conn, url, revnum):
     try:
         adm.crawl_revisions(basedir, reporter, restore_files=False,
                             recurse=True, use_commit_times=True)
-    except subvertpy.SubversionException, (msg, num):
+    except subvertpy.SubversionException as e:
+        msg, num = e.args
         if num == subvertpy.ERR_RA_ILLEGAL_URL:
             raise BzrError(msg)
         raise
@@ -198,7 +199,13 @@ def apply_prop_changes(orig_props, prop_changes):
 
 
 class Walker(object):
-    """Iterator of a Subversion working copy."""
+    """Iterator of a Subversion working copy.
+
+    This follows the Tree.iter_entries_by_dir order:
+
+    * Parents before children
+    * Ordered by name
+    """
 
     def __init__(self, workingtree, start=u"", recursive=True):
         """Create a new walker.
@@ -223,7 +230,8 @@ class Walker(object):
                 return None
             try:
                 wc = self.workingtree._get_wc(p)
-            except subvertpy.SubversionException, (_, num):
+            except subvertpy.SubversionException as e:
+                msg, num = e.args
                 if num == subvertpy.ERR_WC_NOT_DIRECTORY:
                     continue
                 raise
@@ -387,7 +395,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
                 try:
                     subwc = self._get_wc(subprefix, base=wc)
-                except subvertpy.SubversionException, (_, num):
+                except subvertpy.SubversionException as e:
+                    msg, num = e.args
                     if num == subvertpy.ERR_WC_NOT_DIRECTORY:
                         continue
                     raise
@@ -465,7 +474,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 try:
                     wc.delete(osutils.safe_utf8(self.abspath(file)),
                               keep_local=keep_files)
-                except subvertpy.SubversionException, (msg, num):
+                except subvertpy.SubversionException as e:
+                    msg, num = e.args
                     if num == ERR_BAD_FILENAME:
                         note("%s does not exist." % file)
                     else:
@@ -704,7 +714,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             try:
                 data = osutils.fingerprint_file(
                     open(abspath.encode(osutils._fs_enc)))
-            except IOError, e:
+            except IOError as e:
                 if e.errno == errno.EISDIR:
                     ie = SubversionTreeDirectory(file_id, basename, parent_id)
                     ie.revision = None
@@ -927,7 +937,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             try:
                 adm.delete(abspath, keep_local=True)
                 adm.add(abspath)
-            except subvertpy.SubversionException, (_, num):
+            except subvertpy.SubversionException as e:
+                msg, num = e.args
                 if num == ERR_WC_NODE_KIND_CHANGE:
                     if entry.kind == subvertpy.NODE_DIR:
                         from_kind = "directory"
@@ -958,7 +969,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 try:
                     abspath = self.abspath(f)
                     wc.add(abspath, copyfrom[0], copyfrom[1])
-                except subvertpy.SubversionException, (_, num):
+                except subvertpy.SubversionException as e:
+                    msg, num = e.args
                     if num in (subvertpy.ERR_ENTRY_EXISTS,
                                subvertpy.ERR_WC_SCHEDULE_CONFLICT):
                         continue
@@ -1043,7 +1055,8 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             try:
                 (prop_changes, orig_props) = adm.get_prop_diffs(
                     abspath.encode("utf-8"))
-            except subvertpy.SubversionException, (_, num):
+            except subvertpy.SubversionException as e:
+                msg, num = e.args
                 if num in (subvertpy.ERR_WC_NOT_DIRECTORY,
                            subvertpy.ERR_WC_NOT_LOCKED):
                     return {}
@@ -1179,7 +1192,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         abspath = self.abspath(path)
         try:
             stat_result = _lstat(abspath.encode(osutils._fs_enc))
-        except OSError, e:
+        except OSError as e:
             import errno
             if getattr(e, 'errno', None) == errno.ENOENT:
                 # no file.
@@ -1675,6 +1688,18 @@ class SvnWorkingTreeFormat(WorkingTreeFormat):
         from breezy.plugins.svn.remote import SvnRemoteFormat
         return SvnRemoteFormat()
 
+    def make_test_tree(self, relpath):
+        controldir_format = self.get_controldir_for_branch()
+        from breezy.transport import get_transport
+        if relpath == '.':
+            branch_relpath = '../.branch'
+        else:
+            branch_relpath = relpath+'.branch'
+        t = get_transport(branch_relpath)
+        controldir = controldir_format.initialize_on_transport(t)
+        branch = controldir.create_branch()
+        return branch.create_checkout(relpath, lightweight=True)
+
 
 class SvnWorkingTreeDirFormat(ControlDirFormat):
     """Working Tree implementation that uses Subversion working copies."""
@@ -1689,7 +1714,8 @@ class SvnWorkingTreeDirFormat(ControlDirFormat):
         import subvertpy
         try:
             return SvnCheckout(transport, self)
-        except subvertpy.SubversionException, (_, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num in (subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED,):
                 raise NoSvnRepositoryPresent(transport.base)
             if num in (subvertpy.ERR_WC_NOT_DIRECTORY,):
@@ -1768,7 +1794,8 @@ class SvnCheckout(ControlDir):
         # Open related remote repository + branch
         try:
             wc = Adm(None, self.local_path)
-        except subvertpy.SubversionException, (msg, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num == ERR_WC_UNSUPPORTED_FORMAT:
                 raise UnsupportedFormatError(msg, kind='workingtree')
             else:
@@ -1776,7 +1803,8 @@ class SvnCheckout(ControlDir):
         try:
             try:
                 self.entry = wc.entry(self.local_path, True)
-            except subvertpy.SubversionException, (msg, num):
+            except subvertpy.SubversionException as e:
+                msg, num = e.args
                 if num in (subvertpy.ERR_ENTRY_NOT_FOUND,
                            subvertpy.ERR_NODE_UNKNOWN_KIND):
                     raise CorruptWorkingTree(self.local_path, msg)
@@ -1831,7 +1859,7 @@ class SvnCheckout(ControlDir):
             # FIXME: This could potentially be done without actually
             # opening the branch?
             ret.branch # Trigger NotSvnBranchPath error
-        except NotSvnBranchPath, e:
+        except NotSvnBranchPath as e:
             raise NoWorkingTree(self.local_path)
         return ret
 
@@ -1888,7 +1916,8 @@ class SvnCheckout(ControlDir):
         except RepositoryRootUnknown:
             return self.get_remote_controldir().open_branch(revnum=revnum,
                 possible_transports=possible_transports)
-        except subvertpy.SubversionException, (_, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num == subvertpy.ERR_WC_NOT_DIRECTORY:
                 raise NotBranchError(path=self.base)
             raise
@@ -1914,14 +1943,14 @@ class SvnCheckout(ControlDir):
             # directories and files are read-write for this user. This is
             # mostly a workaround for filesystems which lie about being able to
             # write to a directory (cygwin & win32)
-            if (st.st_mode & 07777 == 00000):
+            if (st.st_mode & 0o7777 == 0o0000):
                 # FTP allows stat but does not return dir/file modes
                 self._dir_mode = None
                 self._file_mode = None
             else:
-                self._dir_mode = (st.st_mode & 07777) | 00700
+                self._dir_mode = (st.st_mode & 0o7777) | 0o0700
                 # Remove the sticky and execute bits for files
-                self._file_mode = self._dir_mode & ~07111
+                self._file_mode = self._dir_mode & ~0o7111
 
     def _get_file_mode(self):
         """Return Unix mode for newly created files, or None.

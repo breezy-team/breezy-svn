@@ -22,7 +22,6 @@ import subvertpy
 from subvertpy import (
     ra,
     )
-import urlparse
 import urllib
 
 from breezy.config import (
@@ -180,6 +179,7 @@ def create_auth_baton(url):
 
     :param url: URL to create auth baton for.
     """
+    import urlparse
     (scheme, netloc, path, _, _) = urlparse.urlsplit(url)
     (creds, host) = urllib.splituser(netloc)
     (host, port) = urllib.splitport(host)

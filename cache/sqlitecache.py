@@ -65,7 +65,7 @@ try:
     try:
         import sqlite3
         check_pysqlite_version(sqlite3)
-    except (ImportError, errors.BzrError), e:
+    except (ImportError, errors.BzrError) as e:
         from pysqlite2 import dbapi2 as sqlite3
         check_pysqlite_version(sqlite3)
 except:
@@ -103,19 +103,19 @@ class CacheTable(object):
     def execute(self, *args, **kwargs):
         try:
             return self.cachedb.execute(*args, **kwargs)
-        except sqlite3.OperationalError, e:
+        except sqlite3.OperationalError as e:
             raise self._convert_operational_errors(e)
 
     def executemany(self, *args, **kwargs):
         try:
             return self.cachedb.executemany(*args, **kwargs)
-        except sqlite3.OperationalError, e:
+        except sqlite3.OperationalError as e:
             raise self._convert_operational_errors(e)
 
     def executescript(self, *args, **kwargs):
         try:
             return self.cachedb.executescript(*args, **kwargs)
-        except sqlite3.OperationalError, e:
+        except sqlite3.OperationalError as e:
             raise self._convert_operational_errors(e)
 
     def commit(self):

@@ -379,7 +379,8 @@ class CachingLogWalker(object):
                     if to_revnum > self.saved_maxrevnum and to_revnum > 0:
                         raise bzrsvn_errors.IncompleteRepositoryHistory(
                             "last available revision: %d" % self.saved_maxrevnum)
-            except subvertpy.SubversionException, (msg, num):
+            except subvertpy.SubversionException as e:
+                msg, num = e.args
                 if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                     raise NoSuchRevision(branch=self,
                         revision="Revision number %d: %s" % (to_revnum, msg))
@@ -437,7 +438,8 @@ class LogWalker(object):
         try:
             return self._transport.iter_log([path], revnum, 0, 2, True, False,
                     False, []).next()[1]
-        except subvertpy.SubversionException, (_, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 raise NoSuchRevision(branch=self,
                     revision="Revision number %d" % revnum)
@@ -485,7 +487,8 @@ class LogWalker(object):
                     revprops = lazy_dict(known_revprops, self._transport.revprop_list,
                         revnum)
                 yield (revpaths, revnum, revprops)
-        except subvertpy.SubversionException, (_, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 raise NoSuchRevision(branch=self,
                     revision="Revision number %d" % from_revnum)
@@ -506,7 +509,8 @@ class LogWalker(object):
             log_iter = self._transport.iter_log([u""], revnum, revnum, 1, True,
                 True, False, [])
             return strip_slashes(log_iter.next()[0])
-        except subvertpy.SubversionException, (_, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:
                 raise NoSuchRevision(branch=self,
                     revision="Revision number %d" % revnum)

@@ -49,7 +49,7 @@ def parse_svk_feature(feature):
     return (uuid, branch.strip("/").decode('utf-8'), int(revnum))
 
 
-def generate_svk_feature((uuid, branch, revnum)):
+def generate_svk_feature(foreign_revid):
     """Create a SVK feature identifier.
 
     :param uuid: Subversion repository UUID
@@ -57,6 +57,7 @@ def generate_svk_feature((uuid, branch, revnum)):
     :param revnum: Revision number
     :return: Matching SVK feature identifier.
     """
+    (uuid, branch, revnum) = foreign_revid
     assert isinstance(revnum, int)
     assert isinstance(uuid, str)
     assert isinstance(branch, text_type) and (branch == u"" or not branch.startswith(u"/"))

@@ -397,7 +397,8 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         try:
             (fetched_rev, props) = self.transport.get_file(path,
                     stream, self._revmeta.metarev.revnum)
-        except subvertpy.SubversionException, (_, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num == subvertpy.ERR_FS_NOT_FILE:
                 return "directory"
             raise
@@ -454,7 +455,8 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         try:
             (fetched_rev, props) = self.transport.get_file(path,
                     BytesIO(), self._revmeta.metarev.revnum)
-        except subvertpy.SubversionException, (_, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num == subvertpy.ERR_FS_NOT_FILE:
                 (dirents, fetched_rev, props) = self.transport.get_dir(
                     path, self._revmeta.metarev.revnum)
@@ -692,7 +694,8 @@ class SvnBasisTree(SvnRevisionTreeCommon):
                 if entry.kind == subvertpy.NODE_DIR:
                     try:
                         subwc = self.workingtree._get_wc(subrelpath)
-                    except subvertpy.SubversionException, (_, num):
+                    except subvertpy.SubversionException as e:
+                        msg, num = e.args
                         if num == subvertpy.ERR_WC_NOT_DIRECTORY:
                             raise BasisTreeIncomplete()
                         raise

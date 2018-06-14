@@ -141,7 +141,7 @@ class cmd_svn_import(Command):
 
         try:
             from_repos = from_dir.open_repository()
-        except NoRepositoryPresent, e:
+        except NoRepositoryPresent as e:
             if prefix is not None:
                 raise BzrCommandError(gettext("Path inside repository specified "
                                       "and --prefix specified"))
@@ -294,7 +294,7 @@ class cmd_svn_branches(Command):
 
         try:
             repository = dir.open_repository()
-        except errors.NoRepositoryPresent, e:
+        except errors.NoRepositoryPresent as e:
             repository = dir.find_repository(_ignore_branch_path=True)
             assert dir.root_transport.base.startswith(repository.base)
             prefix = dir.root_transport.base[len(repository.base):].strip("/")

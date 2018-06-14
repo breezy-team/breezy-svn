@@ -959,7 +959,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         return self.id_map.get(new_path)
 
     def _get_bzr_base_file_id(self, parent_id, path):
-        if not isinstance(path, unicode):
+        if not isinstance(path, text_type):
             raise TypeError(path)
         assert (isinstance(parent_id, str) or
                 (parent_id is None and path == ""))

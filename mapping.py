@@ -82,7 +82,7 @@ SVN_REVPROP_BZR_REPOS_UUID = 'bzr:repository-uuid'
 SVN_REVPROP_BZR_TESTAMENT = 'bzr:testament'
 
 
-def find_new_lines((oldvalue, newvalue)):
+def find_new_lines(oldvalue, newvalue):
     """Find any new lines that have been added to a string.
 
     :param oldvalue: Previous contents
@@ -400,12 +400,10 @@ class BzrSvnMapping(foreign.VcsMapping):
         """
         raise NotImplementedError(self.revision_id_bzr_to_foreign)
 
-    def revision_id_foreign_to_bzr(self, (uuid, path, revnum)):
+    def revision_id_foreign_to_bzr(self, foreign_revid):
         """Generate a unambiguous revision id.
 
-        :param uuid: UUID of the repository.
-        :param path: Branch path.
-        :param revnum: Subversion revision number.
+        :param foreign_revid: tuple of (uuid, path, revnum)
 
         :return: New revision id.
         """
@@ -436,14 +434,11 @@ class BzrSvnMapping(foreign.VcsMapping):
         return self.is_branch(path) or self.is_tag(path)
 
     @staticmethod
-    def generate_file_id((uuid, branch, revnum), inv_path):
+    def generate_file_id(foreign_revid, inv_path):
         """Create a file id identifying a Subversion file.
 
-        :param uuid: UUID of the repository
-        :param revnum: Revision number at which the file was introduced.
-        :param branch: Branch path of the branch in which the file was
-            introduced.
-        :param inv_path: Original path of the file within the inventory
+        :param foreign_revid: Tuple of (uuid, branch, revnum)
+        :param inv_pat: Original path of the file within the inventory
         """
         raise NotImplementedError
 
@@ -757,8 +752,8 @@ class BzrSvnMappingFileProps(object):
         bzr_merges = fileprops.get(SVN_PROP_BZR_ANCESTRY+self.name, None)
         if bzr_merges is not None:
             try:
-                new_lines = find_new_lines(bzr_merges)
-            except ValueError, e:
+                new_lines = find_new_lines(*bzr_merges)
+            except ValueError as e:
                 mutter(str(e))
                 return ()
             if len(new_lines) != 1:
@@ -827,8 +822,8 @@ class BzrSvnMappingFileProps(object):
                     self.is_bzr_revision_hidden_fileprops(fileprops))
 
         try:
-            new_lines = find_new_lines(text)
-        except ValueError, e:
+            new_lines = find_new_lines(*text)
+        except ValueError as e:
             mutter(str(e))
             return (None, None,
                     self.is_bzr_revision_hidden_fileprops(fileprops))
@@ -842,7 +837,7 @@ class BzrSvnMappingFileProps(object):
             (revno, revid) = parse_revid_property(new_lines[0])
             return (revno, revid,
                     self.is_bzr_revision_hidden_fileprops(fileprops))
-        except errors.InvalidPropertyValue, e:
+        except errors.InvalidPropertyValue as e:
             mutter(str(e))
             return (None, None,
                     self.is_bzr_revision_hidden_fileprops(fileprops))
@@ -859,8 +854,8 @@ class BzrSvnMappingFileProps(object):
         text = changed_fileprops.get(SVN_PROP_BZR_REVISION_ID+self.name,
             ("", ""))
         try:
-            new_lines = find_new_lines(text)
-        except ValueError, e:
+            new_lines = find_new_lines(*text)
+        except ValueError as e:
             checkresult.invalid_fileprop_cnt += 1
         else:
             if len(new_lines) > 1:
@@ -870,7 +865,7 @@ class BzrSvnMappingFileProps(object):
             return
         try:
             revid = parse_revid_property(new_lines[0])
-        except errors.InvalidPropertyValue, e:
+        except errors.InvalidPropertyValue as e:
             self.invalid_fileprop_cnt += 1
             return
 
@@ -1052,7 +1047,7 @@ def find_mappings_fileprops(changed_fileprops):
         if k.startswith(SVN_PROP_BZR_REVISION_ID):
             try:
                 # perhaps check if content change was valid?
-                find_new_lines(v)
+                find_new_lines(*v)
             except ValueError:
                 pass
             else:
@@ -1117,7 +1112,7 @@ def get_roundtrip_ancestor_revids(fileprops):
             try:
                 (revno, revid) = parse_revid_property(line)
                 yield (revid, revno, mapping_name)
-            except errors.InvalidPropertyValue, ie:
+            except errors.InvalidPropertyValue as ie:
                 mutter(str(ie))
 
 
@@ -1148,22 +1143,24 @@ class ForeignSubversion(foreign.ForeignVcs):
 
     @property
     def branch_format(self):
-        from breezy.plugins.svn.branch import SvnBranchFormat
+        from .branch import SvnBranchFormat
         return SvnBranchFormat()
 
     @property
     def repository_format(self):
-        from breezy.plugins.svn.repository import SvnRepositoryFormat
+        from .repository import SvnRepositoryFormat
         return SvnRepositoryFormat()
 
     def __init__(self):
         super(ForeignSubversion, self).__init__(mapping_registry)
         self.abbreviation = "svn"
 
-    def show_foreign_revid(self, (uuid, bp, revnum)):
+    def show_foreign_revid(self, foreign_revid):
+        (uuid, bp, revnum) = foreign_revid
         return { u"svn revno": u"%d (on /%s)" % (revnum, bp.decode("utf-8"))}
 
-    def serialize_foreign_revid(self, (uuid, bp, revnum)):
+    def serialize_foreign_revid(self, foreign_revid):
+        (uuid, bp, revnum) = foreign_revid
         return "%s:%d:%s" % (uuid, revnum, urllib.quote(bp))
 
 

@@ -120,7 +120,7 @@ def get_client_string():
 def init_subvertpy():
     try:
         import subvertpy
-    except ImportError, e:
+    except ImportError as e:
         raise DependencyNotPresent("subvertpy", "bzr-svn: %s" % str(e))
 
     check_subversion_version()
@@ -168,9 +168,9 @@ class SvnWorkingTreeProber(SvnProber):
         from subvertpy.wc import check_wc
         try:
             version = check_wc(transport.local_abspath('.').encode("utf-8"))
-        except subvertpy.SubversionException, (msg, num):
-            ERR_WC_UPGRADE_REQUIRED = getattr(subvertpy, "ERR_WC_UPGRADE_REQUIRED", 155036) # subvertpy < 0.9.0
-            if num == ERR_WC_UPGRADE_REQUIRED:
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
+            if num == subvertpy.ERR_WC_UPGRADE_REQUIRED:
                 raise UnsupportedFormatError(msg)
             raise
         from .workingtree import SvnWorkingTreeDirFormat
@@ -301,7 +301,8 @@ class SvnRemoteProber(SvnProber):
         import subvertpy
         try:
             transport = get_svn_ra_transport(transport)
-        except subvertpy.SubversionException, (msg, num):
+        except subvertpy.SubversionException as e:
+            msg, num = e.args
             if num == subvertpy.ERR_RA_DAV_NOT_VCC:
                 raise NotBranchError(path=transport.base)
             if num in (subvertpy.ERR_RA_ILLEGAL_URL,
@@ -313,8 +314,8 @@ class SvnRemoteProber(SvnProber):
             raise
         except (InProcessTransport, NoSuchFile, urlutils.InvalidURL, InvalidHttpResponse):
             raise NotBranchError(path=transport.base)
-        except DavRequestFailed, e:
-            if "501 Unsupported method" in e.msg:
+        except DavRequestFailed as e:
+            if "501 Unsupported method" in e[1]:
                 raise NotBranchError(path=transport.base)
             else:
                 raise
