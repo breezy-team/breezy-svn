@@ -21,7 +21,7 @@ from info import *
 
 if __name__ == '__main__':
     from distutils.core import setup
-    readme = open("README", "r").read()
+    readme = open("README.rst", "r").read()
     version = bzr_plugin_version[:3]
     version_string = ".".join([str(x) for x in version])
 
