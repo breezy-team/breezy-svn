@@ -23,6 +23,16 @@ env:
   - SVN_VERSION=1.6.21
   - SVN_VERSION=1.5.9
 
+before_install:
+    - wget https://archive.apache.org/dist/subversion/subversion-${SVN_VERSION}.tar.gz
+    - tar xvfz subversion-${SVN_VERSION}.tar.gz
+    - cd subversion-${SVN_VERSION}
+    - ./configure ${SVN_OPTIONS}
+    - make
+    - sudo make install
+    - sudo ldconfig -v
+    - cd ..
+
 script:
   - make check
 
