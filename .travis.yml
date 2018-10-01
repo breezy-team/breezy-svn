@@ -1,0 +1,35 @@
+language: python
+dist: trusty
+addons:
+  apt:
+    update: true
+    packages: libapr1-dev libaprutil1-dev libdb5.3-dev liblz4-dev libsasl2-dev libperl-dev libserf-dev libsqlite3-dev libtool python-all-dev libneon27-gnutls-dev
+
+sudo: false
+cache: pip
+git:
+  depth: false
+
+python:
+  - 2.7
+
+env:
+# SVN 1.10 requires libutf8proc, which isn't available on trusty :(
+#  - SVN_VERSION=1.10.0
+#    SVN_OPTIONS="--with-lz4=internal"
+  - SVN_VERSION=1.9.7
+  - SVN_VERSION=1.8.19
+  - SVN_VERSION=1.7.19
+  - SVN_VERSION=1.6.21
+  - SVN_VERSION=1.5.9
+
+script:
+  - make check
+
+install:
+  - sudo apt install python-all-dev subunit python-testtools
+  - travis_retry pip install -U setuptools
+  - travis_retry pip install -U pip coverage codecov flake8 testtools paramiko cython six docutils python-subunit bzr+lp:brz subvertpy
+
+after_success:
+  - codecov
