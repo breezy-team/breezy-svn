@@ -109,7 +109,7 @@ class SubversionTreeFile(TreeFile):
 
 class SubversionTree(object):
 
-    def get_file_properties(self, path, file_id=None):
+    def get_file_properties(self, path):
         raise NotImplementedError(self.get_file_properties)
 
     def supports_content_filtering(self):
@@ -189,25 +189,25 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
             return None, False, None
         return entry.kind, entry.executable, None
 
-    def get_file_mtime(self, path, file_id=None):
+    def get_file_mtime(self, path):
         """See Tree.get_file_mtime."""
-        revid = self.get_file_revision(path, file_id)
+        revid = self.get_file_revision(path)
         try:
             rev = self._repository.get_revision(revid)
         except errors.NoSuchRevision:
             raise errors.FileTimestampUnavailable(path)
         return rev.timestamp
 
-    def is_executable(self, path, file_id=None):
-        props = self.get_file_properties(path, file_id)
+    def is_executable(self, path):
+        props = self.get_file_properties(path)
         if props.has_key(properties.PROP_SPECIAL):
             text = self.get_file_stream_by_path(path)
             if text.read(5) == "link ":
                 return False
         return props.has_key(properties.PROP_EXECUTABLE)
 
-    def get_symlink_target(self, path, file_id=None):
-        props = self.get_file_properties(path, file_id)
+    def get_symlink_target(self, path):
+        props = self.get_file_properties(path)
         if not props.has_key(properties.PROP_SPECIAL):
             return None
         text = self.get_file_stream_by_path(path).read()
@@ -215,10 +215,10 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
             return None
         return text[len("link "):].decode("utf-8")
 
-    def get_file_sha1(self, path, file_id=None, stat_value=None):
-        return osutils.sha_string(self.get_file_text(path, file_id))
+    def get_file_sha1(self, path, stat_value=None):
+        return osutils.sha_string(self.get_file_text(path))
 
-    def get_file_revision(self, path, file_id=None):
+    def get_file_revision(self, path):
         file_id, file_revision = self.lookup_id(path)
         return file_revision
 
@@ -230,7 +230,7 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
     def get_file_stream_by_path(self, path):
         raise NotImplementedError(self.get_file_stream_by_path)
 
-    def iter_child_entries(self, path, file_id=None):
+    def iter_child_entries(self, path):
         entry = self.iter_entries_by_dir(specific_files=[path]).next()[1]
         return iter(getattr(entry, 'children', {}).values())
 
@@ -244,14 +244,15 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
 
         :param paths: The filenames to find related paths for (if None, returns
             None)
-        :param trees: The trees to find file_ids within
+        :param trees: The trees to find paths within
         :param require_versioned: if true, all specified filenames must occur in
             at least one tree.
         :return: a set of paths for the specified filenames and their children
             in `tree`
         """
+        # TODO(jelmer): Implement this without file ids
         if paths is None:
-            return None;
+            return None
         file_ids = self.paths2ids(
                 paths, trees, require_versioned=require_versioned)
         ret = set()
@@ -392,7 +393,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         return self.root_inventory.iter_entries_by_dir(
             specific_file_ids=specific_file_ids)
 
-    def kind(self, path, file_id=None):
+    def kind(self, path):
         stream = BytesIO()
         try:
             (fetched_rev, props) = self.transport.get_file(path,
@@ -407,9 +408,8 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
             return "symlink"
         return "file"
 
-    def get_file_size(self, path, file_id=None):
-        if file_id is None:
-            file_id = self.path2id(path)
+    def get_file_size(self, path):
+        file_id = self.path2id(path)
         # FIXME: More efficient implementation?
         return self.root_inventory.get_entry(file_id).text_size
 
@@ -431,7 +431,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         for path, entry in entries:
             yield path, 'V', entry.kind, entry.file_id, entry
 
-    def get_file(self, path, file_id=None):
+    def get_file(self, path):
         stream = BytesIO()
         (fetched_rev, props) = self.transport.get_file(path,
                 stream, self._revmeta.metarev.revnum)
@@ -447,11 +447,11 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         stream.seek(0)
         return stream
 
-    def get_file_text(self, path, file_id=None):
-        with self.get_file(path, file_id) as my_file:
+    def get_file_text(self, path):
+        with self.get_file(path) as my_file:
             return my_file.read()
 
-    def get_file_properties(self, path, file_id=None):
+    def get_file_properties(self, path):
         try:
             (fetched_rev, props) = self.transport.get_file(path,
                     BytesIO(), self._revmeta.metarev.revnum)
@@ -729,14 +729,13 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         wt_path = self.workingtree.abspath(name)
         return wc.get_pristine_contents(wt_path)
 
-    def kind(self, path, file_id=None):
-        if file_id is None:
-            file_id = self.path2id(path)
+    def kind(self, path):
+        file_id = self.path2id(path)
         if file_id is None:
             raise errors.NoSuchFile(path, self)
         return self.root_inventory.get_entry(file_id).kind
 
-    def get_file_text(self, path, file_id=None):
+    def get_file_text(self, path):
         """See Tree.get_file_text()."""
         f = self.get_file_stream_by_path(path)
         try:
@@ -744,10 +743,10 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         finally:
             f.close()
 
-    def get_file(self, path, file_id=None):
+    def get_file(self, path):
         return self.get_file_stream_by_path(path)
 
-    def get_file_properties(self, path, file_id=None):
+    def get_file_properties(self, path):
         """See SubversionTree.get_file_properties()."""
         abspath = self.workingtree.abspath(path)
         if not os.path.isdir(abspath.encode(osutils._fs_enc)):
@@ -758,7 +757,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             (_, orig_props) = wc.get_prop_diffs(abspath.encode("utf-8"))
         return orig_props
 
-    def annotate_iter(self, path, file_id=None, default_revision=CURRENT_REVISION):
+    def annotate_iter(self, path, default_revision=CURRENT_REVISION):
         from .annotate import Annotater
         annotater = Annotater(self.workingtree.branch.repository)
         annotater.check_file_revs(

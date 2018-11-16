@@ -255,8 +255,8 @@ def dir_editor_send_changes(base_tuple, parents,
     except NoSuchId:
         base_path = None
     else:
-        if base_tree.kind(base_path, file_id) == 'directory':
-            for child_ie in base_tree.iter_child_entries(base_path, file_id):
+        if base_tree.kind(base_path) == 'directory':
+            for child_ie in base_tree.iter_child_entries(base_path):
                 new_child_ie = get_ie(child_ie.file_id)
                 # remove if...
                 if (
@@ -697,9 +697,9 @@ class SvnCommitBuilder(CommitBuilder):
             return
 
         # Iterate over the children that were present previously
-        if self.old_tree.kind(old_path, file_id) == 'directory':
+        if self.old_tree.kind(old_path) == 'directory':
             for child_ie in self.old_tree.iter_child_entries(
-                    old_path, file_id):
+                    old_path):
                 if (not child_ie.file_id in self._deleted_fileids and
                     not child_ie.file_id in self._updated):
                     yield child_ie
