@@ -1131,9 +1131,9 @@ def revprops_complete(revprops):
 
 def get_svn_file_contents(tree, kind, path, file_id=None):
     if kind == "file":
-        return tree.get_file(path, file_id)
+        return tree.get_file(path)
     elif kind == "symlink":
-        target = tree.get_symlink_target(path, file_id)
+        target = tree.get_symlink_target(path)
         return BytesIO(b"link %s" % target.encode("utf-8"))
     else:
         raise AssertionError

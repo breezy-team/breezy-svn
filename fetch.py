@@ -723,9 +723,9 @@ class RevisionBuildEditor(DeltaBuildEditor):
             self._deleted.add(p)
             if fid not in self.id_map.values():
                 self._inv_delta_append(p, None, fid, None)
-            if self.bzr_base_tree.kind(p, fid) != 'directory':
+            if self.bzr_base_tree.kind(p) != 'directory':
                 return
-            for c in self.bzr_base_tree.iter_child_entries(p, fid):
+            for c in self.bzr_base_tree.iter_child_entries(p):
                 rec_del(c.file_id)
         base_file_id = self._get_bzr_base_file_id(old_parent_id, path)
         rec_del(base_file_id)
@@ -1041,7 +1041,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         for tree in self.bzr_parent_trees:
             try:
                 path = tree.id2path(file_id)
-                revision = tree.get_file_revision(path, file_id)
+                revision = tree.get_file_revision(path)
             except NoSuchId:
                 pass
             else:
