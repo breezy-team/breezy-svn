@@ -993,8 +993,8 @@ class SvnCommitBuilder(CommitBuilder):
             if (ptree.path2id(osutils.dirname(ppath)) == new_ie.parent_id and
                 osutils.basename(ppath) == new_ie.name and (
                  (new_ie.kind == 'file' and ptree.kind(ppath) == 'file' and
-                  ptree.get_file_sha1(ppath, new_ie.file_id) == new_ie.text_sha1 and
-                  ptree.is_executable(ppath, new_ie.file_id) == new_ie.executable) or
+                  ptree.get_file_sha1(ppath) == new_ie.text_sha1 and
+                  ptree.is_executable(ppath) == new_ie.executable) or
                  (new_ie.kind == 'symlink' and ptree.kind(ppath) == 'symlink' and
                   ptree.get_symlink_target(ppath) == new_ie.symlink_target) or
                  (new_ie.kind == 'directory' and ptree.kind(ppath) == 'directory'))):
@@ -1047,7 +1047,7 @@ class SvnCommitBuilder(CommitBuilder):
             self.modified_files[file_id] = get_svn_file_delta_transmitter(
                 tree, self.old_tree, file_id, old_path, new_path, new_ie)
             if new_ie.revision is None:
-                yield file_id, new_path, (new_ie.text_sha1, stat_val)
+                yield new_path, new_ie.text_sha1
         elif new_kind == 'symlink':
             new_ie.symlink_target = tree.get_symlink_target(new_path)
             new_ie.revision, unusual_text_parents = self._get_text_revision(
