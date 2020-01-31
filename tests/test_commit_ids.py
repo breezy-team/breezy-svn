@@ -172,7 +172,7 @@ class CommitIdTesting:
             ('afile', 'contents')])
         tree.add(["afile"], ['thefileid'])
         self.commit_tree(tree, b"reva")
-        os.chmod("afile", 0755)
+        os.chmod("afile", 0o755)
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
             "": ("therootid", b"reva", []),

@@ -57,6 +57,7 @@ from breezy import (
     conflicts as _mod_conflicts,
     errors as bzr_errors,
     hashcache,
+    location as _mod_location,
     osutils,
     rio as _mod_rio,
     transport as _mod_transport,
@@ -622,9 +623,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return ("NEW-" + escape_svn_path(osutils.safe_utf8(relpath).strip("/")),
                 None)
 
-    def get_root_id(self):
-        return self.path2id("")
-
     def path2id(self, path):
         if isinstance(path, list):
             path = "/".join(path)
@@ -686,7 +684,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             pass
         if file_id.startswith("NEW-"):
             return urlutils.unescape(file_id[4:])
-        if file_id == self.get_root_id():
+        if file_id == self.path2id(''):
             # Special case if self.last_revision() == 'null:'
             return ""
         raise NoSuchId(self, file_id)
@@ -1629,7 +1627,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
              [(file1_path, file1_name, file1_kind, None, file1_id,
                file1_kind), ... ])
         """
-        pending = [(prefix, '', 'directory', None, self.get_root_id(), None)]
+        pending = [(prefix, '', 'directory', None, self.path2id(''), None)]
         while pending:
             dirblock = []
             currentdir = pending.pop()
@@ -1846,7 +1844,7 @@ class SvnCheckout(ControlDir):
         wt = self.open_workingtree()
         if revision_id is None:
             revision_id = wt.last_revision()
-        url = _mod_transport.location_to_url(location)
+        url = _mod_location.location_to_url(location)
         path = urlutils.local_path_from_url(url)
         return wt.branch.create_checkout(path, lightweight=True,
             revision_id=revision_id).controldir

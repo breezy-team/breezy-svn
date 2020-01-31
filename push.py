@@ -49,7 +49,7 @@ from breezy.revision import (
 from breezy.sixish import (
     text_type,
     )
-from breezy.testament import (
+from breezy.bzr.testament import (
     StrictTestament,
     )
 from breezy.trace import (
@@ -105,21 +105,22 @@ def _filter_iter_changes(iter_changes):
     :return: A generator of changes.
     """
     for change in iter_changes:
-        kind = change[6][1]
-        versioned = change[3][1]
+        kind = change.kind[1]
+        versioned = change.versioned[1]
         if kind is None and versioned:
             # 'missing' path
             # Reset the new path (None) and new versioned flag (False)
-            change = (change[0], (change[1][0], None), change[2],
-                (change[3][0], False)) + change[4:]
-        if change[3][0] or change[3][1]:
+            change = TreeChange(
+                change.file_id, (change.path[0], None),
+                change.changed_content,
+                (change.versioned[0], False), *change[4:])
+        if any(change.versioned):
             yield change
 
 
-def push_revision_tree(graph, target_repo, branch_path, config_stack, source_repo,
-                       base_revid, revision_id, rev,
-                       base_foreign_revid, base_mapping,
-                       push_metadata,
+def push_revision_tree(graph, target_repo, branch_path, config_stack,
+                       source_repo, base_revid, revision_id, rev,
+                       base_foreign_revid, base_mapping, push_metadata,
                        root_action):
     """Push a revision tree into a target repository.
 
@@ -175,18 +176,18 @@ def push_revision_tree(graph, target_repo, branch_path, config_stack, source_rep
         builder.will_record_deletes()
         iter_changes = old_tree.iter_changes(base_tree)
         iter_changes = _filter_iter_changes(iter_changes)
-        for file_id, path, fs_hash in builder.record_iter_changes(
-            old_tree, base_tree.get_revision_id(), iter_changes):
+        for path, fs_hash in builder.record_iter_changes(
+                old_tree, base_tree.get_revision_id(), iter_changes):
             pass
         builder.finish_inventory()
-    except:
+    except BaseException:
         builder.abort()
         raise
     try:
         revid = builder.commit(rev.message)
-    except SubversionException, (msg, num):
+    except SubversionException as e:
         builder.abort()
-        if num == ERR_FS_TXN_OUT_OF_DATE:
+        if e.args[1] == ERR_FS_TXN_OUT_OF_DATE:
             raise DivergedBranches(source_repo, target_repo)
         raise
     except ChangesRootLHSHistory:
@@ -552,8 +553,8 @@ class InterToSvnRepository(InterRepository):
                     rev, push_metadata=push_metadata,
                     base_foreign_info=start_parent_foreign_info,
                     root_action=("create", ))
-        except SubversionException, (msg, num):
-            if num == subvertpy.ERR_FS_TXN_OUT_OF_DATE:
+        except SubversionException as e:
+            if e.args[1] == subvertpy.ERR_FS_TXN_OUT_OF_DATE:
                 raise AlreadyBranchError(target_branch_path)
             raise
 
@@ -765,8 +766,8 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
             if deletefirst:
                 try:
                     root.delete_entry(urlutils.basename(branch_path))
-                except SubversionException, (msg, num):
-                    if num == ERR_FS_ROOT_DIR:
+                except SubversionException as e:
+                    if e.args[1] == ERR_FS_ROOT_DIR:
                         raise ChangesRootLHSHistory()
                     raise
             branch_dir = root.add_directory(

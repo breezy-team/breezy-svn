@@ -21,6 +21,7 @@ from __future__ import absolute_import
 
 import os
 from subvertpy import (
+    ERR_FS_NOT_DIRECTORY,
     ERR_STREAM_MALFORMED_DATA,
     NODE_FILE,
     SubversionException,
@@ -123,8 +124,8 @@ def load_dumpfile(dumpfile, outputdir, feedback_stream=None):
     try:
         try:
             r.load_fs(file, feedback_stream, repos.LOAD_UUID_DEFAULT)
-        except SubversionException, (_, num):
-            if num == ERR_STREAM_MALFORMED_DATA:
+        except SubversionException as e:
+            if e.args[1] == ERR_STREAM_MALFORMED_DATA:
                 raise NotDumpFile(dumpfile)
             raise
     finally:
@@ -341,8 +342,10 @@ class RepositoryConverter(object):
                     pb.update("%s:%d" % (source_branch.get_branch_path(),
                         source_branch.get_revnum()), i,
                         len(existing_branches))
-                except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                    continue
+                except SubversionException as e:
+                    if e.args[1] == ERR_FS_NOT_DIRECTORY:
+                        continue
+                    raise
                 if colocated:
                     target_branch = self._get_colocated_branch(source_branch,
                             prefix, remember_parent)

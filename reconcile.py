@@ -70,9 +70,11 @@ class RepoReconciler(breezy.reconcile.RepoReconciler):
                 try:
                     old_mapping = mapping.find_mapping_fileprops(
                         revmeta.get_changed_fileprops())
-                except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                    num_changed += self._set_skip_revprop(revnum, revprops)
-                    continue
+                except SubversionException as e:
+                    if e.args[1] == ERR_FS_NOT_DIRECTORY:
+                        num_changed += self._set_skip_revprop(revnum, revprops)
+                        continue
+                    raise
                 if old_mapping is None:
                     num_changed += self._set_skip_revprop(revnum, revprops)
                     continue

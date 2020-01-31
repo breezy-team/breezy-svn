@@ -77,7 +77,8 @@ class BzrSvnMappingv1(BzrSvnMapping):
         return (uuid, branch_path, revnum), cls(LegacyLayout.from_branch_path(branch_path))
 
     @classmethod
-    def revision_id_foreign_to_bzr(cls, (uuid, path, revnum)):
+    def revision_id_foreign_to_bzr(cls, foreign_revid):
+        (uuid, path, revnum) = foreign_revid
         assert isinstance(path, str)
         return b"svn-v1:%d@%s-%s" % (revnum, uuid, escape_svn_path(path))
 
@@ -171,7 +172,8 @@ class BzrSvnMappingv2(BzrSvnMappingv1):
         assert revnum >= 0
         return (uuid, branch_path, revnum), cls(LegacyLayout.from_branch_path(branch_path))
 
-    def revision_id_foreign_to_bzr(self, (uuid, path, revnum)):
+    def revision_id_foreign_to_bzr(self, foreign_revid):
+        (uuid, path, revnum) = foreign_revid
         assert isinstance(path, str)
         return b"svn-v2:%d@%s-%s" % (revnum, uuid, escape_svn_path(path))
 
@@ -244,7 +246,7 @@ class TrunkLegacyLayout(LegacyLayout):
 
     def get_branches(self, repository, revnum, project=u"", pb=None):
         return get_root_paths(repository,
-             [(u"*/" * self.level) + x for x in u"branches/*", u"tags/*", u"trunk"],
+             [(u"*/" * self.level) + x for x in [u"branches/*", u"tags/*", u"trunk"]],
              revnum, self.is_branch, project)
 
     def get_tags(self, repository, revnum, project=u"", pb=None):

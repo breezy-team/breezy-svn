@@ -26,7 +26,7 @@ from breezy import (
     osutils,
     )
 
-from cStringIO import StringIO
+from io import StringIO
 
 from subvertpy import (
     properties,

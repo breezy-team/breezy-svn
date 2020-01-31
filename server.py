@@ -132,8 +132,7 @@ class RepositoryBackend(ServerRepositoryBackend):
         relpath = None # FIXME
         editor.set_target_revision(revnum)
         root = editor.open_root()
-        self.branch.repository.lock_read()
-        try:
+        with self.branch.repository.lock_read():
             new_tree = self.branch.repository.revision_tree(revid)
             modified_files = {}
             visit_dirs = set()
@@ -146,13 +145,11 @@ class RepositoryBackend(ServerRepositoryBackend):
                     modified_files[ie.file_id] = "link %s" % ie.symlink_target
 
             dir_editor_send_changes(None, new_tree, "",
-                    new_tree.get_root_id(),
+                    new_tree.path2id(''),
                     root, "svn://localhost/", revnum-1, relpath,
                                 modified_files, visit_dirs)
             root.close()
             editor.close()
-        finally:
-            self.branch.repository.unlock()
 
     def check_path(self, path, revnum):
         return subvertpy.NODE_DIR

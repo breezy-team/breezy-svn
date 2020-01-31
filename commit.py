@@ -25,7 +25,7 @@ from io import (
     BytesIO,
     )
 from subvertpy import (
-    ERR_BAD_PROPERTY_VALUE ,
+    ERR_BAD_PROPERTY_VALUE,
     ERR_FS_NOT_DIRECTORY,
     ERR_REPOS_DISABLED_FEATURE,
     delta,
@@ -190,8 +190,7 @@ def set_svn_revprops(repository, revnum, revprops):
         try:
             repository.svn_transport.change_rev_prop(revnum, name, value)
         except SubversionException as e:
-            msg, num = e.args
-            if num == ERR_REPOS_DISABLED_FEATURE:
+            if e.args[1] == ERR_REPOS_DISABLED_FEATURE:
                 raise RevpropChangeFailed(name)
             else:
                 raise
@@ -500,7 +499,7 @@ class SvnCommitBuilder(CommitBuilder):
         else:
             self.old_tree = old_tree
 
-        self.new_root_id = self.old_tree.get_root_id()
+        self.new_root_id = self.old_tree.path2id('')
 
         self._deleted_fileids = set()
         self._updated_children = defaultdict(set)
@@ -628,8 +627,7 @@ class SvnCommitBuilder(CommitBuilder):
                 ret.append(ret[-1].open_directory(
                     "/".join(elements[0:i+1]), -1))
             except SubversionException as e:
-                msg, num = e.args
-                if num == ERR_FS_NOT_DIRECTORY:
+                if e.args[1] == ERR_FS_NOT_DIRECTORY:
                     raise MissingPrefix("/".join(elements), "/".join(elements[0:i]))
                 else:
                     raise
@@ -821,17 +819,16 @@ class SvnCommitBuilder(CommitBuilder):
             else:
                 root_from = None
 
-            if (self.old_tree.get_root_id() is not None and
-                self.old_tree.get_root_id() != self.new_root_id and
-                self.root_action[0] == "open"):
+            if (self.old_tree.path2id('') is not None and
+                    self.old_tree.path2id('') != self.new_root_id and
+                    self.root_action[0] == "open"):
                 self.root_action = ("replace", self.root_action[1])
 
             try:
                 try:
                     root = editor.open_root(self.base_revnum)
                 except SubversionException as e:
-                    msg, num = e.args
-                    if num == ERR_BAD_PROPERTY_VALUE:
+                    if e.args[1] == ERR_BAD_PROPERTY_VALUE:
                         raise ValueError("Invalid property contents: %r" % msg)
                     raise
                 branch_editors = self.open_branch_editors(root, bp_parts,
@@ -1093,23 +1090,20 @@ class SvnCommitBuilder(CommitBuilder):
         if self.base_revid != basis_revision_id:
             raise AssertionError("Invalid basis revision %s != %s" %
                 (self.base_revid, basis_revision_id))
-        for (file_id, (old_path, new_path), changed_content,
-             (old_ver, new_ver), (old_parent_id, new_parent_id),
-             (old_name, new_name), (old_kind, new_kind),
-             (old_executable, new_executable)) in iter_changes:
-            if new_kind is None:
-                self._basis_delta.append((old_path, None, file_id, None))
-                self._deleted_fileids.add(file_id)
+        for change in iter_changes:
+            if change.kind[1] is None:
+                self._basis_delta.append((change.path[0], None, change.file_id, None))
+                self._deleted_fileids.add(change.file_id)
             else:
                 for data in self._record_change(
-                        tree, parent_trees, file_id, (old_path, new_path),
-                        new_kind, new_name, new_parent_id, new_executable):
+                        tree, parent_trees, change.file_id, change.path,
+                        change.kind[1], change.name[1], change.parent_id[1], change.executable[1]):
                     yield data
             # Old path parent needs to be visited in case file_id was removed
             # from it but there were no other changes there.
-            if old_path not in (None, new_path):
-                self._visit_parent_dirs(old_path)
-            if new_path != "" or basis_revision_id != NULL_REVISION:
+            if change.path[0] not in (None, change.path[1]):
+                self._visit_parent_dirs(change.path[0])
+            if change.path[1] != "" or basis_revision_id != NULL_REVISION:
                 self._any_changes = True
         if self.new_root_id is None or self._rich_root_bump:
             # housekeeping root entry changes do not affect no-change commits.
@@ -1162,9 +1156,9 @@ class SvnCommitBuilder(CommitBuilder):
             old_path = None
         else:
             old_path = ""
-        for data in self._record_change(tree, parent_trees, tree.get_root_id(),
-                (old_path, ""), "directory", "", None, False,
-                force_change=self._rich_root_bump):
+        for data in self._record_change(
+                tree, parent_trees, tree.path2id(''), (old_path, ""),
+                "directory", "", None, False, force_change=self._rich_root_bump):
             yield data
 
     def any_changes(self):

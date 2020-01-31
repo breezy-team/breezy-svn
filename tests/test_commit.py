@@ -669,7 +669,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         local_dir.open_branch().bind(master_branch)
         wt = local_dir.open_workingtree()
         self.build_tree({'b/file': 'data'})
-        rootid = wt.get_root_id()
+        rootid = wt.path2id('')
         wt.branch.nick = "some-nick"
         wt.add('file')
         oldid = wt.path2id("file")
@@ -703,7 +703,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         self.build_tree({'b/dir/file': 'data'})
         wt.add('dir')
         wt.add('dir/file')
-        rootid = wt.get_root_id()
+        rootid = wt.path2id('')
         dirid = wt.path2id("dir")
         fileid = wt.path2id("dir/file")
         revid1 = wt.commit(message="Commit from Bzr") #2

@@ -60,7 +60,7 @@ class TestBasisTree(SubversionTestCase):
     def test_root_id(self):
         tree = self.make_svn_branch_and_tree("d", "dc")
         tree = SvnBasisTree(tree)
-        self.assertIs(None, tree.get_root_id())
+        self.assertIs(None, tree.path2id(''))
 
     def test_executable(self):
         tree = self.make_svn_branch_and_tree("d", "dc")
@@ -134,8 +134,8 @@ class TestBasisTree(SubversionTestCase):
 
         try:
             self.client_update("dc")
-        except subvertpy.SubversionException, (msg, num):
-            if num == subvertpy.ERR_WC_BAD_ADM_LOG:
+        except subvertpy.SubversionException as e:
+            if e.args[1] == subvertpy.ERR_WC_BAD_ADM_LOG:
                 raise TestSkipped("Unable to run test with svn 1.4")
             raise
         tree = SvnBasisTree(tree)
@@ -217,8 +217,8 @@ class TestBasisTree(SubversionTestCase):
 
         try:
             self.client_update("dc")
-        except subvertpy.SubversionException, (msg, num):
-            if num == subvertpy.ERR_WC_BAD_ADM_LOG:
+        except subvertpy.SubversionException as e:
+            if e.args[1] == subvertpy.ERR_WC_BAD_ADM_LOG:
                 raise TestSkipped("Unable to run test with svn 1.4")
             raise
 

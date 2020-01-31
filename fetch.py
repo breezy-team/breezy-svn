@@ -104,7 +104,7 @@ TEXT_CACHE_SIZE = 1024 * 1024 * 50
 
 def tree_parent_id_basename_to_file_id(tree, parent_id, basename):
     if parent_id is None and basename == "":
-        return tree.get_root_id()
+        return tree.path2id('')
     inv = tree.root_inventory
     parent_id_basename_index = getattr(
         inv, "parent_id_basename_to_file_id", None)
@@ -530,9 +530,9 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
         file_id = self.editor._get_new_file_id(path)
-        if self.editor.bzr_base_tree.has_id(file_id):
+        try:
             bzr_base_path = self.editor.bzr_base_tree.id2path(file_id)
-        else:
+        except NoSuchId:
             bzr_base_path = None
         if copyfrom_path is not None:
             # Delta's will be against this text
@@ -873,14 +873,14 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _open_root(self, base_revnum):
         assert self.revid is not None
 
-        if self.svn_base_tree.get_root_id() is None:
+        if self.svn_base_tree.path2id('') is None:
             svn_base_ie = None
             svn_base_file_id = None
         else:
             (svn_base_file_id, svn_base_ie) = self.get_svn_base_ie_open(
                 None, u"", base_revnum)
 
-        if self.bzr_base_tree.get_root_id() is None:
+        if self.bzr_base_tree.path2id('') is None:
             # First time the root is set
             bzr_base_ie = None
             file_id = self._get_new_file_id(u"")
@@ -1004,7 +1004,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
         except KeyError:
             pass
         if (self.bzr_base_tree.has_id(ie.file_id) or
-            len(self.bzr_parent_trees) <= 1):
+                len(self.bzr_parent_trees) <= 1):
             # File was touched but not newly introduced since base so it has
             # changed somehow.
             return self.revid
@@ -1226,8 +1226,8 @@ class FetchRevisionFinder(object):
         for revmeta, mapping in revmetas:
             try:
                 map[revmeta, mapping] = revmeta.get_revision_id(mapping)
-            except SubversionException, (_, num):
-                if num == ERR_FS_NOT_DIRECTORY:
+            except SubversionException as e:
+                if e.args[1] == ERR_FS_NOT_DIRECTORY:
                     continue
                 else:
                     raise
@@ -1259,8 +1259,8 @@ class FetchRevisionFinder(object):
             for m in needed_mappings[revmeta]:
                 try:
                     (m, lhsm) = revmeta.get_appropriate_mappings(m)
-                except SubversionException, (_, num):
-                    if num == ERR_FS_NOT_DIRECTORY:
+                except SubversionException as e:
+                    if e.args[1] == ERR_FS_NOT_DIRECTORY:
                         continue
                     else:
                         raise
@@ -1480,8 +1480,8 @@ class InterFromSvnToInventoryRepository(InterRepository):
 
             try:
                 report_inventory_contents(reporter, parent_revnum, start_empty)
-            except SubversionException, (_, num):
-                if num != subvertpy.ERR_FS_PATH_SYNTAX:
+            except SubversionException as e:
+                if e.args[1] != subvertpy.ERR_FS_PATH_SYNTAX:
                     raise
                 # This seems to occur sometimes when we try to accidently
                 # import a file over HTTP
@@ -1520,8 +1520,10 @@ class InterFromSvnToInventoryRepository(InterRepository):
                 for num, (revmeta, mapping) in enumerate(revs[offset:offset+batch_size]):
                     try:
                         revid = revmeta.get_revision_id(mapping)
-                    except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                        continue
+                    except SubversionException as e:
+                        if e.args[1] == ERR_FS_NOT_DIRECTORY:
+                            continue
+                        raise
                     assert revid != NULL_REVISION
                     if pb is not None:
                         pb.update('copying revision', offset+num, total)
@@ -1540,10 +1542,13 @@ class InterFromSvnToInventoryRepository(InterRepository):
                             try:
                                 self._fetch_revision_switch(editor, revmeta,
                                                             parent_revmeta)
-                            except SubversionException, (_, ERR_FS_NOT_DIRECTORY):
-                                accidental_file_revs.add(revmeta)
-                                editor.abort()
-                                continue
+                            except SubversionException as e:
+                                if e.args == ERR_FS_NOT_DIRECTORY:
+                                    accidental_file_revs.add(revmeta)
+                                    editor.abort()
+                                    continue
+                                else:
+                                    raise
                     except:
                         editor.abort()
                         raise

@@ -110,13 +110,13 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
                 continue
             for path in find_commit_paths([revpaths]):
                 layout = guess_layout_from_path(path)
-                if str(layout) in potentials:
+                if str(layout) not in potentials:
                     potentials[str(layout)] = 0
                 potentials[str(layout)] += 1
                 layout_cache[str(layout)] = layout
 
     entries = potentials.items()
-    entries.sort(lambda (a, b), (c, d): d - b)
+    entries.sort(key=lambda e: e[1])
 
     mutter('potential branching layouts: %r' % entries)
 
@@ -167,11 +167,11 @@ def is_likely_branch_url(url):
     svn_root_url = transport.get_repos_root()
     branch_path = urllib.unquote(url[len(svn_root_url):])
     try:
-        (guessed_layout, _) = logwalker_guess_layout(lw,
-            transport.get_latest_revnum())
-    except SubversionException, (msg, num):
-        if num == ERR_FS_NOT_FOUND:
-            return False # path doesn't exist
+        (guessed_layout, _) = logwalker_guess_layout(
+            lw, transport.get_latest_revnum())
+    except SubversionException as e:
+        if e.args[1] == ERR_FS_NOT_FOUND:
+            return False  # path doesn't exist
         raise
     if guessed_layout is None:
         return None

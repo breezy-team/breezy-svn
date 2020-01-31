@@ -213,8 +213,8 @@ class SvnBranch(ForeignBranch):
             try:
                 if self.check_path() != NODE_DIR:
                     raise NotBranchError(self.base)
-            except SubversionException, (_, num):
-                if num == ERR_FS_NO_SUCH_REVISION:
+            except SubversionException as e:
+                if e.args[1] == ERR_FS_NO_SUCH_REVISION:
                     raise NotBranchError(self.base)
                 raise
         if project is None:
@@ -515,10 +515,6 @@ class SvnBranch(ForeignBranch):
             if revmeta.get_revision_id(mapping) == revision_id:
                 return revmeta.get_revno(mapping)
         raise NoSuchRevision(self, revision_id)
-
-    def get_root_id(self):
-        tree = self.basis_tree()
-        return tree.get_root_id()
 
     def set_push_location(self, location):
         """See Branch.set_push_location()."""

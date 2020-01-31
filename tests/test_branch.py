@@ -92,7 +92,7 @@ class WorkingSubversionBranch(SubversionTestCase):
             b.repository.get_mapping())
 
         revtagdict = b.tags.get_reverse_tag_dict()
-        self.assertEquals([revid], revtagdict.keys())
+        self.assertEquals([revid], list(revtagdict.keys()))
         self.assertEquals(["foo"], revtagdict[revid])
         self.assertEquals([(revid, ["foo"])], revtagdict.items())
 
@@ -892,8 +892,9 @@ foohosts""")
         newbranch.repository.unlock()
 
     def assertVersionsPresentEquals(self, texts, fileid, versions):
-        self.assertEqual(set([(fileid, v) for v in versions]),
-            set(filter(lambda (fid, rid): fid == fileid, texts.keys())))
+        self.assertEqual(
+            set([(fileid, v) for v in versions]),
+            set(filter(lambda e: e[0] == fileid, texts.keys())))
 
     def test_check(self):
         branch = self.make_svn_branch('d')

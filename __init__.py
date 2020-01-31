@@ -169,8 +169,7 @@ class SvnWorkingTreeProber(SvnProber):
         try:
             version = check_wc(transport.local_abspath('.').encode("utf-8"))
         except subvertpy.SubversionException as e:
-            msg, num = e.args
-            if num == subvertpy.ERR_WC_UPGRADE_REQUIRED:
+            if e.args[1] == subvertpy.ERR_WC_UPGRADE_REQUIRED:
                 raise UnsupportedFormatError(msg)
             raise
         from .workingtree import SvnWorkingTreeDirFormat
@@ -185,22 +184,6 @@ class SvnWorkingTreeProber(SvnProber):
         else:
             from .workingtree import SvnWorkingTreeDirFormat
             return set([SvnWorkingTreeDirFormat()])
-
-
-def dav_options(transport, url):
-    # FIXME: Integrate this into HttpTransport.options().
-    from breezy.transport.http import HttpTransport, Request
-    if isinstance(transport, HttpTransport):
-        req = Request('OPTIONS', url, accepted_errors=[200, 403, 404, 405])
-        req.follow_redirections = True
-        resp = transport._perform(req)
-        if resp.code == 404:
-            raise NoSuchFile(transport._path)
-        if resp.code in (403, 405):
-            raise InvalidHttpResponse(transport.base,
-                "OPTIONS not supported or forbidden for remote URL")
-        return resp.headers.getheaders('DAV')
-    raise NotImplementedError
 
 
 class SvnRemoteProber(SvnProber):
@@ -251,22 +234,19 @@ class SvnRemoteProber(SvnProber):
         # that the remote end supports version control.
         if scheme in ("http", "https"):
             priv_transport = getattr(transport, "_decorated", transport)
-            url = ConnectedTransport._unsplit_url(
-                priv_transport._unqualified_scheme,
-                None, None, priv_transport._host,
-                priv_transport._port, priv_transport._path)
             try:
-                dav_entries = dav_options(transport, url)
-            except (InProcessTransport, NoSuchFile, urlutils.InvalidURL, InvalidHttpResponse):
-                raise NotBranchError(path=transport.base)
-            except NotImplementedError:
-                pass # Custom http implementation?
+                headers = priv_transport._options('.')
+            except (errors.InProcessTransport, errors.NoSuchFile,
+                    errors.InvalidHttpResponse):
+                raise errors.NotBranchError(path=transport.base)
             else:
-                import itertools
-                dav_entries = list(itertools.chain(
-                    *[entry.split(",") for entry in dav_entries]))
-                if not "version-control" in dav_entries:
-                    raise NotBranchError(path=transport.base)
+                dav_entries = set()
+                for key, value in headers:
+                    if key.upper() == 'DAV':
+                        dav_entries.update(
+                            [x.strip() for x in value.split(',')])
+                if "version-control" not in dav_entries:
+                    raise errors.NotBranchError(path=transport.base)
 
         self._check_versions()
         from .transport import get_svn_ra_transport
@@ -275,7 +255,7 @@ class SvnRemoteProber(SvnProber):
         try:
             transport = get_svn_ra_transport(transport)
         except subvertpy.SubversionException as e:
-            msg, num = e.args
+            num = e.args[1]
             if num == subvertpy.ERR_RA_DAV_NOT_VCC:
                 raise NotBranchError(path=transport.base)
             if num in (subvertpy.ERR_RA_ILLEGAL_URL,

@@ -74,7 +74,7 @@ class TestWorkingTree(SubversionTestCase):
     def test_invalid_entries(self):
         self.make_svn_branch_and_tree('a', 'dc')
         entries_path = os.path.join(self.test_dir, 'dc/.svn/entries')
-        os.chmod(entries_path, 0755)
+        os.chmod(entries_path, 0o755)
         num = check_wc("dc")
         f = open(entries_path, "w+")
         try:
@@ -307,7 +307,6 @@ class TestWorkingTree(SubversionTestCase):
         wt = self.make_svn_branch_and_tree('a', 'dc')
         wt.set_root_id("somefileid")
         self.assertEquals("somefileid", wt.path2id(""))
-        self.assertEquals("somefileid", wt.get_root_id())
 
     def test_empty_basis_tree(self):
         wt = self.make_svn_branch_and_tree('a', 'dc', lossy=True)
@@ -315,7 +314,7 @@ class TestWorkingTree(SubversionTestCase):
                          wt.basis_tree().get_revision_id())
         root_id = wt.branch.repository.get_mapping().generate_file_id(
                 (wt.branch.repository.uuid, wt.branch.get_branch_path(), 1), u"")
-        self.assertEquals(wt.get_root_id(), root_id)
+        self.assertEquals(wt.path2id(''), root_id)
 
     def test_basis_tree(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')

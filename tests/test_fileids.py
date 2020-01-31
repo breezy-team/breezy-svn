@@ -201,7 +201,12 @@ class TestFileMapping(TestCase):
 
     def setUp(self):
         TestCase.setUp(self)
-        self.generate_file_id = lambda (uuid, bp, revnum), ip: "%d@%s:%s:%s" % (revnum, uuid, bp, ip)
+
+        def generate_file_id(foreign_revid, ip):
+            (uuid, bp, revnum) = foreign_revid
+            return "%d@%s:%s:%s" % (revnum, uuid, bp, ip)
+
+        self.generate_file_id = generate_file_id
 
     def apply_mappings(self, mappings, renames={}):
         map = {}
@@ -209,6 +214,7 @@ class TestFileMapping(TestCase):
         brns.sort()
         for r in brns:
             (revnum, branchpath) = r
+
             def new_file_id(x):
                 if renames.has_key(r) and renames[r].has_key(x):
                     return renames[r][x]

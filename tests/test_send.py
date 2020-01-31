@@ -18,7 +18,7 @@
 
 """bzr-svn send tests."""
 
-from cStringIO import StringIO
+from io import StringIO
 
 from breezy import tests
 

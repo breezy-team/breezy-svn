@@ -64,8 +64,8 @@ class Annotater(object):
         try:
             self._repository.svn_transport.get_file_revs(path, -1, revnum,
                 self._handler, include_merged_revisions=True)
-        except subvertpy.SubversionException, (msg, num):
-            if num == subvertpy.ERR_FS_NOT_FILE:
+        except subvertpy.SubversionException as e:
+            if e.args[1] == subvertpy.ERR_FS_NOT_FILE:
                 return []
             raise
         return self._annotated

@@ -20,7 +20,10 @@ import stat
 import subvertpy
 from subvertpy import ra
 from unittest import TestCase
-import urlparse
+try:
+    import urllib.parse as urlparse
+except ImportError:  # python < 3
+    import urlparse
 
 from breezy import urlutils
 from breezy.errors import (
@@ -38,6 +41,7 @@ from breezy.plugins.svn.transport import (
     _url_escape_uri,
     _url_unescape_uri,
     )
+
 
 class SvnRaTest(SubversionTestCase):
 

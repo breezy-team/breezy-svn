@@ -478,10 +478,9 @@ class TestFetchWorks(FetchTestCase):
         last_rev = oldrepos.generate_revision_id(3, u"branch2",
             oldrepos.get_mapping())
         self.fetch(oldrepos, repo, last_rev)
-        self.assertEquals(repo.revision_tree(last_rev).get_root_id(),
+        self.assertEquals(repo.revision_tree(last_rev).path2id(''),
             oldrepos.get_mapping().generate_file_id(
                 (oldrepos.uuid, "branch1", 1), u""))
-
 
     def test_fetch_replace(self):
         repos_url = self.make_svn_repository('d')
@@ -1620,7 +1619,7 @@ Node-copyfrom-path: x
 
         self.assertEqual(
             mapping.generate_file_id((repos.uuid, "trunk", 1), u""),
-            tree.get_root_id())
+            tree.path2id(''))
 
     def test_fetch_odd(self):
         repos_url = self.make_svn_repository('d')

@@ -52,8 +52,7 @@ class PathPropertyProvider(object):
         try:
             (_, _, props) = self.log._transport.get_dir(path, revnum)
         except SubversionException as e:
-            msg, num = e.args
-            if num == ERR_FS_NO_SUCH_REVISION:
+            if e.args[1] == ERR_FS_NO_SUCH_REVISION:
                 raise NoSuchRevision(self, revnum)
             raise
         return props

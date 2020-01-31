@@ -179,7 +179,10 @@ def create_auth_baton(url):
 
     :param url: URL to create auth baton for.
     """
-    import urlparse
+    try:
+        import urllib.parse as urlparse
+    except ImportError:  # python < 3
+        import urlparse
     (scheme, netloc, path, _, _) = urlparse.urlsplit(url)
     (creds, host) = urllib.splituser(netloc)
     (host, port) = urllib.splitport(host)

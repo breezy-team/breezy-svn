@@ -508,7 +508,7 @@ def guess_scheme_from_history(changed_paths, last_revnum,
                 scheme_cache[str(scheme)] = scheme
 
     entries = potentials.items()
-    entries.sort(lambda (a, b), (c, d): d - b)
+    entries.sort(key=lambda e: e[1])
 
     mutter('potential branching schemes: %r' % entries)
 

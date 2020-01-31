@@ -241,7 +241,8 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.scheme)
 
-    def generate_file_id(self, (uuid, branch, revnum), inv_path):
+    def generate_file_id(self, foreign_revid, inv_path):
+        (uuid, branch, revnum) = foreign_revid
         assert isinstance(uuid, str)
         assert isinstance(revnum, int)
         assert isinstance(branch, text_type)
@@ -322,7 +323,8 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
                 cls.revid_prefix, scheme, uuid,
                 mapping.escape_svn_path(path.strip(u"/")), revnum)
 
-    def revision_id_foreign_to_bzr(self, (uuid, path, revnum)):
+    def revision_id_foreign_to_bzr(self, foreign_revid):
+        (uuid, path, revnum) = foreign_revid
         assert isinstance(path, text_type)
         return self._generate_revision_id(uuid, revnum, path, self.scheme)
 

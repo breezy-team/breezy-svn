@@ -158,7 +158,7 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
     def has_or_had_id(self, file_id):
         return self.has_id(file_id)
 
-    def id2path(self, file_id):
+    def id2path(self, file_id, recurse='none'):
         try:
             return self.lookup_path(file_id)
         except KeyError:
@@ -179,9 +179,6 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
             return None
         else:
             return file_id
-
-    def get_root_id(self):
-        return self.path2id("")
 
     def _comparison_data(self, entry, path):
         # FIXME
@@ -327,7 +324,7 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
 
     # FIXME: This can only be a svn branch, so use that fact.
     reference_branch = Branch.open(url)
-    file_id = reference_branch.get_root_id()
+    file_id = reference_branch.path2id('')
     ie = TreeReference(file_id, name, parent.file_id, revision=revid)
     if ref_revnum is not None:
         ie.reference_revision = reference_branch.generate_revision_id(ref_revnum)
@@ -628,7 +625,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
         if self._bzr_inventory is not None:
             return self._bzr_inventory
         self._bzr_inventory = Inventory(root_id=None)
-        if self.get_root_id() is None:
+        if self.path2id('') is None:
             return self._bzr_inventory
         def add_file_to_inv(relpath, id, revid, adm):
             if not isinstance(relpath, text_type):

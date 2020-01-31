@@ -21,6 +21,7 @@ import subvertpy
 from subvertpy import (
     NODE_NONE,
     properties,
+    ERR_FS_NOT_DIRECTORY,
     )
 
 from breezy import (
@@ -68,8 +69,11 @@ def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
         mapping = revmeta.get_original_mapping() or branch.mapping
         try:
             revid = revmeta.get_revision_id(mapping)
-        except subvertpy.SubversionException, (_, ERR_FS_NOT_DIRECTORY,):
-            continue
+        except subvertpy.SubversionException as e:
+            if e.args[1] == ERR_FS_NOT_DIRECTORY:
+                continue
+            else:
+                raise
         for name in names:
             if not isinstance(name, text_type):
                 raise TypeError(name)

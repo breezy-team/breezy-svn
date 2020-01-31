@@ -107,12 +107,13 @@ class SvnRemoteFormat(ControlDirFormat):
         import subvertpy
         try:
             return SvnRemoteAccess(transport, self)
-        except subvertpy.SubversionException, (_, num):
-            if num in (subvertpy.ERR_RA_DAV_REQUEST_FAILED,
-                       subvertpy.ERR_RA_DAV_NOT_VCC,
-                       subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED):
+        except subvertpy.SubversionException as e:
+            if e.args[1] in (
+                    subvertpy.ERR_RA_DAV_REQUEST_FAILED,
+                    subvertpy.ERR_RA_DAV_NOT_VCC,
+                    subvertpy.ERR_RA_LOCAL_REPOS_OPEN_FAILED):
                 raise errors.NotBranchError(transport.base)
-            if num == subvertpy.ERR_XML_MALFORMED:
+            if e.args[1] == subvertpy.ERR_XML_MALFORMED:
                 # This *could* be an indication of an actual corrupt
                 # svn server, but usually it just means a broken
                 # xml page
@@ -165,26 +166,27 @@ class SvnRemoteFormat(ControlDirFormat):
         import os
         import subvertpy
         from subvertpy import repos
-        ERR_REPOS_BAD_ARGS = getattr(subvertpy, "ERR_REPOS_BAD_ARGS", 165002)
         # For subvertpy < 0.8.6
+        ERR_REPOS_BAD_ARGS = getattr(subvertpy, "ERR_REPOS_BAD_ARGS", 165002)
 
         if not isinstance(transport, LocalTransport):
             raise UninitializableOnRemoteTransports(self)
 
-        local_path = transport.local_abspath(".").rstrip("/").encode(osutils._fs_enc)
-        assert type(local_path) == str
+        local_path = transport.local_abspath(".").rstrip("/").encode(
+            osutils._fs_enc)
         try:
             repos.create(local_path)
-        except subvertpy.SubversionException, (_, num):
-            if num == subvertpy.ERR_DIR_NOT_EMPTY:
+        except subvertpy.SubversionException as e:
+            if e.args[1] == subvertpy.ERR_DIR_NOT_EMPTY:
                 raise errors.BzrError("Directory is not empty")
-            if num == ERR_REPOS_BAD_ARGS:
+            if e.args[1] == ERR_REPOS_BAD_ARGS:
                 raise errors.AlreadyControlDirError(local_path)
             raise
         # All revision property changes
-        revprop_hook = os.path.join(local_path, "hooks", "pre-revprop-change")
+        revprop_hook = os.path.join(
+            local_path, b"hooks", b"pre-revprop-change")
         open(revprop_hook, 'w').write("#!/bin/sh")
-        os.chmod(revprop_hook, os.stat(revprop_hook).st_mode | 0111)
+        os.chmod(revprop_hook, os.stat(revprop_hook).st_mode | 0o111)
         return self.open(transport, _found=True)
 
     def supports_transport(self, transport):
@@ -582,8 +584,8 @@ class SvnRemoteAccess(ControlDir):
                 with ce.open_root() as root:
                     try:
                         root.delete_entry(basename)
-                    except subvertpy.SubversionException, (_, num):
-                        if num == subvertpy.ERR_FS_TXN_OUT_OF_DATE:
+                    except subvertpy.SubversionException as e:
+                        if e.args[1] == subvertpy.ERR_FS_TXN_OUT_OF_DATE:
                             # Make sure the branch still exists
                             self.open_branch(branch_name)
                         raise

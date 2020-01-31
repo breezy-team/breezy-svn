@@ -77,7 +77,7 @@ class SubversionStore(_mod_bzr_config.LockableIniFileStore):
 
     def __init__(self, possible_transports=None):
         t = transport.get_transport_from_path(
-            _mod_bzr_config.config_dir(),
+            config_dir(),
             possible_transports=possible_transports)
         super(SubversionStore, self).__init__(t, 'subversion.conf')
         self.id = 'subversion'

@@ -608,12 +608,8 @@ class PushNewBranchTests(SubversionTestCase):
         oldrepos.copy_content_into(newrepos)
         newtree = newrepos.revision_tree(revid)
 
-        bzrwt.lock_read()
-        try:
-            self.assertEquals(bzrwt.get_root_id(),
-                              newtree.get_root_id())
-        finally:
-            bzrwt.unlock()
+        with bzrwt.lock_read():
+            self.assertEquals(bzrwt.path2id(''), newtree.path2id(''))
 
     def test_single_revision(self):
         repos_url = self.make_svn_repository("a")
@@ -621,11 +617,8 @@ class PushNewBranchTests(SubversionTestCase):
         bzrwt, revid = self._create_single_rev_bzrwt()
         newbranch = newdir.import_branch(bzrwt.branch)
         newtree = newbranch.repository.revision_tree(revid)
-        bzrwt.lock_read()
-        try:
-            self.assertEquals(bzrwt.get_root_id(), newtree.get_root_id())
-        finally:
-            bzrwt.unlock()
+        with bzrwt.lock_read():
+            self.assertEquals(bzrwt.path2id(''), newtree.path2id(''))
         self.assertEquals(revid, newbranch.last_revision())
 
     def test_single_revision_single_branch(self):
@@ -1044,7 +1037,7 @@ class PushNewBranchTests(SubversionTestCase):
             new_ie.file_id = "mynewroot"
             foo_ie.parent_id = new_ie.file_id
             bzrwt.apply_inventory_delta([
-                ("", None, bzrwt.get_root_id(), None),
+                ("", None, bzrwt.path2id(''), None),
                 (None, "", new_ie.file_id, new_ie),
                 ("foo", "foo", foo_ie.file_id, foo_ie)])
         finally:
@@ -1202,7 +1195,7 @@ class PushNewBranchTests(SubversionTestCase):
         wt.lock_write()
         try:
             wt.apply_inventory_delta([
-                ("", None, wt.get_root_id(), None),
+                ("", None, wt.path2id(''), None),
                 ("mysubdir", "", wt.path2id("mysubdir"),
                     InventoryDirectory(wt.path2id("mysubdir"), "",
                         None))])
