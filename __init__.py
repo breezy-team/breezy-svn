@@ -224,13 +224,14 @@ def dav_options(transport, url):
                     if code == 404:
                         raise NoSuchFile(transport._path)
                     if code in (403, 405):
-                        raise InvalidHttpResponse(transport.base,
-                            "OPTIONS not supported or forbidden for remote URL")
+                        raise InvalidHttpResponse(
+                            transport.base,
+                            "OPTIONS not supported/forbidden for remote URL")
                     if code == 200:
                         headers = transport._parse_headers(header)
                         return headers.getheaders('DAV')
-                    raise InvalidHttpResponse(transport.base,
-                            "Invalid HTTP response: %d" % code)
+                    raise InvalidHttpResponse(
+                        transport.base, "Invalid HTTP response: %d" % code)
                 finally:
                     conn.unsetopt(pycurl.CUSTOMREQUEST)
     raise NotImplementedError
@@ -239,6 +240,12 @@ def dav_options(transport, url):
 class SvnRemoteProber(SvnProber):
 
     _supported_schemes = ["http", "https", "file", "svn"]
+
+    @classmethod
+    def priority(klas, transport):
+        if 'svn' in transport.base:
+            return -15
+        return -11
 
     def probe_transport(self, transport):
 
@@ -346,7 +353,7 @@ register_lazy_transport('svn+', __name__ + '.transport',
 # this causes some Subversion servers to reply with 401 Authentication required
 # even though they are accessible without authentication.
 ControlDirFormat.register_prober(SvnWorkingTreeProber)
-ControlDirFormat._server_probers.insert(0, SvnRemoteProber)
+ControlDirFormat.register_prober(SvnRemoteProber)
 
 network_format_registry.register_lazy("svn-wc",
     __name__ + '.workingtree', 'SvnWorkingTreeDirFormat')
