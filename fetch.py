@@ -111,7 +111,7 @@ def tree_parent_id_basename_to_file_id(tree, parent_id, basename):
     if parent_id_basename_index is None:
         return inv[parent_id].children[basename].file_id
     else:
-        ret = parent_id_basename_index.iteritems(
+        ret = parent_id_basename_index.items(
             [(parent_id or '', basename.encode("utf-8"))])
         try:
             return ret.next()[1]
@@ -1679,9 +1679,7 @@ class InterFromSvnToInventoryRepository(InterRepository):
                 del activeranges[p,mapping]
                 activeranges[revmeta,mapping] = range
 
-        def cmprange((ak, av),(bk, bv)):
-            return cmp(av[0], bv[0])
-        ranges = sorted(activeranges.iteritems(), cmp=cmprange)
+        ranges = sorted(activeranges.items(), key=lambda e: e[1][0])
 
         self.target.start_write_group()
         try:

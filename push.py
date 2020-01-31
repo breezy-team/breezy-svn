@@ -721,7 +721,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
     else:
         revmeta, mapping = repository._get_revmeta(revid)
         old_fileprops = revmeta.get_fileprops()
-        fileprops = dict(old_fileprops.iteritems())
+        fileprops = dict(old_fileprops.items())
         from_url = url_join_unescaped_path(repository.base,
             revmeta.metarev.branch_path)
         from_revnum = revmeta.metarev.revnum
@@ -771,7 +771,7 @@ def create_branch_with_hidden_commit(repository, branch_path, revid,
                     raise
             branch_dir = root.add_directory(
                 urlutils.basename(branch_path), from_url, from_revnum)
-            for k, (ov, nv) in properties.diff(fileprops, old_fileprops).iteritems():
+            for k, (ov, nv) in properties.diff(fileprops, old_fileprops).items():
                 branch_dir.change_prop(k, nv)
             branch_dir.close()
             root.close()

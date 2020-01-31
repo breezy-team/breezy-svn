@@ -368,7 +368,7 @@ class SqliteLogCache(LogCache, CacheTable):
         if orig_paths is None or orig_paths == {}:
             return
         new_paths = []
-        for p, v in orig_paths.iteritems():
+        for p, v in orig_paths.items():
             copyfrom_path = v[1]
             if copyfrom_path is not None:
                 copyfrom_path = copyfrom_path.strip("/").decode("utf-8")
@@ -403,7 +403,7 @@ class SqliteLogCache(LogCache, CacheTable):
 
         if revprops is None:
             return
-        self.executemany("replace into revprop (rev, name, value) values (?, ?, ?)", [(revision, name.decode("utf-8", "replace"), value.decode("utf-8", "replace")) for (name, value) in revprops.iteritems()])
+        self.executemany("replace into revprop (rev, name, value) values (?, ?, ?)", [(revision, name.decode("utf-8", "replace"), value.decode("utf-8", "replace")) for (name, value) in revprops.items()])
         self.execute("""
             replace into revinfo (rev, all_revprops) values (?, ?)
         """, (revision, all_revprops))

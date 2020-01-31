@@ -108,7 +108,7 @@ def idmap_reverse_lookup(idmap, mapping, fileid):
     else:
         uuid = None
     # Unfortunately, the map is the other way around
-    for k in sorted(idmap.iterkeys()):
+    for k in sorted(idmap.keys()):
         (v, ck, child_create_foreign_revid) = idmap[k]
         if v == fileid:
             return k
@@ -134,7 +134,7 @@ def determine_text_revisions(changes, default_revid, specific_revids):
     """
     ret = {}
     ret.update(specific_revids)
-    for p, (action, copy_from) in changes.iteritems():
+    for p, (action, copy_from) in changes.items():
         if not isinstance(p, text_type):
             raise TypeError(p)
         # The root changes often because of file properties, so we don't
@@ -224,7 +224,7 @@ class DictFileIdMap(FileIdMap):
         :param changes: Changes for the revision in question.
         """
         assert "" in self.data or self.data == {}, "'' missing in %r" % self.data
-        for p, (action, copy_from) in changes.iteritems():
+        for p, (action, copy_from) in changes.items():
             if action in ('D', 'R'):
                 for xp in self.data.keys():
                     if ((p == xp or xp.startswith(u"%s/" % p)) and
@@ -260,7 +260,7 @@ class DictFileIdMap(FileIdMap):
                 (foreign_revid, self.data))
 
     def has_fileid(self, fileid):
-        for fid, _ in self.data.itervalues():
+        for fid, _ in self.data.values():
             if fid == fileid:
                 return True
         return False

@@ -677,7 +677,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def id2path(self, file_id):
         ids = self._get_new_file_ids()
-        for path, fid in ids.iteritems():
+        for path, fid in ids.items():
             if file_id == fid:
                 return path
         try:
@@ -731,7 +731,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def iter_child_entries(self, path, file_id=None):
         """See Tree.iter_child_entries."""
         entry = self.iter_entries_by_dir(specific_files=[path]).next()[1]
-        return getattr(entry, 'children', {}).itervalues()
+        return getattr(entry, 'children', {}).values()
 
     def iter_entries_by_dir(self, specific_files=None):
         """See WorkingTree.iter_entries_by_dir."""
@@ -1111,7 +1111,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         return self.get_file_properties("")
 
     def _set_branch_props(self, wc, fileprops):
-        for k, v in fileprops.iteritems():
+        for k, v in fileprops.items():
             wc.prop_set(k, v, self.basedir.encode("utf-8"))
 
     def _get_base_branch_props(self):
@@ -1296,15 +1296,14 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         mode = stat_result.st_mode
         return bool(stat.S_ISREG(mode) and stat.S_IEXEC & mode)
 
-    if not osutils.supports_executable():
-        def is_executable(self, path, file_id=None):
+    def is_executable(self, path, file_id=None):
+        if not osutils.supports_executable(self.abspath(path)):
             basis_tree = self.basis_tree()
             if file_id in basis_tree:
                 return basis_tree.is_executable(path, file_id)
             # Default to not executable
             return False
-    else:
-        def is_executable(self, path, file_id=None):
+        else:
             mode = os.lstat(self.abspath(path)).st_mode
             return bool(stat.S_ISREG(mode) and stat.S_IEXEC & mode)
 
@@ -1365,7 +1364,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def set_merge_modified(self, modified_hashes):
         def iter_stanzas():
-            for file_id, hash in modified_hashes.iteritems():
+            for file_id, hash in modified_hashes.items():
                 yield _mod_rio.Stanza(file_id=file_id.decode('utf8'),
                     hash=hash)
         with self.lock_tree_write():
@@ -1427,7 +1426,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         root_adm = self._get_wc(self.abspath("."), write_lock=True, depth=-1)
         adms_to_close.add(root_adm)
         try:
-            for repos_path, changes in revmeta.metarev.paths.iteritems():
+            for repos_path, changes in revmeta.metarev.paths.items():
                 if changes[0] == 'D':
                     continue
                 assert changes[0] in ('A', 'M', 'R')

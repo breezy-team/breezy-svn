@@ -190,7 +190,7 @@ class TdbLogCache(LogCache, CacheTable):
             db = bencode.bdecode(self.db[b"paths/%d" % revnum])
         except KeyError:
             raise KeyError("missing revision paths for %d" % revnum)
-        for key, v in db.iteritems():
+        for key, v in db.items():
             try:
                 (action, cp, cr, kind) = v
             except ValueError:

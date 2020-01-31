@@ -387,7 +387,7 @@ class RepositoryConverter(object):
             path = path[len(prefix):].strip("/")
         if path is None:
             path = ""
-        if self.dirs.has_key(path):
+        if path in self.dirs:
             return self.dirs[path]
         nt = self.to_transport.clone(path)
         try:

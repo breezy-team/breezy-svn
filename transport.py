@@ -33,7 +33,10 @@ from subvertpy.subr import (
     )
 import sys
 import urllib
-import urlparse
+try:
+    import urllib.parse as urlparse
+except ImportError:  # Python < 3.7
+    import urlparse
 
 import breezy
 from breezy import (

@@ -154,7 +154,7 @@ class RevidMap(object):
         # added revid
         for revmeta in self.repos._revmeta_provider.iter_reverse_branch_changes(
                 branch_path, max_revnum, min_revnum):
-            for propname, (oldpropvalue, propvalue) in revmeta.get_changed_fileprops().iteritems():
+            for propname, (oldpropvalue, propvalue) in revmeta.get_changed_fileprops().items():
                 if not propname.startswith(SVN_PROP_BZR_REVISION_ID):
                     continue
                 try:

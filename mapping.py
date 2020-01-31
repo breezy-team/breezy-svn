@@ -229,7 +229,7 @@ def parse_svn_revprops(svn_revprops, rev):
     if not isinstance(rev.message, text_type):
         raise TypeError(rev.message)
 
-    assert svn_revprops.has_key(properties.PROP_REVISION_DATE)
+    assert properties.PROP_REVISION_DATE in svn_revprops
     (rev.timestamp, rev.timezone) = parse_svn_dateprop(
             svn_revprops[properties.PROP_REVISION_DATE])
     rev.properties = {}
@@ -303,7 +303,7 @@ def generate_revision_metadata(timestamp, timezone, committer, revprops):
         text += "committer: %s\n" % committer.encode("utf-8")
     if revprops is not None and revprops != {}:
         text += "properties: \n"
-        for k, v in sorted(revprops.iteritems()):
+        for k, v in sorted(revprops.items()):
             if "\n" in k:
                 raise AssertionError("Invalid property name: %s" % k)
             for vline in v.encode("utf-8").split("\n"):
@@ -319,22 +319,22 @@ def parse_bzr_svn_revprops(props, rev):
     :param rev: Revision object
     """
     changed = False
-    if props.has_key(SVN_REVPROP_BZR_TIMESTAMP):
+    if SVN_REVPROP_BZR_TIMESTAMP in props:
         (rev.timestamp, rev.timezone) = unpack_highres_date(
             props[SVN_REVPROP_BZR_TIMESTAMP])
         changed = True
 
-    if props.has_key(SVN_REVPROP_BZR_COMMITTER):
+    if SVN_REVPROP_BZR_COMMITTER in props:
         rev.committer = props[SVN_REVPROP_BZR_COMMITTER].decode("utf-8")
         changed = True
 
-    if props.has_key(SVN_REVPROP_BZR_LOG):
+    if SVN_REVPROP_BZR_LOG in props:
         rev.message = props[SVN_REVPROP_BZR_LOG].decode("utf-8")
         if not isinstance(rev.message, text_type):
             raise TypeError(rev.message)
         changed = True
 
-    for name, value in props.iteritems():
+    for name, value in props.items():
         if name.startswith(SVN_REVPROP_BZR_REVPROP_PREFIX):
             bzrname = name[len(SVN_REVPROP_BZR_REVPROP_PREFIX):].encode('utf-8')
             rev.properties[bzrname] = value.decode("utf-8")
@@ -882,7 +882,7 @@ class BzrSvnMappingRevProps(object):
         return parse_bzr_svn_revprops(svn_revprops, rev)
 
     def import_fileid_map_revprops(self, svn_revprops):
-        if not svn_revprops.has_key(SVN_REVPROP_BZR_FILEIDS):
+        if SVN_REVPROP_BZR_FILEIDS not in svn_revprops:
             return {}
         return parse_fileid_property(svn_revprops[SVN_REVPROP_BZR_FILEIDS])
 
@@ -944,7 +944,7 @@ class BzrSvnMappingRevProps(object):
             svn_revprops[SVN_REVPROP_BZR_COMMITTER] = committer.encode("utf-8")
 
         if revprops is not None:
-            for name, value in revprops.iteritems():
+            for name, value in revprops.items():
                 svn_name = SVN_REVPROP_BZR_REVPROP_PREFIX+name
                 svn_revprops[svn_name] = value.encode("utf-8")
 
@@ -1043,7 +1043,7 @@ def find_mapping_revprops(revprops):
 
 def find_mappings_fileprops(changed_fileprops):
     ret = []
-    for k, v in changed_fileprops.iteritems():
+    for k, v in changed_fileprops.items():
         if k.startswith(SVN_PROP_BZR_REVISION_ID):
             try:
                 # perhaps check if content change was valid?
@@ -1092,7 +1092,7 @@ def estimate_bzr_ancestors(fileprops):
     """Estimate the number of bzr ancestors of a revision from file properties.
     """
     found = []
-    for k, v in fileprops.iteritems():
+    for k, v in fileprops.items():
         if k.startswith(SVN_PROP_BZR_REVISION_ID):
             found.append(len(v.splitlines()))
     if found != []:
@@ -1104,7 +1104,7 @@ def estimate_bzr_ancestors(fileprops):
 
 
 def get_roundtrip_ancestor_revids(fileprops):
-    for propname, propvalue in fileprops.iteritems():
+    for propname, propvalue in fileprops.items():
         if not propname.startswith(SVN_PROP_BZR_REVISION_ID):
             continue
         mapping_name = propname[len(SVN_PROP_BZR_REVISION_ID):]

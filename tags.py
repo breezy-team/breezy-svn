@@ -53,7 +53,7 @@ GhostTagsNotSupported = getattr(bzr_errors, "GhostTagsNotSupported", None)
 
 def reverse_dict(orig):
     ret = {}
-    for k, v in orig.iteritems():
+    for k, v in orig.items():
         ret.setdefault(v, []).append(k)
     return ret
 
@@ -64,7 +64,7 @@ def _resolve_reverse_tags_fallback(branch, reverse_tag_revmetas):
     """
     # For anything that's not in the branches' ancestry, just use
     # the latest mapping
-    for (revmeta, names) in reverse_tag_revmetas.iteritems():
+    for (revmeta, names) in reverse_tag_revmetas.items():
         mapping = revmeta.get_original_mapping() or branch.mapping
         try:
             revid = revmeta.get_revision_id(mapping)
@@ -122,7 +122,7 @@ class ReverseTagDict(object):
         self.project = project
         self._by_foreign_revid = {}
         self._tags = tags
-        for name, revmeta in tags.iteritems():
+        for name, revmeta in tags.items():
             self._by_foreign_revid.setdefault(revmeta.metarev.get_foreign_revid(), []).append(name)
 
     def _lookup_revid(self, revid):
@@ -146,21 +146,15 @@ class ReverseTagDict(object):
     def items(self):
         d = resolve_tags_svn_ancestry(self.branch, self._tags)
         rev = {}
-        for key, (revmeta, mapping, revid) in d.iteritems():
+        for key, (revmeta, mapping, revid) in d.items():
             rev.setdefault(revid, []).append(key)
         return rev.items()
 
-    def iteritems(self):
-        return iter(self.items())
-
     def __iter__(self):
-        return self.iterkeys()
-
-    def iterkeys(self):
-        return (k for (k, v) in self.iteritems())
+        return self.keys()
 
     def keys(self):
-        return list(self.iterkeys())
+        return (k for (k, v) in self.items())
 
 
 class SubversionTags(BasicTags):
@@ -314,7 +308,7 @@ class SubversionTags(BasicTags):
     def get_tag_dict(self):
         tag_revmetas = self._get_tag_dict_revmeta()
         d = resolve_tags_svn_ancestry(self.branch, tag_revmetas)
-        return dict([(k, v[2]) for (k, v) in d.iteritems()])
+        return dict([(k, v[2]) for (k, v) in d.items()])
 
     def get_reverse_tag_dict(self):
         """Returns a dict with revisions as keys
@@ -350,7 +344,7 @@ class SubversionTags(BasicTags):
 
     def _set_tag_dict(self, dest_dict):
         cur_dict = self.get_tag_dict()
-        for k, v in dest_dict.iteritems():
+        for k, v in dest_dict.items():
             if cur_dict.get(k) != v:
                 try:
                     self.set_tag(k, v)

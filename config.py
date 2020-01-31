@@ -31,10 +31,12 @@ from breezy import (
     trace,
     transport,
     )
-from breezy.config import (
-    ConfigObj,
+from breezy.bedding import (
     config_dir,
     ensure_config_dir_exists,
+    )
+from breezy.config import (
+    ConfigObj,
     GlobalConfig,
     LocationConfig,
     Config,

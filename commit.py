@@ -186,7 +186,7 @@ def set_svn_revprops(repository, revnum, revprops):
     :param revnum: Revision number of revision to change metadata of.
     :param revprops: Dictionary with revision properties to set.
     """
-    for (name, value) in revprops.iteritems():
+    for (name, value) in revprops.items():
         try:
             repository.svn_transport.change_rev_prop(revnum, name, value)
         except SubversionException as e:
@@ -518,7 +518,7 @@ class SvnCommitBuilder(CommitBuilder):
 
         self._svn_revprops = {}
         self._svnprops = lazy_dict({}, dict,
-            self._base_branch_props.iteritems())
+            self._base_branch_props.items())
         if push_metadata:
             (self.set_custom_revprops,
                 self.set_custom_fileprops) = self.repository._properties_to_set(
@@ -577,7 +577,7 @@ class SvnCommitBuilder(CommitBuilder):
 
     def _check_properties(self):
         """Verify that all revision properties are OK."""
-        for name, value in self._revprops.iteritems():
+        for name, value in self._revprops.items():
             if (not isinstance(name, basestring) or
                 osutils.contains_whitespace(name)):
                 raise ValueError("invalid property name %r" % name)
@@ -852,7 +852,7 @@ class SvnCommitBuilder(CommitBuilder):
 
                     # Set all the revprops
                     if self.push_metadata and self._svnprops.is_loaded:
-                        for prop, newvalue in self._svnprops.iteritems():
+                        for prop, newvalue in self._svnprops.items():
                             oldvalue = self._base_branch_props.get(prop)
                             if oldvalue == newvalue:
                                 continue
@@ -864,7 +864,7 @@ class SvnCommitBuilder(CommitBuilder):
                         branch_editors[-1].change_prop(DUMMY_ROOT_PROPERTY_NAME,
                             None)
 
-                    for prop, (oldvalue, newvalue) in self._changed_fileprops.iteritems():
+                    for prop, (oldvalue, newvalue) in self._changed_fileprops.items():
                             if not properties.is_valid_property_name(prop):
                                 trace.warning(
                                     "Setting property %r with invalid characters "

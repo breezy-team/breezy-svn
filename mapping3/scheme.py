@@ -502,7 +502,7 @@ def guess_scheme_from_history(changed_paths, last_revnum,
                 continue
             for path in find_commit_paths([revpaths]):
                 scheme = guess_scheme_from_path(path)
-                if not potentials.has_key(str(scheme)):
+                if str(scheme) not in potentials:
                     potentials[str(scheme)] = 0
                 potentials[str(scheme)] += 1
                 scheme_cache[str(scheme)] = scheme

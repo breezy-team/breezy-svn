@@ -69,12 +69,6 @@ class lazy_dict(object):
         self._ensure_init()
         return self.dict.get(key, default)
 
-    def has_key(self, key):
-        if self.initial.has_key(key):
-            return True
-        self._ensure_init()
-        return self.dict.has_key(key)
-
     def keys(self):
         self._ensure_init()
         return self.dict.keys()
@@ -86,10 +80,6 @@ class lazy_dict(object):
     def items(self):
         self._ensure_init()
         return self.dict.items()
-
-    def iteritems(self):
-        self._ensure_init()
-        return self.dict.iteritems()
 
     def __iter__(self):
         self._ensure_init()

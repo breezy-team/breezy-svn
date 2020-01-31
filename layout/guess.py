@@ -110,7 +110,7 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
                 continue
             for path in find_commit_paths([revpaths]):
                 layout = guess_layout_from_path(path)
-                if not potentials.has_key(str(layout)):
+                if str(layout) in potentials:
                     potentials[str(layout)] = 0
                 potentials[str(layout)] += 1
                 layout_cache[str(layout)] = layout

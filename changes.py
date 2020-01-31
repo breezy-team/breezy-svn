@@ -54,10 +54,9 @@ def find_prev_location(paths, branch_path, revnum):
 
     # Make sure we get the right location for next time, if
     # the branch itself was copied
-    if (paths.has_key(branch_path) and
-        paths[branch_path][0] in ('R', 'A')):
+    if branch_path in paths and paths[branch_path][0] in ('R', 'A'):
         if paths[branch_path][1] is None:
-            return None # Was added here
+            return None  # Was added here
         revnum = paths[branch_path][2]
         assert isinstance(paths[branch_path][1], text_type)
         branch_path = paths[branch_path][1]

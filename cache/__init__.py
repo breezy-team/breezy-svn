@@ -26,7 +26,7 @@ from breezy import (
     trace,
     transport as _mod_transport,
     )
-from breezy.config import (
+from breezy.bedding import (
     config_dir,
     ensure_config_dir_exists,
     )

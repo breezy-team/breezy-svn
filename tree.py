@@ -290,7 +290,7 @@ class SvnRulesSearcher(object):
             return None
 
     def get_items(self, path):
-        for k, v in self.tree.get_file_properties(path).iteritems():
+        for k, v in self.tree.get_file_properties(path).items():
             prop = self._map_property(k, v)
             if prop is not None:
                 yield prop
@@ -678,7 +678,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
             if relpath == u"":
                 self._bzr_inventory.revision_id = revid
 
-            for name, entry in entries.iteritems():
+            for name, entry in entries.items():
                 if name == "":
                     continue
 

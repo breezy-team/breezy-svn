@@ -318,7 +318,7 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
                 parent_fileid_map = self.repository.get_fileid_map(
                     parent_revmeta, parent_mapping)
                 parent_fileid_maps.append(parent_fileid_map)
-        for path, text_revision in text_revisions.iteritems():
+        for path, text_revision in text_revisions.items():
             # Every text revision either has to match the actual revision's
             # revision id (if it was last changed there) or the text revisions
             # in one of the parents.
@@ -888,7 +888,7 @@ class SvnRepository(ForeignRepository):
                     this_parent_map[revid] = parents
             parent_map.update(this_parent_map)
             pending = set()
-            map(pending.update, this_parent_map.itervalues())
+            map(pending.update, this_parent_map.values())
             pending = pending.difference(parent_map)
         kg = graph.KnownGraph(parent_map)
         return kg
@@ -932,7 +932,7 @@ class SvnRepository(ForeignRepository):
         for (file_id, revision_id, identifier) in desired_files:
             per_revision.setdefault(revision_id, []).append(
                 (file_id, identifier))
-        for revid, files in per_revision.iteritems():
+        for revid, files in per_revision.items():
             try:
                 tree = self.revision_tree(revid)
             except bzr_errors.NoSuchRevision:
@@ -1361,7 +1361,7 @@ def find_branches_between(logwalker, transport, layout, from_revnum, to_revnum,
                                     continue
                                 raise
 
-    for p, i in created_branches.iteritems():
+    for p, i in created_branches.items():
         ret.append((p, i, True))
 
     return ret
@@ -1399,7 +1399,7 @@ def find_tags_between(revmeta_provider, project, layout, mapping, from_revnum,
                         del tags[t]
 
     ret = {}
-    for path, (lastrevnum, revmeta) in tags.iteritems():
+    for path, (lastrevnum, revmeta) in tags.items():
         name = layout.get_tag_name(path, project)
         # Layout wasn't able to determine tag name from path
         if name is None:

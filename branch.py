@@ -808,7 +808,7 @@ class InterFromSvnBranch(GenericInterBranch):
         if fetch_tags and self.source.supports_tags():
             tag_revmetas = self.source.tags._get_tag_dict_revmeta()
             d = resolve_tags_svn_ancestry(self.source, tag_revmetas)
-            for name, (revmeta, mapping, revid) in d.iteritems():
+            for name, (revmeta, mapping, revid) in d.items():
                 todo.append((revmeta, mapping))
         self._fetch_revmetas(todo, find_ghosts=find_ghosts, limit=limit,
                 exclude_non_mainline=exclude_non_mainline)
@@ -1058,7 +1058,7 @@ class InterToSvnBranch(InterBranch):
         new_last_revid = self.target.last_revision()
         return (old_last_revid,
                 new_last_revid,
-                dict([(k, v[0]) for (k, v) in revid_map.iteritems()]))
+                dict([(k, v[0]) for (k, v) in revid_map.items()]))
 
     def fetch(self, stop_revision=None, fetch_tags=None, find_ghosts=False,
             limit=None, exclude_non_mainline=None):

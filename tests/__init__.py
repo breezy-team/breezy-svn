@@ -199,7 +199,7 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         self.assertIsInstance(got, dict)
         if len(expected) != len(got):
             self.assertEquals(expected, got, msg)
-        for p, v1 in expected.iteritems():
+        for p, v1 in expected.items():
             try:
                 v2 = got[p]
             except KeyError:

@@ -121,29 +121,28 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps,
         return None
 
     def import_revision_revprops(self, svn_revprops, rev):
-        if svn_revprops.has_key(mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES):
+        if mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES in svn_revprops:
             features = mapping.parse_required_features_property(
                 svn_revprops[mapping.SVN_REVPROP_BZR_REQUIRED_FEATURES])
             assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
-        return mapping.BzrSvnMappingRevProps.import_revision_revprops(self,
-            svn_revprops, rev)
+        return mapping.BzrSvnMappingRevProps.import_revision_revprops(self, svn_revprops, rev)
 
     def import_revision_fileprops(self, fileprops, rev):
-        if fileprops.has_key(mapping.SVN_PROP_BZR_REQUIRED_FEATURES):
+        if mapping.SVN_PROP_BZR_REQUIRED_FEATURES in fileprops:
             features = mapping.parse_required_features_property(
                 fileprops[mapping.SVN_PROP_BZR_REQUIRED_FEATURES])
             assert features.issubset(supported_features), "missing feature: %r" % features.difference(supported_features)
-        return mapping.BzrSvnMappingFileProps.import_revision_fileprops(self,
-            fileprops, rev)
+        return mapping.BzrSvnMappingFileProps.import_revision_fileprops(
+            self, fileprops, rev)
 
     def get_mandated_layout(self, repository):
         return None
 
     def is_bzr_revision_hidden_revprops(self, revprops):
-        return revprops.has_key(mapping.SVN_REVPROP_BZR_HIDDEN)
+        return mapping.SVN_REVPROP_BZR_HIDDEN in revprops
 
     def is_bzr_revision_hidden_fileprops(self, changed_fileprops):
-        return changed_fileprops.has_key(mapping.SVN_PROP_BZR_HIDDEN)
+        return mapping.SVN_PROP_BZR_HIDDEN in changed_fileprops
 
     def get_hidden_lhs_ancestors_count(self, fileprops):
         return int(fileprops.get(mapping.SVN_PROP_BZR_HIDDEN, "0"))

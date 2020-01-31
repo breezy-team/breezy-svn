@@ -400,7 +400,7 @@ def strip_slashes(changed_paths):
         return {}
     assert type(changed_paths) is dict
     revpaths = {}
-    for k, v in changed_paths.iteritems():
+    for k, v in changed_paths.items():
         try:
             kind = v[3]
         except IndexError:

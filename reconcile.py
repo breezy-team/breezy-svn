@@ -81,7 +81,7 @@ class RepoReconciler(breezy.reconcile.RepoReconciler):
                 new_revprops = export_as_mapping(revmeta, graph, old_mapping,
                         old_mapping)
                 changed_revprops = dict(((k,v) for k,v in
-                    new_revprops.iteritems() if k not in revprops or
+                    new_revprops.items() if k not in revprops or
                     revprops[k] != v))
                 set_svn_revprops(self.repo, revnum, changed_revprops)
                 if changed_revprops != {}:
@@ -99,7 +99,7 @@ def export_as_mapping(revmeta, graph, old_mapping, new_mapping):
     :return: Dictionary with revision properties
     """
     assert new_mapping.can_use_revprops
-    new_revprops = dict(revmeta.revprops.iteritems())
+    new_revprops = dict(revmeta.revprops.items())
     rev = revmeta.get_revision(old_mapping)
     revno = graph.find_distance_to_null(rev.revision_id, [])
     new_mapping.export_revision_revprops(new_revprops, revmeta.uuid,

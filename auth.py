@@ -95,8 +95,8 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
         mutter("Verifying SSL server: %s", realm)
         credentials = self.get_credentials(self.scheme, host=self.host)
         if (credentials is not None and
-            credentials.has_key("verify_certificates") and
-            credentials["verify_certificates"] == False):
+            "verify_certificates" in credentials and
+            credentials["verify_certificates"] is False):
             accepted_failures = (
                     subvertpy.SSL_NOTYETVALID +
                     subvertpy.SSL_EXPIRED +
