@@ -200,40 +200,6 @@ def dav_options(transport, url):
             raise InvalidHttpResponse(transport.base,
                 "OPTIONS not supported or forbidden for remote URL")
         return resp.headers.getheaders('DAV')
-    else:
-        try:
-            from breezy.transport.http._pycurl import PyCurlTransport
-        except DependencyNotPresent:
-            pass
-        else:
-            import pycurl
-            from cStringIO import StringIO
-            if isinstance(transport, PyCurlTransport):
-                conn = transport._get_curl()
-                try:
-                    conn.setopt(pycurl.URL, url)
-                    conn.setopt(pycurl.FOLLOWLOCATION, 0)
-                    transport._set_curl_options(conn)
-                    conn.setopt(pycurl.CUSTOMREQUEST, 'OPTIONS')
-                    header = StringIO()
-                    data = StringIO()
-                    conn.setopt(pycurl.HEADERFUNCTION, header.write)
-                    conn.setopt(pycurl.WRITEFUNCTION, data.write)
-                    transport._curl_perform(conn, header)
-                    code = conn.getinfo(pycurl.HTTP_CODE)
-                    if code == 404:
-                        raise NoSuchFile(transport._path)
-                    if code in (403, 405):
-                        raise InvalidHttpResponse(
-                            transport.base,
-                            "OPTIONS not supported/forbidden for remote URL")
-                    if code == 200:
-                        headers = transport._parse_headers(header)
-                        return headers.getheaders('DAV')
-                    raise InvalidHttpResponse(
-                        transport.base, "Invalid HTTP response: %d" % code)
-                finally:
-                    conn.unsetopt(pycurl.CUSTOMREQUEST)
     raise NotImplementedError
 
 
@@ -278,7 +244,7 @@ class SvnRemoteProber(SvnProber):
 
         scheme = url.split(":")[0]
         if (not scheme.startswith("svn+") and
-            not scheme in self._supported_schemes):
+                not scheme in self._supported_schemes):
             raise NotBranchError(path=transport.base)
 
         # If this is a HTTP transport, use the existing connection to check
