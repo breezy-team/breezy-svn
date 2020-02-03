@@ -155,22 +155,11 @@ class SubversionTree(object):
 
 class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
 
-    def has_or_had_id(self, file_id):
-        return self.has_id(file_id)
-
     def id2path(self, file_id, recurse='none'):
         try:
             return self.lookup_path(file_id)
         except KeyError:
             raise errors.NoSuchId(self, file_id)
-
-    def has_id(self, file_id):
-        try:
-            self.id2path(file_id)
-        except errors.NoSuchId:
-            return False
-        else:
-            return True
 
     def path2id(self, path):
         try:
@@ -197,15 +186,15 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
 
     def is_executable(self, path):
         props = self.get_file_properties(path)
-        if props.has_key(properties.PROP_SPECIAL):
+        if properties.PROP_SPECIAL in props:
             text = self.get_file_stream_by_path(path)
             if text.read(5) == "link ":
                 return False
-        return props.has_key(properties.PROP_EXECUTABLE)
+        return properties.PROP_EXECUTABLE in props
 
     def get_symlink_target(self, path):
         props = self.get_file_properties(path)
-        if not props.has_key(properties.PROP_SPECIAL):
+        if properties.PROP_SPECIAL not in props:
             return None
         text = self.get_file_stream_by_path(path).read()
         if not text.startswith("link "):
@@ -313,7 +302,7 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     parent = inv.get_entry(parent_id)
     if dir != "":
         for part in dir.split("/"):
-            if parent.children.has_key(part):
+            if part in parent.children:
                 parent = parent.children[part]
             else:
                 # Implicitly add directory if it doesn't exist yet
@@ -324,7 +313,7 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
 
     # FIXME: This can only be a svn branch, so use that fact.
     reference_branch = Branch.open(url)
-    file_id = reference_branch.path2id('')
+    file_id = reference_branch.basis_tree().path2id('')
     ie = TreeReference(file_id, name, parent.file_id, revision=revid)
     if ref_revnum is not None:
         ie.reference_revision = reference_branch.generate_revision_id(ref_revnum)
@@ -401,7 +390,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
                 return "directory"
             raise
         stream.seek(0)
-        if props.has_key(properties.PROP_SPECIAL) and stream.read(5) == "link ":
+        if properties.PROP_SPECIAL in props and stream.read(5) == "link ":
             return "symlink"
         return "file"
 
@@ -632,7 +621,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
                 raise TypeError(relpath)
             (propchanges, props) = adm.get_prop_diffs(
                 self.workingtree.abspath(relpath).encode("utf-8"))
-            if props.has_key(properties.PROP_SPECIAL):
+            if properties.PROP_SPECIAL in props:
                 is_symlink = (self.get_file_stream_by_path(relpath).read(5) == "link ")
             else:
                 is_symlink = False
@@ -645,7 +634,7 @@ class SvnBasisTree(SvnRevisionTreeCommon):
                 data = osutils.fingerprint_file(self.get_file_stream_by_path(relpath))
                 ie.text_sha1 = data['sha1']
                 ie.text_size = data['size']
-                ie.executable = props.has_key(properties.PROP_EXECUTABLE)
+                ie.executable = properties.PROP_EXECUTABLE in props
             ie.revision = revid
             return ie
 

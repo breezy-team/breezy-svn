@@ -17,11 +17,10 @@
 
 from __future__ import absolute_import
 
+from io import BytesIO
+
 import subvertpy
 
-from cStringIO import (
-    StringIO,
-    )
 from subvertpy.delta import (
     apply_txdelta_window,
     )
@@ -32,11 +31,8 @@ from breezy import (
 from breezy.annotate import (
     reannotate,
     )
-from breezy.errors import (
-    NoSuchId,
-    )
 
-from breezy.plugins.svn import (
+from . import (
     changes,
     )
 
@@ -62,8 +58,8 @@ class Annotater(object):
         self._text = ""
         path = urlutils.join(branch_path, relpath.encode("utf-8")).strip("/")
         try:
-            self._repository.svn_transport.get_file_revs(path, -1, revnum,
-                self._handler, include_merged_revisions=True)
+            self._repository.svn_transport.get_file_revs(
+                path, -1, revnum, self._handler, include_merged_revisions=True)
         except subvertpy.SubversionException as e:
             if e.args[1] == subvertpy.ERR_FS_NOT_FILE:
                 return []
@@ -91,15 +87,15 @@ class Annotater(object):
             # Related file in Subversion but not in Bazaar
             # We still apply the delta since we'll need the fulltext later
             fileid = None
-        stream = StringIO()
+        stream = BytesIO()
+
         def apply_window(window):
             if window is None:
                 stream.seek(0)
                 lines = stream.readlines()
-                self._text = "".join(lines)
-                self._annotated = self.check_file(lines, revid, [self._annotated])
+                self._text = b"".join(lines)
+                self._annotated = self.check_file(
+                    lines, revid, [self._annotated])
                 return
             stream.write(apply_txdelta_window(self._text, window))
         return apply_window
-
-

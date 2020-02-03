@@ -237,7 +237,7 @@ class SvnRemoteAccess(ControlDir):
             raise AssertionError("SVN URL %r does not start with root %r" %
                 (self.svn_url, self.svn_root_url))
 
-        self._branch_path = urllib.unquote(self.svn_url[len(self.svn_root_url):])
+        self._branch_path = urlutils.unquote(self.svn_url[len(self.svn_root_url):])
 
     def break_lock(self):
         pass
@@ -472,8 +472,7 @@ class SvnRemoteAccess(ControlDir):
         if repository is None:
             repository = self.find_repository()
 
-        repository.lock_write()
-        try:
+        with repository.lock_write():
             if mapping is None:
                 mapping = repository.get_mapping()
 
@@ -500,8 +499,6 @@ class SvnRemoteAccess(ControlDir):
             if append_revisions_only == False:
                 branch.set_append_revisions_only(False)
             return branch
-        finally:
-            repository.unlock()
 
     def get_branch_reference(self, name=None):
         """See ControlDir.get_branch_reference()."""

@@ -240,12 +240,14 @@ def convert_relocate_error(url, num, msg):
 
 
 def Connection(url, auth=None, config=None, readonly=False):
+    from . import get_client_string
     progress_cb = SubversionProgressReporter(url).update
     try:
-        ret = RemoteAccess(_url_escape_uri(url), auth=auth,
-                client_string_func=breezy.plugins.svn.get_client_string,
-                progress_cb=progress_cb,
-                config=config)
+        ret = RemoteAccess(
+            _url_escape_uri(url), auth=auth,
+            client_string_func=get_client_string,
+            progress_cb=progress_cb,
+            config=config)
         if 'transport' in debug.debug_flags:
             ret = MutteringRemoteAccess(ret)
         if readonly:

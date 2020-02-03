@@ -238,7 +238,7 @@ class SvnRemoteProber(SvnProber):
                 headers = priv_transport._options('.')
             except (errors.InProcessTransport, errors.NoSuchFile,
                     errors.InvalidHttpResponse):
-                raise errors.NotBranchError(path=transport.base)
+                raise NotBranchError(path=transport.base)
             else:
                 dav_entries = set()
                 for key, value in headers:
@@ -246,7 +246,7 @@ class SvnRemoteProber(SvnProber):
                         dav_entries.update(
                             [x.strip() for x in value.split(',')])
                 if "version-control" not in dav_entries:
-                    raise errors.NotBranchError(path=transport.base)
+                    raise NotBranchError(path=transport.base)
 
         self._check_versions()
         from .transport import get_svn_ra_transport
@@ -321,17 +321,17 @@ register_extra_lazy_repository_format = getattr(repository_format_registry,
 register_extra_lazy_repository_format(__name__ + '.repository',
     'SvnRepositoryFormat')
 
-format_registry.register_lazy("subversion", "breezy.plugins.svn.remote",
+format_registry.register_lazy("subversion", __name__ + ".remote",
                          "SvnRemoteFormat",
                          "Subversion repository. ",
                          native=False)
-format_registry.register_lazy("subversion-wc", "breezy.plugins.svn.workingtree",
+format_registry.register_lazy("subversion-wc", __name__ + ".workingtree",
                          "SvnWorkingTreeDirFormat",
                          "Subversion working copy. ",
                          native=False, hidden=True)
 
 _mod_bzr_config.credential_store_registry.register_lazy(
-    "subversion", "breezy.plugins.svn.auth", "SubversionCredentialStore",
+    "subversion", __name__ + ".auth", "SubversionCredentialStore",
     help=__doc__, fallback=True)
 
 
@@ -346,16 +346,9 @@ plugin_cmds.register_lazy('cmd_fix_svn_ancestry', [],
                           __name__ + '.commands')
 
 
-try:
-    # breezy.filters.filter_stacks_registry as introduced in 2.6
-    from breezy.filters import filter_stacks_registry
-    filter_stacks_registry.register_lazy("svn-keywords",
-            "breezy.plugins.svn.keywords", "create_svn_keywords_filter")
-except ImportError:
-    # fall back to lazy_register_filter_stack_map on older bzr
-    from breezy.filters import lazy_register_filter_stack_map
-    lazy_register_filter_stack_map("svn-keywords",
-            "breezy.plugins.svn.keywords", "create_svn_keywords_filter")
+from breezy.filters import filter_stacks_registry
+filter_stacks_registry.register_lazy(
+    "svn-keywords", __name__ + ".keywords", "create_svn_keywords_filter")
 
 
 def info_svn_repository(repository, stats, outf):
@@ -369,12 +362,12 @@ def extract_svn_foreign_revid(rev):
     try:
         foreign_revid = rev.foreign_revid
     except AttributeError:
-        from breezy.plugins.svn.mapping import mapping_registry
+        from .mapping import mapping_registry
         foreign_revid, mapping = \
             mapping_registry.parse_revision_id(rev.revision_id)
         return foreign_revid
     else:
-        from breezy.plugins.svn.mapping import foreign_vcs_svn 
+        from .mapping import foreign_vcs_svn
         if rev.mapping.vcs == foreign_vcs_svn:
             return foreign_revid
         else:
@@ -400,14 +393,14 @@ try:
     from breezy.registry import register_lazy
 except ImportError:
     from breezy.diff import format_registry as diff_format_registry
-    diff_format_registry.register_lazy('svn', __name__ + '.send',
-            'SvnDiffTree', 'Subversion diff format')
+    diff_format_registry.register_lazy(
+        'svn', __name__ + '.send', 'SvnDiffTree', 'Subversion diff format')
 
     from breezy.revisionspec import (
         revspec_registry,
         )
-    revspec_registry.register_lazy("svn:", "breezy.plugins.svn.revspec",
-        "RevisionSpec_svn")
+    revspec_registry.register_lazy(
+        "svn:", __name__ + ".revspec", "RevisionSpec_svn")
 
     from breezy.send import format_registry as send_format_registry
     send_format_registry.register_lazy('svn', __name__ + '.send',
@@ -415,21 +408,21 @@ except ImportError:
     from breezy.foreign import (
         foreign_vcs_registry,
         )
-    foreign_vcs_registry.register_lazy("svn", "breezy.plugins.svn.mapping",
-                                       "foreign_vcs_svn")
+    foreign_vcs_registry.register_lazy(
+        "svn", __name__ + ".mapping", "foreign_vcs_svn")
     from breezy.help_topics import topic_registry
-    topic_registry.register_lazy('svn-layout',
-                                 __name__ + '.layout',
-                                 'help_layout', 'Subversion repository layouts')
+    topic_registry.register_lazy(
+        'svn-layout', __name__ + '.layout', 'help_layout',
+        'Subversion repository layouts')
 else:
     register_lazy("breezy.diff", "format_registry", 'svn', __name__ + '.send',
             'SvnDiffTree', help='Subversion diff format')
     register_lazy("breezy.revisionspec", "revspec_registry", "svn:",
-            "breezy.plugins.svn.revspec", "RevisionSpec_svn")
+            __name__ + ".revspec", "RevisionSpec_svn")
     register_lazy("breezy.send", "format_registry", 'svn',
             __name__ + '.send', 'send_svn', 'Subversion diff format')
     register_lazy("breezy.foreign", "foreign_vcs_registry", "svn",
-            "breezy.plugins.svn.mapping", "foreign_vcs_svn")
+            __name__ + ".mapping", "foreign_vcs_svn")
     register_lazy("breezy.help_topics", "topic_registry", 'svn-layout',
             __name__ + '.layout', 'help_layout',
             'Subversion repository layouts')
@@ -455,7 +448,7 @@ _mod_bzr_config.option_registry.register_lazy('allow_metadata_in_file_properties
 def test_suite():
     """Returns the testsuite for bzr-svn."""
     from unittest import TestSuite
-    from breezy.plugins.svn import tests
+    from . import tests
     suite = TestSuite()
     suite.addTest(tests.test_suite())
     return suite

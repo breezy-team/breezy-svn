@@ -544,7 +544,10 @@ class SvnRepository(ForeignRepository):
     def _cache_add_new_revision(self, revnum, revid, parents):
         assert self.is_locked()
         assert type(parents) == tuple or parents is None
-        self._cached_revnum = max(revnum, self._cached_revnum)
+        if self._cached_revnum is None:
+            self._cached_revnum = revnum
+        else:
+            self._cached_revnum = max(revnum, self._cached_revnum)
         if parents == () and revid != NULL_REVISION:
             parents = (NULL_REVISION,)
         parents_cache = self._parents_provider._cache
@@ -1057,7 +1060,7 @@ class SvnRepository(ForeignRepository):
         return self.lookup_foreign_revision_id(foreign_revid, mapping)
 
     def lookup_bzr_revision_id(self, revid, layout=None, ancestry=None,
-                           project=None, foreign_sibling=None):
+                               project=None, foreign_sibling=None):
         """Parse an existing Subversion-based revision id.
 
         :param revid: The revision id.

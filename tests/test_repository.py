@@ -45,6 +45,7 @@ from breezy.plugins.svn.layout.standard import TrunkLayout
 from breezy.plugins.svn.repository import (
     SvnRepositoryFormat,
     )
+from breezy.tree import TreeChange
 
 import subvertpy.repos
 
@@ -239,7 +240,7 @@ class GetCommitBuilderTests(SubversionTestCase):
         self.addCleanup(self.branch.unlock)
         cb = self.branch.get_commit_builder([])
         list(cb.record_iter_changes(self.branch.repository.revision_tree("null:"),
-            "null:", [("rootid", (None, ""), (False, True), (False, True),
+            "null:", [TreeChange("rootid", (None, ""), (False, True), (False, True),
              (None, None), ("", ""), (None, "directory"), (None, False))]))
         cb.finish_inventory()
         cb.commit("FOO")

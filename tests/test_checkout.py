@@ -27,11 +27,11 @@ from breezy.errors import (
     )
 from breezy.tests import TestCase
 
-from breezy.plugins.svn.workingtree import (
+from ..workingtree import (
     SvnWorkingTreeDirFormat,
     SvnWorkingTreeFormat,
     )
-from breezy.plugins.svn.tests import SubversionTestCase
+from . import SubversionTestCase
 
 class TestWorkingTreeFormat(TestCase):
 

@@ -36,14 +36,14 @@ from breezy.sixish import (
 from breezy.tag import BasicTags
 from breezy.trace import mutter
 
-from breezy.plugins.svn import (
+from . import (
     errors as svn_errors,
     )
-from breezy.plugins.svn.mapping import (
+from .mapping import (
     SVN_REVPROP_BZR_SKIP,
     mapping_registry,
     )
-from breezy.plugins.svn.transport import (
+from .transport import (
     check_dirs_exist,
     create_branch_prefix,
     )
@@ -130,14 +130,12 @@ class ReverseTagDict(object):
             self._by_foreign_revid.setdefault(revmeta.metarev.get_foreign_revid(), []).append(name)
 
     def _lookup_revid(self, revid):
-        return self.repository.lookup_bzr_revision_id(revid,
-            project=self.project)
+        return self.repository.lookup_bzr_revision_id(
+            revid, project=self.project)
 
-    def has_key(self, revid):
+    def __contains__(self, revid):
         foreign_revid, mapping = self._lookup_revid(revid)
-        return self._by_foreign_revid.has_key(foreign_revid)
-
-    __contains__ = has_key
+        return foreign_revid in self._by_foreign_revid
 
     def get(self, revid, default=None):
         foreign_revid, mapping = self._lookup_revid(revid)
@@ -383,8 +381,7 @@ class SubversionTags(BasicTags):
             # no tags in the source, and we don't want to clobber anything
             # that's in the destination
             return {}, []
-        to_tags.branch.lock_write()
-        try:
+        with to_tags.branch.lock_write():
             graph = to_tags.branch.repository.get_graph()
             source_dict = self._resolve_tags_ancestry(tag_revmetas,
                 graph, to_tags.branch.last_revision())
@@ -395,5 +392,3 @@ class SubversionTags(BasicTags):
             if ret[0] != dest_dict:
                 to_tags._set_tag_dict(ret[0])
             return (ret[1], ret[2])
-        finally:
-            to_tags.branch.unlock()

@@ -28,12 +28,12 @@ from breezy.sixish import (
     text_type,
     )
 
-from breezy.plugins.svn import (
+from . import (
     changes,
     errors as svn_errors,
     )
 
-from breezy.plugins.svn.util import (
+from .util import (
     ListBuildingIterator,
     )
 
@@ -196,10 +196,10 @@ class MetaRevision(object):
                 pass
         iterator = self._graph.iter_reverse_branch_changes(
                 self.branch_path, self.revnum, to_revnum=0, limit=0)
-        firstrevmeta = iterator.next()
+        firstrevmeta = next(iterator)
         assert self == firstrevmeta, "Expected %r got %r" % (self, firstrevmeta)
         try:
-            self._lhs_parent = iterator.next()
+            self._lhs_parent = next(iterator)
         except StopIteration:
             self._lhs_parent = None
         self._lhs_parent_known = True
@@ -220,7 +220,7 @@ class RevisionMetadataBranch(object):
         self._graph = graph
 
     def _get_next(self):
-        (bp, paths, revnum, revprops) = self._history_iter.next()
+        (bp, paths, revnum, revprops) = next(self._history_iter)
         ret = MetaRevision(self._graph,
             self._graph._log._transport.get_uuid(), bp, revnum, paths=paths,
             revprops=revprops)
@@ -259,7 +259,7 @@ class RevisionMetadataBranch(object):
         """Fetch at least all revisions until revnum."""
         while len(self._revnums) == 0 or self._revnums[0] > revnum:
             try:
-                self.next()
+                next(self)
             except MetaHistoryIncomplete:
                 return
             except StopIteration:
@@ -288,7 +288,7 @@ class RevisionMetadataBranch(object):
         try:
             return self._revs[i+1]
         except IndexError:
-            return self.next()
+            return next(self)
 
     def append(self, metarev):
         """Append a revision metadata object to this branch."""
@@ -380,7 +380,7 @@ class RevisionMetadataBrowser(object):
         assert isinstance(metarev, MetaRevision)
         while not metarev._lhs_parent_known:
             try:
-                self.next()
+                next(self)
             except StopIteration:
                 if self.to_revnum > 0 or self.from_prefixes:
                     raise MetaHistoryIncomplete(
@@ -395,7 +395,7 @@ class RevisionMetadataBrowser(object):
         """
         try:
             while self._last_revnum is None or self._last_revnum > revnum:
-                self.next()
+                next(self)
         except StopIteration:
             return
 
@@ -404,7 +404,7 @@ class RevisionMetadataBrowser(object):
 
         :return: Tuple with action string and object.
         """
-        ret = self._iter.next()
+        ret = next(self._iter)
         self._actions.append(ret)
         return ret
 

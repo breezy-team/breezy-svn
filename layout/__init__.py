@@ -34,7 +34,7 @@ from breezy.sixish import (
     )
 from breezy.trace import mutter
 
-from breezy.plugins.svn.errors import (
+from ..errors import (
     NotSvnBranchPath,
     NoCustomBranchPaths,
     )
@@ -326,27 +326,29 @@ or "bzr info -v <url>".
 
 
 try:
-    layout_registry = registry.Registry("breezy.plugins.svn.layout", "layout_registry")
+    layout_registry = registry.Registry(__name__, "layout_registry")
 except TypeError:
     layout_registry = registry.Registry()
-layout_registry.register_lazy("root", "breezy.plugins.svn.layout.standard",
-    "RootLayout")
-layout_registry.register_lazy("none", "breezy.plugins.svn.layout.standard",
-    "RootLayout")
-layout_registry.register_lazy("trunk", "breezy.plugins.svn.layout.standard",
-    "TrunkLayout0")
+layout_registry.register_lazy(
+    "root", __name__ + ".standard", "RootLayout")
+layout_registry.register_lazy(
+    "none", __name__ + ".layout.standard", "RootLayout")
+layout_registry.register_lazy(
+    "trunk", __name__ + ".layout.standard", "TrunkLayout0")
 for i in range(10):
-    layout_registry.register_lazy("trunk%d" % i,
-        "breezy.plugins.svn.layout.standard", "TrunkLayout%d" % i)
-layout_registry.register_lazy("trunk-variable",
-    "breezy.plugins.svn.layout.standard", "TrunkLayoutVariable")
+    layout_registry.register_lazy(
+        "trunk%d" % i, __name__ + ".standard", "TrunkLayout%d" % i)
+layout_registry.register_lazy(
+    "trunk-variable",
+    __name__ + ".standard", "TrunkLayoutVariable")
 
-layout_registry.register_lazy("itrunk1", "breezy.plugins.svn.layout.standard",
-    "InverseTrunkLayout1")
-layout_registry.register_lazy("itrunk2", "breezy.plugins.svn.layout.standard",
-    "InverseTrunkLayout2")
-layout_registry.register_lazy("itrunk3", "breezy.plugins.svn.layout.standard",
-    "InverseTrunkLayout3")
+layout_registry.register_lazy(
+    "itrunk1", __name__ + ".standard", "InverseTrunkLayout1")
+layout_registry.register_lazy(
+    "itrunk2", __name__ + ".standard", "InverseTrunkLayout2")
+layout_registry.register_lazy(
+    "itrunk3", __name__ + ".standard", "InverseTrunkLayout3")
+
 
 class RepositoryRegistry(registry.Registry):
 
@@ -356,10 +358,11 @@ class RepositoryRegistry(registry.Registry):
         except KeyError:
             return None
 
+
 try:
-    repository_registry = RepositoryRegistry("breezy.plugins.svn.layout",
-        "repository_registry")
+    repository_registry = RepositoryRegistry(__name__, "repository_registry")
 except TypeError:
     repository_registry = RepositoryRegistry()
-repository_registry.register_lazy("13f79535-47bb-0310-9956-ffa450edef68",
-        "breezy.plugins.svn.layout.standard", "TrunkLayout")
+repository_registry.register_lazy(
+    "13f79535-47bb-0310-9956-ffa450edef68",
+    __name__ + ".standard", "TrunkLayout")

@@ -20,19 +20,17 @@
 from __future__ import absolute_import
 
 import subvertpy
-import urllib
 
 from breezy import (
     trace,
+    urlutils,
     )
 import breezy.errors
 from breezy.errors import (
     BzrError,
     ConnectionError,
     ConnectionReset,
-    DependencyNotPresent,
     DivergedBranches,
-    InvalidRevisionSpec,
     LockActive,
     PermissionDenied,
     NoRepositoryPresent,
@@ -59,7 +57,7 @@ See 'bzr help svn-layout' for details."""
 
     def __init__(self, branch_path, mapping=None):
         BzrError.__init__(self)
-        self.branch_path = urllib.quote(branch_path)
+        self.branch_path = urlutils.quote(branch_path)
         self.mapping = mapping
 
 
@@ -127,7 +125,8 @@ def convert_error(err):
     if num == subvertpy.ERR_RA_DAV_PROPPATCH_FAILED:
         return PropertyChangeFailed(msg)
     if (num > subvertpy.ERR_APR_OS_START_EAIERR and
-        num < subvertpy.ERR_APR_OS_START_EAIERR + subvertpy.ERR_CATEGORY_SIZE):
+            num < subvertpy.ERR_APR_OS_START_EAIERR +
+            subvertpy.ERR_CATEGORY_SIZE):
         # Newer versions of subvertpy (>= 0.7.6) do this for us.
         return ConnectionError(msg=msg)
     else:
@@ -157,7 +156,8 @@ def convert_svn_error(unbound):
 
 class InvalidPropertyValue(BzrError):
 
-    _fmt = 'Invalid property value for Subversion property %(property)s: %(msg)s'
+    _fmt = ('Invalid property value for Subversion property %(property)s: '
+            '%(msg)s')
 
     def __init__(self, property, msg):
         BzrError.__init__(self)
@@ -167,7 +167,8 @@ class InvalidPropertyValue(BzrError):
 
 class InvalidFileName(BzrError):
 
-    _fmt = "Unable to convert Subversion path %(path)s because it contains characters invalid in Bazaar."
+    _fmt = ("Unable to convert Subversion path %(path)s because it contains "
+            "characters invalid in Bazaar.")
 
     def __init__(self, path):
         BzrError.__init__(self)
@@ -176,7 +177,8 @@ class InvalidFileName(BzrError):
 
 class SymlinkTargetContainsNewline(BzrError):
 
-    _fmt = "Unable to convert target of symlink %(path)s because it contains newlines."
+    _fmt = ("Unable to convert target of symlink %(path)s because "
+            "it contains newlines.")
 
     def __init__(self, path):
         BzrError.__init__(self)
@@ -185,7 +187,8 @@ class SymlinkTargetContainsNewline(BzrError):
 
 class CorruptMappingData(BzrError):
 
-    _fmt = "An invalid change was made to the bzr-specific properties in %(path)s."
+    _fmt = ("An invalid change was made to the bzr-specific "
+            "properties in %(path)s.")
 
     def __init__(self, path):
         BzrError.__init__(self)
@@ -210,7 +213,8 @@ class AppendRevisionsOnlyViolation(breezy.errors.AppendRevisionsOnlyViolation):
 
 class FileIdMapIncomplete(BzrError):
 
-    _fmt = "Unable to find file id for child '%(child)s' in '%(parent)s' in %(revmeta)r."
+    _fmt = ("Unable to find file id for child '%(child)s' in '%(parent)s' "
+            "in %(revmeta)r.")
 
     def __init__(self, child, parent, revmeta):
         BzrError.__init__(self)
@@ -274,7 +278,8 @@ class PushToEmptyBranch(BzrError):
 
 class PropertyChangeFailed(BzrError):
 
-    _fmt = """Unable to set DAV properties: %(msg)s. Perhaps LimitXMLRequestBody is set too low in the server."""
+    _fmt = ("Unable to set DAV properties: %(msg)s. "
+            "Perhaps LimitXMLRequestBody is set too low in the server.")
 
     def __init__(self, msg):
         BzrError.__init__(self, msg=msg)
@@ -282,12 +287,18 @@ class PropertyChangeFailed(BzrError):
 
 class RequiresMetadataInFileProps(BzrError):
 
-    _fmt = """This operation requires storing bzr-svn metadata in Subversion file properties. These file properties may cause spurious conflicts for other Subversion users during merges. To allow this, set `allow_metadata_in_file_properties = True` in your configuration and try again."""
+    _fmt = ("This operation requires storing bzr-svn metadata in Subversion "
+            "file properties. These file properties may cause spurious "
+            "conflicts for other Subversion users during merges. "
+            "To allow this, set "
+            "`allow_metadata_in_file_properties = True` in your "
+            "configuration and try again.")
 
 
 class TextChecksumMismatch(VersionedFileInvalidChecksum):
 
-    _fmt = """checksum mismatch: %(expected_checksum)r != %(actual_checksum)r in %(path)s:%(revnum)d"""
+    _fmt = ("checksum mismatch: %(expected_checksum)r != %(actual_checksum)r "
+            "in %(path)s:%(revnum)d")
 
     def __init__(self, expected_checksum, actual_checksum, path, revnum):
         self.expected_checksum = expected_checksum
@@ -298,9 +309,11 @@ class TextChecksumMismatch(VersionedFileInvalidChecksum):
 
 class SubversionBranchDiverged(DivergedBranches):
 
-    _fmt = "Subversion branch at %(branch_path)s has diverged from %(source_repo)r."
+    _fmt = ("Subversion branch at %(branch_path)s has diverged "
+            "from %(source_repo)r.")
 
-    def __init__(self, source_repo, source_revid, target_repo, branch_path, target_revid):
+    def __init__(self, source_repo, source_revid, target_repo, branch_path,
+                 target_revid):
         self.branch_path = branch_path
         self.target_repo = target_repo
         self.source_repo = source_repo
@@ -310,7 +323,8 @@ class SubversionBranchDiverged(DivergedBranches):
 
 class NoLayoutTagSetSupport(TagsNotSupported):
 
-    _fmt = "Creating tags is not possible with the current layout %(layout)r%(extra)s"
+    _fmt = ("Creating tags is not possible with the current layout "
+            "%(layout)r%(extra)s")
 
     def __init__(self, layout, extra=None):
         self.layout = layout
@@ -329,15 +343,18 @@ class IncompleteRepositoryHistory(BzrError):
 
 
 _reuse_uuids_warned = set()
+
+
 def warn_uuid_reuse(uuid, location):
     """Warn that a UUID is being reused for different repositories."""
     global _reuse_uuids_warned
     if uuid in _reuse_uuids_warned:
         return
-    trace.warning("Repository with UUID %s at %s contains fewer revisions "
-         "than cache. This either means that this repository contains an out "
-         "of date mirror of another repository (harmless), or that the UUID "
-         "is being used for two different Subversion repositories ("
-         "potential repository corruption).",
-         uuid, location)
+    trace.warning(
+        "Repository with UUID %s at %s contains fewer revisions "
+        "than cache. This either means that this repository contains an out "
+        "of date mirror of another repository (harmless), or that the UUID "
+        "is being used for two different Subversion repositories ("
+        "potential repository corruption).",
+        uuid, location)
     _reuse_uuids_warned.add(uuid)

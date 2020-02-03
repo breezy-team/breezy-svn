@@ -56,26 +56,26 @@ from breezy.trace import (
     mutter,
     )
 
-from breezy.plugins.svn.commit import (
+from .commit import (
     SvnCommitBuilder,
     )
-from breezy.plugins.svn.config import (
+from .config import (
     SvnBranchStack,
     )
-from breezy.plugins.svn.errors import (
+from .errors import (
     ChangesRootLHSHistory,
     MissingPrefix,
     SubversionBranchDiverged,
     convert_svn_error,
     )
-from breezy.plugins.svn.mapping import (
+from .mapping import (
     SVN_REVPROP_BZR_SKIP,
     )
-from breezy.plugins.svn.repository import (
+from .repository import (
     SvnRepositoryFormat,
     SvnRepository,
     )
-from breezy.plugins.svn.transport import (
+from .transport import (
     check_dirs_exist,
     create_branch_prefix,
     url_join_unescaped_path,
@@ -653,7 +653,7 @@ class InterToSvnRepository(InterRepository):
 
     def fetch(self, revision_id=None, pb=None, find_ghosts=False,
         fetch_spec=None, project=None, mapping=None, target_is_empty=False,
-        limit=None, exclude_non_mainline=None):
+        limit=None, exclude_non_mainline=None, lossy=False):
         """Fetch revisions. """
         if fetch_spec is not None:
             recipe = fetch_spec.get_recipe()

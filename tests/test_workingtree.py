@@ -226,13 +226,13 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_lock_write(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        tree.lock_write()
-        tree.unlock()
+        with tree.lock_write():
+            pass
 
     def test_lock_read(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        tree.lock_read()
-        tree.unlock()
+        with tree.lock_read():
+            pass
 
     def test_get_ignore_list_empty(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')

@@ -24,10 +24,10 @@ from breezy import (
     errors,
     )
 
-from breezy.plugins.svn import (
+from . import (
     mapping,
     )
-from breezy.plugins.svn.errors import (
+from .errors import (
     InvalidFileId,
     )
 

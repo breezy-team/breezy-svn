@@ -488,14 +488,12 @@ class GetMapTests(SubversionTestCase):
         self.client_commit("svn-co", "Directory move with modifications.")
         self.client_update("svn-co")
         wt = WorkingTree.open("svn-co")
-        wt.lock_write()
-        wt.update()
-        wt.unlock()
+        with wt.lock_write():
+            wt.update()
         wt = None
         wt = WorkingTree.open("svn-co/subdir1")
-        wt.lock_write()
-        #wt.update()
-        wt.unlock()
+        with wt.lock_write():
+            pass  #wt.update()
 
 
 class FileIdMapCacheTests(TestCaseWithMemoryTransport):

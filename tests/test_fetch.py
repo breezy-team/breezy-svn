@@ -51,34 +51,34 @@ from breezy.trace import (
     mutter,
     )
 
-from breezy.plugins.svn import (
+from .. import (
     remote,
     )
-from breezy.plugins.svn.convert import (
+from ..convert import (
     load_dumpfile,
     )
-from breezy.plugins.svn.errors import (
+from ..errors import (
     InvalidFileName,
     SymlinkTargetContainsNewline,
     )
-from breezy.plugins.svn.fetch import (
+from ..fetch import (
    FetchRevisionFinder,
    InterFromSvnToInventoryRepository,
    check_filename,
    chunks_start_with_link,
    )
-from breezy.plugins.svn.layout.standard import (
+from ..layout.standard import (
     RootLayout,
     TrunkLayout,
     )
-from breezy.plugins.svn.mapping import (
+from ..mapping import (
     SVN_REVPROP_BZR_MAPPING_VERSION,
     SVN_REVPROP_BZR_ROOT,
     )
-from breezy.plugins.svn.tests import (
+from . import (
     SubversionTestCase,
     )
-from breezy.plugins.svn.transport import (
+from ..transport import (
     SvnRaTransport,
     )
 
@@ -105,7 +105,7 @@ class TestFetchWorks(FetchTestCase):
         dc = self.get_commit_editor(repos_url)
         proj1 = dc.add_dir("proj1")
         trunk = proj1.add_dir("proj1/trunk")
-        trunk.add_file("proj1/trunk/file").modify("data")
+        trunk.add_file("proj1/trunk/file").modify(b"data")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -121,7 +121,7 @@ class TestFetchWorks(FetchTestCase):
         t = dc.add_dir("trunk")
         ch = t.add_dir("trunk/check")
         ch.add_dir("trunk/check/debian")
-        ch.add_file("trunk/check/stamp-h.in").modify("foo")
+        ch.add_file("trunk/check/stamp-h.in").modify(b"foo")
         dc.add_dir("tags")
         dc.close() #1
 
@@ -129,29 +129,29 @@ class TestFetchWorks(FetchTestCase):
         t = dc.open_dir("trunk")
         ch = t.open_dir("trunk/check")
         deb = ch.open_dir("trunk/check/debian")
-        deb.add_file("trunk/check/debian/pl").modify("bar")
+        deb.add_file("trunk/check/debian/pl").modify(b"bar")
         dc.close() #2
 
         dc = self.get_commit_editor(repos_url)
         t = dc.open_dir("trunk")
         ch = t.open_dir("trunk/check")
         deb = ch.open_dir("trunk/check/debian")
-        deb.add_file("trunk/check/debian/voo").modify("bar")
+        deb.add_file("trunk/check/debian/voo").modify(b"bar")
         dc.close() #3
 
         dc = self.get_commit_editor(repos_url)
         t = dc.open_dir("trunk")
         ch = t.open_dir("trunk/check")
         deb = ch.open_dir("trunk/check/debian")
-        deb.add_file("trunk/check/debian/blie").modify("oeh")
+        deb.add_file("trunk/check/debian/blie").modify(b"oeh")
         dc.close() #4
 
         dc = self.get_commit_editor(repos_url)
         t = dc.open_dir("trunk")
         ch = t.open_dir("trunk/check")
         deb = ch.open_dir("trunk/check/debian")
-        deb.add_file("trunk/check/debian/bar").modify("oeh")
-        ch.add_file("trunk/check/bar").modify("bla")
+        deb.add_file("trunk/check/debian/bar").modify(b"oeh")
+        ch.add_file("trunk/check/bar").modify(b"bla")
         dc.close() #5
 
         self.make_checkout(repos_url, "dc")
@@ -179,7 +179,7 @@ class TestFetchWorks(FetchTestCase):
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/file\\part").modify("data")
+        trunk.add_file("trunk/file\\part").modify(b"data")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -225,7 +225,7 @@ class TestFetchWorks(FetchTestCase):
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file(u"trunk/f\x2cle".encode("utf-8")).modify("data")
+        trunk.add_file(u"trunk/f\x2cle".encode("utf-8")).modify(b"data")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -238,7 +238,7 @@ class TestFetchWorks(FetchTestCase):
         repos_url = self.make_svn_repository('d')
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/bar").modify("data")
+        trunk.add_file("trunk/bar").modify(b"data")
         dc.close()
         self.client_set_revprop(repos_url, 1, "bzr:gpg-signature", "SIGNATURE")
         oldrepos = Repository.open(repos_url)
@@ -259,7 +259,7 @@ class TestFetchWorks(FetchTestCase):
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/bar").modify("data")
+        trunk.add_file("trunk/bar").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -302,7 +302,7 @@ class TestFetchWorks(FetchTestCase):
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.open_dir("trunk")
-        trunk.add_file(u'trunk/IöC/bar'.encode("utf-8")).modify("more data")
+        trunk.add_file(u'trunk/IöC/bar'.encode("utf-8")).modify(b"more data")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -317,7 +317,7 @@ class TestFetchWorks(FetchTestCase):
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         raardir = trunk.add_dir(u"trunk/é".encode("utf-8"))
-        raardir.add_file(u'trunk/é/f\x2cle'.encode("utf-8")).modify("data")
+        raardir.add_file(u'trunk/é/f\x2cle'.encode("utf-8")).modify(b"data")
         dc.close()
         oldrepos = Repository.open(repos_url)
         oldrepos.set_layout(TrunkLayout(0))
@@ -330,12 +330,12 @@ class TestFetchWorks(FetchTestCase):
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file(u"trunk/€\x2c".encode("utf-8")).modify("data")
+        trunk.add_file(u"trunk/€\x2c".encode("utf-8")).modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.open_dir("trunk")
-        dc.open_file(u"trunk/€\x2c".encode("utf-8")).modify("bar")
+        dc.open_file(u"trunk/€\x2c".encode("utf-8")).modify(b"bar")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -349,7 +349,7 @@ class TestFetchWorks(FetchTestCase):
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.add_dir("foo")
-        foo.add_file("foo/bla").modify("data")
+        foo.add_file("foo/bla").modify(b"data")
         dc.close()
         oldrepos = Repository.open(repos_url)
         dir = ControlDir.create("f")
@@ -371,7 +371,7 @@ class TestFetchWorks(FetchTestCase):
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.add_dir("foo")
-        foo.add_file("foo/bla").modify("data")
+        foo.add_file("foo/bla").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -394,15 +394,15 @@ class TestFetchWorks(FetchTestCase):
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.add_dir("foo")
-        foo.add_file("foo/bla").modify("data")
+        foo.add_file("foo/bla").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.open_dir("foo")
-        foo.add_file("foo/blo").modify("data2")
-        foo.open_file("foo/bla").modify("data")
+        foo.add_file("foo/blo").modify(b"data2")
+        foo.open_file("foo/bla").modify(b"data")
         bar = dc.add_dir("bar")
-        bar.add_file("bar/foo").modify("data3")
+        bar.add_file("bar/foo").modify(b"data3")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -430,7 +430,7 @@ class TestFetchWorks(FetchTestCase):
         dc = self.get_commit_editor(repos_url)
         br1 = dc.add_dir("trunk")
         br2 = br1.add_dir("trunk/bloe")
-        br2.add_file("trunk/bloe/README").modify("BLA")
+        br2.add_file("trunk/bloe/README").modify(b"BLA")
         dc.close()
 
         old_mapping = BzrSvnMappingv3(TrunkBranchingScheme(0))
@@ -438,7 +438,7 @@ class TestFetchWorks(FetchTestCase):
         self.client_set_revprop(repos_url, 1, SVN_REVPROP_BZR_ROOT, "trunk")
 
         dc = self.get_commit_editor(repos_url)
-        dc.open_dir("trunk").add_file("trunk/a").modify("LA")
+        dc.open_dir("trunk").add_file("trunk/a").modify(b"LA")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -457,7 +457,7 @@ class TestFetchWorks(FetchTestCase):
         dc = self.get_commit_editor(repos_url)
         br1 = dc.add_dir("branch1")
         br2 = br1.add_dir("branch1/bloe")
-        br2.add_file("branch1/bloe/README").modify("BLA")
+        br2.add_file("branch1/bloe/README").modify(b"BLA")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -468,7 +468,7 @@ class TestFetchWorks(FetchTestCase):
         dc = self.get_commit_editor(repos_url)
         br1 = dc.open_dir("branch2")
         bloe = br1.open_dir("branch2/bloe")
-        bloe.open_file("branch2/bloe/README").modify("TEST")
+        bloe.open_file("branch2/bloe/README").modify(b"TEST")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -486,12 +486,12 @@ class TestFetchWorks(FetchTestCase):
         repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("bla").modify("data")
+        dc.add_file("bla").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
         dc.delete('bla')
-        dc.add_file("bla").modify("data2")
+        dc.add_file("bla").modify(b"data2")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -516,7 +516,7 @@ class TestFetchWorks(FetchTestCase):
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         mydir = trunk.add_dir("trunk/mydir")
-        mydir.add_file("trunk/mydir/a").modify("data")
+        mydir.add_file("trunk/mydir/a").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -1484,7 +1484,7 @@ Node-copyfrom-path: x
         dc = self.get_commit_editor(repos_url)
         old_trunk = dc.add_dir("old-trunk")
         lib = old_trunk.add_dir("old-trunk/lib")
-        lib.add_file("old-trunk/lib/file").modify("data")
+        lib.add_file("old-trunk/lib/file").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -1508,7 +1508,7 @@ Node-copyfrom-path: x
         dc = self.get_commit_editor(repos_url)
         ot = dc.add_dir("old-trunk")
         lib = ot.add_dir("old-trunk/lib")
-        lib.add_file("old-trunk/lib/file").modify("data")
+        lib.add_file("old-trunk/lib/file").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -1531,7 +1531,7 @@ Node-copyfrom-path: x
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/file").modify("data")
+        trunk.add_file("trunk/file").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -1596,7 +1596,7 @@ Node-copyfrom-path: x
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir('trunk')
-        trunk.add_file("trunk/hosts").modify("hej1")
+        trunk.add_file("trunk/hosts").modify(b"hej1")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -1631,12 +1631,12 @@ Node-copyfrom-path: x
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.open_dir("trunk")
-        trunk.open_file("trunk/hosts").modify("hej2")
+        trunk.open_file("trunk/hosts").modify(b"hej2")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.open_dir("trunk")
-        trunk.open_file("trunk/hosts").modify("hej3")
+        trunk.open_file("trunk/hosts").modify(b"hej3")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -1666,7 +1666,7 @@ Node-copyfrom-path: x
 
         dc = self.get_commit_editor(repos_url)
         f = dc.add_file("bla")
-        f.modify("data")
+        f.modify(b"data")
         f.change_prop("svn:executable", "*")
         dc.close()
 
@@ -1693,7 +1693,7 @@ Node-copyfrom-path: x
         bla.modify('data')
         bla.change_prop("svn:executable", "*")
         blie = dc.add_file("blie")
-        blie.modify("data2")
+        blie.modify(b"data2")
         blie.change_prop("svn:executable", "")
         dc.close()
 
@@ -1720,7 +1720,7 @@ Node-copyfrom-path: x
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
-        dc.open_file("bla").modify("data2")
+        dc.open_file("bla").modify(b"data2")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -1741,9 +1741,9 @@ Node-copyfrom-path: x
         repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("bla").modify("data")
+        dc.add_file("bla").modify(b"data")
         l = dc.add_file("mylink")
-        l.modify("link bla")
+        l.modify(b"link bla")
         l.change_prop("svn:special", "*")
         dc.close()
 
@@ -1771,9 +1771,9 @@ Node-copyfrom-path: x
         repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("bla").modify("data")
+        dc.add_file("bla").modify(b"data")
         l = dc.add_file("mylink")
-        l.modify("link bla\nbar\nbla")
+        l.modify(b"link bla\nbar\nbla")
         l.change_prop("svn:special", "*")
         dc.close()
 
@@ -1799,7 +1799,7 @@ Node-copyfrom-path: x
 
         dc = self.get_commit_editor(repos_url)
         l = dc.add_file("mylink")
-        l.modify("")
+        l.modify(b"")
         l.change_prop("svn:special", "*")
         dc.close()
 
@@ -1820,13 +1820,13 @@ Node-copyfrom-path: x
 
         dc = self.get_commit_editor(repos_url)
         l = dc.add_file("mylink")
-        l.modify("link bla")
+        l.modify(b"link bla")
         l.change_prop("svn:special", "*")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
         l = dc.open_file("mylink")
-        l.modify("bloebla")
+        l.modify(b"bloebla")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -1861,12 +1861,12 @@ Node-copyfrom-path: x
         dc = self.get_commit_editor(repos_url)
         l = dc.add_file("mylink")
         l.change_prop("svn:special", "*")
-        l.modify("bloebla")
+        l.modify(b"bloebla")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
         l = dc.open_file("mylink")
-        l.modify("link bla")
+        l.modify(b"link bla")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -1889,8 +1889,8 @@ Node-copyfrom-path: x
         repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("bla").modify("data")
-        dc.add_file("mylink").modify("link bla")
+        dc.add_file("bla").modify(b"data")
+        dc.add_file("mylink").modify(b"link bla")
         dc.close()
         ra = SvnRaTransport(repos_url)
         dc = self.get_commit_editor(repos_url)
@@ -1916,7 +1916,7 @@ Node-copyfrom-path: x
         repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("bla").modify("data")
+        dc.add_file("bla").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -1945,7 +1945,7 @@ Node-copyfrom-path: x
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/bla").modify("data")
+        trunk.add_file("trunk/bla").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -1978,13 +1978,13 @@ Node-copyfrom-path: x
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/bla").modify("data")
+        trunk.add_file("trunk/bla").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
         branches = dc.add_dir("branches")
         foo = branches.add_dir("branches/foo", "trunk")
-        foo.open_file("branches/foo/bla").modify("more data")
+        foo.open_file("branches/foo/bla").modify(b"more data")
         dc.close()
 
         oldrepos = Repository.open(repos_url)
@@ -2070,7 +2070,7 @@ Node-copyfrom-path: x
         repos_url = self.make_svn_repository('d')
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/bla").modify("data")
+        trunk.add_file("trunk/bla").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -2103,7 +2103,7 @@ Node-copyfrom-path: x
         repos_url = self.make_svn_repository('d')
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/bla").modify("data")
+        trunk.add_file("trunk/bla").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -2214,7 +2214,7 @@ Node-copyfrom-path: x
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         adir = trunk.add_dir("trunk/adir")
-        adir.add_file("trunk/adir/afile").modify("data")
+        adir.add_file("trunk/adir/afile").modify(b"data")
         adir.add_dir("trunk/adir/stationary")
         dc.add_dir("branches").add_dir("branches/abranch")
         dc.close()
@@ -2228,15 +2228,15 @@ Node-copyfrom-path: x
         # prevrev
         dc = self.get_commit_editor(repos_url)
         bdir = dc.open_dir("branches").open_dir("branches/abranch").open_dir("branches/abranch/bdir")
-        bdir.open_file("branches/abranch/bdir/afile").modify("otherdata")
+        bdir.open_file("branches/abranch/bdir/afile").modify(b"otherdata")
         dc.close()
 
         # lastrev
         dc = self.get_commit_editor(repos_url)
         bdir = dc.open_dir("branches").open_dir("branches/abranch").open_dir("branches/abranch/bdir")
-        bdir.add_file("branches/abranch/bdir/bfile").modify("camel")
+        bdir.add_file("branches/abranch/bdir/bfile").modify(b"camel")
         stationary = bdir.open_dir("/branches/abranch/bdir/stationary")
-        stationary.add_file("branches/abranch/bdir/stationary/traveller").modify("data")
+        stationary.add_file("branches/abranch/bdir/stationary/traveller").modify(b"data")
         dc.close()
 
         oldrepos = Repository.open(repos_url)

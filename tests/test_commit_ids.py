@@ -34,7 +34,8 @@ from breezy.tests.features import (
 
 from breezy.workingtree import WorkingTree
 
-from breezy.plugins.svn.tests import SubversionTestCase
+from . import SubversionTestCase
+
 
 class CommitIdTesting:
     """Test that file ids and file revisions are appropriately recorded."""
@@ -44,8 +45,7 @@ class CommitIdTesting:
         return tree.branch.repository.revision_tree(revid)
 
     def tree_items(self, tree):
-        tree.lock_read()
-        try:
+        with tree.lock_read():
             graph = tree._repository.get_file_graph()
             ret = {}
             for (path, versioned, kind, file_id, ie) in tree.list_files(
@@ -57,8 +57,6 @@ class CommitIdTesting:
                     assert pf == ie.file_id
                     parents.append(pr)
                 ret[path] = (ie.file_id, ie.revision, parents)
-        finally:
-            tree.unlock()
         return ret
 
     def commit_tree_items(self, tree, revision_id=None):
@@ -309,7 +307,7 @@ class CommitIdTesting:
             }, items)
 
 
-class BzrCommitIdTesting(TestCaseWithTransport,CommitIdTesting):
+class BzrCommitIdTesting(TestCaseWithTransport, CommitIdTesting):
     """Test ids from a revision tree after committing to bzr."""
 
     def prepare_wt(self, path):
@@ -324,10 +322,10 @@ class BzrCommitIdTesting(TestCaseWithTransport,CommitIdTesting):
         pass
 
 
-class SvnRevisionTreeCommitIdTesting(SubversionTestCase,CommitIdTesting):
+class SvnRevisionTreeCommitIdTesting(SubversionTestCase, CommitIdTesting):
     """Test ids from a svn revision tree after committing to svn."""
 
-    def setUp(self):
+    def setUp(self): 
         SubversionTestCase.setUp(self)
         os.mkdir("repo")
 
@@ -335,9 +333,8 @@ class SvnRevisionTreeCommitIdTesting(SubversionTestCase,CommitIdTesting):
 
     def prepare_wt(self, path):
         repo_url = self.make_svn_repository(os.path.join("repo", path))
-        dc = self.get_commit_editor(repo_url)
-        trunk = dc.add_dir("trunk")
-        dc.close()
+        with self.get_commit_editor(repo_url) as dc:
+            dc.add_dir("trunk")
 
         self.make_checkout(repo_url+"/trunk", path)
         return WorkingTree.open(path)
@@ -351,7 +348,7 @@ class SvnRevisionTreeCommitIdTesting(SubversionTestCase,CommitIdTesting):
         self.assertEquals(expected, revmeta.get_fileid_overrides(mapping))
 
 
-class SvnFetchCommitIdTesting(SubversionTestCase,CommitIdTesting):
+class SvnFetchCommitIdTesting(SubversionTestCase, CommitIdTesting):
     """Test ids from a bzr revision tree after committing to svn and fetching
     back into bzr."""
 
@@ -362,18 +359,19 @@ class SvnFetchCommitIdTesting(SubversionTestCase,CommitIdTesting):
     build_tree_contents = staticmethod(treeshape.build_tree_contents)
 
     def commit_tree(self, tree, revision_id=None):
-        revid = tree.commit("This is a message", rev_id=revision_id)
-        tempdir = osutils.mkdtemp(prefix='testbzrsvn-', suffix='.tmp', dir=self.test_dir)
+        tree.commit("This is a message", rev_id=revision_id)
+        tempdir = osutils.mkdtemp(
+            prefix='testbzrsvn-', suffix='.tmp', dir=self.test_dir)
         self.addCleanup(shutil.rmtree, tempdir)
-        to_branch = ControlDir.create_branch_and_repo(os.path.join(tempdir, 'branch'))
+        to_branch = ControlDir.create_branch_and_repo(
+            os.path.join(tempdir, 'branch'))
         tree.branch.push(to_branch)
         return to_branch.basis_tree()
 
     def prepare_wt(self, path):
         repo_url = self.make_svn_repository(os.path.join("repo", path))
-        dc = self.get_commit_editor(repo_url)
-        trunk = dc.add_dir("trunk")
-        dc.close()
+        with self.get_commit_editor(repo_url) as dc:
+            dc.add_dir("trunk")
 
         self.make_checkout(repo_url+"/trunk", path)
         return WorkingTree.open(path)

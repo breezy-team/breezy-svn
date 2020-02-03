@@ -32,7 +32,7 @@ from breezy.bedding import (
     )
 from breezy.sixish import text_type
 
-from breezy.plugins.svn import version_info
+from .. import version_info
 
 
 class CacheConcurrencyError(Exception):
@@ -114,8 +114,7 @@ class RepositoryCache(object):
 
     def create_cache_dir(self):
         cache_dir = create_cache_dir()
-        assert isinstance(cache_dir, str)
-        dir = os.path.join(cache_dir, str(self.uuid))
+        dir = os.path.join(cache_dir, str(self.uuid).encode('ascii'))
         if not os.path.exists(dir):
             trace.note("Initialising Subversion metadata cache in %s.",
                        dir.decode(osutils._fs_enc))
@@ -127,7 +126,7 @@ class RepositoryCache(object):
             self.create_cache_dir().decode(osutils._fs_enc))
 
     def open_fileid_map(self):
-        from breezy.plugins.svn.fileids import FileIdMapCache
+        from ..fileids import FileIdMapCache
         return FileIdMapCache(self.open_transport())
 
     def open_revid_map(self):
@@ -146,10 +145,10 @@ class RepositoryCache(object):
         pass
 
 try:
-    from breezy.plugins.svn.cache.tdbcache import TdbRepositoryCache
+    from ..cache.tdbcache import TdbRepositoryCache
     cache_cls = TdbRepositoryCache
 except ImportError:
-    from breezy.plugins.svn.cache.sqlitecache import SqliteRepositoryCache
+    from ..cache.sqlitecache import SqliteRepositoryCache
     cache_cls = SqliteRepositoryCache
 
 def get_cache(uuid):

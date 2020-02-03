@@ -35,15 +35,15 @@ from breezy.revision import (
 from breezy.sixish import (
     text_type,
     )
-from breezy.plugins.svn import (
+from . import (
     changes,
     errors as svn_errors,
     util,
     )
-from breezy.plugins.svn.cache import (
+from .cache import (
     CacheConcurrencyError,
     )
-from breezy.plugins.svn.mapping import (
+from .mapping import (
     SVN_PROP_BZR_HIDDEN,
     SVN_PROP_BZR_REVPROP_REDIRECT,
     SVN_REVPROP_BZR_ROOT,
@@ -56,11 +56,11 @@ from breezy.plugins.svn.mapping import (
     parse_svn_revprops,
     revprops_complete,
     )
-from breezy.plugins.svn.metagraph import (
+from .metagraph import (
     MetaRevision,
     MetaRevisionGraph,
     )
-from breezy.plugins.svn.svk import (
+from .svk import (
     estimate_svk_ancestors,
     parse_svk_feature,
     svk_features_merged_since,

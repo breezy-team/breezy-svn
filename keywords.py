@@ -39,8 +39,8 @@ from breezy.filters import (
     ContentFilter,
     )
 
-from breezy.plugins.svn import gettext
-from breezy.plugins.svn.mapping import (
+from . import gettext
+from .mapping import (
     mapping_registry,
     )
 

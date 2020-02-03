@@ -16,18 +16,19 @@
 
 """Branch property access tests."""
 
-from breezy.plugins.svn.branchprops import (
+from ..branchprops import (
     PathPropertyProvider,
     )
-from breezy.plugins.svn.logwalker import (
+from ..logwalker import (
     LogWalker,
     )
-from breezy.plugins.svn.tests import (
-    SubversionTestCase,
-    )
-from breezy.plugins.svn.transport import (
+from ..transport import (
     SvnRaTransport,
     )
+from . import (
+    SubversionTestCase,
+    )
+
 
 class TestBranchProps(SubversionTestCase):
 

@@ -51,16 +51,16 @@ from breezy.tests.features import (
 from breezy.trace import mutter
 from breezy.workingtree import WorkingTree
 
-from breezy.plugins.svn.commit import (
+from ..commit import (
     file_editor_send_prop_changes,
     set_svn_revprops,
     _revision_id_to_svk_feature,
     )
-from breezy.plugins.svn.errors import (
+from ..errors import (
     RevpropChangeFailed,
     )
-from breezy.plugins.svn.mapping import mapping_registry
-from breezy.plugins.svn.tests import SubversionTestCase
+from ..mapping import mapping_registry
+from . import SubversionTestCase
 
 
 class TestNativeCommit(SubversionTestCase):

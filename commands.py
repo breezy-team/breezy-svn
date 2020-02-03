@@ -33,7 +33,7 @@ from breezy.sixish import (
     text_type,
     )
 
-from breezy.plugins.svn import gettext
+from . import gettext
 
 
 def get_layout(layoutname):
@@ -43,15 +43,14 @@ def get_layout(layoutname):
     """
     if isinstance(layoutname, text_type):
         layoutname = layoutname.encode("ascii")
-    from breezy.plugins.svn.layout import layout_registry
+    from .layout import layout_registry
     from breezy.errors import BzrCommandError
 
     try:
-        ret = layout_registry.get(layoutname)()
+        return layout_registry.get(layoutname)()
     except KeyError:
-        raise BzrCommandError(gettext('No such repository layout %r') %
-                layoutname)
-    return ret
+        raise BzrCommandError(
+            gettext('No such repository layout %r') % layoutname)
 
 
 class cmd_svn_import(Command):
@@ -66,33 +65,32 @@ class cmd_svn_import(Command):
     """
     _see_also = ['formats']
     takes_args = ['from_location', 'to_location?']
-    takes_options = [RegistryOption('format',
-                            help='Specify a format for this repository. See'
-                                 ' "bzr help formats" for details. Must support rich-root.',
-                            lazy_registry=('breezy.controldir', 'format_registry'),
-                            converter=lambda name: controldir.format_registry.make_controldir(name),
-                            value_switches=False, title='Repository format'),
-                     Option('trees', help='Create working trees.'),
-                     Option('standalone', help='Create standalone branches.'),
-                     Option('all',
-                         help='Convert all revisions, even those not in '
-                              'current branch history.'),
-                     Option('layout', type=get_layout,
-                         help='Repository layout (none, trunk, etc). '
-                              'Default: auto.'),
-                     Option('keep',
-                         help="Don't delete branches removed in Subversion."),
-                     Option('restore',
-                         help="Restore branches that were removed but have "
-                              "not been changed since the last import."),
-                     Option('prefix', type=str,
-                         hidden=True,
-                         help='Only consider branches of which path starts '
-                              'with prefix.'),
-                     Option('until', type=int,
-                         help="Only import revisions up to specified Subversion revnum"),
-                     Option('colocated', help='Create colocated branches.'),
-                    ]
+    takes_options = [
+        RegistryOption(
+            'format',
+            help='Specify a format for this repository. See'
+                 ' "bzr help formats" for details. Must support rich-root.',
+            lazy_registry=('breezy.controldir', 'format_registry'),
+            converter=controldir.format_registry.make_controldir,
+            value_switches=False, title='Repository format'),
+        Option('trees', help='Create working trees.'),
+        Option('standalone', help='Create standalone branches.'),
+        Option('all', help='Convert all revisions, even those not in '
+                           'current branch history.'),
+        Option('layout',
+               type=get_layout,
+               help='Repository layout (none, trunk, etc). Default: auto.'),
+        Option('keep', help="Don't delete branches removed in Subversion."),
+        Option('restore',
+               help="Restore branches that were removed but have "
+                    "not been changed since the last import."),
+        Option('prefix', type=str, hidden=True,
+               help='Only consider branches of which path starts with '
+                    'prefix.'),
+        Option('until', type=int,
+               help="Only import revisions up to specified Subversion revnum"),
+        Option('colocated', help='Create colocated branches.'),
+        ]
 
     def run(self, from_location, to_location=None, format=None, trees=False,
             standalone=False, layout=None, all=False, prefix=None, keep=False,
@@ -107,11 +105,11 @@ class cmd_svn_import(Command):
             BzrCommandError,
             NoRepositoryPresent,
             )
-        from breezy.plugins.svn import gettext
-        from breezy.plugins.svn.convert import convert_repository
-        from breezy.plugins.svn.remote import SvnRemoteAccess
-        from breezy.plugins.svn.repository import SvnRepository
-        from breezy.plugins.svn.workingtree import SvnCheckout
+        from . import gettext
+        from .convert import convert_repository
+        from .remote import SvnRemoteAccess
+        from .repository import SvnRepository
+        from .workingtree import SvnCheckout
         import os
         from subvertpy import NODE_NONE
 
@@ -124,7 +122,7 @@ class cmd_svn_import(Command):
             standalone = False
 
         if os.path.isfile(from_location):
-            from breezy.plugins.svn.convert import load_dumpfile
+            from .convert import load_dumpfile
             import tempfile
             tmp_repos = tempfile.mkdtemp(prefix='bzr-svn-dump-')
             load_dumpfile(from_location, tmp_repos)
@@ -141,13 +139,15 @@ class cmd_svn_import(Command):
 
         try:
             from_repos = from_dir.open_repository()
-        except NoRepositoryPresent as e:
+        except NoRepositoryPresent:
             if prefix is not None:
-                raise BzrCommandError(gettext("Path inside repository specified "
-                                      "and --prefix specified"))
+                raise BzrCommandError(
+                    gettext("Path inside repository specified "
+                            "and --prefix specified"))
             from_repos = from_dir.find_repository(_ignore_branch_path=True)
             assert from_dir.root_transport.base.startswith(from_repos.base)
-            prefix = from_dir.root_transport.base[len(from_repos.base):].strip("/")
+            prefix = from_dir.root_transport.base[
+                len(from_repos.base):].strip("/")
             prefix = prefix.encode("utf-8")
 
         if not isinstance(from_repos, SvnRepository):
@@ -159,8 +159,7 @@ class cmd_svn_import(Command):
         else:
             to_revnum = min(until, from_repos.get_latest_revnum())
 
-        from_repos.lock_read()
-        try:
+        with from_repos.lock_read():
             if prefix is not None:
                 if layout is None:
                     overall_layout = from_repos.get_guessed_layout()
@@ -168,30 +167,38 @@ class cmd_svn_import(Command):
                     overall_layout = layout
                 prefix = prefix.strip("/") + "/"
                 if overall_layout.is_branch(prefix):
-                    raise BzrCommandError(gettext("%s appears to contain a branch. "
-                            "For individual branches, use 'bzr branch'.") %
-                            from_location)
+                    raise BzrCommandError(
+                        gettext("%s appears to contain a branch. "
+                                "For individual branches, use 'bzr branch'.") %
+                        from_location)
                 # FIXME: Hint about is_tag()
                 elif overall_layout.is_branch_parent(prefix):
-                    self.outf.write(gettext(gettext("Importing branches with prefix %s\n")) %
-                        ("/" + urlutils.unescape_for_display(prefix, self.outf.encoding)))
+                    self.outf.write(
+                        gettext("Importing branches with prefix %s\n") %
+                        ("/" + urlutils.unescape_for_display(prefix,
+                         self.outf.encoding)))
                 else:
-                    raise BzrCommandError(gettext("The specified path is inside a branch. "
-                        "Specify a different URL or a different repository layout (see also 'bzr help svn-layout')."))
+                    raise BzrCommandError(
+                        gettext("The specified path is inside a branch. "
+                                "Specify a different URL or a different "
+                                "repository layout (see also "
+                                "'bzr help svn-layout')."))
 
             if (prefix is not None and
-                from_repos.transport.check_path(prefix, to_revnum) == NODE_NONE):
+                    from_repos.transport.check_path(prefix, to_revnum)
+                    == NODE_NONE):
                 raise BzrCommandError("Prefix %s does not exist" % prefix)
 
             def filter_branch(branch):
                 if (prefix is not None and
-                    not branch.get_branch_path().startswith(prefix)):
+                        not branch.get_branch_path().startswith(prefix)):
                     return False
                 return True
 
             trace.note(gettext("Using repository layout: %s"),
                        layout or from_repos.get_layout())
-            convert_repository(from_repos, to_location, layout,
+            convert_repository(
+                from_repos, to_location, layout,
                 not standalone, trees, all, format=format,
                 filter_branch=filter_branch, keep=keep,
                 incremental=not restore, to_revnum=to_revnum, prefix=prefix,
@@ -203,8 +210,6 @@ class cmd_svn_import(Command):
                 trace.note(
                     gettext("Use 'bzr checkout' to create a working tree in "
                             "the newly created branches."))
-        finally:
-            from_repos.unlock()
 
 
 class cmd_svn_layout(Command):
@@ -222,9 +227,9 @@ class cmd_svn_layout(Command):
             urlutils,
             )
         from breezy.branch import Branch
-        from breezy.plugins.svn import gettext
+        from . import gettext
         from breezy.repository import Repository
-        from breezy.plugins.svn import errors as bzrsvn_errors
+        from . import errors as bzrsvn_errors
 
         try:
             branch, _ = Branch.open_containing(path)
@@ -239,7 +244,8 @@ class cmd_svn_layout(Command):
         self.outf.write(gettext("Repository root: %s\n") % repos.base)
         self.outf.write(gettext("Layout: %s\n") % str(layout))
         if branch is not None:
-            self.outf.write(gettext("Branch path: %s\n") % branch.get_branch_path())
+            self.outf.write(
+                gettext("Branch path: %s\n") % branch.get_branch_path())
             if branch.project:
                 self.outf.write(gettext("Project: %s\n") % branch.project)
             try:
@@ -248,20 +254,22 @@ class cmd_svn_layout(Command):
                 self.outf.write(gettext("No tag support\n"))
             else:
                 if test_tag_path:
-                    self.outf.write(gettext("Tag container directory: %s\n") %
-                            urlutils.dirname(test_tag_path))
+                    self.outf.write(
+                        gettext("Tag container directory: %s\n") %
+                        urlutils.dirname(test_tag_path))
             try:
-                test_branch_path = layout.get_branch_path("test",
-                    branch.project)
+                test_branch_path = layout.get_branch_path(
+                    "test", branch.project)
             except bzrsvn_errors.NoCustomBranchPaths:
                 self.outf.write(gettext("No custom branch support\n"))
             else:
                 if test_branch_path:
                     self.outf.write(
-                        gettext("Branch container directory: %s\n" %
-                            urlutils.dirname(test_branch_path)))
-            self.outf.write(gettext("Push merged revisions: %s\n") %
-                    branch.get_push_merged_revisions())
+                        gettext("Branch container directory: %s\n") %
+                        urlutils.dirname(test_branch_path))
+            self.outf.write(
+                gettext("Push merged revisions: %s\n") %
+                branch.get_push_merged_revisions())
 
 
 class cmd_svn_branches(Command):
@@ -281,9 +289,9 @@ class cmd_svn_branches(Command):
     def run(self, location, layout=None):
         from breezy import errors
         from breezy.controldir import ControlDir
-        from breezy.plugins.svn import gettext
-        from breezy.plugins.svn.remote import SvnRemoteAccess
-        from breezy.plugins.svn.workingtree import SvnCheckout
+        from . import gettext
+        from .remote import SvnRemoteAccess
+        from .workingtree import SvnCheckout
 
         dir = ControlDir.open(location)
 
@@ -294,7 +302,7 @@ class cmd_svn_branches(Command):
 
         try:
             repository = dir.open_repository()
-        except errors.NoRepositoryPresent as e:
+        except errors.NoRepositoryPresent:
             repository = dir.find_repository(_ignore_branch_path=True)
             assert dir.root_transport.base.startswith(repository.base)
             prefix = dir.root_transport.base[len(repository.base):].strip("/")
@@ -307,10 +315,12 @@ class cmd_svn_branches(Command):
             layout = repository.get_guessed_layout()
 
         self.outf.write(gettext("Branches:\n"))
-        for (project, path, name, has_props, revnum) in layout.get_branches(repository, revnum, prefix):
+        for (project, path, name, has_props, revnum) in layout.get_branches(
+                repository, revnum, prefix):
             self.outf.write("%s (%s)\n" % (path, name))
         self.outf.write(gettext("Tags:\n"))
-        for (project, path, name, has_props, revnum) in layout.get_tags(repository, revnum, prefix):
+        for (project, path, name, has_props, revnum) in layout.get_tags(
+                repository, revnum, prefix):
             self.outf.write("%s (%s)\n" % (path, name))
 
 
@@ -346,8 +356,8 @@ class cmd_fix_svn_ancestry(Command):
         dir_to_fix.control_transport.rename('repository', 'repository.backup')
         backup_transport = dir_to_fix.control_transport.clone(
             'repository.backup')
-        old_repo = old_repo_format.open(dir_to_fix, _found=True,
-            _override_transport=backup_transport)
+        old_repo = old_repo_format.open(
+            dir_to_fix, _found=True, _override_transport=backup_transport)
         new_repo = dir_to_fix.create_repository(
             shared=old_repo.is_shared())
         working_trees = old_repo.make_working_trees()
@@ -359,8 +369,9 @@ class cmd_fix_svn_ancestry(Command):
         for revid in present_revisions:
             foreign_revid, mapping = correct_repo.lookup_bzr_revision_id(
                 revid)
-            revisionfinder.find_until(foreign_revid, mapping,
-                find_ghosts=False, exclude_non_mainline=False)
+            revisionfinder.find_until(
+                foreign_revid, mapping, find_ghosts=False,
+                exclude_non_mainline=False)
         trace.note("Fetching correct SVN revisions")
         interrepo.fetch(needed=revisionfinder.get_missing())
         trace.note("Fetching other revisions")

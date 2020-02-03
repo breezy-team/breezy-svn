@@ -18,25 +18,19 @@
 
 from subvertpy import (
     NODE_UNKNOWN,
-    repos,
     )
 import subvertpy.tests
 
-from breezy import osutils
 from breezy.config import GlobalStack
 from breezy.controldir import (
     ControlDir,
-    )
-from breezy.sixish import (
-    text_type,
     )
 from breezy.tests import (
     TestCaseInTempDir,
     )
 from breezy.workingtree import WorkingTree
 
-from breezy.plugins.svn import (
-    config,
+from .. import (
     transport as _mod_svn_transport,
     )
 
@@ -167,8 +161,8 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         :return: A bzr-friendly URL for the created repository.
         """
         return _mod_svn_transport.svn_to_bzr_url(
-            subvertpy.tests.SubversionTestCase.make_repository(self,
-                relpath, allow_revprop_changes))
+            subvertpy.tests.SubversionTestCase.make_repository(
+                self, relpath, allow_revprop_changes))
 
     make_repository = make_svn_repository
 
@@ -183,11 +177,12 @@ class SubversionTestCase(subvertpy.tests.SubversionTestCase,TestCaseInTempDir):
         del self.client_ctx
         TestCaseInTempDir.tearDown(self)
 
-    def make_svn_branch_and_tree(self, repospath, clientpath,
-            allow_revprop_changes=True, lossy=False):
+    def make_svn_branch_and_tree(
+            self, repospath, clientpath, allow_revprop_changes=True,
+            lossy=False):
         branch = self.make_svn_branch(repospath, lossy=lossy)
         self.make_checkout(branch.base, clientpath)
-        return WorkingTree.open(clientpath.decode("utf-8"))
+        return WorkingTree.open(clientpath)
 
     def assertChangedPathEquals(self, expected, got, msg=None):
         if expected[:3] == got[:3] and got[3] in (expected[3], NODE_UNKNOWN):

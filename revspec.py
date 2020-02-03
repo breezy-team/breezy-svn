@@ -28,8 +28,8 @@ from breezy.revisionspec import (
     RevisionInfo,
     )
 
-from breezy.plugins.svn import lazy_check_versions
-from breezy.plugins.svn.mapping import mapping_registry
+from . import lazy_check_versions
+from .mapping import mapping_registry
 
 class RevisionSpec_svn(RevisionSpec):
     """Selects a revision using a Subversion revision number."""
@@ -60,8 +60,7 @@ class RevisionSpec_svn(RevisionSpec):
             revnum = self._get_revnum()
         except ValueError:
             raise InvalidRevisionSpec(self.user_spec, branch)
-        branch.lock_read()
-        try:
+        with branch.lock_read():
             graph = branch.repository.get_graph()
             for revid, _ in graph.iter_ancestry([branch.last_revision()]):
                 try:
@@ -73,8 +72,6 @@ class RevisionSpec_svn(RevisionSpec):
                 except InvalidRevisionId:
                     continue
             raise InvalidRevisionSpec(self.user_spec, branch)
-        finally:
-            branch.unlock()
 
     def _match_on_native(self, branch):
         try:

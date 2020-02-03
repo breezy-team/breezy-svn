@@ -25,20 +25,20 @@ from breezy.bzr.inventory import (
     )
 from breezy.sixish import text_type
 
-from breezy.plugins.svn.errors import (
+from .errors import (
     LayoutUnusable,
     NotSvnBranchPath,
     NoLayoutTagSetSupport,
     )
-from breezy.plugins.svn.layout import (
+from .layout import (
     RepositoryLayout,
     get_root_paths,
     )
-from breezy.plugins.svn.layout.standard import (
+from .layout.standard import (
     RootLayout,
     TrunkLayout,
     )
-from breezy.plugins.svn.mapping import (
+from .mapping import (
     BzrSvnMapping,
     escape_svn_path,
     unescape_svn_path,

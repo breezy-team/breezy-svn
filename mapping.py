@@ -40,7 +40,7 @@ from breezy.sixish import (
     )
 from breezy.trace import mutter
 
-from breezy.plugins.svn import (
+from . import (
     changes,
     errors,
     get_client_string,
@@ -105,6 +105,8 @@ def escape_svn_path(x):
     """
     x = osutils.safe_utf8(x)
     return urllib.quote(x, "")
+
+
 def unescape_svn_path(x):
     """Unescape a path for use by Subversion.
 
@@ -243,9 +245,10 @@ def parse_revision_metadata(text, rev):
     """
     in_properties = False
     for l in text.splitlines():
-        if not ": " in l:
-            raise errors.InvalidPropertyValue(SVN_PROP_BZR_REVISION_INFO,
-                    "Missing : in revision metadata in %r" % l)
+        if ": " not in l:
+            raise errors.InvalidPropertyValue(
+                SVN_PROP_BZR_REVISION_INFO,
+                "Missing : in revision metadata in %r" % l)
         key, value = l.split(": ", 1)
         if key == "committer":
             rev.committer = value.decode("utf-8")
@@ -255,13 +258,13 @@ def parse_revision_metadata(text, rev):
             in_properties = True
         elif key[0] == "\t" and in_properties:
             name = key[1:].encode('utf-8')
-            if not name in rev.properties:
+            if name not in rev.properties:
                 rev.properties[name] = value.decode("utf-8")
             else:
                 rev.properties[name] += "\n" + value.decode("utf-8")
         else:
-            raise errors.InvalidPropertyValue(SVN_PROP_BZR_REVISION_INFO,
-                    "Invalid key %r" % key)
+            raise errors.InvalidPropertyValue(
+                SVN_PROP_BZR_REVISION_INFO, "Invalid key %r" % key)
 
 
 def parse_revid_property(line):
@@ -270,16 +273,16 @@ def parse_revid_property(line):
     :return: tuple with (bzr_revno, revid)
     """
     if '\n' in line:
-        raise errors.InvalidPropertyValue(SVN_PROP_BZR_REVISION_ID,
-                "newline in revision id property line")
+        raise errors.InvalidPropertyValue(
+            SVN_PROP_BZR_REVISION_ID, "newline in revision id property line")
     try:
         (revno, revid) = line.split(' ', 1)
     except ValueError:
-        raise errors.InvalidPropertyValue(SVN_PROP_BZR_REVISION_ID,
-                "missing space")
+        raise errors.InvalidPropertyValue(
+            SVN_PROP_BZR_REVISION_ID, "missing space")
     if revid == "":
-        raise errors.InvalidPropertyValue(SVN_PROP_BZR_REVISION_ID,
-                "empty revision id")
+        raise errors.InvalidPropertyValue(
+            SVN_PROP_BZR_REVISION_ID, "empty revision id")
     return (int(revno), revid)
 
 
@@ -336,7 +339,8 @@ def parse_bzr_svn_revprops(props, rev):
 
     for name, value in props.items():
         if name.startswith(SVN_REVPROP_BZR_REVPROP_PREFIX):
-            bzrname = name[len(SVN_REVPROP_BZR_REVPROP_PREFIX):].encode('utf-8')
+            bzrname = name[len(SVN_REVPROP_BZR_REVPROP_PREFIX):].encode(
+                'utf-8')
             rev.properties[bzrname] = value.decode("utf-8")
         changed = True
 
@@ -363,7 +367,7 @@ class BzrSvnMapping(foreign.VcsMapping):
     def __init__(self):
         super(BzrSvnMapping, self).__init__(foreign_vcs_svn)
         if ((version_info[3] == 'exp' or self.experimental) and
-            not BzrSvnMapping._warned_experimental):
+                not BzrSvnMapping._warned_experimental):
             from breezy.trace import warning
             warning("using experimental bzr-svn mappings; may break existing "
                     "branches in the most horrible ways")
@@ -588,14 +592,16 @@ class BzrSvnMapping(foreign.VcsMapping):
     def import_text_revisions_fileprops(self, fileprops):
         raise NotImplementedError(self.import_text_revisions_fileprops)
 
-    def export_revision_revprops(self, svn_revprops, uuid, branch_root,
+    def export_revision_revprops(
+            self, svn_revprops, uuid, branch_root,
             timestamp, timezone, committer, revprops, revision_id, revno,
             parent_ids, testament):
         """Determines the revision properties.
         """
         raise NotImplementedError(self.export_revision_revprops)
 
-    def export_revision_fileprops(self, svn_fileprops, timestamp, timezone,
+    def export_revision_fileprops(
+            self, svn_fileprops, timestamp, timezone,
             committer, revprops, revision_id, revno, parent_ids, testament):
         """Determines the branch root file properties.
         """
@@ -668,8 +674,10 @@ def generate_fileid_property(fileids):
     :param fileids: Map of path -> fileid
     :return: Property value
     """
-    return "".join(["%s\t%s\n" % (urllib.quote(path.encode("utf-8")),
-        fileids[path]) for path in sorted(fileids.keys())])
+    return "".join(
+        ["%s\t%s\n" % (
+            urllib.quote(path.encode("utf-8")),
+            fileids[path]) for path in sorted(fileids.keys())])
 
 
 def parse_text_parents_property(text):
@@ -677,7 +685,10 @@ def parse_text_parents_property(text):
     for line in text.splitlines():
         parts = line.split("\t")
         entry = parts[0]
-        ret[urllib.unquote(entry).decode("utf-8")] = filter(lambda x: x != "", [osutils.safe_revision_id(parent_revid) for parent_revid in parts[1:]])
+        ret[urllib.unquote(entry).decode("utf-8")] = filter(
+            lambda x: x != "",
+            [osutils.safe_revision_id(parent_revid)
+             for parent_revid in parts[1:]])
     return ret
 
 
@@ -738,13 +749,15 @@ class BzrSvnMappingFileProps(object):
 
     def export_text_parents_fileprops(self, text_parents, fileprops):
         if text_parents != {}:
-            fileprops[SVN_PROP_BZR_TEXT_PARENTS] = generate_text_parents_property(text_parents)
+            fileprops[SVN_PROP_BZR_TEXT_PARENTS] = (
+                generate_text_parents_property(text_parents))
         elif SVN_PROP_BZR_TEXT_PARENTS in fileprops:
             fileprops[SVN_PROP_BZR_TEXT_PARENTS] = ""
 
     def export_text_revisions_fileprops(self, text_revisions, fileprops):
         if text_revisions != {}:
-            fileprops[SVN_PROP_BZR_TEXT_REVISIONS] = generate_text_revisions_property(text_revisions)
+            fileprops[SVN_PROP_BZR_TEXT_REVISIONS] = (
+                generate_text_revisions_property(text_revisions))
         elif SVN_PROP_BZR_TEXT_REVISIONS in fileprops:
             fileprops[SVN_PROP_BZR_TEXT_REVISIONS] = ""
 
@@ -757,7 +770,8 @@ class BzrSvnMappingFileProps(object):
                 mutter(str(e))
                 return ()
             if len(new_lines) != 1:
-                mutter("unexpected number of lines in bzr merge property: %r",
+                mutter(
+                    "unexpected number of lines in bzr merge property: %r",
                     new_lines)
                 return ()
             return parse_merge_property(new_lines[0])
@@ -794,7 +808,8 @@ class BzrSvnMappingFileProps(object):
 
         return svnprops
 
-    def export_revision_fileprops(self, svn_fileprops, timestamp, timezone,
+    def export_revision_fileprops(
+            self, svn_fileprops, timestamp, timezone,
             committer, revprops, revision_id, revno, parent_ids, testament):
 
         # Keep track of what Subversion properties to set later on
@@ -802,14 +817,15 @@ class BzrSvnMappingFileProps(object):
             timestamp, timezone, committer, revprops)
 
         if len(parent_ids) > 1:
-            svn_fileprops.update(self._record_merges(parent_ids[1:],
-                svn_fileprops))
+            svn_fileprops.update(self._record_merges(
+                parent_ids[1:], svn_fileprops))
 
         # Set appropriate property if revision id was specified by
         # caller
         if revision_id is not None:
             old = svn_fileprops.get(SVN_PROP_BZR_REVISION_ID+self.name, "")
-            svn_fileprops[SVN_PROP_BZR_REVISION_ID+self.name] = old + "%d %s\n" % (revno, revision_id)
+            svn_fileprops[SVN_PROP_BZR_REVISION_ID+self.name] = (
+                old + "%d %s\n" % (revno, revision_id))
 
     def export_message_fileprops(self, message, fileprops):
         fileprops[SVN_PROP_BZR_LOG] = message.encode("utf-8")
@@ -851,11 +867,11 @@ class BzrSvnMappingFileProps(object):
 
     def check_fileprops(self, changed_fileprops, checkresult):
         # bzr:revision-id:*
-        text = changed_fileprops.get(SVN_PROP_BZR_REVISION_ID+self.name,
-            ("", ""))
+        text = changed_fileprops.get(
+            SVN_PROP_BZR_REVISION_ID+self.name, ("", ""))
         try:
             new_lines = find_new_lines(*text)
-        except ValueError as e:
+        except ValueError:
             checkresult.invalid_fileprop_cnt += 1
         else:
             if len(new_lines) > 1:
@@ -865,7 +881,7 @@ class BzrSvnMappingFileProps(object):
             return
         try:
             revid = parse_revid_property(new_lines[0])
-        except errors.InvalidPropertyValue as e:
+        except errors.InvalidPropertyValue:
             self.invalid_fileprop_cnt += 1
             return
 
@@ -887,16 +903,18 @@ class BzrSvnMappingRevProps(object):
         return parse_fileid_property(svn_revprops[SVN_REVPROP_BZR_FILEIDS])
 
     def import_text_parents_revprops(self, svn_revprops):
-        if not svn_revprops.has_key(SVN_REVPROP_BZR_TEXT_PARENTS):
+        if SVN_REVPROP_BZR_TEXT_PARENTS not in svn_revprops:
             return {}
-        return parse_text_parents_property(svn_revprops[SVN_REVPROP_BZR_TEXT_PARENTS])
+        return parse_text_parents_property(
+            svn_revprops[SVN_REVPROP_BZR_TEXT_PARENTS])
 
     def export_text_parents_revprops(self, text_parents, svn_revprops):
         if text_parents != {}:
-            svn_revprops[SVN_REVPROP_BZR_TEXT_PARENTS] = generate_text_parents_property(text_parents)
+            svn_revprops[SVN_REVPROP_BZR_TEXT_PARENTS] = (
+                generate_text_parents_property(text_parents))
 
     def import_text_revisions_revprops(self, svn_revprops):
-        if not svn_revprops.has_key(SVN_REVPROP_BZR_TEXT_REVISIONS):
+        if SVN_REVPROP_BZR_TEXT_REVISIONS not in svn_revprops:
             return {}
         return parse_text_revisions_property(
             svn_revprops[SVN_REVPROP_BZR_TEXT_REVISIONS])
@@ -923,7 +941,7 @@ class BzrSvnMappingRevProps(object):
 
     def get_revision_id_revprops(self, revprops):
         if (not is_bzr_revision_revprops(revprops) or
-            not SVN_REVPROP_BZR_REVISION_ID in revprops):
+                SVN_REVPROP_BZR_REVISION_ID not in revprops):
             return (None, None, self.is_bzr_revision_hidden_revprops(revprops))
         revid = revprops[SVN_REVPROP_BZR_REVISION_ID]
         revno = int(revprops[SVN_REVPROP_BZR_REVNO])
@@ -932,7 +950,8 @@ class BzrSvnMappingRevProps(object):
     def export_message_revprops(self, message, revprops):
         revprops[SVN_REVPROP_BZR_LOG] = message.encode("utf-8")
 
-    def export_revision_revprops(self, svn_revprops, uuid, branch_root,
+    def export_revision_revprops(
+            self, svn_revprops, uuid, branch_root,
             timestamp, timezone, committer, revprops, revision_id, revno,
             parent_ids, testament):
         svn_revprops[SVN_REVPROP_BZR_MAPPING_VERSION] = self.name
@@ -1007,22 +1026,26 @@ class SubversionMappingRegistry(foreign.VcsMappingRegistry):
 
 
 try:
-    mapping_registry = SubversionMappingRegistry("breezy.plugins.svn.mapping",
-        "mapping_registry")
+    mapping_registry = SubversionMappingRegistry(
+        __name__ + ".mapping", "mapping_registry")
 except TypeError:
     mapping_registry = SubversionMappingRegistry()
-mapping_registry.register_lazy('v1', 'breezy.plugins.svn.mapping2',
-                               'BzrSvnMappingv1',
-                               'Original bzr-svn mapping format (bzr-svn 0.2.x)')
-mapping_registry.register_lazy('v2', 'breezy.plugins.svn.mapping2',
-                               'BzrSvnMappingv2',
-                               'Second format (bzr-svn 0.3.x)')
-mapping_registry.register_lazy('v3', 'breezy.plugins.svn.mapping3.base',
-                               'BzrSvnMappingv3',
-                               'Third format (bzr-svn 0.4.x)')
-mapping_registry.register_lazy('v4', 'breezy.plugins.svn.mapping4',
-                               'BzrSvnMappingv4',
-                               'Fourth format (bzr-svn 0.5.x)')
+mapping_registry.register_lazy(
+    'v1', __name__ + '.mapping2',
+    'BzrSvnMappingv1',
+    'Original bzr-svn mapping format (bzr-svn 0.2.x)')
+mapping_registry.register_lazy(
+    'v2', __name__ + '.mapping2',
+    'BzrSvnMappingv2',
+    'Second format (bzr-svn 0.3.x)')
+mapping_registry.register_lazy(
+    'v3', __name__ + '.mapping3.base',
+    'BzrSvnMappingv3',
+    'Third format (bzr-svn 0.4.x)')
+mapping_registry.register_lazy(
+    'v4', __name__ + '.mapping4',
+    'BzrSvnMappingv4',
+    'Fourth format (bzr-svn 0.5.x)')
 mapping_registry.set_default('v4')
 
 
@@ -1071,9 +1094,9 @@ def find_mapping_fileprops(changed_fileprops):
 def is_bzr_revision_revprops(revprops):
     """Check if the specified revision properties
     contain bzr-svn metadata."""
-    if revprops.has_key(SVN_REVPROP_BZR_MAPPING_VERSION):
+    if SVN_REVPROP_BZR_MAPPING_VERSION in revprops:
         return True
-    if revprops.has_key(SVN_REVPROP_BZR_SKIP):
+    if SVN_REVPROP_BZR_SKIP in revprops:
         return False
     return None
 
@@ -1129,7 +1152,7 @@ def revprops_complete(revprops):
             SVN_REVPROP_BZR_HIDDEN in revprops)
 
 
-def get_svn_file_contents(tree, kind, path, file_id=None):
+def get_svn_file_contents(tree, kind, path):
     if kind == "file":
         return tree.get_file(path)
     elif kind == "symlink":
@@ -1157,7 +1180,7 @@ class ForeignSubversion(foreign.ForeignVcs):
 
     def show_foreign_revid(self, foreign_revid):
         (uuid, bp, revnum) = foreign_revid
-        return { u"svn revno": u"%d (on /%s)" % (revnum, bp.decode("utf-8"))}
+        return {u"svn revno": u"%d (on /%s)" % (revnum, bp.decode("utf-8"))}
 
     def serialize_foreign_revid(self, foreign_revid):
         (uuid, bp, revnum) = foreign_revid

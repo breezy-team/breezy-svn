@@ -36,15 +36,14 @@ from breezy.errors import (
 from breezy.revision import NULL_REVISION
 from breezy.tests import (
     TestCase,
-    TestSkipped,
     )
 from breezy.trace import mutter
 
-from breezy.plugins.svn.branch import (
+from ..branch import (
     SvnBranchFormat,
     )
-from breezy.plugins.svn.convert import load_dumpfile
-from breezy.plugins.svn.tests import SubversionTestCase
+from ..convert import load_dumpfile
+from . import SubversionTestCase
 
 
 class WorkingSubversionBranch(SubversionTestCase):
@@ -822,16 +821,15 @@ foohosts""")
         oldbranch = Branch.open(url)
 
         uuid = "6f95bc5c-e18d-4021-aca8-49ed51dbcb75"
-        newbranch.lock_read()
-        tree = newbranch.repository.revision_tree(oldbranch.generate_revision_id(7))
+        with newbranch.lock_read():
+            tree = newbranch.repository.revision_tree(oldbranch.generate_revision_id(7))
 
-        host_fileid = tree.path2id("hosts")
+            host_fileid = tree.path2id("hosts")
 
-        self.assertVersionsPresentEquals(newbranch.repository.texts,
-                                        host_fileid, [
-            oldbranch.generate_revision_id(6),
-            oldbranch.generate_revision_id(7)])
-        newbranch.unlock()
+            self.assertVersionsPresentEquals(newbranch.repository.texts,
+                                            host_fileid, [
+                oldbranch.generate_revision_id(6),
+                oldbranch.generate_revision_id(7)])
 
     def test_fetch_odd(self):
         repos_url = self.make_repository('d')
@@ -880,16 +878,15 @@ foohosts""")
         tree = newbranch.repository.revision_tree(
              oldbranch.generate_revision_id(6))
         transaction = newbranch.repository.get_transaction()
-        newbranch.repository.lock_read()
-        texts = newbranch.repository.texts
-        host_fileid = tree.path2id("hosts")
-        mapping = oldbranch.repository.get_mapping()
-        self.assertVersionsPresentEquals(texts, host_fileid, [
-            mapping.revision_id_foreign_to_bzr((uuid, u"trunk", 1)),
-            mapping.revision_id_foreign_to_bzr((uuid, u"trunk", 2)),
-            mapping.revision_id_foreign_to_bzr((uuid, u"trunk", 3)),
-            oldbranch.generate_revision_id(6)])
-        newbranch.repository.unlock()
+        with newbranch.repository.lock_read():
+            texts = newbranch.repository.texts
+            host_fileid = tree.path2id("hosts")
+            mapping = oldbranch.repository.get_mapping()
+            self.assertVersionsPresentEquals(texts, host_fileid, [
+                mapping.revision_id_foreign_to_bzr((uuid, u"trunk", 1)),
+                mapping.revision_id_foreign_to_bzr((uuid, u"trunk", 2)),
+                mapping.revision_id_foreign_to_bzr((uuid, u"trunk", 3)),
+                oldbranch.generate_revision_id(6)])
 
     def assertVersionsPresentEquals(self, texts, fileid, versions):
         self.assertEqual(

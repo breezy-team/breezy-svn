@@ -30,16 +30,16 @@ from breezy.errors import BzrError
 from breezy.sixish import text_type
 from breezy.trace import mutter
 
-from breezy.plugins.svn.layout.guess import (
+from ..layout.guess import (
     GUESS_SAMPLE_SIZE,
     find_commit_paths,
     )
-from breezy.plugins.svn.layout.standard import (
+from ..layout.standard import (
     CustomLayout,
     RootLayout,
     TrunkLayout,
     )
-from breezy.plugins.svn.errors import LayoutUnusable
+from ..errors import LayoutUnusable
 
 
 class InvalidSvnBranchPath(BzrError):

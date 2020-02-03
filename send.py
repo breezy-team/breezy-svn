@@ -119,15 +119,15 @@ class SvnDiffTree(_mod_diff.DiffTree):
     def _get_file_contents(self, tree, file_id, path, kind):
         if kind in (None, "directory"):
             return None
-        from breezy.plugins.svn.mapping import get_svn_file_contents
-        with get_svn_file_contents(tree, kind, path, file_id) as f:
+        from .mapping import get_svn_file_contents
+        with get_svn_file_contents(tree, kind, path) as f:
             return f.readlines()
 
     def _show_diff(self, specific_files, extra_trees):
         iterator = self.new_tree.iter_changes(self.old_tree,
-                                               specific_files=specific_files,
-                                               extra_trees=extra_trees,
-                                               require_versioned=True)
+                                              specific_files=specific_files,
+                                              extra_trees=extra_trees,
+                                              require_versioned=True)
         has_changes = 0
         for (file_id, paths, changed_content, versioned, parent, name, kind,
              executable) in iterator:
@@ -175,12 +175,13 @@ class SvnMergeDirective(merge_directive.BaseMergeDirective):
         return self.patch.splitlines(True)
 
     @classmethod
-    def _generate_diff(cls, repository, svn_repository, revision_id, ancestor_id):
+    def _generate_diff(cls, repository, svn_repository, revision_id,
+                       ancestor_id):
         tree_1 = repository.revision_tree(ancestor_id)
         tree_2 = repository.revision_tree(revision_id)
         s = StringIO()
-        differ = SvnDiffTree.from_trees_options(tree_1, tree_2, s, 'utf8', None,
-            '', '', None)
+        differ = SvnDiffTree.from_trees_options(
+            tree_1, tree_2, s, 'utf8', None, '', '', None)
         differ.show_diff(None, None)
         return s.getvalue()
 
@@ -188,28 +189,26 @@ class SvnMergeDirective(merge_directive.BaseMergeDirective):
     def from_objects(cls, repository, revision_id, time, timezone,
                      target_branch, local_target_branch=None,
                      public_branch=None, message=None):
-        from breezy.plugins.svn.repository import SvnRepository
+        from .repository import SvnRepository
         submit_branch = _mod_branch.Branch.open(target_branch)
         if not isinstance(submit_branch.repository, SvnRepository):
             raise errors.BzrError("Not a Subversion repository")
 
-        submit_branch.lock_read()
-        try:
+        with submit_branch.lock_read():
             submit_revision_id = submit_branch.last_revision()
             repository.fetch(submit_branch.repository, submit_revision_id)
             graph = repository.get_graph()
             ancestor_id = graph.find_unique_lca(revision_id,
                                                 submit_revision_id)
-            patch = cls._generate_diff(repository, submit_branch.repository,
-                                    revision_id, ancestor_id)
-        finally:
-            submit_branch.unlock()
-        return cls(revision_id, None, time, timezone, target_branch,
+            patch = cls._generate_diff(
+                repository, submit_branch.repository, revision_id, ancestor_id)
+        return cls(
+            revision_id, None, time, timezone, target_branch,
             patch, None, public_branch, message)
 
 
 def send_svn(branch, revision_id, submit_branch, public_branch,
-              no_patch, no_bundle, message, base_revision_id):
+             no_patch, no_bundle, message, base_revision_id):
     return SvnMergeDirective.from_objects(
         branch.repository, revision_id, time.time(),
         osutils.local_time_offset(), submit_branch,

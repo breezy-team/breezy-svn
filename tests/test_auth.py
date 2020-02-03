@@ -20,8 +20,7 @@ from breezy import (
     tests,
     ui,
     )
-from breezy.tests import ui_testing
-from breezy.plugins.svn.auth import (
+from ..auth import (
     SubversionAuthenticationConfig,
     )
 
@@ -31,7 +30,7 @@ class TestSubversionAuthenticationConfig(tests.TestCase):
 
     def test_get_svn_simple(self):
         username, password = "a-user", "a-secret"
-        realm = "REALM" # what does this mean in the context of svn?
+        realm = "REALM"  # what does this mean in the context of svn?
         ui.ui_factory = tests.TestUIFactory(stdin=password + "\n")
         conf = SubversionAuthenticationConfig("svn", username, None, None)
         got_user, got_pass, _ = conf.get_svn_simple(realm, username, True)
@@ -39,6 +38,7 @@ class TestSubversionAuthenticationConfig(tests.TestCase):
         self.assertEquals(username, got_user)
         self.assertIsInstance(got_pass, str)
         self.assertEquals(password, got_pass)
-        self.assertEquals("%s %s password: " % (realm, username),
+        self.assertEquals(
+            "%s %s password: " % (realm, username),
             ui.ui_factory.stderr.getvalue())
         self.assertEquals("", ui.ui_factory.stdout.getvalue())

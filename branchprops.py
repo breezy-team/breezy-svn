@@ -20,17 +20,17 @@
 from __future__ import absolute_import
 
 from subvertpy import (
-        ERR_FS_NO_SUCH_REVISION,
-        SubversionException,
-        )
+    ERR_FS_NO_SUCH_REVISION,
+    SubversionException,
+    )
 
 from breezy.errors import (
-        NoSuchRevision,
-        )
+    NoSuchRevision,
+    )
 
-from breezy.plugins.svn import (
-        util,
-        )
+from . import (
+    util,
+    )
 
 
 class PathPropertyProvider(object):

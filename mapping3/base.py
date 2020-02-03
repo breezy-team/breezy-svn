@@ -26,19 +26,19 @@ from breezy import (
     )
 from breezy.sixish import text_type
 
-from breezy.plugins.svn import (
+from .. import (
     errors,
     mapping,
     )
-from breezy.plugins.svn.errors import (
+from ..errors import (
     NoCustomBranchPaths,
     NoLayoutTagSetSupport,
     )
-from breezy.plugins.svn.layout import (
+from ..layout import (
     RepositoryLayout,
     get_root_paths,
     )
-from breezy.plugins.svn.mapping3.scheme import (
+from ..mapping3.scheme import (
     BranchingScheme,
     InvalidSvnBranchPath,
     ListBranchingScheme,
@@ -51,6 +51,7 @@ from breezy.plugins.svn.mapping3.scheme import (
     )
 
 SVN_PROP_BZR_BRANCHING_SCHEME = 'bzr:branching-scheme'
+
 
 class SchemeDerivedLayout(RepositoryLayout):
 

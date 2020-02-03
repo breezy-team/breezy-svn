@@ -33,17 +33,17 @@ from breezy.sixish import (
     text_type,
     )
 
-from breezy.plugins.svn import (
+from . import (
     changes,
     errors as bzrsvn_errors,
     )
-from breezy.plugins.svn.cache import (
+from .cache import (
     CacheConcurrencyError,
     )
-from breezy.plugins.svn.transport import (
+from .transport import (
     SvnRaTransport,
     )
-from breezy.plugins.svn.util import (
+from .util import (
     lazy_dict,
     )
 
@@ -436,8 +436,8 @@ class LogWalker(object):
         assert isinstance(revnum, int) and revnum >= 0
 
         try:
-            return self._transport.iter_log([path], revnum, 0, 2, True, False,
-                    False, []).next()[1]
+            return next(self._transport.iter_log([path], revnum, 0, 2, True, False,
+                    False, []))[1]
         except subvertpy.SubversionException as e:
             msg, num = e.args
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:

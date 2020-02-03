@@ -79,14 +79,14 @@ class SvnRaTest(SubversionTestCase):
     def test_lock_read(self):
         repos_url = self.make_svn_repository('a')
         t = SvnRaTransport(repos_url)
-        lock = t.lock_read(".")
-        lock.unlock()
+        with t.lock_read("."):
+            pass
 
     def test_lock_write(self):
         repos_url = self.make_svn_repository('a')
         t = SvnRaTransport(repos_url)
-        lock = t.lock_write(".")
-        lock.unlock()
+        with t.lock_write("."):
+            pass
 
     def test_listable(self):
         repos_url = self.make_svn_repository('a')

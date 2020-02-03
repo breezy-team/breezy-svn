@@ -56,10 +56,12 @@ def as_bool(str):
     """
     if str is None:
         return None
-    _bools = { 'yes': True, 'no': False,
-               'on': True, 'off': False,
-               '1': True, '0': False,
-               'true': True, 'false': False }
+    _bools = {
+        'yes': True, 'no': False,
+        'on': True, 'off': False,
+        '1': True, '0': False,
+        'true': True, 'false': False,
+        }
     if isinstance(str, list):
         raise ValueError
     try:
@@ -140,7 +142,7 @@ class SubversionUUIDConfig(_mod_bzr_config.LockableConfig):
     def __init__(self, uuid):
         super(SubversionUUIDConfig, self).__init__(self._get_filename())
         self.uuid = uuid
-        if not self.uuid in self._get_parser():
+        if self.uuid not in self._get_parser():
             self._get_parser()[self.uuid] = {}
 
     def _get_filename(self):
@@ -213,11 +215,11 @@ class SvnRepositoryConfig(Config):
         """
         self.set_user_option('branching-scheme', str(scheme))
         if (guessed_scheme != scheme or
-            self.get_user_option('branching-scheme-guess') is not None):
+                self.get_user_option('branching-scheme-guess') is not None):
             self.set_user_option('branching-scheme-guess',
                                  guessed_scheme or scheme)
-        if (mandatory or
-            self.get_user_option('branching-scheme-mandatory') is not None):
+        if (mandatory or self.get_user_option(
+                'branching-scheme-mandatory') is not None):
             self.set_user_option('branching-scheme-mandatory', str(mandatory))
 
     def _get_user_option(self, option_name, use_global=True):
@@ -252,8 +254,9 @@ class SvnRepositoryConfig(Config):
 
         :return: BranchingScheme instance.
         """
-        from breezy.plugins.svn.mapping3.scheme import BranchingScheme
-        schemename = self._get_user_option("branching-scheme", use_global=False)
+        from .mapping3.scheme import BranchingScheme
+        schemename = self._get_user_option(
+            "branching-scheme", use_global=False)
         if schemename is not None:
             return BranchingScheme.find_scheme(schemename.encode('ascii'))
         return None
@@ -270,7 +273,7 @@ class SvnRepositoryConfig(Config):
 
         :return: BranchingScheme instance.
         """
-        from breezy.plugins.svn.mapping3.scheme import BranchingScheme
+        from .mapping3.scheme import BranchingScheme
         schemename = self._get_user_option("branching-scheme-guess",
                                            use_global=False)
         if schemename is not None:
@@ -383,11 +386,13 @@ class BranchConfig(Config):
         return self.get_user_option('change_editor')
 
     def set_user_option(self, name, value, store=STORE_LOCATION,
-        warn_masked=False):
+                        warn_masked=False):
         if store == STORE_GLOBAL:
             self._get_global_config().set_user_option(name, value)
         elif store == STORE_BRANCH:
-            raise NotImplementedError("Saving in branch config not supported for Subversion branches")
+            raise NotImplementedError(
+                "Saving in branch config not supported for Subversion "
+                "branches")
         else:
             self._get_location_config().set_user_option(name, value, store)
         if not warn_masked:
@@ -420,7 +425,8 @@ class PropertyConfig(object):
         return self.properties[self.prefix+option_name]
 
     def __setitem__(self, option_name, value):
-        raise NotImplementedError(self.set_user_option) # Should be setting the property..
+        # Should be setting the property..
+        raise NotImplementedError(self.set_user_option)
 
     def __contains__(self, option_name):
         return (self.prefix+option_name) in self.properties
@@ -437,15 +443,18 @@ class NoSubversionBuildPackageConfig(Exception):
 
 
 class SubversionBuildPackageConfig(object):
-    """Configuration object that behaves similar to svn-buildpackage when it reads its config."""
+    """Configuration that behaves similar to svn-buildpackage."""
 
     def __init__(self, tree):
-        from breezy.plugins.svn.workingtree import SvnWorkingTree
-        from breezy.plugins.svn.tree import SubversionTree
+        from .workingtree import SvnWorkingTree
+        from .tree import SubversionTree
         if (isinstance(tree, SvnWorkingTree) and
-            os.path.exists(os.path.join(tree.abspath("."), ".svn", "svn-layout"))):
-            self.wt_layout_path = os.path.join(tree.abspath("."), ".svn", "svn-layout")
-            self.option_source = ConfigObj(self.wt_layout_path, encoding="utf-8")
+                os.path.exists(os.path.join(
+                    tree.abspath("."), ".svn", "svn-layout"))):
+            self.wt_layout_path = os.path.join(
+                    tree.abspath("."), ".svn", "svn-layout")
+            self.option_source = ConfigObj(
+                self.wt_layout_path, encoding="utf-8")
         elif tree.has_filename("debian/svn-layout"):
             layout_file = tree.get_file("debian/svn-layout")
             self.option_source = ConfigObj(layout_file, encoding="utf-8")
@@ -479,14 +488,16 @@ class SubversionBuildPackageConfig(object):
         self.option_source[option_name] = value
 
 
-svn_layout_option = _mod_bzr_config.Option('layout', default=None,
-           help='''\
+svn_layout_option = _mod_bzr_config.Option(
+    'layout', default=None,
+    help='''\
 The mandated bzr-svn repository layout to use.
 
 See `bzr help svn-layout` for details.
 ''')
 
-svn_guessed_layout_option = _mod_bzr_config.Option('guessed-layout',
+svn_guessed_layout_option = _mod_bzr_config.Option(
+    'guessed-layout',
     default=None,
     help='''\
 The bzr-svn repository layout that bzr-svn guessed.
@@ -494,31 +505,38 @@ The bzr-svn repository layout that bzr-svn guessed.
 See `bzr help svn-layout` for details.
 ''')
 
+
 def svn_paths_from_store(text):
     return [b.encode("utf-8") for b in text.split(";") if b != ""]
 
-svn_branches_option = _mod_bzr_config.Option('branches', default=None,
-           from_unicode=svn_paths_from_store,
-           help='''\
+
+svn_branches_option = _mod_bzr_config.Option(
+    'branches', default=None,
+    from_unicode=svn_paths_from_store,
+    help='''\
 Paths in the Subversion repository to consider branches.
 
 This should be a comma-separated list of paths, each relative to the
 repository root. Asterisks may be used as wildcards, and will match
 a single path element.
 
-See `bzr help svn-layout` for more information on Subversion repository layouts.
+See `bzr help svn-layout` for more information on Subversion repository
+layouts.
 ''')
 
-svn_tags_option = _mod_bzr_config.Option('tags', default=None,
-           from_unicode=svn_paths_from_store,
-           help='''\
+
+svn_tags_option = _mod_bzr_config.Option(
+    'tags', default=None,
+    from_unicode=svn_paths_from_store,
+    help='''\
 Paths in the Subversion repository to consider tags.
 
 This should be a comma-separated list of paths, each relative to the
 repository root. Asterisks may be used as wildcards, and will match
 a single path element.
 
-See `bzr help svn-layout` for more information on Subversion repository layouts.
+See `bzr help svn-layout` for more information on Subversion repository
+layouts.
 ''')
 
 
@@ -526,7 +544,8 @@ def override_svn_revprops_from_store(text):
     val = _mod_bzr_config.bool_from_store(text)
     if val is not None:
         if val:
-            return [properties.PROP_REVISION_DATE, properties.PROP_REVISION_AUTHOR]
+            return [
+                properties.PROP_REVISION_DATE, properties.PROP_REVISION_AUTHOR]
         else:
             return []
     else:
@@ -534,9 +553,10 @@ def override_svn_revprops_from_store(text):
         return text.split(",")
 
 
-svn_override_revprops = _mod_bzr_config.Option('override-svn-revprops', default=None,
+svn_override_revprops = _mod_bzr_config.Option(
+    'override-svn-revprops', default=None,
     from_unicode=override_svn_revprops_from_store,
-   help='''\
+    help='''\
 Which Subversion revision properties to override (comma-separated list).
 
 This is done after a revision is pushed from bzr, and requires the
@@ -552,24 +572,28 @@ Possible values:
               the bzr revision
 ''')
 
-svn_log_strip_trailing_new_line = _mod_bzr_config.Option('log-strip-trailing-newline',
+svn_log_strip_trailing_new_line = _mod_bzr_config.Option(
+    'log-strip-trailing-newline',
     default=False, from_unicode=_mod_bzr_config.bool_from_store,
     help='''\
-Whether or not trailing newlines should be stripped in the Subversion log message.
+Whether trailing newlines should be stripped in the Subversion log message.
 
 This only applies to revisions created by bzr-svn.
 ''')
-svn_push_merged_revisions = _mod_bzr_config.Option('push_merged_revisions',
+svn_push_merged_revisions = _mod_bzr_config.Option(
+    'push_merged_revisions',
     default=False, from_unicode=_mod_bzr_config.bool_from_store,
     help='''\
 Whether to push merged revisions.
 ''')
-svn_allow_metadata_in_fileprops = _mod_bzr_config.Option('allow_metadata_in_file_properties',
+
+svn_allow_metadata_in_fileprops = _mod_bzr_config.Option(
+    'allow_metadata_in_file_properties',
     default=False, from_unicode=_mod_bzr_config.bool_from_store,
     help='''\
-Whether to allow bzr-svn to store bzr-svn-specific metadata in Subversion file properties.
+Whether to store bzr-svn-specific metadata in Subversion file properties.
 
-This is usually a bad idea, and not necessary with newer versions of Subversion,
-which support revision properties. This setting is present for compatibility with
-older versions of bzr-svn.
+This is usually a bad idea, and not necessary with newer versions of
+Subversion, which support revision properties. This setting is present for
+compatibility with older versions of bzr-svn.
 ''')

@@ -42,17 +42,17 @@ from breezy.tests import (
     TestCase,
     )
 
-from breezy.plugins.svn.layout.standard import (
+from ..layout.standard import (
     RootLayout,
     TrunkLayout,
     )
-from breezy.plugins.svn.convert import (
+from ..convert import (
     NotDumpFile,
     contains_parent_path,
     convert_repository,
     load_dumpfile,
     )
-from breezy.plugins.svn.tests import (
+from . import (
     SubversionTestCase,
     )
 

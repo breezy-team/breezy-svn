@@ -18,14 +18,14 @@ from __future__ import absolute_import
 from subvertpy import SubversionException, ERR_FS_NOT_FOUND
 import urllib
 
-from breezy import ui
-from breezy.trace import mutter
+from .... import ui
+from ....trace import mutter
 
-from breezy.plugins.svn.changes import (
+from ..changes import (
     common_prefix,
     )
 
-from breezy.plugins.svn.layout.standard import (
+from .standard import (
     CustomLayout,
     RootLayout,
     TrunkLayout,
@@ -34,14 +34,16 @@ from breezy.plugins.svn.layout.standard import (
 # Number of revisions to evaluate when guessing the repository layout
 GUESS_SAMPLE_SIZE = 300
 
+
 def find_commit_paths(changed_paths):
     """Find the commit-paths used in a bunch of revisions.
 
-    :param changed_paths: List of changed_paths (dictionary with path -> action)
+    :param changed_paths:
+        List of changed_paths (dictionary with path -> action)
     :return: List of potential commit paths.
     """
     for changes in changed_paths:
-        yield common_prefix(changes.keys())
+        yield common_prefix(list(changes.keys()))
 
 
 def guess_layout_from_branch_path(relpath):
@@ -115,8 +117,7 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
                 potentials[str(layout)] += 1
                 layout_cache[str(layout)] = layout
 
-    entries = potentials.items()
-    entries.sort(key=lambda e: e[1])
+    entries = sorted(potentials.items(), key=lambda e: e[1])
 
     mutter('potential branching layouts: %r' % entries)
 
@@ -160,8 +161,8 @@ def is_likely_branch_url(url):
     """Check whether url refers to a likely branch URL.
 
     """
-    from breezy.plugins.svn.transport import SvnRaTransport
-    from breezy.plugins.svn.logwalker import LogWalker
+    from ..transport import SvnRaTransport
+    from ..logwalker import LogWalker
     transport = SvnRaTransport(url)
     lw = LogWalker(transport=transport)
     svn_root_url = transport.get_repos_root()

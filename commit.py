@@ -59,31 +59,32 @@ from breezy.revision import (
     NULL_REVISION,
     )
 
-from breezy.plugins.svn import (
+from . import (
     mapping,
     )
-from breezy.plugins.svn.errors import (
+from .errors import (
     convert_svn_error,
     ChangesRootLHSHistory,
     MissingPrefix,
     RevpropChangeFailed,
     )
-from breezy.plugins.svn.svk import (
+from .svk import (
     generate_svk_feature,
     parse_svk_features,
     serialize_svk_features,
     SVN_PROP_SVK_MERGE
     )
-from breezy.plugins.svn.transport import (
+from .transport import (
     url_join_unescaped_path,
     )
-from breezy.plugins.svn.util import (
+from .util import (
     lazy_dict,
     )
 
 DUMMY_ROOT_PROPERTY_NAME = "bzr:svn:dummy"
 
 _fileprops_warned_repos = set()
+
 
 def warn_setting_fileprops(uuid):
     """Warn the user about the fact that file properties are going to be set.
@@ -133,7 +134,8 @@ def update_svk_features(oldvalue, merges, lookup_revid=None):
 
 
 def update_mergeinfo(lookup_revid, graph, oldvalue, baserevid, merges):
-    """Update a svn:mergeinfo property to include a specified list of merges."""
+    """Update a svn:mergeinfo property to include a specified list of merges.
+    """
     with ui.ui_factory.nested_progress_bar() as pb:
         mergeinfo = properties.parse_mergeinfo_property(oldvalue)
         for i, merge in enumerate(merges):
@@ -146,8 +148,8 @@ def update_mergeinfo(lookup_revid, graph, oldvalue, baserevid, merges):
                 except NoSuchRevision:
                     break
 
-                properties.mergeinfo_add_revision(mergeinfo, "/" + path,
-                    revnum)
+                properties.mergeinfo_add_revision(
+                    mergeinfo, "/" + path, revnum)
     newvalue = properties.generate_mergeinfo_property(mergeinfo)
     if newvalue != oldvalue:
         return newvalue
@@ -165,14 +167,24 @@ def find_suitable_base(parents, ie):
     candidates = []
     # Filter out which parents have this file id
     for (tree, url, revnum) in parents:
-        if tree.has_id(ie.file_id) and ie.kind == tree.kind(tree.id2path(ie.file_id), ie.file_id):
-            candidates.append((tree, url, revnum))
+        try:
+            path = tree.id2path(ie.file_id)
+        except NoSuchId:
+            pass
+        else:
+            if ie.kind == tree.kind(path):
+                candidates.append((tree, url, revnum))
     if candidates == []:
         return None
     # Check if there's any candidate that has the *exact* revision we need
     for (tree, url, revnum) in candidates:
-        if tree.get_file_revision(tree.id2path(ie.file_id), ie.file_id) == ie.revision:
-            return (tree, url, revnum)
+        try:
+            path = tree.id2path(ie.file_id)
+        except NoSuchId:
+            pass
+        else:
+            if tree.get_file_revision(path, ie.file_id) == ie.revision:
+                return (tree, url, revnum)
     # TODO: Ideally we should now pick the candidate with the least changes
     # for now, just pick the first candidate
     return candidates[0]
@@ -209,7 +221,7 @@ def file_editor_send_content_changes(reader, file_editor):
     if 'check' in debug.debug_flags:
         contents = reader.read()
         digest = delta.send_stream(BytesIO(contents), txdelta)
-        from breezy.plugins.svn.fetch import md5_string
+        from .fetch import md5_string
         assert digest == md5_string(contents)
     else:
         delta.send_stream(reader, txdelta)
@@ -222,9 +234,9 @@ def path_join(basepath, name):
         return name
 
 
-def dir_editor_send_changes(base_tuple, parents,
-    browse_tuple, path, file_id, dir_editor, branch_path,
-    modified_files, visit_dirs):
+def dir_editor_send_changes(
+        base_tuple, parents, browse_tuple, path, file_id, dir_editor,
+        branch_path, modified_files, visit_dirs):
     """Pass the changes to a directory to the commit editor.
 
     :param path: Path (from repository root) to the directory.
@@ -235,6 +247,7 @@ def dir_editor_send_changes(base_tuple, parents,
     (base_tree, base_url, base_revnum) = base_tuple
     (iter_children, get_ie) = browse_tuple
     changed = False
+
     def mutter(text, *args):
         if 'commit' in debug.debug_flags:
             trace.mutter(text, *args)
@@ -261,12 +274,12 @@ def dir_editor_send_changes(base_tuple, parents,
                 if (
                     # ... path no longer exists
                     new_child_ie is None or
-                    # ... parent changed
-                    child_ie.parent_id != new_child_ie.parent_id or
-                    # ... name changed
-                    child_ie.name != new_child_ie.name or
-                    # ... kind changed
-                    child_ie.kind != new_child_ie.kind):
+                        # ... parent changed
+                        child_ie.parent_id != new_child_ie.parent_id or
+                        # ... name changed
+                        child_ie.name != new_child_ie.name or
+                        # ... kind changed
+                        child_ie.kind != new_child_ie.kind):
                     mutter('removing %r(%r)', child_ie.name, child_ie.file_id)
                     dir_editor.delete_entry(
                         branch_relative_path(path, child_ie.name),
@@ -284,9 +297,13 @@ def dir_editor_send_changes(base_tuple, parents,
         full_new_child_path = branch_relative_path(new_child_path)
         child_editor = None
         try:
+            base_path = base_tree.id2path(child_ie.file_id)
+        except NoSuchId:
+            base_path = None
+        try:
             # add them if they didn't exist in base_tree or changed kind
-            if (not base_tree.has_id(child_ie.file_id) or
-                base_tree.kind(base_tree.id2path(child_ie.file_id)) != child_ie.kind):
+            if (base_path is not None or
+                    base_tree.kind(base_path) != child_ie.kind):
                 mutter('adding %s %r', child_ie.kind, new_child_path)
 
                 # Do a copy operation if at all possible, to make
@@ -294,31 +311,31 @@ def dir_editor_send_changes(base_tuple, parents,
                 new_base = find_suitable_base(parents, child_ie)
                 if new_base is not None:
                     child_base_path = new_base[0].id2path(child_ie.file_id)
-                    copyfrom_url = url_join_unescaped_path(new_base[1], child_base_path)
+                    copyfrom_url = url_join_unescaped_path(
+                        new_base[1], child_base_path)
                     copyfrom_revnum = new_base[2]
                 else:
                     # No suitable base found
                     copyfrom_url = None
                     copyfrom_revnum = -1
 
-                child_editor = dir_editor.add_file(full_new_child_path,
-                            copyfrom_url, copyfrom_revnum)
+                child_editor = dir_editor.add_file(
+                    full_new_child_path, copyfrom_url, copyfrom_revnum)
                 changed = True
             # copy if they existed at different location
-            elif (base_tree.id2path(child_ie.file_id) != new_child_path or
-                  base_tree.root_inventory.get_entry(child_ie.file_id).parent_id != child_ie.parent_id):
-                mutter('copy %s %r -> %r', child_ie.kind,
-                                  base_tree.id2path(child_ie.file_id),
-                                  new_child_path)
-                child_editor = dir_editor.add_file(full_new_child_path,
-                    url_join_unescaped_path(base_url,
-                        base_tree.id2path(child_ie.file_id)),
+            elif (base_path != new_child_path or
+                      base_tree.root_inventory.get_entry(child_ie.file_id).parent_id != child_ie.parent_id):
+                mutter('copy %s %r -> %r', child_ie.kind, base_path, new_child_path)
+                child_editor = dir_editor.add_file(
+                    full_new_child_path,
+                    url_join_unescaped_path(base_url, base_path),
                     base_revnum)
                 changed = True
             # open if they existed at the same location
             elif child_ie.file_id in modified_files:
                 mutter('open %s %r', child_ie.kind, new_child_path)
-                child_editor = dir_editor.open_file(full_new_child_path, base_revnum)
+                child_editor = dir_editor.open_file(
+                    full_new_child_path, base_revnum)
             else:
                 # Old copy of the file was retained. No need to send changes
                 child_editor = None
@@ -342,9 +359,12 @@ def dir_editor_send_changes(base_tuple, parents,
         new_child_path = path_join(path, child_ie.name)
         child_editor = None
         try:
+            base_path = base_tree.id2path(child_ie.file_id)
+        except NoSuchId:
+            base_path = None
+        try:
             # add them if they didn't exist in base_tree or changed kind
-            if (not base_tree.has_id(child_ie.file_id) or
-                base_tree.kind(base_tree.id2path(child_ie.file_id)) != child_ie.kind):
+            if (base_path is not None or base_tree.kind(base_path) != child_ie.kind):
                 mutter('adding dir %r', child_ie.name)
 
                 # Do a copy operation if at all possible, to make
@@ -370,7 +390,8 @@ def dir_editor_send_changes(base_tuple, parents,
                   base_tree.root_inventory.get_entry(child_ie.file_id).parent_id != child_ie.parent_id):
                 old_child_path = base_tree.id2path(child_ie.file_id)
                 mutter('copy dir %r -> %r', old_child_path, new_child_path)
-                copyfrom_url = url_join_unescaped_path(base_url, old_child_path)
+                copyfrom_url = url_join_unescaped_path(
+                    base_url, old_child_path)
                 copyfrom_revnum = base_revnum
 
                 child_editor = dir_editor.add_directory(
@@ -392,7 +413,8 @@ def dir_editor_send_changes(base_tuple, parents,
                 continue
 
             # Handle this directory
-            changed = dir_editor_send_changes(child_base, parents,
+            changed = dir_editor_send_changes(
+                child_base, parents,
                 (iter_children, get_ie), new_child_path, child_ie.file_id,
                 child_editor, branch_path, modified_files, visit_dirs) or changed
         finally:
@@ -698,8 +720,8 @@ class SvnCommitBuilder(CommitBuilder):
         if self.old_tree.kind(old_path) == 'directory':
             for child_ie in self.old_tree.iter_child_entries(
                     old_path):
-                if (not child_ie.file_id in self._deleted_fileids and
-                    not child_ie.file_id in self._updated):
+                if (child_ie.file_id not in self._deleted_fileids and
+                        child_ie.file_id not in self._updated):
                     yield child_ie
 
     def _get_new_ie(self, file_id):
@@ -788,8 +810,8 @@ class SvnCommitBuilder(CommitBuilder):
                     self._override_text_parents, self._svnprops)
         if self._config_stack.get("log-strip-trailing-newline"):
             if self.set_custom_revprops:
-                self.mapping.export_message_revprops(message,
-                    self._svn_revprops)
+                self.mapping.export_message_revprops(
+                    message, self._svn_revprops)
             if self.set_custom_fileprops:
                 self.mapping.export_message_fileprops(message, self._svnprops)
             message = message.rstrip("\n")
@@ -809,14 +831,14 @@ class SvnCommitBuilder(CommitBuilder):
                 timeval = properties.time_to_cstring(1000000 * self._timestamp)
                 self._svn_revprops[properties.PROP_REVISION_ORIGINAL_DATE] = timeval
             if (not self.supports_custom_revprops and
-                self._svn_revprops.keys() != [properties.PROP_REVISION_LOG]):
+                    self._svn_revprops.keys() != [properties.PROP_REVISION_LOG]):
                 raise AssertionError(
                     "non-log revision properties set but not supported: %r" %
                     self._svn_revprops.keys())
 
-            if self.old_tree.has_id(self.new_root_id):
+            try:
                 root_from = self.old_tree.id2path(self.new_root_id)
-            else:
+            except NoSuchId:
                 root_from = None
 
             if (self.old_tree.path2id('') is not None and
@@ -1006,8 +1028,7 @@ class SvnCommitBuilder(CommitBuilder):
                 heads_set.remove(p)
         if force_change:
             return None, heads
-        if (len(heads) == 1 and
-            heads[0] in carry_over_candidates):
+        if len(heads) == 1 and heads[0] in carry_over_candidates:
             # carry over situation
             parent_tree = carry_over_candidates[heads[0]]
             return parent_tree.get_file_revision(parent_tree.id2path(new_ie.file_id)), None
@@ -1184,7 +1205,8 @@ class SvnCommitBuilder(CommitBuilder):
         raise NotImplementedError(self.record_entry_contents)
 
 
-def send_svn_file_text_delta(tree, old_tree, file_id, old_path, new_path, ie, editor):
+def send_svn_file_text_delta(
+        tree, old_tree, file_id, old_path, new_path, ie, editor):
     """Send the file text delta to a Subversion editor object.
 
     Tree can either be a native Subversion tree of some sort,
@@ -1195,11 +1217,8 @@ def send_svn_file_text_delta(tree, old_tree, file_id, old_path, new_path, ie, ed
     :param old_tree: Base tree
     :param editor: Editor to report changes to
     """
-    contents = mapping.get_svn_file_contents(tree, ie.kind, new_path, ie.file_id)
-    try:
-        file_editor_send_content_changes(contents, editor)
-    finally:
-        contents.close()
+    with mapping.get_svn_file_contents(tree, ie.kind, new_path) as f:
+        file_editor_send_content_changes(f, editor)
     file_editor_send_prop_changes(old_tree, old_path, ie, editor)
     editor.close()
 

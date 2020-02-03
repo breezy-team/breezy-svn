@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-"""Utility functions for dealing with changes dictionaries as return by Subversions' log functions."""
+"""Utility functions for dealing with changes return by svn ' log functions."""
 
 from __future__ import absolute_import
 
@@ -123,15 +123,16 @@ def changes_root(paths):
     paths = sorted(paths)
     root = paths[0]
     for p in paths[1:]:
-        if p.startswith(u"%s/" % root): # new path is child of root
+        if p.startswith(u"%s/" % root):  # new path is child of root
             continue
-        elif root.startswith(u"%s/" % p): # new path is parent of root
+        elif root.startswith(u"%s/" % p):  # new path is parent of root
             root = p
         else:
             if u"" in paths:
                 return u""
-            return None # Mismatch
+            return None  # Mismatch
     return root
+
 
 def apply_reverse_changes(branches, changes):
     """Apply the specified changes on a set of branch names in reverse.

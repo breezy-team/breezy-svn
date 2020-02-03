@@ -19,7 +19,7 @@ from __future__ import absolute_import
 
 from breezy.sixish import text_type
 
-from breezy.plugins.svn import errors
+from . import errors
 
 SVN_PROP_SVK_MERGE = 'svk:merge'
 

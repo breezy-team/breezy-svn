@@ -47,13 +47,13 @@ from breezy.transport import (
     get_transport,
     )
 
-from breezy.plugins.svn import (
+from . import (
     changes,
     )
-from breezy.plugins.svn.branch import (
+from .branch import (
     SvnBranch,
     )
-from breezy.plugins.svn.fetch import (
+from .fetch import (
     FetchRevisionFinder,
     InterFromSvnToInventoryRepository,
     )
@@ -69,7 +69,8 @@ def get_latest_svn_import_revision(repo, uuid):
     :param uuid: Subversion repository UUID.
     """
     try:
-        text = repo.controldir.transport.get_bytes(LATEST_IMPORT_REVISION_FILENAME)
+        text = repo.controldir.transport.get_bytes(
+            LATEST_IMPORT_REVISION_FILENAME)
     except NoSuchFile:
         return 0
     (text_uuid, revnum) = text.strip().split(" ")
@@ -85,8 +86,8 @@ def put_latest_svn_import_revision(repo, uuid, revnum):
     :param uuid: Subversion repository UUID.
     :param revnum: A revision number.
     """
-    repo.controldir.transport.put_bytes(LATEST_IMPORT_REVISION_FILENAME,
-                             "%s %d\n" % (uuid, revnum))
+    repo.controldir.transport.put_bytes(
+        LATEST_IMPORT_REVISION_FILENAME, "%s %d\n" % (uuid, revnum))
 
 
 class NotDumpFile(BzrError):
@@ -167,7 +168,8 @@ class RepositoryConverter(object):
         """
         assert not all or create_shared_repo
         if format is None:
-            self._format = controldir.format_registry.make_controldir('default')
+            self._format = controldir.format_registry.make_controldir(
+                'default')
         else:
             self._format = format
 
@@ -183,7 +185,8 @@ class RepositoryConverter(object):
             layout = source_repos.get_layout()
 
         try:
-            target_dir = controldir.ControlDir.open_from_transport(self.to_transport)
+            target_dir = controldir.ControlDir.open_from_transport(
+                self.to_transport)
         except NotBranchError:
             target_dir = None
         else:
@@ -198,7 +201,7 @@ class RepositoryConverter(object):
         if create_shared_repo:
             try:
                 target_repos = target_dir.open_repository()
-                target_repos_is_empty = False # FIXME: Call Repository.is_empty() ?
+                target_repos_is_empty = False  # FIXME: Call Repository.is_empty() ?
                 if not layout.is_branch(u"") and not target_repos.is_shared() and not colocated:
                     raise BzrError("Repository %r is not shared." % target_repos)
             except NoRepositoryPresent:
@@ -209,11 +212,10 @@ class RepositoryConverter(object):
             target_repos = None
             target_repos_is_empty = False
 
-        source_repos.lock_read()
-        try:
+        with source_repos.lock_read():
             if incremental and target_repos is not None:
-                from_revnum = get_latest_svn_import_revision(target_repos,
-                    source_repos.uuid)
+                from_revnum = get_latest_svn_import_revision(
+                    target_repos, source_repos.uuid)
             else:
                 from_revnum = 0
             if to_revnum is None:
@@ -223,8 +225,8 @@ class RepositoryConverter(object):
             mapping = source_repos.get_mapping()
             existing_branches = {}
             deleted = set()
-            it = source_repos._revmeta_provider.iter_all_changes(layout,
-                mapping.is_branch_or_tag, to_revnum, from_revnum,
+            it = source_repos._revmeta_provider.iter_all_changes(
+                layout, mapping.is_branch_or_tag, to_revnum, from_revnum,
                 prefix=prefix)
             if create_shared_repo:
                 revfinder = FetchRevisionFinder(source_repos, target_repos,
@@ -239,11 +241,12 @@ class RepositoryConverter(object):
             with ui.ui_factory.nested_progress_bar() as pb:
                 for kind, item in it:
                     if kind == "revision":
-                        pb.update("finding branches", to_revnum-item.metarev.revnum,
-                                  to_revnum-from_revnum)
+                        pb.update(
+                            "finding branches", to_revnum-item.metarev.revnum,
+                            to_revnum-from_revnum)
                         if (not item.metarev.branch_path in existing_branches and
-                            layout.is_branch(item.metarev.branch_path) and
-                            not contains_parent_path(deleted, item.metarev.branch_path)):
+                                layout.is_branch(item.metarev.branch_path) and
+                                not contains_parent_path(deleted, item.metarev.branch_path)):
                             existing_branches[item.metarev.branch_path] = SvnBranch(
                                 source_repos, None, item.metarev.branch_path,
                                 revnum=item.metarev.revnum, _skip_check=True,
@@ -257,11 +260,14 @@ class RepositoryConverter(object):
                         deleted.add(path)
 
             if create_shared_repo:
-                if not InterFromSvnToInventoryRepository.is_compatible(source_repos, target_repos):
+                if not InterFromSvnToInventoryRepository.is_compatible(
+                        source_repos, target_repos):
                     raise IncompatibleRepositories(source_repos, target_repos)
-                inter = InterFromSvnToInventoryRepository.get(source_repos, target_repos)
-                self._fetch_to_shared_repo(inter, prefix, from_revnum, revmetas,
-                                           revfinder, mapping, heads)
+                inter = InterFromSvnToInventoryRepository.get(
+                    source_repos, target_repos)
+                self._fetch_to_shared_repo(
+                    inter, prefix, from_revnum, revmetas, revfinder, mapping,
+                    heads)
 
             if not keep:
                 self._remove_branches(deleted, existing_branches.keys())
@@ -269,11 +275,9 @@ class RepositoryConverter(object):
             existing_branches = existing_branches.values()
             if filter_branch is not None:
                 existing_branches = filter(filter_branch, existing_branches)
-            self._create_branches(existing_branches, prefix,
-                  create_shared_repo, working_trees, colocated,
-                  remember_parent)
-        finally:
-            source_repos.unlock()
+            self._create_branches(
+                existing_branches, prefix, create_shared_repo, working_trees,
+                colocated, remember_parent)
 
         if target_repos is not None:
             put_latest_svn_import_revision(target_repos, source_repos.uuid,
@@ -283,7 +287,8 @@ class RepositoryConverter(object):
                               revfinder, mapping, heads):
         def needs_manual_check(revmeta):
             if (prefix is not None and
-                not changes.path_is_child(prefix, revmeta.metarev.branch_path)):
+                    not changes.path_is_child(
+                        prefix, revmeta.metarev.branch_path)):
                 # Parent branch path is outside of prefix; we need to
                 # check manually
                 return True
@@ -295,8 +300,8 @@ class RepositoryConverter(object):
         with ui.ui_factory.nested_progress_bar() as pb:
             pb.update("checking revisions to fetch", 0,
                       len(revmetas))
-            revfinder.find_iter_revisions(revmetas, mapping,
-                needs_manual_check, pb=pb, heads=heads)
+            revfinder.find_iter_revisions(
+                revmetas, mapping, needs_manual_check, pb=pb, heads=heads)
         missing = revfinder.get_missing()
         inter.fetch(needed=missing)
 
@@ -339,19 +344,20 @@ class RepositoryConverter(object):
         with ui.ui_factory.nested_progress_bar() as pb:
             for i, source_branch in enumerate(existing_branches):
                 try:
-                    pb.update("%s:%d" % (source_branch.get_branch_path(),
-                        source_branch.get_revnum()), i,
-                        len(existing_branches))
+                    pb.update("%s:%d" % (
+                            source_branch.get_branch_path(),
+                            source_branch.get_revnum()), i,
+                            len(existing_branches))
                 except SubversionException as e:
                     if e.args[1] == ERR_FS_NOT_DIRECTORY:
                         continue
                     raise
                 if colocated:
-                    target_branch = self._get_colocated_branch(source_branch,
-                            prefix, remember_parent)
+                    target_branch = self._get_colocated_branch(
+                        source_branch, prefix, remember_parent)
                 else:
-                    target_branch = self._get_nested_branch(source_branch,
-                            prefix, remember_parent)
+                    target_branch = self._get_nested_branch(
+                        source_branch, prefix, remember_parent)
                 try:
                     target_branch.pull(source_branch, overwrite=True)
                 except NoSuchRevision:
@@ -399,6 +405,7 @@ class RepositoryConverter(object):
             nt.create_prefix()
             self.dirs[path] = self._format.initialize_on_transport(nt)
         return self.dirs[path]
+
 
 def convert_repository(*args, **kwargs):
     RepositoryConverter(*args, **kwargs)

@@ -31,12 +31,12 @@ from breezy.sixish import (
     )
 from breezy.lru_cache import LRUCache
 
-from breezy.plugins.svn.errors import (
+from .errors import (
     InvalidBzrSvnRevision,
     InvalidPropertyValue,
     warn_uuid_reuse,
     )
-from breezy.plugins.svn.mapping import (
+from .mapping import (
     SVN_PROP_BZR_REVISION_ID,
     find_mapping_revprops,
     find_new_lines,
@@ -236,10 +236,6 @@ class DiskCachingRevidMap(object):
         try:
             (branch_path, min_revnum, max_revnum, \
                     mapping) = self.cache.lookup_revid(revid)
-            assert isinstance(branch_path, text_type)
-            assert type(mapping) is str
-            # Entry already complete?
-            assert min_revnum <= max_revnum
             if min_revnum == max_revnum:
                 return ((self.actual.repos.uuid, branch_path, min_revnum),
                         mapping_registry.parse_mapping_name("svn-" + mapping))
@@ -283,12 +279,11 @@ class DiskCachingRevidMap(object):
             (branch_path, min_revnum, max_revnum, mapping) = found
             if min_revnum == max_revnum:
                 return (self.actual.repos.uuid, branch_path, min_revnum), mapping
-            assert min_revnum <= max_revnum
-            assert isinstance(branch_path, text_type)
+            if min_revnum > max_revnum:
+                raise AssertionError('%d > %d' % (min_revnum, max_revnum))
 
-        ((uuid, branch_path, revnum), mapping) = self.actual.bisect_fileprop_revid_revnum(revid,
-            branch_path, min_revnum, max_revnum)
-        assert isinstance(branch_path, text_type)
+        ((uuid, branch_path, revnum), mapping) = self.actual.bisect_fileprop_revid_revnum(
+            revid, branch_path, min_revnum, max_revnum)
         self.remember_entry(revid, branch_path, revnum, revnum, mapping.name)
         return (uuid, branch_path, revnum), mapping
 

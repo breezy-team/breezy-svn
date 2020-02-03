@@ -20,7 +20,7 @@ from __future__ import absolute_import
 
 from breezy.sixish import text_type
 
-from breezy.plugins.svn import lazy_check_versions
+from . import lazy_check_versions
 lazy_check_versions()
 
 import os
@@ -44,7 +44,7 @@ from breezy import (
     )
 from breezy.branch import Branch
 
-from breezy.plugins.svn.commit import dir_editor_send_changes
+from .commit import dir_editor_send_changes
 
 
 def determine_changed_paths(repository, branch_path, rev, revno):
@@ -91,8 +91,7 @@ class RepositoryBackend(ServerRepositoryBackend):
             strict_node, limit):
         i = 0
         revno = start_rev
-        self.branch.repository.lock_read()
-        try:
+        with self.branch.repository.lock_read():
             # FIXME: check whether start_rev and end_rev actually exist
             while revno != end_rev:
                 #TODO: Honor target_path, strict_node, changed_paths
@@ -112,8 +111,6 @@ class RepositoryBackend(ServerRepositoryBackend):
                     send_revision(revno,
                             rev.committer, time.strftime("%Y-%m-%dT%H:%M:%S.00000Z", time.gmtime(rev.timestamp)),
                             rev.message, changed_paths=changes)
-        finally:
-            self.branch.repository.unlock()
 
     def rev_proplist(self, revnum):
         path, revid = self._get_revid(revnum)

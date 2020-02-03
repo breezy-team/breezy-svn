@@ -25,14 +25,13 @@ from breezy.controldir import (
     )
 import breezy.gpg
 from breezy.repository import Repository
-from breezy.tests import KnownFailure
 from breezy.tests.blackbox import ExternalBase
 
-from breezy.plugins.svn.convert import load_dumpfile
-from breezy.plugins.svn.layout.standard import (
+from ..convert import load_dumpfile
+from ..layout.standard import (
     RootLayout,
     )
-from breezy.plugins.svn.tests import SubversionTestCase
+from . import SubversionTestCase
 
 
 class TestBranch(SubversionTestCase, ExternalBase):

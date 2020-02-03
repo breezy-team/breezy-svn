@@ -28,10 +28,10 @@ from subvertpy import (
 
 from breezy import ui
 
-from breezy.plugins.svn import (
+from . import (
     mapping,
     )
-from breezy.plugins.svn.commit import set_svn_revprops
+from .commit import set_svn_revprops
 
 
 class RepoReconciler(breezy.reconcile.RepoReconciler):

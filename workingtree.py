@@ -106,26 +106,26 @@ from breezy.workingtree import (
     WorkingTreeFormat,
     )
 
-from breezy.plugins.svn import (
+from . import (
     SvnWorkingTreeProber,
     svk,
     )
-from breezy.plugins.svn.commit import (
+from .commit import (
     _revision_id_to_svk_feature,
     )
-from breezy.plugins.svn.errors import (
+from .errors import (
     convert_svn_error,
     NotSvnBranchPath,
     NoSvnRepositoryPresent,
     )
-from breezy.plugins.svn.mapping import (
+from .mapping import (
     escape_svn_path,
     )
-from breezy.plugins.svn.transport import (
+from .transport import (
     SvnRaTransport,
     svn_config,
     )
-from breezy.plugins.svn.tree import (
+from .tree import (
     BasisTreeIncomplete,
     SvnBasisTree,
     SubversionTree,
@@ -138,12 +138,12 @@ from breezy.controldir import Converter
 from breezy.controldir import (
     ControlDirFormat,
     ControlDir,
-    format_registry,
     )
 
 
 class RepositoryRootUnknown(BzrError):
-    _fmt = "The working tree does not store the root of the Subversion repository."
+    _fmt = ("The working tree does not store the root of the Subversion "
+            "repository.")
 
 
 class LocalRepositoryOpenFailed(BzrError):
@@ -614,7 +614,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         elif (entry.schedule == SCHEDULE_ADD or
               entry.schedule == SCHEDULE_REPLACE):
             ids = self._get_new_file_ids()
-            if ids.has_key(relpath):
+            if relpath in ids:
                 return (ids[relpath], None)
         else:
             raise AssertionError("unknown schedule value %r for %s" % (
@@ -657,21 +657,6 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     if entry.schedule == SCHEDULE_DELETE:
                         ret.add(p)
         return ret
-
-    def has_or_had_id(self, file_id):
-        if self.has_id(file_id):
-            return True
-        if self.basis_tree().has_id(file_id):
-            return True
-        return False
-
-    def has_id(self, file_id):
-        try:
-            self.id2path(file_id)
-        except NoSuchId:
-            return False
-        else:
-            return True
 
     def id2path(self, file_id):
         ids = self._get_new_file_ids()
@@ -1070,7 +1055,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         try:
             new_entries = self._get_new_file_ids()
             if id is None:
-                if new_entries.has_key(path):
+                if path in new_entries:
                     del new_entries[path]
             else:
                 assert isinstance(id, str)
@@ -1344,17 +1329,19 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             try:
                 merge_hashes = {}
                 try:
-                    if hashfile.next() != MERGE_MODIFIED_HEADER_1 + '\n':
+                    if next(hashfile) != MERGE_MODIFIED_HEADER_1 + '\n':
                         raise MergeModifiedFormatError()
                 except StopIteration:
                     raise MergeModifiedFormatError()
                 for s in _mod_rio.RioReader(hashfile):
                     # RioReader reads in Unicode, so convert file_ids back to utf8
                     file_id = osutils.safe_file_id(s.get("file_id"), warn=False)
-                    if not self.has_id(file_id):
+                    try:
+                        path = self.id2path(file_id)
+                    except NoSuchId:
                         continue
                     text_hash = s.get("hash")
-                    if text_hash == self.get_file_sha1(self.id2path(file_id), file_id):
+                    if text_hash == self.get_file_sha1(path):
                         merge_hashes[file_id] = text_hash
                 return merge_hashes
             finally:
@@ -1363,12 +1350,13 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def set_merge_modified(self, modified_hashes):
         def iter_stanzas():
             for file_id, hash in modified_hashes.items():
-                yield _mod_rio.Stanza(file_id=file_id.decode('utf8'),
-                    hash=hash)
+                yield _mod_rio.Stanza(
+                    file_id=file_id.decode('utf8'), hash=hash)
         with self.lock_tree_write():
-            my_file = _mod_rio.rio_file(iter_stanzas(), MERGE_MODIFIED_HEADER_1)
-            self._transport.put_file('merge-hashes', my_file,
-                mode=self.controldir._get_file_mode())
+            my_file = _mod_rio.rio_file(
+                iter_stanzas(), MERGE_MODIFIED_HEADER_1)
+            self._transport.put_file(
+                'merge-hashes', my_file, mode=self.controldir._get_file_mode())
 
     def update_basis_by_delta(self, new_revid, delta):
         """Update the parents of this tree after a commit.
@@ -1682,7 +1670,7 @@ class SvnWorkingTreeFormat(WorkingTreeFormat):
         raise NotImplementedError(self.initialize)
 
     def get_controldir_for_branch(self):
-        from breezy.plugins.svn.remote import SvnRemoteFormat
+        from .remote import SvnRemoteFormat
         return SvnRemoteFormat()
 
     def make_test_tree(self, relpath):
@@ -1734,10 +1722,11 @@ class SvnWorkingTreeDirFormat(ControlDirFormat):
     def initialize_on_transport(self, transport):
         raise UninitializableFormat(self)
 
-    def initialize_on_transport_ex(self, transport, use_existing_dir=False,
-        create_prefix=False, force_new_repo=False, stacked_on=None,
-        stack_on_pwd=None, repo_format_name=None, make_working_trees=None,
-        shared_repo=False, vfs_only=False):
+    def initialize_on_transport_ex(
+            self, transport, use_existing_dir=False, create_prefix=False,
+            force_new_repo=False, stacked_on=None, stack_on_pwd=None,
+            repo_format_name=None, make_working_trees=None, shared_repo=False,
+            vfs_only=False):
         raise UninitializableFormat(self)
 
     def get_converter(self, format):
@@ -1746,11 +1735,11 @@ class SvnWorkingTreeDirFormat(ControlDirFormat):
 
     @property
     def repository_format(self):
-        from breezy.plugins.svn.repository import SvnRepositoryFormat
+        from .repository import SvnRepositoryFormat
         return SvnRepositoryFormat()
 
     def get_branch_format(self):
-        from breezy.plugins.svn.branch import SvnBranchFormat
+        from .branch import SvnBranchFormat
         return SvnBranchFormat()
 
     def supports_transport(self, transport):
@@ -1828,7 +1817,7 @@ class SvnCheckout(ControlDir):
         return filename == self._adm_dir or filename.startswith(self._adm_dir+'/')
 
     def get_remote_controldir(self):
-        from breezy.plugins.svn.remote import SvnRemoteAccess
+        from .remote import SvnRemoteAccess
         if self._remote_controldir is None:
             self._remote_controldir = SvnRemoteAccess(self.get_remote_transport())
         return self._remote_controldir
@@ -1902,7 +1891,7 @@ class SvnCheckout(ControlDir):
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
             mapping=None, revnum=None, possible_transports=None):
         """See ControlDir.open_branch()."""
-        from breezy.plugins.svn.branch import SvnBranch
+        from .branch import SvnBranch
         repos = self._find_repository()
         if mapping is None:
             mapping = repos.get_mapping()
@@ -1964,7 +1953,7 @@ class SvnCheckout(ControlDir):
         return self._dir_mode
 
     def get_config(self):
-        from breezy.plugins.svn.config import SvnRepositoryConfig
+        from .config import SvnRepositoryConfig
         if self._config is None:
             self._config = SvnRepositoryConfig(self.entry.url, self.entry.uuid)
         return self._config
@@ -1984,9 +1973,10 @@ class SvnCheckoutConverter(Converter):
         """See Converter.convert()."""
         from breezy.branch import BranchReferenceFormat
         remote_branch = to_convert.open_branch()
-        controldir = self.target_format.initialize(to_convert.root_transport.base)
-        branch = BranchReferenceFormat().initialize(controldir, remote_branch)
-        wt = controldir.create_workingtree()
+        controldir = self.target_format.initialize(
+            to_convert.root_transport.base)
+        BranchReferenceFormat().initialize(controldir, remote_branch)
+        controldir.create_workingtree()
         # FIXME: Convert working tree
         to_convert.root_transport.delete_tree(".svn")
         return controldir

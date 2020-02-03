@@ -27,7 +27,7 @@ from breezy.errors import (
     )
 from breezy.tests import TestCase
 
-from breezy.plugins.svn.errors import (
+from ..errors import (
     convert_error,
     convert_svn_error,
     DavRequestFailed,

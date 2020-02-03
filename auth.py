@@ -22,7 +22,6 @@ import subvertpy
 from subvertpy import (
     ra,
     )
-import urllib
 
 from breezy.config import (
     AuthenticationConfig,
@@ -75,10 +74,11 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
         mutter("Obtaining username and password for SVN connection %r"
                "(username: %r)", realm, username)
         if username is None:
-            username = self.get_user(self.scheme,
-                    host=self.host, path=self.path, realm=realm, ask=True)
-        password = self.get_password(self.scheme, host=self.host,
-            path=self.path, user=username,
+            username = self.get_user(
+                self.scheme, host=self.host, path=self.path, realm=realm,
+                ask=True)
+        password = self.get_password(
+            self.scheme, host=self.host, path=self.path, user=username,
             realm=realm, prompt=u"%s %s password" % (realm, username))
         if isinstance(password, text_type):
             password = password.encode('utf-8')
@@ -95,8 +95,8 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
         mutter("Verifying SSL server: %s", realm)
         credentials = self.get_credentials(self.scheme, host=self.host)
         if (credentials is not None and
-            "verify_certificates" in credentials and
-            credentials["verify_certificates"] is False):
+                "verify_certificates" in credentials and
+                credentials["verify_certificates"] is False):
             accepted_failures = (
                     subvertpy.SSL_NOTYETVALID +
                     subvertpy.SSL_EXPIRED +
@@ -113,8 +113,8 @@ class SubversionAuthenticationConfig(AuthenticationConfig):
 
         :param retries: Number of allowed retries.
         """
-        return ra.get_username_prompt_provider(self.get_svn_username,
-                                                     retries)
+        return ra.get_username_prompt_provider(
+            self.get_svn_username, retries)
 
     def get_svn_simple_prompt_provider(self, retries):
         """Return a Subversion auth provider for retrieving a
@@ -155,12 +155,13 @@ def get_ssl_client_cert_pw_provider(tries):
 
 
 def get_stock_svn_providers():
-    providers = [ra.get_simple_provider(),
-            ra.get_username_provider(),
-            ra.get_ssl_client_cert_file_provider(),
-            ra.get_ssl_client_cert_pw_file_provider(),
-            ra.get_ssl_server_trust_file_provider(),
-            ]
+    providers = [
+        ra.get_simple_provider(),
+        ra.get_username_provider(),
+        ra.get_ssl_client_cert_file_provider(),
+        ra.get_ssl_client_cert_pw_file_provider(),
+        ra.get_ssl_server_trust_file_provider(),
+        ]
 
     if getattr(ra, 'get_windows_simple_provider', None):
         providers.append(ra.get_windows_simple_provider())
@@ -183,11 +184,11 @@ def create_auth_baton(url):
         import urllib.parse as urlparse
     except ImportError:  # python < 3
         import urlparse
-    (scheme, netloc, path, _, _) = urlparse.urlsplit(url)
-    (creds, host) = urllib.splituser(netloc)
-    (host, port) = urllib.splitport(host)
+    parsed_url = urlparse.urlsplit(url)
 
-    auth_config = SubversionAuthenticationConfig(scheme, host, port, path)
+    auth_config = SubversionAuthenticationConfig(
+        parsed_url.scheme, parsed_url.hostname, parsed_url.port,
+        parsed_url.path)
 
     # Specify Subversion providers first, because they use file data
     # rather than prompting the user.
@@ -197,12 +198,12 @@ def create_auth_baton(url):
     providers += [get_ssl_client_cert_pw_provider(1)]
 
     auth_baton = ra.Auth(providers)
-    if creds is not None:
-        (user, password) = urllib.splitpasswd(creds)
-        if user is not None:
-            auth_baton.set_parameter(subvertpy.AUTH_PARAM_DEFAULT_USERNAME, user)
-        if password is not None:
-            auth_baton.set_parameter(subvertpy.AUTH_PARAM_DEFAULT_PASSWORD, password)
+    if parsed_url.username is not None:
+        auth_baton.set_parameter(
+            subvertpy.AUTH_PARAM_DEFAULT_USERNAME, parsed_url.username)
+    if parsed_url.password is not None:
+        auth_baton.set_parameter(
+            subvertpy.AUTH_PARAM_DEFAULT_PASSWORD, parsed_url.password)
     return auth_baton
 
 
@@ -217,7 +218,8 @@ class SubversionCredentialStore(CredentialStore):
         if credentials.get('port') is None:
             import socket
             try:
-                credentials['port'] = socket.getservbyname(credentials['scheme'])
+                credentials['port'] = socket.getservbyname(
+                    credentials['scheme'])
             except socket.error:
                 mutter("Unable to look up default port for %(scheme)s" %
                        credentials)
@@ -230,7 +232,7 @@ class SubversionCredentialStore(CredentialStore):
             return None
         creds = self.auth.credentials("svn.simple", svn_realm)
         try:
-            (username, password, may_save) = creds.next()
+            (username, password, may_save) = next(creds)
         except StopIteration:
             return None
         assert type(password) == str
@@ -242,17 +244,21 @@ class SubversionCredentialStore(CredentialStore):
     def get_credentials(self, scheme, host, port=None, user=None, path=None,
                         realm=None):
         assert isinstance(realm, str) or realm is None
-        credentials = { "scheme": scheme, "host": host, "port": port,
-            "realm": realm, "user": user}
+        credentials = {
+            "scheme": scheme,
+            "host": host,
+            "port": port,
+            "realm": realm,
+            "user": user,
+            }
         svn_realm = self._get_realm(credentials)
         if svn_realm is None:
             return None
         creds = self.auth.credentials("svn.simple", svn_realm)
         try:
-            (username, password, may_save) = creds.next()
+            (username, password, may_save) = next(creds)
         except StopIteration:
             return None
         credentials['user'] = username
         credentials['password'] = password
         return credentials
-

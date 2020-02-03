@@ -21,8 +21,8 @@ import subvertpy
 
 from breezy import urlutils
 from breezy.sixish import text_type
-from breezy.plugins.svn import errors as svn_errors
-from breezy.plugins.svn.layout import (
+from .. import errors as svn_errors
+from ..layout import (
     RepositoryLayout,
     get_root_paths,
     wildcard_matches,

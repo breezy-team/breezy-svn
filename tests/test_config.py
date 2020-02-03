@@ -20,7 +20,7 @@ from breezy import controldir
 from breezy.branch import Branch
 from breezy.repository import Repository
 from breezy.tests import test_config
-from breezy.plugins.svn.config import (
+from ..config import (
     NoSubversionBuildPackageConfig,
     PropertyConfig,
     SubversionBuildPackageConfig,
@@ -28,8 +28,8 @@ from breezy.plugins.svn.config import (
     SvnBranchStack,
     UUIDMatcher,
     )
-from breezy.plugins.svn.mapping3.scheme import TrunkBranchingScheme
-from breezy.plugins.svn.tests import SubversionTestCase
+from ..mapping3.scheme import TrunkBranchingScheme
+from . import SubversionTestCase
 
 
 def build_subversion_store(test):

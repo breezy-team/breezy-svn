@@ -43,7 +43,7 @@ from breezy.bzr.versionedfile import (
     ConstantMapper,
     )
 
-from breezy.plugins.svn import (
+from . import (
     changes,
     errors,
     )

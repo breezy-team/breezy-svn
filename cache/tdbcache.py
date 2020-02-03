@@ -31,22 +31,22 @@ from breezy import (
     trace,
     )
 
-from breezy.plugins.svn.cache import (
+from ..cache import (
     RepositoryCache,
     )
-from breezy.plugins.svn.mapping import (
+from ..mapping import (
     mapping_registry,
     )
-from breezy.plugins.svn.revids import (
+from ..revids import (
     RevisionIdMapCache,
     )
-from breezy.plugins.svn.revmeta import (
+from ..revmeta import (
     RevisionInfoCache,
     )
-from breezy.plugins.svn.logwalker import (
+from ..logwalker import (
     LogCache,
     )
-from breezy.plugins.svn.parents import (
+from ..parents import (
     ParentsCache,
     )
 
@@ -302,10 +302,10 @@ class TdbRepositoryCache(RepositoryCache):
 
     def __init__(self, uuid):
         super(TdbRepositoryCache, self).__init__(uuid)
-        cache_file = os.path.join(self.create_cache_dir(), 'cache.tdb')
-        assert isinstance(cache_file, str), "expected str, got: %r" % cache_file
-        db = tdb_open(cache_file, TDB_HASH_SIZE, tdb.DEFAULT,
-                os.O_RDWR|os.O_CREAT)
+        cache_file = os.path.join(self.create_cache_dir(), b'cache.tdb')
+        db = tdb_open(
+            cache_file.decode(), TDB_HASH_SIZE, tdb.DEFAULT,
+            os.O_RDWR|os.O_CREAT)
         try:
             assert int(db[b"version"].decode()) == CACHE_DB_VERSION
         except KeyError:

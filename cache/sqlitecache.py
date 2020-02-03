@@ -29,23 +29,23 @@ from breezy.sixish import (
     text_type,
     )
 
-from breezy.plugins.svn.cache import (
+from ..cache import (
     CacheConcurrencyError,
     RepositoryCache,
     )
-from breezy.plugins.svn.mapping import (
+from ..mapping import (
     mapping_registry,
     )
-from breezy.plugins.svn.revids import (
+from ..revids import (
     RevisionIdMapCache,
     )
-from breezy.plugins.svn.revmeta import (
+from ..revmeta import (
     RevisionInfoCache,
     )
-from breezy.plugins.svn.logwalker import (
+from ..logwalker import (
     LogCache,
     )
-from breezy.plugins.svn.parents import (
+from ..parents import (
     ParentsCache,
     )
 
