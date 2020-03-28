@@ -94,23 +94,3 @@ tags::
 	$(CTAGS) -R .
 
 ctags:: tags
-
-homepage.html: wiki.py README INSTALL
-	python wiki.py | tail -n +2 | rst2html > $@
-
-.PHONY: update-pot po/brz-svn.pot
-update-pot: po/brz-svn.pot
-
-TRANSLATABLE_PYFILES:=$(shell find . -name '*.py' \
-		| grep -v 'tests/' \
-		)
-
-po/brz-svn.pot: $(PYFILES) $(DOCFILES)
-	BRZ_PLUGINS_AT=svn@$(shell pwd) brz export-pot \
-          --plugin=svn > po/brz-svn.pot
-	echo $(TRANSLATABLE_PYFILES) | xargs \
-	  xgettext --package-name "brz-svn" \
-	  --msgid-bugs-address "<bazaar@lists.canonical.com>" \
-	  --copyright-holder "Jelmer Vernooij <jelmer@samba.org>" \
-	  --from-code ISO-8859-1 --sort-by-file --join --add-comments=i18n: \
-	  -d brz-svn -p po -o brz-svn.pot

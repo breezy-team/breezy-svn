@@ -1027,23 +1027,23 @@ class SubversionMappingRegistry(foreign.VcsMappingRegistry):
 
 try:
     mapping_registry = SubversionMappingRegistry(
-        __name__ + ".mapping", "mapping_registry")
+        __name__, "mapping_registry")
 except TypeError:
     mapping_registry = SubversionMappingRegistry()
 mapping_registry.register_lazy(
-    'v1', __name__ + '.mapping2',
+    'v1', 'breezy.plugins.svn.mapping2',
     'BzrSvnMappingv1',
     'Original bzr-svn mapping format (bzr-svn 0.2.x)')
 mapping_registry.register_lazy(
-    'v2', __name__ + '.mapping2',
+    'v2', 'breezy.plugins.svn.mapping2',
     'BzrSvnMappingv2',
     'Second format (bzr-svn 0.3.x)')
 mapping_registry.register_lazy(
-    'v3', __name__ + '.mapping3.base',
+    'v3', 'breezy.plugins.svn.mapping3.base',
     'BzrSvnMappingv3',
     'Third format (bzr-svn 0.4.x)')
 mapping_registry.register_lazy(
-    'v4', __name__ + '.mapping4',
+    'v4', 'breezy.plugins.svn.mapping4',
     'BzrSvnMappingv4',
     'Fourth format (bzr-svn 0.5.x)')
 mapping_registry.set_default('v4')

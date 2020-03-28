@@ -1,8 +1,0 @@
-<folder title="Tools">
-  <folder title="Migration Tools">
-    <folder title="Import From" icon="actions/go-jump">
-      <tool action="qrun svn-import" icon="logos/subversion" title="Subversion" type="bzr" />
-    </folder>
-  </folder>
-</folder>
-

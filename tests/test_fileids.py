@@ -466,21 +466,21 @@ class GetMapTests(SubversionTestCase):
     def test_304134(self):
         self.make_checkout(self.repos_url, 'svn-co')
         self.build_tree({
-            'svn-co/subdir1/file1': '',
-            'svn-co/subdir1/file2': '',
-            'svn-co/subdir2/file3': '',
-            'svn-co/subdir2/file4': ''})
+            'svn-co/subdir1/file1': b'',
+            'svn-co/subdir1/file2': b'',
+            'svn-co/subdir2/file3': b'',
+            'svn-co/subdir2/file4': b''})
         self.client_add('svn-co/subdir1')
         self.client_add('svn-co/subdir2')
         self.client_commit('svn-co', "Initial tree.")
-        self.build_tree({'svn-co/subdir1/subdir3/file5': '',
-                         'svn-co/subdir1/subdir3/file6': ''})
+        self.build_tree({'svn-co/subdir1/subdir3/file5': b'',
+                         'svn-co/subdir1/subdir3/file6': b''})
         self.client_add('svn-co/subdir1/subdir3')
         self.client_commit('svn-co', "More files.")
         self.build_tree({
-            'svn-co/subdir2/file3': 'addaline',
-            'svn-co/subdir2/file4': 'addbline',
-            'svn-co/subdir2/file7': ''})
+            'svn-co/subdir2/file3': b'addaline',
+            'svn-co/subdir2/file4': b'addbline',
+            'svn-co/subdir2/file7': b''})
         self.client_add('svn-co/subdir2/file7')
         self.client_set_prop("svn-co/subdir2/file4", "svn:executable", "true")
         self.client_copy("svn-co/subdir2", "svn-co/subdir1/subdir2")

@@ -19,8 +19,6 @@
 
 from __future__ import absolute_import
 
-import urllib
-
 from breezy import (
     errors,
     osutils,
@@ -129,19 +127,22 @@ class SvnRemoteFormat(ControlDirFormat):
     def get_format_description(self):
         return 'Subversion Smart Server'
 
-    def initialize_on_transport_ex(self, transport, use_existing_dir=False,
-        create_prefix=False, force_new_repo=False, stacked_on=None,
-        stack_on_pwd=None, repo_format_name=None, make_working_trees=None,
-        shared_repo=False, vfs_only=False):
+    def initialize_on_transport_ex(
+            self, transport, use_existing_dir=False,
+            create_prefix=False, force_new_repo=False, stacked_on=None,
+            stack_on_pwd=None, repo_format_name=None, make_working_trees=None,
+            shared_repo=False, vfs_only=False):
+
         def make_directory(transport):
             transport.mkdir('.')
             return transport
+
         def redirected(transport, e, redirection_notice):
             trace.note(redirection_notice)
             return transport._redirected_to(e.source, e.target)
         try:
-            transport = do_catching_redirections(make_directory, transport,
-                redirected)
+            transport = do_catching_redirections(
+                make_directory, transport, redirected)
         except errors.FileExists:
             if not use_existing_dir:
                 raise
@@ -234,17 +235,20 @@ class SvnRemoteAccess(ControlDir):
         self.root_url = svn_transport.get_repos_root()
 
         if not self.svn_url.lower().startswith(self.svn_root_url.lower()):
-            raise AssertionError("SVN URL %r does not start with root %r" %
+            raise AssertionError(
+                "SVN URL %r does not start with root %r" %
                 (self.svn_url, self.svn_root_url))
 
-        self._branch_path = urlutils.unquote(self.svn_url[len(self.svn_root_url):])
+        self._branch_path = urlutils.unquote(
+            self.svn_url[len(self.svn_root_url):])
 
     def break_lock(self):
         pass
 
-    def clone_on_transport(self, transport, revision_id=None,
-        force_new_repo=False, preserve_stacking=False, stacked_on=None,
-        create_prefix=False, use_existing_dir=True, no_tree=False):
+    def clone_on_transport(
+            self, transport, revision_id=None, force_new_repo=False,
+            preserve_stacking=False, stacked_on=None, create_prefix=False,
+            use_existing_dir=True, no_tree=False):
         """Clone this controldir and its contents to transport verbatim.
 
         :param transport: The transport for the location to produce the clone
@@ -293,14 +297,18 @@ class SvnRemoteAccess(ControlDir):
         relpath = self._determine_relpath(None)
         if relpath == u"":
             guessed_layout = self.find_repository().get_guessed_layout()
-            if guessed_layout is not None and not guessed_layout.is_branch(u""):
-                trace.warning('Cloning Subversion repository as branch. '
-                        'To import the individual branches in the repository, '
-                        'use "bzr svn-import".')
+            if (guessed_layout is not None and
+                    not guessed_layout.is_branch(u"")):
+                trace.warning(
+                    'Cloning Subversion repository as branch. '
+                    'To import the individual branches in the repository, '
+                    'use "bzr svn-import".')
         target_transport = get_transport(url, possible_transports)
         target_transport.ensure_base()
-        require_colocated = ("branch" in target_transport.get_segment_parameters())
-        cloning_format = self.cloning_metadir(require_colocated=require_colocated)
+        require_colocated = (
+            "branch" in target_transport.get_segment_parameters())
+        cloning_format = self.cloning_metadir(
+            require_colocated=require_colocated)
         # Create/update the result branch
         result = cloning_format.initialize_on_transport(target_transport)
 
@@ -315,10 +323,10 @@ class SvnRemoteAccess(ControlDir):
                 result_repo = result.create_repository()
                 target_is_empty = True
             else:
-                target_is_empty = None # Unknown
+                target_is_empty = None  # Unknown
         if stacked:
-            raise UnstackableBranchFormat(self._format.get_branch_format(),
-                self.root_transport.base)
+            raise UnstackableBranchFormat(
+                self._format.get_branch_format(), self.root_transport.base)
         interrepo = InterRepository.get(source_repository, result_repo)
         try:
             source_branch = self.open_branch()
@@ -329,24 +337,26 @@ class SvnRemoteAccess(ControlDir):
         else:
             project = source_branch.project
             mapping = source_branch.mapping
-        interrepo.fetch(revision_id=revision_id,
-            project=project, mapping=mapping,
-            target_is_empty=target_is_empty,
-            exclude_non_mainline=False)
+        interrepo.fetch(
+            revision_id=revision_id, project=project, mapping=mapping,
+            target_is_empty=target_is_empty, exclude_non_mainline=False)
         if source_branch is not None:
             if revision_id is None:
                 revision_id = source_branch.last_revision()
-            result_branch = source_branch.sprout(result,
-                revision_id=revision_id, repository=result_repo)
+            result_branch = source_branch.sprout(
+                result, revision_id=revision_id, repository=result_repo)
             interbranch = InterBranch.get(source_branch, result_branch)
-            interbranch.fetch(stop_revision=revision_id,
-                    exclude_non_mainline=False) # For the tags
+            # For the tags
+            interbranch.fetch(
+                stop_revision=revision_id, exclude_non_mainline=False)
         else:
             result_branch = result.create_branch()
-        if (create_tree_if_local and isinstance(target_transport, LocalTransport)
-            and (result_repo is None or result_repo.make_working_trees())):
-            result.create_workingtree(accelerator_tree=accelerator_tree,
-                hardlink=hardlink, from_branch=result_branch)
+        if (create_tree_if_local
+                and isinstance(target_transport, LocalTransport)
+                and (result_repo is None or result_repo.make_working_trees())):
+            result.create_workingtree(
+                accelerator_tree=accelerator_tree, hardlink=hardlink,
+                from_branch=result_branch)
         return result
 
     def is_control_filename(self, path):
@@ -375,7 +385,8 @@ class SvnRemoteAccess(ControlDir):
         from .repository import SvnRepository
         from .transport import get_svn_ra_transport
         if self.root_url != self.root_transport.base:
-            transport = get_transport(self.root_url, possible_transports=[self.root_transport])
+            transport = get_transport(
+                self.root_url, possible_transports=[self.root_transport])
             svn_transport = get_svn_ra_transport(transport)
         else:
             transport = self.root_transport
@@ -383,7 +394,8 @@ class SvnRemoteAccess(ControlDir):
         if _ignore_branch_path:
             return SvnRepository(self, transport, svn_transport)
         else:
-            return SvnRepository(self, transport, svn_transport, self._branch_path)
+            return SvnRepository(
+                self, transport, svn_transport, self._branch_path)
 
     def cloning_metadir(self, require_stacking=False, require_colocated=False):
         """Produce a metadir suitable for cloning with."""
@@ -392,8 +404,7 @@ class SvnRemoteAccess(ControlDir):
             ret = format_registry.make_controldir('development-colo')
         return ret
 
-    def open_workingtree(self, unsupported=False,
-            recommend_upgrade=True):
+    def open_workingtree(self, unsupported=False, recommend_upgrade=True):
         """See ControlDir.open_workingtree().
 
         Will always raise NotLocalUrl as this
@@ -415,7 +426,7 @@ class SvnRemoteAccess(ControlDir):
         return not isinstance(self._format, format.__class__)
 
     def import_branch(self, source, stop_revision=None, overwrite=False,
-            name=None, lossy=False):
+                      name=None, lossy=False):
         """Create a new branch in this repository, possibly
         with the specified history, optionally importing revisions.
 
@@ -440,15 +451,17 @@ class SvnRemoteAccess(ControlDir):
                     project = layout.get_branch_project(target_branch_path)
                 except NotSvnBranchPath:
                     raise errors.NotBranchError(target_branch_path)
-                inter.push_new_branch(layout, project, target_branch_path,
-                        stop_revision, push_metadata=(not lossy), overwrite=overwrite)
+                inter.push_new_branch(
+                    layout, project, target_branch_path, stop_revision,
+                    push_metadata=(not lossy), overwrite=overwrite)
                 return self.open_branch(name)
 
     def _determine_relpath(self, branch_name):
         from .errors import NoCustomBranchPaths
         repos = self.find_repository()
         layout = repos.get_layout()
-        if branch_name is None and getattr(self, "_get_selected_branch", False):
+        if branch_name is None and getattr(
+                self, "_get_selected_branch", False):
             branch_name = self._get_selected_branch()
         if branch_name == "" and layout.is_branch_or_tag(self._branch_path):
             return self._branch_path
@@ -461,7 +474,7 @@ class SvnRemoteAccess(ControlDir):
                 raise errors.NoColocatedBranchSupport(layout)
 
     def create_branch(self, name=None, repository=None, mapping=None,
-            lossy=False, append_revisions_only=None):
+                      lossy=False, append_revisions_only=None):
         """See ControlDir.create_branch()."""
         from .branch import SvnBranch
         from .push import (
@@ -481,22 +494,26 @@ class SvnRemoteAccess(ControlDir):
             relpath = self._determine_relpath(name).strip("/")
             if relpath == "":
                 if repository.get_latest_revnum() > 0:
-                    # Bail out if there are already revisions in this repository
+                    # Bail out if there are already revisions in this
+                    # repository
                     raise errors.AlreadyBranchError(repository.transport.base)
-                # TODO: Set NULL_REVISION in SVN_PROP_BZR_BRANCHING_SCHEME on rev0
+                # TODO: Set NULL_REVISION in SVN_PROP_BZR_BRANCHING_SCHEME on
+                # rev0
             bp_parts = relpath.split("/")
-            existing_bp_parts = check_dirs_exist(repository.svn_transport, bp_parts,
-                -1)
+            existing_bp_parts = check_dirs_exist(
+                repository.svn_transport, bp_parts, -1)
             if len(existing_bp_parts) == len(bp_parts) and relpath != "":
                 raise errors.AlreadyBranchError(repository.transport.base)
             if len(existing_bp_parts) < len(bp_parts)-1:
-                create_branch_container(repository.svn_transport, relpath,
+                create_branch_container(
+                    repository.svn_transport, relpath,
                     "/".join(existing_bp_parts))
             if relpath != "":
-                create_branch_with_hidden_commit(repository, relpath,
-                    NULL_REVISION, set_metadata=(not lossy))
+                create_branch_with_hidden_commit(
+                    repository, relpath, NULL_REVISION,
+                    set_metadata=(not lossy))
             branch = SvnBranch(repository, self, relpath, mapping)
-            if append_revisions_only == False:
+            if append_revisions_only is False:
                 branch.set_append_revisions_only(False)
             return branch
 
@@ -512,7 +529,8 @@ class SvnRemoteAccess(ControlDir):
         # Sorry, no branch references.
         raise errors.IncompatibleFormat(target_branch._format, self._format)
 
-    def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
+    def open_branch(
+            self, name=None, unsupported=True, ignore_fallbacks=False,
             mapping=None, branch_path=None, repository=None, revnum=None,
             possible_transports=None, project=None):
         """See ControlDir.open_branch()."""
@@ -523,7 +541,8 @@ class SvnRemoteAccess(ControlDir):
             repository = self.find_repository()
         if mapping is None:
             mapping = repository.get_mapping()
-        return SvnBranch(repository, self, branch_path, mapping, revnum=revnum,
+        return SvnBranch(
+            repository, self, branch_path, mapping, revnum=revnum,
             project=project)
 
     def create_repository(self, shared=None, format=None):
@@ -535,7 +554,8 @@ class SvnRemoteAccess(ControlDir):
         return self.open_repository()
 
     def push_branch(self, source, revision_id=None, overwrite=False,
-        remember=False, create_prefix=False, name=None, lossy=False):
+                    remember=False, create_prefix=False, name=None,
+                    lossy=False):
         from .branch import SvnBranch
         if lossy and isinstance(source, SvnBranch):
             raise errors.LossyPushToSameVCS(source, self)
@@ -556,11 +576,11 @@ class SvnRemoteAccess(ControlDir):
         except errors.NotBranchError:
             if create_prefix:
                 self.svn_transport.create_prefix()
-            ret.target_branch = self.import_branch(source, revision_id,
-                overwrite=overwrite, lossy=lossy)
+            ret.target_branch = self.import_branch(
+                source, revision_id, overwrite=overwrite, lossy=lossy)
             ret.target_branch_path = "/" + ret.target_branch.get_branch_path()
-            tag_ret = source.tags.merge_to(ret.target_branch.tags,
-                overwrite)
+            tag_ret = source.tags.merge_to(
+                ret.target_branch.tags, overwrite)
             if isinstance(tag_ret, tuple):
                 (ret.tag_updates, ret.tag_conflicts) = tag_ret
             else:
@@ -598,8 +618,8 @@ class SvnRemoteAccess(ControlDir):
     def get_config(self):
         from .config import SvnRepositoryConfig
         if self._config is None:
-            self._config = SvnRepositoryConfig(self.root_transport.base,
-                self.svn_transport.get_uuid())
+            self._config = SvnRepositoryConfig(
+                self.root_transport.base, self.svn_transport.get_uuid())
         return self._config
 
     def list_branches(self):
@@ -609,10 +629,9 @@ class SvnRemoteAccess(ControlDir):
         repos = self.find_repository()
         layout = repos.get_layout()
         branches = {}
-        for project, bp, nick, has_props, revnum in layout.get_branches(repos,
-                repos.get_latest_revnum()):
-            b = self.open_branch(branch_path=bp, repository=repos,
-                project=project)
+        for project, bp, nick, has_props, revnum in layout.get_branches(
+                repos, repos.get_latest_revnum()):
+            b = self.open_branch(
+                    branch_path=bp, repository=repos, project=project)
             branches[b.name] = b
         return branches
-

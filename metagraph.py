@@ -253,7 +253,7 @@ class RevisionMetadataBranch(object):
                 self._revs[0].revnum)
 
     def __iter__(self):
-        return ListBuildingIterator(self._revs, self.next)
+        return ListBuildingIterator(self._revs, self)
 
     def fetch_until(self, revnum):
         """Fetch at least all revisions until revnum."""
@@ -265,10 +265,12 @@ class RevisionMetadataBranch(object):
             except StopIteration:
                 return
 
-    def next(self):
+    def __next__(self):
         if self._history_limit and len(self._revs) >= self._history_limit:
             raise MetaHistoryIncomplete("Limited to %d revisions" % self._history_limit)
         return self._get_next()
+
+    next = __next__
 
     def _index(self, metarev):
         """Find the location of a metarev object, counted from the
@@ -346,7 +348,7 @@ class RevisionMetadataBrowser(object):
         self._iter = self.do()
 
     def __iter__(self):
-        return ListBuildingIterator(self._actions, self.next)
+        return ListBuildingIterator(self._actions, self)
 
     def __repr__(self):
         return "<%s from %d to %d, layout: %r>" % (
@@ -399,7 +401,7 @@ class RevisionMetadataBrowser(object):
         except StopIteration:
             return
 
-    def next(self):
+    def __next__(self):
         """Return the next action.
 
         :return: Tuple with action string and object.
@@ -407,6 +409,8 @@ class RevisionMetadataBrowser(object):
         ret = next(self._iter)
         self._actions.append(ret)
         return ret
+
+    next = __next__
 
     def do(self):
         """Yield revisions and deleted branches.
@@ -424,7 +428,7 @@ class RevisionMetadataBrowser(object):
 
             if self._last_revnum is not None:
                 # Import all metabranches_history where key > revnum
-                for x in xrange(self._last_revnum, revnum-1, -1):
+                for x in range(self._last_revnum, revnum-1, -1):
                     for bp in self._pending_ancestors[x].keys():
                         self._ancestors[bp].update(self._pending_ancestors[x][bp])
                     del self._pending_ancestors[x]

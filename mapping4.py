@@ -18,10 +18,9 @@
 
 from __future__ import absolute_import
 
-import urllib
-
 from breezy import (
     errors,
+    urlutils,
     )
 
 from . import (
@@ -86,7 +85,8 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps,
     def revision_id_foreign_to_bzr(self, foreign_revid):
         (uuid, path, revnum) = foreign_revid
         assert isinstance(uuid, str)
-        return b"svn-v4:%s:%s:%d" % (uuid, str(urllib.quote(path)), revnum)
+        return b"svn-v4:%s:%s:%d" % (
+            uuid.encode('ascii'), urlutils.quote(path).encode('ascii'), revnum)
 
     def generate_file_id(self, foreign_revid, inv_path):
         (uuid, branch, revnum) = foreign_revid

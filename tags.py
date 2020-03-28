@@ -33,7 +33,7 @@ from breezy import (
 from breezy.sixish import (
     text_type,
     )
-from breezy.tag import BasicTags
+from breezy.tag import Tags
 from breezy.trace import mutter
 
 from . import (
@@ -159,7 +159,7 @@ class ReverseTagDict(object):
         return (k for (k, v) in self.items())
 
 
-class SubversionTags(BasicTags):
+class SubversionTags(Tags):
     """Subversion tags object."""
 
     def __init__(self, branch):
@@ -358,7 +358,7 @@ class SubversionTags(BasicTags):
                 self.delete_tag(k)
 
     def merge_to(self, to_tags, overwrite=False, ignore_master=False,
-                 _from_revnum=None, _to_revnum=None):
+                 _from_revnum=None, _to_revnum=None, selector=None):
         """Copy tags between repositories if necessary and possible.
 
         This method has common command-line behaviour about handling
@@ -381,10 +381,13 @@ class SubversionTags(BasicTags):
             # no tags in the source, and we don't want to clobber anything
             # that's in the destination
             return {}, []
+        # TODO(jelmer): Implement selector
+        if selector is not None:
+            raise NotImplementedError(self.merge_to)
         with to_tags.branch.lock_write():
             graph = to_tags.branch.repository.get_graph()
-            source_dict = self._resolve_tags_ancestry(tag_revmetas,
-                graph, to_tags.branch.last_revision())
+            source_dict = self._resolve_tags_ancestry(
+                tag_revmetas, graph, to_tags.branch.last_revision())
             dest_dict = to_tags.get_tag_dict()
             ret = self._reconcile_tags(
                 dict([(k, v[2]) for (k, v) in source_dict.items()]),

@@ -465,7 +465,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
 
     def _close(self):
         if (not self.editor.bzr_base_tree.has_id(self.new_id) or
-            self.new_ie != self.editor.bzr_base_tree.root_inventory.get_entry(self.new_id) or
+                self.new_ie != self.editor.bzr_base_tree.root_inventory.get_entry(self.new_id) or
             self.bzr_base_path != self.path):
             self.new_ie.revision = self.editor._get_directory_revision(self.new_id)
             self.editor.texts.insert_record_stream([

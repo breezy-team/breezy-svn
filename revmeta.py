@@ -365,7 +365,7 @@ class BzrMetaRevision(object):
         while (lm.children and not lm.knows_fileprops() and
                get_memoized(lm) is None):
             todo.append(lm)
-            lm = iter(lm.children).next()
+            lm = next(iter(lm.children))
         if get_memoized(lm) is not None:
             val = get_memoized(lm)
         else:
@@ -998,7 +998,7 @@ class RevisionMetadataProvider(object):
         it = get_iter(branch_path, revnum)
         while it:
             try:
-                revmeta = it.next()
+                revmeta = next(it)
             except StopIteration:
                 revid = None
                 foreign_sibling = None

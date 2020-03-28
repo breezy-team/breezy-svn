@@ -370,7 +370,7 @@ class SvnBranch(ForeignBranch):
             )
         if revision_id is None or revision_id == self.last_revision():
             bp = self.get_branch_path()
-            uuid = self.repository.uuid
+            uuid = self.repository.uuid.decode()
             revnum = self.get_revnum()
         else:
             (uuid, bp, revnum), mapping = self.lookup_bzr_revision_id(
@@ -596,7 +596,7 @@ class SvnBranch(ForeignBranch):
                 revid = last_revmeta.get_revision_id(mapping)
             if self.is_locked():
                 self._cached_last_revid = revid
-            assert isinstance(revid, str), "not str: %r" % revid
+            assert isinstance(revid, bytes), "not str: %r" % revid
             return revid
 
     def get_push_merged_revisions(self):

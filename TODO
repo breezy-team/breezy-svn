@@ -4,7 +4,6 @@ more tests:
 - reconcile
 
 performance:
-- use chk maps for file ids
 - store changes root path in tdb cache, for quicker iter_changes().
 - when walking history, also update revid cache if possible
  - and perhaps tags info?
@@ -16,4 +15,4 @@ performance:
 
 for other things to do, see:
 
-* https://bugs.launchpad.net/bzr-svn
+* https://bugs.launchpad.net/brz-svn

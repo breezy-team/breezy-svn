@@ -113,7 +113,7 @@ class lazy_readonly_list(object):
         self._list = []
 
     def _next(self):
-        ret = self._iterator.next()
+        ret = next(self._iterator)
         self._list.append(ret)
         return ret
 
@@ -125,13 +125,15 @@ class lazy_readonly_list(object):
                 self._next = next
                 self._idx = 0
 
-            def next(self):
+            def __next__(self):
                 if len(self._list) > self._idx:
                     ret = self._list[self._idx]
                     self._idx += 1
                     return ret
                 self._idx += 1
                 return self._next()
+
+            next = __next__
 
         return Iterator(self._list, self._next)
 
@@ -148,10 +150,12 @@ class ListBuildingIterator(object):
         self.i = -1
         self.it = it
 
-    def next(self):
+    def __next__(self):
         """Return the next item."""
-        self.i+=1
+        self.i += 1
         try:
             return self.base_list[self.i]
         except IndexError:
-            return self.it()
+            return next(self.it)
+
+    next = __next__

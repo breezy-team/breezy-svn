@@ -97,7 +97,7 @@ class TestNativeCommit(SubversionTestCase):
         wt = self.make_svn_branch_and_tree('d', 'dc') #1
         self.build_tree({'dc/foo/bla': "data"})
         self.client_add("dc/foo")
-        revid = wt.commit(message="data", rev_id="some-revid-bla") #2
+        revid = wt.commit(message="data", rev_id=b"some-revid-bla") #2
         self.assertEqual("some-revid-bla", revid)
         self.assertEqual(wt.branch.generate_revision_id(2), revid)
         self.assertEqual(
@@ -312,8 +312,8 @@ class TestNativeCommit(SubversionTestCase):
     def test_parent_id_reused(self):
         wt = self.make_svn_branch_and_tree('d', 'dc')
 
-        first_revid = wt.commit("msg", rev_id="firstrevid")
-        second_revid = wt.commit("msg", rev_id="secondrevid")
+        first_revid = wt.commit("msg", rev_id=b"firstrevid")
+        second_revid = wt.commit("msg", rev_id=b"secondrevid")
 
         wt.branch.set_last_revision_info(1, first_revid)
 

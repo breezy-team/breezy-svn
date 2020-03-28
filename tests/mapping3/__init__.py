@@ -526,7 +526,7 @@ class RepositoryTests(SubversionTestCase):
         bzrwt.add("registry")
         bzrwt.add("registry/generic.c")
         revid1 = bzrwt.commit("Add initial directory + file", 
-                              rev_id="initialrevid")
+                              rev_id=b"initialrevid")
 
         # Push first branch into Subversion
         newdir = ControlDir.open(repos_url+"/trunk")
@@ -550,7 +550,7 @@ class RepositoryTests(SubversionTestCase):
         self.build_tree({'c/registry/generic.c': "DE"})
         bzrwt.add_pending_merge(merge_revid)
         self.assertEquals(bzrwt.get_parent_ids()[1], merge_revid)
-        revid2 = bzrwt.commit("Merge something", rev_id="mergerevid")
+        revid2 = bzrwt.commit("Merge something", rev_id=b"mergerevid")
         bzr_parents = bzrwt.branch.repository.get_revision(revid2).parent_ids
         trunk = Branch.open(repos_url + "/trunk")
         self.assertRaises(AppendRevisionsOnlyViolation,

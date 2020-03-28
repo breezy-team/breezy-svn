@@ -221,9 +221,9 @@ class Walker(object):
         self.recursive = recursive
 
     def __iter__(self):
-        return iter(self.next, None)
+        return iter(self.__next__, None)
 
-    def next(self):
+    def __next__(self):
         while not self.pending:
             try:
                 p = self.todo.pop()
