@@ -91,7 +91,7 @@ from breezy.revision import (
     CURRENT_REVISION,
     NULL_REVISION,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 from breezy.trace import (

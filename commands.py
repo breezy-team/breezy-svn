@@ -29,7 +29,7 @@ from breezy.option import (
     RegistryOption,
     Option,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 

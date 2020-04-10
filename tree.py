@@ -54,7 +54,7 @@ from breezy.revision import (
 from breezy.revisiontree import (
     RevisionTree,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 from breezy.trace import mutter

@@ -17,7 +17,7 @@
 
 from __future__ import absolute_import
 
-from breezy.sixish import text_type
+from six import text_type
 
 from . import errors
 

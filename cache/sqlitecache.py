@@ -25,7 +25,7 @@ from breezy import (
     trace,
     osutils,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 

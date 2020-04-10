@@ -29,7 +29,7 @@ from breezy import (
 from breezy.errors import (
     NoSuchRevision,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 

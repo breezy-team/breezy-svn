@@ -21,8 +21,11 @@ from breezy.branch import Branch
 from breezy.controldir import ControlDir
 from breezy.errors import (
     BzrError,
-    InvalidRevisionSpec,
     )
+try:
+    from breezy.revisionspec import InvalidRevisionSpec
+except ImportError:  # brz < 3.2
+    from breezy.errors import InvalidRevisionSpec
 from breezy.revisionspec import (
     RevisionInfo,
     RevisionSpec,

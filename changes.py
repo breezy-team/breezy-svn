@@ -21,7 +21,7 @@ from __future__ import absolute_import
 from subvertpy import NODE_DIR
 
 
-from breezy.sixish import text_type
+from six import text_type
 
 
 REV0_CHANGES = {u"": ('A', None, -1, NODE_DIR)}

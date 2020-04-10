@@ -33,7 +33,7 @@ from breezy.bzr.knit import (
 from breezy.revision import (
     NULL_REVISION,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 from breezy.trace import (

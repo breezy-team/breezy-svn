@@ -27,7 +27,7 @@ from breezy.config import (
     AuthenticationConfig,
     CredentialStore,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 from breezy.trace import (

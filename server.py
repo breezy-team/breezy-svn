@@ -18,7 +18,7 @@
 
 from __future__ import absolute_import
 
-from breezy.sixish import text_type
+from six import text_type
 
 from . import lazy_check_versions
 lazy_check_versions()

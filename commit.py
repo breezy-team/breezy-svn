@@ -53,7 +53,7 @@ from breezy.errors import (
 from breezy.bzr.inventory import (
     entry_factory,
     )
-from breezy.sixish import text_type
+from six import text_type
 from breezy.repository import (
     CommitBuilder,
     )

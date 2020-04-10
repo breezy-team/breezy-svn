@@ -24,7 +24,7 @@ from subvertpy import (
     NODE_DIR,
     )
 
-from breezy.sixish import (
+from six import (
     text_type,
     )
 

@@ -30,7 +30,7 @@ from breezy.bedding import (
     config_dir,
     ensure_config_dir_exists,
     )
-from breezy.sixish import text_type
+from six import text_type
 
 from .. import version_info
 

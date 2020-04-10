@@ -23,7 +23,7 @@ from breezy.errors import (
 from breezy.bzr.inventory import (
     ROOT_ID,
     )
-from breezy.sixish import text_type
+from six import text_type
 
 from .errors import (
     LayoutUnusable,

@@ -62,7 +62,7 @@ from breezy.bzr.inventory import (
 from breezy.revision import (
     NULL_REVISION,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 from breezy.bzr.inventorytree import InventoryRevisionTree

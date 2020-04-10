@@ -27,7 +27,7 @@ from breezy import (
     urlutils,
     )
 from breezy.errors import BzrError
-from breezy.sixish import text_type
+from six import text_type
 from breezy.trace import mutter
 
 from ..layout.guess import (

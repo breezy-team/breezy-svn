@@ -29,7 +29,7 @@ from breezy import (
     urlutils,
     ui,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 from breezy.trace import mutter

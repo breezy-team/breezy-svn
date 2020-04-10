@@ -52,7 +52,7 @@ from breezy.errors import (
     RedirectRequested,
     TransportNotPossible,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 from breezy.trace import (

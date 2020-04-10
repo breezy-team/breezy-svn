@@ -27,11 +27,16 @@ from subvertpy import (
     )
 
 from breezy import (
-    cleanup,
     tag,
     trace,
     urlutils,
     )
+
+try:
+    from contextlib import ExitStack
+except ImportError:
+    from breezy.cleanup import ExitStack
+
 from breezy.branch import (
     Branch,
     BranchFormat,
@@ -71,7 +76,7 @@ from breezy.revision import (
     is_null,
     ensure_null,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 from breezy.symbol_versioning import (
@@ -965,7 +970,7 @@ class InterFromSvnBranch(GenericInterBranch):
             raise LocalRequiresBoundBranch()
         master_branch = None
         source_is_master = False
-        with cleanup.ExitStack() as es:
+        with ExitStack() as es:
             es.enter_context(self.source.lock_read())
             if bound_location:
                 # bound_location comes from a config file, some care has to be

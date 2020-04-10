@@ -20,7 +20,7 @@ from functools import partial
 import subvertpy
 
 from breezy import urlutils
-from breezy.sixish import text_type
+from six import text_type
 from .. import errors as svn_errors
 from ..layout import (
     RepositoryLayout,

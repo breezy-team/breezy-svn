@@ -15,7 +15,7 @@
 
 import subvertpy
 
-from breezy.sixish import text_type
+from six import text_type
 from breezy.tests import (
     TestCase,
     )

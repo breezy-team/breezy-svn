@@ -30,7 +30,7 @@ from breezy import (
     urlutils,
     version_info as breezy_version,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 from breezy.tag import Tags

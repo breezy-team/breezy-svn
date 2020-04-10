@@ -24,7 +24,7 @@ from breezy import (
     errors as bzr_errors,
     osutils,
     )
-from breezy.sixish import text_type
+from six import text_type
 
 from .. import (
     errors,

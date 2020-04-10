@@ -35,7 +35,7 @@ from breezy.revision import (
     NULL_REVISION,
     Revision,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 from breezy.trace import mutter

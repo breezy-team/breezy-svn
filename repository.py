@@ -43,7 +43,7 @@ from breezy.repository import (
     RepositoryFormat,
     RepositoryWriteLockResult,
     )
-from breezy.sixish import (
+from six import (
     text_type,
     )
 from breezy.bzr.inventorytree import InventoryRevisionTree
