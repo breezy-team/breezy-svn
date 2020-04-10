@@ -373,9 +373,9 @@ class FileIdMapCache(object):
                 optional_child_create_revid = b"\t%s:%d:%s" % (
                     created_revid[0], created_revid[2], created_revid[1].encode('utf-8'))
             lines.append(b"%s\t%s\t%s%s\n" % (
-                urllib.quote(path.encode("utf-8")),
-                urllib.quote(id),
-                urllib.quote(changed_revid),
+                urlutils.quote(path.encode("utf-8")),
+                urlutils.quote(id),
+                urlutils.quote(changed_revid),
                 optional_child_create_revid))
 
         self.idmap_knit.add_lines((revid,), [(r, ) for r in parent_revids],

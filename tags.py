@@ -245,8 +245,8 @@ class SubversionTags(Tags):
         revnum = self.repository.get_latest_revnum()
         if self.repository.svn_transport.check_path(path, revnum) == NODE_NONE:
             raise KeyError
-        tip, hidden, mapping = self.repository._revmeta_provider._iter_reverse_revmeta_mapping_history(
-            path, revnum, to_revnum=0, mapping=self.branch.mapping).next()
+        tip, hidden, mapping = next(self.repository._revmeta_provider._iter_reverse_revmeta_mapping_history(
+            path, revnum, to_revnum=0, mapping=self.branch.mapping))
         assert not hidden
         return tip.get_tag_revmeta(mapping)
 

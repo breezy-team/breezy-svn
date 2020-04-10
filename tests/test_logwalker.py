@@ -426,7 +426,7 @@ class TestLogWalker(SubversionTestCase):
         cb.close()
 
         for (paths, rev, revprops) in walker.iter_changes([""], 1):
-            self.assertTrue(rev == 0 or paths.has_key("foo"))
+            self.assertTrue(rev == 0 or "foo" in paths)
             self.assertTrue(rev in (0, 1))
 
     def test_follow_history_nohist(self):
@@ -446,7 +446,7 @@ class TestLogWalker(SubversionTestCase):
         cb.close()
 
         for (paths, rev, revprops) in walker.iter_changes([u""], 1):
-            self.assertTrue(rev == 0 or paths.has_key(u"foo"))
+            self.assertTrue(rev == 0 or u"foo" in paths)
             self.assertTrue(rev in (0, 1))
 
         self.assertRaises(NoSuchRevision, lambda: list(walker.iter_changes([u""], 2)))

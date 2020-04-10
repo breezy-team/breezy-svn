@@ -216,9 +216,10 @@ class TestFileMapping(TestCase):
             (revnum, branchpath) = r
 
             def new_file_id(x):
-                if renames.has_key(r) and renames[r].has_key(x):
+                try:
                     return renames[r][x]
-                return self.generate_file_id(("uuid", branchpath, revnum), x)
+                except KeyError:
+                    return self.generate_file_id(("uuid", branchpath, revnum), x)
             revmap = simple_apply_changes(new_file_id, mappings[r])
             map.update(dict([(x, (revmap[x], r)) for x in revmap]))
         return map

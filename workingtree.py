@@ -713,7 +713,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def iter_child_entries(self, path, file_id=None):
         """See Tree.iter_child_entries."""
-        entry = self.iter_entries_by_dir(specific_files=[path]).next()[1]
+        entry = next(self.iter_entries_by_dir(specific_files=[path]))[1]
         return getattr(entry, 'children', {}).values()
 
     def iter_entries_by_dir(self, specific_files=None):
@@ -1868,7 +1868,10 @@ class SvnCheckout(ControlDir):
         if self.entry.repos is None:
             raise RepositoryRootUnknown()
         assert self.entry.url.startswith(self.entry.repos)
-        return self.entry.url[len(self.entry.repos):].strip("/").decode('utf-8')
+        ret = self.entry.url[len(self.entry.repos):].strip("/")
+        if isinstance(ret, bytes):  # Python < 3
+            return ret.decode('utf-8')
+        return ret
 
     def needs_format_conversion(self, format):
         return not isinstance(self._format, format.__class__)

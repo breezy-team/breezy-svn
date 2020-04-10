@@ -266,9 +266,9 @@ class InterToSvnRepository(InterRepository):
         if len(existing_bp_parts) < len(bp_parts):
             # Branch doesn't exist yet
             return ("create", )
-        (revmeta, hidden, mapping) = self.target._revmeta_provider._iter_reverse_revmeta_mapping_history(
+        (revmeta, hidden, mapping) = next(self.target._revmeta_provider._iter_reverse_revmeta_mapping_history(
             path, self.target.get_latest_revnum(), to_revnum=0,
-            mapping=self.target.get_mapping()).next()
+            mapping=self.target.get_mapping()))
         assert not hidden
         if tuple(parent_ids) == () or tuple(parent_ids) == (NULL_REVISION,):
             return ("replace", revmeta.metarev.revnum)

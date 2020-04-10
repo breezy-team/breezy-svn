@@ -75,9 +75,9 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
                 repos.get_config().get_user_option("foo"))
 
     def test_repr(self):
-        dc = self.get_commit_editor(self.repos_url)
-        dc.add_file("foo").modify("data")
-        dc.close()
+        with self.get_commit_editor(self.repos_url) as dc:
+            with dc.add_file("foo") as f:
+                f.modify("data")
 
         repos = Repository.open(self.repos_url)
 
@@ -88,9 +88,9 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         repos = Repository.open(self.repos_url)
         stats = repos.gather_stats()
         self.assertEquals(0, stats['revisions'])
-        self.assertFalse(stats.has_key("firstrev"))
-        self.assertFalse(stats.has_key("latestrev"))
-        self.assertFalse(stats.has_key('committers'))
+        self.assertNotIn("firstrev", stats)
+        self.assertNotIn("latestrev", stats)
+        self.assertNotIn('committers', stats)
 
     def test_uuid(self):
         """ Test UUID is retrieved correctly """
@@ -99,10 +99,10 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         self.assertEqual(fs.get_uuid(), repository.uuid)
 
     def test_is_shared(self):
-        dc = self.get_commit_editor(self.repos_url)
-        foo = dc.add_dir("foo")
-        bla = foo.add_file("foo/bla").modify("data")
-        dc.close()
+        with self.get_commit_editor(self.repos_url) as dc:
+            with dc.add_dir("foo") as foo:
+                with foo.add_file("foo/bla") as f:
+                    f.modify("data")
 
         repository = Repository.open(self.repos_url)
         self.assertFalse(repository.is_shared())

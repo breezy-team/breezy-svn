@@ -236,12 +236,12 @@ class BranchConfigStackTests(SubversionTestCase):
     def test_get_tags(self):
         c = self.config
         c.set("tags", "bla;blie")
-        self.assertEquals(["bla", "blie"], c.get('tags'))
+        self.assertEquals([b"bla", b"blie"], c.get('tags'))
 
     def test_tags(self):
         c = self.config
         c.set("tags", "bla;blie")
-        self.assertEquals(["bla", "blie"], c.get('tags'))
+        self.assertEquals([b"bla", b"blie"], c.get('tags'))
 
 
 class PropertyConfigTests(SubversionTestCase):

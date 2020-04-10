@@ -95,7 +95,7 @@ class CacheTable(object):
 
     @classmethod
     def _convert_operational_errors(cls, e):
-        if "database is locked" in e:
+        if "database is locked" in str(e):
             return CacheConcurrencyError()
         else:
             return e
@@ -251,13 +251,15 @@ class SqliteRevisionInfoCache(RevisionInfoCache, CacheTable):
             original_mapping text,
             stored_lhs_parent_revid text
         );
-        create unique index if not exists revmeta_path_mapping on revmetainfo(revnum, path, mapping);
+        create unique index if not exists revmeta_path_mapping on revmetainfo(
+            revnum, path, mapping);
         create table if not exists original_mapping (
             path text not null,
             revnum integer,
             original_mapping text
             );
-        create unique index if not exists original_mapping_path_revnum on original_mapping (path, revnum);
+        create unique index if not exists original_mapping_path_revnum on
+            original_mapping (path, revnum);
         """)
         self._commit_interval = 500
 
@@ -268,20 +270,31 @@ class SqliteRevisionInfoCache(RevisionInfoCache, CacheTable):
             orig_mapping_name = original_mapping.name
         else:
             orig_mapping_name = None
-        self.execute("replace into original_mapping (path, revnum, original_mapping) values (?, ?, ?)", (foreign_revid[1], foreign_revid[2], orig_mapping_name))
+        self.execute(
+            "replace into original_mapping (path, revnum, original_mapping) "
+            "values (?, ?, ?)",
+            (foreign_revid[1], foreign_revid[2], orig_mapping_name))
 
-    def insert_revision(self, foreign_revid, mapping, (revno, revid, hidden),
-            stored_lhs_parent_revid):
+    def insert_revision(self, foreign_revid, mapping, revinfo,
+                        stored_lhs_parent_revid):
         """See RevisionInfoCache.insert_revision."""
-
-        self.execute("replace into revmetainfo (path, revnum, mapping, revid, revno, hidden, stored_lhs_parent_revid) values (?, ?, ?, ?, ?, ?, ?)", (foreign_revid[1], foreign_revid[2], mapping.name, revid, revno, hidden, stored_lhs_parent_revid))
+        (revno, revid, hidden) = revinfo
+        self.execute(
+            "replace into revmetainfo "
+            "(path, revnum, mapping, revid, revno, hidden, "
+            "stored_lhs_parent_revid) values (?, ?, ?, ?, ?, ?, ?)",
+            (foreign_revid[1], foreign_revid[2], mapping.name, revid, revno,
+             hidden, stored_lhs_parent_revid))
         self._commit_conditionally()
 
     def get_revision(self, foreign_revid, mapping):
         """See RevisionInfoCache.get_revision."""
 
         # Will raise KeyError if not present
-        row = self.execute("select revno, revid, hidden, stored_lhs_parent_revid from revmetainfo where path = ? and revnum = ? and mapping = ?", (foreign_revid[1], foreign_revid[2], mapping.name)).fetchone()
+        row = self.execute(
+            "select revno, revid, hidden, stored_lhs_parent_revid from "
+            "revmetainfo where path = ? and revnum = ? and mapping = ?",
+            (foreign_revid[1], foreign_revid[2], mapping.name)).fetchone()
         if row is None:
             raise KeyError((foreign_revid, mapping))
         else:

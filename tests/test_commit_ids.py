@@ -69,40 +69,40 @@ class CommitIdTesting:
         tree = self.prepare_wt('.')
         tree.lock_write()
         self.addCleanup(tree.unlock)
-        tree.set_root_id("THEROOTID")
+        tree.set_root_id(b"THEROOTID")
         items = self.commit_tree_items(tree, b"reva")
         self.assertEquals({
-            "": ("THEROOTID", b"reva", [])}, items)
+            "": (b"THEROOTID", b"reva", [])}, items)
 
     def test_add_file(self):
         tree = self.prepare_wt('.')
         tree.lock_write()
         self.addCleanup(tree.unlock)
-        tree.set_root_id("THEROOTID")
+        tree.set_root_id(b"THEROOTID")
         self.build_tree_contents([('afile', 'contents')])
-        tree.add(["afile"], ['THEFILEID'])
+        tree.add(["afile"], [b'THEFILEID'])
         items = self.commit_tree_items(tree, b"reva")
         self.assertEquals({
-            "": ("THEROOTID", b"reva", []),
-            "afile": ("THEFILEID", b"reva", []),
+            "": (b"THEROOTID", b"reva", []),
+            "afile": (b"THEFILEID", b"reva", []),
             }, items)
 
     def test_modify_file(self):
         tree = self.prepare_wt('.')
         tree.lock_write()
         self.addCleanup(tree.unlock)
-        tree.set_root_id("therootid")
+        tree.set_root_id(b"therootid")
         self.build_tree_contents([
             ('afile', 'contents'),
             ("unchanged", "content")])
-        tree.add(["afile", "unchanged"], ['thefileid', "unchangedid"])
+        tree.add(["afile", "unchanged"], [b'thefileid', b"unchangedid"])
         self.commit_tree(tree, b"reva")
         self.build_tree_contents([('afile', 'contents2')])
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
-            "": ("therootid", b"reva", []),
-            "afile": ("thefileid", "revb", [b"reva"]),
-            "unchanged": ("unchangedid", b"reva", []),
+            "": (b"therootid", b"reva", []),
+            "afile": (b"thefileid", "revb", [b"reva"]),
+            "unchanged": (b"unchangedid", b"reva", []),
             }, items)
 
     def test_change_link_target(self):
@@ -110,89 +110,89 @@ class CommitIdTesting:
         tree = self.prepare_wt('.')
         tree.lock_write()
         self.addCleanup(tree.unlock)
-        tree.set_root_id("therootid")
+        tree.set_root_id(b"therootid")
         os.symlink('oldtarget', 'link')
-        tree.add(["link"], ['thefileid'])
+        tree.add(["link"], [b'thefileid'])
         self.commit_tree(tree, b"reva")
         os.unlink('link')
         os.symlink('newtarget', 'link')
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
-            "": ("therootid", b"reva", []),
-            "link": ("thefileid", "revb", [b"reva"]),
+            "": (b"therootid", b"reva", []),
+            "link": (b"thefileid", "revb", [b"reva"]),
             }, items)
 
     def test_new_parent(self):
         tree = self.prepare_wt('.')
         tree.lock_write()
         self.addCleanup(tree.unlock)
-        tree.set_root_id("therootid")
+        tree.set_root_id(b"therootid")
         self.build_tree_contents([
             ('afile', 'contents'),
             ('adir/', )])
         tree.add(["afile", "adir"],
-                 ['thefileid', "thedirid"])
+                 [b'thefileid', b"thedirid"])
         self.commit_tree(tree, b"reva")
         tree.rename_one("afile", "adir/afile")
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
-            "": ("therootid", b"reva", []),
-            "adir": ("thedirid", b"reva", []),
-            "adir/afile": ("thefileid", "revb", [b"reva"]),
+            "": (b"therootid", b"reva", []),
+            "adir": (b"thedirid", b"reva", []),
+            "adir/afile": (b"thefileid", "revb", [b"reva"]),
             }, items)
 
     def test_rename_unmodified(self):
         tree = self.prepare_wt('.')
         tree.lock_write()
         self.addCleanup(tree.unlock)
-        tree.set_root_id("therootid")
+        tree.set_root_id(b"therootid")
         self.build_tree_contents([
             ('afile', 'contents'),
             ('adir/', )])
         tree.add(["afile", "adir"],
-                 ['thefileid', "thedirid"])
+                 [b'thefileid', b"thedirid"])
         self.commit_tree(tree, b"reva")
         tree.rename_one("afile", "bfile")
         tree.rename_one("adir", "bdir")
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
-            "": ("therootid", b"reva", []),
-            "bfile": ("thefileid", "revb", [b"reva"]),
-            "bdir": ("thedirid", "revb", [b"reva"]),
+            "": (b"therootid", b"reva", []),
+            "bfile": (b"thefileid", "revb", [b"reva"]),
+            "bdir": (b"thedirid", "revb", [b"reva"]),
             }, items)
 
     def test_change_mode(self):
         tree = self.prepare_wt('.')
         tree.lock_write()
         self.addCleanup(tree.unlock)
-        tree.set_root_id("therootid")
+        tree.set_root_id(b"therootid")
         self.build_tree_contents([
             ('afile', 'contents')])
-        tree.add(["afile"], ['thefileid'])
+        tree.add(["afile"], [b'thefileid'])
         self.commit_tree(tree, b"reva")
         os.chmod("afile", 0o755)
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
-            "": ("therootid", b"reva", []),
-            "afile": ("thefileid", "revb", [b"reva"]),
+            "": (b"therootid", b"reva", []),
+            "afile": (b"thefileid", "revb", [b"reva"]),
             }, items)
 
     def test_rename_parent(self):
         tree = self.prepare_wt('.')
         tree.lock_write()
         self.addCleanup(tree.unlock)
-        tree.set_root_id("therootid")
+        tree.set_root_id(b"therootid")
         self.build_tree_contents([
             ('adir/', ),
             ('adir/afile', 'contents')])
-        tree.add(["adir", "adir/afile"], ['thedirid', 'thefileid'])
+        tree.add(["adir", "adir/afile"], [b'thedirid', b'thefileid'])
         self.commit_tree(tree, b"reva")
         tree.rename_one('adir', 'bdir')
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
-            "": ("therootid", b"reva", []),
-            "bdir": ("thedirid", "revb", [b"reva"]),
-            "bdir/afile": ("thefileid", b"reva", []),
+            "": (b"therootid", b"reva", []),
+            "bdir": (b"thedirid", "revb", [b"reva"]),
+            "bdir/afile": (b"thefileid", b"reva", []),
             }, items)
         self.assertOverrideTextRevisions(tree, "revb", {
             "bdir/afile": b"reva"})
@@ -204,10 +204,10 @@ class CommitIdTesting:
         tree = self.prepare_wt('.')
         tree.lock_write()
         self.addCleanup(tree.unlock)
-        tree.set_root_id("therootid")
+        tree.set_root_id(b"therootid")
         self.build_tree_contents([
             ('adir/', )])
-        tree.add(["adir"], ['thedirid'])
+        tree.add(["adir"], [b'thedirid'])
         self.commit_tree(tree, b"reva")
         self.assertOverrideTextRevisions(tree, b"reva", {})
         self.assertOverrideFileIds(tree, b"reva", {
@@ -215,14 +215,14 @@ class CommitIdTesting:
             "adir": "thedirid"})
         self.build_tree_contents([
             ('adir/afile', 'contents')])
-        tree.add(['adir/afile'], ['thefileid'])
+        tree.add(['adir/afile'], [b'thefileid'])
         items = self.commit_tree_items(tree, "revb")
         self.assertOverrideFileIds(tree, "revb", {
-            "adir/afile": "thefileid"})
+            "adir/afile": b"thefileid"})
         self.assertEquals({
-            "": ("therootid", b"reva", []),
-            "adir": ("thedirid", b"reva", []),
-            "adir/afile": ("thefileid", "revb", []),
+            "": (b"therootid", b"reva", []),
+            "adir": (b"thedirid", b"reva", []),
+            "adir/afile": (b"thefileid", "revb", []),
             }, items)
         self.assertOverrideTextRevisions(tree, "revb", {})
         self.assertOverrideFileIds(tree, "revb", {
@@ -237,13 +237,13 @@ class CommitIdTesting:
         tree = self.prepare_wt('main')
         tree.lock_write()
         self.addCleanup(tree.unlock)
-        tree.set_root_id("therootid")
+        tree.set_root_id(b"therootid")
         self.build_tree_contents([
             ('main/afile', 'contents'),
             ('main/bfile', 'contents'),
             ('main/cfile', 'contents')])
         tree.add(["afile", "bfile", "cfile"],
-                 ['thefileid', 'bfileid', 'cfileid'])
+                 [b'thefileid', b'bfileid', b'cfileid'])
         self.commit_tree(tree, b"reva")
 
         os.mkdir('feature')
@@ -280,10 +280,10 @@ class CommitIdTesting:
         tree.pull(other_tree.branch)
         items = self.tree_items(tree.revision_tree("merge"))
         self.assertEquals({
-            "": ("therootid", b"reva", []),
-            "afile": ("thefileid", "revc", [b"reva"]),
-            "bfile": ("bfileid", "merge", ["revc", "revb"]),
-            "cfile": ("cfileid", "merge", ["revc", "revb"]),
+            "": (b"therootid", b"reva", []),
+            "afile": (b"thefileid", "revc", [b"reva"]),
+            "bfile": (b"bfileid", "merge", ["revc", "revb"]),
+            "cfile": (b"cfileid", "merge", ["revc", "revb"]),
             }, items)
         self.assertOverrideTextRevisions(tree, "merge", {
             })
@@ -292,18 +292,18 @@ class CommitIdTesting:
         tree = self.prepare_wt('.')
         tree.lock_write()
         self.addCleanup(tree.unlock)
-        tree.set_root_id("THEROOTID")
+        tree.set_root_id(b"THEROOTID")
         self.build_tree_contents([('afile', 'contents')])
-        tree.add(["afile"], ['THEFILEID'])
+        tree.add(["afile"], [b'THEFILEID'])
         items = self.commit_tree_items(tree, b"reva")
         self.assertEquals({
-            "": ("THEROOTID", b"reva", []),
-            "afile": ("THEFILEID", b"reva", []),
+            "": (b"THEROOTID", b"reva", []),
+            "afile": (b"THEFILEID", b"reva", []),
             }, items)
         items = self.commit_tree_items(tree, "revb")
         self.assertEquals({
-            "": ("THEROOTID", b"reva", []),
-            "afile": ("THEFILEID", b"reva", []),
+            "": (b"THEROOTID", b"reva", []),
+            "afile": (b"THEFILEID", b"reva", []),
             }, items)
 
 

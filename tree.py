@@ -217,7 +217,7 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
         raise NotImplementedError(self.get_file_stream_by_path)
 
     def iter_child_entries(self, path):
-        entry = self.iter_entries_by_dir(specific_files=[path]).next()[1]
+        entry = next(self.iter_entries_by_dir(specific_files=[path]))[1]
         return iter(getattr(entry, 'children', {}).values())
 
     def find_related_paths_across_trees(self, paths, trees=[],
@@ -413,7 +413,7 @@ class SvnRevisionTree(SvnRevisionTreeCommon):
         entries = inv.iter_entries(from_dir=from_dir_id, recursive=recursive)
         if inv.root is not None and not include_root and from_dir is None:
             # skip the root for compatability with the current apis.
-            entries.next()
+            next(entries)
         for path, entry in entries:
             yield path, 'V', entry.kind, entry.file_id, entry
 

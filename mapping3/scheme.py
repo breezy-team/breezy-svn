@@ -50,7 +50,7 @@ repository layout. See 'bzr help svn-repository-layout' for details."""
 
     def __init__(self, path, layout):
         BzrError.__init__(self)
-        self.path = urllib.quote(path)
+        self.path = urlutils.quote(path)
         self.layout = layout
 
 

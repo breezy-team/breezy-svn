@@ -3,23 +3,23 @@ Development
 
 Unit testing
 ~~~~~~~~~~~~
-To run the breezy-svn testsuite, simply run 
-'brz selftest --starting-with=bazaar.plugins.svn' or 
+To run the breezy-svn testsuite, simply run
+'brz selftest --starting-with=bazaar.plugins.svn' or
 run 'make check' in the top-level breezy-svn directory.
 
 Unavailable breezy APIs
 ~~~~~~~~~~~~~~~~~~~~~~~
-When dealing with things that are only available in newer versions of Breezy, 
-please mention in what Breezy version they became available. This makes it 
+When dealing with things that are only available in newer versions of Breezy,
+please mention in what Breezy version they became available. This makes it
 easy to clean up the code later, e.g.::
 
-	try:
-		from breezy.revspec import revspec_registry
-	except ImportError:
-		# Not available in Breezy < 1.12
-	else:
-		revspec_registry.register_lazy("svn", "breezy.plugins.svn.revspec", 
-			"RevisionSpec_svn")
+    try:
+        from breezy.revspec import revspec_registry
+    except ImportError:
+        # Not available in Breezy < 1.12
+    else:
+        revspec_registry.register_lazy("svn", "breezy.plugins.svn.revspec",
+            "RevisionSpec_svn")
 
 Structure
 ~~~~~~~~~
@@ -31,7 +31,7 @@ Subversion essentially has two formats - the repository directory, which
 contains all the revision data and the branches, and the working copy, which is
 what the user works in.
 
-Because of this, breezy-svn provides two custom probers and dir implementations - 
+Because of this, breezy-svn provides two custom probers and dir implementations -
 one that can probe for and open working copies and one which can probe for and
 open Subversion repositories.
 
@@ -40,7 +40,7 @@ tree. The control directory implementation for the repository exists not just fo
 file system directory of the repository itself but for each of the "virtual"
 file paths in the repository too.
 
-Most of the complexity in breezy-svn has to do with mapping Subversion history into 
+Most of the complexity in breezy-svn has to do with mapping Subversion history into
 Bazaar history and making the distinction between what is a branch and what isn't.
 
 The "repository layout" is an object that takes a path and can tell whether it is

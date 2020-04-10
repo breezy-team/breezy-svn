@@ -508,7 +508,7 @@ class LogWalker(object):
         try:
             log_iter = self._transport.iter_log([u""], revnum, revnum, 1, True,
                 True, False, [])
-            return strip_slashes(log_iter.next()[0])
+            return strip_slashes(next(log_iter)[0])
         except subvertpy.SubversionException as e:
             msg, num = e.args
             if num == subvertpy.ERR_FS_NO_SUCH_REVISION:

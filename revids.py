@@ -106,7 +106,7 @@ class RevidMap(object):
             assert type(revno) is int
             iterator = self.repos._revmeta_provider.iter_reverse_branch_changes(
                     branch, revno, to_revnum=0, limit=0)
-            yield iterator.next()
+            yield next(iterator)
 
     def discover_fileprop_revids(self, layout, from_revnum, to_revnum,
             project=None, pb=None):

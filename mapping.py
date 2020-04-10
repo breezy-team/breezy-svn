@@ -22,11 +22,11 @@ import calendar
 from io import BytesIO
 from subvertpy import properties
 import time
-import urllib
 
 from breezy import (
     foreign,
     osutils,
+    urlutils,
     )
 from breezy.errors import (
     InvalidRevisionId,
@@ -104,7 +104,7 @@ def escape_svn_path(x):
     :return: Escaped path
     """
     x = osutils.safe_utf8(x)
-    return urllib.quote(x, "")
+    return urlutils.quote(x, "")
 
 
 def unescape_svn_path(x):
@@ -676,7 +676,7 @@ def generate_fileid_property(fileids):
     """
     return "".join(
         ["%s\t%s\n" % (
-            urllib.quote(path.encode("utf-8")),
+            urlutils.quote(path.encode("utf-8")),
             fileids[path]) for path in sorted(fileids.keys())])
 
 
@@ -703,14 +703,14 @@ def parse_text_revisions_property(text):
 
 def generate_text_parents_property(text_parents):
     return "".join(["%s\t%s\n" % (
-        urllib.quote(path.encode("utf-8")), "\t".join(text_parents[path]))
+        urlutils.quote(path.encode("utf-8")), "\t".join(text_parents[path]))
         for path in sorted(text_parents.keys())
         if text_parents[path] is not None])
 
 
 def generate_text_revisions_property(text_revisions):
     return "".join([
-        "%s\t%s\n" % (urllib.quote(path.encode("utf-8")), text_revisions[path])
+        "%s\t%s\n" % (urlutils.quote(path.encode("utf-8")), text_revisions[path])
         for path in sorted(text_revisions.keys())
         if text_revisions[path] is not None
         ])
@@ -1184,7 +1184,7 @@ class ForeignSubversion(foreign.ForeignVcs):
 
     def serialize_foreign_revid(self, foreign_revid):
         (uuid, bp, revnum) = foreign_revid
-        return "%s:%d:%s" % (uuid, revnum, urllib.quote(bp))
+        return "%s:%d:%s" % (uuid, revnum, urlutils.quote(bp))
 
 
 foreign_vcs_svn = ForeignSubversion()
