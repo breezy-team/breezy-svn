@@ -7,8 +7,8 @@ To run the breezy-svn testsuite, simply run
 'brz selftest --starting-with=bazaar.plugins.svn' or 
 run 'make check' in the top-level breezy-svn directory.
 
-Unavailable breezy API's
-~~~~~~~~~~~~~~~~~~~~~~~~
+Unavailable breezy APIs
+~~~~~~~~~~~~~~~~~~~~~~~
 When dealing with things that are only available in newer versions of Breezy, 
 please mention in what Breezy version they became available. This makes it 
 easy to clean up the code later, e.g.::
@@ -66,7 +66,3 @@ layout.
 
 revmeta.py provides another layer, and allows walking over both branches and the
 relevant mappings.
-
-Coding Style, etc
-~~~~~~~~~~~~~~~~~
-Please refer to HACKING in the Breezy source distribution.
