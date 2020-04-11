@@ -103,6 +103,15 @@ MAX_CHECK_PRESENT_INTERVAL = 1000
 TEXT_CACHE_SIZE = 1024 * 1024 * 50
 
 
+def has_id(tree, file_id):
+    try:
+        tree.id2path(file_id)
+    except NoSuchId:
+        return False
+    else:
+        return True
+
+
 def tree_parent_id_basename_to_file_id(tree, parent_id, basename):
     if parent_id is None and basename == "":
         return tree.path2id('')
@@ -335,14 +344,14 @@ class DirectoryBuildEditor(object):
         self._close()
 
     def add_directory(self, path, copyfrom_path=None, copyfrom_revnum=-1):
-        assert isinstance(path, str)
-        path = path.decode("utf-8")
+        if isinstance(path, bytes):
+            path = path.decode("utf-8")
         check_filename(path)
         return self._add_directory(path, copyfrom_path, copyfrom_revnum)
 
     def open_directory(self, path, base_revnum):
-        assert isinstance(path, str)
-        path = path.decode("utf-8")
+        if isinstance(path, bytes):
+            path = path.decode("utf-8")
         return self._open_directory(path, base_revnum)
 
     def absent_directory(self, path):
@@ -376,19 +385,19 @@ class DirectoryBuildEditor(object):
             trace.mutter('unsupported dir property %r', name)
 
     def add_file(self, path, copyfrom_path=None, copyfrom_revnum=-1):
-        assert isinstance(path, str)
-        path = path.decode("utf-8")
+        if isinstance(path, bytes):
+            path = path.decode("utf-8")
         check_filename(path)
         return self._add_file(path, copyfrom_path, copyfrom_revnum)
 
     def open_file(self, path, base_revnum):
-        assert isinstance(path, str)
-        path = path.decode("utf-8")
+        if isinstance(path, bytes):
+            path = path.decode("utf-8")
         return self._open_file(path, base_revnum)
 
     def delete_entry(self, path, revnum):
-        assert isinstance(path, str)
-        path = path.decode("utf-8")
+        if isinstance(path, bytes):
+            path = path.decode("utf-8")
         return self._delete_entry(path, revnum)
 
 
@@ -449,7 +458,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
     def __init__(self, editor, bzr_base_path, path, new_id,
                  bzr_base_ie, svn_base_ie, parent_file_id, renew_fileids=None):
         super(DirectoryRevisionBuildEditor, self).__init__(editor, path)
-        assert isinstance(new_id, str)
+        assert isinstance(new_id, bytes)
         self.new_id = new_id
         self.bzr_base_path = bzr_base_path
         self._renew_fileids = renew_fileids
@@ -464,7 +473,7 @@ class DirectoryRevisionBuildEditor(DirectoryBuildEditor):
         self.editor._delete_entry(self.svn_base_ie.file_id, path, revnum)
 
     def _close(self):
-        if (not self.editor.bzr_base_tree.has_id(self.new_id) or
+        if (not has_id(self.editor.bzr_base_tree, self.new_id) or
                 self.new_ie != self.editor.bzr_base_tree.root_inventory.get_entry(self.new_id) or
             self.bzr_base_path != self.path):
             self.new_ie.revision = self.editor._get_directory_revision(self.new_id)
@@ -919,7 +928,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             else:
                 self._delete_entry(None, u"", base_revnum)
                 renew_fileids = svn_base_ie
-        assert isinstance(file_id, str)
+        assert isinstance(file_id, bytes)
 
         return DirectoryRevisionBuildEditor(
             self, bzr_base_path, u"", file_id, bzr_base_ie, svn_base_ie, None,
@@ -931,7 +940,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             [e[1] for e in self._inv_delta if e[1] is not None])
         exceptions = delta_new_paths.union(self._explicitly_deleted)
         for path in tree_ancestors(self.bzr_base_tree, file_id, exceptions):
-            if isinstance(path, str):
+            if isinstance(path, bytes):
                 path = path.decode("utf-8")
             self._renew_fileid(path)
 
@@ -977,7 +986,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _get_bzr_base_file_id(self, parent_id, path):
         if not isinstance(path, text_type):
             raise TypeError(path)
-        assert (isinstance(parent_id, str) or
+        assert (isinstance(parent_id, bytes) or
                 (parent_id is None and path == ""))
         basename = urlutils.basename(path)
         return tree_parent_id_basename_to_file_id(
@@ -986,8 +995,8 @@ class RevisionBuildEditor(DeltaBuildEditor):
     def _get_existing_file_id(self, old_parent_id, new_parent_id, path):
         if not isinstance(path, text_type):
             raise TypeError(path)
-        assert isinstance(old_parent_id, str) or old_parent_id is None
-        assert isinstance(new_parent_id, str) or new_parent_id is None
+        assert isinstance(old_parent_id, bytes) or old_parent_id is None
+        assert isinstance(new_parent_id, bytes) or new_parent_id is None
         ret = self._get_map_id(path)
         if ret is not None:
             return ret
@@ -1019,7 +1028,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             return self._text_revisions_overrides[path]
         except KeyError:
             pass
-        if (self.bzr_base_tree.has_id(ie.file_id) or
+        if (has_id(self.bzr_base_tree, ie.file_id) or
                 len(self.bzr_parent_trees) <= 1):
             # File was touched but not newly introduced since base so it has
             # changed somehow.
@@ -1048,7 +1057,7 @@ class RevisionBuildEditor(DeltaBuildEditor):
             return revision
 
     def _get_text_parents(self, file_id):
-        assert isinstance(file_id, str)
+        assert isinstance(file_id, bytes)
         try:
             return self._text_parents_overrides[file_id]
         except KeyError:

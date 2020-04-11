@@ -98,7 +98,7 @@ class SvnRaTest(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.add_dir("foo")
-        foo.add_file("foo/bar").modify("Data")
+        foo.add_file("foo/bar").modify(b"Data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -112,22 +112,22 @@ class SvnRaTest(SubversionTestCase):
     def test_list_dir(self):
         repos_url = self.make_svn_repository('a')
         t = SvnRaTransport(repos_url)
-        self.assertEqual([], t.list_dir("."))
+        self.assertEqual([], list(t.list_dir(".")))
         t.mkdir("foo")
         self.assertEqual(["foo"], t.list_dir("."))
-        self.assertEqual([], t.list_dir("foo"))
+        self.assertEqual([], list(t.list_dir("foo")))
         t.mkdir("foo/bar")
-        self.assertEqual(["bar"], t.list_dir("foo"))
+        self.assertEqual(["bar"], list(t.list_dir("foo")))
 
     def test_list_dir_file(self):
         repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("file").modify("data")
+        dc.add_file("file").modify(b"data")
         dc.close()
 
         t = SvnRaTransport(repos_url)
-        self.assertEqual(["file"], t.list_dir("."))
+        self.assertEqual(["file"], list(t.list_dir(".")))
         self.assertRaises(NoSuchFile, t.list_dir, "file")
 
     def test_clone(self):
@@ -135,7 +135,7 @@ class SvnRaTest(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("dir")
-        dc.add_file("bl").modify("data")
+        dc.add_file("bl").modify(b"data")
         dc.close()
 
         t = SvnRaTransport(repos_url)
@@ -146,7 +146,7 @@ class SvnRaTest(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("dir")
-        dc.add_file("bl").modify("data")
+        dc.add_file("bl").modify(b"data")
         dc.close()
 
         t = SvnRaTransport(repos_url)
@@ -209,7 +209,7 @@ class SvnRaTest(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("dir")
-        dc.add_file("bl").modify("data")
+        dc.add_file("bl").modify(b"data")
         dc.close()
 
         t = SvnRaTransport(repos_url)
@@ -220,7 +220,7 @@ class SvnRaTest(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         dc.add_dir("dir")
-        dc.add_file("bl").modify("data")
+        dc.add_file("bl").modify(b"data")
         dc.close()
 
         t = SvnRaTransport("%s/dir" % repos_url)

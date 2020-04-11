@@ -66,7 +66,7 @@ class TestComplexFileids(SubversionTestCase):
         repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("foo").modify("data")
+        dc.add_file("foo").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -75,7 +75,7 @@ class TestComplexFileids(SubversionTestCase):
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
-        dc.open_file("bar").modify("data2")
+        dc.open_file("bar").modify(b"data2")
         dc.close()
 
         repository = Repository.open(repos_url)
@@ -96,12 +96,12 @@ class TestComplexFileids(SubversionTestCase):
         repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("foo").modify("data")
-        dc.add_file("blie").modify("bloe")
+        dc.add_file("foo").modify(b"data")
+        dc.add_file("blie").modify(b"bloe")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("bar", "foo", 1).modify("data2")
+        dc.add_file("bar", "foo", 1).modify(b"data2")
         dc.close()
 
         controldir = ControlDir.open(repos_url)
@@ -122,7 +122,7 @@ class TestComplexFileids(SubversionTestCase):
         repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("foo").modify("data")
+        dc.add_file("foo").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -144,12 +144,12 @@ class TestComplexFileids(SubversionTestCase):
         repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("foo").modify("data")
+        dc.add_file("foo").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
         dc.delete("foo")
-        dc.add_file("foo").modify("data")
+        dc.add_file("foo").modify(b"data")
         dc.close()
 
         controldir = ControlDir.open(repos_url)
@@ -169,7 +169,7 @@ class TestComplexFileids(SubversionTestCase):
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
         dir = trunk.add_dir("trunk/dir")
-        dir.add_file("trunk/dir/file").modify("data")
+        dir.add_file("trunk/dir/file").modify(b"data")
         dc.add_dir("branches")
         dc.close()
 
@@ -328,7 +328,7 @@ class GetMapTests(SubversionTestCase):
         dc.close()
 
         dc = self.get_commit_editor(self.repos_url)
-        dc.open_dir("trunk").add_file("trunk/file").modify("data")
+        dc.open_dir("trunk").add_file("trunk/file").modify(b"data")
         dc.close()
 
         self.assertEqual({
@@ -349,11 +349,11 @@ class GetMapTests(SubversionTestCase):
         dc.close()
 
         dc = self.get_commit_editor(self.repos_url)
-        dc.open_dir("trunk").add_file("trunk/file").modify("data")
+        dc.open_dir("trunk").add_file("trunk/file").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(self.repos_url)
-        dc.open_dir("trunk").open_file("trunk/file").modify("otherdata")
+        dc.open_dir("trunk").open_file("trunk/file").modify(b"otherdata")
         dc.close()
 
         self.assertEqual({
@@ -375,13 +375,13 @@ class GetMapTests(SubversionTestCase):
 
         dc = self.get_commit_editor(self.repos_url)
         trunk = dc.open_dir("trunk")
-        trunk.add_file("trunk/file").modify("data")
-        trunk.add_file("trunk/bar").modify("data2")
+        trunk.add_file("trunk/file").modify(b"data")
+        trunk.add_file("trunk/bar").modify(b"data2")
         dc.close()
 
         dc = self.get_commit_editor(self.repos_url)
         trunk = dc.open_dir("trunk")
-        trunk.open_file("trunk/file").modify('otherdata')
+        trunk.open_file("trunk/file").modify(b'otherdata')
         dc.close()
 
         self.assertEqual({
@@ -406,7 +406,7 @@ class GetMapTests(SubversionTestCase):
 
         dc = self.get_commit_editor(self.repos_url)
         trunk = dc.open_dir("trunk")
-        trunk.add_file("trunk/file").modify("data")
+        trunk.add_file("trunk/file").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(self.repos_url)
@@ -437,13 +437,13 @@ class GetMapTests(SubversionTestCase):
         dc = self.get_commit_editor(self.repos_url)
         trunk = dc.open_dir("trunk")
         dir = trunk.add_dir("trunk/dir")
-        dir.add_file("trunk/dir/file").modify("data")
+        dir.add_file("trunk/dir/file").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(self.repos_url)
         trunk = dc.open_dir("trunk")
         dir = trunk.add_dir("trunk/bar", "trunk/dir")
-        dir.open_file("trunk/bar/file").modify("data2")
+        dir.open_file("trunk/bar/file").modify(b"data2")
         dc.close()
 
         self.assertEqual({

@@ -151,7 +151,7 @@ class TestWithRepository(SubversionTestCase):
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("bar").modify("bloe")
+        dc.add_file("bar").modify(b"bloe")
         dc.close()
 
         repos = Repository.open(repos_url)
@@ -170,7 +170,7 @@ class TestWithRepository(SubversionTestCase):
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("bar").modify("bloe")
+        dc.add_file("bar").modify(b"bloe")
         dc.close()
 
         repos = Repository.open(repos_url)

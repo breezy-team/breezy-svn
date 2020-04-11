@@ -124,7 +124,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         trunk = pykleur.open_dir("pykleur/trunk")
         nested = trunk.open_dir("pykleur/trunk/pykleur")
         afile = nested.add_file("pykleur/trunk/pykleur/afile")
-        afile.modify("contents")
+        afile.modify(b"contents")
         afile.close()
         cb.close() #2
 
@@ -194,9 +194,9 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/file").modify("data")
+        trunk.add_file("trunk/file").modify(b"data")
         foo = dc.add_dir("foo")
-        foo.add_file("foo/file").modify("data")
+        foo.add_file("foo/file").modify(b"data")
         dc.close()
 
         repos = Repository.open(repos_url)
@@ -216,15 +216,15 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/file").modify("data")
+        trunk.add_file("trunk/file").modify(b"data")
         foo = dc.add_dir("foo")
-        foo.add_file("foo/file").modify("data")
+        foo.add_file("foo/file").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
         branches = dc.add_dir("branches")
         somebranch = branches.add_dir("branches/somebranch")
-        somebranch.add_file("branches/somebranch/somefile").modify("data")
+        somebranch.add_file("branches/somebranch/somefile").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -252,7 +252,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/afile").modify("data")
+        trunk.add_file("trunk/afile").modify(b"data")
         dc.add_dir("branches")
         dc.close()
 
@@ -266,7 +266,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/afile").modify("data")
+        trunk.add_file("trunk/afile").modify(b"data")
         dc.add_dir("branches")
         dc.close()
 
@@ -520,7 +520,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/foo").modify("data")
+        trunk.add_file("trunk/foo").modify(b"data")
         dc.close()
 
         self.assertEqual([("trunk", 1, True)],
@@ -534,7 +534,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/foo").modify("data")
+        trunk.add_file("trunk/foo").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -549,7 +549,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
     def test_has_revision(self):
         repos_url = self.make_client('d', 'dc')
         repository = Repository.open(repos_url)
-        self.build_tree({'dc/foo': "data"})
+        self.build_tree({'dc/foo': b"data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message")
         self.assertTrue(repository.has_revision(
@@ -569,10 +569,10 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
     def test_get_parent_map(self):
         repos_url = self.make_client('d', 'dc')
-        self.build_tree({'dc/foo': "data"})
+        self.build_tree({'dc/foo': b"data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message")
-        self.build_tree({'dc/foo': "data2"})
+        self.build_tree({'dc/foo': b"data2"})
         self.client_commit("dc", "Second Message")
         repository = Repository.open(repos_url)
         mapping = repository.get_mapping()
@@ -589,11 +589,11 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos_url = self.make_svn_repository('d')
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("foo").modify("data")
+        dc.add_file("foo").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
-        dc.open_file("foo").modify("data2")
+        dc.open_file("foo").modify(b"data2")
         dc.close()
 
         r = Repository.open(repos_url)
@@ -613,12 +613,12 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
     def test_revision_svk_parent(self):
         repos_url = self.make_client('d', 'dc')
-        self.build_tree({'dc/trunk/foo': "data", 'dc/branches/foo': None})
+        self.build_tree({'dc/trunk/foo': b"data", 'dc/branches/foo': None})
         self.client_add("dc/trunk")
         self.client_add("dc/branches")
         self.client_commit("dc", "My Message")
         self.client_update("dc")
-        self.build_tree({'dc/trunk/foo': "data2"})
+        self.build_tree({'dc/trunk/foo': b"data2"})
         repository = Repository.open(repos_url)
         repository.set_layout(TrunkLayout(0))
         self.client_set_prop("dc/trunk", "svk:merge",
@@ -635,11 +635,11 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repository = Repository.open(repos_url)
         self.assertRaises(NoSuchRevision, repository.get_revision,
                 "nonexisting")
-        self.build_tree({'dc/foo': "data"})
+        self.build_tree({'dc/foo': b"data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message")
         self.client_update("dc")
-        self.build_tree({'dc/foo': "data2"})
+        self.build_tree({'dc/foo': b"data2"})
         (num, date, author) = self.client_commit("dc", "Second Message")
         repository = Repository.open(repos_url)
         mapping = repository.get_mapping()
@@ -711,7 +711,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
     def test_check(self):
         repos_url = self.make_client('d', 'dc')
-        self.build_tree({'dc/foo': "data"})
+        self.build_tree({'dc/foo': b"data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message")
         repository = Repository.open(repos_url)
@@ -722,10 +722,10 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
     def test_copy_contents_into(self):
         repos_url = self.make_client('d', 'dc')
-        self.build_tree({'dc/foo/bla': "data"})
+        self.build_tree({'dc/foo/bla': b"data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message")
-        self.build_tree({'dc/foo/blo': "data2", "dc/bar/foo": "data3", 'dc/foo/bla': "data"})
+        self.build_tree({'dc/foo/blo': b"data2", "dc/bar/foo": b"data3", 'dc/foo/bla': b"data"})
         self.client_add("dc/foo/blo")
         self.client_add("dc/bar")
         self.client_commit("dc", "Second Message")
@@ -758,7 +758,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/bla").modify("data")
+        trunk.add_file("trunk/bla").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
@@ -796,12 +796,12 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         cb = self.get_commit_editor(repos_url)
         trunk = cb.open_dir("trunk")
         hosts = trunk.add_file("trunk/hosts")
-        hosts.modify("hej2")
+        hosts.modify(b"hej2")
         cb.close("bla\xfcbla") #2
 
         cb = self.get_commit_editor(repos_url)
         trunk = cb.open_dir("trunk")
-        trunk.open_file("trunk/hosts").modify("hej3")
+        trunk.open_file("trunk/hosts").modify(b"hej3")
         cb.close("a\x0cb") #3
 
         cb = self.get_commit_editor(repos_url)
@@ -857,7 +857,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         repos_url = self.make_client('d', 'dc')
         repos = Repository.open(repos_url)
         repos.set_layout(RootLayout())
-        self.build_tree({'dc/adir/afile': "data"})
+        self.build_tree({'dc/adir/afile': b"data"})
         self.client_add("dc/adir")
         self.client_commit("dc", "Initial commit")
         mapping = repos.get_mapping()
@@ -868,13 +868,13 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
 
     def testlhs_revision_parent_simple(self):
         repos_url = self.make_client('d', 'dc')
-        self.build_tree({'dc/trunk/adir/afile': "data",
+        self.build_tree({'dc/trunk/adir/afile': b"data",
                          'dc/trunk/adir/stationary': None,
                          'dc/branches/abranch': None})
         self.client_add("dc/trunk")
         self.client_add("dc/branches")
         self.client_commit("dc", "Initial commit")
-        self.build_tree({'dc/trunk/adir/afile': "bla"})
+        self.build_tree({'dc/trunk/adir/afile': b"bla"})
         self.client_commit("dc", "Incremental commit")
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(0))
@@ -891,7 +891,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         py = dc.add_dir("py")
         trunk = py.add_dir("py/trunk")
         adir = trunk.add_dir("py/trunk/adir")
-        adir.add_file("py/trunk/adir/afile").modify("data")
+        adir.add_file("py/trunk/adir/afile").modify(b"data")
         adir.add_dir("py/trunk/adir/stationary")
         dc.close() #1
 
@@ -903,7 +903,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         de = dc.open_dir("de")
         trunk = de.open_dir("de/trunk")
         adir = trunk.open_dir("de/trunk/adir")
-        adir.open_file("de/trunk/adir/afile").modify("bla")
+        adir.open_file("de/trunk/adir/afile").modify(b"bla")
         dc.close()
         repos = Repository.open(repos_url)
         repos.set_layout(TrunkLayout(1))
@@ -919,7 +919,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         py = dc.add_dir("py")
         trunk = py.add_dir("py/trunk")
         adir = trunk.add_dir("py/trunk/adir")
-        afile = adir.add_file("py/trunk/adir/afile").modify("data")
+        afile = adir.add_file("py/trunk/adir/afile").modify(b"data")
         stationary = adir.add_dir("py/trunk/adir/stationary")
         dc.close()
 
@@ -942,7 +942,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         py = dc.add_dir("py")
         trunk = py.add_dir("py/trunk")
         adir = trunk.add_dir("py/trunk/adir")
-        afile = adir.add_file("py/trunk/adir/file").modify("data")
+        afile = adir.add_file("py/trunk/adir/file").modify(b"data")
         adir.add_dir("py/trunk/adir/stationary")
         dc.close()
 
@@ -969,7 +969,7 @@ class TestSubversionMappingRepositoryWorks(SubversionTestCase):
         dc = self.get_commit_editor(repos_url)
         old_trunk = dc.add_dir("old-trunk")
         lib = old_trunk.add_dir("old-trunk/lib")
-        lib.add_file("old-trunk/lib/file").modify("data")
+        lib.add_file("old-trunk/lib/file").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)

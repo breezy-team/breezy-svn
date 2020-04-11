@@ -64,7 +64,7 @@ from . import (
     errors,
     layout,
     logwalker,
-    revmeta,
+    revmeta as _mod_revmeta,
     )
 from .branchprops import (
     PathPropertyProvider,
@@ -324,20 +324,23 @@ class SubversionRepositoryCheckResult(branch.BranchCheckResult):
             # in one of the parents.
             fileid = fileid_map.lookup(mapping, path)[0]
             parent_text_revisions = []
-            for parent_fileid_map, parent_mapping in zip(parent_fileid_maps,
-                    parent_mappings):
+            for parent_fileid_map, parent_mapping in zip(
+                    parent_fileid_maps, parent_mappings):
                 try:
                     parent_text_revisions.append(
-                        parent_fileid_map.reverse_lookup(parent_mapping, fileid))
+                        parent_fileid_map.reverse_lookup(
+                            parent_mapping, fileid))
                 except KeyError:
                     pass
             if (text_revision != revmeta.get_revision_id(mapping) and
                     not ghost_parents and
-                    not text_revision in parent_text_revisions):
+                    text_revision not in parent_text_revisions):
                 self.invalid_text_revisions += 1
 
 
 _optimizers_registered = False
+
+
 def lazy_register_optimizers():
     """Register optimizers for fetching between svn and bzr repositories.
     """
@@ -362,12 +365,12 @@ class SvnRepository(ForeignRepository):
     def __init__(self, some_dir, transport, svn_transport, branch_path=None):
         lazy_register_optimizers()
         self.vcs = foreign_vcs_svn
-        _revision_store = None
 
         assert isinstance(transport, Transport)
 
         control_files = DummyLockableFiles(transport)
-        Repository.__init__(self, SvnRepositoryFormat(), some_dir, control_files)
+        Repository.__init__(
+            self, SvnRepositoryFormat(), some_dir, control_files)
         self._transport = transport
         self.svn_transport = svn_transport
         self._cached_revnum = None
@@ -378,7 +381,7 @@ class SvnRepository(ForeignRepository):
         self._guessed_layout = None
         self._guessed_appropriate_layout = None
         self.transport = transport
-        self.uuid = svn_transport.get_uuid().encode()
+        self.uuid = svn_transport.get_uuid()
         assert self.uuid is not None
         self.base = transport.base
         assert self.base is not None
@@ -411,16 +414,15 @@ class SvnRepository(ForeignRepository):
             log_cache = self._cache_obj.open_logwalker()
             if log_cache.max_revnum() > self.get_latest_revnum():
                 errors.warn_uuid_reuse(self.uuid, self.base)
-            self._log = logwalker.CachingLogWalker(self._log,
-                log_cache)
+            self._log = logwalker.CachingLogWalker(self._log, log_cache)
 
         if "fileids" in use_cache:
             self.fileid_map = CachingFileIdMapStore(
                 self._cache_obj.open_fileid_map(), self.fileid_map)
 
         if "revids" in use_cache:
-            self.revmap = DiskCachingRevidMap(self.revmap,
-                self._cache_obj.open_revid_map())
+            self.revmap = DiskCachingRevidMap(
+                self.revmap, self._cache_obj.open_revid_map())
             self._real_parents_provider = DiskCachingParentsProvider(
                 self._real_parents_provider, self._cache_obj.open_parents())
         else:
@@ -441,8 +443,8 @@ class SvnRepository(ForeignRepository):
 
         self.branchprop_list = PathPropertyProvider(self._log)
 
-        self._revmeta_provider = revmeta.RevisionMetadataProvider(self,
-                self.revinfo_cache is not None)
+        self._revmeta_provider = _mod_revmeta.RevisionMetadataProvider(
+            self, self.revinfo_cache is not None)
 
     def _get_controldir(self):
         # This is done lazily since the actual repository root may not be
@@ -450,7 +452,8 @@ class SvnRepository(ForeignRepository):
         if self._some_controldir.svn_root_url == self._some_controldir.svn_url:
             return self._some_controldir
         from .remote import SvnRemoteAccess
-        self._some_controldir = SvnRemoteAccess(self._some_controldir.svn_transport.clone_root())
+        self._some_controldir = SvnRemoteAccess(
+            self._some_controldir.svn_transport.clone_root())
         return self._some_controldir
 
     def _set_controldir(self, value):
@@ -477,7 +480,7 @@ class SvnRepository(ForeignRepository):
         """Return the graph walker for this repository format"""
         parents_provider = self._make_parents_provider()
         if (other_repository is not None and
-            not self.has_same_location(other_repository)):
+                not self.has_same_location(other_repository)):
             parents_provider = graph.StackedParentsProvider(
                 [parents_provider, other_repository._make_parents_provider()])
         return SubversionGraph(self, parents_provider)
@@ -598,8 +601,9 @@ class SvnRepository(ForeignRepository):
     def gather_stats(self, revid=None, committers=None):
         """See Repository.gather_stats()."""
         result = {}
+
         def check_timestamp(timestamp):
-            if not 'latestrev' in result:
+            if 'latestrev' not in result:
                 result['latestrev'] = timestamp
             result['firstrev'] = timestamp
 
@@ -608,8 +612,8 @@ class SvnRepository(ForeignRepository):
             if committers is not None and revid is not None:
                 all_committers = set()
                 graph = self.get_graph()
-                revids = [r for (r,ps) in graph.iter_ancestry([revid]) if r !=
-                        NULL_REVISION and ps is not None]
+                revids = [r for (r, ps) in graph.iter_ancestry([revid])
+                          if r != NULL_REVISION and ps is not None]
                 for rev in self.get_revisions(revids):
                     if rev.committer != '':
                         all_committers.add(rev.committer)
@@ -654,7 +658,7 @@ class SvnRepository(ForeignRepository):
             use_revprops = False
             use_fileprops = mapping.can_use_fileprops
         if (use_fileprops and
-            not target_config.get('allow_metadata_in_file_properties')):
+                not target_config.get('allow_metadata_in_file_properties')):
             raise errors.RequiresMetadataInFileProps()
         return (use_revprops, use_fileprops)
 
@@ -668,8 +672,8 @@ class SvnRepository(ForeignRepository):
         """Get the default mapping that is used for this repository."""
         if self._default_mapping is None:
             mappingcls = self.get_mapping_class()
-            self._default_mapping = mappingcls.from_repository(self,
-                self._hinted_branch_path)
+            self._default_mapping = mappingcls.from_repository(
+                self, self._hinted_branch_path)
         return self._default_mapping
 
     def _make_parents_provider(self):
@@ -682,7 +686,8 @@ class SvnRepository(ForeignRepository):
             yield self.get_delta_for_revision(revision)
 
     def get_revision_delta(self, revid, specific_fileids=None):
-        return self.get_delta_for_revision(self.get_revision(revid),
+        return self.get_delta_for_revision(
+            self.get_revision(revid),
             specific_fileids=specific_fileids)
 
     def get_delta_for_revision(self, revision, specific_fileids=None):
@@ -826,7 +831,8 @@ class SvnRepository(ForeignRepository):
                 for revmeta in self._revmeta_provider.iter_all_revisions(
                         self.get_layout(), self.get_mapping().is_branch_or_tag,
                         last_revnum):
-                    pb.update("checking revisions",
+                    pb.update(
+                        "checking revisions",
                         last_revnum-revmeta.metarev.revnum, last_revnum)
                     ret.check_revmeta(revmeta)
         return ret
@@ -973,7 +979,7 @@ class SvnRepository(ForeignRepository):
         """See Repository.get_parent_map()."""
         parent_map = {}
         for revision_id in revids:
-            if type(revision_id) != str:
+            if type(revision_id) != bytes:
                 raise ValueError("expected sequence of revision ids")
             if revision_id == NULL_REVISION:
                 parent_map[revision_id] = ()
@@ -999,6 +1005,8 @@ class SvnRepository(ForeignRepository):
                     yield (revid, revmeta, mapping)
 
     def _get_revmeta(self, revision_id):
+        if not isinstance(revision_id, bytes):
+            raise TypeError(revision_id)
         foreign_revid, mapping = self.lookup_bzr_revision_id(revision_id)
         (uuid, branch, revnum) = foreign_revid
         assert isinstance(branch, text_type)
@@ -1037,7 +1045,8 @@ class SvnRepository(ForeignRepository):
     def lookup_foreign_revision_id(self, foreign_revid, newest_allowed):
         (uuid, path, revnum) = foreign_revid
         if uuid != self.uuid:
-            raise errors.DifferentSubversionRepository(uuid, self.uuid)
+            raise errors.DifferentSubversionRepository(
+                uuid, self.uuid)
         assert isinstance(path, text_type)
         assert isinstance(newest_allowed, BzrSvnMapping)
 
@@ -1057,7 +1066,9 @@ class SvnRepository(ForeignRepository):
         """
         assert isinstance(revnum, int)
         foreign_revid = (self.uuid, path, revnum)
-        return self.lookup_foreign_revision_id(foreign_revid, mapping)
+        revid = self.lookup_foreign_revision_id(foreign_revid, mapping)
+        assert isinstance(revid, bytes)
+        return revid
 
     def lookup_bzr_revision_id(self, revid, layout=None, ancestry=None,
                                project=None, foreign_sibling=None):
@@ -1160,7 +1171,7 @@ class SvnRepository(ForeignRepository):
 
         This will include branches inside other branches.
         """
-        from .branch import SvnBranch # avoid circular imports
+        from .branch import SvnBranch  # avoid circular imports
         with self.lock_read():
             # All branches use this repository, so the using argument can be
             # ignored.

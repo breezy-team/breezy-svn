@@ -190,7 +190,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
 
     def __init__(self, scheme, guessed_scheme=None):
         mapping.BzrSvnMapping.__init__(self)
-        if isinstance(scheme, bytes) or isinstance(scheme, text_type):
+        if isinstance(scheme, str) or isinstance(scheme, text_type):
             try:
                 self.scheme = BranchingScheme.find_scheme(scheme)
             except UnknownBranchingScheme as e:
@@ -250,10 +250,10 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
         if not isinstance(inv_path, text_type):
             raise TypeError(inv_path)
         inv_path = inv_path.encode("utf-8")
-        ret = b"%d@%s:%s:%s" % (revnum, uuid, mapping.escape_svn_path(branch),
+        ret = b"%d@%s:%s:%s" % (revnum, uuid.encode('ascii'), mapping.escape_svn_path(branch),
                                mapping.escape_svn_path(inv_path))
         if len(ret) > 150:
-            ret = b"%d@%s:%s;%s" % (revnum, uuid,
+            ret = b"%d@%s:%s;%s" % (revnum, uuid.encode('ascii'),
                                 mapping.escape_svn_path(branch),
                                 osutils.sha(inv_path).hexdigest())
         assert isinstance(ret, str)
@@ -261,12 +261,12 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
 
     def parse_file_id(self, file_id):
         try:
-            (revnum_str, rest) = file_id.split("@", 1)
+            (revnum_str, rest) = file_id.split(b"@", 1)
             revnum = int(revnum_str)
-            (uuid, bp, ip) = rest.split(":", 2)
+            (uuid, bp, ip) = rest.split(b":", 2)
         except ValueError:
             raise errors.InvalidFileId(file_id)
-        return (uuid, revnum, (u"%s/%s" % (mapping.unescape_svn_path(bp),
+        return (uuid.decode('ascii'), revnum, (u"%s/%s" % (mapping.unescape_svn_path(bp),
             mapping.unescape_svn_path(ip))).strip(u"/"))
 
     @classmethod
@@ -278,7 +278,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
             raise bzr_errors.InvalidRevisionId(revid, "")
 
         try:
-            (version, uuid, branch_path, srevnum) = revid.split(":")
+            (version, uuid, branch_path, srevnum) = revid.split(b":")
         except ValueError:
             raise bzr_errors.InvalidRevisionId(revid, "")
 
@@ -286,7 +286,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
 
         branch_path = mapping.unescape_svn_path(branch_path)
 
-        return (uuid, branch_path, int(srevnum), scheme)
+        return (uuid.decode('ascii'), branch_path, int(srevnum), scheme.decode('utf-8'))
 
     @classmethod
     def revision_id_bzr_to_foreign(cls, revid):
@@ -321,7 +321,7 @@ class BzrSvnMappingv3(mapping.BzrSvnMappingFileProps,
         assert revnum > 0 or path == u"", \
                 "Trying to generate revid for (%r,%r)" % (path, revnum)
         return b"%s%s:%s:%s:%d" % (
-                cls.revid_prefix, scheme, uuid,
+                cls.revid_prefix, scheme, uuid.encode('ascii'),
                 mapping.escape_svn_path(path.strip(u"/")), revnum)
 
     def revision_id_foreign_to_bzr(self, foreign_revid):

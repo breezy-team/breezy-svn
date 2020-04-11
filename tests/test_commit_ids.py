@@ -48,7 +48,7 @@ class CommitIdTesting:
         with tree.lock_read():
             graph = tree._repository.get_file_graph()
             ret = {}
-            for (path, versioned, kind, file_id, ie) in tree.list_files(
+            for (path, versioned, kind, ie) in tree.list_files(
                     include_root=True, recursive=True):
                 key = (ie.file_id, ie.revision)
                 pkeys = graph.get_parent_map([key])
@@ -60,6 +60,8 @@ class CommitIdTesting:
         return ret
 
     def commit_tree_items(self, tree, revision_id=None):
+        if revision_id is not None:
+            self.assertIsInstance(revision_id, bytes)
         return self.tree_items(self.commit_tree(tree, revision_id))
 
     def prepare_wt(self, path):
@@ -98,7 +100,7 @@ class CommitIdTesting:
         tree.add(["afile", "unchanged"], [b'thefileid', b"unchangedid"])
         self.commit_tree(tree, b"reva")
         self.build_tree_contents([('afile', 'contents2')])
-        items = self.commit_tree_items(tree, "revb")
+        items = self.commit_tree_items(tree, b"revb")
         self.assertEquals({
             "": (b"therootid", b"reva", []),
             "afile": (b"thefileid", "revb", [b"reva"]),
@@ -116,7 +118,7 @@ class CommitIdTesting:
         self.commit_tree(tree, b"reva")
         os.unlink('link')
         os.symlink('newtarget', 'link')
-        items = self.commit_tree_items(tree, "revb")
+        items = self.commit_tree_items(tree, b"revb")
         self.assertEquals({
             "": (b"therootid", b"reva", []),
             "link": (b"thefileid", "revb", [b"reva"]),
@@ -134,7 +136,7 @@ class CommitIdTesting:
                  [b'thefileid', b"thedirid"])
         self.commit_tree(tree, b"reva")
         tree.rename_one("afile", "adir/afile")
-        items = self.commit_tree_items(tree, "revb")
+        items = self.commit_tree_items(tree, b"revb")
         self.assertEquals({
             "": (b"therootid", b"reva", []),
             "adir": (b"thedirid", b"reva", []),
@@ -154,7 +156,7 @@ class CommitIdTesting:
         self.commit_tree(tree, b"reva")
         tree.rename_one("afile", "bfile")
         tree.rename_one("adir", "bdir")
-        items = self.commit_tree_items(tree, "revb")
+        items = self.commit_tree_items(tree, b"revb")
         self.assertEquals({
             "": (b"therootid", b"reva", []),
             "bfile": (b"thefileid", "revb", [b"reva"]),
@@ -171,7 +173,7 @@ class CommitIdTesting:
         tree.add(["afile"], [b'thefileid'])
         self.commit_tree(tree, b"reva")
         os.chmod("afile", 0o755)
-        items = self.commit_tree_items(tree, "revb")
+        items = self.commit_tree_items(tree, b"revb")
         self.assertEquals({
             "": (b"therootid", b"reva", []),
             "afile": (b"thefileid", "revb", [b"reva"]),
@@ -188,7 +190,7 @@ class CommitIdTesting:
         tree.add(["adir", "adir/afile"], [b'thedirid', b'thefileid'])
         self.commit_tree(tree, b"reva")
         tree.rename_one('adir', 'bdir')
-        items = self.commit_tree_items(tree, "revb")
+        items = self.commit_tree_items(tree, b"revb")
         self.assertEquals({
             "": (b"therootid", b"reva", []),
             "bdir": (b"thedirid", "revb", [b"reva"]),
@@ -216,7 +218,7 @@ class CommitIdTesting:
         self.build_tree_contents([
             ('adir/afile', 'contents')])
         tree.add(['adir/afile'], [b'thefileid'])
-        items = self.commit_tree_items(tree, "revb")
+        items = self.commit_tree_items(tree, b"revb")
         self.assertOverrideFileIds(tree, "revb", {
             "adir/afile": b"thefileid"})
         self.assertEquals({
@@ -268,7 +270,7 @@ class CommitIdTesting:
         self.assertEquals(bconflict.path, "bfile")
         cconflict = other_tree.conflicts()[1]
         self.assertEquals(cconflict.path, "cfile")
-        self.build_tree_contents({"feature/bfile": "contents-resolved"})
+        self.build_tree_contents({"feature/bfile": b"contents-resolved"})
         bconflict._do("done", other_tree)
         bconflict.cleanup(other_tree)
         cconflict._do("take_other", other_tree)
@@ -300,7 +302,7 @@ class CommitIdTesting:
             "": (b"THEROOTID", b"reva", []),
             "afile": (b"THEFILEID", b"reva", []),
             }, items)
-        items = self.commit_tree_items(tree, "revb")
+        items = self.commit_tree_items(tree, b"revb")
         self.assertEquals({
             "": (b"THEROOTID", b"reva", []),
             "afile": (b"THEFILEID", b"reva", []),

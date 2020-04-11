@@ -20,9 +20,12 @@ from __future__ import absolute_import
 from breezy import version_info as breezy_version
 from breezy.errors import (
     InvalidRevisionId,
-    InvalidRevisionSpec,
     NoSuchRevision,
     )
+try:
+    from breezy.revisionspec import InvalidRevisionSpec
+except ImportError:  # brz < 3.2
+    from breezy.errors import InvalidRevisionSpec
 from breezy.revisionspec import (
     RevisionSpec,
     RevisionInfo,

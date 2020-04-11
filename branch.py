@@ -375,7 +375,7 @@ class SvnBranch(ForeignBranch):
             )
         if revision_id is None or revision_id == self.last_revision():
             bp = self.get_branch_path()
-            uuid = self.repository.uuid.decode()
+            uuid = self.repository.uuid
             revnum = self.get_revnum()
         else:
             (uuid, bp, revnum), mapping = self.lookup_bzr_revision_id(
@@ -433,10 +433,12 @@ class SvnBranch(ForeignBranch):
         raise NoSuchRevision(self, revnum)
 
     def get_config(self):
-        return BranchConfig(self.user_url, self.repository.uuid)
+        uuid = self.repository.uuid
+        return BranchConfig(self.user_url, uuid)
 
     def get_config_stack(self):
-        return SvnBranchStack(self.user_url, self.repository.uuid)
+        uuid = self.repository.uuid
+        return SvnBranchStack(self.user_url, uuid)
 
     def get_append_revisions_only(self):
         value = self.get_config_stack().get('append_revisions_only')
@@ -453,7 +455,7 @@ class SvnBranch(ForeignBranch):
         if ret is not None:
             return ret
         bp = self._branch_path.strip("/")
-        if isinstance(bp, str):
+        if isinstance(bp, bytes):
             bp = bp.decode('utf-8')
         if self._branch_path == "":
             return self.base.split("/")[-1]
@@ -476,7 +478,7 @@ class SvnBranch(ForeignBranch):
 
     def set_last_revision_info(self, revno, revid):
         """See Branch.set_last_revision_info()."""
-        if type(revid) != str:
+        if not isinstance(revid, bytes):
             raise InvalidRevisionId(revid, self)
         with self.lock_write():
             if self.last_revision() == revid:
@@ -728,9 +730,10 @@ class SvnBranch(ForeignBranch):
 
     __repr__ = __str__
 
-    def _basic_push(self, target, overwrite=False, stop_revision=None):
+    def _basic_push(self, target, overwrite=False, stop_revision=None,
+                    tag_selector=None):
         return InterBranch.get(self, target)._basic_push(
-            overwrite, stop_revision)
+            overwrite, stop_revision, tag_selector=tag_selector)
 
     def reconcile(self, thorough=True):
         """Make sure the data stored in this branch is consistent.
@@ -888,7 +891,7 @@ class InterFromSvnBranch(GenericInterBranch):
 
     def _basic_push(
             self, overwrite=False, stop_revision=None,
-            fetch_non_mainline=False):
+            fetch_non_mainline=False, tag_selector=None):
         result = BranchPushResult()
         result.source_branch = self.source
         result.target_branch = self.target
@@ -900,13 +903,15 @@ class InterFromSvnBranch(GenericInterBranch):
         # FIXME: Tags
         return result
 
-    def _update_tags(self, result, overwrite, tags_since_revnum):
+    def _update_tags(self, result, overwrite, tags_since_revnum,
+                     tag_selector=None):
         if not self.source.supports_tags():
             return
         tag_ret = self.source.tags.merge_to(
             self.target.tags, overwrite,
             _from_revnum=tags_since_revnum,
-            _to_revnum=self.source.repository.get_latest_revnum())
+            _to_revnum=self.source.repository.get_latest_revnum(),
+            selector=tag_selector)
         if isinstance(tag_ret, tuple):
             (result.tag_updates, result.tag_conflicts) = tag_ret
         else:
@@ -915,7 +920,7 @@ class InterFromSvnBranch(GenericInterBranch):
     def _basic_pull(
             self, stop_revision, overwrite, run_hooks,
             _override_hook_target, _hook_master,
-            fetch_non_mainline=None):
+            fetch_non_mainline=None, tag_selector=None):
         with self.target.lock_write():
             result = SubversionSourcePullResult()
             result.source_branch = self.source
@@ -948,7 +953,9 @@ class InterFromSvnBranch(GenericInterBranch):
             (result.new_revno, result.new_revid) = self._update_revisions(
                 stop_revision, overwrite,
                 fetch_non_mainline=fetch_non_mainline)
-            self._update_tags(result, overwrite, tags_since_revnum)
+            self._update_tags(
+                result, overwrite, tags_since_revnum,
+                tag_selector=tag_selector)
             if _hook_master:
                 result.master_branch = _hook_master
                 result.local_branch = result.target_branch
@@ -963,7 +970,7 @@ class InterFromSvnBranch(GenericInterBranch):
     def pull(self, overwrite=False, stop_revision=None,
              run_hooks=True, possible_transports=None,
              _override_hook_target=None, local=False,
-             fetch_non_mainline=None):
+             fetch_non_mainline=None, tag_selector=None):
         """See InterBranch.pull()."""
         bound_location = self.target.get_bound_location()
         if local and not bound_location:
@@ -989,11 +996,13 @@ class InterFromSvnBranch(GenericInterBranch):
                 # pull from source into master.
                 master_branch.pull(
                     self.source, overwrite, stop_revision,
-                    run_hooks=False, fetch_non_mainline=fetch_non_mainline)
+                    run_hooks=False, fetch_non_mainline=fetch_non_mainline,
+                    tag_selector=tag_selector)
             return self._basic_pull(
                 stop_revision, overwrite, run_hooks,
                 _override_hook_target, _hook_master=master_branch,
-                fetch_non_mainline=fetch_non_mainline)
+                fetch_non_mainline=fetch_non_mainline,
+                tag_selector=tag_selector)
 
     @classmethod
     def is_compatible(self, source, target):
@@ -1107,7 +1116,7 @@ class InterToSvnBranch(InterBranch):
             result.tag_conflicts = ret
 
     def _basic_push(self, overwrite=False, stop_revision=None, lossy=False,
-                    fetch_non_mainline=False):
+                    fetch_non_mainline=False, tag_selector=None):
         """Basic implementation of push without bound branches or hooks.
 
         Must be called with source read locked and target write locked.
@@ -1139,7 +1148,8 @@ class InterToSvnBranch(InterBranch):
 
     def pull(self, overwrite=False, stop_revision=None,
              run_hooks=True, possible_transports=None,
-             local=False, fetch_non_mainline=False):
+             local=False, fetch_non_mainline=False,
+             tag_selector=None):
         """See InterBranch.pull()."""
         if local:
             raise LocalRequiresBoundBranch()

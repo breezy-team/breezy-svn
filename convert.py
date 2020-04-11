@@ -116,12 +116,12 @@ def load_dumpfile(dumpfile, outputdir, feedback_stream=None):
     r = repos.create(outputdir)
     if dumpfile.endswith(".gz"):
         import gzip
-        file = gzip.GzipFile(dumpfile)
+        file = gzip.GzipFile(dumpfile, mode='rb')
     elif dumpfile.endswith(".bz2"):
         import bz2
-        file = bz2.BZ2File(dumpfile)
+        file = bz2.BZ2File(dumpfile, mode='rb')
     else:
-        file = open(dumpfile)
+        file = open(dumpfile, 'rb')
     try:
         try:
             r.load_fs(file, feedback_stream, repos.LOAD_UUID_DEFAULT)

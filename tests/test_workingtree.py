@@ -85,7 +85,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_add_duplicate(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         self.client_add("dc/bl")
         tree.add(["bl"])
 
@@ -95,7 +95,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_add(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         tree.add(["bl"])
 
         self.assertEquals(
@@ -104,7 +104,7 @@ class TestWorkingTree(SubversionTestCase):
     def test_special_char(self):
         self.requireFeature(UnicodeFilenameFeature)
         self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({u"dc/I²C": "data"})
+        self.build_tree({u"dc/I²C": b"data"})
         self.client_add("dc/I²C")
         tree = WorkingTree.open("dc")
         self.assertEquals(
@@ -113,7 +113,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_not_branch_path(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/file": "data"})
+        self.build_tree({"dc/file": b"data"})
         self.client_add("dc/file")
         self.client_commit("dc", "initial")
         self.client_update("dc")
@@ -128,7 +128,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_smart_add_file(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         tree.smart_add(["dc/bl"])
         self.assertEquals(
             set(["aa"]), tree.filter_unversioned_files(["bl", "aa"]))
@@ -136,7 +136,7 @@ class TestWorkingTree(SubversionTestCase):
     def test_smart_add_unicode(self):
         self.requireFeature(UnicodeFilenameFeature)
         tree = self.make_svn_branch_and_tree('a', u'dć'.encode(osutils._fs_enc))
-        self.build_tree({u"dć/bé".encode(osutils._fs_enc): "data"})
+        self.build_tree({u"dć/bé".encode(osutils._fs_enc): b"data"})
         tree.smart_add([u"dć/bé"])
         self.assertEquals(set(), tree.filter_unversioned_files([u"bé"]))
 
@@ -149,7 +149,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_smart_add_recurse(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl/foo": "data"})
+        self.build_tree({"dc/bl/foo": b"data"})
         tree.smart_add(["dc/bl"])
 
         self.assertEquals(set(["aa"]),
@@ -157,7 +157,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_smart_add_recurse_more(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl/foo/da": "data"})
+        self.build_tree({"dc/bl/foo/da": b"data"})
         tree.smart_add(["dc/bl"])
 
         self.assertEquals(set(["aa"]),
@@ -165,7 +165,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_smart_add_more(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl/foo/da": "data", "dc/ha": "contents"})
+        self.build_tree({"dc/bl/foo/da": b"data", "dc/ha": b"contents"})
         tree.smart_add(["dc/bl", "dc/ha"])
 
         self.assertEquals(set(["aa"]),
@@ -173,8 +173,8 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_smart_add_ignored(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/.bzrignore": "bl/ha"})
-        self.build_tree({"dc/bl/foo/da": "data", "dc/bl/ha": "contents"})
+        self.build_tree({"dc/.bzrignore": b"bl/ha"})
+        self.build_tree({"dc/bl/foo/da": b"data", "dc/bl/ha": b"contents"})
         tree.smart_add(["dc/bl"])
 
         self.assertEquals(set(["ha", "aa"]),
@@ -182,7 +182,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_smart_add_toplevel(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl/foo/da": "data", "dc/ha": "contents"})
+        self.build_tree({"dc/bl/foo/da": b"data", "dc/ha": b"contents"})
         tree.smart_add(["dc"])
 
         self.assertEquals(set(["aa"]),
@@ -190,7 +190,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_add_nolist(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         tree.add("bl")
 
         self.assertEquals(
@@ -198,7 +198,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_add_nolist_withid(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         tree.add("bl", "bloe")
 
         self.assertEqual(
@@ -208,7 +208,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_add_not_recursive(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl/file": "data"})
+        self.build_tree({"dc/bl/file": b"data"})
         tree.add(["bl"])
 
         tree = WorkingTree.open("dc")
@@ -217,7 +217,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_add_nested(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl/file": "data"})
+        self.build_tree({"dc/bl/file": b"data"})
         tree.add(["bl", "bl/file"])
 
         tree = WorkingTree.open("dc")
@@ -254,7 +254,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_add_reopen(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         tree.add(["bl"])
 
         tree = WorkingTree.open("dc")
@@ -262,14 +262,14 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_remove(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         tree.add(["bl"])
         tree.remove(["bl"])
         self.assertEquals(set(["bl"]), tree.filter_unversioned_files(["bl"]))
 
     def test_remove_dup(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         tree.add(["bl"])
         os.remove("dc/bl")
         self.assertEquals(set([]), tree.filter_unversioned_files(["bl"]))
@@ -281,7 +281,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_revert(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         self.client_add("dc/bl")
         self.client_commit("dc", "Bla")
         self.client_update("dc")
@@ -291,10 +291,10 @@ class TestWorkingTree(SubversionTestCase):
         self.assertEqual("data", open('dc/bl').read())
 
     def test_rename_one(self):
-        tree = self.make_svn_branch_and_tree('a', 'dc') #1
-        self.build_tree({"dc/bl": "data"})
+        tree = self.make_svn_branch_and_tree('a', 'dc')  # 1
+        self.build_tree({"dc/bl": b"data"})
         self.client_add("dc/bl")
-        self.client_commit("dc", "Bla") #2
+        self.client_commit("dc", "Bla")  # 2
         tree.rename_one("bl", "bloe")
 
         basis_tree = tree.basis_tree()
@@ -318,7 +318,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_basis_tree(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         self.client_add("dc/bl")
         self.client_commit("dc", "Bla")
         self.client_update("dc")
@@ -328,7 +328,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_move(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data", "dc/a": "data2", "dc/dir": None})
+        self.build_tree({"dc/bl": b"data", "dc/a": b"data2", "dc/dir": None})
         self.client_add("dc/bl")
         self.client_add("dc/a")
         self.client_add("dc/dir")
@@ -341,19 +341,19 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_get_parent_ids_no_merges(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         self.client_add("dc/bl")
         self.client_commit('dc', 'msg')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         self.assertEqual([tree.branch.last_revision()], tree.get_parent_ids())
 
     def test_delta(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         self.client_add("dc/bl")
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         self.client_commit("dc", "Bla")
-        self.build_tree({"dc/bl": "data2"})
+        self.build_tree({"dc/bl": b"data2"})
         tree.basis_tree()
         delta = tree.changes_from(tree.basis_tree())
         self.assertEqual("bl", delta.modified[0][0])
@@ -438,12 +438,12 @@ class TestWorkingTree(SubversionTestCase):
         self.client_add("svn-wc/peer")
         self.client_commit("svn-wc", "Added peer")
 
-        self.build_tree({"svn-wc/peer/file": "A"})
+        self.build_tree({"svn-wc/peer/file": b"A"})
         self.client_add("svn-wc/peer/file")
         self.client_commit("svn-wc", "Added file")
         self.client_update("svn-wc")
 
-        self.build_tree({"svn-wc/peer/file": "B"})
+        self.build_tree({"svn-wc/peer/file": b"B"})
         self.client_copy("svn-wc/peer", "svn-wc/parent/child")
         self.client_delete("svn-wc/peer")
         self.client_commit("svn-wc", "Made peer a child, with mods.")
@@ -463,7 +463,7 @@ class TestWorkingTree(SubversionTestCase):
         if not supports_executable():
             return
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bla": "data"})
+        self.build_tree({"dc/bla": b"data"})
         self.client_add("dc/bla")
         self.client_set_prop("dc/bla", "svn:executable", "*")
         self.assertTrue(tree.is_executable("bla"))
@@ -508,50 +508,50 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_commit_callback(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         self.client_add("dc/bl")
         tree.basis_tree()
         tree.commit(message_callback=lambda x: "data")
 
     def test_commit_callback_unicode(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         self.client_add("dc/bl")
         tree.basis_tree()
         tree.commit(message_callback=lambda x: u"data")
 
     def test_commit_message_unicode(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bl": "data"})
+        self.build_tree({"dc/bl": b"data"})
         self.client_add("dc/bl")
         orig_tree = tree.basis_tree()
         tree.commit(message=u"data")
 
     def test_commit_nested(self):
         repos_url = self.make_client('a', 'dc')
-        self.build_tree({"dc/branches/foobranch/file": "data"})
+        self.build_tree({"dc/branches/foobranch/file": b"data"})
         self.client_add("dc/branches")
         self.client_commit("dc", "initial changes")
         self.make_checkout(repos_url + "/branches/foobranch", "de")
         tree = WorkingTree.open("de")
-        self.build_tree({'de/file': "foo"})
+        self.build_tree({'de/file': b"foo"})
         tree.basis_tree()
         tree.commit(message="data")
 
     def test_set_root_id_commit(self):
         tree = self.make_svn_branch_and_tree('a', 'dc')
         self.assertIsNot(None, tree.path2id(""))
-        self.build_tree({"dc/foo": "data"})
+        self.build_tree({"dc/foo": b"data"})
         self.client_add("dc/foo")
         tree.commit("set root")
 
     def test_update_after_commit(self):
-        tree = self.make_svn_branch_and_tree('a', 'dc') #1
-        self.build_tree({"dc/bl": "data"})
+        tree = self.make_svn_branch_and_tree('a', 'dc')  # 1
+        self.build_tree({"dc/bl": b"data"})
         self.client_add("dc/bl")
         orig_tree = tree.basis_tree()
         self.assertTrue(tree.changes_from(tree.basis_tree()).has_changed())
-        tree.commit(message="data") #2
+        tree.commit(message="data")  # 2
         self.assertCleanTree(tree)
         self.assertEqual(
                 tree.branch.generate_revision_id(2),
@@ -572,35 +572,35 @@ class TestWorkingTree(SubversionTestCase):
         self.assertFalse(os.path.exists(os.path.join("dc", ".bzr")))
 
     def test_update(self):
-        tree = self.make_svn_branch_and_tree('a', 'de') #1
-        self.make_checkout(tree.branch.base, "dc") #1
-        self.build_tree({'dc/bla': "data"})
+        tree = self.make_svn_branch_and_tree('a', 'de')  # 1
+        self.make_checkout(tree.branch.base, "dc")  # 1
+        self.build_tree({'dc/bla': b"data"})
         self.client_add("dc/bla")
-        self.client_commit("dc", "msg") #2
+        self.client_commit("dc", "msg")  # 2
         tree.update()
         self.assertTrue(os.path.exists(os.path.join("de", ".svn")))
         self.assertTrue(os.path.exists(os.path.join("de", "bla")))
 
     def test_update_revision(self):
-        tree = self.make_svn_branch_and_tree('a', 'de') #1
+        tree = self.make_svn_branch_and_tree('a', 'de')  # 1
         self.make_checkout(tree.branch.base, "dc")
-        self.build_tree({'dc/bla': "data"})
+        self.build_tree({'dc/bla': b"data"})
         self.client_add("dc/bla")
-        self.client_commit("dc", "msg") #2
-        self.build_tree({'dc/bla': "data2"})
-        self.client_commit("dc", "msg2") #3
+        self.client_commit("dc", "msg")  # 2
+        self.build_tree({'dc/bla': b"data2"})
+        self.client_commit("dc", "msg2")  # 3
         tree.update(revision=tree.branch.generate_revision_id(2))
         self.assertTrue(os.path.exists(os.path.join("de", ".svn")))
         self.assertFileEqual("data", "de/bla")
 
     def test_update_old_tip(self):
-        tree = self.make_svn_branch_and_tree('a', 'dc') #1
+        tree = self.make_svn_branch_and_tree('a', 'dc')  # 1
         self.make_checkout(tree.branch.base, "de")
-        self.build_tree({'dc/bla': "data"})
+        self.build_tree({'dc/bla': b"data"})
         self.client_add("dc/bla")
-        self.client_commit("dc", "msg") #2
-        self.build_tree({'dc/bla': "data2"})
-        self.client_commit("dc", "msg2") #3
+        self.client_commit("dc", "msg")  # 2
+        self.build_tree({'dc/bla': b"data2"})
+        self.client_commit("dc", "msg2")  # 3
         tree = WorkingTree.open("de")
         tree.update(revision=tree.branch.generate_revision_id(2),
                     old_tip=tree.branch.generate_revision_id(1))
@@ -706,9 +706,9 @@ class TestWorkingTree(SubversionTestCase):
         self.requireFeature(SymlinkFeature)
         self.requireFeature(UnicodeFilenameFeature)
         wt = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({u"dc/\U00020001".encode(osutils._fs_enc): ""})
+        self.build_tree({u"dc/\U00020001".encode(osutils._fs_enc): b""})
         os.symlink(u"\U00020001", "dc/a")
-        self.build_tree({"dc/b": ""})
+        self.build_tree({"dc/b": b""})
         os.symlink("b", u"dc/\U00020002")
         self.client_add("dc/a")
         self.client_add("dc/b")
@@ -727,7 +727,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_get_file_properties(self):
         wt = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bla": "data"})
+        self.build_tree({"dc/bla": b"data"})
         self.client_add("dc/bla")
         self.client_set_prop("dc/bla", "bzrbla", "bloe")
         props = wt.get_file_properties('bla')
@@ -735,7 +735,7 @@ class TestWorkingTree(SubversionTestCase):
 
     def test_invdelta_remove(self):
         wt = self.make_svn_branch_and_tree('a', 'dc')
-        self.build_tree({"dc/bla": "data"})
+        self.build_tree({"dc/bla": b"data"})
         self.client_add("dc/bla")
         wt.apply_inventory_delta([("bla", None, wt.path2id("bla"), None)])
 

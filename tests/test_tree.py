@@ -48,7 +48,7 @@ class TestBasisTree(SubversionTestCase):
 
         dc = self.get_commit_editor(tree.branch.base)
         f = dc.add_file("file")
-        f.modify("new contents")
+        f.modify(b"new contents")
         dc.close()
 
         self.client_update("dc")
@@ -67,7 +67,7 @@ class TestBasisTree(SubversionTestCase):
 
         dc = self.get_commit_editor(tree.branch.base)
         f = dc.add_file("file")
-        f.modify("x")
+        f.modify(b"x")
         f.change_prop("svn:executable", "*")
         dc.close()
 
@@ -80,7 +80,7 @@ class TestBasisTree(SubversionTestCase):
         tree = self.make_svn_branch_and_tree("d", "dc")
 
         dc = self.get_commit_editor(tree.branch.base)
-        dc.add_file("file").modify("x")
+        dc.add_file("file").modify(b"x")
         dc.close()
 
         self.client_update("dc")
@@ -93,7 +93,7 @@ class TestBasisTree(SubversionTestCase):
 
         dc = self.get_commit_editor(tree.branch.base)
         file = dc.add_file("file")
-        file.modify("link target")
+        file.modify(b"link target")
         file.change_prop("svn:special", "*")
         dc.close()
 
@@ -109,7 +109,7 @@ class TestBasisTree(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         file = dc.add_file("file")
-        file.modify("link target\nbar\nbla")
+        file.modify(b"link target\nbar\nbla")
         file.change_prop("svn:special", "*")
         dc.close()
 
@@ -125,10 +125,10 @@ class TestBasisTree(SubversionTestCase):
 
         dc = self.get_commit_editor(tree.branch.base)
         file1 = dc.add_file("file")
-        file1.modify("fsdfdslhfdsk h")
+        file1.modify(b"fsdfdslhfdsk h")
         file1.change_prop("svn:special", "*")
         file2 = dc.add_file("file2")
-        file2.modify("a")
+        file2.modify(b"a")
         file2.change_prop("svn:special", "*")
         dc.close()
 
@@ -145,14 +145,14 @@ class TestBasisTree(SubversionTestCase):
         tree = self.make_svn_branch_and_tree("d", "dc")
 
         dc = self.get_commit_editor(tree.branch.base)
-        dc.add_file("bla").modify("p")
+        dc.add_file("bla").modify(b"p")
         file = dc.add_file("file")
-        file.modify("link target")
+        file.modify(b"link target")
         file.change_prop("svn:special", "*")
         dc.close()
 
         dc = self.get_commit_editor(tree.branch.base)
-        dc.open_file("bla").modify("pa")
+        dc.open_file("bla").modify(b"pa")
         dc.close()
 
         self.client_update("dc")
@@ -166,11 +166,11 @@ class TestBasisTree(SubversionTestCase):
         repos_url = self.make_client("d", "dc")
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("file").modify("x\n")
+        dc.add_file("file").modify(b"x\n")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
-        dc.open_file("file").modify("x\ny\n")
+        dc.open_file("file").modify(b"x\ny\n")
         dc.close()
 
         self.client_update('dc')
@@ -195,7 +195,7 @@ class TestBasisTree(SubversionTestCase):
 
     def test_get_file_properties(self):
         repos_url = self.make_client('a', 'dc')
-        self.build_tree({"dc/bla": "data"})
+        self.build_tree({"dc/bla": b"data"})
         self.client_add("dc/bla")
         self.client_set_prop("dc/bla", "bzrbla", "bloe")
         self.client_commit('dc', 'msg')
@@ -210,7 +210,7 @@ class TestBasisTree(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         file = dc.add_file("file")
-        file.modify("link target")
+        file.modify(b"link target")
         file.change_prop("svn:special", "*")
         file.change_prop("svn:executable", "*")
         dc.close()
@@ -235,8 +235,8 @@ class TestInventoryExternals(SubversionTestCase):
         branch = self.make_svn_branch('d', lossy=True)
         repos = branch.repository
         mapping = repos.get_mapping()
-        inv = Inventory(root_id='blabloe')
-        inventory_add_external(inv, 'blabloe', 'blie/bla',
+        inv = Inventory(root_id=b'blabloe')
+        inventory_add_external(inv, b'blabloe', 'blie/bla',
                 mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)),
                 None, branch.base)
         expected_ie = TreeReference(
@@ -256,14 +256,14 @@ class TestInventoryExternals(SubversionTestCase):
         branch = self.make_svn_branch('d', lossy=True)
         repos = branch.repository
         mapping = repos.get_mapping()
-        inv = Inventory(root_id='blabloe')
-        inventory_add_external(inv, 'blabloe', 'bla',
+        inv = Inventory(root_id=b'blabloe')
+        inventory_add_external(inv, b'blabloe', 'bla',
             mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1)), None,
             branch.base)
 
         self.assertEqual(TreeReference(
             mapping.generate_file_id((repos.uuid, branch.get_branch_path(), 1), u""),
-             'bla', 'blabloe',
+             'bla', b'blabloe',
              reference_revision=CURRENT_REVISION,
              revision=mapping.revision_id_foreign_to_bzr((repos.uuid, branch.get_branch_path(), 1))),
              inv.get_entry(inv.path2id('bla')))
@@ -271,14 +271,14 @@ class TestInventoryExternals(SubversionTestCase):
     def test_add_simple_rev(self):
         branch = self.make_svn_branch('d', lossy=True) #1
         repos = branch.repository
-        inv = Inventory(root_id='blabloe')
+        inv = Inventory(root_id=b'blabloe')
         mapping = repos.get_mapping()
-        inventory_add_external(inv, 'blabloe', 'bla',
+        inventory_add_external(inv, b'blabloe', 'bla',
             mapping.revision_id_foreign_to_bzr(
                 (repos.uuid, branch.get_branch_path(), 1)), 1, branch.base)
         expected_ie = TreeReference(
             mapping.generate_file_id((repos.uuid, branch.get_branch_path(), 1), u""),
-            'bla', 'blabloe',
+            'bla', b'blabloe',
             revision=mapping.revision_id_foreign_to_bzr(
                 (repos.uuid, branch.get_branch_path(), 1)),
             reference_revision=branch.last_revision())
@@ -297,7 +297,7 @@ class TestSvnRevisionTree(SubversionTestCase):
     def setUp(self):
         super(TestSvnRevisionTree, self).setUp()
         tree = self.make_svn_branch_and_tree('d', 'dc') #1
-        self.build_tree({'dc/foo/bla': "data"})
+        self.build_tree({'dc/foo/bla': b"data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message") #2
         self.branch = tree.branch
@@ -322,8 +322,7 @@ class TestSvnRevisionTree(SubversionTestCase):
                          self.tree.get_revision_id())
 
     def test_get_file_lines(self):
-        self.assertEqual(["data"],
-                self.tree.get_file_lines("foo/bla"))
+        self.assertEqual([b"data"], self.tree.get_file_lines("foo/bla"))
 
     def test_executable(self):
         self.client_set_prop("dc/foo/bla", "svn:executable", "*")

@@ -95,15 +95,15 @@ class TestConversion(SubversionTestCase):
 
         dc = self.get_commit_editor()
         t = dc.add_dir("trunk")
-        t.add_file("trunk/file").modify("data")
+        t.add_file("trunk/file").modify(b"data")
         bs = dc.add_dir("branches")
         ab = bs.add_dir("branches/abranch")
-        ab.add_file("branches/abranch/anotherfile").modify("data2")
+        ab.add_file("branches/abranch/anotherfile").modify(b"data2")
         dc.close()
 
         dc = self.get_commit_editor()
         t = dc.open_dir("trunk")
-        t.open_file("trunk/file").modify("otherdata")
+        t.open_file("trunk/file").modify(b"otherdata")
         dc.close()
 
     def get_commit_editor(self):
@@ -138,7 +138,7 @@ class TestConversion(SubversionTestCase):
         dc = self.get_commit_editor()
         bs = dc.open_dir("branches")
         sb = bs.add_dir("branches/somebranch")
-        sb.add_file("branches/somebranch/somefile").modify('data')
+        sb.add_file("branches/somebranch/somefile").modify(b'data')
         dc.close()
 
         dc = self.get_commit_editor()
@@ -159,7 +159,7 @@ class TestConversion(SubversionTestCase):
     def test_fetch_filebranch(self):
         dc = self.get_commit_editor()
         bs = dc.open_dir("branches")
-        bs.add_file("branches/somebranch").modify('data')
+        bs.add_file("branches/somebranch").modify(b'data')
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
@@ -173,7 +173,7 @@ class TestConversion(SubversionTestCase):
         dc = self.get_commit_editor()
         bs = dc.open_dir("branches")
         sb = bs.add_dir("branches/somebranch")
-        sb.add_file("branches/somebranch/somefile").modify('data')
+        sb.add_file("branches/somebranch/somefile").modify(b'data')
         dc.close()
 
         dc = self.get_commit_editor()
@@ -192,13 +192,13 @@ class TestConversion(SubversionTestCase):
         dc = self.get_commit_editor()
         branches = dc.open_dir("branches")
         dc.add_dir("branches/somebranch")
-        dc.add_file("branches/somebranch/somefile").modify('data')
+        dc.add_file("branches/somebranch/somefile").modify(b'data')
         dc.close()
 
         dc = self.get_commit_editor()
         branches = dc.open_dir("branches")
         ab = branches.add_dir("branches/anotherbranch")
-        ab.add_file("branches/anotherbranch/somefile").modify('data')
+        ab.add_file("branches/anotherbranch/somefile").modify(b'data')
         dc.close()
 
         oldrepos = Repository.open(self.repos_url)
@@ -471,16 +471,16 @@ class TestPrefixed(SubversionTestCase):
         dc = self.get_commit_editor()
         b = dc.add_dir("base")
         t = b.add_dir("base/trunk")
-        t.add_file("base/trunk/file").modify("data")
+        t.add_file("base/trunk/file").modify(b"data")
         bs = b.add_dir("base/branches")
         ab = bs.add_dir("base/branches/abranch")
-        ab.add_file("base/branches/abranch/anotherfile").modify("data2")
+        ab.add_file("base/branches/abranch/anotherfile").modify(b"data2")
         dc.close()
 
         dc = self.get_commit_editor()
         b = dc.open_dir("base")
         t = b.open_dir("base/trunk")
-        t.open_file("base/trunk/file").modify("otherdata")
+        t.open_file("base/trunk/file").modify(b"otherdata")
         dc.close()
 
     def get_commit_editor(self):

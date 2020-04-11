@@ -1,5 +1,5 @@
 # Copyright (C) 2005-2009 Jelmer Vernooij <jelmer@samba.org>
- 
+
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -67,19 +67,19 @@ class Mappingv3FilePropTests(TestCase):
         self.mapping = BzrSvnMappingv3(NoBranchingScheme())
 
     def test_generate_revid(self):
-        self.assertEqual("svn-v3-undefined:myuuid:branch:5", 
+        self.assertEqual("svn-v3-undefined:myuuid:branch:5",
                          BzrSvnMappingv3._generate_revision_id("myuuid", 5, u"branch", "undefined"))
 
     def test_generate_revid_nested(self):
-        self.assertEqual("svn-v3-undefined:myuuid:branch%2Fpath:5", 
+        self.assertEqual("svn-v3-undefined:myuuid:branch%2Fpath:5",
                   BzrSvnMappingv3._generate_revision_id("myuuid", 5, u"branch/path", "undefined"))
 
     def test_generate_revid_special_char(self):
-        self.assertEqual("svn-v3-undefined:myuuid:branch%2C:5", 
+        self.assertEqual("svn-v3-undefined:myuuid:branch%2C:5",
              BzrSvnMappingv3._generate_revision_id("myuuid", 5, u"branch\x2c", "undefined"))
 
     def test_generate_revid_nordic(self):
-        self.assertEqual("svn-v3-undefined:myuuid:branch%C3%A6:5", 
+        self.assertEqual("svn-v3-undefined:myuuid:branch%C3%A6:5",
              BzrSvnMappingv3._generate_revision_id("myuuid", 5, u"branch\xe6", "undefined"))
 
     def test_parse_revid_simple(self):
@@ -96,17 +96,17 @@ class Mappingv3FilePropTests(TestCase):
         self.assertEqual("2@uuid:bp:", self.mapping.generate_file_id(("uuid", u"bp", 2), u""))
 
     def test_generate_file_id_path(self):
-        self.assertEqual("2@uuid:bp:mypath", 
+        self.assertEqual("2@uuid:bp:mypath",
                 self.mapping.generate_file_id(("uuid", u"bp", 2), u"mypath"))
 
     def test_generate_file_id_long(self):
         dir = "this/is/a" + ("/very"*40) + "/long/path/"
-        self.assertEqual("2@uuid:bp;" + sha1(dir+"filename"), 
+        self.assertEqual("2@uuid:bp;" + sha1(dir+"filename"),
                 self.mapping.generate_file_id(("uuid", u"bp", 2), dir+u"filename"))
 
     def test_generate_file_id_long_nordic(self):
         dir = "this/is/a" + ("/very"*40) + "/long/path/"
-        self.assertEqual("2@uuid:bp;" + sha1((dir+u"filename\x2c\x8a").encode('utf-8')), 
+        self.assertEqual("2@uuid:bp;" + sha1((dir+u"filename\x2c\x8a").encode('utf-8')),
                 self.mapping.generate_file_id(("uuid", u"bp", 2), dir+u"filename\x2c\x8a"))
 
     def test_generate_file_id_special_char(self):
@@ -117,15 +117,15 @@ class Mappingv3FilePropTests(TestCase):
         self.assertFalse(" " in self.mapping.generate_file_id(("uuid", u"b p", 1), u"my path"))
 
     def test_generate_svn_file_id(self):
-        self.assertEqual("2@uuid:bp:path", 
+        self.assertEqual("2@uuid:bp:path",
                 self.mapping.generate_file_id(("uuid", u"bp", 2), u"path"))
 
     def test_generate_svn_file_id_nordic(self):
-        self.assertEqual("2@uuid:bp:%C3%A6%C3%B8%C3%A5", 
+        self.assertEqual("2@uuid:bp:%C3%A6%C3%B8%C3%A5",
                 self.mapping.generate_file_id(("uuid", u"bp", 2), u"\xe6\xf8\xe5"))
 
     def test_generate_svn_file_id_nordic_branch(self):
-        self.assertEqual("2@uuid:%C3%A6:%C3%A6%C3%B8%C3%A5", 
+        self.assertEqual("2@uuid:%C3%A6:%C3%A6%C3%B8%C3%A5",
                 self.mapping.generate_file_id(("uuid", u"\xe6", 2), u"\xe6\xf8\xe5"))
 
 
@@ -143,7 +143,7 @@ class RepositoryTests(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
-        dc.change_prop("bzr:revision-id:v3-none", 
+        dc.change_prop("bzr:revision-id:v3-none",
                             "2 myrevid\n")
         dc.close()
 
@@ -155,13 +155,13 @@ class RepositoryTests(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
-        dc.change_prop("bzr:revision-id:v3-none", 
+        dc.change_prop("bzr:revision-id:v3-none",
                             "2 myrevid\n")
         dc.close()
 
         dc = self.get_commit_editor(repos_url)
         dc.open_file("foo").modify()
-        dc.change_prop("bzr:revision-id:v3-none", 
+        dc.change_prop("bzr:revision-id:v3-none",
                             "2 myrevid\n3 mysecondrevid\n")
         dc.close()
 
@@ -172,7 +172,7 @@ class RepositoryTests(SubversionTestCase):
 
     def test_generate_revision_id_forced_revid(self):
         dc = self.get_commit_editor(self.repos_url)
-        dc.change_prop(SVN_PROP_BZR_REVISION_ID+"v3-none", 
+        dc.change_prop(SVN_PROP_BZR_REVISION_ID+"v3-none",
                              "2 someid\n")
         dc.close()
 
@@ -198,11 +198,11 @@ class RepositoryTests(SubversionTestCase):
 
     def test_revision_ghost_parents(self):
         dc = self.get_commit_editor(self.repos_url)
-        dc.add_file("foo").modify("data")
+        dc.add_file("foo").modify(b"data")
         dc.close()
 
         dc = self.get_commit_editor(self.repos_url)
-        dc.open_file("foo").modify("data2")
+        dc.open_file("foo").modify(b"data2")
         dc.change_prop("bzr:ancestry:v3-none", "ghostparent\n")
         dc.close()
 
@@ -215,19 +215,19 @@ class RepositoryTests(SubversionTestCase):
                 repository.get_revision(
                     repository.generate_revision_id(1, u"", mapping)).parent_ids)
         self.assertEqual((repository.generate_revision_id(1, u"", mapping),
-            "ghostparent"), 
+            "ghostparent"),
                 repository.get_revision(
                     repository.generate_revision_id(2, u"", mapping)).parent_ids)
- 
+
     def test_get_revision_id_overriden(self):
         self.make_checkout(self.repos_url, 'dc')
         repository = Repository.open(self.repos_url)
         self.assertRaises(NoSuchRevision, repository.get_revision, "nonexisting")
-        self.build_tree({'dc/foo': "data"})
+        self.build_tree({'dc/foo': b"data"})
         self.client_add("dc/foo")
         self.client_commit("dc", "My Message")
-        self.build_tree({'dc/foo': "data2"})
-        self.client_set_prop("dc", "bzr:revision-id:v3-none", 
+        self.build_tree({'dc/foo': b"data2"})
+        self.client_set_prop("dc", "bzr:revision-id:v3-none",
                             "3 myrevid\n")
         self.client_update("dc")
         (num, date, author) = self.client_commit("dc", "Second Message")
@@ -239,7 +239,7 @@ class RepositoryTests(SubversionTestCase):
         rev = repository.get_revision("myrevid")
         self.assertEqual((repository.generate_revision_id(1, u"", mapping),),
                 rev.parent_ids)
-        self.assertEqual(rev.revision_id, 
+        self.assertEqual(rev.revision_id,
                          repository.generate_revision_id(2, u"", mapping))
         self.assertEqual(author, rev.committer)
         self.assertIsInstance(rev.properties, dict)
@@ -251,7 +251,7 @@ class RepositoryTests(SubversionTestCase):
         dc.close()
         repository = Repository.open(self.repos_url)
         mapping = repository.get_mapping()
-        self.assertEqual(((repository.uuid, u"", 1), mapping), repository.lookup_bzr_revision_id( 
+        self.assertEqual(((repository.uuid, u"", 1), mapping), repository.lookup_bzr_revision_id(
             mapping.revision_id_foreign_to_bzr((repository.uuid, u"", 1)))[:2])
         self.assertEqual(((repository.uuid, u"", 1), mapping),
                 repository.lookup_bzr_revision_id("myid")[:2])
@@ -264,34 +264,34 @@ class RepositoryTests(SubversionTestCase):
 
         repository = Repository.open(self.repos_url)
         mapping = repository.get_mapping()
-        self.assertEqual(((repository.uuid, u"", 1), mapping), repository.lookup_bzr_revision_id( 
+        self.assertEqual(((repository.uuid, u"", 1), mapping), repository.lookup_bzr_revision_id(
             mapping.revision_id_foreign_to_bzr((repository.uuid, u"", 1)))[:2])
-        self.assertRaises(NoSuchRevision, repository.lookup_bzr_revision_id, 
+        self.assertRaises(NoSuchRevision, repository.lookup_bzr_revision_id,
             "corrupt-entry")
 
     def test_lookup_revision_id_overridden_invalid_dup(self):
         self.make_checkout(self.repos_url, 'dc')
         self.build_tree({'dc/bloe': None})
         self.client_add("dc/bloe")
-        self.client_set_prop("dc", SVN_PROP_BZR_REVISION_ID+"v3-none", 
+        self.client_set_prop("dc", SVN_PROP_BZR_REVISION_ID+"v3-none",
                              "corrupt-entry\n")
         self.client_commit("dc", "foobar")
         self.build_tree({'dc/bla': None})
         self.client_add("dc/bla")
-        self.client_set_prop("dc", SVN_PROP_BZR_REVISION_ID+"v3-none", 
+        self.client_set_prop("dc", SVN_PROP_BZR_REVISION_ID+"v3-none",
                 "corrupt-entry\n2 corrupt-entry\n")
         self.client_commit("dc", "foobar")
         repository = Repository.open(self.repos_url)
         mapping = repository.get_mapping()
-        self.assertEqual(((repository.uuid, u"", 2), mapping), repository.lookup_bzr_revision_id( 
+        self.assertEqual(((repository.uuid, u"", 2), mapping), repository.lookup_bzr_revision_id(
             mapping.revision_id_foreign_to_bzr((repository.uuid, u"", 2)))[:2])
-        self.assertEqual(((repository.uuid, u"", 1), mapping), repository.lookup_bzr_revision_id( 
+        self.assertEqual(((repository.uuid, u"", 1), mapping), repository.lookup_bzr_revision_id(
             mapping.revision_id_foreign_to_bzr((repository.uuid, u"", 1)))[:2])
-        self.assertEqual(((repository.uuid, u"", 2), mapping), repository.lookup_bzr_revision_id( 
+        self.assertEqual(((repository.uuid, u"", 2), mapping), repository.lookup_bzr_revision_id(
             "corrupt-entry")[:2])
 
     def test_lookup_revision_id_overridden_not_found(self):
-        """Make sure a revision id that is looked up but doesn't exist 
+        """Make sure a revision id that is looked up but doesn't exist
         doesn't accidently end up in the revid cache."""
         self.make_checkout(self.repos_url, 'dc')
         self.build_tree({'dc/bloe': None})
@@ -299,12 +299,12 @@ class RepositoryTests(SubversionTestCase):
         self.client_set_prop("dc", SVN_PROP_BZR_REVISION_ID+"v3-none", "2 myid\n")
         self.client_commit("dc", "foobar")
         repository = Repository.open(self.repos_url)
-        self.assertRaises(NoSuchRevision, 
+        self.assertRaises(NoSuchRevision,
                 repository.lookup_bzr_revision_id, "foobar")
 
     def test_set_branching_scheme_property(self):
         self.make_checkout(self.repos_url, 'dc')
-        self.client_set_prop("dc", SVN_PROP_BZR_BRANCHING_SCHEME, 
+        self.client_set_prop("dc", SVN_PROP_BZR_BRANCHING_SCHEME,
             "trunk\nbranches/*\nbranches/tmp/*")
         self.client_commit("dc", "set scheme")
         repository = Repository.open(self.repos_url)
@@ -316,14 +316,14 @@ class RepositoryTests(SubversionTestCase):
         repos = Repository.open(self.repos_url)
         set_property_scheme(repos, ListBranchingScheme(["bla/*"]))
         self.client_update("dc")
-        self.assertEquals("bla/*\n",
+        self.assertEquals(b"bla/*\n",
                    self.client_get_prop("dc", SVN_PROP_BZR_BRANCHING_SCHEME))
         self.assertEquals("Updating branching scheme for Bazaar.",
                 self.client_log(self.repos_url, 1, 1)[1][3])
 
     def test_fetch_fileid_renames(self):
         dc = self.get_commit_editor(self.repos_url)
-        dc.add_file("test").modify("data")
+        dc.add_file("test").modify(b"data")
         dc.change_prop("bzr:file-ids", "test\tbla\n")
         dc.change_prop("bzr:revision-info", "")
         dc.close()
@@ -338,7 +338,7 @@ class RepositoryTests(SubversionTestCase):
 
     def test_fetch_ghosts(self):
         dc = self.get_commit_editor(self.repos_url)
-        dc.add_file("bla").modify("data")
+        dc.add_file("bla").modify(b"data")
         dc.change_prop("bzr:ancestry:v3-none", "aghost\n")
         dc.close()
 
@@ -354,7 +354,7 @@ class RepositoryTests(SubversionTestCase):
 
     def test_fetch_invalid_ghosts(self):
         dc = self.get_commit_editor(self.repos_url)
-        dc.add_file("bla").modify("data")
+        dc.add_file("bla").modify(b"data")
         dc.change_prop("bzr:ancestry:v3-none", "a ghost\n")
         dc.close()
 
@@ -397,7 +397,7 @@ class RepositoryTests(SubversionTestCase):
     def test_fetch_complex_ids_files(self):
         dc = self.get_commit_editor(self.repos_url)
         dir = dc.add_dir("dir")
-        dir.add_file("dir/adir").modify("contents")
+        dir.add_file("dir/adir").modify(b"contents")
         dc.change_prop("bzr:revision-info", "")
         dc.change_prop("bzr:file-ids", "dir\tbloe\ndir/adir\tbla\n")
         dc.close()
@@ -429,7 +429,7 @@ class RepositoryTests(SubversionTestCase):
 
     def test_revision_fileidmap(self):
         dc = self.get_commit_editor(self.repos_url)
-        dc.add_file("foo").modify("data")
+        dc.add_file("foo").modify(b"data")
         dc.change_prop("bzr:revision-info", "")
         dc.change_prop("bzr:file-ids", "foo\tsomeid\n")
         dc.close()
@@ -444,29 +444,28 @@ class RepositoryTests(SubversionTestCase):
         self.make_checkout(self.repos_url, "dc")
         wt = WorkingTree.open("dc")
         wt.branch.get_config().set_user_option("allow_metadata_in_file_properties", "True")
-        self.build_tree({'dc/foo/bla': "data", 'dc/bla': "otherdata"})
+        self.build_tree({'dc/foo/bla': b"data", 'dc/bla': b"otherdata"})
         wt.add('bla')
         wt.commit(message="data")
         branch = Branch.open(self.repos_url)
         branch.lock_write()
         self.addCleanup(branch.unlock)
-        builder = branch.get_commit_builder([branch.last_revision()], 
+        builder = branch.get_commit_builder([branch.last_revision()],
                 revision_id="my-revision-id")
         tree = branch.repository.revision_tree(branch.last_revision())
         list(builder.record_iter_changes(tree, branch.last_revision(), []))
         builder.finish_inventory()
         builder.commit("foo")
 
-        self.assertEqual("3 my-revision-id\n", 
-            self.client_get_prop("dc", 
-                "bzr:revision-id:v3-none", 2))
+        self.assertEqual(b"3 my-revision-id\n",
+            self.client_get_prop("dc", "bzr:revision-id:v3-none", 2))
 
     def test_commit_metadata_requires_config_change(self):
         self.make_checkout(self.repos_url, "dc")
 
         wt = WorkingTree.open("dc")
         wt.branch.get_config().set_user_option("allow_metadata_in_file_properties", "False")
-        self.build_tree({'dc/foo/bla': "data", 'dc/bla': "otherdata"})
+        self.build_tree({'dc/foo/bla': b"data", 'dc/bla': b"otherdata"})
         wt.add('bla')
         self.assertRaises(RequiresMetadataInFileProps, wt.commit,
             message="data")
@@ -477,7 +476,7 @@ class RepositoryTests(SubversionTestCase):
         self.make_checkout(self.repos_url, "dc")
 
         wt = WorkingTree.open("dc")
-        self.build_tree({'dc/foo/bla': "data", 'dc/bla': "otherdata"})
+        self.build_tree({'dc/foo/bla': b"data", 'dc/bla': b"otherdata"})
         wt.add('bla')
         wt.branch.get_config().set_user_option("allow_metadata_in_file_properties", "True")
         wt.commit(message="data")
@@ -485,7 +484,7 @@ class RepositoryTests(SubversionTestCase):
         branch = Branch.open(self.repos_url)
         branch.lock_write()
         self.addCleanup(branch.unlock)
-        builder = branch.get_commit_builder([branch.last_revision()], 
+        builder = branch.get_commit_builder([branch.last_revision()],
                 timestamp=4534.0, timezone=2, committer="fry",
                 revision_id="my-revision-id")
         tree = branch.repository.revision_tree(branch.last_revision())
@@ -493,16 +492,16 @@ class RepositoryTests(SubversionTestCase):
         builder.finish_inventory()
         builder.commit("foo")
 
-        self.assertEqual("3 my-revision-id\n", 
+        self.assertEqual(b"3 my-revision-id\n",
                 self.client_get_prop("dc", "bzr:revision-id:v3-none", 2))
 
         self.assertEqual(
-                "timestamp: 1970-01-01 01:15:36.000000000 +0000\ncommitter: fry\n",
+                b"timestamp: 1970-01-01 01:15:36.000000000 +0000\ncommitter: fry\n",
                 self.client_get_prop("dc", "bzr:revision-info", 2))
 
     def test_commit_parents(self):
         self.make_checkout(self.repos_url, "dc")
-        self.build_tree({'dc/foo/bla': "data"})
+        self.build_tree({'dc/foo/bla': b"data"})
         self.client_add("dc/foo")
         wt = WorkingTree.open("dc")
         wt.branch.get_config().set_user_option("allow_metadata_in_file_properties", "True")
@@ -510,7 +509,7 @@ class RepositoryTests(SubversionTestCase):
         wt.set_pending_merges(["some-ghost-revision"])
         self.assertEqual(["some-ghost-revision"], wt.get_parent_ids()[1:])
         wt.commit(message="data")
-        self.assertEqual("some-ghost-revision\n", 
+        self.assertEqual(b"some-ghost-revision\n",
                 self.client_get_prop(self.repos_url, "bzr:ancestry:v3-none", 1))
         self.assertEqual((wt.branch.generate_revision_id(0), "some-ghost-revision"),
                          wt.branch.repository.get_revision(
@@ -522,10 +521,10 @@ class RepositoryTests(SubversionTestCase):
         debug_flags.add("fetch")
         repos_url = self.make_svn_repository("a")
         bzrwt = ControlDir.create_standalone_workingtree("c")
-        self.build_tree({'c/registry/generic.c': "Tour"})
+        self.build_tree({'c/registry/generic.c': b"Tour"})
         bzrwt.add("registry")
         bzrwt.add("registry/generic.c")
-        revid1 = bzrwt.commit("Add initial directory + file", 
+        revid1 = bzrwt.commit("Add initial directory + file",
                               rev_id=b"initialrevid")
 
         # Push first branch into Subversion
@@ -541,13 +540,13 @@ class RepositoryTests(SubversionTestCase):
         dc = self.get_commit_editor(repos_url)
         trunk = dc.open_dir("trunk")
         registry = trunk.open_dir("trunk/registry")
-        registry.open_file("trunk/registry/generic.c").modify("BLA")
+        registry.open_file("trunk/registry/generic.c").modify(b"BLA")
         dc.close()
         mapping = newdir.find_repository().get_mapping()
         merge_revid = newdir.find_repository().generate_revision_id(2, u"trunk", mapping)
 
-        # Merge 
-        self.build_tree({'c/registry/generic.c': "DE"})
+        # Merge
+        self.build_tree({'c/registry/generic.c': b"DE"})
         bzrwt.add_pending_merge(merge_revid)
         self.assertEquals(bzrwt.get_parent_ids()[1], merge_revid)
         revid2 = bzrwt.commit("Merge something", rev_id=b"mergerevid")
@@ -563,7 +562,7 @@ class RepositoryTests(SubversionTestCase):
 
         self.assertEquals((2, revid2), trunk.last_revision_info())
         self.assertEquals(
-                '1 initialrevid\n2 mergerevid\n',
+                b'1 initialrevid\n2 mergerevid\n',
                 self.client_get_prop(repos_url+"/trunk", SVN_PROP_BZR_REVISION_ID+"v3-trunk0",
                                      c.get_latest_revnum()))
 
@@ -576,7 +575,7 @@ class RepositoryTests(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         dc.add_file("foo").modify()
-        dc.change_prop(SVN_PROP_BZR_REVISION_ID+"v3-none", 
+        dc.change_prop(SVN_PROP_BZR_REVISION_ID+"v3-none",
                 "42 mycommit\n")
         dc.close()
 

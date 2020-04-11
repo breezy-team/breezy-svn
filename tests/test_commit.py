@@ -66,8 +66,8 @@ from . import SubversionTestCase
 class TestNativeCommit(SubversionTestCase):
 
     def test_simple_commit(self):
-        wt = self.make_svn_branch_and_tree('d', 'dc') #1
-        self.build_tree({'dc/foo/bla': "data"})
+        wt = self.make_svn_branch_and_tree('d', 'dc')  # 1
+        self.build_tree({'dc/foo/bla': b"data"})
         self.client_add("dc/foo")
         revid = wt.commit(message="data")
         self.assertEqual(wt.branch.generate_revision_id(2), revid)
@@ -81,10 +81,10 @@ class TestNativeCommit(SubversionTestCase):
         self.assertTrue(new_tree.has_filename("foo/bla"))
 
     def test_commit_message(self):
-        wt = self.make_svn_branch_and_tree('d', 'dc') #1
-        self.build_tree({'dc/foo/bla': "data"})
+        wt = self.make_svn_branch_and_tree('d', 'dc')  # 1
+        self.build_tree({'dc/foo/bla': b"data"})
         self.client_add("dc/foo")
-        revid = wt.commit(message="data") #2
+        revid = wt.commit(message="data")  # 2
         self.assertEqual(wt.branch.generate_revision_id(2), revid)
         self.assertEqual(
                 wt.branch.generate_revision_id(2), wt.branch.last_revision())
@@ -94,10 +94,10 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEqual("data", new_revision.message)
 
     def test_commit_rev_id(self):
-        wt = self.make_svn_branch_and_tree('d', 'dc') #1
-        self.build_tree({'dc/foo/bla': "data"})
+        wt = self.make_svn_branch_and_tree('d', 'dc')  # 1
+        self.build_tree({'dc/foo/bla': b"data"})
         self.client_add("dc/foo")
-        revid = wt.commit(message="data", rev_id=b"some-revid-bla") #2
+        revid = wt.commit(message="data", rev_id=b"some-revid-bla")  # 2
         self.assertEqual("some-revid-bla", revid)
         self.assertEqual(wt.branch.generate_revision_id(2), revid)
         self.assertEqual(
@@ -109,30 +109,30 @@ class TestNativeCommit(SubversionTestCase):
     def test_commit_unicode_filename(self):
         self.requireFeature(UnicodeFilenameFeature)
         wt = self.make_svn_branch_and_tree('d', 'dc')
-        self.build_tree({u'dc/I²C': "data"})
-        self.client_add(u"dc/I²C".encode("utf-8"))
+        self.build_tree({u'dc/I²C': b"data"})
+        self.client_add(u"dc/I²C")
         wt.commit(message="data")
 
     def test_commit_local(self):
         wt = self.make_svn_branch_and_tree('d', 'dc')
-        self.build_tree({'dc/foo/bla': "data"})
+        self.build_tree({'dc/foo/bla': b"data"})
         self.client_add("dc/foo")
         self.assertRaises(BzrError, wt.commit,
                 message="data", local=True)
 
     def test_commit_committer(self):
         wt = self.make_svn_branch_and_tree('d', 'dc')
-        self.build_tree({'dc/foo/bla': "data"})
+        self.build_tree({'dc/foo/bla': b"data"})
         self.client_add("dc/foo")
         revid = wt.commit(message="data", committer="john doe")
         rev = wt.branch.repository.get_revision(revid)
         self.assertEquals("john doe", rev.committer)
 
     def test_commit_message_nordic(self):
-        wt = self.make_svn_branch_and_tree('d', 'dc') #1
-        self.build_tree({'dc/foo/bla': "data"})
+        wt = self.make_svn_branch_and_tree('d', 'dc')  # 1
+        self.build_tree({'dc/foo/bla': b"data"})
         self.client_add("dc/foo")
-        revid = wt.commit(message=u"føø") #2
+        revid = wt.commit(message=u"føø")  # 2
         self.assertEqual(revid, wt.branch.generate_revision_id(2))
         self.assertEqual(
                 wt.branch.generate_revision_id(2), wt.branch.last_revision())
@@ -168,7 +168,7 @@ class TestNativeCommit(SubversionTestCase):
         self.assertEquals(ERR_FS_TXN_OUT_OF_DATE, e.args[1])
 
     def test_lossy_commit_builder(self):
-        branch = self.make_svn_branch('d', lossy=True) #1
+        branch = self.make_svn_branch('d', lossy=True)  # 1
         branch.lock_write()
         self.addCleanup(branch.unlock)
         cb = branch.repository.get_commit_builder(branch,
@@ -180,32 +180,32 @@ class TestNativeCommit(SubversionTestCase):
             revid)
 
     def test_commit_update(self):
-        self.make_svn_branch_and_tree('d', 'dc') #1
-        self.build_tree({'dc/foo/bla': "data"})
+        self.make_svn_branch_and_tree('d', 'dc')  # 1
+        self.build_tree({'dc/foo/bla': b"data"})
         self.client_add("dc/foo")
-        self.client_commit("dc", "msg") #2
+        self.client_commit("dc", "msg")  # 2
         wt = WorkingTree.open("dc")
-        self.build_tree({'dc/foo/bla': "data2"})
+        self.build_tree({'dc/foo/bla': b"data2"})
         wt.set_pending_merges(["some-ghost-revision"])
-        wt.commit(message="data") #3
+        wt.commit(message="data")  # 3
         self.assertEqual(
                 wt.branch.generate_revision_id(3),
                 wt.branch.last_revision())
 
     def test_commit_rename_file(self):
-        wt = self.make_svn_branch_and_tree('d', 'dc') #1
+        wt = self.make_svn_branch_and_tree('d', 'dc')  # 1
         self.build_tree({'dc/.dummy': 'dummy'})
         self.client_add('dc/.dummy')
-        self.client_commit("dc", "msg") #2
-        self.build_tree({'dc/foo': "data"})
+        self.client_commit("dc", "msg")  # 2
+        self.build_tree({'dc/foo': b"data"})
         self.client_add("dc/foo")
         wt.set_pending_merges(["some-ghost-revision"])
         oldid = wt.path2id("foo")
-        wt.commit(message="data") # 3
+        wt.commit(message="data")  # 3
         wt.rename_one("foo", "bar")
         self.assertEquals(oldid, wt.path2id("bar"))
         self.assertEquals(None, wt.path2id("foo"))
-        wt.commit(message="doe") # 4
+        wt.commit(message="doe")  # 4
         paths = self.client_log(wt.branch.base, 4, 0)[4][0]
         self.assertEquals('D', paths[u"/trunk/foo"][0])
         self.assertEquals('A', paths[u"/trunk/bar"][0])
@@ -217,14 +217,14 @@ class TestNativeCommit(SubversionTestCase):
                 revmeta.get_fileid_overrides(svnrepo.get_mapping()))
 
     def test_commit_rename_file_from_directory(self):
-        wt = self.make_svn_branch_and_tree('d', 'dc') #1
-        self.build_tree({'dc/adir/foo': "data"})
+        wt = self.make_svn_branch_and_tree('d', 'dc')  # 1
+        self.build_tree({'dc/adir/foo': b"data"})
         self.client_add("dc/adir")
-        wt.commit(message="data") #2
+        wt.commit(message="data")  # 2
         wt.rename_one("adir/foo", "bar")
         self.assertFalse(wt.has_filename("adir/foo"))
         self.assertTrue(wt.has_filename("bar"))
-        wt.commit(message="doe") #3
+        wt.commit(message="doe")  # 3
         paths = self.client_log(wt.branch.base, 3, 0)[3][0]
         self.assertEquals('D', paths[u"/trunk/adir/foo"][0])
         self.assertEquals('A', paths[u"/trunk/bar"][0])
@@ -236,7 +236,7 @@ class TestNativeCommit(SubversionTestCase):
 
         dc = self.get_commit_editor(repos_url)
         foo = dc.add_dir("trunk")
-        foo.add_file("trunk/bla").modify("bla")
+        foo.add_file("trunk/bla").modify(b"bla")
         dc.add_dir("branches")
         dc.close()
 
@@ -281,16 +281,16 @@ class TestNativeCommit(SubversionTestCase):
                 self.client_delete(a)
             self.client_commit('sc', '.')
             self.client_update('sc')
-        self.build_tree({'sc/de/foo':'data', 'sc/de/bar':'DATA'})
+        self.build_tree({'sc/de/foo': b'data', 'sc/de/bar': b'DATA'})
         self.client_add('sc/de')
-        self.client_commit('sc', 'blah') #1
+        self.client_commit('sc', 'blah')  # 1
         self.client_update('sc')
         os.mkdir('sc/de/trunk')
         self.client_add('sc/de/trunk')
-        mv(('sc/de/foo', 'sc/de/trunk/foo'), ('sc/de/bar', 'sc/de/trunk/bar')) #2
+        mv(('sc/de/foo', 'sc/de/trunk/foo'), ('sc/de/bar', 'sc/de/trunk/bar'))  # 2
         mv(('sc/de', 'sc/pyd'))  #3
         self.client_delete('sc/pyd/trunk/foo')
-        self.client_commit('sc', '.') #4
+        self.client_commit('sc', '.')  # 4
         self.client_update('sc')
 
         self.make_checkout(repo + '/pyd/trunk', 'pyd')
@@ -333,7 +333,7 @@ class TestPush(SubversionTestCase):
         super(TestPush, self).setUp()
         self.repos_url = self.make_client('d', 'sc')
 
-        self.build_tree({'sc/foo/bla': "data"})
+        self.build_tree({'sc/foo/bla': b"data"})
         self.client_add("sc/foo")
         self.client_commit("sc", "foo")
 
@@ -356,7 +356,7 @@ class TestPush(SubversionTestCase):
                          self.newdir.root_transport.base)
 
     def test_child(self):
-        self.build_tree({'sc/foo/bar': "data"})
+        self.build_tree({'sc/foo/bar': b"data"})
         self.client_add("sc/foo/bar")
         self.client_commit("sc", "second message")
 
@@ -365,7 +365,7 @@ class TestPush(SubversionTestCase):
         self.assertEquals(3, result.new_revno)
 
     def test_diverged(self):
-        self.build_tree({'sc/foo/bar': "data"})
+        self.build_tree({'sc/foo/bar': b"data"})
         self.client_add("sc/foo/bar")
         self.client_commit("sc", "second message")
 
@@ -505,7 +505,7 @@ class TestPush(SubversionTestCase):
             repos.generate_revision_id(2, u"", mapping)).message)
 
     def test_commit_rename_file(self):
-        self.build_tree({'dc/vla': "data"})
+        self.build_tree({'dc/vla': b"data"})
         wt = self.newdir.open_workingtree()
         wt.add("vla")
         wt.set_pending_merges(["some-ghost-revision"])
@@ -521,7 +521,7 @@ class TestPush(SubversionTestCase):
 
     def test_commit_rename_file_from_directory(self):
         wt = self.newdir.open_workingtree()
-        self.build_tree({'dc/adir/foo': "data"})
+        self.build_tree({'dc/adir/foo': b"data"})
         wt.add("adir")
         wt.add("adir/foo")
         wt.commit(message="data")
@@ -539,7 +539,7 @@ class TestPush(SubversionTestCase):
 
     def test_commit_remove(self):
         wt = self.newdir.open_workingtree()
-        self.build_tree({'dc/foob': "data"})
+        self.build_tree({'dc/foob': b"data"})
         wt.add("foob")
         wt.commit(message="data")
         wt.remove(["foob"])
@@ -551,7 +551,7 @@ class TestPush(SubversionTestCase):
 
     def test_commit_rename_remove_parent(self):
         wt = self.newdir.open_workingtree()
-        self.build_tree({'dc/adir/foob': "data"})
+        self.build_tree({'dc/adir/foob': b"data"})
         wt.add("adir")
         wt.add("adir/foob")
         wt.commit(message="data")
@@ -568,7 +568,7 @@ class TestPush(SubversionTestCase):
 
     def test_commit_remove_nested(self):
         wt = self.newdir.open_workingtree()
-        self.build_tree({'dc/adir/foob': "data"})
+        self.build_tree({'dc/adir/foob': b"data"})
         wt.add("adir")
         wt.add("adir/foob")
         wt.commit(message="data")
@@ -585,7 +585,7 @@ class JoinedCommitTests(SubversionTestCase):
     def test_commit_join(self):
         repos_url = self.make_client('d', 'sc')
 
-        self.build_tree({'sc/trunk/foo/bla': "data"})
+        self.build_tree({'sc/trunk/foo/bla': b"data"})
         self.client_add("sc/trunk")
         self.client_commit("sc", "foo")
 
@@ -600,7 +600,7 @@ class JoinedCommitTests(SubversionTestCase):
         dc.close()
 
         wt = self.newdir.open_workingtree()
-        self.build_tree({"dc/lala": "data"})
+        self.build_tree({"dc/lala": b"data"})
         wt.add(["lala"])
         wt.commit(message="init")
         joinedwt = ControlDir.create_standalone_workingtree("dc/newdir")
@@ -619,7 +619,7 @@ class TestPushNested(SubversionTestCase):
         super(TestPushNested, self).setUp()
         self.repos_url = self.make_client('d', 'sc')
 
-        self.build_tree({'sc/foo/trunk/bla': "data"})
+        self.build_tree({'sc/foo/trunk/bla': b"data"})
         self.client_add("sc/foo")
         self.client_commit("sc", "foo")
 
@@ -694,7 +694,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         self.assertEquals(1, len(delta.renamed))
 
     def test_nested_fileid(self):
-        master_branch = self.make_svn_branch("d") #1
+        master_branch = self.make_svn_branch("d")  # 1
         os.mkdir("b")
         local_dir = master_branch.controldir.sprout("b")
         local_dir.open_branch().bind(master_branch)
@@ -706,7 +706,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         rootid = wt.path2id('')
         dirid = wt.path2id("dir")
         fileid = wt.path2id("dir/file")
-        revid1 = wt.commit(message="Commit from Bzr") #2
+        revid1 = wt.commit(message="Commit from Bzr")  # 2
         master_branch = Branch.open(master_branch.base)
         rm_provider = master_branch.repository._revmeta_provider
         mapping = master_branch.repository.get_mapping()
@@ -724,7 +724,7 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         dc.add_dir("trunk")
         dc.add_dir("branches")
         dc.add_dir("tags")
-        dc.close() # 1
+        dc.close()  # 1
 
         master_branch = Branch.open(repos_url+"/trunk")
         trunk = master_branch.controldir.sprout("trunk")
@@ -737,11 +737,11 @@ class HeavyWeightCheckoutTests(SubversionTestCase):
         wt = feature.open_workingtree()
         self.build_tree_contents([("feature/test.txt", "test")])
         wt.add("test.txt")
-        revid2 = wt.commit("added test.txt") # 2
+        revid2 = wt.commit("added test.txt")  # 2
 
         wt = trunk.open_workingtree()
         wt.merge_from_branch(feature.open_branch(), to_revision=revid2)
-        wt.commit("merged feature") # 3
+        wt.commit("merged feature")  # 3
 
         log = self.client_log(repos_url, 3, 0)
         self.assertEquals({

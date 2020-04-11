@@ -87,6 +87,8 @@ class MetaRevision(object):
             raise TypeError(branch_path)
         self.branch_path = branch_path
         self.revnum = revnum
+        if not isinstance(uuid, str):
+            raise TypeError(uuid)
         self.uuid = uuid
         self._graph = graph
         self._paths = paths
@@ -103,9 +105,12 @@ class MetaRevision(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def __cmp__(self, other):
-        return cmp((self.uuid, self.revnum, self.branch_path),
-                   (other.uuid, other.revnum, other.branch_path))
+    def __lt__(self, other):
+        if not isinstance(other, type(self)):
+            raise TypeError(other)
+        return (
+            (self.uuid, self.revnum, self.branch_path) <
+            (other.uuid, other.revnum, other.branch_path))
 
     def __repr__(self):
         return "<%s for revision %d, path %s in repository %r>" % (

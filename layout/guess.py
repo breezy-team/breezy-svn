@@ -16,9 +16,8 @@
 from __future__ import absolute_import
 
 from subvertpy import SubversionException, ERR_FS_NOT_FOUND
-import urllib
 
-from .... import ui
+from .... import ui, urlutils
 from ....trace import mutter
 
 from ..changes import (
@@ -143,17 +142,17 @@ def guess_layout_from_history(changed_paths, last_revnum, relpath=None):
 
 
 def repository_guess_layout(repository, revnum, branch_path=None):
-    return logwalker_guess_layout(repository._log, revnum,
-        branch_path=branch_path)
+    return logwalker_guess_layout(
+        repository._log, revnum, branch_path=branch_path)
 
 
 def logwalker_guess_layout(logwalker, revnum, branch_path=None):
-    with ui.ui_factory.nested_progress_bar() as pb:
-        (guessed_layout, layout) = guess_layout_from_history(
-            logwalker.iter_changes(None, revnum,
-                max(0, revnum-GUESS_SAMPLE_SIZE)), revnum, branch_path)
+    (guessed_layout, layout) = guess_layout_from_history(
+        logwalker.iter_changes(
+            None, revnum,
+            max(0, revnum-GUESS_SAMPLE_SIZE)), revnum, branch_path)
     mutter("Guessed repository layout: %r, guess layout to use: %r" %
-            (guessed_layout, layout))
+           (guessed_layout, layout))
     return (guessed_layout, layout)
 
 
@@ -166,7 +165,7 @@ def is_likely_branch_url(url):
     transport = SvnRaTransport(url)
     lw = LogWalker(transport=transport)
     svn_root_url = transport.get_repos_root()
-    branch_path = urllib.unquote(url[len(svn_root_url):])
+    branch_path = urlutils.unquote(url[len(svn_root_url):])
     try:
         (guessed_layout, _) = logwalker_guess_layout(
             lw, transport.get_latest_revnum())

@@ -32,7 +32,6 @@ from subvertpy.subr import (
     uri_canonicalize as svn_uri_canonicalize,
     )
 import sys
-import urllib
 try:
     import urllib.parse as urlparse
 except ImportError:  # Python < 3.7
@@ -143,7 +142,7 @@ def _url_unescape_uri(url):
     (scheme, netloc, path, query, fragment) = urlparse.urlsplit(url)
     if scheme in ("http", "https"):
         # Without this, URLs with + in them break
-        path = urlutils.quote(urllib.unquote(path), safe="/+%")
+        path = urlutils.quote(urlutils.unquote(path), safe="/+%")
     while "//" in path:
         path = path.replace("//", "/")
     return urlparse.urlunsplit((scheme, netloc, path, query, fragment))
@@ -159,7 +158,7 @@ def _url_escape_uri(url):
 
 def url_join_unescaped_path(url, path):
     (scheme, netloc, basepath, query, fragment) = urlparse.urlsplit(url)
-    path = urlutils.join(urllib.unquote(basepath), path)
+    path = urlutils.join(urlutils.unquote(basepath), path)
     if scheme in ("http", "https"):
         # Without this, URLs with + in them break
         path = urlutils.quote(path, safe="/+%")

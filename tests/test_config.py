@@ -236,12 +236,12 @@ class BranchConfigStackTests(SubversionTestCase):
     def test_get_tags(self):
         c = self.config
         c.set("tags", "bla;blie")
-        self.assertEquals([b"bla", b"blie"], c.get('tags'))
+        self.assertEquals(["bla", "blie"], c.get('tags'))
 
     def test_tags(self):
         c = self.config
         c.set("tags", "bla;blie")
-        self.assertEquals([b"bla", b"blie"], c.get('tags'))
+        self.assertEquals(["bla", "blie"], c.get('tags'))
 
 
 class PropertyConfigTests(SubversionTestCase):
@@ -301,7 +301,7 @@ class SvnBpConfigTests(SubversionTestCase):
         dc = self.get_commit_editor(branch.base)
         d = dc.add_dir("debian")
         f = d.add_file("debian/svn-layout")
-        f.modify("origDir = aorigdir\n")
+        f.modify(b"origDir = aorigdir\n")
         dc.close()
 
         cfg = SubversionBuildPackageConfig(branch.basis_tree())

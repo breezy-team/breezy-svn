@@ -76,13 +76,13 @@ class TdbRevisionIdMapCache(RevisionIdMapCache, CacheTable):
     def set_last_revnum_checked(self, layout, revnum):
         """See RevisionIdMapCache.set_last_revnum_checked."""
 
-        self.db["revidmap-last/%s" % str(layout)] = str(revnum)
+        self.db[b"revidmap-last/%s" % str(layout).encode('utf-8')] = b'%d' % (revnum, )
 
     def last_revnum_checked(self, layout):
         """See RevisionIdMapCache.last_revnum_checked."""
 
         try:
-            return int(self.db[b"revidmap-last/%s" % str(layout)].decode())
+            return int(self.db[b"revidmap-last/%s" % str(layout).encode('utf-8')].decode())
         except KeyError:
             return 0
 
@@ -302,9 +302,8 @@ class TdbRepositoryCache(RepositoryCache):
 
     def __init__(self, uuid):
         super(TdbRepositoryCache, self).__init__(uuid)
-        cache_file = os.path.join(self.create_cache_dir(), b'cache.tdb')
-        db = tdb_open(
-            cache_file.decode(), TDB_HASH_SIZE, tdb.DEFAULT,
+        cache_file = os.path.join(self.create_cache_dir(), 'cache.tdb')
+        db = tdb_open(cache_file, TDB_HASH_SIZE, tdb.DEFAULT,
             os.O_RDWR|os.O_CREAT)
         try:
             assert int(db[b"version"].decode()) == CACHE_DB_VERSION

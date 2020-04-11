@@ -68,13 +68,8 @@ def create_cache_dir():
         name = 'svn-cache'
     if sys.platform in ("nt", "win32"):
         from breezy.win32utils import get_local_appdata_location
-        s = get_local_appdata_location()
-        assert s is not None
-        # This can return a unicode string or a plain string in
-        # user encoding
-        if isinstance(s, bytes):
-            s = s.decode(breezy.user_encoding)
-        base_cache_dir = s.encode(osutils._fs_enc)
+        base_cache_dir = get_local_appdata_location()
+        assert base_cache_dir is not None
         cache_dir = os.path.join(base_cache_dir, name)
     else:
         base_cache_dir = config_dir()
@@ -87,8 +82,6 @@ def create_cache_dir():
                 pass
             else:
                 cache_dir = os.path.join(xdg_cache_home, "bazaar", "svn")
-        if isinstance(cache_dir, text_type):
-            cache_dir = cache_dir.encode(osutils._fs_enc)
 
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
@@ -98,6 +91,8 @@ def create_cache_dir():
 
 
 _cachedbs = threading.local()
+
+
 def cachedbs():
     """Get a cache for this thread's db connections."""
     try:
@@ -106,24 +101,24 @@ def cachedbs():
         _cachedbs.cache = weakref.WeakValueDictionary()
         return _cachedbs.cache
 
+
 class RepositoryCache(object):
     """Object that provides a cache related to a particular UUID."""
 
     def __init__(self, uuid):
+        assert isinstance(uuid, str)
         self.uuid = uuid
 
     def create_cache_dir(self):
         cache_dir = create_cache_dir()
-        dir = os.path.join(cache_dir, str(self.uuid).encode('ascii'))
+        dir = os.path.join(cache_dir, self.uuid)
         if not os.path.exists(dir):
-            trace.note("Initialising Subversion metadata cache in %s.",
-                       dir.decode(osutils._fs_enc))
+            trace.note("Initialising Subversion metadata cache in %s.", dir)
             os.mkdir(dir)
         return dir
 
     def open_transport(self):
-        return _mod_transport.get_transport_from_path(
-            self.create_cache_dir().decode(osutils._fs_enc))
+        return _mod_transport.get_transport_from_path(self.create_cache_dir())
 
     def open_fileid_map(self):
         from ..fileids import FileIdMapCache
@@ -152,6 +147,7 @@ except ImportError:
     cache_cls = SqliteRepositoryCache
 
 def get_cache(uuid):
+    assert isinstance(uuid, str)
     try:
         return cachedbs()[uuid]
     except KeyError:

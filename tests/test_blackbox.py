@@ -52,7 +52,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
 
     def commit_something(self, repos_url):
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("foo").modify("bar")
+        dc.add_file("foo").modify(b"bar")
         dc.close()
 
     def test_branch_onerev(self):
@@ -92,7 +92,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         dc.close()
 
         self.run_bzr("branch %s/trunk dc" % repos_url)
-        self.build_tree({"dc/foo": "blaaaa"})
+        self.build_tree({"dc/foo": b"blaaaa"})
         self.run_bzr("commit -m msg dc")
         self.run_bzr_error([
              'ERROR: Prefix missing for branches\\/mybranch; please create it before pushing.'],
@@ -107,7 +107,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         dc.close()
 
         self.run_bzr("branch %s dc" % repos_url)
-        self.build_tree({"dc/foo": "blaaaa"})
+        self.build_tree({"dc/foo": b"blaaaa"})
         self.run_bzr("commit -m msg dc")
         self.run_bzr("push -d dc %s" % repos_url)
         self.assertEquals("", self.run_bzr("status dc")[0])
@@ -120,7 +120,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         dc.close()
 
         self.run_bzr("init dc")
-        self.build_tree({"dc/foo": "blaaaa"})
+        self.build_tree({"dc/foo": b"blaaaa"})
         self.run_bzr("add dc/foo")
         self.run_bzr("commit -m msg dc")
         output, err = self.run_bzr("push -d dc %s/trunk" % repos_url, retcode=3)
@@ -136,7 +136,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         dc.close()
 
         self.run_bzr("init dc")
-        self.build_tree({"dc/foo": "blaaaa"})
+        self.build_tree({"dc/foo": b"blaaaa"})
         self.run_bzr("add dc/foo")
         self.run_bzr("commit -m msg dc")
         self.run_bzr_error(
@@ -146,11 +146,11 @@ class TestBranch(SubversionTestCase, ExternalBase):
     def test_push_verbose(self):
         repos_url = self.make_repository('d')
         self.run_bzr("init dc")
-        self.build_tree({"dc/foo": "blaaaa"})
+        self.build_tree({"dc/foo": b"blaaaa"})
         self.run_bzr("add dc/foo")
         self.run_bzr("commit -m msg dc")
         self.run_bzr("push -v -d dc %s/trunk" % repos_url)
-        self.build_tree({"dc/foo": "blaaaaa"})
+        self.build_tree({"dc/foo": b"blaaaaa"})
         self.run_bzr("commit -m msg dc")
         self.run_bzr("push -v -d dc %s/trunk" % repos_url)
 
@@ -185,7 +185,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         dc.close()
 
         self.run_bzr("init dc")
-        self.build_tree({"dc/bar": "blaaaa"})
+        self.build_tree({"dc/bar": b"blaaaa"})
         self.run_bzr("add dc/bar")
         self.run_bzr("commit -m msg dc")
         self.run_bzr("push --overwrite -d dc %s/trunk" % repos_url)
@@ -207,7 +207,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         dc.close()
 
         self.run_bzr("branch %s dc" % repos_url)
-        self.build_tree({"dc/foo": "blaaaa"})
+        self.build_tree({"dc/foo": b"blaaaa"})
         self.run_bzr("commit -m msg dc")
         self.run_bzr("push --lossy -d dc %s" % repos_url)
         self.assertEquals("", self.run_bzr("status dc")[0])
@@ -221,7 +221,7 @@ class TestBranch(SubversionTestCase, ExternalBase):
         dc.close()
 
         self.run_bzr("branch %s dc" % repos_url)
-        self.build_tree({"dc/foofile": "blaaaa"})
+        self.build_tree({"dc/foofile": b"blaaaa"})
         self.run_bzr("add dc/foofile")
         self.run_bzr("commit -m msg dc")
         self.run_bzr("push --lossy -d dc %s" % repos_url)
@@ -414,16 +414,16 @@ Node-copyfrom-path: x
     def test_list(self):
         repos_url = self.make_repository("a")
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("foo").modify("test")
-        dc.add_file("bla").modify("ha")
+        dc.add_file("foo").modify(b"test")
+        dc.add_file("bla").modify(b"ha")
         dc.close()
         self.assertEquals("a/bla\na/foo\n", self.run_bzr("ls a")[0])
 
     def test_info_remote(self):
         repos_url = self.make_repository("a")
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("foo").modify("test")
-        dc.add_file("bla").modify("ha")
+        dc.add_file("foo").modify(b"test")
+        dc.add_file("bla").modify(b"ha")
         dc.close()
         self.assertEquals(
                 "Standalone branch (format: subversion)\nLocation:\n  branch root: a\n",
@@ -431,7 +431,7 @@ Node-copyfrom-path: x
 
     def test_lightweight_checkout_lightweight_checkout(self):
         self.make_svn_branch_and_tree("a", "dc")
-        self.build_tree({'dc/foo': "test", 'dc/bla': "ha"})
+        self.build_tree({'dc/foo': b"test", 'dc/bla': b"ha"})
         self.client_add("dc/foo")
         self.client_add("dc/bla")
         self.client_commit("dc", "Msg")
@@ -514,12 +514,12 @@ if len(sys.argv) == 2:
 
         dc = self.get_commit_editor(svn_url)
         trunk = dc.add_dir("trunk")
-        trunk.add_file("trunk/foo").modify("bar1")
+        trunk.add_file("trunk/foo").modify(b"bar1")
         dc.close()
 
         dc = self.get_commit_editor(svn_url)
         trunk = dc.open_dir("trunk")
-        trunk.open_file("trunk/foo").modify("bar2")
+        trunk.open_file("trunk/foo").modify(b"bar2")
         dc.close()
 
         self.run_bzr('branch %s/trunk trunk' % svn_url)

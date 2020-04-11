@@ -25,7 +25,9 @@ from collections import (
 
 import errno
 import os
+import operator
 import posixpath
+from six import string_types
 import stat
 import subvertpy
 
@@ -240,7 +242,9 @@ class Walker(object):
                 entries = wc.entries_read(True)
                 for name in sorted(entries):
                     entry = entries[name]
-                    subp = osutils.pathjoin(p, name.decode("utf-8")).rstrip("/")
+                    if isinstance(name, bytes):
+                        name = name.decode('utf-8')
+                    subp = osutils.pathjoin(p, name).rstrip("/")
                     if entry.kind == subvertpy.NODE_DIR and name != "":
                         if self.recursive:
                             self.todo.append(subp)
@@ -601,14 +605,16 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         if entry.schedule == SCHEDULE_NORMAL:
             # Keep old id
             try:
-                return self.path_to_file_id(entry.cmt_rev, entry.revision,
-                        relpath)
+                return self.path_to_file_id(
+                    entry.cmt_rev, entry.revision, relpath)
             except KeyError:
                 if entry.revision == self._cached_base_revnum:
-                    raise AssertionError("file %s:%d not in fileid map for %d" % (
-                        relpath, entry.revision, self._cached_base_revnum))
-                # For some reason a file that doesn't exist in the current revision
-                # has ended up here. Let's just generate a NEW- file id
+                    raise AssertionError(
+                        "file %s:%d not in fileid map for %d" % (
+                            relpath, entry.revision, self._cached_base_revnum))
+                # For some reason a file that doesn't exist in the current
+                # revision has ended up here. Let's just generate a NEW- file
+                # id
         elif entry.schedule == SCHEDULE_DELETE:
             return (None, None)
         elif (entry.schedule == SCHEDULE_ADD or
@@ -620,8 +626,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             raise AssertionError("unknown schedule value %r for %s" % (
                 entry.schedule, relpath))
         # FIXME: Generate more random but consistent file ids
-        return ("NEW-" + escape_svn_path(osutils.safe_utf8(relpath).strip("/")),
-                None)
+        return (
+            b"NEW-" + escape_svn_path(relpath.strip("/")),
+            None)
 
     def path2id(self, path):
         if isinstance(path, list):
@@ -629,10 +636,13 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         with self._get_wc() as wc:
             try:
                 entry = self._get_entry(wc, path)
-                (file_id, revision) = self._find_ids(osutils.safe_unicode(path), entry)
+                (file_id, revision) = self._find_ids(
+                        osutils.safe_unicode(path), entry)
             except KeyError:
                 return None
             else:
+                if not isinstance(file_id, bytes):
+                    raise TypeError(file_id)
                 return file_id
 
     def _get_entry(self, wc, path):
@@ -675,7 +685,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
         raise NoSuchId(self, file_id)
 
     def _ie_from_entry(self, relpath, entry, parent_id):
-        assert type(parent_id) is str or parent_id is None
+        assert type(parent_id) is bytes or parent_id is None
         if not isinstance(relpath, text_type):
             raise TypeError(relpath)
         (file_id, revid) = self._find_ids(relpath, entry)
@@ -696,7 +706,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             ie.revision = revid
             try:
                 data = osutils.fingerprint_file(
-                    open(abspath.encode(osutils._fs_enc)))
+                    open(abspath.encode(osutils._fs_enc), 'rb'))
             except IOError as e:
                 if e.errno == errno.EISDIR:
                     ie = SubversionTreeDirectory(file_id, basename, parent_id)
@@ -935,9 +945,9 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def add(self, files, ids=None, kinds=None, _copyfrom=None):
         """Add files to the working tree."""
         # TODO: Use kinds
-        if isinstance(files, basestring):
+        if isinstance(files, string_types):
             files = [files]
-            if isinstance(ids, str):
+            if isinstance(ids, bytes):
                 ids = [ids]
         if ids is None:
             ids = [None] * len(files)
@@ -996,7 +1006,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                     parent_id = fileids[parent_path]
                 except KeyError:
                     parent_id = self.path2id(parent_path)
-                    assert type(parent_id) is str
+                    assert type(parent_id) is bytes
                     fileids[parent_path] = parent_id
             ie = self._ie_from_entry(relpath, entry, parent_id)
             if ie is not None:
@@ -1058,7 +1068,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
                 if path in new_entries:
                     del new_entries[path]
             else:
-                assert isinstance(id, str)
+                assert isinstance(id, bytes)
                 new_entries[path] = id
             fileprops = self._get_branch_props()
             self.mapping.export_fileid_map_fileprops(new_entries, fileprops)
@@ -1070,14 +1080,15 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
     def lookup_id(self, path, entry=None):
         ids = self._get_new_file_ids()
         if path in ids:
+            assert ids[path] is bytes
             return (ids[path], None)
         try:
             return self.basis_idmap.lookup(self.mapping, path)[:2]
         except KeyError:
             if path == "":
-                return ("root-%s-%s" % (
+                return (b"root-%s-%s" % (
                     escape_svn_path(self.get_branch_path()),
-                    self.entry.uuid), None)
+                    self.entry.uuid.encode('ascii')), None)
             mutter("fileid map: %r", self._get_new_file_ids())
             raise
 
@@ -1086,7 +1097,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
             ret = {}
             (prop_changes, orig_props) = wc.get_prop_diffs(
                 self.basedir.encode("utf-8"))
-            for k,v in prop_changes:
+            for k, v in prop_changes:
                 ret[k] = (orig_props.get(k), v)
             return ret
 
@@ -1138,10 +1149,7 @@ class SvnWorkingTree(SubversionTree, WorkingTree):
 
     def apply_inventory_delta(self, delta):
         """Apply an inventory delta."""
-        def cmp_delta_changes(a, b):
-            # Only sort on new_path for now
-            return cmp(a[1], b[1])
-        delta.sort(cmp_delta_changes)
+        delta.sort(key=operator.itemgetter(1))
         base_tree = self.basis_tree()
         for (old_path, new_path, file_id, ie) in delta:
             self._apply_inventory_delta_change(base_tree, old_path, new_path,
@@ -1868,10 +1876,7 @@ class SvnCheckout(ControlDir):
         if self.entry.repos is None:
             raise RepositoryRootUnknown()
         assert self.entry.url.startswith(self.entry.repos)
-        ret = self.entry.url[len(self.entry.repos):].strip("/")
-        if isinstance(ret, bytes):  # Python < 3
-            return ret.decode('utf-8')
-        return ret
+        return self.entry.url[len(self.entry.repos):].strip("/")
 
     def needs_format_conversion(self, format):
         return not isinstance(self._format, format.__class__)
@@ -1892,7 +1897,7 @@ class SvnCheckout(ControlDir):
         raise NotImplementedError(self.create_branch)
 
     def open_branch(self, name=None, unsupported=True, ignore_fallbacks=False,
-            mapping=None, revnum=None, possible_transports=None):
+                    mapping=None, revnum=None, possible_transports=None):
         """See ControlDir.open_branch()."""
         from .branch import SvnBranch
         repos = self._find_repository()

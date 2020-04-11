@@ -74,13 +74,13 @@ class BzrSvnMappingv1(BzrSvnMapping):
         branch_path = unescape_svn_path(revid[fash+1:])
         revnum = int(revid[0:at])
         assert revnum >= 0
-        return (uuid, branch_path, revnum), cls(LegacyLayout.from_branch_path(branch_path))
+        return (uuid.decode('ascii'), branch_path, revnum), cls(LegacyLayout.from_branch_path(branch_path))
 
     @classmethod
     def revision_id_foreign_to_bzr(cls, foreign_revid):
         (uuid, path, revnum) = foreign_revid
         assert isinstance(path, str)
-        return b"svn-v1:%d@%s-%s" % (revnum, uuid, escape_svn_path(path))
+        return b"svn-v1:%d@%s-%s" % (revnum, uuid.encode('ascii'), escape_svn_path(path))
 
     def __eq__(self, other):
         return type(self) == type(other)
@@ -170,12 +170,12 @@ class BzrSvnMappingv2(BzrSvnMappingv1):
         branch_path = unescape_svn_path(revid[fash+1:])
         revnum = int(revid[0:at])
         assert revnum >= 0
-        return (uuid, branch_path, revnum), cls(LegacyLayout.from_branch_path(branch_path))
+        return (uuid.decode('ascii'), branch_path, revnum), cls(LegacyLayout.from_branch_path(branch_path))
 
     def revision_id_foreign_to_bzr(self, foreign_revid):
         (uuid, path, revnum) = foreign_revid
         assert isinstance(path, str)
-        return b"svn-v2:%d@%s-%s" % (revnum, uuid, escape_svn_path(path))
+        return b"svn-v2:%d@%s-%s" % (revnum, uuid.encode('ascii'), escape_svn_path(path))
 
     def __eq__(self, other):
         return type(self) == type(other)

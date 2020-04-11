@@ -77,7 +77,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
     def test_repr(self):
         with self.get_commit_editor(self.repos_url) as dc:
             with dc.add_file("foo") as f:
-                f.modify("data")
+                f.modify(b"data")
 
         repos = Repository.open(self.repos_url)
 
@@ -102,7 +102,7 @@ class TestSubversionRepositoryWorks(SubversionTestCase):
         with self.get_commit_editor(self.repos_url) as dc:
             with dc.add_dir("foo") as foo:
                 with foo.add_file("foo/bla") as f:
-                    f.modify("data")
+                    f.modify(b"data")
 
         repository = Repository.open(self.repos_url)
         self.assertFalse(repository.is_shared())

@@ -68,42 +68,41 @@ class BzrSvnMappingv4(mapping.BzrSvnMappingFileProps,
 
     @classmethod
     def revision_id_bzr_to_foreign(cls, revid):
-        assert isinstance(revid, str)
+        assert isinstance(revid, bytes)
 
         if not revid.startswith(cls.revid_prefix):
             raise errors.InvalidRevisionId(revid, "")
 
         try:
-            (version, uuid, branch_path, srevnum) = revid.split(":")
+            (version, uuid, branch_path, srevnum) = revid.split(b":")
         except ValueError:
             raise errors.InvalidRevisionId(revid, "")
 
         branch_path = mapping.unescape_svn_path(branch_path)
 
-        return (uuid, branch_path, int(srevnum)), cls()
+        return (uuid.decode('ascii'), branch_path, int(srevnum)), cls()
 
     def revision_id_foreign_to_bzr(self, foreign_revid):
         (uuid, path, revnum) = foreign_revid
-        assert isinstance(uuid, str)
         return b"svn-v4:%s:%s:%d" % (
             uuid.encode('ascii'), urlutils.quote(path).encode('ascii'), revnum)
 
     def generate_file_id(self, foreign_revid, inv_path):
         (uuid, branch, revnum) = foreign_revid
         return b"%d@%s:%s" % (
-                revnum, uuid,
+                revnum, uuid.encode('ascii'),
                 mapping.escape_svn_path(
                     u"%s/%s" % (branch, inv_path)))
 
     def parse_file_id(self, fileid):
         try:
-            (revnum_str, rest) = fileid.split("@", 1)
+            (revnum_str, rest) = fileid.split(b"@", 1)
             revnum = int(revnum_str)
-            (uuid, path_escaped) = rest.split(":", 1)
+            (uuid, path_escaped) = rest.split(b":", 1)
         except ValueError:
             raise InvalidFileId(fileid)
         path = mapping.unescape_svn_path(path_escaped).strip("/")
-        return (uuid, revnum, path)
+        return (uuid.decode('ascii'), revnum, path)
 
     def is_branch(self, branch_path):
         return True

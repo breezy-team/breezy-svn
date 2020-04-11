@@ -211,10 +211,10 @@ class WorkingSubversionBranch(SubversionTestCase):
         dc.close()
 
         b = Branch.open(repos_url + "/trunk")
-        self.assertEquals(["foo"], b.tags.get_tag_dict().keys())
+        self.assertEquals(["foo"], list(b.tags.get_tag_dict().keys()))
         b.tags.delete_tag(u"foo")
         b = Branch.open(repos_url + "/trunk")
-        self.assertEquals([], b.tags.get_tag_dict().keys())
+        self.assertEquals([], list(b.tags.get_tag_dict().keys()))
 
     def test_tag_set_no_parent_dir(self):
         repos_url = self.make_repository('a')

@@ -507,7 +507,7 @@ See `bzr help svn-layout` for details.
 
 
 def svn_paths_from_store(text):
-    return [b.encode("utf-8") for b in text.split(";") if b != ""]
+    return [b for b in text.split(";") if b != ""]
 
 
 svn_branches_option = _mod_bzr_config.Option(

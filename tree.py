@@ -25,7 +25,6 @@ from subvertpy import (
     properties,
     wc,
     )
-import urllib
 
 from breezy import (
     errors,
@@ -167,6 +166,8 @@ class SvnRevisionTreeCommon(SubversionTree,RevisionTree):
         except KeyError:
             return None
         else:
+            if not isinstance(file_id, bytes):
+                raise TypeError(file_id)
             return file_id
 
     def _comparison_data(self, entry, path):
@@ -297,7 +298,7 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
     :param url: URL of referenced tree.
     """
     assert ref_revnum is None or isinstance(ref_revnum, int)
-    assert revid is None or isinstance(revid, str)
+    assert revid is None or isinstance(revid, bytes)
     (dir, name) = os.path.split(path)
     parent = inv.get_entry(parent_id)
     if dir != "":
@@ -307,7 +308,7 @@ def inventory_add_external(inv, parent_id, path, revid, ref_revnum, url):
             else:
                 # Implicitly add directory if it doesn't exist yet
                 # TODO: Generate a file id
-                parent = inv.add(InventoryDirectory('someid', part,
+                parent = inv.add(InventoryDirectory(b'someid', part,
                                  parent_id=parent.file_id))
                 parent.revision = revid
 
@@ -640,13 +641,14 @@ class SvnBasisTree(SvnRevisionTreeCommon):
 
         def find_ids(entry):
             assert entry.url.startswith(self._repository.svn_transport.svn_url)
-            relpath = urllib.unquote(entry.url[len(self._repository.svn_transport.svn_url):].strip("/"))
+            relpath = urlutils.unquote(entry.url[len(self._repository.svn_transport.svn_url):].strip("/"))
+            if isinstance(relpath, bytes):
+                relpath = relpath.decode('utf-8')
             assert isinstance(relpath, str)
             if entry.schedule in (wc.SCHEDULE_NORMAL,
                                   wc.SCHEDULE_DELETE,
                                   wc.SCHEDULE_REPLACE):
-                return self.lookup_id(
-                    self.workingtree.unprefix(relpath.decode("utf-8")))
+                return self.lookup_id(self.workingtree.unprefix(relpath))
             return (None, None)
 
         def add_dir_to_inv(relpath, adm, parent_id):
@@ -723,11 +725,8 @@ class SvnBasisTree(SvnRevisionTreeCommon):
 
     def get_file_text(self, path):
         """See Tree.get_file_text()."""
-        f = self.get_file_stream_by_path(path)
-        try:
+        with self.get_file_stream_by_path(path) as f:
             return f.read()
-        finally:
-            f.close()
 
     def get_file(self, path):
         return self.get_file_stream_by_path(path)

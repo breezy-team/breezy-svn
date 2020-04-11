@@ -103,7 +103,7 @@ class TestRemoteAccess(SubversionTestCase):
         repos_url = self.make_svn_repository("d")
 
         dc = self.get_commit_editor(repos_url)
-        dc.add_file("bla").modify("contents")
+        dc.add_file("bla").modify(b"contents")
         dc.close()
         x = ControlDir.open(repos_url)
         self.assertRaises(AlreadyBranchError, x.create_branch)

@@ -19,6 +19,7 @@ from __future__ import absolute_import
 
 import base64
 import bz2
+import operator
 from subvertpy import properties
 import urllib
 
@@ -193,7 +194,7 @@ class ListBranchingScheme(BranchingScheme):
 
     def __str__(self):
         return "list-%s" % prop_name_quote(
-            bz2.compress("".join(map(lambda x:x+"\n", self.branch_list))))
+            bz2.compress(b"".join([x+b"\n" for x in self.branch_list])))
 
     def is_tag(self, path, project=None):
         """See BranchingScheme.is_tag()."""
@@ -507,8 +508,8 @@ def guess_scheme_from_history(changed_paths, last_revnum,
                 potentials[str(scheme)] += 1
                 scheme_cache[str(scheme)] = scheme
 
-    entries = potentials.items()
-    entries.sort(key=lambda e: e[1])
+    entries = list(potentials.items())
+    entries.sort(key=operator.itemgetter(1))
 
     mutter('potential branching schemes: %r' % entries)
 

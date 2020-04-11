@@ -103,8 +103,7 @@ def escape_svn_path(x):
     :param x: Path
     :return: Escaped path
     """
-    x = osutils.safe_utf8(x)
-    return urlutils.quote(x, "")
+    return urlutils.quote(x, "").encode('utf-8')
 
 
 def unescape_svn_path(x):
@@ -113,7 +112,7 @@ def unescape_svn_path(x):
     :param x: Escaped path
     :return: Unescaped path
     """
-    return urllib.unquote(x).decode('utf-8')
+    return urlutils.unquote(x.decode('utf-8'))
 
 
 # The following two functions don't use day names (which can vary by
@@ -664,7 +663,7 @@ def parse_fileid_property(text):
     ret = {}
     for line in text.splitlines():
         (path, key) = line.split("\t", 1)
-        ret[urllib.unquote(path).decode("utf-8")] = str(key)
+        ret[urlutils.unquote(path).decode("utf-8")] = str(key)
     return ret
 
 
@@ -685,7 +684,7 @@ def parse_text_parents_property(text):
     for line in text.splitlines():
         parts = line.split("\t")
         entry = parts[0]
-        ret[urllib.unquote(entry).decode("utf-8")] = filter(
+        ret[urlutils.unquote(entry).decode("utf-8")] = filter(
             lambda x: x != "",
             [osutils.safe_revision_id(parent_revid)
              for parent_revid in parts[1:]])
@@ -696,7 +695,7 @@ def parse_text_revisions_property(text):
     ret = {}
     for line in text.splitlines():
         (entry, revid) = line.split("\t", 1)
-        ret[urllib.unquote(entry).decode("utf-8")] = osutils.safe_revision_id(
+        ret[urlutils.unquote(entry).decode("utf-8")] = osutils.safe_revision_id(
             revid)
     return ret
 
@@ -934,7 +933,7 @@ class BzrSvnMappingRevProps(object):
         path = revprops.get(SVN_REVPROP_BZR_ROOT)
         if path is None:
             return None
-        return path.decode('utf-8')
+        return path
 
     def get_repository_uuid(self, revprops):
         return revprops.get(SVN_REVPROP_BZR_REPOS_UUID)
@@ -1014,12 +1013,12 @@ class SubversionMappingRegistry(foreign.VcsMappingRegistry):
         :param revid: Revision id to parse
         :return: tuple with (uuid, branch_path, revno), mapping
         """
-        if type(revid) is not str:
+        if type(revid) is not bytes:
             raise TypeError("revision id is not a bytestring")
-        if not revid.startswith("svn-"):
+        if not revid.startswith(b"svn-"):
             raise InvalidRevisionId(revid, None)
-        mapping_version = revid[len("svn-"):len("svn-vx")]
-        mapping = self.get(mapping_version)
+        mapping_version = revid[len(b"svn-"):len(b"svn-vx")]
+        mapping = self.get(mapping_version.decode('utf-8'))
         return mapping.revision_id_bzr_to_foreign(revid)
 
     revision_id_bzr_to_foreign = parse_revision_id

@@ -776,20 +776,20 @@ class SvnCommitBuilder(CommitBuilder):
             return
         if self.old_tree.kind(from_path) != 'directory':
             return
-        for (p, v, k, fid, ie) in self.old_tree.list_files(
+        for (p, v, k, ie) in self.old_tree.list_files(
                 include_root=False, from_dir=from_path, recursive=True):
             assert v
-            if fid in self._updated or fid in self._deleted_fileids:
+            if ie.file_id in self._updated or ie.file_id in self._deleted_fileids:
                 # File was already changed in some other way this commit
-                # No need to set fid
+                # No need to set ie.file_id
                 continue
             child_path = osutils.pathjoin(path, ie.name)
             old_child_path = osutils.pathjoin(from_path, ie.name)
-            self._override_file_ids[child_path] = fid
+            self._override_file_ids[child_path] = ie.file_id
             self._override_text_revisions[child_path] = (
-                    self.old_tree.get_file_revision(old_child_path, fid))
+                    self.old_tree.get_file_revision(old_child_path, ie.file_id))
             if ie.kind == 'directory':
-                self._update_moved_dir_child_file_ids(child_path, fid)
+                self._update_moved_dir_child_file_ids(child_path, ie.file_id)
 
     def _commit_done(self, *args):
         """Callback that is called by the Subversion commit editor
