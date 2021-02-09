@@ -236,8 +236,7 @@ class SvnRemoteProber(SvnProber):
             priv_transport = getattr(transport, "_decorated", transport)
             try:
                 headers = priv_transport._options('.')
-            except (errors.InProcessTransport, errors.NoSuchFile,
-                    errors.InvalidHttpResponse):
+            except (InProcessTransport, NoSuchFile, InvalidHttpResponse):
                 raise NotBranchError(path=transport.base)
             else:
                 dav_entries = set()
