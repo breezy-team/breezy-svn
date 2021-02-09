@@ -186,10 +186,12 @@ def simple_apply_changes(new_file_id, changes):
 
 
 class FileIdMap(object):
+    """Map from file ids to names."""
 
     __slots__ = ()
 
     def has_fileid(self, fileid):
+        """Does this file id appear in the map?"""
         raise NotImplementedError(self.has_fileid)
 
     def as_dict(self):
@@ -202,7 +204,7 @@ class FileIdMap(object):
         raise NotImplementedError(self.reverse_lookup)
 
     def apply_delta(self, text_revisions, delta, changes, default_revid,
-                      mapping, foreign_revid):
+                    mapping, foreign_revid):
         raise NotImplementedError(self.apply_delta)
 
 
@@ -272,7 +274,7 @@ class DictFileIdMap(FileIdMap):
 
     def lookup(self, mapping, path):
         ret = idmap_lookup(self.data.__getitem__, mapping, path)
-        if not isinstance(ret, bytes):
+        if not isinstance(ret, tuple):
             raise TypeError(ret)
         return ret
 
